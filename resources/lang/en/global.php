@@ -1,0 +1,754 @@
+<?php
+
+return [
+
+    'user-management' => [
+        'title' => 'User Management',
+        'created_at' => 'Time',
+        'fields' => [
+        ],
+    ],
+
+    'permissions' => [
+        'title' => 'Permissions',
+        'created_at' => 'Time',
+        'fields' => [
+            'title' => 'Title',
+            'name' => 'Name',
+            'parent_id' => 'Parent Permission',
+            'actions' => 'Actions',
+        ],
+    ],
+
+    'regions' => [
+        'title' => 'Regions',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'status' => 'Status',
+            'actions' => 'Actions'
+        ],
+    ],
+
+    'cities' => [
+        'title' => 'Cities',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'featured' => 'Featured',
+            'region' => 'Region',
+            'status' => 'Status',
+            'actions' => 'Actions'
+        ],
+    ],
+    'towns' => [
+        'title' => 'Towns',
+        'created_at' => 'Time',
+        'import' => 'Import Towns',
+        'fields' => [
+            'name' => 'Name',
+            'city' => 'City',
+            'status' => 'Status',
+            'actions' => 'Actions'
+        ],
+    ],
+    'payment_modes' => [
+        'title' => 'Payment Modes',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'status' => 'Status',
+            'featured' => 'Featured',
+            'use_type' => 'Use Type',
+            'actions' => 'Actions',
+            'sort' => 'Sort Payment Modes'
+        ],
+    ],
+    'custom_forms' => [
+        'title' => 'Custom Forms',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'form_type' => 'Form Type',
+            'actions' => 'Actions',
+            'created_at' => 'Created at',
+            'status' => 'Status',
+            'sort' => 'Sort Custom Forms'
+        ],
+    ],
+    'custom_form_feedbacks' => [
+        'title' => 'Custom Form Feedbacks',
+        'created_at' => 'Time',
+        'fields' => [
+            'patient_id' => 'Patient ID',
+            'name' => 'Name',
+            'patient_name' => 'Patient Name',
+            'actions' => 'Actions',
+            'created_at' => 'Created at',
+            'sort' => 'Sort Custom Form Feedbacks'
+        ],
+    ],
+    'medical_history' => [
+        'title' => 'Medical History',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'patient_name' => 'Patient Name',
+            'actions' => 'Actions',
+            'created_at' => 'Created at',
+            'sort' => 'Sort Medical History'
+        ],
+    ],
+
+    'measurement_form' => [
+        'title' => 'Measurement Form',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'patient_name' => 'Patient Name',
+            'actions' => 'Actions',
+            'created_at' => 'Created at',
+            'sort' => 'Sort Measurement Form'
+        ],
+    ],
+
+    'locations' => [
+        'title' => 'Centres',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'fdo_name' => 'FDO',
+            'fdo_phone' => 'FDO Phone',
+            'address' => 'Address',
+            'city' => 'City',
+            'region' => 'Region',
+            'service' => 'Services',
+            'created_at' => 'Created at',
+            'status' => 'Status',
+            'actions' => 'Actions',
+        ],
+    ],
+
+    'doctors' => [
+        'title' => 'Doctors',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'city' => 'City',
+            'location' => 'Centre',
+            'service'=>'Service',
+            'actions' => 'Actions',
+            'email'=>'email',
+            'phone'=>'Phone',
+            'gender'=>'Gender',
+            'role' => 'Role',
+            'location' =>'Allocate',
+            'created_at' => 'Created at',
+            'status' => 'Status',
+        ],
+    ],
+
+    'appointment_statuses' => [
+        'title' => 'Appointment Statuses',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'parent' => 'Parent Group',
+            'is_comment' => 'Ask for Comments',
+            'allow_message' => 'Allow Send SMS',
+            'is_default' => 'Default Status for New Appointments',
+            'is_arrived' => 'Default Status for Arrived Appointments',
+            'is_cancelled' => 'Default Status for Cancelled Appointments',
+            'is_unscheduled' => 'Default Status for Un-Scheduled Appointments',
+            'status' => 'Status',
+            'actions' => 'Actions',
+        ],
+    ],
+
+    'appointments' => [
+        'title' => 'Appointments',
+        'created_at' => 'Time',
+        "invoice_paid_message" => "Appointment has invoice",//"Paid payment. So It cannot be scheduled", // Appointment has invoice.
+        'fields' => [
+            'patient_name' => 'Patient',
+            'msg_count' => 'SMS',
+            'msg_send' => 'Send SMS',
+            'patient_phone' => 'Phone',
+            'scheduled_at' => 'Scheduled',
+            'doctor' => 'Doctor',
+            'region' => 'Region',
+            'city' => 'City',
+            'location' => 'Centre',
+            'service' => 'Service',
+            'appointment_status' => 'Status',
+            'appointment_type' => 'Type',
+            'consultancy_type' => 'Consultancy Type',
+            'created_by' => 'Created By',
+            'updated_by' => 'Updated By',
+            'rescheduled_by' => 'Rescheduled By',
+            'created_at' => 'Created At',
+            'actions' => 'Actions',
+        ],
+    ],
+
+    'lead_sources' => [
+        'title' => 'Lead Sources',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'actions' => 'Actions',
+            'status' => 'Status',
+        ],
+    ],
+
+    'lead_statuses' => [
+        'title' => 'Lead Statuses',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'parent' => 'Parent Group',
+            'is_comment' => 'Ask for Comments',
+            'is_default' => 'Default for Open Leads',
+            'is_arrived' => 'Default for Arrived Leads',
+            'is_converted' => 'Default for Converted Leads',
+            'is_junk' => 'Default for Junk Leads',
+            'status' => 'Status',
+            'actions' => 'Actions',
+        ],
+    ],
+
+    'leads' => [
+        'title' => 'Leads',
+        'created_at' => 'Time',
+        'import' => 'Import Leads',
+        'fields' => [
+            'patientid'=>'ID',
+            'patient_id' =>'Patient ID',
+            'full_name' => 'Full Name',
+            'phone' => 'Phone',
+            'cnic' => 'CNIC',
+            'dob' =>'DOB',
+            'email' => 'Email',
+            'gender' => 'Gender',
+            'role'=> 'Role',
+            'location' => 'Location',
+            'incentive'=>'Incentive',
+            'total_Revenue' => 'Total Revenue',
+            'commission' => 'Commission %',
+            'comments' => 'Comments',
+            'city' => 'City',
+            'town' => 'Town',
+            'region' => 'Region',
+            'lead_source' => 'Lead Source',
+            'lead_status' => 'Lead Status',
+            'service' => 'Service',
+            'created_by' => 'Created By',
+            'referred_by' => 'Referred By',
+            'created_at' => 'Created At',
+            'msg_count' => 'Msg Count',
+            'msg_send' => 'Send SMS',
+            'actions' => 'Actions',
+        ]
+    ],
+
+    'staff' => [
+        'title' => 'Leads',
+        'created_at' => 'Time',
+        'import' => 'Import Leads',
+        'fields' => [
+            'patientid'=>'ID',
+            'full_name' => 'Full Name',
+            'phone' => 'Phone',
+            'dob' =>'DOB',
+            'email' => 'Email',
+            'gender' => 'Gender',
+            'comments' => 'Comments',
+            'centre' => 'Centre',
+            'city' => 'City',
+            'region' => 'Region',
+            'lead_source' => 'Lead Source',
+            'lead_status' => 'Lead Status',
+            'service' => 'Service',
+            'created_by' => 'Created By',
+            'created_at' => 'Created At',
+            'msg_count' => 'Msg Count',
+            'msg_send' => 'Send SMS',
+            'actions' => 'Actions',
+        ]
+    ],
+
+    'services' => [
+        'title' => 'Services',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'actions' => 'Actions'
+        ],
+    ],
+
+    'cancellation_reasons' => [
+        'title' => 'No Show Reasons',
+        'word' => 'No Show Reason',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'actions' => 'Actions'
+        ],
+    ],
+
+    'settings' => [
+        'title' => 'Global Settings',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'data' => 'Data',
+            'actions' => 'Actions'
+        ],
+    ],
+
+    'sms_templates' => [
+        'title' => 'SMS Templates',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'content' => 'Content',
+            'slug' => 'Slug',
+            'status' => 'Status',
+            'actions' => 'Actions'
+        ],
+    ],
+
+    'roles' => [
+        'title' => 'Roles',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'commission' => 'Commission',
+            'permission' => 'Permissions',
+            'actions' => 'Actions',
+        ],
+    ],
+
+    'users' => [
+        'title' => 'Users',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'email' => 'Email',
+            'password' => 'Password',
+            'change_password' => 'Change Password',
+            'roles' => 'Roles',
+            'commission' => 'Commission',
+            'remember-token' => 'Remember token',
+            'actions' => 'Actions',
+            'phone'=>'Phone',
+            'gender'=>'Gender',
+            'locations'=>'Center',
+            'created_at' =>'Created at',
+            'status' => 'Status'
+        ],
+    ],
+
+    'user_types' => [
+        'title' => 'User Type',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'type' => 'Type',
+            'password' => 'Password',
+            'actions' => 'Actions',
+        ],
+    ],
+    'resource_types' => [
+        'title' => 'Resource Type',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'actions' => 'Actions',
+        ],
+    ],
+    'resources' => [
+        'title' => 'Resource',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'resource_types'=>'Resource Type',
+            'centre' => 'Centre',
+            'machine_type' =>'Machine Type',
+            'actions' => 'Actions',
+            'created_at' => 'Created at',
+            'status' => 'Status',
+        ],
+    ],
+
+    'resourcerotas' => [
+        'title' => 'Rota Management',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Resource Name',
+            'type'=> 'Type',
+            'city' => 'City',
+            'location' => 'Centre',
+            'from' =>'From',
+            'to' =>'To',
+            'region' => 'Regions',
+            'created_at' => 'Created at',
+            'actions' => 'Actions',
+            'status' => 'Status',
+        ],
+    ],
+
+    'discounts' => [
+        'title' => 'Discounts',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'type'=>'Type',
+            'amount'=>'Amount',
+            'discount_type' => 'Discount Type',
+            'discription'=>'Discription',
+            'services'=>'Services',
+            'locations'=>'Allocate',
+            'start'=>'From',
+            'end'=>'To',
+            'created_at' => 'Created at',
+            'actions' => 'Actions',
+            'status' => 'Status',
+        ],
+    ],
+
+    'user_operator_settings' => [
+        'title' => 'Operator Settings',
+        'created_at' => 'Time',
+        'fields' => [
+            'id' => 'ID',
+            'operator_name' => 'Operator',
+            'username' => 'Username',
+            'password' => 'Password',
+            'mask' => 'Mask',
+            'test_mode' => 'Enable Test Mode',
+            'url' => 'URL',
+            'string_1' => 'Custom Field 1',
+            'string_2' => 'Custom Field 2',
+            'actions' => 'Actions'
+        ],
+    ],
+
+    'logs' => [
+        'title' => 'Logs',
+        'created_at' => 'Time',
+        'fields' => [
+            'id'=>'Id',
+            'datetime' => 'Date Time',
+            'screen'=>'Screen',
+            'user'=>'User',
+            'actions' => 'Actions',
+        ],
+    ],
+
+    'packages' => [
+        'title' => 'Plans',
+        'create' => 'Create Plans',
+        'created_at' => 'Time',
+        'fields' => [
+            'package_id' => 'Plans',
+            'patient_id' => 'Patient ID',
+            'phone' => 'Phone',
+            'patient_name' => 'Patient',
+            'location' => 'Centres',
+            'session_count' => 'Session count',
+            'total' => 'Total',
+            'cash_receive'=>'Cash receive',
+            'refund' => 'Refund',
+            'created_at' => 'Created at',
+            'actions'=>'Actions',
+            'status' => 'Status',
+
+        ],
+    ],
+
+    'packagesadvances' => [
+        'title' => 'Finances',
+        'create' => 'Create Advance',
+        'created_at' => 'Time',
+        'fields' => [
+            'patient_id' => 'Patient ID',
+            'patient' => 'Patient',
+            'phone'=>'Phone',
+            'package' => 'Plans',
+            'transtype' => 'Transaction type',
+            'cash_in' => 'Cash In',
+            'cash_out' => 'Cash Out',
+            'balance' => 'Balance',
+            'payment_mode' => 'Payment Mode',
+            'cash_flow' => 'Cash Flow',
+            'cash_amount' => 'Cash Amount',
+            'is_refund' => 'Is_Refund',
+            'is_cancel' => 'Is_Cancel',
+            'actions'=>'Actions',
+            'created_at'=>'Created at',
+        ],
+    ],
+
+    'invoices' => [
+        'title' => 'Invoices',
+        'create_invoice' => 'Create Invoice',
+        'created_at' => 'Time',
+        'fields' => [
+            'invoice' => 'Invoice Number',
+            'patient_id' => 'Patient ID',
+            'patient_name'=>'Patient Name',
+            'region' => 'Region',
+            'city' => 'City',
+            'location' => 'Centre',
+            'phone' => 'Phone',
+            'service_name' =>'consultancy/Service',
+            'invoive_status' => 'Invoice Status',
+            'total_price'=>'Price',
+            'actions'=>'Actions',
+            'created_at' => 'Created at'
+        ],
+    ],
+
+    'documents' => [
+        'title' => 'Documents',
+        'fields' => [
+            'name'=>'Name',
+            'actions'=>'Actions',
+            'created_at' => 'Created at'
+        ],
+    ],
+
+    'refunds' => [
+        'title' => 'Refunds',
+        'plans_refunds' => 'Plans Refunds',
+        'non_plans_refunds' => 'Non Plans Refunds',
+        'created_at' => 'Time',
+        'fields' => [
+            'patient' =>'Patient',
+            'cash_in' =>'Total Cash In',
+            'cash_out' =>'Total Cash Out',
+            'balance' =>'Balance',
+            'actions'=>'Actions'
+        ],
+    ],
+
+    'nonplansrefunds' => [
+        'title' => 'Non Plans Refunds',
+        'fields' => [
+            'patient_id' => 'Patient ID',
+            'patient' => 'Patient',
+            'doctor' => 'Doctor',
+            'region' => 'Region',
+            'city' => 'City',
+            'centre' => 'Centre',
+            'service' => 'Service',
+            'service_type' => 'Type',
+            'created_at' => 'Created At',
+            'actions' => 'Actions'
+        ],
+    ],
+
+    'pabao_records' => [
+        'title' => 'Pabau Records',
+        'created_at' => 'Time',
+        'import' => 'Import Records',
+        'fields' => [
+            'location_id' =>'Centre',
+            'client' =>'Client',
+            'phone' => 'Phone',
+            'mobile' => 'Mobile',
+            'invoice_no' => 'Invoice No.',
+            'issue_date' => 'Issue Date',
+            'total_amount' => 'Total Amount',
+            'paid_amount' => 'Paid Amount',
+            'outstanding_amount' => 'Outstanding Amount',
+            'actions' => 'Actions',
+        ]
+    ],
+
+    'reports' => [
+        'title' => 'Reports',
+        'lead_report' => 'Lead Reports',
+        'revenue_breakup' => 'Revenue Breakup Reports',
+        'appointment_report' => 'Appointment Reports',
+        'staff_appointment_schedule_report' => 'Staff Appointment Schedule Reports',
+        'employee_appointment_summary' => 'Employee Appointment Summary Reports',
+        'finance_report' => 'Finance Reports',
+        'ledger_report' => 'Ledger Reports',
+        'revenue_report' => 'General Revenue Reports',
+        'centers_report' => 'Centre Report',
+        'marketing_report' => 'Marketing Reports',
+        'staff_report' => 'Staff Reports',
+        'staff_listing' => 'Staff Listing',
+        'staff_revenue_report' => 'Staff Revenue Reports',
+        'operations_report' => 'Operation Reports',
+        'centers_report' => 'Centre Reports',
+        'dashboard_report' => 'Dashboard Reports',
+        'hr_report' => 'HR Reports',
+        'created_at' => 'Time',
+        'fields' => [
+            'actions'=>'Actions'
+        ],
+    ],
+
+    'app_create' => 'Create',
+    'app_Submit' => 'Submit',
+    'app_uploaddocument' => 'Upload Document',
+    'app_change_password' => 'Change Password',
+    'app_refund' => 'Refund',
+    'app_detail' => 'Detail',
+    'app_inactive' => 'Inactive',
+    'app_active' => 'Active',
+    'app_save' => 'Save',
+    'app_edit' => 'Edit',
+    'app_display' => 'Display',
+    'app_log' => 'Log',
+    'app_pdf' => 'Print',
+    'app_print' => 'Print',
+    'app_make_pdf' => 'PDF',
+    'app_preview' => 'Preview',
+    'app_submit' => 'Submit',
+    'app_calendar'=>'Calender',
+    'app_detail' => 'Details',
+    'app_view' => 'View',
+    'app_update' => 'Update',
+    'app_list' => 'List',
+    'app_no_entries_in_table' => 'No entries in table',
+    'custom_controller_index' => 'Custom controller index.',
+    'app_logout' => 'Logout',
+    'app_add_new' => 'Add New',
+    'app_sort' => 'Sort Data',
+    'app_back' => 'Back',
+    'app_are_you_sure' => 'Are you sure?',
+    'app_back_to_list' => 'Back to list',
+    'app_dashboard' => 'Dashboard',
+    'app_delete' => 'Delete',
+    'app_cancel' => 'Cancel',
+    'app_arrange' => 'Arrange List',
+    'app_orderlist' => 'Sort Cities',
+    'app_sort_region' => 'Sort Region',
+    'app_orderlist' => 'Sort Cities',
+    'app_sort' => 'Sort Data',
+    'app_SortStatus' => 'Sort Statuses',
+    'app_SortSource' => 'Sort Sources',
+    'app_Sortservice' => 'Sort Services',
+    'app_SortCenters'=>'Sort Centers',
+    'app_Sortcancellation_reason' => 'Sort No Show Reasons',
+    'global_title_cutera' => 'Cutera',
+    'global_title_keto' => 'KetoSlim',
+    'app_warning'=>'Warning',
+    'app_appointmentimages' => 'Appointment Images',
+    'app_appointmentmeasurement' => 'Appointment Measurement',
+    'app_appointmentmeasurementforms' => 'Appointment Measurement Forms',
+    'app_appointmentmedical' => 'Appointment Medical History',
+    'app_appointmentmedicalforms' => 'Appointment Medical Forms',
+    'app_general_form' => 'Add General Form',
+    'app_medical_form' => 'Add Medical Form',
+    'app_measurement_form' => 'Add Measurement Form',
+    'app_payment' => 'Payment',
+    'app_excel' => 'Excel',
+    'app_sms' => 'Sms Log',
+
+    'patients' => [
+        'heading' => 'Patients Management',
+        'title' => 'Patients',
+        'created_at' => 'Time',
+        'fields' => [
+            'patient_id' => 'Patient ID',
+            'name' => 'Name',
+            'email' => 'Email',
+            'phone'=>'Phone',
+            'gender'=>'Gender',
+            'created_at' => 'Created at',
+            'status' => 'Status',
+            'actions' => 'Actions',
+        ],
+    ],
+    'appointmentimages' => [
+        'fields' => [
+            'patient_id' => 'Patient ID',
+            'name' => 'Image',
+            'type' => 'Type',
+            'actions' => 'Actions',
+            'created_at' => 'Created at'
+        ],
+    ],
+    'appointmentmesurement' => [
+        'fields' => [
+            'name' => 'Name',
+            'patient_name' => 'Patient Name',
+            'created_by' => 'Created By',
+            'type' => 'Type',
+            'actions' => 'Actions',
+            'created_at' => 'Created at'
+        ],
+    ],
+    'appointmentmedical' => [
+        'fields' => [
+            'name' => 'Name',
+            'patient_name' => 'Patient Name',
+            'created_by' => 'Created By',
+            'actions' => 'Actions',
+            'created_at' => 'Created at'
+        ],
+    ],
+    'bundles' => [
+        'title' => 'Packages',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'price' => 'Price',
+            'total_services' => 'Total Services',
+            'apply_discount' => 'Apply Discounts',
+            'actions' => 'Actions',
+            'start'=>'Valid From',
+            'end'=>'Valid To',
+            'created_at' => 'Created At',
+            'status' => 'Status',
+        ],
+    ],
+
+    'staff_targets' => [
+        'title' => 'Staff Targets',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'address' => 'Address',
+            'city' => 'City',
+            'region'=>'Region',
+            'employee' => 'Staff Member',
+            'year' => 'Year',
+            'month' => 'Month',
+            'service' => 'Services',
+            'total_amount' => 'Target Amount',
+            'total_services' => 'Target Services',
+            'location' => 'Centre',
+            'created_at' => 'Created at',
+            'actions' => 'Actions',
+        ],
+    ],
+
+    'centre_targets' => [
+        'title' => 'Centre Targets',
+        'created_at' => 'Time',
+        'fields' => [
+            'year' => 'Year',
+            'month' => 'Month',
+            'created_at' => 'Created at',
+            'actions' => 'Actions',
+        ],
+    ],
+    'machinetypes' => [
+        'title' => 'Machine Type',
+        'created_at' => 'Time',
+        'fields' => [
+            'name' => 'Name',
+            'services'=>'Services',
+            'created_at' => 'Created at',
+            'status' => 'Status',
+            'actions' => 'Actions',
+        ],
+    ],
+
+];

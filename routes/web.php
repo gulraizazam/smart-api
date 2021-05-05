@@ -18,5 +18,16 @@ Route::get('/', function () {
 });
 
 Auth::routes();
+// Authentication Routes...
+Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('auth.login');
+Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('auth.logout');
+
+// Check Session
+Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
+Route::get('/admin/home', [App\Http\Controllers\HomeController::class, 'index'])->name('admin.home');
+
+// Change Password Routes...
+Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('auth.change_password');
+Route::patch('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('auth.admin.change_password');
