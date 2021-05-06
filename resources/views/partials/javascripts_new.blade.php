@@ -9,6 +9,7 @@
 
 <!-- END THEME GLOBAL SCRIPTS -->
 <!-- BEGIN THEME LAYOUT SCRIPTS -->
+<script src="{{ url('assets/js/pages/custom/login/forgot-general.js') }}"></script>
 <script src="{{ url('assets/js/pages/custom/login/login-general.js') }}"></script>
 <!-- END THEME LAYOUT SCRIPTS -->
 <script>

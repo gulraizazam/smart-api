@@ -10,7 +10,12 @@
                             </ul>
                         </div>
                     @endif
-
+<!--begin::Login Sign in form-->
+<div class="login-signin">
+							<div class="mb-20">
+								<h3 class="opacity-70 font-weight-normal">Sign In</h3>
+								<p class="opacity-70">Enter your details to login to your account:</p>
+							</div>
                     <form class="form"  method="POST"  action="{{ url('login') }}" id="kt_login_signin_form">
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
 								<div class="form-group">
@@ -30,5 +35,6 @@
 								<div class="form-group text-center mt-10">
 									<button id="kt_login_signin_submit" class="btn btn-pill btn-primary opacity-90 px-15 py-3">Sign In</button>
 								</div>
-							</form>		
+							</form>	
+		</div>	
 @endsection

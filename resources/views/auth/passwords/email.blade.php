@@ -1,47 +1,38 @@
-@extends('layouts.app')
+@extends('layouts.auth_new')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Reset Password') }}</div>
-
-                <div class="card-body">
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
-                    <form method="POST" action="{{ route('password.email') }}">
-                        @csrf
-
-                        <div class="form-group row">
-                            <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
-
-                                @error('email')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group row mb-0">
-                            <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Send Password Reset Link') }}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+@if (session('status'))
+        <div class="alert alert-success">
+            {{ session('status') }}
         </div>
-    </div>
-</div>
+    @endif
+    @if (count($errors) > 0)
+        <div class="alert alert-danger">
+            <strong>Whoops!</strong> There were problems with input:
+            <br><br>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+<!--begin::Login forgot password form-->
+<div class="login-forgot">
+							<div class="mb-20">
+								<h3 class="opacity-75 font-weight-normal">Forgotten Password ?</h3>
+								<p class="opacity-75">Enter your email to reset your password</p>
+							</div>
+							<form class="form" id="kt_login_forgot_form" method="POST" action="{{ url('password/email') }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+								<div class="form-group mb-10">
+									<input class="form-control h-auto text-white bg-white-o-5 rounded-pill border-0 py-4 px-8" type="email" autocomplete="off" placeholder="Email" name="email" value="{{ old('email') }}" />
+								</div>
+								<div class="form-group">
+									<button id="kt_login_forgot_submit" class="btn btn-pill btn-primary opacity-90 px-15 py-3 m-2">Submit</button>
+									<a id="kt_login_forgot_cancel" href="{{ route('auth.login') }}" class="btn btn-pill btn-outline-white opacity-90 px-15 py-3 m-2">Back</a>
+								</div>
+							</form>
+						</div>
+						<!--end::Login forgot password form-->
 @endsection

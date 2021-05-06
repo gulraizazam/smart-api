@@ -31,3 +31,9 @@ Route::get('/admin/home', [App\Http\Controllers\HomeController::class, 'index'])
 // Change Password Routes...
 Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('auth.change_password');
 Route::patch('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('auth.admin.change_password');
+
+// Password Reset Routes...
+Route::get('password/reset', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showLinkRequestForm'])->name('auth.password.reset');
+Route::post('password/email', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLinkEmail'])->name('auth.password.resetemail');
+Route::get('password/reset/{token}', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('auth.password.resettoken');

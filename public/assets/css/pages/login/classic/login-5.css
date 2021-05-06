@@ -1,6 +1,6 @@
 .login.login-5 .login-signin,
 .login.login-5 .login-signup,
-.login.login-5 .login-forgot {
+.login.login-5  {
   display: none;
 }
 .login.login-5.login-signin-on .login-signup {
@@ -10,7 +10,7 @@
   display: block;
 }
 .login.login-5.login-signin-on .login-forgot {
-  display: none;
+  /*display: none;*/
 }
 .login.login-5.login-signup-on .login-signup {
   display: block;
@@ -19,7 +19,7 @@
   display: none;
 }
 .login.login-5.login-signup-on .login-forgot {
-  display: none;
+  /*display: none;*/
 }
 .login.login-5.login-forgot-on .login-signup {
   display: none;
