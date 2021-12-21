@@ -61,7 +61,7 @@ class CreateAdmin extends Command
      *
      * @return mixed array | boolean
      */
-    private function getDetails() : array | boolean
+    private function getDetails()
     {
         $details['name'] = $this->ask('Name', 'Super Admin');
         $details['email'] = $this->ask('Email', 'admin@admin.com');
@@ -74,6 +74,7 @@ class CreateAdmin extends Command
         $confirm_password = $this->ask('Confirm password', '12345678');
         $details['password'] = bcrypt($password);
         $details['confirm_password']  = bcrypt($confirm_password);
+        $details['phone'] = '12345678901';
 
         while (! $this->isValidPassword($password, $confirm_password)) {
             if (! $this->isRequiredLength($password)) {
