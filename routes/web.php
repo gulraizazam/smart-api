@@ -47,6 +47,8 @@
 
         Route::resource('settings', SettingsController::class);
 
+        Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
+
         Route::resource('permissions', PermissionsController::class);
 
     });

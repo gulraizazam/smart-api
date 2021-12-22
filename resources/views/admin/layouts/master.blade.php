@@ -1,69 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <!--begin::Head-->
-<head><base href="">
-    <title>Cutera</title>
+<head>
     <meta charset="utf-8" />
-    <meta name="description" content="The most advanced Bootstrap Admin Theme on Themeforest trusted by 94,000 beginners and professionals. Multi-demo, Dark Mode, RTL support and complete React, Angular, Vue &amp; Laravel versions. Grab your copy now and get life-time updates for free." />
-    <meta name="keywords" content="Metronic, bootstrap, bootstrap 5, Angular, VueJs, React, Laravel, admin themes, web design, figma, web development, free templates, free admin themes, bootstrap theme, bootstrap template, bootstrap dashboard, bootstrap dak mode, bootstrap button, bootstrap datepicker, bootstrap timepicker, fullcalendar, datatables, flaticon" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta property="og:locale" content="en_US" />
-    <meta property="og:type" content="article" />
-    <meta property="og:title" content="Metronic - Bootstrap 5 HTML, VueJS, React, Angular &amp; Laravel Admin Dashboard Theme" />
-    <meta property="og:url" content="https://keenthemes.com/metronic" />
-    <meta property="og:site_name" content="Keenthemes | Metronic" />
-    <link rel="canonical" href="https://preview.keenthemes.com/metronic8" />
-    <link rel="shortcut icon" href="{{asset('favicon.ico')}}" />
+    <title>Cutera</title>
+    <meta name="description" content="Metronic admin dashboard live demo. Check out all the features of the admin panel. A large number of settings, additional services and widgets." />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link rel="canonical" href="https://keenthemes.com/metronic" />
     <!--begin::Fonts-->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
     <!--end::Fonts-->
-    <!--begin::Global Stylesheets Bundle(used by all pages)-->
+
+    <!--begin::Global Theme Styles(used by all pages)-->
     <link href="{{asset('assets/plugins/global/plugins.bundle.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{asset('assets/plugins/custom/prismjs/prismjs.bundle.css')}}" rel="stylesheet" type="text/css" />
     <link href="{{asset('assets/css/style.bundle.css')}}" rel="stylesheet" type="text/css" />
+    <!--end::Global Theme Styles-->
+    <!--begin::Layout Themes(used by all pages)-->
+    <link href="{{asset('assets/css/themes/layout/header/base/light.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{asset('assets/css/themes/layout/header/menu/light.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{asset('assets/css/themes/layout/brand/dark.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{asset('assets/css/themes/layout/aside/dark.css')}}" rel="stylesheet" type="text/css" />
+    <!--end::Layout Themes-->
     <link href="{{asset('assets/css/custom.css')}}" rel="stylesheet" type="text/css" />
-    <!--end::Global Stylesheets Bundle-->
+    <link rel="shortcut icon" href="{{asset('favicon.ico')}}" />
+
+    @stack('css')
+
 </head>
 <!--end::Head-->
 <!--begin::Body-->
-<body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled toolbar-fixed aside-enabled aside-fixed" style="--kt-toolbar-height:55px;--kt-toolbar-height-tablet-and-mobile:55px">
-<!--begin::Main-->
+<body id="kt_body" class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
 
-<!--begin::Root-->
 <div class="d-flex flex-column flex-root">
     <!--begin::Page-->
-    <div class="page d-flex flex-row flex-column-fluid">
+    <div class="d-flex flex-row flex-column-fluid page">
 
-        <!--begin::Wrapper-->
-        <div class="wrapper d-flex flex-column flex-row-fluid" id="kt_wrapper">
+@include('admin.partials.mobile-header')
 
-            @include('admin.partials.sidebar')
+@include('admin.partials.sidebar')
 
-            @include('admin.partials.header')
+<!--begin::Wrapper-->
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
 
-            @yield('content')
+        @include('admin.partials.header')
 
-            @include('admin.partials.footer')
+        @yield('content')
 
-        </div>
-        <!--end::Wrapper-->
+
+        @include('admin.partials.footer')
+
+    </div>
 
     </div>
     <!--end::Page-->
 </div>
-
 <!--end::Main-->
-<script>var hostUrl = "assets/";</script>
-<!--begin::Javascript-->
-<!--begin::Global Javascript Bundle(used by all pages)-->
-<script src="{{asset('assets/plugins/global/plugins.bundle.js')}}"></script>
-<script src="{{asset('assets/js/scripts.bundle.js')}}"></script>
-<!--end::Global Javascript Bundle-->
 
-<!--begin::Page Custom Javascript(used by this page)-->
-<script src="{{asset('assets/js/custom/widgets.js')}}"></script>
-<script src="{{asset('assets/js/custom/apps/chat/chat.js')}}"></script>
-<!--end::Page Custom Javascript-->
-<!--end::Javascript-->
+<script>
+    var HOST_URL = "/metronic/theme/html/tools/preview";
+    var base_route = "{{url('/')}}";
+</script>
+<!--begin::Global Config(global config for global JS scripts)-->
+<script>var KTAppSettings = { "breakpoints": { "sm": 576, "md": 768, "lg": 992, "xl": 1200, "xxl": 1400 }, "colors": { "theme": { "base": { "white": "#ffffff", "primary": "#3699FF", "secondary": "#E5EAEE", "success": "#1BC5BD", "info": "#8950FC", "warning": "#FFA800", "danger": "#F64E60", "light": "#E4E6EF", "dark": "#181C32" }, "light": { "white": "#ffffff", "primary": "#E1F0FF", "secondary": "#EBEDF3", "success": "#C9F7F5", "info": "#EEE5FF", "warning": "#FFF4DE", "danger": "#FFE2E5", "light": "#F3F6F9", "dark": "#D6D6E0" }, "inverse": { "white": "#ffffff", "primary": "#ffffff", "secondary": "#3F4254", "success": "#ffffff", "info": "#ffffff", "warning": "#ffffff", "danger": "#ffffff", "light": "#464E5F", "dark": "#ffffff" } }, "gray": { "gray-100": "#F3F6F9", "gray-200": "#EBEDF3", "gray-300": "#E4E6EF", "gray-400": "#D1D3E0", "gray-500": "#B5B5C3", "gray-600": "#7E8299", "gray-700": "#5E6278", "gray-800": "#3F4254", "gray-900": "#181C32" } }, "font-family": "Poppins" };</script>
+<!--end::Global Config-->
+<!--begin::Global Theme Bundle(used by all pages)-->
+<script src="{{asset('assets/plugins/global/plugins.bundle.js')}}"></script>
+<script src="{{asset('assets/plugins/custom/prismjs/prismjs.bundle.js')}}"></script>
+<script src="{{asset('assets/js/scripts.bundle.js')}}"></script>
+<!--end::Global Theme Bundle-->
+
+<script src="{{asset('assets/js/pages/widgets.js')}}"></script>
+
+@stack('datatable-js')
+
+<script src="{{asset('assets/js/pages/crud/ktdatatable/advanced/row-details.js')}}"></script>
+
+<!--end::Page Scripts-->
+
+@stack('js')
+
 </body>
 <!--end::Body-->
 </html>

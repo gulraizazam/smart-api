@@ -18,7 +18,7 @@ class PermissionsController extends Controller
     public function index()
     {
         if (! Gate::allows('permissions_manage')) {
-            return abort(401);
+            //return abort(401);
         }
 
         return view('admin.permissions.index');
