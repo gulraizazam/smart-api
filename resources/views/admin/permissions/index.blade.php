@@ -17,7 +17,7 @@
                     <div class="card-header py-3">
                         <div class="card-title">
                             <span class="card-icon">
-												<span class="svg-icon svg-icon-md svg-icon-primary">
+                                <span class="svg-icon svg-icon-md svg-icon-primary">
 													<!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
 													<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
 														<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -30,7 +30,7 @@
 													</svg>
                                                     <!--end::Svg Icon-->
 												</span>
-											</span>
+                            </span>
                             <h3 class="card-label">Permissions</h3>
                         </div>
                         <div class="card-toolbar">
@@ -38,53 +38,11 @@
 
                             <div class="delete-records d-none">
                                 <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                <a href="#" class="btn btn-danger font-weight-bolder">
+                                <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
                                     <i class="fa fa-trash-alt"></i>Delete
                                 </a>
                             </div>&nbsp;&nbsp;&nbsp;
 
-                            <div class="dropdown dropdown-inline mr-2">
-
-                                <button type="button" class="btn btn-light-primary font-weight-bolder dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="la la-download"></i>Export</button>
-                                <!--begin::Dropdown Menu-->
-                                <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
-                                    <ul class="nav flex-column nav-hover">
-                                        <li class="nav-header font-weight-bolder text-uppercase text-primary pb-2">Choose an option:</li>
-                                        <li class="nav-item">
-                                            <a href="#" class="nav-link">
-                                                <i class="nav-icon la la-print"></i>
-                                                <span class="nav-text">Print</span>
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="#" class="nav-link">
-                                                <i class="nav-icon la la-copy"></i>
-                                                <span class="nav-text">Copy</span>
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="#" class="nav-link">
-                                                <i class="nav-icon la la-file-excel-o"></i>
-                                                <span class="nav-text">Excel</span>
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="#" class="nav-link">
-                                                <i class="nav-icon la la-file-text-o"></i>
-                                                <span class="nav-text">CSV</span>
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="#" class="nav-link">
-                                                <i class="nav-icon la la-file-pdf-o"></i>
-                                                <span class="nav-text">PDF</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <!--end::Dropdown Menu-->
-                            </div>
                             <!--end::Dropdown-->
                             <!--begin::Button-->
                             <a href="#" class="btn btn-primary font-weight-bolder">
@@ -108,7 +66,8 @@
                                                 </span>
                                             </div>
                                         </div>
-                                        <div class="col-md-4 my-2 my-md-0">
+
+                                       {{-- <div class="col-md-4 my-2 my-md-0">
                                             <div class="d-flex align-items-center">
                                                 <label class="mr-3 mb-0 d-none d-md-block">Status:</label>
                                                 <select class="form-control" id="kt_datatable_search_status">
@@ -122,6 +81,7 @@
                                                 </select>
                                             </div>
                                         </div>
+
                                         <div class="col-md-4 my-2 my-md-0">
                                             <div class="d-flex align-items-center">
                                                 <label class="mr-3 mb-0 d-none d-md-block">Type:</label>
@@ -132,12 +92,13 @@
                                                     <option value="3">Direct</option>
                                                 </select>
                                             </div>
-                                        </div>
+                                        </div>--}}
+
                                     </div>
                                 </div>
-                                <div class="col-lg-3 col-xl-4 mt-5 mt-lg-0">
+                               {{-- <div class="col-lg-3 col-xl-4 mt-5 mt-lg-0">
                                     <a href="#" class="btn btn-light-primary px-6 font-weight-bold">Search</a>
-                                </div>
+                                </div>--}}
                             </div>
                         </div>
                         <!--end::Search Form-->

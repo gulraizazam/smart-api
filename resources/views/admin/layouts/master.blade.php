@@ -4,12 +4,13 @@
 <head>
     <meta charset="utf-8" />
     <title>Cutera</title>
-    <meta name="description" content="Metronic admin dashboard live demo. Check out all the features of the admin panel. A large number of settings, additional services and widgets." />
+    <meta content="Cutera Aesthetic is a Medical Spa offering more than 60 treatment for skin rejuvenation and body contouring" name="description" />
+    <meta content="Red Signal" name="author"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <link rel="canonical" href="https://keenthemes.com/metronic" />
     <!--begin::Fonts-->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
     <!--end::Fonts-->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!--begin::Global Theme Styles(used by all pages)-->
     <link href="{{asset('assets/plugins/global/plugins.bundle.css')}}" rel="stylesheet" type="text/css" />
@@ -56,6 +57,8 @@
     <!--end::Page-->
 </div>
 <!--end::Main-->
+
+@routes
 
 <script>
     var HOST_URL = "/metronic/theme/html/tools/preview";

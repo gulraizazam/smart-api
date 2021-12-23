@@ -19,7 +19,7 @@
 <script src="{{ url('metronic/assets/layouts/layout/scripts/demo.min.js') }}" type="text/javascript"></script>
 <script src="{{ url('metronic/assets/layouts/global/scripts/quick-sidebar.min.js') }}" type="text/javascript"></script>
 <script src="{{ url("metronic/assets/layouts/global/scripts/quick-nav.min.js") }}" type="text/javascript"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/.js/latest/js/.min.js" type="text/javascript"></script>
 <script src="{{ url('js/Utils.js') }}" type="text/javascript"></script>
 <!-- END THEME LAYOUT SCRIPTS -->
 <script>

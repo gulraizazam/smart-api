@@ -35,13 +35,14 @@ class PermissionsController extends Controller
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $Permissions = Permission::whereIn('id', $request->get('id'));
-            if($Permissions) {
+        if(! is_null($request->get('query')) && isset($request->get('query')['delete'])) {
+            $ids = explode(',', $request->get('query')['delete']);
+            $Permissions = Permission::whereIn('id', $ids);
+            if($Permissions->exists()) {
                 $Permissions->delete();
             }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true;
+            $records["message"] = "Records has been deleted successfully!";
         }
 
         $where = array();
@@ -49,63 +50,61 @@ class PermissionsController extends Controller
         $orderBy = 'created_at';
         $order = 'desc';
 
-        if($request->get('order')[0]['dir']) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            $order = $request->get('order')[0]['dir'];
+        if ($request->has('sort')) {
+            $orderColumn = $request->get('sort')['field'];
+            $orderBy = $request->get('sort')['field'];
+            $order = $request->get('sort')['sort'];
         }
 
+        $query = Permission::query();
 
-        if($request->get('name')) {
-            $where[] = array(
-                'name',
-                'like',
-                '%' . $request->get('name') . '%'
-            );
-        }
-
-        if(count($where)) {
-            $iTotalRecords = Permission::where($where)->count();
+        if(! is_null($request->get('query')) && isset($request->get('query')['generalSearch'])) {
+            $search = $request->get('query')['generalSearch'];
+            $query = $query->where("name", "LIKE", "%{$search}%")
+                ->orWhere("title", "LIKE", "%{$search}%")
+                ->orWhere("parent_id", "LIKE", "%{$search}%");
+                $iTotalRecords = $query->count();
         } else {
             $iTotalRecords = Permission::count();
         }
 
-
-        $iDisplayLength = intval($request->get('length'));
+        $iDisplayLength = intval($request->pagination['perpage'] ?? 10);
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        $iDisplayStart = intval($request->pagination['page'] ?? 1);
 
-        $end = $iDisplayStart + $iDisplayLength;
-        $end = $end > $iTotalRecords ? $iTotalRecords : $end;
+        $pages = ceil($iTotalRecords / $iDisplayLength);
 
-        if(count($where)) {
-            $Permissions = Permission::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+        if($request->has('query')) {
+            $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         } else {
-            $Permissions = Permission::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         }
 
         $PermissionsData = Permission::where('main_group', 1)->select('id','title', 'name', 'parent_id')->OrderBy('name', 'asc')->get()->keyBy('id');
 
         if($Permissions) {
             foreach($Permissions as $permission) {
-//                echo '<pre>';
-//                print_r($permission->toArray());
-//                print_r($PermissionsData->toArray());
-//                exit;
+
                 $records["data"][] = array(
-                    'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="'.$permission->id.'"/><span></span></label>',
+                    'id' => $permission->id,
                     'title' => $permission->title,
                     'name' => $permission->name,
                     'parent_id' => ($permission->parent_id) ? $PermissionsData[$permission->parent_id]->name : '-',
-                    'actions' => view('admin.permissions.actions', compact('permission'))->render(),
+                    //'actions' => view('admin.permissions.actions', compact('permission'))->render(),
                 );
             }
         }
 
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+        $records["meta"] = [
+            'field' => 'name',
+            'page' => $iDisplayStart,
+            'pages' => $pages,
+            'perpage' => $iDisplayLength,
+            'total' => $iTotalRecords,
+            'sort' => $orderBy,
+        ];
+       // $records["recordsTotal"] = $iTotalRecords;
+        //$records["recordsFiltered"] = $iTotalRecords;
 
         return response()->json($records);
     }
@@ -256,6 +255,7 @@ class PermissionsController extends Controller
      */
     public function destroy($id)
     {
+        dd($id);
         if (! Gate::allows('permissions_destroy')) {
             return abort(401);
         }

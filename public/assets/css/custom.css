@@ -98,3 +98,7 @@
 .container-xl, .container-lg, .container-md, .container-sm, .container {
     max-width: 100%;
 }
+
+.swal2-validation-message {
+    display: none;
+}
