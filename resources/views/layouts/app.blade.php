@@ -36,6 +36,8 @@
 <!--end::Page Custom Javascript-->
 <!--end::Javascript-->
 
+@include('admin.partials.messages', ['toaster' => true])
+
 </body>
 <!--end::Body-->
 </html>

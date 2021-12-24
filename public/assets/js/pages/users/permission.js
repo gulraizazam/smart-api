@@ -17,11 +17,11 @@ var table_columns = [ {
     }, {
         field: 'name',
         title: 'Name',
-        width: 'auto',
+        width: 300,
     }, {
         field: 'parent_id',
         title: 'Parent Permission',
-        width: 200,
+        width: 300,
     },  {
         field: 'Actions',
         title: 'Actions',
@@ -30,7 +30,10 @@ var table_columns = [ {
         overflow: 'visible',
         autoHide: false,
         template: function(data) {
-            let delete_route = route('admin.permissions.destroy', {id: data.id});
+            let id = data.id;
+            let delete_route = route('admin.permissions.destroy', {id: id});
+            let csrf = $('meta[name="csrf-token"]').attr('content');
+
             return '<div class="dropdown dropdown-inline action-dots">'+
                 '<a href="javascript:;" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">'+
                     '<i class="fa fa-ellipsis-v" aria-hidden="true"></i>'+
@@ -38,22 +41,49 @@ var table_columns = [ {
                 '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">'+
                     '<ul class="navi flex-column navi-hover py-2">'+
                         '<li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">'+
-                        'Choose aaction:'+
+                        'Choose an action:'+
                         '</li>'+
                         '<li class="navi-item">'+
                             '<a href="javascript:void(0);" class="navi-link">'+
-                                '<span class="navi-icon"><i class="la la-print"></i></span>'+
+                                '<span class="navi-icon"><i class="la la-pencil"></i></span>'+
                                 '<span class="navi-text">Edit</span>'+
                             '</a>'+
                         '</li>'+
                         '<li class="navi-item">'+
-                            '<a href="javascript:void(0);" data-route="'+delete_route+'" onclick="deleteRow(this)" class="navi-link">'+
-                                '<span class="navi-icon"><i class="la la-copy"></i></span>'+
+                            '<a href="javascript:void(0);" onclick="deleteRow('+id+');" class="navi-link">'+
+                                '<span class="navi-icon"><i class="la la-trash"></i></span>'+
                                 '<span class="navi-text">Delete</span>'+
                             '</a>'+
+                            '<form id="delete-row-form-'+id+'" action="'+delete_route+'" method="post">' +
+                                '<input type="hidden" name="_token" value="'+csrf+'">'+
+                                '<input type="hidden" name="_method" value="delete">'+
+                            '</form>'+
                         '</li>'+
                     '</ul>'+
                 '</div>'+
                 '</div>';
         },
     }];
+
+
+function createPermission($route) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            $("#permission-create").html(response);
+            reInit("#kt_select2_8", "Select an Parent Group");
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            if (xhr.status == '401') {
+
+            } else {
+            }
+            reInit("#kt_select2_8", "Select an Parent Group");
+        }
+    });
+}

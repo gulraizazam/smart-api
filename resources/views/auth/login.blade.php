@@ -23,6 +23,9 @@
                         <h1 class="text-dark mb-3">Sign In</h1>
                         <!--end::Title-->
                     </div>
+
+                    @include('admin.partials.messages', ['message' => true])
+
                     <!--begin::Heading-->
                     <!--begin::Input group-->
                     <div class="fv-row mb-10">

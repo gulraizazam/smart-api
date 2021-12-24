@@ -47,12 +47,12 @@
                         <!--end::Menu separator-->
                         <!--begin::Menu item-->
                         <div class="menu-item px-5">
-                            <a href="javascript:void(0);" class="menu-link px-5">My Profile</a>
+                            <a href="{{route('admin.change_password')}}" class="menu-link px-5">My Profile</a>
                         </div>
 
-                        <div class="menu-item px-5 my-1">
+                        {{--<div class="menu-item px-5 my-1">
                             <a href="javascript:void(0);" class="menu-link px-5">Account Settings</a>
-                        </div>
+                        </div>--}}
                         <!--end::Menu item-->
                         <!--begin::Menu item-->
                         <div class="menu-item px-5">

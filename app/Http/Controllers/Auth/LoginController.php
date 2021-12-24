@@ -58,6 +58,7 @@ class LoginController extends Controller
     }
 
     public function login(\Illuminate\Http\Request $request) {
+
         $this->validateLogin($request);
 
         // If the class is using the ThrottlesLogins trait, we can automatically throttle
@@ -83,7 +84,7 @@ class LoginController extends Controller
                 return redirect()
                     ->back()
                     ->withInput($request->only($this->username(), 'remember'))
-                    ->withErrors(['active' => 'Your account has been deactivated, please contact administrator.']);
+                    ->with(['error' => 'Your account has been deactivated, please contact administrator.']);
             }
         }
 
@@ -92,7 +93,12 @@ class LoginController extends Controller
         // user surpasses their maximum number of attempts they will get locked out.
         $this->incrementLoginAttempts($request);
 
-        return $this->sendFailedLoginResponse($request);
+        //return $this->sendFailedLoginResponse($request);
+
+        return redirect()
+            ->back()
+            ->withInput()
+            ->with(['error' => 'Your credentials did not match with our record.']);
     }
 
     /**

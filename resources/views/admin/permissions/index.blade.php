@@ -18,8 +18,8 @@
                         <div class="card-title">
                             <span class="card-icon">
                                 <span class="svg-icon svg-icon-md svg-icon-primary">
-													<!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
-													<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                    <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
+                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
 														<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
 															<rect x="0" y="0" width="24" height="24" />
 															<rect fill="#000000" opacity="0.3" x="12" y="4" width="3" height="13" rx="1.5" />
@@ -28,8 +28,8 @@
 															<rect fill="#000000" opacity="0.3" x="17" y="11" width="3" height="6" rx="1.5" />
 														</g>
 													</svg>
-                                                    <!--end::Svg Icon-->
-												</span>
+                                    <!--end::Svg Icon-->
+                                </span>
                             </span>
                             <h3 class="card-label">Permissions</h3>
                         </div>
@@ -42,12 +42,18 @@
                                     <i class="fa fa-trash-alt"></i>Delete
                                 </a>
                             </div>&nbsp;&nbsp;&nbsp;
-
                             <!--end::Dropdown-->
                             <!--begin::Button-->
-                            <a href="#" class="btn btn-primary font-weight-bolder">
-                                <i class="la la-plus"></i>New Record
+                           {{-- <a href="#" class="btn btn-primary font-weight-bolder">
+                                <i class="la la-plus"></i>Add New
+                            </a>--}}
+
+                            <a href="javascript:void(0);" onclick="createPermission('{{ route('admin.permissions.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#kt_modal_add_user">
+                                <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
+                                <i class="la la-plus"></i>
+                                Add New
                             </a>
+
                             <!--end::Button-->
                         </div>
                     </div>
@@ -116,8 +122,23 @@
     </div>
     <!--end::Content-->
 
+    <div class="modal fade" id="kt_modal_add_user" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="permission-create">
+            {{--moel shuold be apend here--}}
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+    <!--end::Modal - Add task-->
+
+
+
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/users/permission.js')}}"></script>
+    @endpush
+
+    @push('js')
+        <script src="{{asset('assets/js/pages/crud/forms/validation/permission//validate.js')}}"></script>
     @endpush
 
 @endsection

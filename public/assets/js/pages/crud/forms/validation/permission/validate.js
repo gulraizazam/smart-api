@@ -1,53 +1,52 @@
-// Class definition
-var KTFormControls = function () {
-	// Private functions
-	var profileValidation = function () {
-        let form = document.getElementById('kt_form_1');
-		let validate = FormValidation.formValidation(
-            form,
-			{
-				fields: {
-                    current_password: {
-						validators: {
-							notEmpty: {
-								message: 'Password is required'
-							}
-						}
-					},
-                    new_password: {
-                        validators: {
-                            notEmpty: {
-                                message: 'New Password is required'
-                            }
-                        }
-                    },
-                    new_password_confirmation: {
-                        validators: {
-                            notEmpty: {
-                                message: 'Confirm password is required'
-                            }
-                        }
-                    },
-				},
 
-				plugins: {
-					trigger: new FormValidation.plugins.Trigger(),
-					// Bootstrap Framework Integration
-					bootstrap: new FormValidation.plugins.Bootstrap(),
-					// Validate fields when clicking the Submit button
-					submitButton: new FormValidation.plugins.SubmitButton(),
-            		// Submit the form when all fields are valid
-            		//defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
-				}
-			}
-		);
+var KTPermissionValidation = function () {
+    // Private functions
+    var permissionValidation = function () {
+        let form = document.getElementById('modal_add_user_form');
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    title: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The title field is required'
+                            }
+                        }
+                    },
+                    name: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The name field is required'
+                            }
+                        }
+                    },
+                    parent: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The parent field is required'
+                            }
+                        }
+                    },
+                },
+
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                    // Submit the form when all fields are valid
+                }
+            }
+        );
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
-                   /* setTimeout(function () {
-                        window.location = route('admin.home');
-                    }, 500);*/
+                    /* setTimeout(function () {
+                         window.location = route('admin.home');
+                     }, 500);*/
                     $(".profile-message").addClass("d-none");
                     $(form)[0].reset();
                 } else {
@@ -56,18 +55,18 @@ var KTFormControls = function () {
                 }
             });
         });
-	}
+    }
 
-	return {
-		// public functions
-		init: function() {
-            profileValidation();
-		}
-	};
+    return {
+        // public functions
+        init: function() {
+            permissionValidation();
+        }
+    };
 }();
 
 jQuery(document).ready(function() {
-	KTFormControls.init();
+    KTPermissionValidation.init();
 });
 
 

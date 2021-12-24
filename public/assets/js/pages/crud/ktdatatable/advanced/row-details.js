@@ -12,7 +12,7 @@ var KTDatatableAutoColumnHideDemo = function() {
 				type: 'remote',
 				source: {
 					read: {
-                        url: table_url,
+                        url:  typeof table_url !== 'undefined' ? table_url : '',
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
@@ -60,26 +60,12 @@ var KTDatatableAutoColumnHideDemo = function() {
 			},
 
 			// columns definition
-			columns: table_columns ?? [],
+			columns: typeof table_columns !== 'undefined' ? table_columns : [],
 
 		});
 
 		$('#delete-table-rows').on('click', function() {
-            swal.fire({
-                title: 'Are you sure you want to delete?',
-                type: 'danger',
-                icon: 'info',
-                buttonsStyling: false,
-                confirmButtonText: 'Yes',
-                cancelButtonText: 'No',
-                showCancelButton: true,
-                cancelButtonClass: 'btn btn-danger font-weight-bold',
-                confirmButtonClass: 'btn btn-primary font-weight-bold'
-            }).then(function(result) {
-                if (result.value) {
-                    datatable.search(row_ids.join(','), 'delete');
-                }
-            });
+            deleteConfirm(datatable);
 		});
 
         $('#kt_datatable_search_status').on('change', function() {
@@ -147,7 +133,29 @@ function deleteSuccessAndReset(data, datatable) {
 
 }
 
-function deleteRow($this) {
-    console.log($($this).data('route'));
-   // window.location.href = route;
+function deleteRow(id) {
+    deleteConfirm(null, $("#delete-row-form-" + id));
+}
+
+function deleteConfirm(datatable = null, $form = null) {
+    swal.fire({
+        title: 'Are you sure you want to delete?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function(result) {
+        if (result.value) {
+            if (datatable) {
+                datatable.search(row_ids.join(','), 'delete');
+            }
+            if ($form) {
+                $form.submit();
+            }
+        }
+    });
 }

@@ -45,8 +45,6 @@ class PermissionsController extends Controller
             $records["message"] = "Records has been deleted successfully!";
         }
 
-        $where = array();
-
         $orderBy = 'created_at';
         $order = 'desc';
 
@@ -103,8 +101,6 @@ class PermissionsController extends Controller
             'total' => $iTotalRecords,
             'sort' => $orderBy,
         ];
-       // $records["recordsTotal"] = $iTotalRecords;
-        //$records["recordsFiltered"] = $iTotalRecords;
 
         return response()->json($records);
     }
@@ -117,7 +113,7 @@ class PermissionsController extends Controller
     public function create()
     {
         if (! Gate::allows('permissions_create')) {
-            return abort(401);
+            //return abort(401);
         }
 
         $permissions = ['' => 'Select a Parent Group', 0 => 'This is Parent Group'];
@@ -129,7 +125,7 @@ class PermissionsController extends Controller
             }
         }
 
-        return view('admin.permissions.create', compact('permissions'));
+        return view('admin.permissions.create', compact('permissions'))->render();
     }
 
     /**
@@ -255,16 +251,13 @@ class PermissionsController extends Controller
      */
     public function destroy($id)
     {
-        dd($id);
         if (! Gate::allows('permissions_destroy')) {
-            return abort(401);
+            //return abort(401);
         }
         $permission = Permission::findOrFail($id);
         $permission->delete();
 
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return redirect()->route('admin.permissions.index');
+        return redirect()->back()->with('success', 'Record has been deleted successfully.');
     }
 
 }

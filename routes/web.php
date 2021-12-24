@@ -42,6 +42,9 @@
 
         Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
+        Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
+        Route::post('change_password',  [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('change_password');
+
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 
@@ -50,5 +53,6 @@
         Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
 
         Route::resource('permissions', PermissionsController::class);
+
 
     });
