@@ -1,9 +1,8 @@
 "use strict";
-// Class definition
 
 let row_ids = [];
 
-var KTDatatableAutoColumnHideDemo = function() {
+var KTDatatable = function() {
 
 	var table = function() {
 
@@ -76,6 +75,14 @@ var KTDatatableAutoColumnHideDemo = function() {
 			datatable.search($(this).val().toLowerCase(), 'Type');
 		});
 
+        $('#search_name').on('change', function() {
+			datatable.search($(this).val().toLowerCase(), 'Name');
+		});
+
+        $('#search_commission').on('change', function() {
+            datatable.search($(this).val().toLowerCase(), 'Commission');
+        });
+
 		$('#kt_datatable_search_status, #kt_datatable_search_type').selectpicker();
 	};
 
@@ -89,7 +96,7 @@ var KTDatatableAutoColumnHideDemo = function() {
 
 jQuery(document).ready(function() {
 
-	KTDatatableAutoColumnHideDemo.init();
+    KTDatatable.init();
 
     /*To get selected row ids for deletion*/
     $(document).on("click", ".select-all-checkboxes", function () {
@@ -123,39 +130,5 @@ function setRowIds($rows) {
     row_ids = [];
     $rows.each(function () {
         row_ids.push($(this).val())
-    });
-}
-
-function deleteSuccessAndReset(data, datatable) {
-    $(".delete-records").addClass("d-none");
-    toastr.info(data.message);
-    datatable.search([], 'delete');
-
-}
-
-function deleteRow(id) {
-    deleteConfirm(null, $("#delete-row-form-" + id));
-}
-
-function deleteConfirm(datatable = null, $form = null) {
-    swal.fire({
-        title: 'Are you sure you want to delete?',
-        type: 'danger',
-        icon: 'info',
-        buttonsStyling: false,
-        confirmButtonText: 'Yes, delete!',
-        cancelButtonText: 'No',
-        showCancelButton: true,
-        cancelButtonClass: 'btn btn-primary font-weight-bold',
-        confirmButtonClass: 'btn btn-danger font-weight-bold'
-    }).then(function(result) {
-        if (result.value) {
-            if (datatable) {
-                datatable.search(row_ids.join(','), 'delete');
-            }
-            if ($form) {
-                $form.submit();
-            }
-        }
     });
 }

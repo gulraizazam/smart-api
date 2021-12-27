@@ -616,7 +616,7 @@
 
 .fv-plugins-bootstrap .form-control.is-valid,
 .fv-plugins-bootstrap .form-control.is-invalid {
-    background-image: none;
+    /*background-image: none;*/
 }
 
 .fv-plugins-bootstrap3 .help-block {

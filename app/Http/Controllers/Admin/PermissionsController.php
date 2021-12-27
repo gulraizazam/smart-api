@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
@@ -33,7 +33,6 @@ class PermissionsController extends Controller
     public function datatable(Request $request)
     {
         $records = array();
-        $records["data"] = array();
 
         if(! is_null($request->get('query')) && isset($request->get('query')['delete'])) {
             $ids = explode(',', $request->get('query')['delete']);
@@ -45,16 +44,11 @@ class PermissionsController extends Controller
             $records["message"] = "Records has been deleted successfully!";
         }
 
-        $orderBy = 'created_at';
-        $order = 'desc';
+        list($orderBy, $order) = getSortBy($request);
 
-        if ($request->has('sort')) {
-            $orderColumn = $request->get('sort')['field'];
-            $orderBy = $request->get('sort')['field'];
-            $order = $request->get('sort')['sort'];
-        }
-
-        $query = Permission::query();
+        $query = Permission::query()->with(['parent' => function ($query) {
+            $query->select('id', 'name');
+        }]);
 
         if(! is_null($request->get('query')) && isset($request->get('query')['generalSearch'])) {
             $search = $request->get('query')['generalSearch'];
@@ -66,11 +60,7 @@ class PermissionsController extends Controller
             $iTotalRecords = Permission::count();
         }
 
-        $iDisplayLength = intval($request->pagination['perpage'] ?? 10);
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->pagination['page'] ?? 1);
-
-        $pages = ceil($iTotalRecords / $iDisplayLength);
+        list( $iDisplayLength, $iDisplayStart, $pages) = getPaginationElement($iTotalRecords);
 
         if($request->has('query')) {
             $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
@@ -78,20 +68,7 @@ class PermissionsController extends Controller
             $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         }
 
-        $PermissionsData = Permission::where('main_group', 1)->select('id','title', 'name', 'parent_id')->OrderBy('name', 'asc')->get()->keyBy('id');
-
-        if($Permissions) {
-            foreach($Permissions as $permission) {
-
-                $records["data"][] = array(
-                    'id' => $permission->id,
-                    'title' => $permission->title,
-                    'name' => $permission->name,
-                    'parent_id' => ($permission->parent_id) ? $PermissionsData[$permission->parent_id]->name : '-',
-                    //'actions' => view('admin.permissions.actions', compact('permission'))->render(),
-                );
-            }
-        }
+        $records["data"] = $Permissions;
 
         $records["meta"] = [
             'field' => 'name',
@@ -113,7 +90,7 @@ class PermissionsController extends Controller
     public function create()
     {
         if (! Gate::allows('permissions_create')) {
-            //return abort(401);
+            return abort(401);
         }
 
         $permissions = ['' => 'Select a Parent Group', 0 => 'This is Parent Group'];
@@ -160,7 +137,7 @@ class PermissionsController extends Controller
 
 
         return response()->json(array(
-            'status' => 1,
+            'status' => true,
             'message' => 'Record has been created successfully.',
         ));
     }
@@ -196,8 +173,8 @@ class PermissionsController extends Controller
 
         $PermissionsData = Permission::where('main_group', 1)->OrderBy('name', 'asc')->get();
         if($PermissionsData) {
-            foreach ($PermissionsData as $permission) {
-                $permissions[$permission->id] = $permission->title . ' (' . $permission->name . ')';
+            foreach ($PermissionsData as $permissionData) {
+                $permissions[$permissionData->id] = $permissionData->title . ' (' . $permissionData->name . ')';
             }
         }
 
@@ -252,7 +229,7 @@ class PermissionsController extends Controller
     public function destroy($id)
     {
         if (! Gate::allows('permissions_destroy')) {
-            //return abort(401);
+            return abort(401);
         }
         $permission = Permission::findOrFail($id);
         $permission->delete();

@@ -2,7 +2,8 @@
 var KTPermissionValidation = function () {
     // Private functions
     var permissionValidation = function () {
-        let form = document.getElementById('modal_add_user_form');
+        let modal_id = 'modal_add_permission_form';
+        let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
@@ -21,7 +22,7 @@ var KTPermissionValidation = function () {
                             }
                         }
                     },
-                    parent: {
+                    parent_id: {
                         validators: {
                             notEmpty: {
                                 message: 'The parent field is required'
@@ -36,22 +37,20 @@ var KTPermissionValidation = function () {
                     bootstrap: new FormValidation.plugins.Bootstrap(),
                     // Validate fields when clicking the Submit button
                     submitButton: new FormValidation.plugins.SubmitButton(),
-                    // Submit the form when all fields are valid
                 }
             }
         );
+        validate.on('core.form.invalid', function (e) {
+           select2Validation();
+        });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
-                    /* setTimeout(function () {
-                         window.location = route('admin.home');
-                     }, 500);*/
-                    $(".profile-message").addClass("d-none");
-                    $(form)[0].reset();
+                    closePopup(modal_id);
+                    reInitTable();
                 } else {
-                    $(".profile-message").removeClass("d-none");
-                    $(".message-body").text(response.message);
+                    toastr.error(response.message);
                 }
             });
         });

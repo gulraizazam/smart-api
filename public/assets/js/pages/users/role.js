@@ -1,5 +1,5 @@
 
-var table_url = route('admin.permissions.datatable');
+var table_url = route('admin.roles.datatable');
 
 var table_columns = [ {
     field: 'id',
@@ -11,16 +11,12 @@ var table_columns = [ {
             return '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>';
         }
     }, {
-        field: 'title',
-        title: 'Title',
-        width: 'auto',
-    }, {
         field: 'name',
         title: 'Name',
         width: 300,
     }, {
-        field: 'parent.name',
-        title: 'Parent Permission',
+        field: 'commission',
+        title: 'Commission',
         width: 300,
     },  {
         field: 'Actions',

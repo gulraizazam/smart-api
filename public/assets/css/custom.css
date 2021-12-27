@@ -143,5 +143,13 @@
     height: 20px !important;
     width: 20px !important;
 }
+.select2-is-invalid {
+    border-radius: 6px !important;
+    border: 1px solid !important;
+    border-color: #F64E60 !important;
+}
+.select2-selection {
+    height: 45px !important;
+}
 
 

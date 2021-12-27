@@ -3,6 +3,7 @@
     use Illuminate\Support\Facades\Route;
     use App\Http\Controllers\Admin\SettingsController;
     use App\Http\Controllers\Admin\PermissionsController;
+    use App\Http\Controllers\Admin\RolesController;
 
     /*
     |--------------------------------------------------------------------------
@@ -53,6 +54,11 @@
         Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
 
         Route::resource('permissions', PermissionsController::class);
+
+        Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
+        Route::resource('roles', RolesController::class);
+       // Route::post('roles_mass_destroy', ['uses' => 'Admin\RolesController@massDestroy', 'as' => 'roles.mass_destroy']);
+
 
 
     });
