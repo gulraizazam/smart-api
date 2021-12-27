@@ -1,0 +1,594 @@
+<?php
+
+namespace App\Models;
+
+use App\Helpers\NodesTree;
+use App\User;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Event;
+use App\Helpers\GeneralFunctions;
+use Auth;
+
+class Appointments extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
+        'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
+        'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
+        'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
+        'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter','consultancy_type','coming_from'
+    ];
+
+    protected $table = 'appointments';
+    protected static $_table = 'appointments';
+    /**
+     * used in event
+     * @var string
+     */
+    public $__table = 'appointments';
+    static protected $_fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date','first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
+        'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
+        'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
+        'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
+        'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter','consultancy_type','coming_from'
+    ];
+
+    /**
+     * used in events
+     * @var array
+     */
+    public $__fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date','first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
+        'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
+        'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
+        'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
+        'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter','consultancy_type','coming_from'
+    ];
+
+    protected $attributes = array(
+        'consultancy_type' => 'in_person'
+    );
+
+    public static function updateServiceRecord($id, $data, $account_id)
+    {
+        // Set Account ID
+        $data['account_id'] = $account_id;
+        $data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
+        $data['updated_by'] = Auth::User()->id;
+
+        if (isset($data['start'])) {
+            $data['scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
+            $data['scheduled_time'] = Carbon::parse($data['start'])->format('H:i:s');
+            if ($data['first_scheduled_count'] == 0) {
+                $data['first_scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
+                $data['first_scheduled_time'] = Carbon::parse($data['start'])->format('H:i:s');
+                $data['first_scheduled_count'] = 1;
+            } else {
+                $data['scheduled_at_count'] = $data['scheduled_at_count'] + 1;
+            }
+        } else {
+            $data['scheduled_date'] = null;
+            $data['scheduled_time'] = null;
+            $data['first_scheduled_at'] = null;
+        }
+        if (isset($data["resourceId"])) {
+            $data["resource_id"] = $data["resourceId"];
+        }
+
+        $record = self::where([
+            'id' => $id,
+            'account_id' => $account_id
+        ])->first();
+
+        if (!$record) {
+            return null;
+        }
+
+        $record->update($data);
+
+        return $record;
+
+    }
+
+    /**
+     * Get the lead comments for lead.
+     */
+    public function appointment_comments()
+    {
+        return $this->hasMany('App\Models\AppointmentComments', 'appointment_id')->OrderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the Service that owns the Appointment.
+     */
+    public function service()
+    {
+        return $this->belongsTo('App\Models\Services')->withTrashed();
+    }
+
+    /**
+     * Get Appointment Type that owns the Appointment.
+     */
+    public function appointment_type()
+    {
+        return $this->belongsTo('App\Models\AppointmentTypes')->withTrashed();
+    }
+
+    /**
+     * Get the Appointment Status that owns the Appointment.
+     */
+    public function appointment_status()
+    {
+        return $this->belongsTo('App\Models\AppointmentStatuses')->withTrashed();
+    }
+
+    /*
+     * Get the Appointment status according to base appointment status
+     * */
+
+    public function appointment_status_base()
+    {
+        return $this->belongsTo('App\Models\AppointmentStatuses', 'base_appointment_status_id')->withTrashed();
+    }
+
+    /**
+     * Get the Appointment Status that owns the Appointment.
+     */
+    public function cancellation_reason()
+    {
+        return $this->belongsTo('App\Models\CancellationReasons')->withTrashed();
+    }
+
+    /**
+     * Get the Doctors that owns the Appointment.
+     */
+    public function doctor()
+    {
+        return $this->belongsTo('App\User', 'doctor_id')->withTrashed();
+    }
+
+    /**
+     * Get the City that owns the Appointment.
+     */
+    public function city()
+    {
+        return $this->belongsTo('App\Models\Cities')->withTrashed();
+    }
+
+    /**
+     * Get the Region that owns the Appointment.
+     */
+    public function region()
+    {
+        return $this->belongsTo('App\Models\Regions')->withTrashed();
+    }
+
+    /**
+     * Get the Doctors that owns the Appointment.
+     */
+    public function location()
+    {
+        return $this->belongsTo('App\Models\Locations')->withTrashed();
+    }
+
+    /**
+     * Get the Lead that owns the Appointment.
+     */
+    public function lead()
+    {
+        return $this->belongsTo('App\Models\Leads')->withTrashed();
+    }
+
+    /**
+     * Get the patient that owns the Appointment.
+     */
+    public function patient()
+    {
+        return $this->belongsTo('App\User', 'patient_id')->withTrashed();
+    }
+
+    /**
+     * Get the patient that owns the Appointment.
+     */
+    public function user()
+    {
+        return $this->belongsTo('App\User', 'created_by')->withTrashed();
+    }
+
+    /*
+     * Get the user by whom appointment is converted
+     */
+
+    public function user_converted_by()
+    {
+        return $this->belongsTo('App\User', 'converted_by')->withTrashed();
+    }
+
+    /*
+     * Get the user by whom appointment is updated
+      */
+
+    public function user_updated_by()
+    {
+        return $this->belongsTo('App\User', 'updated_by')->withTrashed();
+    }
+
+    /*
+     * Get the appointments for City.
+     */
+    public function sms_logs()
+    {
+        return $this->hasMany('App\Models\SMSLogs', 'appointment_id')->withTrashed();
+    }
+
+    /*
+     * Self join on appointment_id
+     * */
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointments::class, 'appointment_id');
+    }
+
+    /**
+     * Get the package advances information.
+     */
+    public function packageadvance()
+    {
+
+        return $this->hasMany('App\Models\PackageAdvances', 'appointment_id');
+    }
+
+    /*
+     * Get the packages information
+     * */
+
+    public function packages()
+    {
+        return $this->hasMany(Packages::class, 'appointment_id');
+    }
+
+    /*
+     * Get the invoices of the appointments
+     * */
+    public function hasInvoices()
+    {
+        return $this->hasMany(Invoices::class, 'appointment_id');
+    }
+
+    /**
+     * Prepare SMS Contnet for Delivery
+     *
+     * @param: int $appointment_id
+     * @param: int $smsContent
+     *
+     * @return: string
+     */
+    static public function prepareSMSContent($appointment_id = false, $smsContent)
+    {
+        if (!$appointment_id) {
+            return $smsContent;
+        } else {
+            $appointment = self::find($appointment_id);
+            $patient = Patients::find($appointment->patient_id);
+
+            // Load Globar Setting for Head Office
+            $Setting = Settings::getBySlug('sys-headoffice', $appointment->account_id);
+            $smsContent = str_replace('##head_office_phone##', $Setting->data, $smsContent);
+
+            if ($appointment) {
+                // Replace Patient Information
+                $smsContent = str_replace('##patient_name##', ($appointment->name) ? $appointment->name : $patient->name, $smsContent);
+                $smsContent = str_replace('##patient_phone##', $patient->phone, $smsContent);
+
+                // Replace Schedule Information
+                $smsContent = str_replace('##appointment_date##', Carbon::parse($appointment->scheduled_date)->format('l, F d,Y'), $smsContent);
+                $smsContent = str_replace('##appointment_time##', Carbon::parse($appointment->scheduled_time)->format('h:i A'), $smsContent);
+
+                // Replace Service Information
+                $service = Services::find($appointment->service_id);
+                if ($service) {
+                    $smsContent = str_replace('##appointment_service##', $service->name, $smsContent);
+                }
+
+                // Load and Replace Centre Information
+                $Location = Locations::find($appointment->location_id);
+                if ($Location) {
+                    $smsContent = str_replace('##fdo_name##', $Location->fdo_name, $smsContent);
+                    $smsContent = str_replace('##fdo_phone##', GeneralFunctions::prepareNumber4CallSMS($Location->fdo_phone), $smsContent);
+                    $smsContent = str_replace('##centre_name##', $Location->name, $smsContent);
+                    $smsContent = str_replace('##centre_address##', $Location->address, $smsContent);
+                    $smsContent = str_replace('##centre_google_map##', $Location->google_map, $smsContent);
+                }
+
+                // Load and Replace Doctor Information
+                $Doctor = Doctors::find($appointment->doctor_id);
+                if ($Doctor) {
+                    $smsContent = str_replace('##doctor_name##', $Doctor->name, $smsContent);
+                    $smsContent = str_replace('##doctor_profile_link##', $Doctor->profile_url, $smsContent);
+                }
+
+            }
+
+            return $smsContent;
+        }
+    }
+
+    /**
+     * Get Doctor based appointments
+     *
+     * @param: \Illuminate\Http\Request $request
+     * @param: $account_id Current organization id
+     *
+     * @return: string
+     */
+    static function getNonScheduledAppointments(Request $request, $appointment_type_id = false, $account_id)
+    {
+        $where = array();
+        $where[] = ['account_id', '=', $account_id];
+
+        /*
+         * Get default cancelled appointment status
+         */
+        $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly($account_id);
+        if ($cancelled_appointment_status) {
+            $where[] = ['base_appointment_status_id', '!=', $cancelled_appointment_status->id];
+        }
+
+        if ($appointment_type_id) {
+            $where[] = ['appointment_type_id', '=', $appointment_type_id];
+        }
+
+        if ($request->get('city_id')) {
+            $where[] = ['city_id', '=', $request->get('city_id')];
+        }
+
+        if ($request->get('location_id')) {
+            $where[] = ['location_id', '=', $request->get('location_id')];
+        }
+
+        if ($request->get('doctor_id')) {
+            $where[] = ['doctor_id', '=', $request->get('doctor_id')];
+        }
+
+        return self::where($where)
+            ->whereNull('scheduled_date')
+            ->whereNull('scheduled_time')
+            ->get();
+    }
+
+    /**
+     * Get Doctor based appointments
+     *
+     * @param: \Illuminate\Http\Request $request
+     * @param: integer $appointment_type_id Appointment ID
+     * @param: integer $account_id Current organization id
+     * @param: boolean $skip_doctor
+     *
+     * @return: string
+     */
+    static function getScheduledAppointments(Request $request, $appointment_type_id = false, $account_id, $skip_doctor = false)
+    {
+        $where = array();
+        $where[] = ['account_id', '=', $account_id];
+
+        /*
+         * Get default cancelled appointment status
+         */
+        $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly($account_id);
+        if ($cancelled_appointment_status) {
+            $where[] = ['base_appointment_status_id', '!=', $cancelled_appointment_status->id];
+        }
+
+        if ($appointment_type_id) {
+            $where[] = ['appointment_type_id', '=', $appointment_type_id];
+        }
+
+        if ($request->get('city_id')) {
+            $where[] = ['city_id', '=', $request->get('city_id')];
+        }
+
+        if ($request->get('start')) {
+            $where[] = ['scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d')];
+        }
+
+        if ($request->get('location_id')) {
+            $where[] = ['location_id', '=', $request->get('location_id')];
+        }
+
+        if (!$skip_doctor) {
+            if ($request->get('doctor_id')) {
+                $where[] = ['doctor_id', '=', $request->get('doctor_id')];
+            }
+        }
+
+        return self::where($where)
+            ->whereNotNull('scheduled_date')
+            ->whereNotNull('scheduled_time')
+            // these lines skiping records because data from request is is date and matching with time
+            /*            ->whereDate('scheduled_time', '>=', Carbon::parse($request->get('start'))->toDateString())
+                        ->whereDate('scheduled_time', '<=', Carbon::parse($request->get('end'))->toDateString())*/
+            ->get();
+    }
+
+    /**
+     * Update Record
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return (mixed)
+     */
+    static public function updateRecord($id, $data, $account_id)
+    {
+        // Set Account ID
+        $data['account_id'] = $account_id;
+        $data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
+        $data['updated_by'] = Auth::User()->id;
+
+        if (isset($data['start'])) {
+            $data['scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
+            $data['scheduled_time'] = Carbon::parse($data['start'])->format('H:i:s');
+            if ($data['first_scheduled_count'] == 0) {
+                $data['first_scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
+                $data['first_scheduled_time'] = Carbon::parse($data['start'])->format('H:i:s');
+                $data['first_scheduled_count'] = 1;
+            } else {
+                $data['scheduled_at_count'] = $data['scheduled_at_count'] + 1;
+            }
+        } else {
+            $data['scheduled_date'] = null;
+            $data['scheduled_time'] = null;
+            $data['first_scheduled_at'] = null;
+        }
+
+        $record = self::where([
+            'id' => $id,
+            'account_id' => $account_id
+        ])->first();
+
+        if (!$record) {
+            return null;
+        }
+
+        $record->update($data);
+
+        return $record;
+    }
+
+    /**
+     * Get Node Services
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return (mixed)
+     */
+    static public function getNodeServices($serviceId = 0, $account_id, $drop_down = false, $remove_spaces = false)
+    {
+        /*
+         * That function use Appointment Report (Appointment by status) and Treatment Management
+         */
+        $parentGroups = new NodesTree();
+        $parentGroups->current_id = -1;
+        $parentGroups->build(($serviceId) ? $serviceId : 0, $account_id, true, true);
+        $parentGroups->toList($parentGroups, -1);
+        $services = $parentGroups->nodeList;
+
+        $nodeList = array();
+
+        if ($drop_down) {
+            $nodeList[''] = 'Select a Child Service';
+        }
+
+        if (count($services)) {
+            foreach ($services as $key => $service) {
+                if ($key < 0) {
+                    continue;
+                }
+
+                if ($drop_down) {
+                    if ($remove_spaces) {
+                        $nodeList[$key] = str_replace("&nbsp;", '', trim($service['name']));
+                    } else {
+                        $nodeList[$key] = trim($service['name']);
+                    }
+                } else {
+                    if ($remove_spaces) {
+                        $service['name'] = str_replace("&nbsp;", '', trim($service['name']));
+                    }
+                    $nodeList[$key] = $service;
+                }
+            }
+        }
+
+        return $nodeList;
+    }
+
+    public static function boot()
+    {
+
+
+        parent::boot();
+
+
+        static::created(function ($item) {
+
+            Event::fire('appointment.created', $item);
+
+        });
+
+
+        static::updating(function ($item) {
+
+            Event::fire('appointment.updating', $item);
+
+        });
+
+
+        static::deleting(function ($item) {
+
+            Event::fire('appointment.deleting', $item);
+
+        });
+
+    }
+
+    /**
+     * Delete Record
+     *
+     * @param id
+     *
+     * @return (mixed)
+     */
+    static public function DeleteRecord($id, $account_id)
+    {
+        $appointment = self::where(['id' => $id, 'account_id' => $account_id])->first();
+
+        if (!$appointment) {
+
+            flash('Appointment not found.')->error()->important();
+            return redirect()->route('admin.appointments.index');
+        }
+
+        // Check if child records exists or not, If exist then disallow to delete it.
+        if (self::isChildExists($id, $account_id)) {
+            flash('Child records exist, unable to delete appointment')->error()->important();
+            return redirect()->route('admin.appointments.index');
+        }
+
+
+        $record = $appointment->delete();
+
+        //log request for delete for audit trail
+        AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
+
+        flash('Record has been deleted successfully.')->success()->important();
+
+        return $record;
+    }
+
+    /**
+     * Check if child records exist
+     *
+     * @param (int) $id
+     * @param
+     *
+     * @return (boolean)
+     */
+    static protected function isChildExists($id, $account_id)
+    {
+        if (
+            PackageAdvances::where(['appointment_id' => $id, 'account_id' => $account_id])->count() ||
+            Invoices::where(['appointment_id' => $id, 'account_id' => $account_id])->count() ||
+            Measurement::where(['appointment_id' => $id])->count() ||
+            Appointmentimage::where(['appointment_id' => $id])->count()
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+}

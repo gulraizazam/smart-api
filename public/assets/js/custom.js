@@ -19,9 +19,6 @@ $(document).ready(function () {
 function deleteSuccessAndReset(data, datatable) {
     $(".delete-records").addClass("d-none");
     toastr.info(data.message);
-    //datatable.search([], 'delete');
-    window.location.reload();
-
 }
 
 function deleteRow(id) {
@@ -42,7 +39,10 @@ function deleteConfirm(datatable = null, $form = null) {
     }).then(function(result) {
         if (result.value) {
             if (datatable) {
-                datatable.search(row_ids.join(','), 'delete');
+                let filters =  {
+                    delete: row_ids.join(','),
+                }
+                datatable.search(filters, 'search');
             }
             if ($form) {
                 $form.submit();
@@ -76,4 +76,8 @@ function reInitTable() {
         $('#kt_datatable').KTDatatable('destroy');
         KTDatatable.init();
     }, 400);
+}
+
+function getAllFilterValues() {
+
 }

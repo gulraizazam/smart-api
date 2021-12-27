@@ -1,0 +1,509 @@
+<?php
+
+namespace App\Models;
+
+use App\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Session;
+use App\Helpers\Filters;
+
+class CustomForms extends BaseModal
+{
+    use SoftDeletes;
+
+    protected $fillable = ['account_id', 'name', "description", "form_type", 'content', 'active', 'sort_number', 'created_by', 'updated_by', 'created_at', 'updated_at','custom_form_type'];
+
+    protected static $_fillable = [ 'name', "description", "form_type", 'content', 'active', 'sort_number','form_type'];
+    public $__fillable = [ 'name', "description", "form_type", 'content', 'active', 'sort_number','custom_form_type'];
+
+    protected $table = 'custom_forms';
+    protected static $_table = 'custom_forms';
+    public $__table = 'custom_forms';
+
+    const sort_field = 'sort_number';
+
+    public static function activateRecord($id)
+    {
+        $custom_form = self::getData($id);
+        $custom_form->update(['active' => 1]);
+        AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+    }
+
+    public static function inactivateRecord($id)
+    {
+        $custom_form = CustomForms::getData($id);
+        $custom_form->update(['active' => 0]);
+        AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+    }
+
+    public static function deleteRecord($id)
+    {
+        $custom_form = CustomForms::getData($id);
+        $custom_form->delete();
+
+    }
+
+
+    public function form_fields()
+    {
+        //return $this->hasMany('App\Models\CustomFormFields', 'user_form_id')->where([ ['field_type', '!=', config("constants.custom_form.field_types.title")]])->orderBy(self::sort_field, 'asc');
+        return $this->hasMany('App\Models\CustomFormFields', 'user_form_id')->orderBy(self::sort_field, 'asc');
+    }
+
+    public static function get_all_fields_data($id)
+    {
+
+        return self::where([
+            ['id', '=', $id],
+            ['account_id', '=', Auth::User()->account_id]
+        ])->with(['form_fields'])->first();
+    }
+
+
+
+    /**
+     * Get active and sorted data only.
+     */
+    static public function getActiveSorted($cityId = false)
+    {
+        if ($cityId && !is_array($cityId)) {
+            $cityId = array($cityId);
+        }
+        if ($cityId) {
+            return self::whereIn('id', $cityId)->get()->pluck('name', 'id');
+        } else {
+            return self::get()->pluck('name', 'id');
+        }
+    }
+
+    /**
+     * Get active and sorted data only.
+     */
+    static public function getActiveSortedFeatured($cityId = false)
+    {
+        if ($cityId && !is_array($cityId)) {
+            $cityId = array($cityId);
+        }
+
+        $query = self::where(['active' => 1, 'is_featured' => 1]);
+        if ($cityId) {
+            $query->whereIn('id', $cityId);
+        }
+        return $query->get()->pluck('name', 'id');
+    }
+
+    /**
+     * Get active and sorted data only.
+     */
+    static public function getActiveOnly($cityId = false)
+    {
+        if ($cityId && !is_array($cityId)) {
+            $cityId = array($cityId);
+        }
+        $query = self::where(['active' => 1]);
+        if ($cityId) {
+            $query->whereIn('id', $cityId);
+        }
+        return $query->OrderBy(self::sort_field, 'asc')->get();
+    }
+
+    /**
+     * Get active and sorted data only.
+     */
+    static public function getActiveFeaturedOnly($cityId = false, $account_id)
+    {
+        if ($cityId && !is_array($cityId)) {
+            $cityId = array($cityId);
+        }
+
+        $query = self::where(['active' => 1, 'is_featured' => 1, 'account_id' => $account_id]);
+        if ($cityId) {
+            $query->whereIn('id', $cityId);
+        }
+        return $query->OrderBy(self::sort_field, 'asc');
+    }
+
+
+    /**
+     * Get Total Records
+     *
+     * @param bool $account_id
+     * @return  (mixed)
+     */
+    static public function getAllForms($account_id = false)
+    {
+        $where = array();
+
+        if ($account_id) {
+            $where[] = array(
+                'account_id',
+                '=',
+                $account_id
+            );
+        }
+        $forms = self::where($where)->get();
+
+        if ($forms)
+            return $forms;
+        else
+            return false;
+
+    }
+
+    /**
+     * Get Total Records
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param (int) $account_id Current Organization's ID
+     *
+     * @return (mixed)
+     */
+    static public function getTotalRecords(Request $request, $account_id = false,$apply_filter = false)
+    {
+        $where = Self::custom_forms_filters($request, $account_id, $apply_filter);
+
+        if (count($where)) {
+            return self::where($where)->count();
+        } else {
+            return self::count();
+        }
+    }
+
+    /**
+     * Get Records
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param (int) $iDisplayStart Start Index
+     * @param (int) $iDisplayLength Total Records Length
+     * @param (int) $account_id Current Organization's ID
+     *
+     * @return (mixed)
+     */
+    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false,$apply_filter = false)
+    {
+        $where = Self::custom_forms_filters($request, $account_id, $apply_filter);
+        $orderBy = 'created_at';
+        $order = 'desc';
+
+        if ($request->get('order')) {
+            $orderColumn = $request->get('order')[0]['column'];
+            $orderBy = $request->get('columns')[$orderColumn]['data'];
+            if ($orderBy == 'created_at') {
+                $orderBy = 'custom_forms.created_at';
+            }
+            $order = $request->get('order')[0]['dir'];
+
+            Filters::put(Auth::User()->id, 'custom_forms', 'order_by', $orderBy);
+            Filters::put(Auth::User()->id, 'custom_forms', 'order', $order);
+        } else {
+            if(
+                Filters::get(Auth::User()->id, 'custom_forms', 'order_by')
+                && Filters::get(Auth::User()->id, 'custom_forms', 'order')
+            ) {
+                $orderBy = Filters::get(Auth::User()->id, 'custom_forms', 'order_by');
+                $order = Filters::get(Auth::User()->id, 'custom_forms', 'order');
+
+                if ($orderBy == 'created_at') {
+                    $orderBy = 'custom_forms.created_at';
+                }
+            } else {
+                $orderBy = 'created_at';
+                $order = 'desc';
+                if ($orderBy == 'created_at') {
+                    $orderBy = 'custom_forms.created_at';
+                }
+
+                Filters::put(Auth::User()->id, 'custom_forms', 'order_by', $orderBy);
+                Filters::put(Auth::User()->id, 'custom_forms', 'order', $order);
+            }
+        }
+        if (count($where)) {
+            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+        } else {
+            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+        }
+    }
+
+    /**
+     * Get filters
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param (int) $account_id Current Organization's ID
+     * @param (boolean) $apply_filter
+     * @return (mixed)
+     */
+    static public function custom_forms_filters($request, $account_id, $apply_filter)
+    {
+        $where = array();
+        if ($account_id) {
+            $where[] = array(
+                'account_id',
+                '=',
+                $account_id
+            );
+            Filters::put(Auth::User()->id, 'custom_forms', 'account_id', $account_id);
+        }  else {
+
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'custom_forms', 'account_id');
+            } else {
+                if (Filters::get(Auth::User()->id, 'custom_forms', 'account_id')) {
+                    $where[] = array(
+                        'account_id',
+                        '=',
+                        Filters::get(Auth::User()->id, 'custom_forms', 'account_id')
+                    );
+                }
+            }
+        }
+        if ($request->get('name')) {
+            $where[] = array(
+                'name',
+                'like',
+                '%' . $request->get('name') . '%'
+            );
+            Filters::put(Auth::User()->id, 'custom_forms', 'name', $request->get('name'));
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'custom_forms', 'name');
+            } else {
+                if (Filters::get(Auth::User()->id, 'custom_forms', 'name')) {
+                    $where[] = array(
+                        'name',
+                        'like',
+                        '%' . Filters::get(Auth::User()->id, 'custom_forms', 'name') . '%'
+                    );
+                }
+            }
+        }
+        if ($request->get('form_type_id') != '' ) {
+            $where[] = array(
+                'custom_form_type',
+                '=',
+                $request->get('form_type_id')
+            );
+            Filters::put(Auth::User()->id, 'custom_forms', 'form_type_id', $request->get('form_type_id'));
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'custom_forms', 'form_type_id');
+            } else {
+                if (Filters::get(Auth::User()->id, 'custom_forms', 'form_type_id')) {
+                    $where[] = array(
+                        'custom_form_type',
+                        '=',
+                        Filters::get(Auth::User()->id, 'custom_forms', 'form_type_id')
+                    );
+                }
+            }
+        }
+        if ($request->get('created_from')) {
+            $where[] = array(
+                'created_at',
+                '>=',
+                $request->get('created_from') . ' 00:00:00'
+            );
+            Filters::put(Auth::User()->id, 'custom_forms', 'created_from', $request->get('created_from'));
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'custom_forms', 'created_from');
+            } else {
+                if (Filters::get(Auth::User()->id, 'custom_forms', 'created_from')) {
+                    $where[] = array(
+                        'created_at',
+                        '>=',
+                        Filters::get(Auth::User()->id, 'custom_forms', 'created_from') . ' 00:00:00'
+                    );
+                }
+            }
+        }
+        if ($request->get('created_to')) {
+            $where[] = array(
+                'created_at',
+                '<=',
+                $request->get('created_to') . ' 23:59:59'
+            );
+            Filters::put(Auth::User()->id, 'custom_forms', 'created_to', $request->get('created_to'));
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'custom_forms', 'created_to');
+            } else {
+                if (Filters::get(Auth::User()->id, 'custom_forms', 'created_to')) {
+                    $where[] = array(
+                        'created_at',
+                        '<=',
+                        Filters::get(Auth::User()->id, 'custom_forms', 'created_to') . ' 23:59:59'
+                    );
+                }
+            }
+        }
+        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+            $where[] = array(
+                'active',
+                '=',
+                $request->get('status')
+            );
+            Filters::put(Auth::user()->id, 'custom_forms', 'status', $request->get('status'));
+        } else {
+            if ( $apply_filter ){
+                Filters::forget( Auth::user()->id, 'custom_forms', 'status');
+            } else {
+                if ( Filters::get(Auth::user()->id, 'custom_forms', 'status') == 0 || Filters::get(Auth::user()->id, 'custom_forms', 'status') == 1){
+                    if ( Filters::get(Auth::user()->id, 'custom_forms', 'status') != null ){
+                        $where[] = array(
+                            'active',
+                            '=',
+                            Filters::get( Auth::user()->id, 'custom_forms', 'status')
+                        );
+                    }
+                }
+            }
+        }
+        return $where;
+    }
+
+    /**
+     * Get All Records
+     *
+     * @param (int) $account_id Current Organization's ID
+     *
+     * @return (mixed)
+     */
+    static public function getAllRecordsDictionary($account_id)
+    {
+        return self::where(['account_id' => $account_id])->get()->getDictionary();
+    }
+
+    /**
+     * Create Record
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return (mixed)
+     */
+    static public function createForm($account_id, $data )
+    {
+        // Set Account ID
+        $data['account_id'] = Auth::User()->account_id;
+        $data["name"] = 'Untitled Form-' . time();
+        $data["description"] = "";
+        $data["form_type"] = 1;
+        $data["content"] = "";
+        $data["created_by"] = Auth::id();
+        $record = self::create($data);
+        $record->update([self::sort_field => $record->id]);
+//        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+        return $record;
+    }
+
+    /**
+     * Create Record
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return (mixed)
+     */
+    static public function createRecord($request, $account_id, $user_id)
+    {
+
+        $data = $request->all();
+
+        // Set Account ID
+        $data['account_id'] = $account_id;
+
+        $data["created_by"] = $user_id;
+        $record = self::create($data);
+        $record->update([self::sort_field => $record->id]);
+//        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+        return $record;
+    }
+
+    /**
+     * Update Record
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return (mixed)
+     */
+    static public function updateRecord($id, $request, $account_id, $user_id)
+    {
+        $old_data = (self::find($id))->toArray();
+        $data = $request->all();
+
+        // Set Account ID
+        $data['account_id'] = $account_id;
+        if ($request->has("name")) {
+            $data["name"] = $request->get("name");
+        }
+
+        if ($request->has("description")) {
+            $data["description"] = $request->get("description");
+        }
+
+
+        $record = self::where([
+            'id' => $id,
+            'account_id' => $account_id
+        ])->first();
+
+        if (!$record) {
+            return null;
+        }
+
+        $data["updated_by"] = $user_id;
+        $record->update($data);
+//        AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
+        return $record;
+    }
+
+    /**
+     * Check if child records exist
+     *
+     * @param (int) $id
+     * @param
+     *
+     * @return (boolean)
+     */
+    static public function isChildExists($id, $account_id)
+    {
+
+        return false;
+    }
+
+    /**
+     * Model boot for database events
+     */
+
+    public static function boot() {
+
+
+
+        parent::boot();
+
+
+        static::created(function($item) {
+
+            Event::fire('custom_form.created', $item);
+
+        });
+
+
+        static::updating(function($item) {
+
+            Event::fire('custom_form.updating', $item);
+
+        });
+
+
+
+        static::deleting(function($item) {
+
+            Event::fire('custom_form.deleting', $item);
+
+        });
+
+    }
+}

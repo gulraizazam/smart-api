@@ -4,6 +4,8 @@
     use App\Http\Controllers\Admin\SettingsController;
     use App\Http\Controllers\Admin\PermissionsController;
     use App\Http\Controllers\Admin\RolesController;
+    use App\Http\Controllers\Admin\UsersController;
+    use App\Http\Controllers\Admin\UserTypesController;
 
     /*
     |--------------------------------------------------------------------------
@@ -59,6 +61,13 @@
         Route::resource('roles', RolesController::class);
        // Route::post('roles_mass_destroy', ['uses' => 'Admin\RolesController@massDestroy', 'as' => 'roles.mass_destroy']);
 
+        Route::post('users/datatable', [UsersController::class, 'datatable'])->name('users.datatable');
+        Route::resource('users', UsersController::class);
+
+        Route::post('user_types/datatable', [UserTypesController::class, 'datatable'])->name('user_types.datatable');
+        Route::patch('user_types/active/{id}', [UserTypesController::class, 'active']) ->name('user_types.active');
+        Route::patch('user_types/inactive/{id}', [UserTypesController::class, 'inactive'])->name('user_types.inactive');
+        Route::resource('user_types', UserTypesController::class);
 
 
     });

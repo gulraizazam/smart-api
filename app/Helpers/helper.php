@@ -20,3 +20,17 @@
             $pages
         ];
     }
+
+    function getFilters($filters) {
+        if (isset($filters['query']) && isset($filters['query']['search'])) {
+            return $filters['query']['search'];
+        }
+        return [];
+    }
+
+    function hasFilter($filters, $key) {
+        if (count($filters) > 0 && isset($filters[$key]) && $filters[$key] != '') {
+            return true;
+        }
+        return false;
+    }

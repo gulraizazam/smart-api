@@ -13,11 +13,11 @@ var table_columns = [ {
     }, {
         field: 'name',
         title: 'Name',
-        width: 300,
+        width: 700,
     }, {
         field: 'commission',
         title: 'Commission',
-        width: 300,
+        width: 200,
     },  {
         field: 'Actions',
         title: 'Actions',
@@ -63,7 +63,7 @@ var table_columns = [ {
     }];
 
 
-function createPermission($route) {
+function createRole($route) {
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

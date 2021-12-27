@@ -53,11 +53,6 @@ var KTDatatable = function() {
 
 			pagination: true,
 
-			search: {
-				input: $('#kt_datatable_search_query'),
-				key: 'generalSearch'
-			},
-
 			// columns definition
 			columns: typeof table_columns !== 'undefined' ? table_columns : [],
 
@@ -67,20 +62,40 @@ var KTDatatable = function() {
             deleteConfirm(datatable);
 		});
 
-        $('#kt_datatable_search_status').on('change', function() {
-			datatable.search($(this).val().toLowerCase(), 'Status');
+        $('#reset-search').on('click', function() {
+            let filters =  {
+            }
+            datatable.search(filters, 'search');
+        });
+
+        $('#apply-search').on('click', function() {
+            let filters =  {
+                search: $("#datatable_search_query").val().toLowerCase(),
+            }
+			datatable.search(filters, 'search');
 		});
 
-		$('#kt_datatable_search_type').on('change', function() {
-			datatable.search($(this).val().toLowerCase(), 'Type');
-		});
+        /*reset all table filters*/
+        $('#reset-filters').on('click', function() {
+            let filters =  {
+                delete: '',
+                name: '',
+                commission: '',
+                filter: 'filter_cancel',
+            }
+            datatable.search(filters, 'search');
+        });
 
-        $('#search_name').on('change', function() {
-			datatable.search($(this).val().toLowerCase(), 'Name');
-		});
+        /*apply table filters*/
+        $('#apply-filters').on('click', function() {
 
-        $('#search_commission').on('change', function() {
-            datatable.search($(this).val().toLowerCase(), 'Commission');
+            let filters =  {
+                delete: '',
+                name: $("#search_name").val(),
+                commission: $("#search_commission").val(),
+                filter: 'filter',
+            }
+            datatable.search(filters, 'search');
         });
 
 		$('#kt_datatable_search_status, #kt_datatable_search_type').selectpicker();

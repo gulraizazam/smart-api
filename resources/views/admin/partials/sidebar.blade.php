@@ -82,7 +82,7 @@
                                 </li>
 
                                 <li class="menu-item" aria-haspopup="true">
-                                    <a href="{{route('admin.settings.index')}}" class="menu-link">
+                                    <a href="{{route('admin.users.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
                                         </i>
@@ -91,7 +91,7 @@
                                 </li>
 
                                 <li class="menu-item" aria-haspopup="true">
-                                    <a href="{{route('admin.settings.index')}}" class="menu-link">
+                                    <a href="{{route('admin.user_types.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
                                         </i>

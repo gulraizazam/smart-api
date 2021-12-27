@@ -34,8 +34,10 @@ class PermissionsController extends Controller
     {
         $records = array();
 
-        if(! is_null($request->get('query')) && isset($request->get('query')['delete'])) {
-            $ids = explode(',', $request->get('query')['delete']);
+        $filters = getFilters($request->all());
+
+        if(count($filters) > 0 &&  hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
             $Permissions = Permission::whereIn('id', $ids);
             if($Permissions->exists()) {
                 $Permissions->delete();
@@ -50,8 +52,8 @@ class PermissionsController extends Controller
             $query->select('id', 'name');
         }]);
 
-        if(! is_null($request->get('query')) && isset($request->get('query')['generalSearch'])) {
-            $search = $request->get('query')['generalSearch'];
+        if(count($filters) > 0  && hasFilter($filters, 'search')) {
+            $search = $filters['search'];
             $query = $query->where("name", "LIKE", "%{$search}%")
                 ->orWhere("title", "LIKE", "%{$search}%")
                 ->orWhere("parent_id", "LIKE", "%{$search}%");

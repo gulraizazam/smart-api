@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Helpers\Filters;
 use App\Models\RoleHasUsers;
+use Illuminate\Support\Str;
 use PHPUnit\Util\Filter;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
@@ -42,10 +43,12 @@ class RolesController extends Controller
     public function datatable(Request $request)
     {
 
+        $filters = getFilters($request->all());
+
         $apply_filter = false;
-        if($request->get('action')) {
-            $action = $request->get('action');
-            if(isset($action[0]) && $action[0] == 'filter_cancel') {
+        if(count($filters) > 0 && hasFilter($filters, 'filter')) {
+            $action = $filters['filter'];
+            if($action == 'filter_cancel') {
                 Filters::flush(Auth::User()->id, 'roles');
             } else if($action == 'filter') {
                 $apply_filter = true;
@@ -55,8 +58,10 @@ class RolesController extends Controller
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $Roles = Role::whereIn('id', $request->get('id'))->get();
+        if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
+            $ids = explode(',', $filters['delete']);
+            $Roles = Role::whereIn('id', $ids)->get();
+
             $any_deleted = false;
             foreach ($Roles as $role){
                 if(!self::isChildExists($role->id, Auth::User()->account_id)) {
@@ -64,12 +69,13 @@ class RolesController extends Controller
                     $role->delete();
               }
             }
+
             if($any_deleted){
-                $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-                $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+                $records["status"] = true;
+                $records["message"] = "Records has been deleted successfully!";
             } else {
-                $records["customActionStatus"] = "NO"; // pass custom message(useful for getting status of group actions)
-                $records["customActionMessage"] = "One or more records are not deleted!"; // pass custom message(useful for getting status of group actions)
+                $records["status"] = false;
+                $records["message"] = "One or more records are not deleted!";
             }
         }
 
@@ -77,13 +83,13 @@ class RolesController extends Controller
 
         list($orderBy, $order) = getSortBy($request);
 
-        if(isset($request->get('query')['name']) && $request->get('query')['name'] != '') {
+        if(count($filters) > 0 && hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('query')['name'] . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::user()->id, 'roles', 'name', $request->get('query')['name']);
+            Filters::put(Auth::user()->id, 'roles', 'name', $filters['name']);
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id, 'roles', 'name');
@@ -98,13 +104,13 @@ class RolesController extends Controller
             }
         }
 
-        if ($request->get('query')['commission'] && $request->get('query')['commission'] != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'commission')) {
             $where[] = array(
                 'commission',
                 '=',
-                $request->get('query')['commission']
+                $filters['commission']
             );
-            Filters::put(Auth::user()->id,'roles', 'commission', $request->get('query')['commission']);
+            Filters::put(Auth::user()->id,'roles', 'commission', $filters['commission']);
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id, 'roles', 'commission');
@@ -141,19 +147,25 @@ class RolesController extends Controller
                     $permissions .= '<span class="label label-sm label-info">' . $permission . '</span>&nbsp;';
                 }
                 $records["data"][$index] = array(
-                    'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="'.$role->id.'"/><span></span></label>',
+                    'id' => $role->id,
+                    //'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="'.$role->id.'"/><span></span></label>',
                     'name' => $role->name,
                     'commission' => $role->commission . '%',
                     'permissions' => $permissions,
-                    'actions' => view('admin.roles.actions', compact('role'))->render(),
+                   // 'actions' => view('admin.roles.actions', compact('role'))->render(),
                 );
                 $index++;
             }
         }
 
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+        $records["meta"] = [
+            'field' => 'name',
+            'page' => $iDisplayStart,
+            'pages' => $pages,
+            'perpage' => $iDisplayLength,
+            'total' => $iTotalRecords,
+            'sort' => $orderBy,
+        ];
 
         return response()->json($records);
     }
@@ -166,7 +178,7 @@ class RolesController extends Controller
     public function create()
     {
         if (! Gate::allows('roles_create')) {
-            return abort(401);
+            //return abort(401);
         }
 
         // Get list of all allowed permissions for current role.
@@ -529,7 +541,7 @@ class RolesController extends Controller
                     'name' => $groupPermission->name,
                     'parent_id' => $groupPermission->parent_id,
                     'children' => array(),
-                    'key' => str_replace_last('manage', '', $groupPermission->name),
+                    'key' => Str::replaceLast('manage', '', $groupPermission->name),
                 );
 
                 if($SubPermissions) {
@@ -568,7 +580,7 @@ class RolesController extends Controller
                     'name' => $groupPermission->name,
                     'parent_id' => $groupPermission->parent_id,
                     'children' => array(),
-                    'key' => str_replace_last('manage', '', $groupPermission->name),
+                    'key' => Str::replaceLast('manage', '', $groupPermission->name),
                 );
 
                 if($DashboardSubPermissions) {
@@ -607,7 +619,7 @@ class RolesController extends Controller
                     'name' => $groupPermission->name,
                     'parent_id' => $groupPermission->parent_id,
                     'children' => array(),
-                    'key' => str_replace_last('manage', '', $groupPermission->name),
+                    'key' => Str::replaceLast('manage', '', $groupPermission->name),
                 );
 
                 if($ReportSubPermissions) {
