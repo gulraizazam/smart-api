@@ -128,7 +128,7 @@ class Locations extends BaseModal
      */
     public function getFullAddressAttribute($value)
     {
-        return ucfirst($this->city->name) . ' - ' . ucfirst($this->name);
+        return ucfirst($this->city->name ?? '') . ' - ' . ucfirst($this->name ?? '');
     }
 
     /**

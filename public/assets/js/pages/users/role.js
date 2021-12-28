@@ -63,29 +63,6 @@ var table_columns = [ {
     }];
 
 
-function createRole($route) {
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: $route,
-        type: "GET",
-        cache: false,
-        success: function (response) {
-            $("#permission-create").html(response);
-            reInitSelect2("#kt_select2_8", "Select an Parent Group");
-            reInitValidation(KTPermissionValidation);
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            if (xhr.status == '401') {
-
-            } else {
-            }
-            reInitValidation(KTPermissionValidation);
-        }
-    });
-}
-
 function editRow( id, modal) {
 
     $(modal).modal("show");

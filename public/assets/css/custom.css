@@ -36,31 +36,31 @@
     padding-left: 20px;
 }
 .fs-5 {
-    font-size: 1.15rem!important;
+    font-size: 1.15rem !important;
 }
 
 .fw-bold {
-    font-weight: 500!important;
+    font-weight: 500 !important;
     font-size: 14px;
     color: #000;
     padding-left: 20px;
 }
 .fs-6 {
-    font-size: 1.075rem!important;
+    font-size: 1.075rem !important;
 }
 .py-4 {
-    padding-top: 1rem!important;
-    padding-bottom: 1rem!important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
 }
 .w-275px {
-    width: 275px!important;
+    width: 275px !important;
 }
 
 .flex-column {
-    flex-direction: column!important;
+    flex-direction: column !important;
 }
 .d-flex {
-    display: flex!important;
+    display: flex !important;
 }
 
 .menu-sub-dropdown {
@@ -134,11 +134,6 @@
     border-color: #F3F6F9!important;
 }
 
-.btn {
-    border: 0 !important;
-    padding: calc(0.75rem + 1px) calc(1.5rem + 1px) !important;
-    font-weight: 600 !important;
-}
 .svg-icon svg {
     height: 20px !important;
     width: 20px !important;
@@ -151,5 +146,25 @@
 .select2-selection {
     height: 45px !important;
 }
-
-
+.input-group-addon {
+    padding: 11px 15px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1;
+    color: #555;
+    text-align: center;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+   float: right;
+    white-space: nowrap;
+    display: table-cell;
+    margin: -38px -34px 0 0;
+}
+.label-inline {
+    height: auto !important;
+    padding: 5px 5px 5px 5px !important;
+}
+.advance-filters {
+  /*  margin-top: -40px;*/
+}

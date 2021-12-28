@@ -1,5 +1,6 @@
 "use strict";
 
+let perPage = 20;
 let row_ids = [];
 
 var KTDatatable = function() {
@@ -29,7 +30,7 @@ var KTDatatable = function() {
                         },
 					},
 				},
-				pageSize: 20,
+				pageSize: perPage,
 				saveState: false,
 				serverPaging: true,
 				serverFiltering: true,
@@ -55,6 +56,8 @@ var KTDatatable = function() {
 
 			// columns definition
 			columns: typeof table_columns !== 'undefined' ? table_columns : [],
+
+
 
 		});
 

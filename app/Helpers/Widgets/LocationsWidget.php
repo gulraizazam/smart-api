@@ -177,7 +177,7 @@ class LocationsWidget
         $array1 = array();
         $location_array_1 = array();
         $collection = $centers;
-        //dd($collection);
+
         if (count($collection) > 0) {
 
             $first_child = Locations::where(array(

@@ -80,13 +80,9 @@ class PermissionsController extends Controller
             }
         }
 
-        list( $iDisplayLength, $iDisplayStart, $pages) = getPaginationElement($iTotalRecords);
+        list( $iDisplayLength, $iDisplayStart, $pages) = getPaginationElement($request, $iTotalRecords);
 
-        if($request->has('query')) {
-            $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
-        } else {
-            $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
-        }
+        $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 
         $records["data"] = $Permissions;
 
@@ -96,7 +92,7 @@ class PermissionsController extends Controller
             'pages' => $pages,
             'perpage' => $iDisplayLength,
             'total' => $iTotalRecords,
-            'sort' => $orderBy,
+            'sort' => $order,
         ];
 
         return response()->json($records);

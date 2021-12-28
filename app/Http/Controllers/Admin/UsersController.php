@@ -10,15 +10,15 @@ use App\Models\Locations;
 use App\Models\Patients;
 use App\Models\RoleHasUsers;
 use App\Models\UserHasLocations;
-use App\User;
-use Auth;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use Config;
-use DB;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Session;
+use Illuminate\Support\Facades\Session;
 use Spatie\Permission\Models\Role;
 use Validator;
 
@@ -55,38 +55,27 @@ class UsersController extends Controller
     public function datatable(Request $request)
     {
         $filename = 'users';
-        $apply_filter = false;
-        if ($request->get('action')) {
-            $action = $request->get('action');
-            if (isset($action[0]) && $action[0] == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, $filename);
-            } elseif ($action == 'filter') {
-                $apply_filter = true;
-            }
-        }
+
+        $filters = getFilters($request->all());
+
+        $apply_filter = checkFilters($filters, 'permissions');
 
         $records = [];
         $records['data'] = [];
 
-        if ($request->get('customActionType') && $request->get('customActionType') == 'group_action') {
-            $Users = User::whereIn('id', $request->get('id'));
+        if(count($filters) > 0 &&  hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
+            $Users = User::whereIn('id', $ids);
             if ($Users) {
                 $Users->delete();
             }
-            $records['customActionStatus'] = 'OK'; // pass custom message(useful for getting status of group actions)
-            $records['customActionMessage'] = 'Records has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
+            $records['status'] = true;
+            $records['message'] = 'Records has been deleted successfully!';
         }
 
         $where = [];
 
-        $orderBy = 'users.created_at';
-        $order = 'desc';
-
-        if ($request->get('order')[0]['dir']) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            $order = $request->get('order')[0]['dir'];
-        }
+        list($orderBy, $order) = getSortBy($request);
 
         if (Auth::user()->account_id && Auth::user()->account_id != '') {
             $where[] = [
@@ -109,13 +98,13 @@ class UsersController extends Controller
             }
         }
 
-        if ($request->get('name') && $request->get('name') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'name')) {
             $where[] = [
                 'users.name',
                 'like',
-                '%'.$request->get('name').'%',
+                '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::user()->id, $filename, 'name', $request->get('name'));
+            Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'name');
@@ -129,13 +118,13 @@ class UsersController extends Controller
                 }
             }
         }
-        if ($request->get('email') && $request->get('email')) {
+        if (count($filters) > 0 && hasFilter($filters, 'email')) {
             $where[] = [
                 'users.email',
                 'like',
-                '%'.$request->get('email').'%',
+                '%'.$filters['email'].'%',
             ];
-            Filters::put(Auth::user()->id, $filename, 'email', $request->get('email'));
+            Filters::put(Auth::user()->id, $filename, 'email', $filters['email']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'email');
@@ -150,13 +139,13 @@ class UsersController extends Controller
             }
         }
 
-        if ($request->get('phone') && $request->get('phone') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'phone')) {
             $where[] = [
                 'users.phone',
                 'like',
-                '%'.GeneralFunctions::cleanNumber($request->get('phone')).'%',
+                '%'.GeneralFunctions::cleanNumber($filters['phone']).'%',
             ];
-            Filters::put(Auth::user()->id, $filename, 'phone', $request->get('phone'));
+            Filters::put(Auth::user()->id, $filename, 'phone', $filters['phone']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'phone');
@@ -172,13 +161,13 @@ class UsersController extends Controller
                 }
             }
         }
-        if ($request->get('gender') && $request->get('gender')) {
+        if (count($filters) > 0 && hasFilter($filters, 'gender')) {
             $where[] = [
                 'users.gender',
                 '=',
                 $request->get('gender'),
             ];
-            Filters::put(Auth::user()->id, $filename, 'gender', $request->get('gender'));
+            Filters::put(Auth::user()->id, $filename, 'gender', $filters['gender']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'gender');
@@ -193,13 +182,13 @@ class UsersController extends Controller
             }
         }
 
-        if ($request->get('commission') && $request->get('commission') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'commission')) {
             $where[] = [
                 'commission',
                 '=',
-                $request->get('commission'),
+                $filters['commission'],
             ];
-            Filters::put(Auth::user()->id, $filename, 'commission', $request->get('commission'));
+            Filters::put(Auth::user()->id, $filename, 'commission', $filters['commission']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'commission');
@@ -213,13 +202,13 @@ class UsersController extends Controller
                 }
             }
         }
-        if ($request->get('location_id') && $request->get('location_id')) {
+        if (count($filters) > 0 && hasFilter($filters, 'location_id')) {
             $where[] = [
                 'user_has_locations.location_id',
                 '=',
-                $request->get('location_id'),
+                $filters['location_id'],
             ];
-            Filters::put(Auth::user()->id, $filename, 'location_id', $request->get('location_id'));
+            Filters::put(Auth::user()->id, $filename, 'location_id', $filters['location_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'location_id');
@@ -233,13 +222,13 @@ class UsersController extends Controller
                 }
             }
         }
-        if ($request->get('role_id') && $request->get('role_id')) {
+        if (count($filters) > 0 && hasFilter($filters, 'role_id')) {
             $where[] = [
                 'role_has_users.role_id',
                 '=',
-                $request->get('role_id'),
+                $filters['role_id'],
             ];
-            Filters::put(Auth::user()->id, $filename, 'role_id', $request->get('role_id'));
+            Filters::put(Auth::user()->id, $filename, 'role_id', $filters['role_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'role_id');
@@ -253,13 +242,13 @@ class UsersController extends Controller
                 }
             }
         }
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
             $where[] = [
                 'users.created_at',
                 '>=',
-                $request->get('created_from').' 00:00:00',
+                $filters['created_from'].' 00:00:00',
             ];
-            Filters::put(Auth::user()->id, $filename, 'created_from', $request->get('created_from').' 00:00:00');
+            Filters::put(Auth::user()->id, $filename, 'created_from', $filters['created_from'].' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'created_from');
@@ -274,13 +263,13 @@ class UsersController extends Controller
             }
         }
 
-        if ($request->get('created_to') && $request->get('created_to') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
             $where[] = [
                 'users.created_at',
                 '<=',
-                $request->get('created_to').' 23:59:59',
+                $filters['created_to'].' 23:59:59',
             ];
-            Filters::put(Auth::user()->id, $filename, 'created_to', $request->get('created_to').' 23:59:59');
+            Filters::put(Auth::user()->id, $filename, 'created_to', $filters['created_to'].' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'created_to');
@@ -295,13 +284,13 @@ class UsersController extends Controller
             }
         }
 
-        if ($request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null) {
+        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
             $where[] = [
                 'users.active',
                 '=',
-                $request->get('status'),
+                $filters['status'],
             ];
-            Filters::put(Auth::user()->id, $filename, 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'status');
@@ -320,7 +309,7 @@ class UsersController extends Controller
         if (count($where)) {
             $iTotalRecords = count(DB::table('users')->leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id', 'users.id')
                 ->select('users.id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where([
@@ -330,7 +319,7 @@ class UsersController extends Controller
         } else {
             $iTotalRecords = count(DB::table('users')->leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id', 'users.id')
                 ->select('users.id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where([
@@ -338,13 +327,7 @@ class UsersController extends Controller
                 ])->get());
         }
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
-
-        $end = $iDisplayStart + $iDisplayLength;
-        $end = $end > $iTotalRecords ? $iTotalRecords : $end;
+        list( $iDisplayLength, $iDisplayStart, $pages) = getPaginationElement($request, $iTotalRecords);
 
         if (count($where)) {
             $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
@@ -364,29 +347,30 @@ class UsersController extends Controller
                     ['account_id', '=', Auth::User()->account_id],
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         }
+
         if ($Users) {
             $index = 0;
             $loc = Locations::select('*')->get()->getDictionary();
             foreach ($Users as $user) {
                 $locaiton = '';
-                $userhaslocation = $user->user_has_locations->pluck('location_id');
+                $userhaslocation = $user->user_has_locations ? $user->user_has_locations->pluck('location_id') : [];
                 $user_has_locations = LocationsWidget::generatelocationArrayEdit($userhaslocation, Auth::User()->account_id, $user);
                 if ($user_has_locations) {
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
                         if ($locationchecked->slug == 'custom') {
-                            $locaiton .= '<span class="label label-sm label-info">'.$loc[$location]->city->name.'-'.$loc[$location]->name.'</span>&nbsp;';
+                            $locaiton .= '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'.$loc[$location]->city->name.'-'.$loc[$location]->name.'</span></span>&nbsp;';
                         } else {
-                            $locaiton .= '<span class="label label-sm label-info">'.$loc[$location]->name.'</span>&nbsp;';
+                            $locaiton .= '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'.$loc[$location]->name.'</span></span>&nbsp;';
                         }
                     }
                 }
                 $roles = '';
                 foreach ($user->roles()->pluck('name') as $role) {
-                    $roles .= '<span class="label label-sm label-info">'.$role.'</span>&nbsp;';
+                    $roles .= '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'.$role.'</span></span>&nbsp;';
                 }
                 $records['data'][$index] = [
-                    'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="'.$user->id.'"/><span></span></label>',
+                    'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => GeneralFunctions::contactStatus($user->phone),
@@ -402,9 +386,14 @@ class UsersController extends Controller
             }
         }
 
-        $records['draw'] = $sEcho;
-        $records['recordsTotal'] = $iTotalRecords;
-        $records['recordsFiltered'] = $iTotalRecords;
+        $records["meta"] = [
+            'field' => 'name',
+            'page' => $iDisplayStart,
+            'pages' => $pages,
+            'perpage' => $iDisplayLength,
+            'total' => $iTotalRecords,
+            'sort' => $order,
+        ];
 
         return response()->json($records);
     }

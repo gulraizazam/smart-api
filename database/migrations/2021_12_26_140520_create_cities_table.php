@@ -21,6 +21,7 @@ class CreateCitiesTable extends Migration
             $table->unsignedBigInteger('sort_number')->nullable();
             $table->unsignedBigInteger('is_featured')->default(0);
             $table->unsignedBigInteger('region_id');
+            $table->unsignedBigInteger('account_id')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
@@ -28,6 +29,9 @@ class CreateCitiesTable extends Migration
             $table->foreign('region_id')
                 ->references('id')
                 ->on('regions');
+            $table->foreign('account_id')
+                ->references('id')
+                ->on('accounts');
         });
     }
 

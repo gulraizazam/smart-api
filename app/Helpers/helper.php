@@ -11,8 +11,9 @@
         return [$orderBy, $order];
     }
 
-    function getPaginationElement($iTotalRecords) {
-        $iDisplayLength = intval($request->pagination['perpage'] ?? 10);
+    function getPaginationElement($request, $iTotalRecords, $defaultPerPage = 20) {
+
+        $iDisplayLength = intval($request->pagination['perpage'] ?? $defaultPerPage);
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
         $iDisplayStart = intval($request->pagination['page'] ?? 1);
         $pages = ceil($iTotalRecords / $iDisplayLength);
@@ -31,7 +32,7 @@
     }
 
     function hasFilter($filters, $key) {
-        if (count($filters) > 0 && isset($filters[$key]) && $filters[$key] != '') {
+        if (count($filters) > 0 && isset($filters[$key]) && $filters[$key] != '' &&  $filters[$key] != null) {
             return true;
         }
         return false;

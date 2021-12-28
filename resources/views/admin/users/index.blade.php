@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-        @include('admin.partials.breadcrumb', ['module' => 'Permission List', 'title' => 'Permission'])
+        @include('admin.partials.breadcrumb', ['module' => 'Users List', 'title' => 'Users'])
 
         <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,7 +31,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Permissions</h3>
+                            <h3 class="card-label">Users</h3>
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
@@ -42,11 +42,6 @@
                                     <i class="fa fa-trash-alt"></i>Delete
                                 </a>
                             </div>&nbsp;&nbsp;&nbsp;
-                            <!--end::Dropdown-->
-                            <!--begin::Button-->
-                           {{-- <a href="#" class="btn btn-primary font-weight-bolder">
-                                <i class="la la-plus"></i>Add New
-                            </a>--}}
 
                             <a href="javascript:void(0);" onclick="createPermission('{{ route('admin.permissions.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_permission">
                                 <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
@@ -62,58 +57,96 @@
                         <!--begin::Search Form-->
                         <div class="mt-2 mb-7">
                             <div class="row align-items-center">
+
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                        <div class="col-md-10">
-                                            <div class="input-icon">
-                                                <input type="text" value="{{$filters['search'] ?? ''}}" class="form-control filter-field" placeholder="Search..." id="datatable_search_query" />
-                                                <span>
-                                                    <i class="flaticon2-search-1 text-muted"></i>
-                                                </span>
-                                            </div>
+                                        <div class="col-md-2">
+                                            <label>Name:</label>
+                                            <input type="text" value="{{$filters['name'] ?? ''}}" class="form-control filter-field" placeholder="Name" id="search_name" />
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Email:</label>
+                                            <input type="text" value="{{$filters['email'] ?? ''}}" class="form-control filter-field" placeholder="Email" id="search_email" />
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Phone:</label>
+                                            <input type="text" value="{{$filters['phone'] ?? ''}}" class="form-control filter-field" placeholder="Phone" id="search_phone" />
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Center:</label>
+                                            <input type="text" value="{{$filters['center'] ?? ''}}" class="form-control filter-field" placeholder="Center" id="search_center" />
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Role:</label>
+                                            <input type="text" value="{{$filters['role'] ?? ''}}" class="form-control filter-field" placeholder="Role" id="search_role" />
                                         </div>
 
                                         <div class="col-md-2">
                                             <div class="input-icon">
                                                 <button class="btn btn-sm btn-success" id="apply-search">Search</button>
                                                 <button class="btn btn-sm btn-danger ml-2" onclick="resetFilters();" id="reset-search">Reset</button>
+
                                             </div>
                                         </div>
-
-                                       {{-- <div class="col-md-4 my-2 my-md-0">
-                                            <div class="d-flex align-items-center">
-                                                <label class="mr-3 mb-0 d-none d-md-block">Status:</label>
-                                                <select class="form-control" id="kt_datatable_search_status">
-                                                    <option value="">All</option>
-                                                    <option value="1">Pending</option>
-                                                    <option value="2">Delivered</option>
-                                                    <option value="3">Canceled</option>
-                                                    <option value="4">Success</option>
-                                                    <option value="5">Info</option>
-                                                    <option value="6">Danger</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-4 my-2 my-md-0">
-                                            <div class="d-flex align-items-center">
-                                                <label class="mr-3 mb-0 d-none d-md-block">Type:</label>
-                                                <select class="form-control" id="kt_datatable_search_type">
-                                                    <option value="">All</option>
-                                                    <option value="1">Online</option>
-                                                    <option value="2">Retail</option>
-                                                    <option value="3">Direct</option>
-                                                </select>
-                                            </div>
-                                        </div>--}}
 
                                     </div>
                                 </div>
-                               {{-- <div class="col-lg-3 col-xl-4 mt-5 mt-lg-0">
-                                    <a href="#" class="btn btn-light-primary px-6 font-weight-bold">Search</a>
-                                </div>--}}
+
+
+                                <div class="col-lg-12 col-xl-12 mt-10 advance-filters" style="display: none;">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2">
+                                            <label>Gender:</label>
+                                            <select class="form-control filter-field select2" name="gender">
+                                                <option value="">Gender</option>
+                                                {{--$filters['gender'] ?? ''--}}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Commission:</label>
+                                            <input type="text" value="{{$filters['commission'] ?? ''}}" class="form-control filter-field" placeholder="Status" id="search_status" />
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Status:</label>
+                                            <select class="form-control filter-field select2" name="status">
+                                                <option value="">All</option>
+                                                {{--$filters['status'] ?? ''--}}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-lg-3 mb-lg-0 mb-6">
+                                            <label>Create at:</label>
+                                            <div class="input-daterange input-group to-from-datepicker" >
+                                                <input type="text" value="{{$filters['from'] ?? ''}}" class="form-control datatable-input" name="from" placeholder="From" data-col-index="5">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text">
+                                                        <i class="la la-ellipsis-h"></i>
+                                                    </span>
+                                                </div>
+                                                <input type="text" value="{{$filters['to'] ?? ''}}" class="form-control datatable-input" name="to" placeholder="To" data-col-index="5">
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-11 col-xl-11">
+                                    <div class="row align-items-center" style="float: right;">
+                                        <div class="row">
+                                            <button class="btn btn-sm btn-default ml-2 mt-10" onclick="advanceFilters();" id="reset-search"> <i class="advance-arrow fa fa-caret-right"></i> Advance</button>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
+                    </div>
                         <!--end::Search Form-->
                         <!--end: Search Form-->
                         <!--begin: Datatable-->
@@ -141,11 +174,11 @@
 
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/users/permission.js')}}"></script>
+        <script src="{{asset('assets/js/pages/users/user.js')}}"></script>
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/permission/validate.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/users/validate.js')}}"></script>
     @endpush
 
 @endsection

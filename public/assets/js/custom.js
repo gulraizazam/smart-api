@@ -14,6 +14,16 @@ $(document).ready(function () {
     $(document).on( "click", ".popup-close", function () {
         $(this).parents(".modal").modal("toggle");
     })
+
+    $('.select2').select2();
+
+    $('.to-from-datepicker').datepicker({
+        todayHighlight: true,
+        templates: {
+            leftArrow: '<i class="la la-angle-left"></i>',
+            rightArrow: '<i class="la la-angle-right"></i>',
+        },
+    });
 });
 
 function deleteSuccessAndReset(data, datatable) {
@@ -84,4 +94,9 @@ function getAllFilterValues() {
 
 function resetFilters() {
     $(".filter-field").val('');
+}
+
+function advanceFilters() {
+    $(".advance-filters").slideToggle();
+    $(".advance-arrow").toggleClass("fa fa-caret-right").toggleClass("fa fa-caret-down")
 }

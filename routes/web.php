@@ -62,6 +62,10 @@
        // Route::post('roles_mass_destroy', ['uses' => 'Admin\RolesController@massDestroy', 'as' => 'roles.mass_destroy']);
 
         Route::post('users/datatable', [UsersController::class, 'datatable'])->name('users.datatable');
+
+        Route::patch('users/active/{id}', [UsersController::class, 'active'])->name('users.active');
+        Route::patch('users/inactive/{id}', [UsersController::class, 'inactive'])->name('users.inactive');
+
         Route::resource('users', UsersController::class);
 
         Route::post('user_types/datatable', [UserTypesController::class, 'datatable'])->name('user_types.datatable');

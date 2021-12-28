@@ -48,7 +48,7 @@
                                  <i class="la la-plus"></i>Add New
                              </a>--}}
 
-                            <a href="javascript:void(0);" onclick="createRole('{{ route('admin.roles.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_permission">
+                            <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
                                 <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                 <i class="la la-plus"></i>
                                 Add New
@@ -82,16 +82,9 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-1 pl-15">
-                                            <div class="input-icon">
-                                                <button class="btn btn-sm btn-success" id="apply-filters">{{--<i class="la la-search"></i>--}} Search</button>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-1 my-md-0">
-                                            <div class="input-icon">
-                                                <button class="btn btn-sm btn-danger" onclick="resetFilters();" id="reset-filters">{{--<i class="la la-close"></i> --}}Reset</button>
-                                            </div>
+                                        <div class="col-md-2 pl-15">
+                                            <button class="btn btn-sm btn-success" id="apply-filters">{{--<i class="la la-search"></i>--}} Search</button>
+                                            <button class="btn btn-sm btn-danger" onclick="resetFilters();" id="reset-filters">{{--<i class="la la-close"></i> --}}Reset</button>
                                         </div>
 
                                         {{-- <div class="col-md-4 my-2 my-md-0">
@@ -156,10 +149,6 @@
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/users/role.js')}}"></script>
-    @endpush
-
-    @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/permission//validate.js')}}"></script>
     @endpush
 
 @endsection

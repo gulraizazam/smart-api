@@ -19,8 +19,13 @@ class CreateRegionsTable extends Migration
             $table->string('name');
             $table->unsignedTinyInteger('active')->default(1);
             $table->unsignedBigInteger('sort_number')->nullable();
+            $table->unsignedBigInteger('account_id')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('account_id')
+                ->references('id')
+                ->on('accounts');
         });
     }
 
