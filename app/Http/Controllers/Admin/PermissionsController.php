@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Filters;
 use App\Models\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
 use Validator;
@@ -18,10 +20,12 @@ class PermissionsController extends Controller
     public function index()
     {
         if (! Gate::allows('permissions_manage')) {
-            //return abort(401);
+           // return abort(401);
         }
 
-        return view('admin.permissions.index');
+        $filters = Filters::all(Auth::User()->id, 'permissions');
+
+        return view('admin.permissions.index', compact('filters'));
     }
 
     /**
@@ -35,6 +39,8 @@ class PermissionsController extends Controller
         $records = array();
 
         $filters = getFilters($request->all());
+
+        $apply_filter = checkFilters($filters, 'permissions');
 
         if(count($filters) > 0 &&  hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
@@ -52,14 +58,26 @@ class PermissionsController extends Controller
             $query->select('id', 'name');
         }]);
 
+        $iTotalRecords = Permission::count();
+
         if(count($filters) > 0  && hasFilter($filters, 'search')) {
+            Filters::put(Auth::user()->id, 'permissions', 'search', $filters['search']);
             $search = $filters['search'];
             $query = $query->where("name", "LIKE", "%{$search}%")
                 ->orWhere("title", "LIKE", "%{$search}%")
                 ->orWhere("parent_id", "LIKE", "%{$search}%");
                 $iTotalRecords = $query->count();
         } else {
-            $iTotalRecords = Permission::count();
+            if ($apply_filter){
+                Filters::forget(Auth::user()->id, 'permissions', 'search');
+            } else {
+                if ($search = Filters::get(Auth::user()->id,'permissions', 'search')){
+                    $query = $query->where("name", "LIKE", "%{$search}%")
+                        ->orWhere("title", "LIKE", "%{$search}%")
+                        ->orWhere("parent_id", "LIKE", "%{$search}%");
+                    $iTotalRecords = $query->count();
+                }
+            }
         }
 
         list( $iDisplayLength, $iDisplayStart, $pages) = getPaginationElement($iTotalRecords);

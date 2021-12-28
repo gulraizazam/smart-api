@@ -1,5 +1,7 @@
 <?php
 
+    use App\Helpers\Filters;
+
     function getSortBy($request, $orderBy = 'name', $order = 'asc') {
         if ($request->has('sort')) {
             $orderBy = $request->get('sort')['field'];
@@ -33,4 +35,19 @@
             return true;
         }
         return false;
+    }
+
+    function checkFilters($filters, $key) {
+
+        $apply_filter = false;
+        if(count($filters) > 0 && hasFilter($filters, 'filter')) {
+            $action = $filters['filter'];
+            if($action == 'filter_cancel') {
+                Filters::flush(Auth::User()->id, $key);
+            } else if($action == 'filter') {
+                $apply_filter = true;
+            }
+        }
+
+        return $apply_filter;
     }

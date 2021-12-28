@@ -64,12 +64,14 @@ var KTDatatable = function() {
 
         $('#reset-search').on('click', function() {
             let filters =  {
+                filter: 'filter_cancel',
             }
             datatable.search(filters, 'search');
         });
 
         $('#apply-search').on('click', function() {
             let filters =  {
+                filter: 'filter',
                 search: $("#datatable_search_query").val().toLowerCase(),
             }
 			datatable.search(filters, 'search');

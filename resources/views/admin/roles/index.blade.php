@@ -66,7 +66,7 @@
                                     <div class="row align-items-center">
                                         <div class="col-md-7 my-md-0">
                                             <div class="input-icon">
-                                                <input type="text" value="{{$filters['name'] ?? ''}}" class="form-control" placeholder="Name" id="search_name" />
+                                                <input type="text" value="{{$filters['name'] ?? ''}}" class="form-control filter-field" placeholder="Name" id="search_name" />
                                                 <span>
                                                     <i class="flaticon2-search-1 text-muted"></i>
                                                 </span>
@@ -75,7 +75,7 @@
 
                                         <div class="col-md-3 my-md-0">
                                             <div class="input-icon">
-                                                <input type="text" value="{{$filters['commission'] ?? ''}}" class="form-control" placeholder="Commission" id="search_commission" />
+                                                <input type="text" value="{{$filters['commission'] ?? ''}}" class="form-control filter-field" placeholder="Commission" id="search_commission" />
                                                 <span>
                                                     <i class="flaticon2-search-1 text-muted"></i>
                                                 </span>
@@ -90,7 +90,7 @@
 
                                         <div class="col-md-1 my-md-0">
                                             <div class="input-icon">
-                                                <button class="btn btn-sm btn-danger" id="reset-filters">{{--<i class="la la-close"></i> --}}Reset</button>
+                                                <button class="btn btn-sm btn-danger" onclick="resetFilters();" id="reset-filters">{{--<i class="la la-close"></i> --}}Reset</button>
                                             </div>
                                         </div>
 

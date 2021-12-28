@@ -81,3 +81,7 @@ function reInitTable() {
 function getAllFilterValues() {
 
 }
+
+function resetFilters() {
+    $(".filter-field").val('');
+}

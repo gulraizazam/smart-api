@@ -45,15 +45,8 @@ class RolesController extends Controller
 
         $filters = getFilters($request->all());
 
-        $apply_filter = false;
-        if(count($filters) > 0 && hasFilter($filters, 'filter')) {
-            $action = $filters['filter'];
-            if($action == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, 'roles');
-            } else if($action == 'filter') {
-                $apply_filter = true;
-            }
-        }
+
+        $apply_filter = checkFilters($filters, 'roles');
 
         $records = array();
         $records["data"] = array();

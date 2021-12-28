@@ -23,10 +23,13 @@ class CreateLocationsTable extends Migration
             $table->text('google_map')->nullable();
             $table->unsignedBigInteger('region_id');
             $table->unsignedBigInteger('city_id');
+            $table->string('ntn');
+            $table->string('stn');
             $table->string('image_src')->nullable();
             $table->string('tax_percentage')->nullable();
             $table->unsignedTinyInteger('active')->default(1);
             $table->unsignedInteger('sort_no')->nullable();
+            $table->unsignedBigInteger('account_id')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

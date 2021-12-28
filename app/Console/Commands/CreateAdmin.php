@@ -75,6 +75,11 @@ class CreateAdmin extends Command
         $details['password'] = bcrypt($password);
         $details['confirm_password']  = bcrypt($confirm_password);
         $details['phone'] = '12345678901';
+        $details['main_account'] = 1;
+        $details['user_type_id'] = 1;
+        $details['account_id'] = 1;
+        $details['active'] = 1;
+        $details['gender'] = 1;
 
         while (! $this->isValidPassword($password, $confirm_password)) {
             if (! $this->isRequiredLength($password)) {

@@ -21,7 +21,7 @@ class CreateUserTypesTable extends Migration
 
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('account_id')->nullable()->after('type');
+            $table->unsignedBigInteger('account_id')->nullable();
 
             // Manage Foreign Key Relationships
             $table->foreign('created_by')->references('id')->on('users');
