@@ -15,12 +15,14 @@
 
         $iDisplayLength = intval($request->pagination['perpage'] ?? $defaultPerPage);
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->pagination['page'] ?? 1);
+        $iDisplayStart = intval(isset($request->pagination['page']) ? $request->pagination['page'] - 1 : 0);
+        $page = intval($request->pagination['page'] ?? 1);
         $pages = ceil($iTotalRecords / $iDisplayLength);
         return [
             $iDisplayLength,
             $iDisplayStart,
-            $pages
+            $pages,
+            $page
         ];
     }
 
@@ -32,7 +34,7 @@
     }
 
     function hasFilter($filters, $key) {
-        if (count($filters) > 0 && isset($filters[$key]) && $filters[$key] != '' &&  $filters[$key] != null) {
+        if (isset($filters) && count($filters) > 0 && isset($filters[$key]) && $filters[$key] != '' &&  $filters[$key] != null) {
             return true;
         }
         return false;

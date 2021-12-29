@@ -91,3 +91,32 @@ function editRow( id, modal) {
 
 
 }
+
+function applyFilters(datatable) {
+
+    $('#apply-filters').on('click', function() {
+
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            commission: $("#search_commission").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+    });
+
+}
+
+function resetAllFilters(datatable) {
+
+    $('#reset-filters').on('click', function() {
+
+        let filters =  {
+            delete: '',
+            name: '',
+            commission: '',
+            filter: 'filter_cancel',
+        }
+        datatable.search(filters, 'search');
+    });
+}

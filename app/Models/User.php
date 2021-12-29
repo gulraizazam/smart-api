@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -80,6 +83,11 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsToMany(Role::class, 'role_user');
+    }
+
+    public function user_roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_has_users');
     }
 
     /**
@@ -278,7 +286,7 @@ class User extends Authenticatable
 
             AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-            flash('Record has been deleted successfully.')->success()->important();
+            session()->flash('success', 'Record has been deleted successfully.');
 
             return $record;
         }

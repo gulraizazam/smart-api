@@ -85,7 +85,7 @@
 
 <script src="{{asset('assets/js/custom.js')}}"></script>
 
-@include('admin.partials.messages')
+@include('admin.partials.messages', ['toastr' => true])
 
 @stack('js')
 

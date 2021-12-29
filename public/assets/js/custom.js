@@ -94,6 +94,7 @@ function getAllFilterValues() {
 
 function resetFilters() {
     $(".filter-field").val('');
+    $(".select2").select2();
 }
 
 function advanceFilters() {

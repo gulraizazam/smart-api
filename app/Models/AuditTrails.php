@@ -47,8 +47,8 @@ class AuditTrails extends BaseModal
 
         $action = AuditTrailActions::where('name', '=', $table_action)->select('id')->first();
         $table = AuditTrailTables::where('name', '=', $table_name)->select('id')->first();
-        $audit_tail['audit_trail_action_name'] = $action->id;
-        $audit_tail['audit_trail_table_name'] = $table->id;
+        $audit_tail['audit_trail_action_name'] = $action->id ?? 0;
+        $audit_tail['audit_trail_table_name'] = $table->id ?? 0;
         if ($parent_id == '0') {
 
             $audit_tail['table_record_id'] = $record->id;

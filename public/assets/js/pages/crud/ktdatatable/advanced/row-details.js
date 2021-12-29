@@ -45,6 +45,7 @@ var KTDatatable = function() {
                     message: "Loading wait.."
                 }*/
             },
+        
             /*rows: {
                 autoHide: false,
             },*/
@@ -56,8 +57,6 @@ var KTDatatable = function() {
 
 			// columns definition
 			columns: typeof table_columns !== 'undefined' ? table_columns : [],
-
-
 
 		});
 
@@ -81,27 +80,10 @@ var KTDatatable = function() {
 		});
 
         /*reset all table filters*/
-        $('#reset-filters').on('click', function() {
-            let filters =  {
-                delete: '',
-                name: '',
-                commission: '',
-                filter: 'filter_cancel',
-            }
-            datatable.search(filters, 'search');
-        });
+        resetAllFilters(datatable);
 
         /*apply table filters*/
-        $('#apply-filters').on('click', function() {
-
-            let filters =  {
-                delete: '',
-                name: $("#search_name").val(),
-                commission: $("#search_commission").val(),
-                filter: 'filter',
-            }
-            datatable.search(filters, 'search');
-        });
+        applyFilters(datatable);
 
 		$('#kt_datatable_search_status, #kt_datatable_search_type').selectpicker();
 	};

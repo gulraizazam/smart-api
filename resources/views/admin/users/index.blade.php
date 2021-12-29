@@ -43,7 +43,7 @@
                                 </a>
                             </div>&nbsp;&nbsp;&nbsp;
 
-                            <a href="javascript:void(0);" onclick="createPermission('{{ route('admin.permissions.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_permission">
+                            <a href="javascript:void(0);" onclick="createUsers('{{ route('admin.users.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_user">
                                 <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                 <i class="la la-plus"></i>
                                 Add New
@@ -52,103 +52,11 @@
                             <!--end::Button-->
                         </div>
                     </div>
-                    <div class="card-body">
-                        <!--begin: Search Form-->
-                        <!--begin::Search Form-->
-                        <div class="mt-2 mb-7">
-                            <div class="row align-items-center">
 
-                                <div class="col-lg-12 col-xl-12">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-2">
-                                            <label>Name:</label>
-                                            <input type="text" value="{{$filters['name'] ?? ''}}" class="form-control filter-field" placeholder="Name" id="search_name" />
-                                        </div>
-
-                                        <div class="col-md-2">
-                                            <label>Email:</label>
-                                            <input type="text" value="{{$filters['email'] ?? ''}}" class="form-control filter-field" placeholder="Email" id="search_email" />
-                                        </div>
-
-                                        <div class="col-md-2">
-                                            <label>Phone:</label>
-                                            <input type="text" value="{{$filters['phone'] ?? ''}}" class="form-control filter-field" placeholder="Phone" id="search_phone" />
-                                        </div>
-
-                                        <div class="col-md-2">
-                                            <label>Center:</label>
-                                            <input type="text" value="{{$filters['center'] ?? ''}}" class="form-control filter-field" placeholder="Center" id="search_center" />
-                                        </div>
-
-                                        <div class="col-md-2">
-                                            <label>Role:</label>
-                                            <input type="text" value="{{$filters['role'] ?? ''}}" class="form-control filter-field" placeholder="Role" id="search_role" />
-                                        </div>
-
-                                        <div class="col-md-2">
-                                            <div class="input-icon">
-                                                <button class="btn btn-sm btn-success" id="apply-search">Search</button>
-                                                <button class="btn btn-sm btn-danger ml-2" onclick="resetFilters();" id="reset-search">Reset</button>
-
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </div>
-
-
-                                <div class="col-lg-12 col-xl-12 mt-10 advance-filters" style="display: none;">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-2">
-                                            <label>Gender:</label>
-                                            <select class="form-control filter-field select2" name="gender">
-                                                <option value="">Gender</option>
-                                                {{--$filters['gender'] ?? ''--}}
-                                            </select>
-                                        </div>
-
-                                        <div class="col-md-2">
-                                            <label>Commission:</label>
-                                            <input type="text" value="{{$filters['commission'] ?? ''}}" class="form-control filter-field" placeholder="Status" id="search_status" />
-                                        </div>
-
-                                        <div class="col-md-2">
-                                            <label>Status:</label>
-                                            <select class="form-control filter-field select2" name="status">
-                                                <option value="">All</option>
-                                                {{--$filters['status'] ?? ''--}}
-                                            </select>
-                                        </div>
-
-                                        <div class="col-lg-3 mb-lg-0 mb-6">
-                                            <label>Create at:</label>
-                                            <div class="input-daterange input-group to-from-datepicker" >
-                                                <input type="text" value="{{$filters['from'] ?? ''}}" class="form-control datatable-input" name="from" placeholder="From" data-col-index="5">
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text">
-                                                        <i class="la la-ellipsis-h"></i>
-                                                    </span>
-                                                </div>
-                                                <input type="text" value="{{$filters['to'] ?? ''}}" class="form-control datatable-input" name="to" placeholder="To" data-col-index="5">
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-11 col-xl-11">
-                                    <div class="row align-items-center" style="float: right;">
-                                        <div class="row">
-                                            <button class="btn btn-sm btn-default ml-2 mt-10" onclick="advanceFilters();" id="reset-search"> <i class="advance-arrow fa fa-caret-right"></i> Advance</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
+                     <!--begin::Search Form-->
+                    @include('admin.users.filters')
                         <!--end::Search Form-->
-                        <!--end: Search Form-->
+
                         <!--begin: Datatable-->
                         <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
                         <!--end: Datatable-->
@@ -162,9 +70,9 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_permission" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_add_user" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="permission-create">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="user-create">
             {{--moel shuold be apend here--}}
         </div>
         <!--end::Modal dialog-->

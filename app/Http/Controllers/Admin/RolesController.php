@@ -124,7 +124,7 @@ class RolesController extends Controller
             $iTotalRecords = Role::count();
         }
 
-        list( $iDisplayLength, $iDisplayStart, $pages) = getPaginationElement($request, $iTotalRecords);
+        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         if(count($where)) {
             $Roles = Role::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
@@ -153,7 +153,7 @@ class RolesController extends Controller
 
         $records["meta"] = [
             'field' => 'name',
-            'page' => $iDisplayStart,
+            'page' => $page,
             'pages' => $pages,
             'perpage' => $iDisplayLength,
             'total' => $iTotalRecords,

@@ -80,7 +80,7 @@ class PermissionsController extends Controller
             }
         }
 
-        list( $iDisplayLength, $iDisplayStart, $pages) = getPaginationElement($request, $iTotalRecords);
+        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 
@@ -88,7 +88,7 @@ class PermissionsController extends Controller
 
         $records["meta"] = [
             'field' => 'name',
-            'page' => $iDisplayStart,
+            'page' => $page,
             'pages' => $pages,
             'perpage' => $iDisplayLength,
             'total' => $iTotalRecords,
@@ -106,7 +106,7 @@ class PermissionsController extends Controller
     public function create()
     {
         if (! Gate::allows('permissions_create')) {
-            return abort(401);
+            //return abort(401);
         }
 
         $permissions = ['' => 'Select a Parent Group', 0 => 'This is Parent Group'];

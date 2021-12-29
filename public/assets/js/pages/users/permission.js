@@ -1,7 +1,8 @@
 
 var table_url = route('admin.permissions.datatable');
 
-var table_columns = [ {
+var table_columns = [
+    {
     field: 'id',
     sortable: false,
     width: 25,

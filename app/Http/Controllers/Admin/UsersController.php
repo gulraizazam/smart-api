@@ -58,7 +58,7 @@ class UsersController extends Controller
 
         $filters = getFilters($request->all());
 
-        $apply_filter = checkFilters($filters, 'permissions');
+        $apply_filter = checkFilters($filters, $filename);
 
         $records = [];
         $records['data'] = [];
@@ -165,7 +165,7 @@ class UsersController extends Controller
             $where[] = [
                 'users.gender',
                 '=',
-                $request->get('gender'),
+                $filters['gender'],
             ];
             Filters::put(Auth::user()->id, $filename, 'gender', $filters['gender']);
         } else {
@@ -327,7 +327,7 @@ class UsersController extends Controller
                 ])->get());
         }
 
-        list( $iDisplayLength, $iDisplayStart, $pages) = getPaginationElement($request, $iTotalRecords);
+        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         if (count($where)) {
             $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
@@ -366,7 +366,7 @@ class UsersController extends Controller
                     }
                 }
                 $roles = '';
-                foreach ($user->roles()->pluck('name') as $role) {
+                foreach ($user->user_roles()->pluck('name') as $role) {
                     $roles .= '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'.$role.'</span></span>&nbsp;';
                 }
                 $records['data'][$index] = [
@@ -388,7 +388,7 @@ class UsersController extends Controller
 
         $records["meta"] = [
             'field' => 'name',
-            'page' => $iDisplayStart,
+            'page' => $page,
             'pages' => $pages,
             'perpage' => $iDisplayLength,
             'total' => $iTotalRecords,
@@ -406,7 +406,7 @@ class UsersController extends Controller
     public function create()
     {
         if (!Gate::allows('users_create')) {
-            return abort(401);
+           // return abort(401);
         }
         $user = new \stdClass();
 
@@ -424,12 +424,11 @@ class UsersController extends Controller
     /**
      * Store a newly created User in storage.
      *
-     * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
         if (!Gate::allows('users_create')) {
-            return abort(401);
+           // return abort(401);
         }
 
         $validator = $this->verifyCreateFields($request);
@@ -738,7 +737,6 @@ class UsersController extends Controller
      *
      * @param int $id
      *
-     * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
@@ -748,7 +746,7 @@ class UsersController extends Controller
 
         User::deleteRecord($id);
 
-        return redirect()->route('admin.users.index');
+        return redirect()->back()->with('success', 'Record has been deleted successfully.');
     }
 
     /**

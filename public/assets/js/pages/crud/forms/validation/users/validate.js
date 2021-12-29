@@ -1,17 +1,17 @@
 
-var KTPermissionValidation = function () {
+var UserValidation = function () {
     // Private functions
     var permissionValidation = function () {
-        let modal_id = 'modal_add_permission_form';
+        let modal_id = 'modal_add_user_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    title: {
+                    email: {
                         validators: {
                             notEmpty: {
-                                message: 'The title field is required'
+                                message: 'The email field is required'
                             }
                         }
                     },
@@ -22,10 +22,45 @@ var KTPermissionValidation = function () {
                             }
                         }
                     },
-                    parent_id: {
+                    phone: {
                         validators: {
                             notEmpty: {
-                                message: 'The parent field is required'
+                                message: 'The phone field is required'
+                            }
+                        }
+                    },
+                    gender: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The gender field is required'
+                            }
+                        }
+                    },
+                    password: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The password field is required'
+                            }
+                        }
+                    },
+                    'roles[]': {
+                        validators: {
+                            notEmpty: {
+                                message: 'The roles field is required'
+                            }
+                        }
+                    },
+                    commission: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The commission field is required'
+                            }
+                        }
+                    },
+                    'centers[]': {
+                        validators: {
+                            notEmpty: {
+                                message: 'The commission field is required'
                             }
                         }
                     },
@@ -65,7 +100,7 @@ var KTPermissionValidation = function () {
 }();
 
 jQuery(document).ready(function() {
-    KTPermissionValidation.init();
+    UserValidation.init();
 });
 
 

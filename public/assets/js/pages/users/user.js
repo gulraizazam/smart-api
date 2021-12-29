@@ -57,9 +57,9 @@ var table_columns = [
         overflow: 'visible',
         autoHide: false,
         template: function(data) {
-            let modal = 'modal_add_permission';
+            let modal = 'modal_add_user';
             let id = data.id;
-            let delete_route = route('admin.permissions.destroy', {id: id});
+            let delete_route = route('admin.users.destroy', {id: id});
             let csrf = $('meta[name="csrf-token"]').attr('content');
 
             return '<div class="dropdown dropdown-inline action-dots">'+
@@ -125,7 +125,7 @@ function editRow( id, modal) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.permissions.edit', {id: id}),
+        url: route('admin.users.edit', {id: id}),
         type: "GET",
         cache: false,
         success: function (response) {
@@ -143,5 +143,73 @@ function editRow( id, modal) {
         }
     });
 
+
+}
+
+function createUsers($route) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            $("#user-create").html(response);
+            reInitSelect2(".select2", "Select");
+            reInitValidation(UserValidation);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            if (xhr.status == '401') {
+
+            } else {
+            }
+            reInitValidation(UserValidation);
+        }
+    });
+}
+
+function applyFilters(datatable) {
+
+    $('#apply-filters').on('click', function() {
+
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            email: $("#search_email").val(),
+            phone: $("#search_phone").val(),
+            location_id: $("#search_center").val(),
+            role_id: $("#search_role").val(),
+            gender: $("#search_gender").val(),
+            commission: $("#search_commission").val(),
+            status: $("#search_status").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+    });
+
+}
+
+function resetAllFilters(datatable) {
+
+    $('#reset-filters').on('click', function() {
+        let filters =  {
+            delete: '',
+            name: '',
+            commission: '',
+            email: '',
+            phone: '',
+            location_id: '',
+            role_id: '',
+            gender: '',
+            status: '',
+            created_from: '',
+            created_to: '',
+            filter: 'filter_cancel',
+        }
+        datatable.search(filters, 'search');
+    });
 
 }
