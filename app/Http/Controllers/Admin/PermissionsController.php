@@ -87,7 +87,7 @@ class PermissionsController extends Controller
         $records["data"] = $Permissions;
 
         $records["meta"] = [
-            'field' => 'name',
+            'field' => $orderBy,
             'page' => $page,
             'pages' => $pages,
             'perpage' => $iDisplayLength,

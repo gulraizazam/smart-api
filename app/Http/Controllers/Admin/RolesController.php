@@ -152,7 +152,7 @@ class RolesController extends Controller
         }
 
         $records["meta"] = [
-            'field' => 'name',
+            'field' => $orderBy,
             'page' => $page,
             'pages' => $pages,
             'perpage' => $iDisplayLength,

@@ -48,20 +48,22 @@
             </div>
         </div>
 
-        @php 
+        @php
             $display = 'none;';
-            $advance_class = 'advance-arrow fa fa-caret-right';
-        if(hasFilter($filters, 'gender')
-            || hasFilter($filters, 'commission')
-            || hasFilter($filters, 'status') 
-            || hasFilter($filters, 'created_from') 
-            || hasFilter($filters, 'created_to')) {
-            $display = 'block;';
-            $advance_class = 'advance-arrow fa fa-caret-down';
-            }
-        
+            $advance_class = 'fa-caret-right';
+        if(isset($filters)) {
+				if(hasFilter($filters, 'gender')
+                    || hasFilter($filters, 'commission')
+                    || hasFilter($filters, 'status')
+                    || hasFilter($filters, 'created_from')
+                    || hasFilter($filters, 'created_to')) {
+                    $display = 'block;';
+                    $advance_class = 'fa-caret-down';
+                }
+			}
+
         @endphp
-        
+
         <div class="col-lg-12 col-xl-12 mt-10 advance-filters" style="display: {{$display}}">
             <div class="row align-items-center">
                 <div class="col-md-2">
@@ -109,7 +111,7 @@
             <div class="row align-items-center" style="float: right;">
                 <div class="row">
                     <button class="btn btn-sm btn-default ml-2 mt-10" onclick="advanceFilters();" id="reset-search">
-                        <i class="{{$advance_class}}"></i> 
+                        <i class="advance-arrow fa {{$advance_class}}"></i>
                         Advance
                         </button>
                 </div>

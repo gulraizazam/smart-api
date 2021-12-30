@@ -208,4 +208,10 @@ return [
         1 => 'Yes',
         2 => 'No',
     ),
+
+    'user_types' => [
+        'application user' => 'application user',
+        'patient' => 'patient',
+        'practitioner'=>'practitioner'
+    ]
 ];

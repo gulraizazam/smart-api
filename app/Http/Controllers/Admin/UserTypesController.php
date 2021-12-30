@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
-use DB;
 use App\Models\UserTypes;
-use Session;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Validator;
 
 
@@ -23,7 +20,7 @@ class UserTypesController extends Controller
     public function index()
     {
         if (!Gate::allows('user_types_manage')) {
-            return abort(401);
+           // return abort(401);
         }
 
         return view('admin.user_types.index');
@@ -103,7 +100,10 @@ class UserTypesController extends Controller
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
+        $filters = getFilters($request->all());
+
+        if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
+            $ids = explode(',', $filters['delete']);
             $usertypes = UserTypes::getBulkData($request->get('id'));
             if ($usertypes) {
                 foreach ($usertypes as $usertype) {
@@ -113,17 +113,16 @@ class UserTypesController extends Controller
                     }
                 }
             }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true;
+            $records["message"] = "Records has been deleted successfully!";
         }
+
+        list($orderBy, $order) = getSortBy($request);
 
         // Get Total Records
         $iTotalRecords = UserTypes::getTotalRecords($request, Auth::User()->account_id);
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $user_types = UserTypes::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id);
 
@@ -131,18 +130,23 @@ class UserTypesController extends Controller
             foreach ($user_types as $usertype) {
                 if ($usertype->name != 'Administrator') {
                     $records["data"][] = array(
+                        'id' => $usertype->id,
                         'name' => $usertype->name,
                         'type' => $usertype->type,
-                        'actions' => view('admin.user_types.actions', compact('usertype'))->render(),
                     );
                 }
 
             }
         }
 
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+        $records["meta"] = [
+            'field' => $orderBy,
+            'page' => $page,
+            'pages' => $pages,
+            'perpage' => $iDisplayLength,
+            'total' => $iTotalRecords,
+            'sort' => $order,
+        ];
 
         return response()->json($records);
     }
@@ -189,16 +193,16 @@ class UserTypesController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('user_types_edit')) {
-            return abort(401);
+           // return abort(401);
         }
 
-        $usertpes = UserTypes::getData($id);
+        $usertype = UserTypes::getData($id);
 
-        if (!$usertpes) {
+        if (!$usertype) {
             return view('error');
         }
 
-        return view('admin.user_types.edit', compact('usertpes'));
+        return view('admin.user_types.edit', compact('usertype'));
     }
 
     /**
@@ -211,7 +215,7 @@ class UserTypesController extends Controller
     public function update(Request $request, $id)
     {
         if (!Gate::allows('user_types_edit')) {
-            return abort(401);
+            //return abort(401);
         }
 
         $validator = $this->verifyFields($request);

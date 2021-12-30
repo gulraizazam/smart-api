@@ -42,6 +42,8 @@ class UserTypes extends BaseModal
     {
         $where = array();
 
+        $filters = getFilters($request->all());
+
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -50,19 +52,19 @@ class UserTypes extends BaseModal
             );
         }
 
-        if ($request->get('name')) {
+        if (count($filters) > 0 && hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
         }
 
-        if ($request->get('type') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'type')) {
             $where[] = array(
                 'type',
                 '=',
-                $request->get('type')
+                $filters['type']
             );
         }
 
@@ -90,6 +92,8 @@ class UserTypes extends BaseModal
     {
         $where = array();
 
+        $filters = getFilters($request->all());
+
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -98,19 +102,19 @@ class UserTypes extends BaseModal
             );
         }
 
-        if ($request->get('name')) {
+        if (count($filters) > 0 && hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
         }
 
-        if ($request->get('type') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'type')) {
             $where[] = array(
                 'type',
                 '=',
-                $request->get('type')
+                $filters['type']
             );
         }
 

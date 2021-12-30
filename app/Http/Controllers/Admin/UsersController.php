@@ -387,7 +387,7 @@ class UsersController extends Controller
         }
 
         $records["meta"] = [
-            'field' => 'name',
+            'field' => $orderBy,
             'page' => $page,
             'pages' => $pages,
             'perpage' => $iDisplayLength,
@@ -683,7 +683,7 @@ class UsersController extends Controller
                 $role_has_users = [];
                 foreach ($roles as $role) {
                     $roleid = DB::table('roles')->select('id')->where('id', '=', $role)->first();
-                   if ($roleid) { 
+                   if ($roleid) {
                         $role_has_users = [
                             'role_id' => $roleid->id ?? 0,
                             'user_id' => $user->id ?? 0,
