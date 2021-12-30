@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateAuditTrailTablesTable extends Migration
+class CreateMachineTypesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,15 @@ class CreateAuditTrailTablesTable extends Migration
      */
     public function up()
     {
-        Schema::create('audit_trail_tables', function (Blueprint $table) {
+        Schema::create('machine_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 500);
-            $table->string('screen', 500)->nullable();
+            $table->string('name');
+            $table->unsignedTinyInteger('active')->default(1);
+            $table->unsignedBigInteger('account_id');
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->foreign('account_id')->references('id')->on('accounts');
         });
     }
 
@@ -28,6 +32,6 @@ class CreateAuditTrailTablesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('audit_trail_tables');
+        Schema::dropIfExists('machine_types');
     }
 }

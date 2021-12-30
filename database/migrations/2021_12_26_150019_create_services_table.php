@@ -20,6 +20,7 @@ class CreateServicesTable extends Migration
             $table->unsignedTinyInteger('sort_no')->nullable();
 
             $table->unsignedTinyInteger('active')->default(1);
+            $table->unsignedBigInteger('tax_treatment_type_id');
 
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->string('duration')->nullable();
@@ -29,6 +30,9 @@ class CreateServicesTable extends Migration
             $table->unsignedBigInteger('account_id');
             $table->unsignedTinyInteger('complimentory')->default(0);
             $table->unsignedBigInteger('tax_treatment_type_id');
+
+            // Foreign Key Relationships
+            $table->foreign('account_id', 'services_account')->references('id')->on('accounts');
 
             // Foreign Key Relationships
             $table->foreign('account_id', 'services_account')->references('id')->on('accounts');

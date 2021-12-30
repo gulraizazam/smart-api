@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateUserHasLocationsTable extends Migration
+class CreateDiscountHasLocationsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,26 +13,28 @@ class CreateUserHasLocationsTable extends Migration
      */
     public function up()
     {
-        Schema::create('user_has_locations', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('region_id');
+        Schema::create('discount_has_locations', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('discount_id');
             $table->unsignedBigInteger('location_id');
+            $table->unsignedBigInteger('service_id');
+            $table->timestamps();
 
             // Manage Foreign Key Relationships
-            $table->foreign('region_id')
+            $table->foreign('discount_id')
                 ->references('id')
-                ->on('regions')
+                ->on('discounts')
                 ->onDelete('cascade');
+
             $table->foreign('location_id')
                 ->references('id')
                 ->on('locations')
                 ->onDelete('cascade');
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->onDelete('cascade');
 
-            $table->primary(['user_id', 'location_id']);
+            $table->foreign('service_id')
+                ->references('id')
+                ->on('services')
+                ->onDelete('cascade');
         });
     }
 
@@ -43,6 +45,6 @@ class CreateUserHasLocationsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('user_has_locations');
+        Schema::dropIfExists('discount_has_locations');
     }
 }

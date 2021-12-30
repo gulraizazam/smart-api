@@ -37,6 +37,7 @@ class CreateUsersTable extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            $table->index(['name', 'phone']);
             $table->unique(['email', 'deleted_at']);
 
         });

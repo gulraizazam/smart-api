@@ -33,7 +33,7 @@
                             </span>
                             <h3 class="card-label">User Types</h3>
                         </div>
-                       
+
                     </div>
 
                     <div class="card-body">

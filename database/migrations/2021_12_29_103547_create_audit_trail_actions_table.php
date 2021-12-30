@@ -15,7 +15,7 @@ class CreateAuditTrailActionsTable extends Migration
     {
         Schema::create('audit_trail_actions', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
+            $table->string('name', 500)->nullable();
             $table->timestamps();
         });
     }

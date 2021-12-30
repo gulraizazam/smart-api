@@ -27,9 +27,11 @@ class CreateLocationsTable extends Migration
             $table->string('stn')->nullable();
             $table->string('image_src')->nullable();
             $table->string('tax_percentage')->nullable();
+            $table->string('ntn')->nullable();
             $table->unsignedTinyInteger('active')->default(1);
             $table->unsignedInteger('sort_no')->nullable();
             $table->unsignedBigInteger('account_id')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 

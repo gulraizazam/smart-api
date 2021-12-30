@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateUserHasLocationsTable extends Migration
+class CreateDoctorHasServicesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,26 +13,21 @@ class CreateUserHasLocationsTable extends Migration
      */
     public function up()
     {
-        Schema::create('user_has_locations', function (Blueprint $table) {
+        Schema::create('doctor_has_services', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('region_id');
-            $table->unsignedBigInteger('location_id');
+            $table->unsignedBigInteger('service_id');
 
             // Manage Foreign Key Relationships
-            $table->foreign('region_id')
+            $table->foreign('service_id')
                 ->references('id')
-                ->on('regions')
-                ->onDelete('cascade');
-            $table->foreign('location_id')
-                ->references('id')
-                ->on('locations')
+                ->on('services')
                 ->onDelete('cascade');
             $table->foreign('user_id')
                 ->references('id')
                 ->on('users')
                 ->onDelete('cascade');
 
-            $table->primary(['user_id', 'location_id']);
+            $table->primary(['user_id', 'service_id']);
         });
     }
 
@@ -43,6 +38,6 @@ class CreateUserHasLocationsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('user_has_locations');
+        Schema::dropIfExists('doctor_has_services');
     }
 }
