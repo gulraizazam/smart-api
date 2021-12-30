@@ -52,9 +52,10 @@
                             <!--end::Button-->
                         </div>
                     </div>
-
+                    
+                    <div class="card-body">
                      <!--begin::Search Form-->
-                    @include('admin.users.filters')
+                        @include('admin.users.filters')
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -77,7 +78,16 @@
         </div>
         <!--end::Modal dialog-->
     </div>
-    <!--end::Modal - Add task-->
+
+    <div class="modal fade" id="change_modal" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="change_password">
+            {{--moel shuold be apend here--}}
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    
 
 
 
@@ -87,6 +97,7 @@
 
     @push('js')
         <script src="{{asset('assets/js/pages/crud/forms/validation/users/validate.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/users/change-validate.js')}}"></script>
     @endpush
 
 @endsection

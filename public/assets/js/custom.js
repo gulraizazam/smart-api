@@ -24,6 +24,8 @@ $(document).ready(function () {
             rightArrow: '<i class="la la-angle-right"></i>',
         },
     });
+
+    
 });
 
 function deleteSuccessAndReset(data, datatable) {
@@ -63,6 +65,15 @@ function deleteConfirm(datatable = null, $form = null) {
 
 
 /*functions*/
+
+function errorMessage(xhr) {
+    if (xhr.status == '401') {
+        toastr.error("You are not authorized to access this resource");
+    } else {
+        toastr.error("Unable to process your request, please try again later.");
+    }
+}
+
 function reInitSelect2(elem, title) {
     $(elem).select2({
         placeholder: title
@@ -94,10 +105,16 @@ function getAllFilterValues() {
 
 function resetFilters() {
     $(".filter-field").val('');
-    $(".select2").select2();
+    $(".select2").select2({
+        placeholder: ''
+    });
 }
 
 function advanceFilters() {
     $(".advance-filters").slideToggle();
-    $(".advance-arrow").toggleClass("fa fa-caret-right").toggleClass("fa fa-caret-down")
+    $(".advance-arrow").toggleClass("fa-caret-right").toggleClass("fa-caret-down")
+}
+
+function phoneReset(className) {
+    $("." + className).val('');
 }

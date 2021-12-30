@@ -1,34 +1,131 @@
-<link href="{{ url('metronic/assets/global/plugins/bootstrap-switch/css/bootstrap-switch.min.css') }}" rel="stylesheet" type="text/css" />
-<link href="{{ url('metronic/assets/global/css/components.min.css') }}" rel="stylesheet" id="style_components" type="text/css" />
-<link href="{{ url('metronic/assets/global/css/plugins.min.css') }}" rel="stylesheet" type="text/css" />
-<link href="{{ url('metronic/assets/global/plugins/bootstrap-multiselect/css/bootstrap-multiselect.css') }}" rel="stylesheet" type="text/css" />
-<link href="{{ url('metronic/assets/global/plugins/bootstrap-multiselect/css/bootstrap-multiselect.css') }}" rel="stylesheet" type="text/css" />
-
-<div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-    <h4 class="modal-title">@lang('global.app_edit')</h4>
-</div>
-<div class="modal-body">
-    <div class="portlet-body form">
-        <div class="form-group">
-            {!! Form::model($user, ['method' => 'PUT', 'id' => 'form-validation', 'route' => ['admin.users.update', $user->id]]) !!}
-            <div class="form-body">
-                <!-- Starts Form Validation Messages -->
-            @include('partials.messages')
-            <!-- Ends Form Validation Messages -->
-
-                @include('admin.users.fields_edit')
-            </div>
-            <div>
-                {!! Form::submit(trans('global.app_update'), ['class' => 'btn btn-success']) !!}
-            </div>
-            {!! Form::close() !!}
+<!--begin::Modal content-->
+<div class="modal-content">
+    <!--begin::Modal header-->
+    <div class="modal-header" id="kt_modal_add_user_header">
+        <!--begin::Modal title-->
+        <h2 class="fw-bolder">Edit User</h2>
+        <!--end::Modal title-->
+        <!--begin::Close-->
+        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
+            <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
+            <span class="svg-icon svg-icon-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
+                    <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
+                </svg>
+            </span>
+            <!--end::Svg Icon-->
         </div>
+        <!--end::Close-->
     </div>
+    <!--end::Modal header-->
+    <!--begin::Modal body-->
+    <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+        <!--begin::Form-->
+        <form id="modal_add_user_form" method="post" action="{{route('admin.users.update', $user->id)}}">
+            @method('put')
+            <!--begin::Scroll-->
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+
+                <div class="form-group">
+                    <div class="row">
+                        <div class="fv-row col-md-12">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
+                            <input type="text" name="name" value="{{$user->name ?? ''}}" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="row">
+                        <div class="fv-row col-md-6">
+                            <i onclick="phoneReset('phone-field')" class="fa fa-edit"></i>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone</label>
+                            <input type="number" name="phone" value="{{$user->phone ?? ''}}" class="form-control phone-field form-control-lg form-control-solid mb-2" />
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Email</label>
+                            <input type="email" name="email" value="{{$user->email ?? ''}}" class="form-control form-control-lg form-control-solid" />
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="row">
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
+                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
+                                <option value=""></option>
+                                <option value="1" {{isset($user->gender) && $user->gender == '1' ? 'selected' : ''}}>Male</option>
+                                <option value="2" {{isset($user->gender) && $user->gender == '2' ? 'selected' : ''}}>Female</option>
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Commission</label>
+                            <input type="number" min="0" maxlength="100" value="{{$user->commission ?? ''}}" name="commission" class="form-control commission-field form-control-lg form-control-solid mb-2"/>
+                            <span class="input-group-addon">%</span>
+                        </div>
+
+                       
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="row">
+                        <div class="fv-row col-md-12">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centres</label>
+                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
+                                <option value="">Select</option>
+                                @foreach($locations as $locaiton)
+                                    <optgroup label="{{$locaiton['name']}}">
+                                        @foreach($locaiton['children'] as $child)
+                                            <option value="{{$child['id']}}" {{(in_array($child['id'],$user_has_locations)) ? 'selected' : ''}}><?php echo $child['name']; ?></option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    @php($user_roles = $user->user_roles()->pluck('id'))
+                    @if($user_roles)
+                        @php($user_roles = $user_roles->toArray())
+                    @else
+                        @php($user_roles = array())
+                    @endif
+
+                    <div class="row">
+                        <div class="fv-row col-md-12">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Roles</label>
+                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
+                                <option value="">Select</option>
+                                @foreach($roles as $key => $value)
+                                    <option value="{{$key ?? 0}}" {{(in_array($key, $user_roles)) ? 'selected' : ''}}> {{$value ?? ''}}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!--end::Scroll-->
+            <!--begin::Actions-->
+            <hr>
+            <div class="text-center">
+                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" data-kt-users-modal-action="submit">
+                    <span class="indicator-label">Submit</span>
+                </button>
+            </div>
+            <!--end::Actions-->
+        </form>
+        <!--end::Form-->
+    </div>
+    <!--end::Modal body-->
 </div>
-<script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}" type="text/javascript"></script>
-<script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}" type="text/javascript"></script>
-<script src="{{ url('js/admin/users/fields.js') }}" type="text/javascript"></script>
-<script src="{{ url('metronic/assets/global/plugins/bootstrap-multiselect/js/bootstrap-multiselect.js') }}" type="text/javascript"></script>
-<script src="{{ url('metronic/assets/global/plugins/bootstrap-switch/js/bootstrap-switch.min.js') }}" type="text/javascript"></script>
-<script src="{{ url('js/admin/users/component-multiselect.js') }}" type="text/javascript"></script>
+<!--end::Modal content-->

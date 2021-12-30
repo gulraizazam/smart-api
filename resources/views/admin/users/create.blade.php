@@ -30,13 +30,12 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input type="text" name="name" class="form-control form-control-lg form-control-solid mb-2" value="" placeholder="Name" />
-                            {{--<a href="#" class="text-sm font-weight-bold">Forgot password ?</a>--}}
+                            <input type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Email</label>
-                            <input type="email" name="email" class="form-control form-control-lg form-control-solid" placeholder="Email" />
+                            <input type="email" name="email" class="form-control form-control-lg form-control-solid" />
                         </div>
                     </div>
                 </div>
@@ -45,13 +44,13 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone</label>
-                            <input type="number" name="phone" class="form-control form-control-lg form-control-solid mb-2"placeholder="Phone" />
+                            <input type="number" name="phone" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
                             <select class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
-                                <option value="">All</option>
+                                <option value=""></option>
                                 <option value="1">Male</option>
                                 <option value="2">Female</option>
                             </select>
@@ -62,30 +61,22 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Password</label>
-                            <input type="password" name="password" class="form-control form-control-lg form-control-solid mb-2"placeholder="Password" />
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Commission</label>
+                            <input type="number" min="0" maxlength="100" name="commission" class="form-control commission-field form-control-lg form-control-solid mb-2"/>
+                            <span class="input-group-addon">%</span>
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Roles</label>
-                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
-                                <option value="">Select</option>
-                                @foreach($roles as $role)
-                                    <option value="{{$role->id ?? 0}}"> {{$role->name ?? ''}}</option>
-                                @endforeach
-                            </select>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Password</label>
+                            <input type="password" name="password" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
+
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="row">
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Commission</label>
-                            <input type="number" name="commission" class="form-control form-control-lg form-control-solid mb-2"placeholder="Password" />
-                        </div>
-
-                        <div class="fv-row col-md-6">
+                        <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Centres</label>
                             <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
                                 <option value="">Select</option>
@@ -95,6 +86,17 @@
                                             <option value="{{$child['id']}}"><?php echo $child['name']; ?></option>
                                         @endforeach
                                     </optgroup>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fv-row col-md-12">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Roles</label>
+                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
+                                <option value="">Select</option>
+                                @foreach($roles as $role)
+                                    <option value="{{$role->id ?? 0}}"> {{$role->name ?? ''}}</option>
                                 @endforeach
                             </select>
                         </div>

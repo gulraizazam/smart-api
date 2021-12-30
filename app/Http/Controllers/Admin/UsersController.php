@@ -530,7 +530,7 @@ class UsersController extends Controller
     public function changePassword($id)
     {
         if (!Gate::allows('users_change_password')) {
-            return abort(401);
+            //return abort(401);
         }
 
         $user = User::getData($id);
@@ -551,7 +551,7 @@ class UsersController extends Controller
     public function savePassword(Request $request)
     {
         if (!Gate::allows('users_change_password')) {
-            return abort(401);
+           // return abort(401);
         }
 
         $data = [];
@@ -567,9 +567,11 @@ class UsersController extends Controller
         try {
             $id = decrypt($request->get('id'));
         } catch (DecryptException $e) {
-            flash('Are you mad? what were you trying to do? :@.')->error()->important();
 
-            return redirect()->back();
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong, please try again.',
+            ]);
         }
 
         $data['password'] = bcrypt($request->get('password'));
@@ -577,17 +579,17 @@ class UsersController extends Controller
         $result = User::updateRecord($data, $id);
 
         if ($result) {
-            flash('Password has been changed successfully.')->success()->important();
 
             return response()->json([
-                'status' => 1,
+                'status' => true,
                 'message' => 'Password has been changed successfully.',
             ]);
         }
 
-        flash('Are you mad? what were you trying to do? :@.')->error()->important();
-
-        return redirect()->back();
+        return response()->json([
+            'status' => false,
+            'message' => 'Something went wrong, please try again.',
+        ]);
     }
 
     /**
@@ -620,7 +622,7 @@ class UsersController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('users_edit')) {
-            return abort(401);
+           // return abort(401);
         }
         $roles = Role::get()->pluck('name', 'id');
         $roles_commissions = Role::all();
@@ -651,7 +653,7 @@ class UsersController extends Controller
     public function update(Request $request, $id)
     {
         if (!Gate::allows('users_edit')) {
-            return abort(401);
+            //return abort(401);
         }
 
         $validator = $this->verifyUpdateFields($request);
@@ -681,12 +683,14 @@ class UsersController extends Controller
                 $role_has_users = [];
                 foreach ($roles as $role) {
                     $roleid = DB::table('roles')->select('id')->where('id', '=', $role)->first();
-                    $role_has_users = [
-                        'role_id' => $roleid->id,
-                        'user_id' => $user->id,
-                    ];
-                    // Insert assigned centres to User
-                    RoleHasUsers::updateRecord($role_has_users, $user);
+                   if ($roleid) { 
+                        $role_has_users = [
+                            'role_id' => $roleid->id ?? 0,
+                            'user_id' => $user->id ?? 0,
+                        ];
+                        // Insert assigned centres to User
+                        RoleHasUsers::updateRecord($role_has_users, $user);
+                    }
                 }
             }
 

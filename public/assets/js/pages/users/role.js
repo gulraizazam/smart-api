@@ -80,11 +80,7 @@ function editRow( id, modal) {
             reInitValidation(KTPermissionValidation);
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            if (xhr.status == '401') {
-                toastr.error("You are not authorized to access this resource");
-            } else {
-                toastr.error("Unable to process your request, please try again later.");
-            }
+            errorMessage(xhr);
             reInitValidation(KTPermissionValidation);
         }
     });

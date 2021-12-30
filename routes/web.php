@@ -63,6 +63,9 @@
 
         Route::post('users/datatable', [UsersController::class, 'datatable'])->name('users.datatable');
 
+        Route::get('users/password/{id}', [UsersController::class, 'changePassword'])->name('users.change_password');
+        Route::patch('users/password', [UsersController::class, 'savePassword'])->name('users.save_password');
+      
         Route::patch('users/active/{id}', [UsersController::class, 'active'])->name('users.active');
         Route::patch('users/inactive/{id}', [UsersController::class, 'inactive'])->name('users.inactive');
 

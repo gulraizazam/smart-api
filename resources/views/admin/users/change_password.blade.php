@@ -1,56 +1,64 @@
-<div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-    <h4 class="modal-title">@lang('global.app_change_password')</h4>
-</div>
-<div class="modal-body">
-    <div class="portlet-body form">
-        <div class="form-group">
-            {!! Form::model($user, ['method' => 'PATCH', 'id' => 'form-validation', 'route' => ['admin.users.save_password']]) !!}
-            <div class="form-body">
-                <div class="row">
-                    <div class="alert alert-danger display-hide">
-                        <button class="close" data-close="alert"></button>
-                        You have some form errors. Please check below.
-                    </div>
-                    <div class="alert alert-success display-hide">
-                        <button class="close" data-close="alert"></button>
-                        Your validation is complete, fomm!
-                    </div>
+<!--begin::Modal content-->
+<div class="modal-content">
+    <!--begin::Modal header-->
+    <div class="modal-header" id="kt_modal_password_header">
+        <!--begin::Modal title-->
+        <h2 class="fw-bolder">Change Passwprd</h2>
+        <!--end::Modal title-->
+        <!--begin::Close-->
+        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
+            <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
+            <span class="svg-icon svg-icon-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
+                    <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
+                </svg>
+            </span>
+            <!--end::Svg Icon-->
+        </div>
+        <!--end::Close-->
+    </div>
+    <!--end::Modal header-->
+    <!--begin::Modal body-->
+    <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+        <!--begin::Form-->
+        <form id="modal_change_form" method="PATCH" action="{{route('admin.users.save_password')}}">
+            <!--begin::Scroll-->
+            <input type="hidden" name="id" value="{{encrypt($user->id)}}">
 
-                    {!! Form::hidden('id', encrypt((old('id')) ? old('id') : $user->id)) !!}
-                    <div class="col-md-6">
-                        <div class="form-group @if($errors->has('password')) has-error @endif">
-                            {!! Form::label('password', 'New password*', ['class' => 'control-label']) !!}
-                            {!! Form::password('password', ['class' => 'form-control', 'placeholder' => '']) !!}
-                            @if($errors->has('password'))
-                                <span class="help-block help-block-error">
-                                    {{ $errors->first('password') }}
-                                </span>
-                            @endif
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_password_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+
+                <div class="form-group">
+                    <div class="row">
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">New Password</label>
+                            <input type="password" name="password" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                    </div>
-                    <div class="col-md-6">
 
-                        <div class="form-group @if($errors->has('password_confirmation')) has-error @endif">
-                            {!! Form::label('password_confirmation', 'New password confirmation*', ['class' => 'control-label']) !!}
-                            {!! Form::password('password_confirmation', ['class' => 'form-control', 'placeholder' => '']) !!}
-                            @if($errors->has('password_confirmation'))
-                                <span class="help-block help-block-error">
-                                    {{ $errors->first('password_confirmation') }}
-                                </span>
-                            @endif
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">New Password Comnfirmation</label>
+                            <input type="password" name="password_confirmation" class="form-control form-control-lg form-control-solid" />
                         </div>
                     </div>
                 </div>
+
             </div>
-            <div>
-                {!! Form::submit(trans('global.app_save'), ['class' => 'btn btn-success']) !!}
+            <!--end::Scroll-->
+            <!--begin::Actions-->
+            <hr>
+            <div class="text-center">
+                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" data-kt-users-modal-action="submit">
+                    <span class="indicator-label">Submit</span>
+                </button>
             </div>
-            {!! Form::close() !!}
-        </div>
+            <!--end::Actions-->
+        </form>
+        <!--end::Form-->
     </div>
+    <!--end::Modal body-->
 </div>
-<script src="{{ url('js/admin/users/change_password.js') }}" type="text/javascript"></script>
+<!--end::Modal content-->
 
 
 

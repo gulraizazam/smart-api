@@ -32,6 +32,10 @@ var table_columns = [
         title: 'Commission',
         width: 'auto',
     },{
+        field: 'commission',
+        title: 'Commission',
+        width: 'auto',
+    },{
         field: 'location',
         title: 'centre',
         width: 'auto',
@@ -53,11 +57,12 @@ var table_columns = [
         field: 'Actions',
         title: 'Actions',
         sortable: false,
-        width: 125,
+        width: 180,
         overflow: 'visible',
         autoHide: false,
         template: function(data) {
             let modal = 'modal_add_user';
+            let change_modal = 'change_modal';
             let id = data.id;
             let delete_route = route('admin.users.destroy', {id: id});
             let csrf = $('meta[name="csrf-token"]').attr('content');
@@ -78,6 +83,12 @@ var table_columns = [
                 '</a>'+
                 '</li>'+
                 '<li class="navi-item">'+
+                '<a href="javascript:void(0);" onclick="changePassword('+id+', '+change_modal+');" class="navi-link">'+
+                '<span class="navi-icon"><i class="la la-key"></i></span>'+
+                '<span class="navi-text">Change Password</span>'+
+                '</a>'+
+                '</li>'+
+                '<li class="navi-item">'+
                 '<a href="javascript:void(0);" onclick="deleteRow('+id+');" class="navi-link">'+
                 '<span class="navi-icon"><i class="la la-trash"></i></span>'+
                 '<span class="navi-text">Delete</span>'+
@@ -93,31 +104,7 @@ var table_columns = [
         },
     }];
 
-
-function createPermission($route) {
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: $route,
-        type: "GET",
-        cache: false,
-        success: function (response) {
-            $("#permission-create").html(response);
-            reInitSelect2("#kt_select2_8", "Select an Parent Group");
-            reInitValidation(KTPermissionValidation);
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            if (xhr.status == '401') {
-
-            } else {
-            }
-            reInitValidation(KTPermissionValidation);
-        }
-    });
-}
-
-function editRow( id, modal) {
+function editRow(id, modal) {
 
     $(modal).modal("show");
 
@@ -129,21 +116,41 @@ function editRow( id, modal) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#permission-create").html(response);
-            reInitSelect2("#kt_select2_8", "Select an Parent Group");
-            reInitValidation(KTPermissionValidation);
+            $("#user-create").html(response);
+            reInitSelect2(".select2", "");
+            reInitValidation(UserValidation);
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            if (xhr.status == '401') {
-                toastr.error("You are not authorized to access this resource");
-            } else {
-                toastr.error("Unable to process your request, please try again later.");
-            }
-            reInitValidation(KTPermissionValidation);
+            errorMessage(xhr);
+
+            reInitValidation(UserValidation);
         }
     });
 
 
+}
+
+function changePassword(id, modal) {
+    $(modal).modal("show");
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.users.change_password', {id: id}),
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            $("#change_password").html(response);
+            reInitSelect2(".select2", "");
+            reInitValidation(PasswordValidation);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            reInitValidation(PasswordValidation);
+        }
+    });
 }
 
 function createUsers($route) {
@@ -156,14 +163,11 @@ function createUsers($route) {
         cache: false,
         success: function (response) {
             $("#user-create").html(response);
-            reInitSelect2(".select2", "Select");
+            reInitSelect2(".select2", "");
             reInitValidation(UserValidation);
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            if (xhr.status == '401') {
-
-            } else {
-            }
+            errorMessage(xhr);
             reInitValidation(UserValidation);
         }
     });

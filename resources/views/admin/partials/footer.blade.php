@@ -5,7 +5,7 @@
         <!--begin::Copyright-->
         <div class="text-dark order-2 order-md-1">
             <span class="text-muted font-weight-bold mr-2">2021©</span>
-            <a href="http://keenthemes.com/metronic" target="_blank" class="text-dark-75 text-hover-primary">Cutera</a>
+            <a href="#" target="_blank" class="text-dark-75 text-hover-primary">Cutera</a>
         </div>
         <!--end::Copyright-->
     </div>

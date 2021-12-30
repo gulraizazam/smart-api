@@ -123,6 +123,9 @@
     border-color: #F64E60 !important;
     background-image: none !important;
 }
+.is-valid {
+    background-image: none !important;
+}
 
 .form-popup {
     max-width: 700px;
@@ -159,10 +162,15 @@
     background-color: #eee;
     border: 1px solid #ccc;
     border-radius: 4px;
-   float: right;
+    float: right;
     white-space: nowrap;
     display: table-cell;
-    margin: -38px -34px 0 0;
+    margin: -51px 0px 0px 0px;
+    min-height: 43px;
+}
+.commsion-percent {
+    margin: -39px 0px 0px 0px !important;
+    min-height: 39px !important;
 }
 .label-inline {
     height: auto !important;
@@ -170,4 +178,11 @@
 }
 .advance-filters {
   /*  margin-top: -40px;*/
+}
+.select2-selection__choice {
+    background: #e6eaef !important;
+}
+
+.commission-field {
+    width: 85% !important;
 }
