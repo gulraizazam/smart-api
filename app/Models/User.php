@@ -91,10 +91,11 @@ class User extends Authenticatable
     }
 
     public function getRoles() {
+        
         if ($this->user_roles()->count() > 0) {
             return implode(',', $this->user_roles()->pluck('name')->toArray());
         }
-        return null;
+        return '';
     }
 
     /**

@@ -106,7 +106,7 @@
                                     </div>
                                     <div>
                                         <a href="#" class="font-weight-bolder font-size-h5 text-dark-75 text-hover-primary">{{auth()->user()->name ?? ''}}</a>
-                                        <div class="text-muted">{{auth()->user()->getRoles() ?? 'Administrator'}}</div>
+                                        <div class="text-muted">{{auth()->user()->getRoles()}}</div>
                                         <div class="mt-2">
                                             <a href="#" class="btn btn-sm btn-primary font-weight-bold mr-2 py-2 px-3 px-xxl-5 my-1">Chat</a>
                                             <a href="#" class="btn btn-sm btn-success font-weight-bold py-2 px-3 px-xxl-5 my-1">Follow</a>
