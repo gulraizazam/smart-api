@@ -90,6 +90,13 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'role_has_users');
     }
 
+    public function getRoles() {
+        if ($this->user_roles()->count() > 0) {
+            return implode(',', $this->user_roles()->pluck('name')->toArray());
+        }
+        return null;
+    }
+
     /**
      * Get the Users.
      */
