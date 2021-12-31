@@ -75,5 +75,30 @@ function editRow( id, modal) {
         }
     });
 
+}
 
+function applyFilters(datatable) {
+
+    $('#apply-filters').on('click', function() {
+
+        let filters =  {
+            delete: '',
+            search: $("#search_search").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+    });
+
+}
+
+function resetAllFilters(datatable) {
+
+    $('#reset-filters').on('click', function() {
+        let filters =  {
+            delete: '',
+            search: '',
+            filter: 'filter_cancel',
+        }
+        datatable.search(filters, 'search');
+    });
 }

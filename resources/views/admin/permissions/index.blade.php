@@ -63,7 +63,7 @@
                                     <div class="row align-items-center">
                                         <div class="col-md-10">
                                             <div class="input-icon">
-                                                <input type="text" value="{{$filters['search'] ?? ''}}" class="form-control filter-field" placeholder="Search..." id="datatable_search_query" />
+                                                <input type="text" value="{{$filters['search'] ?? ''}}" class="form-control filter-field" placeholder="Search..." id="search_search" />
                                                 <span>
                                                     <i class="flaticon2-search-1 text-muted"></i>
                                                 </span>
@@ -72,8 +72,8 @@
 
                                         <div class="col-md-2">
                                             <div class="input-icon">
-                                                <button class="btn btn-sm btn-success" id="apply-search">Search</button>
-                                                <button class="btn btn-sm btn-danger ml-2" onclick="resetFilters();" id="reset-search">Reset</button>
+                                                <button class="btn btn-sm btn-success" id="apply-filters">Search</button>
+                                                <button class="btn btn-sm btn-danger ml-2" onclick="resetFilters();" id="reset-filters">Reset</button>
                                             </div>
                                         </div>
 

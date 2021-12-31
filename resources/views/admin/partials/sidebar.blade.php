@@ -48,7 +48,7 @@
                         </a>
                     </li>
 
-                    <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.users.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
                                 <i class="font-icon fa fa-users"></i>
@@ -59,12 +59,7 @@
                         <div class="menu-submenu">
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
-                                <li class="menu-item menu-item-parent" aria-haspopup="true">
-                                    <span class="menu-link">
-                                                <span class="menu-text">Themes</span>
-                                            </span>
-                                </li>
-                                <li class="menu-item" aria-haspopup="true">
+                                <li class="menu-item {{activeMenu('admin.permissions.index')}}" aria-haspopup="true">
                                     <a href="{{route('admin.permissions.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
@@ -72,7 +67,7 @@
                                         <span class="menu-text">Permissions</span>
                                     </a>
                                 </li>
-                                <li class="menu-item" aria-haspopup="true">
+                                <li class="menu-item {{activeMenu('admin.roles.index')}}" aria-haspopup="true">
                                     <a href="{{route('admin.roles.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
@@ -81,7 +76,7 @@
                                     </a>
                                 </li>
 
-                                <li class="menu-item" aria-haspopup="true">
+                                <li class="menu-item {{activeMenu('admin.users.index')}}" aria-haspopup="true">
                                     <a href="{{route('admin.users.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
@@ -90,7 +85,7 @@
                                     </a>
                                 </li>
 
-                                <li class="menu-item" aria-haspopup="true">
+                                <li class="menu-item {{activeMenu('admin.user_types.index')}}" aria-haspopup="true">
                                     <a href="{{route('admin.user_types.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
@@ -114,11 +109,6 @@
                         <div class="menu-submenu">
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
-                                <li class="menu-item menu-item-parent" aria-haspopup="true">
-                                    <span class="menu-link">
-                                                <span class="menu-text">Themes</span>
-                                            </span>
-                                </li>
                                 <li class="menu-item" aria-haspopup="true">
                                     <a href="{{route('admin.permissions.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">

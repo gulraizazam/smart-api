@@ -45,7 +45,7 @@ var KTDatatable = function() {
                     message: "Loading wait.."
                 }*/
             },
-        
+
             /*rows: {
                 autoHide: false,
             },*/
@@ -80,10 +80,14 @@ var KTDatatable = function() {
 		});
 
         /*reset all table filters*/
-        resetAllFilters(datatable);
+        if(typeof resetAllFilters === "function") {
+            resetAllFilters(datatable);
+        }
 
         /*apply table filters*/
-        applyFilters(datatable);
+        if(typeof applyFilters === "function") {
+            applyFilters(datatable);
+        }
 
 		$('#kt_datatable_search_status, #kt_datatable_search_type').selectpicker();
 	};

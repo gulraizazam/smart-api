@@ -147,7 +147,7 @@
     border: 1px solid !important;
     border-color: #F64E60 !important;
 }
-.select2-selection {
+.select2-selection, input {
     min-height: 45px !important;
     /*border: 2px solid #F3F6F9 !important;
     background-color: #fff !important;*/
@@ -183,6 +183,12 @@
     background: #e6eaef !important;
 }
 
-.commission-field {
-    width: 85% !important;
+.fw-bolder {
+    margin-top: 10px;
+}
+.input-group-append, .input-group-text {
+    height: 45px !important;
+}
+.popup-percentage {
+    border-left: 1px solid #E4E6EF;
 }

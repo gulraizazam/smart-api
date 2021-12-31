@@ -76,10 +76,16 @@
                     </select>
                 </div>
 
+
                 <div class="col-md-2">
+
                     <label>Commission:</label>
-                    <input type="number" value="{{$filters['commission'] ?? ''}}" name="commission" class="form-control commission-field filter-field" placeholder="Commission" id="search_commission" />
-                    <span class="input-group-addon commsion-percent">%</span>
+                    <div class="input-group">
+                        <input type="number" class="form-control filter-field" value="{{$filters['commission'] ?? ''}}" name="commission" placeholder="Commission" id="search_commission" >
+                        <div class="input-group-append">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-md-2">

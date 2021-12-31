@@ -54,3 +54,17 @@
 
         return $apply_filter;
     }
+
+    function openMenu($routes, $class = 'menu-item-open') {
+        if (in_array(request()->route()->getName(), $routes)) {
+            return $class;
+        }
+        return '';
+    }
+
+    function activeMenu($route, $class = 'menu-item-active') {
+        if (request()->route()->getName() == $route) {
+            return $class;
+        }
+        return '';
+    }
