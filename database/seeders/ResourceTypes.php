@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Accounts;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class AccountsSeeder extends Seeder
+class ResourceTypes extends Seeder
 {
     /**
      * Run the database seeds.
@@ -17,14 +16,14 @@ class AccountsSeeder extends Seeder
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
-        Accounts::truncate();
+        \App\Models\ResourceTypes::truncate();
 
-        Accounts::create([
-            'name' => 'Cutera Aesthetics',
-            'email' => 'care@cutera.pk',
-            'contact' => '03111113355',
-            'resource_person' => 'Cutera Life',
-            'suspended' => '0',
+        \App\Models\ResourceTypes::insert([
+            [
+              'name' => 'Machine',
+              'slug' => 'Machine',
+              'active' => 1,
+            ],
         ]);
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1');

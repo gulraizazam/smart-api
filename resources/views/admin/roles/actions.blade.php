@@ -1,12 +1,37 @@
-@if(Gate::allows('roles_edit'))
-    <a class="btn btn-xs btn-info" href="{{ route('admin.roles.edit',[$role->id]) }}">@lang('global.app_edit')</a>
-@endif
-@if(Gate::allows('roles_destroy'))
-    {!! Form::open(array(
-        'style' => 'display: inline-block;',
-        'method' => 'DELETE',
-        'onsubmit' => "return confirm('".trans("global.app_are_you_sure")."');",
-        'route' => ['admin.roles.destroy', $role->id])) !!}
-    {!! Form::submit(trans('global.app_delete'), array('class' => 'btn btn-xs btn-danger')) !!}
-    {!! Form::close() !!}
+
+@if(Gate::allows('roles_edit') || Gate::allows('roles_destroy'))
+    <div class="dropdown dropdown-inline action-dots">
+        <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">
+            <i class="ki ki-bold-more-hor" aria-hidden="true"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
+            <ul class="navi flex-column navi-hover py-2">
+                <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">
+                    Choose an action:
+                </li>
+
+                @if(Gate::allows('roles_edit'))
+                    <li class="navi-item">
+                        <a href="{{ route('admin.roles.edit', $role) }}" class="navi-link">
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>
+                            <span class="navi-text">Edit</span>
+                        </a>
+                    </li>
+                @endif
+                @if(Gate::allows('roles_destroy'))
+                    <li class="navi-item">
+                        <a href="javascript:void(0);" onclick="deleteRow('{{$role->id}}');" class="navi-link">
+                            <span class="navi-icon"><i class="la la-trash"></i></span>
+                            <span class="navi-text">Delete</span>
+                        </a>
+                        <form id="delete-row-form-{{$role->id}}" action="{{route('admin.roles.destroy', $role)}}" method="post">
+                            @csrf
+                            <input type="hidden" name="_method" value="delete">
+                        </form>
+                    </li>
+                @endif
+
+            </ul>
+        </div>
+    </div>
 @endif

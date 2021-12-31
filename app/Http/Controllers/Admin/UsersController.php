@@ -32,7 +32,7 @@ class UsersController extends Controller
     public function index()
     {
         if (!Gate::allows('users_manage')) {
-            //return abort(401);
+            return abort(401);
         }
         $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
         $locations->prepend('All', '');
@@ -406,7 +406,7 @@ class UsersController extends Controller
     public function create()
     {
         if (!Gate::allows('users_create')) {
-           // return abort(401);
+            return abort(401);
         }
         $user = new \stdClass();
 
@@ -428,7 +428,7 @@ class UsersController extends Controller
     public function store(Request $request)
     {
         if (!Gate::allows('users_create')) {
-           // return abort(401);
+            return abort(401);
         }
 
         $validator = $this->verifyCreateFields($request);
@@ -530,7 +530,7 @@ class UsersController extends Controller
     public function changePassword($id)
     {
         if (!Gate::allows('users_change_password')) {
-            //return abort(401);
+            return abort(401);
         }
 
         $user = User::getData($id);
@@ -551,7 +551,7 @@ class UsersController extends Controller
     public function savePassword(Request $request)
     {
         if (!Gate::allows('users_change_password')) {
-           // return abort(401);
+            return abort(401);
         }
 
         $data = [];
@@ -622,7 +622,7 @@ class UsersController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('users_edit')) {
-           // return abort(401);
+            return abort(401);
         }
         $roles = Role::get()->pluck('name', 'id');
         $roles_commissions = Role::all();
@@ -653,7 +653,7 @@ class UsersController extends Controller
     public function update(Request $request, $id)
     {
         if (!Gate::allows('users_edit')) {
-            //return abort(401);
+            return abort(401);
         }
 
         $validator = $this->verifyUpdateFields($request);

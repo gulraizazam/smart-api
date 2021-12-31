@@ -25,12 +25,16 @@ $(document).ready(function () {
         },
     });
 
-    
+
 });
 
 function deleteSuccessAndReset(data, datatable) {
     $(".delete-records").addClass("d-none");
-    toastr.info(data.message);
+   if (data.status) {
+       toastr.success(data.message);
+   } else {
+       toastr.error(data.message);
+   }
 }
 
 function deleteRow(id) {

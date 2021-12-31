@@ -20,7 +20,7 @@ class UserTypesController extends Controller
     public function index()
     {
         if (!Gate::allows('user_types_manage')) {
-           // return abort(401);
+            return abort(401);
         }
 
         return view('admin.user_types.index');
@@ -133,6 +133,7 @@ class UserTypesController extends Controller
                         'id' => $usertype->id,
                         'name' => $usertype->name,
                         'type' => $usertype->type,
+                        'actions' => view('admin.user_types.actions', compact('usertype'))->render(),
                     );
                 }
 
@@ -193,7 +194,7 @@ class UserTypesController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('user_types_edit')) {
-           // return abort(401);
+            return abort(401);
         }
 
         $usertype = UserTypes::getData($id);
@@ -215,7 +216,7 @@ class UserTypesController extends Controller
     public function update(Request $request, $id)
     {
         if (!Gate::allows('user_types_edit')) {
-            //return abort(401);
+            return abort(401);
         }
 
         $validator = $this->verifyFields($request);

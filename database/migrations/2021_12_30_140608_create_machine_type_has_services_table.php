@@ -14,7 +14,6 @@ class CreateMachineTypeHasServicesTable extends Migration
     public function up()
     {
         Schema::create('machine_type_has_services', function (Blueprint $table) {
-            $table->id();
             $table->unsignedBigInteger('machine_type_id');
             $table->unsignedBigInteger('service_id');
 

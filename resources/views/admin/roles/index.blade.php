@@ -35,24 +35,22 @@
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
+                            @if(Gate::allows('roles_destroy'))
+                                <div class="delete-records d-none">
+                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
+                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
+                                        <i class="fa fa-trash-alt"></i>Delete
+                                    </a>
+                                </div>&nbsp;&nbsp;&nbsp;
+                            @endif
 
-                            <div class="delete-records d-none">
-                                <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
-                                    <i class="fa fa-trash-alt"></i>Delete
+                            @if(Gate::allows('roles_create'))
+                                <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
+                                    <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
+                                    <i class="la la-plus"></i>
+                                    Add New
                                 </a>
-                            </div>&nbsp;&nbsp;&nbsp;
-                            <!--end::Dropdown-->
-                            <!--begin::Button-->
-                            {{-- <a href="#" class="btn btn-primary font-weight-bolder">
-                                 <i class="la la-plus"></i>Add New
-                             </a>--}}
-
-                            <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
-                                <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
-                                <i class="la la-plus"></i>
-                                Add New
-                            </a>
+                            @endif
 
                             <!--end::Button-->
                         </div>

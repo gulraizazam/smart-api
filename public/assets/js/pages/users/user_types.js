@@ -5,29 +5,18 @@ var table_columns = [
      {
         field: 'name',
         title: 'Name',
-        width: 800,
+        width: 600,
     },{
         field: 'type',
         title: 'Type',
         width: 'auto',
     },  {
-        field: 'Actions',
+        field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 180,
+        width: 70,
         overflow: 'visible',
         autoHide: false,
-        template: function(data) {
-            let modal = 'modal_add_user_type';
-            let change_modal = 'change_modal';
-            let id = data.id;
-            let csrf = $('meta[name="csrf-token"]').attr('content');
-
-            return '<a href="javascript:void(0);" onclick="editRow('+id+', '+modal+');" class="btn btn-sm btn-primary">'+
-                '<span class="navi-icon"><i class="la la-pencil"></i></span>'+
-                '<span class="navi-text">Edit</span>'+
-                '</a>';
-        },
     }];
 
 function editRow(id, modal) {

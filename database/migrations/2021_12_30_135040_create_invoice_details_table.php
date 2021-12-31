@@ -41,11 +41,13 @@ class CreateInvoiceDetailsTable extends Migration
             $table->softDeletes();
 
             /*Manage foreign Keys relationship*/
-            $table->foreign('package_service_id', 'package_service_invoice_id')->references('id')->on('package_services');
+            $table->foreign('package_service_id', 'package_service_invoice_id')->references('id')
+                ->on('package_services');
             $table->foreign('discount_id')->references('id')->on('discounts');
             $table->foreign('service_id')->references('id')->on('services');
             $table->foreign('package_id')->references('id')->on('packages');
             $table->foreign('invoice_id')->references('id')->on('invoices');
+
         });
     }
 

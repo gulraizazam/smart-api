@@ -20,7 +20,7 @@ class PermissionsController extends Controller
     public function index()
     {
         if (! Gate::allows('permissions_manage')) {
-           // return abort(401);
+            return abort(401);
         }
 
         $filters = Filters::all(Auth::User()->id, 'permissions');
@@ -84,7 +84,19 @@ class PermissionsController extends Controller
 
         $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 
-        $records["data"] = $Permissions;
+
+        if($Permissions) {
+            foreach($Permissions as $permission) {
+                $records["data"][] = array(
+                    'id' => $permission->id,
+                    'title' => $permission->title,
+                    'name' => $permission->name,
+                    'parent' => ($permission->parent) ? $permission->parent->name : '-',
+                    'actions' => view('admin.permissions.actions', compact('permission'))->render(),
+                );
+            }
+        }
+
 
         $records["meta"] = [
             'field' => $orderBy,
@@ -106,7 +118,7 @@ class PermissionsController extends Controller
     public function create()
     {
         if (! Gate::allows('permissions_create')) {
-            //return abort(401);
+            return abort(401);
         }
 
         $permissions = ['' => 'Select a Parent Group', 0 => 'This is Parent Group'];

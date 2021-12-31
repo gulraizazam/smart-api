@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\Filters;
-use App\Models\RoleHasUsers;
 use Illuminate\Support\Str;
-use PHPUnit\Util\Filter;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
 use Validator;
-use Auth;
-use DB;
-use App\Models\Cities;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RolesController extends Controller
 {
@@ -26,7 +23,7 @@ class RolesController extends Controller
     public function index()
     {
         if (! Gate::allows('roles_manage')) {
-            //return abort(401);
+            return abort(401);
         }
 
         $filters = Filters::all(Auth::User()->id, 'roles');
@@ -141,11 +138,10 @@ class RolesController extends Controller
                 }
                 $records["data"][$index] = array(
                     'id' => $role->id,
-                    //'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="'.$role->id.'"/><span></span></label>',
                     'name' => $role->name,
                     'commission' => $role->commission . '%',
                     'permissions' => $permissions,
-                   // 'actions' => view('admin.roles.actions', compact('role'))->render(),
+                    'actions' => view('admin.roles.actions', compact('role'))->render(),
                 );
                 $index++;
             }
@@ -171,7 +167,7 @@ class RolesController extends Controller
     public function create()
     {
         if (! Gate::allows('roles_create')) {
-            //return abort(401);
+            return abort(401);
         }
 
         // Get list of all allowed permissions for current role.
@@ -203,7 +199,6 @@ class RolesController extends Controller
      * Store a newly created Role in storage.
      *
      * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
@@ -684,7 +679,7 @@ class RolesController extends Controller
      * Remove Role from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy($id)
     {
@@ -703,13 +698,13 @@ class RolesController extends Controller
         // Check if child records exists or not, If exist then disallow to delete it.
         if (self::isChildExists($id, Auth::User()->account_id)) {
 
-            flash('Child records exist, unable to delete resource')->error()->important();
+            session()->flash('error', 'Child records exist, unable to delete resource');
             return redirect()->route('admin.roles.index');
         }
 
         $role->delete();
 
-        flash('Record has been deleted successfully.')->success()->important();
+        session()->flash('success', 'Record has been deleted successfully.');
 
         return redirect()->route('admin.roles.index');
     }

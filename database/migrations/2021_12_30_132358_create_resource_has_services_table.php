@@ -14,7 +14,6 @@ class CreateResourceHasServicesTable extends Migration
     public function up()
     {
         Schema::create('resource_has_services', function (Blueprint $table) {
-            $table->id();
             $table->unsignedBigInteger('resource_id');
             $table->unsignedBigInteger('service_id');
 

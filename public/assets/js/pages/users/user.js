@@ -54,54 +54,12 @@ var table_columns = [
         title: 'status',
         width: 'auto',
     },  {
-        field: 'Actions',
+        field: 'actions',
         title: 'Actions',
         sortable: false,
         width: 180,
         overflow: 'visible',
         autoHide: false,
-        template: function(data) {
-            let modal = 'modal_add_user';
-            let change_modal = 'change_modal';
-            let id = data.id;
-            let delete_route = route('admin.users.destroy', {id: id});
-            let csrf = $('meta[name="csrf-token"]').attr('content');
-
-            return '<div class="dropdown dropdown-inline action-dots">'+
-                '<a href="javascript:;" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">'+
-                '<i class="ki ki-bold-more-hor" aria-hidden="true"></i>'+
-                '</a>'+
-                '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">'+
-                '<ul class="navi flex-column navi-hover py-2">'+
-                '<li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">'+
-                'Choose an action:'+
-                '</li>'+
-                '<li class="navi-item">'+
-                '<a href="javascript:void(0);" onclick="editRow('+id+', '+modal+');" class="navi-link">'+
-                '<span class="navi-icon"><i class="la la-pencil"></i></span>'+
-                '<span class="navi-text">Edit</span>'+
-                '</a>'+
-                '</li>'+
-                '<li class="navi-item">'+
-                '<a href="javascript:void(0);" onclick="changePassword('+id+', '+change_modal+');" class="navi-link">'+
-                '<span class="navi-icon"><i class="la la-key"></i></span>'+
-                '<span class="navi-text">Change Password</span>'+
-                '</a>'+
-                '</li>'+
-                '<li class="navi-item">'+
-                '<a href="javascript:void(0);" onclick="deleteRow('+id+');" class="navi-link">'+
-                '<span class="navi-icon"><i class="la la-trash"></i></span>'+
-                '<span class="navi-text">Delete</span>'+
-                '</a>'+
-                '<form id="delete-row-form-'+id+'" action="'+delete_route+'" method="post">' +
-                '<input type="hidden" name="_token" value="'+csrf+'">'+
-                '<input type="hidden" name="_method" value="delete">'+
-                '</form>'+
-                '</li>'+
-                '</ul>'+
-                '</div>'+
-                '</div>';
-        },
     }];
 
 function editRow(id, modal) {

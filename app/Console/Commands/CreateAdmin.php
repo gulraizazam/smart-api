@@ -3,6 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use Database\Seeders\AccountsSeeder;
+use Database\Seeders\ResourceTypes;
+use Database\Seeders\UserTypes;
 use Illuminate\Console\Command;
 
 class CreateAdmin extends Command
@@ -28,6 +31,13 @@ class CreateAdmin extends Command
      */
     private $user;
 
+
+    private $user_type;
+
+    private $resource_type;
+
+    private $account;
+
     /**
      * Create a new command instance.
      *
@@ -36,6 +46,10 @@ class CreateAdmin extends Command
     public function __construct(User $user)
     {
         parent::__construct();
+
+        $this->account = new AccountsSeeder();
+        $this->user_type = new UserTypes();
+        $this->resource_type = new ResourceTypes();
 
         $this->user = $user;
     }
@@ -48,6 +62,13 @@ class CreateAdmin extends Command
      */
     public function handle()
     {
+
+        /*run required seeders before create admin*/
+        $this->account->run();
+        $this->user_type->run();
+        $this->resource_type->run();
+        /*seeders*/
+
         $details = $this->getDetails();
 
         if ($details) {

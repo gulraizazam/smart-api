@@ -35,24 +35,22 @@
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-
-                            <div class="delete-records d-none">
-                                <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
-                                    <i class="fa fa-trash-alt"></i>Delete
-                                </a>
-                            </div>&nbsp;&nbsp;&nbsp;
+                            @if(Gate::allows('permissions_destroy'))
+                                <div class="delete-records d-none">
+                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
+                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
+                                        <i class="fa fa-trash-alt"></i>Delete
+                                    </a>
+                                </div>&nbsp;&nbsp;&nbsp;
+                            @endif
                             <!--end::Dropdown-->
                             <!--begin::Button-->
-                           {{-- <a href="#" class="btn btn-primary font-weight-bolder">
-                                <i class="la la-plus"></i>Add New
-                            </a>--}}
-
-                            <a href="javascript:void(0);" onclick="createPermission('{{ route('admin.permissions.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_permission">
-                                <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
-                                <i class="la la-plus"></i>
-                                Add New
-                            </a>
+                            @if(Gate::allows('permissions_create'))
+                                <a href="javascript:void(0);" onclick="createPermission('{{ route('admin.permissions.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_permission">
+                                    <i class="la la-plus"></i>
+                                    Add New
+                                </a>
+                            @endif
 
                             <!--end::Button-->
                         </div>
@@ -81,10 +79,10 @@
 
                                     </div>
                                 </div>
-                              
+
                             </div>
                         </div>
-                    
+
                         <!--end: Search Form-->
                         <!--begin: Datatable-->
                         <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
