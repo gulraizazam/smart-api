@@ -20,8 +20,14 @@ class CreateLeadSourcesTable extends Migration
 
             $table->unsignedTinyInteger('active')->default(1);
 
+            $table->unsignedBigInteger('account_id')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('account_id','lead_sources_account')
+                ->references('id')
+                ->on('accounts');
         });
     }
 

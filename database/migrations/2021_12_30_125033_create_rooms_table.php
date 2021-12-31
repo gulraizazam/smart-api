@@ -20,7 +20,7 @@ class CreateRoomsTable extends Migration
             $table->unsignedTinyInteger('active')->default(1);
 
             $table->unsignedBigInteger('account_id')->nullable();
-            $table->unsignedInteger('resource_type_id')->nullable();
+            $table->unsignedBigInteger('resource_type_id')->nullable();
 
             // Foreign Key Relationships
             $table->foreign('account_id')->references('id')->on('accounts');
@@ -28,6 +28,7 @@ class CreateRoomsTable extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+
         });
     }
 

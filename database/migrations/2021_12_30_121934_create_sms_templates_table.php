@@ -19,9 +19,14 @@ class CreateSmsTemplatesTable extends Migration
             $table->text('content');
             $table->string('slug')->nullable();
             $table->unsignedTinyInteger('active')->default(1);
+            $table->unsignedBigInteger('account_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('account_id', 'sms_templates_account')
+                ->references('id')
+                ->on('accounts');
         });
     }
 

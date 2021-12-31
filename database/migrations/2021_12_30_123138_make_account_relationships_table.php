@@ -13,93 +13,93 @@ class MakeAccountRelationshipsTable extends Migration
      */
     public function up()
     {
-        // Regions
+       /* // Regions
         Schema::table('regions', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id', 'regions_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Cities
-        Schema::table('cities', function (Blueprint $table) {
+        /*Schema::table('cities', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id', 'cities_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Locations
-        Schema::table('locations', function (Blueprint $table) {
+        /*Schema::table('locations', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id', 'locations_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Lead Sources
-        Schema::table('lead_sources', function (Blueprint $table) {
+        /*Schema::table('lead_sources', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id','lead_sources_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Lead Statuses
-        Schema::table('lead_statuses', function (Blueprint $table) {
+       /* Schema::table('lead_statuses', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id','lead_statuses_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Leads
-        Schema::table('leads', function (Blueprint $table) {
+        /*Schema::table('leads', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id','leads_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Lead Comments
-        Schema::table('lead_comments', function (Blueprint $table) {
+        /*Schema::table('lead_comments', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id','lead_comments_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Appointment Statuses
-        Schema::table('appointment_statuses', function (Blueprint $table) {
+        /*Schema::table('appointment_statuses', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id','appointment_statuses_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Cancellation Reasons
-        Schema::table('cancellation_reasons', function (Blueprint $table) {
+       /* Schema::table('cancellation_reasons', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id','cancellation_reasons_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // Appointments
-        Schema::table('appointments', function (Blueprint $table) {
+       /* Schema::table('appointments', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id','appointments_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
 
         // SMS Templates
-        Schema::table('sms_templates', function (Blueprint $table) {
+        /*Schema::table('sms_templates', function (Blueprint $table) {
             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
             $table->foreign('account_id', 'sms_templates_account')
                 ->references('id')
                 ->on('accounts');
-        });
+        });*/
     }
 
     /**

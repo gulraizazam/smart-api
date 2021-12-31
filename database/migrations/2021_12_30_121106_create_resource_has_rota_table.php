@@ -40,7 +40,7 @@ class CreateResourceHasRotaTable extends Migration
             $table->unsignedTinyInteger('is_treatment')->default(1);
             $table->unsignedBigInteger('resource_type_id')->nullable();
             $table->unsignedBigInteger('account_id')->nullable();
-            $table->unsignedInteger('resource_id')->nullable();
+            $table->unsignedBigInteger('resource_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
@@ -51,6 +51,7 @@ class CreateResourceHasRotaTable extends Migration
             $table->foreign('location_id')->references('id')->on('locations');
             $table->foreign('resource_type_id')->references('id')->on('resource_types');
             $table->foreign('account_id')->references('id')->on('accounts');
+
         });
     }
 

@@ -20,11 +20,19 @@ class CreateCancellationReasonsTable extends Migration
             $table->unsignedTinyInteger('active')->default(1);
 
             $table->unsignedBigInteger('appointment_type_id')->nullable();
-
-            $table->foreign('appointment_type_id', 'cancellation_reasons_appointment_type')->references('id')->on('appointment_types');
+            $table->unsignedBigInteger('account_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('account_id','cancellation_reasons_account')
+                ->references('id')
+                ->on('accounts');
+            $table->foreign('appointment_type_id',
+                'cancellation_reasons_appointment_type')
+                ->references('id')
+                ->on('appointment_types');
+
         });
     }
 

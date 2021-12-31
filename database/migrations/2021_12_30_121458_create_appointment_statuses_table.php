@@ -27,10 +27,14 @@ class CreateAppointmentStatusesTable extends Migration
 
             $table->unsignedTinyInteger('sort_no')->nullable();
             $table->unsignedTinyInteger('active')->default(1);
+            $table->unsignedBigInteger('account_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('account_id','appointment_statuses_account')
+                ->references('id')
+                ->on('accounts');
             $table->foreign('appointment_type_id',
                 'appointment_statuses_appointment_type')
                 ->references('id')

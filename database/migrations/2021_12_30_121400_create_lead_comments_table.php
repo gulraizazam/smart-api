@@ -19,11 +19,15 @@ class CreateLeadCommentsTable extends Migration
 
             $table->unsignedBigInteger('lead_id');
             $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('account_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
             // Manage Foreign Key Relationships Mapping
+            $table->foreign('account_id','lead_comments_account')
+                ->references('id')
+                ->on('accounts');
             $table->foreign('lead_id')
                 ->references('id')
                 ->on('leads');

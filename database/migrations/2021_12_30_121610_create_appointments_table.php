@@ -48,16 +48,19 @@ class CreateAppointmentsTable extends Migration
             $table->unsignedBigInteger('resource_has_rota_day_id')->nullable();
             $table->unsignedBigInteger('resource_has_rota_day_id_for_machine')->nullable();
             $table->unsignedBigInteger('appointment_type_id')->nullable();
-            $table->time('scheduled_time')->default(0);
             $table->integer('scheduled_at_count')->default(0);
             $table->date('first_scheduled_date')->nullable();
             $table->time('first_scheduled_time')->nullable();
             $table->integer('first_scheduled_count')->default(0);
+            $table->unsignedBigInteger('account_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
             // Manage Foreign Key Relationships
+            $table->foreign('account_id','appointments_account')
+                ->references('id')
+                ->on('accounts');
             $table->foreign('appointment_type_id',
                 'appointments_appointment_type')
                 ->references('id')

@@ -29,6 +29,7 @@ class CreateResourceHasRotaDaysTable extends Migration
             $table->softDeletes();
 
             $table->foreign('resource_has_rota_id')->references('id')->on('resource_has_rota');
+
         });
     }
 

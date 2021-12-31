@@ -20,7 +20,7 @@ class CreateInvoicesTable extends Migration
             $table->unsignedBigInteger('account_id');
             $table->unsignedBigInteger('patient_id')->nullable();
             $table->unsignedBigInteger('appointment_id')->nullable();
-            $table->unsignedInteger('invoice_status_id')->nullable();
+            $table->unsignedBigInteger('invoice_status_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('location_id');
             $table->unsignedBigInteger('doctor_id');
