@@ -35,6 +35,7 @@ class CreateBundlesTable extends Migration
             $table->foreign('created_by')->references('id')->on('users');
             $table->foreign('updated_by')->references('id')->on('users');
             $table->foreign('account_id')->references('id')->on('accounts');
+
         });
     }
 

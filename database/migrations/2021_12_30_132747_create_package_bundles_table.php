@@ -46,6 +46,7 @@ class CreatePackageBundlesTable extends Migration
             $table->foreign('bundle_id', 'package_bundles_bundle_id')->references('id')->on('bundles');
             $table->foreign('discount_id')->references('id')->on('discounts');
             $table->foreign('package_id')->references('id')->on('packages');
+
         });
     }
 
