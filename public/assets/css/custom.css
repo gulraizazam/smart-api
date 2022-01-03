@@ -192,3 +192,11 @@
 .popup-percentage {
     border-left: 1px solid #E4E6EF;
 }
+.percentage-align {
+    float: right;
+    margin-top: -45px;
+}
+.permission_checkbox {
+    width: 23%;
+    margin-bottom: 20px !important;
+}

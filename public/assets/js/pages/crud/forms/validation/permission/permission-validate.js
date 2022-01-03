@@ -1,20 +1,13 @@
 
-var KTPermissionValidation = function () {
-    // Private funct
+var UserValidation = function () {
+    // Private functions
     var permissionValidation = function () {
-        let modal_id = 'modal_add_permission_form';
-        let form = document.getElementById(modal_id);
+        let form_id = 'permissions-form';
+        let form = document.getElementById(form_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    title: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The title field is required'
-                            }
-                        }
-                    },
                     name: {
                         validators: {
                             notEmpty: {
@@ -22,10 +15,10 @@ var KTPermissionValidation = function () {
                             }
                         }
                     },
-                    parent_id: {
+                    commission: {
                         validators: {
                             notEmpty: {
-                                message: 'The parent field is required'
+                                message: 'The commission field is required'
                             }
                         }
                     },
@@ -47,7 +40,7 @@ var KTPermissionValidation = function () {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
-                    closePopup(modal_id);
+                    closePopup(form_id);
                     reInitTable();
                 } else {
                     toastr.error(response.message);
@@ -65,7 +58,7 @@ var KTPermissionValidation = function () {
 }();
 
 jQuery(document).ready(function() {
-    KTPermissionValidation.init();
+    UserValidation.init();
 });
 
 
