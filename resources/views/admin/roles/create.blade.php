@@ -13,11 +13,10 @@
             <!--begin::Container-->
             <div class="container">
 
+                <form class="form fv-plugins-bootstrap" method="post" id="permissions-form" action="{{route('admin.roles.store')}}">
 
-            @include('admin.roles.valid')
-
-                {{--<form id="ssspermissions-form" method="post" action="{{route('admin.roles.store')}}">--}}
-
+                    @csrf
+                    @include('admin.roles.fields')
 
                 <!--begin::Card-->
                     <div class="card card-custom gutter-b example example-compact">
@@ -170,7 +169,8 @@
                         </button>
                     </div>
                 </div>
-               {{-- </form>--}}
+
+                </form>
 
             </div>
             <!--end::Container-->
@@ -195,7 +195,7 @@
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/permission/form-valid.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/permission/permission-validate.js')}}"></script>
     @endpush
 
 @endsection

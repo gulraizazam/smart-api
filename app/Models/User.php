@@ -367,7 +367,7 @@ class User extends Authenticatable
 
             $record = $user->update(['active'=>0]);
 
-            flash('Record has been inactivated successfully.')->success()->important();
+            session()->flash('success', 'Record has been inactivated successfully.');
 
             AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
 
@@ -390,7 +390,7 @@ class User extends Authenticatable
         } else {
             $record = $user->update(['active'=>1]);
 
-            flash('Record has been activated successfully.')->success()->important();
+            session()->flash('success', 'Record has been activated successfully.');
 
             AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 

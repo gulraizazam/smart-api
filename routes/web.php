@@ -46,7 +46,7 @@
         Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
-        Route::post('change_password',  [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('change_password');
+        Route::post('update_password',  [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
 
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
@@ -65,7 +65,7 @@
 
         Route::get('users/password/{id}', [UsersController::class, 'changePassword'])->name('users.change_password');
         Route::patch('users/password', [UsersController::class, 'savePassword'])->name('users.save_password');
-      
+
         Route::patch('users/active/{id}', [UsersController::class, 'active'])->name('users.active');
         Route::patch('users/inactive/{id}', [UsersController::class, 'inactive'])->name('users.inactive');
 

@@ -136,8 +136,8 @@ class AuditTrails extends BaseModal
         $action = AuditTrailActions::where('name', '=', $table_action)->select('name', 'id')->first();
         $table = AuditTrailTables::where('name', '=', $table_name)->select('name', 'id')->first();
 
-        $audit_tail['audit_trail_action_name'] = $action->id;
-        $audit_tail['audit_trail_table_name'] = $table->id;
+        $audit_tail['audit_trail_action_name'] = $action->id ?? 0;
+        $audit_tail['audit_trail_table_name'] = $table->id ?? 0;
         $audit_tail['table_record_id'] = $record_id;
         $audit_tail['parent_id'] = $parent_id;
 
@@ -146,7 +146,7 @@ class AuditTrails extends BaseModal
         $audit_tailObj = self::create($audit_tail);
 
         $audit_changes['audit_trail_id'] = $audit_tailObj->id;
-        $audit_changes['field_name'] = $action->name;
+        $audit_changes['field_name'] = $action->name ?? '';
         $audit_changes['field_before'] = '1';
         $audit_changes['field_after'] = '0';
         $audit_changes['created_at'] = Carbon::now();
@@ -175,8 +175,8 @@ class AuditTrails extends BaseModal
         $action = AuditTrailActions::where('name', '=', $table_action)->select('name', 'id')->first();
         $table = AuditTrailTables::where('name', '=', $table_name)->select('name', 'id')->first();
 
-        $audit_tail['audit_trail_action_name'] = $action->id;
-        $audit_tail['audit_trail_table_name'] = $table->id;
+        $audit_tail['audit_trail_action_name'] = $action->id ?? 0;
+        $audit_tail['audit_trail_table_name'] = $table->id ?? 0;
         $audit_tail['table_record_id'] = $record_id;
         $audit_tail['parent_id'] = $parent_id;
 
@@ -185,7 +185,7 @@ class AuditTrails extends BaseModal
         $audit_tailObj = self::create($audit_tail);
 
         $audit_changes['audit_trail_id'] = $audit_tailObj->id;
-        $audit_changes['field_name'] = $action->name;
+        $audit_changes['field_name'] = $action->name ?? '';
         $audit_changes['field_before'] = '0';
         $audit_changes['field_after'] = '1';
         $audit_changes['created_at'] = Carbon::now();
