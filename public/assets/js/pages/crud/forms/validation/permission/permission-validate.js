@@ -30,9 +30,11 @@ var UserValidation = function () {
                     bootstrap: new FormValidation.plugins.Bootstrap(),
                     // Validate fields when clicking the Submit button
                     submitButton: new FormValidation.plugins.SubmitButton(),
+
                 }
             }
         );
+
         validate.on('core.form.invalid', function (e) {
            select2Validation();
         });
