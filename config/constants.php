@@ -212,6 +212,12 @@ return [
     'user_types' => [
         'application user' => 'application user',
         'patient' => 'patient',
-        'practitioner'=>'practitioner'
+        'practitioner' => 'practitioner'
+    ],
+
+    'api_status' => [
+        'success' => 200,
+        'error' => 500,
+        'unauthorized' => 401,
     ]
 ];
