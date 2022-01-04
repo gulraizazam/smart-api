@@ -6,7 +6,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Create Roles', 'title' => 'Roles'])
+    @include('admin.partials.breadcrumb', ['module' => 'Edit Roles', 'title' => 'Roles'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">

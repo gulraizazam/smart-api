@@ -95,10 +95,10 @@ class AuditTrails extends BaseModal
         $action = AuditTrailActions::where('name', '=', $table_action)->select('id')->first();
         $table = AuditTrailTables::where('name', '=', $table_name)->select('id')->first();
         if(is_null($table)){
-            die("Add Entity name to log it : $table_name");
+            \Log::info("Add Entity name to log it : $table_name");
         }
-        $audit_tail['audit_trail_action_name'] = $action->id;
-        $audit_tail['audit_trail_table_name'] = $table->id;
+        $audit_tail['audit_trail_action_name'] = $action->id ?? 0;
+        $audit_tail['audit_trail_table_name'] = $table->id ?? 0;
         $audit_tail['table_record_id'] = $record_id;
         $audit_tail['parent_id'] = $parent_id;
 

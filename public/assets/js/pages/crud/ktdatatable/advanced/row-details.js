@@ -2,6 +2,7 @@
 
 let perPage = 20;
 let row_ids = [];
+let permissions = [];
 
 var KTDatatable = function() {
 
@@ -17,6 +18,8 @@ var KTDatatable = function() {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         map: function (data) { /*to get response, we can remove this */
+                            /* get permissions array for actions */
+                            permissions = data.permissions;
 
                            if (typeof data.status !== 'undefined') {
                                deleteSuccessAndReset(data, datatable);

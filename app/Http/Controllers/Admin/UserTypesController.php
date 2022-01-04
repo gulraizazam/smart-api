@@ -127,27 +127,20 @@ class UserTypesController extends Controller
         $user_types = UserTypes::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id);
 
         if ($user_types) {
-            foreach ($user_types as $usertype) {
-                if ($usertype->name != 'Administrator') {
-                    $records["data"][] = array(
-                        'id' => $usertype->id,
-                        'name' => $usertype->name,
-                        'type' => $usertype->type,
-                        'actions' => view('admin.user_types.actions', compact('usertype'))->render(),
-                    );
-                }
+            $records["data"] = $user_types;
 
-            }
+            $records["permissions"] = [
+                'edit' => Gate::allows('user_types_edit'),
+            ];
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
         }
-
-        $records["meta"] = [
-            'field' => $orderBy,
-            'page' => $page,
-            'pages' => $pages,
-            'perpage' => $iDisplayLength,
-            'total' => $iTotalRecords,
-            'sort' => $order,
-        ];
 
         return response()->json($records);
     }

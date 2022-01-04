@@ -6,6 +6,7 @@
     use App\Http\Controllers\Admin\RolesController;
     use App\Http\Controllers\Admin\UsersController;
     use App\Http\Controllers\Admin\UserTypesController;
+    use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
     /*
     |--------------------------------------------------------------------------
@@ -38,10 +39,10 @@
 
 
 
-    Route::get('error-logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']);
-
     /*After authentication*/
     Route::group(['middleware' => ['auth','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
+
+        Route::get('error-logs', [LogViewerController::class, 'index']);
 
         Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
@@ -75,6 +76,13 @@
         Route::patch('user_types/active/{id}', [UserTypesController::class, 'active']) ->name('user_types.active');
         Route::patch('user_types/inactive/{id}', [UserTypesController::class, 'inactive'])->name('user_types.inactive');
         Route::resource('user_types', UserTypesController::class);
+
+        /*settings*/
+        Route::post('settings/datatable', ['uses' => 'Admin\SettingsController@datatable', 'as' => 'settings.datatable']);
+        Route::patch('settings/active/{id}', ['uses' => 'Admin\SettingsController@active', 'as' => 'settings.active']);
+        Route::patch('settings/inactive/{id}', ['uses' => 'Admin\SettingsController@inactive', 'as' => 'settings.inactive']);
+        Route::resource('settings', 'Admin\SettingsController');
+
 
 
     });

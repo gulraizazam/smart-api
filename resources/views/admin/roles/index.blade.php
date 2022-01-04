@@ -104,15 +104,6 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_permission" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="permission-create">
-            {{--moel shuold be apend here--}}
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-    <!--end::Modal - Add task-->
-
 
 
     @push('datatable-js')

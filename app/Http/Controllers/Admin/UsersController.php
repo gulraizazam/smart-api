@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
@@ -24,6 +25,16 @@ use Validator;
 
 class UsersController extends Controller
 {
+    public $success;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of User.
      *
@@ -32,7 +43,7 @@ class UsersController extends Controller
     public function index()
     {
         if (!Gate::allows('users_manage')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
         $locations->prepend('All', '');
@@ -352,23 +363,20 @@ class UsersController extends Controller
             $index = 0;
             $loc = Locations::select('*')->get()->getDictionary();
             foreach ($Users as $user) {
-                $locaiton = '';
+                $locations = [];
                 $userhaslocation = $user->user_has_locations ? $user->user_has_locations->pluck('location_id') : [];
                 $user_has_locations = LocationsWidget::generatelocationArrayEdit($userhaslocation, Auth::User()->account_id, $user);
                 if ($user_has_locations) {
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
                         if ($locationchecked->slug == 'custom') {
-                            $locaiton .= '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'.$loc[$location]->city->name.'-'.$loc[$location]->name.'</span></span>&nbsp;';
+                            $locations[] = $loc[$location]->city->name.'-'.$loc[$location]->name;
                         } else {
-                            $locaiton .= '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'.$loc[$location]->name.'</span></span>&nbsp;';
+                            $locations[] = $loc[$location]->name;
                         }
                     }
                 }
-                $roles = '';
-                foreach ($user->user_roles()->pluck('name') as $role) {
-                    $roles .= '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'.$role.'</span></span>&nbsp;';
-                }
+
                 $records['data'][$index] = [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -376,24 +384,32 @@ class UsersController extends Controller
                     'phone' => GeneralFunctions::contactStatus($user->phone),
                     'commission' => $user->commission.'%',
                     'gender' => view('admin.users.genderselection', compact('user'))->render(),
-                    'location' => $locaiton,
-                    'roles' => $roles,
+                    'locations' => $locations,
+                    'roles' => $user->user_roles()->pluck('name'),
                     'created_at' => Carbon::parse($user->created_at)->format('F j,Y h:i A'),
+                    'active' => $user->active,
                     'status' => view('admin.users.status', compact('user'))->render(),
-                    'actions' => view('admin.users.actions', compact('user'))->render(),
                 ];
                 ++$index;
             }
-        }
 
-        $records["meta"] = [
-            'field' => $orderBy,
-            'page' => $page,
-            'pages' => $pages,
-            'perpage' => $iDisplayLength,
-            'total' => $iTotalRecords,
-            'sort' => $order,
-        ];
+            $records["permissions"] = [
+                'edit' => Gate::allows('users_edit'),
+                'change_password' => Gate::allows('users_change_password'),
+                'users_active' => Gate::allows('users_active'),
+                'users_inactive' => Gate::allows('users_inactive'),
+                'delete' => Gate::allows('users_destroy'),
+            ];
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+        }
 
         return response()->json($records);
     }
@@ -406,7 +422,7 @@ class UsersController extends Controller
     public function create()
     {
         if (!Gate::allows('users_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $user = new \stdClass();
 
@@ -428,7 +444,7 @@ class UsersController extends Controller
     public function store(Request $request)
     {
         if (!Gate::allows('users_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $validator = $this->verifyCreateFields($request);
@@ -530,7 +546,7 @@ class UsersController extends Controller
     public function changePassword($id)
     {
         if (!Gate::allows('users_change_password')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $user = User::getData($id);
@@ -551,7 +567,7 @@ class UsersController extends Controller
     public function savePassword(Request $request)
     {
         if (!Gate::allows('users_change_password')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $data = [];
@@ -622,7 +638,7 @@ class UsersController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('users_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $roles = Role::get()->pluck('name', 'id');
         $roles_commissions = Role::all();
@@ -653,7 +669,7 @@ class UsersController extends Controller
     public function update(Request $request, $id)
     {
         if (!Gate::allows('users_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $validator = $this->verifyUpdateFields($request);
@@ -745,12 +761,12 @@ class UsersController extends Controller
     public function destroy($id)
     {
         if (!Gate::allows('users_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         User::deleteRecord($id);
 
-        return redirect()->back()->with('success', 'Record has been deleted successfully.');
+        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
     }
 
     /**
@@ -763,7 +779,7 @@ class UsersController extends Controller
     public function inactive($id)
     {
         if (!Gate::allows('users_inactive')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         User::InactiveRecord($id);
@@ -781,7 +797,7 @@ class UsersController extends Controller
     public function active($id)
     {
         if (!Gate::allows('users_active')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         User::activeRecord($id);
 

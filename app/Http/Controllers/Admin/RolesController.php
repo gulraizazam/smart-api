@@ -130,31 +130,20 @@ class RolesController extends Controller
         }
 
         if($Roles) {
-            $index = 0;
-            foreach($Roles as $role) {
-                $permissions = '';
-                foreach($role->permissions()->pluck('name') as $permission) {
-                    $permissions .= '<span class="label label-sm label-info">' . $permission . '</span>&nbsp;';
-                }
-                $records["data"][$index] = array(
-                    'id' => $role->id,
-                    'name' => $role->name,
-                    'commission' => $role->commission . '%',
-                    'permissions' => $permissions,
-                    'actions' => view('admin.roles.actions', compact('role'))->render(),
-                );
-                $index++;
-            }
+            $records["data"] = $Roles;
+            $records["permissions"] = [
+                'edit' => Gate::allows('roles_edit'),
+                'delete' => Gate::allows('roles_destroy'),
+            ];
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
         }
-
-        $records["meta"] = [
-            'field' => $orderBy,
-            'page' => $page,
-            'pages' => $pages,
-            'perpage' => $iDisplayLength,
-            'total' => $iTotalRecords,
-            'sort' => $order,
-        ];
 
         return response()->json($records);
     }

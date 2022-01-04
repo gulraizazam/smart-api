@@ -36,15 +36,42 @@ var table_columns = [
         title: 'Commission',
         width: 'auto',
     },{
-        field: 'location',
+        field: 'locations',
         title: 'centre',
         width: 'auto',
-        sortable: false
+        sortable: false,
+        template: function (data) {
+
+            let locations = '';
+
+            if (data.locations.length > 0) {
+
+                for (let i = 0; i < data.locations.length; i++) {
+                    locations += '<span><span class="label label-lg font-weight-bold label-light-info label-inline mb-2">'+data.locations[i]+'</span></span>';
+                }
+
+            }
+
+            return locations;
+        }
     }, {
         field: 'roles',
         title: 'roles',
         width: 'auto',
-        sortable: false
+        sortable: false,
+        template: function (data) {
+            let roles = '';
+
+            if (data.roles.length > 0) {
+
+              for (let i = 0; i < data.roles.length; i++) {
+                  roles += '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'+data.roles[i]+'</span></span>&nbsp;';
+              }
+
+            }
+
+            return roles;
+        }
     }, {
         field: 'created_at',
         title: 'created at',
@@ -53,6 +80,9 @@ var table_columns = [
         field: 'status',
         title: 'status',
         width: 'auto',
+        template: function (data) {
+            return statuses(data);
+        }
     },  {
         field: 'actions',
         title: 'Actions',
@@ -60,11 +90,98 @@ var table_columns = [
         width: 180,
         overflow: 'visible',
         autoHide: false,
+        template: function (data) {
+            return actions(data);
+        }
     }];
 
-function editRow(id, modal) {
+function actions(data) {
 
-    $(modal).modal("show");
+    let id = data.id;
+    let url = route('admin.users.destroy', {id: id});
+
+    let csrf = $('meta[name="csrf-token"]').attr('content');
+
+    if (permissions.edit || permissions.delete) {
+        let actions = '<div class="dropdown dropdown-inline action-dots">\
+        <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+            <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+        </a>\
+        <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
+            <ul class="navi flex-column navi-hover py-2">\
+                <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
+                    Choose an action: \
+                    </li>';
+        if (permissions.edit) {
+            actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="editRow('+id+')" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                        <span class="navi-text">Edit</span>\
+                    </a>\
+                </li>';
+        }
+        if (permissions.change_password) {
+            actions += '<li class="navi-item">\
+                <a href="javascript:void(0);"  onClick="changePassword('+id+');" class="navi-link">\
+                    <span class="navi-icon"><i class="la la-key"></i></span>\
+                    <span class="navi-text">Change Password</span>\
+                </a>\
+            </li>';
+        }
+        if (permissions.delete) {
+            actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="deleteRow(`'+url+'`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-trash"></i></span>\
+                        <span class="navi-text">Delete</span>\
+                    </a>\
+                </li>';
+        }
+
+        actions += '</ul>\
+        </div>\
+    </div>';
+
+        return actions;
+    }
+    return '';
+}
+
+function statuses(data) {
+    let csrf = $('meta[name="csrf-token"]').attr('content');
+    let active_id = 'active-' + data.id;
+    let inactive_id = 'inactive-' + data.id;
+    let inactive_url = route('admin.users.inactive', {id: data.id});
+    let active_url = route('admin.users.active', {id: data.id});
+    let status = '';
+    if (data.active) {
+        if (permissions.users_active) {
+            status += '<form class="" id="'+active_id+'" method="post" action="' + inactive_url + '" style="display: inline-block;">\
+                <input type="hidden" name="_token" value="'+csrf+'">\
+                <input type="hidden" name="_method" value="patch">\
+                <button onclick="updateStatus(`'+active_id+'`);" class="btn btn-sm btn-primary" type="button">Active</button>\
+                </form>';
+        } else {
+            status += '<span><span class="label label-lg font-weight-bold label-light-success label-inline">Active </span></span>';
+        }
+
+    } else {
+        if (permissions.users_inactive) {
+            status += '<form id="'+inactive_id+'" method="post" action="'+active_url+'" style="display: inline-block;">\
+                <input type="hidden" name="_token" value="'+csrf+'">\
+                <input type="hidden" name="_method" value="patch">\
+                <button onclick="updateStatus(`'+inactive_id+'`);" class="btn btn-sm btn-warning" type="button">Inactive</button>\
+            </form>';
+        } else {
+            status += '<span><span class="label label-lg font-weight-bold label-light-danger label-inline">Inactive</span> </span>';
+        }
+    }
+
+    return status;
+}
+
+function editRow(id) {
+
+    $("#modal_add_user").modal("show");
 
     $.ajax({
         headers: {
@@ -88,8 +205,8 @@ function editRow(id, modal) {
 
 }
 
-function changePassword(id, modal) {
-    $(modal).modal("show");
+function changePassword(id) {
+    $("#change_modal").modal("show");
 
     $.ajax({
         headers: {

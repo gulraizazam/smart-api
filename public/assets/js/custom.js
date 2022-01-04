@@ -37,11 +37,11 @@ function deleteSuccessAndReset(data, datatable) {
    }
 }
 
-function deleteRow(id) {
-    deleteConfirm(null, $("#delete-row-form-" + id));
+function deleteRow(route) {
+    deleteConfirm(null, route);
 }
 
-function deleteConfirm(datatable = null, $form = null) {
+function deleteConfirm(datatable = null, route = null) {
     swal.fire({
         title: 'Are you sure you want to delete?',
         type: 'danger',
@@ -60,9 +60,30 @@ function deleteConfirm(datatable = null, $form = null) {
                 }
                 datatable.search(filters, 'search');
             }
-            if ($form) {
-                $form.submit();
+            if (route) {
+                sendDeleteRequest(route)
             }
+        }
+    });
+}
+
+function sendDeleteRequest(route) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route,
+        type: "DELETE",
+        cache: false,
+        success: function (response) {
+           if (response.status) {
+               toastr.success(response.message);
+
+               reloadDataTable();
+           }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
         }
     });
 }
@@ -87,6 +108,10 @@ function updateStatus(form_id) {
 }
 
 /*functions*/
+
+function reloadDataTable() {
+    $('#kt_datatable').KTDatatable('reload');
+}
 
 function errorMessage(xhr) {
     if (xhr.status == '401') {

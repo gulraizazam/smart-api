@@ -86,26 +86,23 @@ class PermissionsController extends Controller
 
 
         if($Permissions) {
-            foreach($Permissions as $permission) {
-                $records["data"][] = array(
-                    'id' => $permission->id,
-                    'title' => $permission->title,
-                    'name' => $permission->name,
-                    'parent' => ($permission->parent) ? $permission->parent->name : '-',
-                    'actions' => view('admin.permissions.actions', compact('permission'))->render(),
-                );
-            }
+
+            $records["data"] = $Permissions;
+
+            $records["permissions"] = [
+                'edit' => Gate::allows('permissions_edit'),
+                'delete' => Gate::allows('permissions_destroy'),
+            ];
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
         }
-
-
-        $records["meta"] = [
-            'field' => $orderBy,
-            'page' => $page,
-            'pages' => $pages,
-            'perpage' => $iDisplayLength,
-            'total' => $iTotalRecords,
-            'sort' => $order,
-        ];
 
         return response()->json($records);
     }
@@ -262,7 +259,10 @@ class PermissionsController extends Controller
         $permission = Permission::findOrFail($id);
         $permission->delete();
 
-        return redirect()->back()->with('success', 'Record has been deleted successfully.');
+        return response()->json([
+            'status' => true,
+            'message' => 'Record has been deleted successfully.',
+        ]);
     }
 
 }

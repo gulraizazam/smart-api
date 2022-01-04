@@ -20,7 +20,7 @@ var table_columns = [
         title: 'Name',
         width: 300,
     }, {
-        field: 'parent',
+        field: 'parent.name',
         title: 'Parent Permission',
         width: 300,
     },  {
@@ -30,7 +30,56 @@ var table_columns = [
         width: 80,
         overflow: 'visible',
         autoHide: false,
+        template: function (data) {
+            return actions(data);
+        }
     }];
+
+function actions(data) {
+
+    let id = data.id;
+
+    let csrf = $('meta[name="csrf-token"]').attr('content');
+
+    if (permissions.edit || permissions.delete) {
+        let actions = '<div class="dropdown dropdown-inline action-dots">\
+        <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+            <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+        </a>\
+        <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
+            <ul class="navi flex-column navi-hover py-2">\
+                <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
+                    Choose an action: \
+                    </li>';
+            if (permissions.edit) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="editRow(' + id + ');" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                        <span class="navi-text">Edit</span>\
+                    </a>\
+                </li>';
+            }
+        if (permissions.delete) {
+            actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="deleteRow(' + id + ');" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-trash"></i></span>\
+                        <span class="navi-text">Delete</span>\
+                    </a>\
+                    <form id="delete-row-form-' + id + '" action="" method="post">\
+                        <input type="hidden" name="_token" value="' + csrf + '">\
+                        <input type="hidden" name="_method" value="delete">\
+                    </form>\
+                </li>';
+        }
+
+        actions += '</ul>\
+        </div>\
+    </div>';
+
+        return actions;
+    }
+    return '';
+}
 
 function createPermission($route) {
     $.ajax({
@@ -52,9 +101,9 @@ function createPermission($route) {
     });
 }
 
-function editRow( id, modal) {
+function editRow( id) {
 
-    $(modal).modal("show");
+    $("#modal_add_permission").modal("show");
 
     $.ajax({
         headers: {

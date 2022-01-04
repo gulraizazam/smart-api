@@ -36,7 +36,7 @@
                         </a>
                         <form id="delete-row-form-{{$user->id}}" action="{{route('admin.users.destroy', $user)}}" method="post">
                             @csrf
-                            <input type="hidden" name="_method" value="delete">
+                            <input type="hidden" name="_method" value="put">
                         </form>
                     </li>
                 @endif
