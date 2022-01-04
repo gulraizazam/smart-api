@@ -61,7 +61,7 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                        <div class="col-md-10">
+                                        <div class="col-md-9">
                                             <div class="input-icon">
                                                 <input type="text" value="{{$filters['search'] ?? ''}}" class="form-control filter-field" placeholder="Search..." id="search_search" />
                                                 <span>
@@ -70,11 +70,8 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-2">
-                                            <div class="input-icon">
-                                                <button class="btn btn-sm btn-success" id="apply-filters">Search</button>
-                                                <button class="btn btn-sm btn-danger ml-2" onclick="resetFilters();" id="reset-filters">Reset</button>
-                                            </div>
+                                        <div class="col-md-3">
+                                            @include('admin.partials.filter-buttons')
                                         </div>
 
                                     </div>
