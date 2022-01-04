@@ -41,7 +41,7 @@
     Route::get('error-logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']);
 
     /*After authentication*/
-    Route::group(['middleware' => ['auth','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
+    Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
         Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
