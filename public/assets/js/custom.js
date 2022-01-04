@@ -67,6 +67,24 @@ function deleteConfirm(datatable = null, $form = null) {
     });
 }
 
+function updateStatus(form_id) {
+
+    swal.fire({
+        title: 'Are you sure you want to change?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, change!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function(result) {
+        if (result.value) {
+            $("#" + form_id).submit();
+        }
+    });
+}
 
 /*functions*/
 
@@ -81,6 +99,15 @@ function errorMessage(xhr) {
 function reInitSelect2(elem, title) {
     $(elem).select2({
         placeholder: title
+    });
+}
+
+function autoFocusFields(validate) {
+    var fields = validate.getFields();
+    fields = Object.keys(fields).reverse();
+    $(fields).each(function(index, field) {
+        $("input[name='"+field+"']").focus();
+        return false;
     });
 }
 

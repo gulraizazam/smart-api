@@ -137,7 +137,7 @@
                     <!--begin::Content-->
                     <div class="flex-row-fluid ml-lg-8">
                         <!--begin::Card-->
-                        <form id="kt_form_1" class="form" method="post" action="{{route('admin.change_password')}}">
+                        <form id="kt_form_1" class="form" method="post" action="{{route('admin.update_password')}}">
                             <div class="card card-custom">
 
                                 <!--begin::Header-->

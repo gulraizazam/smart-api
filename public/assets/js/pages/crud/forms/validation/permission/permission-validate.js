@@ -30,18 +30,18 @@ var UserValidation = function () {
                     bootstrap: new FormValidation.plugins.Bootstrap(),
                     // Validate fields when clicking the Submit button
                     submitButton: new FormValidation.plugins.SubmitButton(),
+
                 }
             }
         );
         validate.on('core.form.invalid', function (e) {
            select2Validation();
+            autoFocusFields(validate);
         });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
                 if (response.status == true) {
-                    toastr.success(response.message);
-                    closePopup(form_id);
-                    reInitTable();
+                   window.location.href = route('admin.roles.index')
                 } else {
                     toastr.error(response.message);
                 }

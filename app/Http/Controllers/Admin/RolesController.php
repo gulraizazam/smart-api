@@ -219,7 +219,7 @@ class RolesController extends Controller
         $permissions = $request->input('permission') ? $request->input('permission') : [];
         $role->givePermissionTo($permissions);
 
-        flash('Record has been created successfully.')->success()->important();
+        session()->flash('success', 'Record has been created successfully.');
 
         return response()->json(array(
             'status' => 1,
@@ -666,7 +666,7 @@ class RolesController extends Controller
         $permissions = $request->input('permission') ? $request->input('permission') : [];
         $role->syncPermissions($permissions);
 
-        flash('Record has been updated successfully.')->success()->important();
+        session()->flash('success', 'Record has been updated successfully.');
 
         return response()->json(array(
             'status' => 1,
