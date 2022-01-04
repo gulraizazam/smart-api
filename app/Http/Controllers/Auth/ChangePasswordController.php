@@ -33,8 +33,7 @@ class ChangePasswordController extends Controller
      */
     public function showChangePasswordForm()
     {
-        $user = Auth::getUser();
-
+        $user = Auth::user();
         return view('admin.profile.change-password', compact('user'));
     }
 
@@ -45,7 +44,7 @@ class ChangePasswordController extends Controller
      */
     public function changePassword(Request $request)
     {
-        $user = Auth::getUser();
+        $user = Auth::user();
 
         $validator = $this->validator($request);
 

@@ -40,7 +40,7 @@
 
 
     /*After authentication*/
-    Route::group(['middleware' => ['auth','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
+    Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
         Route::get('error-logs', [LogViewerController::class, 'index']);
 
