@@ -11,15 +11,34 @@ class ApiHelper
      *
      * return api response according to status
      *
-     * @param int $status
+     * @param int $code
+     * @param bool $status
      * @param string $message
      * @param null $data
      * @return \Illuminate\Http\JsonResponse
      */
-    static public function apiResponse(int $status, string $message = 'Success', $data = null)
+    static public function apiResponse(int $code, bool $status = true, string $message = 'Success', $data = null)
     {
         try {
-            return response()->json(['status' => $status, 'message' => $message, 'data' => $data], $status);
+            return response()->json(['status' => $status, 'message' => $message, 'data' => $data], $code);
+        } catch (\Exception $e) {
+            return response()->json(['status' => config('constants.api_status.error'), 'message' => $e->getMessage(), 'data' => null], config('constants.api_status.error'));
+        }
+    }
+
+    /**
+     *
+     * return api response according to status
+     *
+     * @param int $status
+     * @param string $message
+     * @param array $data
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public static function apiDataTable($data = []) 
+    {
+        try {
+            return response()->json($data);
         } catch (\Exception $e) {
             return response()->json(['status' => config('constants.api_status.error'), 'message' => $e->getMessage(), 'data' => null], config('constants.api_status.error'));
         }
