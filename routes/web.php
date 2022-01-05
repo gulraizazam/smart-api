@@ -52,7 +52,7 @@
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 
-        Route::resource('settings', SettingsController::class);
+        Route::get('settings', [SettingsController::class,'index'])->name('settings.index');
 
         Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
 
@@ -77,11 +77,6 @@
         Route::patch('user_types/inactive/{id}', [UserTypesController::class, 'inactive'])->name('user_types.inactive');
         Route::resource('user_types', UserTypesController::class);
 
-        /*settings*/
-        Route::post('settings/datatable', ['uses' => 'Admin\SettingsController@datatable', 'as' => 'settings.datatable']);
-        Route::patch('settings/active/{id}', ['uses' => 'Admin\SettingsController@active', 'as' => 'settings.active']);
-        Route::patch('settings/inactive/{id}', ['uses' => 'Admin\SettingsController@inactive', 'as' => 'settings.inactive']);
-        Route::resource('settings', 'Admin\SettingsController');
 
 
 

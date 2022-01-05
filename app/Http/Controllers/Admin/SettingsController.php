@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Models\Settings;
 use App\Models\UserOperatorSettings;
 use Illuminate\Http\Request;
@@ -15,6 +16,18 @@ use App\Helpers\Filters;
 
 class SettingsController extends Controller
 {
+
+    protected $error;
+    protected $success;
+    protected $unauthorized;
+
+    public function __construct()
+    {
+        $this->error = config('constants.api_status.error');
+        $this->success = config('constants.api_status.success');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of Permission.
      *
@@ -31,105 +44,77 @@ class SettingsController extends Controller
         return view('admin.settings.index', compact('filters'));
     }
 
+
     /**
-     * Display a listing of Lead_statuse.
      *
-     * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\Response
+     * Display a listing of Global Settings.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
         $apply_filter = false;
-        if ($request->get('action')) {
-            $action = $request->get('action');
-            if (isset($action[0]) && $action[0] == 'filter_cancel') {
+        $filters = getFilters($request->all());
+        if (hasFilter($filters, 'filter')) {
+            if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
                 Filters::flush(Auth::User()->id, 'settings');
-            } else if ($action == 'filter') {
+            } else if ($filters['filter'] == 'filter') {
                 $apply_filter = true;
             }
         }
-
         $records = array();
         $records["data"] = array();
-
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $Settings = Settings::getBulkData($request->get('id'));
-            if ($Settings) {
-                foreach ($Settings as $Setting) {
-                    // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!Settings::isChildExists($Setting->id, Auth::User()->account_id)) {
-                        $Setting->delete();
-                    }
-                }
-            }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
-        }
-
+        list($orderBy, $order) = getSortBy($request);
         // Get Total Records
         $iTotalRecords = Settings::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        $settings = Settings::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
-        $Settings = Settings::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-
-        if ($Settings) {
-            foreach ($Settings as $setting) {
-                $data = $setting->data;
-                if ($setting->slug == 'sys-discounts') {
-                    $exploded = explode(':', $setting->data);
-                    $data = 'Min: ' . $exploded[0] . '%, Max: ' . $exploded[1] . '%';
+        if ($settings) {
+            foreach ($settings as $setting) {
+                switch ($setting->slug) {
+                    case 'sys-discounts':
+                        $exploded = explode(':', $setting->data);
+                        $setting->data = 'Min: ' . $exploded[0] . '%, Max: ' . $exploded[1] . '%';
+                        break;
+                    case 'sys-birthdaypromotion':
+                        $exploded = explode(':', $setting->data);
+                        $setting->data = 'Pre Days: ' . $exploded[0] . ', Post Days: ' . $exploded[1];
+                        break;
+                    case 'sys-list-mode':
+                        $setting->data = config('constants.listing_array')[$setting->data];
+                        break;
+                    case 'sys-back-date-appointment':
+                        $setting->data = $setting->data == 0 ? 'Disabled' : 'Enabled';
+                        break;
+                    case 'sys-current-sms-operator':
+                        $setting->data = $setting->data == 1 ? config('constants.operator_array.1') : config('constants.operator_array.2');
+                        break;
+                    case 'sys-consultancy-invoice-medical-operator':
+                        $setting->data = $setting->data == 1 ? config('constants.invoice_consultancy_medical_form.1') : config('constants.invoice_consultancy_medical_form.2');
+                        break;
+                    case 'sys-virtual-consultancy':
+                        $setting->data = $setting->data == 1 ? config('constants.consultancy_type.1') : config('constants.consultancy_type.2');
+                        break;
                 }
-                if ($setting->slug == 'sys-birthdaypromotion') {
-                    $exploded = explode(':', $setting->data);
-                    $data = 'Pre Days: ' . $exploded[0] . ', Post Days: ' . $exploded[1];
-                }
-                if ($setting->slug == 'sys-list-mode') {
-                    $data = Config::get('constants.listing_array')[$setting->data];
-                }
-                if ($setting->slug == 'sys-back-date-appointment') {
-                    if ($setting->data == 0) {
-                        $data = 'Disabled';
-                    } else {
-                        $data = 'Enabled';
-                    }
-                }
-                if ($setting->slug == 'sys-current-sms-operator') {
-                    if ($setting->data == 1) {
-                        $data = Config::get('constants.operator_array.1');
-                    } else {
-                        $data = Config::get('constants.operator_array.2');
-                    }
-                }
-                if ($setting->slug == 'sys-consultancy-invoice-medical-operator') {
-                    if ($setting->data == 1) {
-                        $data = Config::get('constants.invoice_consultancy_medical_form.1');
-                    } else {
-                        $data = Config::get('constants.invoice_consultancy_medical_form.2');;
-                    }
-                }
-                if ($setting->slug == 'sys-virtual-consultancy') {
-                    if ($setting->data == 1) {
-                        $data = Config::get('constants.consultancy_type.1');
-                    } else {
-                        $data = Config::get('constants.consultancy_type.2');;
-                    }
-                }
-                $records["data"][] = array(
-                    'name' => $setting->name,
-                    'data' => $data,
-                    'actions' => view('admin.settings.actions', compact('setting'))->render(),
-                );
             }
-        }
+            $records["data"] = $settings;
 
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+            $records["permissions"] = [
+                'edit' => Gate::allows('settings_edit'),
+            ];
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+        }
 
         return response()->json($records);
     }
@@ -205,76 +190,90 @@ class SettingsController extends Controller
 
 
     /**
-     * Show the form for editing Permission.
+     * Get data for edit
      *
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
-        if (!Gate::allows('settings_edit')) {
-            return abort(401);
+        try {
+            if (!Gate::allows('settings_edit'))
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            $setting = Settings::getData($id);
+            if (!$setting)
+                return ApiHelper::apiResponse($this->success, 'No Data Found', false);
+
+            $setting->field_type = 'text';
+            switch ($setting->slug) {
+                case 'sys-discounts':
+                    $setting->field_type = 'minmax';
+                    $exploded = explode(':', $setting->data);
+                    $setting->min = $exploded[0];
+                    $setting->max = $exploded[1];
+                    break;
+                case 'sys-birthdaypromotion':
+                    $setting->field_type = 'prepost';
+                    $exploded = explode(':', $setting->data);
+                    $setting->pre = $exploded[0];
+                    $setting->post = $exploded[1];
+                    break;
+                case 'sys-list-mode':
+                    $setting->field_type = 'select';
+                    $setting->list = config('constants.listing_array');
+                    break;
+                case 'sys-back-date-appointment':
+                    $setting->field_type = 'select';
+                    $setting->list = (object)['Disabled', 'Enabled'];
+                    break;
+                case 'sys-current-sms-operator':
+                    $setting->field_type = 'select';
+                    $setting->list = config('constants.operator_array');
+                    break;
+                case 'sys-consultancy-invoice-medical-operator':
+                    $setting->field_type = 'select';
+                    $setting->list = config('constants.invoice_consultancy_medical_form');
+                    break;
+                case 'sys-virtual-consultancy':
+                    $setting->field_type = 'select';
+                    $setting->list = config('constants.consultancy_type');
+                    break;
+            }
+            return ApiHelper::apiResponse($this->success, 'Success', true, $setting);
+        } catch (\Exception $e) {
+            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
-
-        $setting = Settings::getData($id);
-
-        if (!$setting) {
-            return view('error', compact('lead_statuse'));
-        }
-
-        return view('admin.settings.edit', compact('setting'));
     }
 
+
     /**
-     * Update Permission in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     * Update Global Setting
+     *
+     * @param Request $request
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('settings_edit')) {
-            return abort(401);
-        }
-        $validator = $this->verifyFields($request);
+        try {
+            if (!Gate::allows('settings_edit'))
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 
-        if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
-        }
-        $setting = (Settings::find($id))->toArray();
+            $validator = $this->verifyFields($request);
+            if ($validator->fails())
+                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
 
-        if (
-            $setting['slug'] == 'sys-discounts'
-            && $request->min > $request->max
-        ) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => array('Min value is greater than Max value.'),
-            ));
-        }
+            $setting = (Settings::find($id))->toArray();
+            if ($setting['slug'] == 'sys-discounts' && $request->min > $request->max)
+                return ApiHelper::apiResponse($this->success, 'Min value is greater than Max value.', false);
 
-        /*
-         * Error will be given if the selected sms operator is not configured in user operator setting
-         * end
-         * */
+            if (Settings::updateRecord($id, $request, Auth::User()->account_id))
+                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
 
-        if (Settings::updateRecord($id, $request, Auth::User()->account_id)) {
-
-            flash('Record has been updated successfully.')->success()->important();
-
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been updated successfully.',
-            ));
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
     }
 
