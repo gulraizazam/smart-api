@@ -148,29 +148,20 @@ function actions(data) {
 
 function statuses(data) {
     let csrf = $('meta[name="csrf-token"]').attr('content');
-    let active_id = 'active-' + data.id;
-    let inactive_id = 'inactive-' + data.id;
+    let id = data.id;
     let inactive_url = route('admin.users.inactive', {id: data.id});
     let active_url = route('admin.users.active', {id: data.id});
     let status = '';
     if (data.active) {
         if (permissions.users_active) {
-            status += '<form class="" id="'+active_id+'" method="post" action="' + inactive_url + '" style="display: inline-block;">\
-                <input type="hidden" name="_token" value="'+csrf+'">\
-                <input type="hidden" name="_method" value="patch">\
-                <button onclick="updateStatus(`'+active_id+'`);" class="btn btn-sm btn-primary" type="button">Active</button>\
-                </form>';
+            status += '<button onclick="updateStatus(`'+inactive_url+'`);" class="btn btn-sm btn-primary" type="button">Active</button>';
         } else {
             status += '<span><span class="label label-lg font-weight-bold label-light-success label-inline">Active </span></span>';
         }
 
     } else {
         if (permissions.users_inactive) {
-            status += '<form id="'+inactive_id+'" method="post" action="'+active_url+'" style="display: inline-block;">\
-                <input type="hidden" name="_token" value="'+csrf+'">\
-                <input type="hidden" name="_method" value="patch">\
-                <button onclick="updateStatus(`'+inactive_id+'`);" class="btn btn-sm btn-warning" type="button">Inactive</button>\
-            </form>';
+            status += '<button onclick="updateStatus(`'+active_url+'`);" class="btn btn-sm btn-warning" type="button">Inactive</button>';
         } else {
             status += '<span><span class="label label-lg font-weight-bold label-light-danger label-inline">Inactive</span> </span>';
         }

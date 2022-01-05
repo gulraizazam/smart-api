@@ -12,9 +12,23 @@ use App\Http\Controllers\Controller;
 use Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\HelperModule\ApiHelper;
 
 class RolesController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of Role.
      *
@@ -192,16 +206,13 @@ class RolesController extends Controller
     public function store(Request $request)
     {
         if (! Gate::allows('roles_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         unset($request['DataTables_Table_0_length']);
         $role = Role::create($request->except('permission'));
@@ -210,10 +221,7 @@ class RolesController extends Controller
 
         session()->flash('success', 'Record has been created successfully.');
 
-        return response()->json(array(
-            'status' => 1,
-            'message' => 'Record has been created successfully.',
-        ));
+        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
     }
 
     /**
@@ -638,16 +646,13 @@ class RolesController extends Controller
     public function update(Request $request, $id)
     {
         if (! Gate::allows('roles_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         unset($request['DataTables_Table_0_length']);
         $role = Role::findOrFail($id);
@@ -657,10 +662,7 @@ class RolesController extends Controller
 
         session()->flash('success', 'Record has been updated successfully.');
 
-        return response()->json(array(
-            'status' => 1,
-            'message' => 'Record has been updated successfully.',
-        ));
+        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
     }
 
 
@@ -673,29 +675,29 @@ class RolesController extends Controller
     public function destroy($id)
     {
         if (! Gate::allows('roles_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $role = Role::findOrFail($id);
 
         if (!$role) {
 
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.roles.index');
+            session()->flash('success', 'Resource not found.', false);
+            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (self::isChildExists($id, Auth::User()->account_id)) {
 
-            session()->flash('error', 'Child records exist, unable to delete resource');
-            return redirect()->route('admin.roles.index');
+            session()->flash('success', 'Child records exist, unable to delete resource.');
+            return ApiHelper::apiResponse($this->success, 'Child records exist, unable to delete resource.', false);
         }
 
         $role->delete();
 
         session()->flash('success', 'Record has been deleted successfully.');
 
-        return redirect()->route('admin.roles.index');
+        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
     }
 
     /**

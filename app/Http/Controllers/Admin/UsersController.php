@@ -27,11 +27,14 @@ class UsersController extends Controller
 {
     public $success;
 
+    public $error;
+
     public $unauthorized;
 
     public function __construct()
     {
         $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
@@ -43,7 +46,7 @@ class UsersController extends Controller
     public function index()
     {
         if (!Gate::allows('users_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return abort(401);
         }
         $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
         $locations->prepend('All', '');
@@ -360,6 +363,7 @@ class UsersController extends Controller
         }
 
         if ($Users) {
+
             $index = 0;
             $loc = Locations::select('*')->get()->getDictionary();
             foreach ($Users as $user) {
@@ -409,9 +413,10 @@ class UsersController extends Controller
                 'total' => $iTotalRecords,
                 'sort' => $order,
             ];
+
         }
 
-        return response()->json($records);
+        return ApiHelper::apiDataTable($records);
     }
 
     /**
@@ -422,7 +427,7 @@ class UsersController extends Controller
     public function create()
     {
         if (!Gate::allows('users_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $user = new \stdClass();
 
@@ -444,16 +449,13 @@ class UsersController extends Controller
     public function store(Request $request)
     {
         if (!Gate::allows('users_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyCreateFields($request);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ]);
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         $data = $request->all();
@@ -499,12 +501,10 @@ class UsersController extends Controller
                 }
             }
         }
-        flash('Record has been created successfully.')->success()->important();
 
-        return response()->json([
-            'status' => 1,
-            'message' => 'Record has been created successfully.',
-        ]);
+        session()->flash('success', 'Record has been created successfully.');
+
+        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
     }
 
     /**
@@ -546,7 +546,7 @@ class UsersController extends Controller
     public function changePassword($id)
     {
         if (!Gate::allows('users_change_password')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return abort(401);
         }
 
         $user = User::getData($id);
@@ -567,7 +567,7 @@ class UsersController extends Controller
     public function savePassword(Request $request)
     {
         if (!Gate::allows('users_change_password')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $data = [];
@@ -584,10 +584,7 @@ class UsersController extends Controller
             $id = decrypt($request->get('id'));
         } catch (DecryptException $e) {
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Something went wrong, please try again.',
-            ]);
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
         }
 
         $data['password'] = bcrypt($request->get('password'));
@@ -596,16 +593,10 @@ class UsersController extends Controller
 
         if ($result) {
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Password has been changed successfully.',
-            ]);
+            return ApiHelper::apiResponse($this->success, 'Password has been changed successfully.');
         }
 
-        return response()->json([
-            'status' => false,
-            'message' => 'Something went wrong, please try again.',
-        ]);
+        return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
     }
 
     /**
@@ -638,7 +629,7 @@ class UsersController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('users_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $roles = Role::get()->pluck('name', 'id');
         $roles_commissions = Role::all();
@@ -669,16 +660,15 @@ class UsersController extends Controller
     public function update(Request $request, $id)
     {
         if (!Gate::allows('users_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyUpdateFields($request);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ]);
+        
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            
         }
         if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
@@ -729,12 +719,10 @@ class UsersController extends Controller
                 }
             }
         }
-        flash('Record has been updated successfully.')->success()->important();
+        
+        session()->flash('success', 'Record has been updated successfully.');
 
-        return response()->json([
-            'status' => 1,
-            'message' => 'Record has been updated successfully.',
-        ]);
+        return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
 
     /**
@@ -761,7 +749,7 @@ class UsersController extends Controller
     public function destroy($id)
     {
         if (!Gate::allows('users_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
         }
 
         User::deleteRecord($id);
@@ -779,12 +767,13 @@ class UsersController extends Controller
     public function inactive($id)
     {
         if (!Gate::allows('users_inactive')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         User::InactiveRecord($id);
 
-        return redirect()->route('admin.users.index');
+        return ApiHelper::apiResponse($this->success, 'Inactivated successfully.');
+
     }
 
     /**
@@ -801,7 +790,7 @@ class UsersController extends Controller
         }
         User::activeRecord($id);
 
-        return redirect()->route('admin.users.index');
+        return ApiHelper::apiResponse($this->success, 'Activated successfully.');
     }
 
     /*

@@ -80,6 +80,8 @@ function sendDeleteRequest(route) {
                toastr.success(response.message);
 
                reloadDataTable();
+           } else {
+             toastr.error(response.message);   
            }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -88,7 +90,7 @@ function sendDeleteRequest(route) {
     });
 }
 
-function updateStatus(form_id) {
+function updateStatus(route) {
 
     swal.fire({
         title: 'Are you sure you want to change?',
@@ -102,7 +104,26 @@ function updateStatus(form_id) {
         confirmButtonClass: 'btn btn-danger font-weight-bold'
     }).then(function(result) {
         if (result.value) {
-            $("#" + form_id).submit();
+           
+           $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route,
+                type: "PATCH",
+                cache: false,
+                success: function (response) {
+                    if (response.status) {
+                        toastr.success(response.message);
+
+                        reloadDataTable();
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+
         }
     });
 }

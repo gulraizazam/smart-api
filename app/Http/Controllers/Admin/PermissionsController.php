@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Models\Permission;
 use Illuminate\Http\Request;
@@ -12,6 +13,21 @@ use Validator;
 
 class PermissionsController extends Controller
 {
+
+
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of Permission.
      *
@@ -102,6 +118,8 @@ class PermissionsController extends Controller
                 'total' => $iTotalRecords,
                 'sort' => $order,
             ];
+
+            return ApiHelper::apiDataTable($records);
         }
 
         return response()->json($records);
@@ -139,16 +157,13 @@ class PermissionsController extends Controller
     public function store(Request $request)
     {
         if (! Gate::allows('permissions_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         $data = $request->all();
@@ -161,10 +176,7 @@ class PermissionsController extends Controller
         Permission::create($data);
 
 
-        return response()->json(array(
-            'status' => true,
-            'message' => 'Record has been created successfully.',
-        ));
+        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
     }
 
     /**
@@ -216,7 +228,7 @@ class PermissionsController extends Controller
     public function update(Request $request, $id)
     {
         if (! Gate::allows('permissions_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
@@ -226,6 +238,7 @@ class PermissionsController extends Controller
                 'status' => 0,
                 'message' => $validator->messages()->all(),
             ));
+            return ApiHelper::apiResponse($this->success,  $validator->messages()->first(), false);
         }
 
         $data = $request->all();
@@ -238,10 +251,7 @@ class PermissionsController extends Controller
         $permission = Permission::findOrFail($id);
         $permission->update($data);
 
-        return response()->json(array(
-            'status' => 1,
-            'message' => 'Record has been updated successfully.',
-        ));
+        return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
 
 
@@ -254,15 +264,13 @@ class PermissionsController extends Controller
     public function destroy($id)
     {
         if (! Gate::allows('permissions_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $permission = Permission::findOrFail($id);
         $permission->delete();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Record has been deleted successfully.',
-        ]);
+        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+    
     }
 
 }

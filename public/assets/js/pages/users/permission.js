@@ -38,6 +38,8 @@ var table_columns = [
 function actions(data) {
 
     let id = data.id;
+    let url = route('admin.permissions.destroy', {id: id});
+
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
 
@@ -60,15 +62,11 @@ function actions(data) {
                 </li>';
             }
         if (permissions.delete) {
-            actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="deleteRow(' + id + ');" class="navi-link">\
+             actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="deleteRow(`'+url+'`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-trash"></i></span>\
                         <span class="navi-text">Delete</span>\
                     </a>\
-                    <form id="delete-row-form-' + id + '" action="" method="post">\
-                        <input type="hidden" name="_token" value="' + csrf + '">\
-                        <input type="hidden" name="_method" value="delete">\
-                    </form>\
                 </li>';
         }
 

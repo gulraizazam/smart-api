@@ -7,11 +7,26 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use App\Models\UserTypes;
 use Illuminate\Support\Facades\Auth;
+use App\HelperModule\ApiHelper;
 use Validator;
 
 
 class UserTypesController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
+
     /**
      * Display a listing of the resource.
      *
@@ -51,30 +66,22 @@ class UserTypesController extends Controller
     public function store(Request $request)
     {
         if (!Gate::allows('user_types_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         if (UserTypes::createRecord($request, Auth::User()->account_id, Auth::User()->id)) {
-            flash('Record has been created successfully.')->success()->important();
+            session()->flash('success', 'Record has been created successfully.');
 
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been created successfully.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
+
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         }
     }
 
@@ -154,12 +161,12 @@ class UserTypesController extends Controller
     public function inactive($id)
     {
         if (!Gate::allows('user_types_inactive')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         UserTypes::inactiveRecord($id);
 
-        return redirect()->route('admin.user_types.index');
+        return ApiHelper::apiResponse($this->success, 'Inactivated successfully.');
     }
 
     /**
@@ -171,11 +178,11 @@ class UserTypesController extends Controller
     public function active($id)
     {
         if (!Gate::allows('user_types_active')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         UserTypes::activeRecord($id);
 
-        return redirect()->route('admin.user_types.index');
+        return ApiHelper::apiResponse($this->success, 'Activated successfully.');
     }
 
     /**
@@ -209,30 +216,21 @@ class UserTypesController extends Controller
     public function update(Request $request, $id)
     {
         if (!Gate::allows('user_types_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         if (UserTypes::updateRecord($id, $request, Auth::User()->account_id, Auth::User()->id)) {
-            flash('Record has been updated successfully.')->success()->important();
+            session()->flash('success', 'Record has been updated successfully.');
 
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been updated successfully.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         }
     }
 

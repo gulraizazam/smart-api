@@ -40,6 +40,7 @@ function actions(data) {
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
     let url = route('admin.roles.edit', {id: id});
+    let delete_url = route('admin.roles.destroy', {id: id});
 
     if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -61,15 +62,11 @@ function actions(data) {
         }
         if (permissions.delete) {
             actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="deleteRow(' + id + ');" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-trash"></i></span>\
                         <span class="navi-text">Delete</span>\
-                    </a>\
-                    <form id="delete-row-form-' + id + '" action="" method="post">\
-                        <input type="hidden" name="_token" value="' + csrf + '">\
-                        <input type="hidden" name="_method" value="delete">\
-                    </form>\
-                </li>';
+                        </a>\
+                     </li>';
         }
 
         actions += '</ul>\
