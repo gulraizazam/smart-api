@@ -142,9 +142,9 @@ function errorMessage(xhr) {
     }
 }
 
-function reInitSelect2(elem, title) {
+function reInitSelect2(elem, title = 'Select') {
     $(elem).select2({
-        placeholder: title
+        placeholder: 'Select'
     });
 }
 
@@ -183,7 +183,7 @@ function getAllFilterValues() {
 function resetFilters() {
     $(".filter-field").val('');
     $(".select2").select2({
-        placeholder: ''
+        placeholder: 'Select'
     });
 }
 

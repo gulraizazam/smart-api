@@ -133,7 +133,7 @@ class PermissionsController extends Controller
     public function create()
     {
         if (! Gate::allows('permissions_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $permissions = ['' => 'Select a Parent Group', 0 => 'This is Parent Group'];
@@ -144,8 +144,12 @@ class PermissionsController extends Controller
                 $permissions[$permission->id] = $permission->title . ' (' . $permission->name . ')';
             }
         }
-
-        return view('admin.permissions.create', compact('permissions'))->render();
+        
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'permissions' => $permissions
+        ]);
+        
+        //return view('admin.permissions.create', compact('permissions'))->render();
     }
 
     /**

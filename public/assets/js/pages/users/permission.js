@@ -88,7 +88,10 @@ function createPermission($route) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#permission-create").html(response);
+            
+            makeCreatePopup(response);
+
+            //$("#permission-create").html(response);
             reInitSelect2("#kt_select2_8", "Select an Parent Group");
             reInitValidation(KTPermissionValidation);
         },
@@ -97,6 +100,20 @@ function createPermission($route) {
             reInitValidation(KTPermissionValidation);
         }
     });
+}
+
+function makeCreatePopup(response) {
+
+    let permissions = response.data.permissions;
+    let options = '<option value="">Select</option>';
+
+    Object.entries(permissions).forEach(function(values, index) {
+        console.log(values[index]);
+        options += '<option value="'+index+'">'+values+'</option>';
+    });
+    
+
+    $(".permissions-dropdown").html(options);
 }
 
 function editRow( id) {

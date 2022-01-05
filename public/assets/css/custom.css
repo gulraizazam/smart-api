@@ -133,10 +133,7 @@
 .select2-container{
     width: 100% !important;
 }
-.select2-selection {
-    background-color: #F3F6F9 !important;
-    border-color: #F3F6F9!important;
-}
+
 
 .svg-icon svg {
     height: 20px !important;
@@ -165,6 +162,7 @@ input {
     max-height: 38px !important;
     background-color: #ffffff !important;
     border: 1px solid #E4E6EF !important;
+   
 }
 .select2-selection--multiple, .select2-selection__rendered {
    min-height: 38px !important;
@@ -232,4 +230,7 @@ input {
     margin-bottom: 15px !important;
     padding-bottom: 15px !important;
 
+}
+.select2-selection__rendered {
+    border: none !important;
 }
