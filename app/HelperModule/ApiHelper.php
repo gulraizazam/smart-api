@@ -14,10 +14,11 @@ class ApiHelper
      * @param int $code
      * @param bool $status
      * @param string $message
+     * @param bool $status
      * @param null $data
      * @return \Illuminate\Http\JsonResponse
      */
-    static public function apiResponse(int $code, bool $status = true, string $message = 'Success', $data = null)
+    static public function apiResponse(int $code, string $message = 'Success', bool $status = true, $data = null)
     {
         try {
             return response()->json(['status' => $status, 'message' => $message, 'data' => $data], $code);
