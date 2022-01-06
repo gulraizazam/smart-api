@@ -48,9 +48,11 @@ function editRow(id, modal) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#user_type_edit").html(response);
+           
+            setEditData(response);
+
             reInitSelect2(".select2", "");
-            reInitValidation(UserTypeValidation);
+        
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -59,6 +61,30 @@ function editRow(id, modal) {
         }
     });
 
+
+}
+
+function setEditData(response) {
+
+
+    let types = response.data.types;
+    let usertype = response.data.usertype;
+
+    let action = route('admin.user_types.update', {id: usertype.id});
+    $("#modal_user_type_form").attr("action", action);
+
+    let options = '<option value="">Select</option>';
+
+    Object.entries(types).forEach(function(value, index) {
+        
+        options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+    });
+    
+    console.log(usertype.type);
+    $("#user_type").html(options);
+    
+    $("#user_type_name").val(usertype.name);
+    $("#user_type").val(usertype.type);
 
 }
 

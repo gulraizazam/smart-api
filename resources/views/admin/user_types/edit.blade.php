@@ -22,7 +22,7 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_user_type_form" method="post" action="{{route('admin.user_types.update', $usertype)}}">
+        <form id="modal_user_type_form" method="post" action="">
             <!--begin::Scroll-->
             @method('put')
 
@@ -32,19 +32,14 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input type="text" name="name" value="{{$usertype->name ?? ''}}" class="form-control form-control-lg form-control-solid mb-2">
+                            <input id="user_type_name" type="text" name="name" value="{{$usertype->name ?? ''}}" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
-                        @php
-                        $types = config('constants.user_types');
-                        @endphp
+                    
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Type </label>
-                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
-                                <option value="">Select</option>
-                                @foreach($types as $key => $type)
-                                    <option value="{{$key ?? 0}}" {{$usertype->type == $key ? 'selected' : '' }}> {{$type ?? ''}}</option>
-                                @endforeach
+                            <select id="user_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
+                                
                             </select>
                         </div>
                     </div>

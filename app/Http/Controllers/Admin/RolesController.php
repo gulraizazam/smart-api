@@ -190,12 +190,16 @@ class RolesController extends Controller
         $dashboardPermissionsMapping = $mapping['dashboardPermissionsMapping'];
         $reportsPermissionsMapping = $mapping['reportsPermissionsMapping'];
 
-        return view('admin.roles.create', compact(
-            'Permissions', 'permissionsMapping',
-            'DashboardPermissions', 'dashboardPermissionsMapping',
-            'ReportsPermissions', 'reportsPermissionsMapping',
-            'AllowedPermissions'
-        ));
+        return ApiHelper::makeResponse([
+            'Permissions' => $Permissions,
+            'DashboardPermissions' => $DashboardPermissions,
+            'ReportsPermissions' => $ReportsPermissions,
+            'permissionsMapping' => $permissionsMapping,
+            'dashboardPermissionsMapping' => $dashboardPermissionsMapping,
+            'reportsPermissionsMapping' => $reportsPermissionsMapping,
+            'AllowedPermissions' =>  $AllowedPermissions
+        ], 'admin.roles.create');
+        
     }
 
     /**
@@ -489,12 +493,18 @@ class RolesController extends Controller
         $dashboardPermissionsMapping = $mapping['dashboardPermissionsMapping'];
         $reportsPermissionsMapping = $mapping['reportsPermissionsMapping'];
 
-        return view('admin.roles.edit', compact(
-            'role', 'AllowedPermissions',
-            'dashboardPermissionsMapping', 'DashboardPermissions',
-            'Permissions', 'permissionsMapping',
-            "reportsPermissionsMapping", 'ReportsPermissions'
-        ));
+
+        return ApiHelper::makeResponse([
+            'role' => $role,
+            'AllowedPermissions' => $AllowedPermissions,
+            'dashboardPermissionsMapping' => $dashboardPermissionsMapping,
+            'DashboardPermissions' => $DashboardPermissions,
+            'Permissions' => $Permissions, 
+            'permissionsMapping' => $permissionsMapping,
+            "reportsPermissionsMapping" => $reportsPermissionsMapping, 
+            'ReportsPermissions' => $ReportsPermissions
+        ], 'admin.roles.edit');
+
     }
 
     /**

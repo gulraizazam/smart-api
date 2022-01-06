@@ -102,7 +102,7 @@
     <div class="modal fade" id="change_modal" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="change_password">
-            {{-- @include('admin.users.change_password') --}}
+            
         </div>
         <!--end::Modal dialog-->
     </div>

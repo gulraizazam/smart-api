@@ -3,12 +3,13 @@
 let perPage = 20;
 let row_ids = [];
 let permissions = [];
+var datatable;
 
 var KTDatatable = function() {
 
 	var table = function() {
 
-		var datatable = $('#kt_datatable').KTDatatable({
+		 datatable = $('#kt_datatable').KTDatatable({
 			data: {
 				type: 'remote',
 				source: {

@@ -194,16 +194,22 @@ class UserTypesController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('user_types_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
         }
 
         $usertype = UserTypes::getData($id);
 
+        $types = config('constants.user_types');
+
         if (!$usertype) {
-            return view('error');
+            return ApiHelper::apiResponse($this->success, 'Record not found.', false);
         }
 
-        return view('admin.user_types.edit', compact('usertype'));
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'usertype' => $usertype,
+            'types' => $types
+        ]);
+
     }
 
     /**

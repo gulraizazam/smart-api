@@ -22,9 +22,9 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_permission_form" class="form" method="post" action="{{route('admin.permissions.store')}}">
+        <form id="modal_edit_permission_form" class="form" method="post" action="{{route('admin.permissions.store')}}">
             <!--begin::Scroll-->
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_edit_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="fv-rowS">

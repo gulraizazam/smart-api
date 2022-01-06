@@ -45,4 +45,19 @@ class ApiHelper
         }
     }
 
+    public static function makeResponse($data = [], $view = null, $code = 200, $status = true, $message = "Record found") 
+    {
+        try {
+            if (request()->hasHeader("Authorization")) {
+                return self::apiResponse($code, $message, $status, $data); 
+            }
+
+            return view($view, $data);
+            
+    
+        } catch (\Exception $e) {
+            return response()->json(['status' => config('constants.api_status.error'), 'message' => $e->getMessage(), 'data' => null], config('constants.api_status.error'));
+        }
+    }
+
 }

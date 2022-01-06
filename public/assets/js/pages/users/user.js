@@ -277,6 +277,10 @@ function setCreateData(response, start_id) {
 function setEditData(response) {
 
     let user = response.data.user;
+   
+    let user_roles = response.data.user_roles;
+    let user_has_locations = response.data.user_has_locations;
+   
     $("#modal_edit_user_form").attr("action", route('admin.users.update', {id: user.id}));
 
    
@@ -305,7 +309,19 @@ function setEditData(response) {
     
     $("#edit_user_roles").html(roles_options);
     $("#edit_user_centers").html(location_otions);
+
+    $("#edit_user_name").val(user.name);
+    $("#edit_user_email").val(user.email);
+    $("#edit_user_phone").val(user.phone);
+    $("#edit_user_gender").val(user.gender);
+    $("#edit_user_commission").val(user.commission);
     
+
+    console.log(user_roles);
+    $('#edit_user_roles').val(user_roles).change();
+
+
+    $("#edit_user_centers").val(user_has_locations).change();
 }
 
 function applyFilters(datatable) {

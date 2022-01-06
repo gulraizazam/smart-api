@@ -209,6 +209,8 @@ input {
 }
 .input-group-append, .input-group-text, .filter-field, .custom-field {
     height: 38px !important;
+    background-color: #fff !important;
+
 }
 .popup-percentage {
     border-left: 1px solid #E4E6EF;

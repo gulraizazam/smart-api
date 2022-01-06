@@ -181,8 +181,7 @@ function closePopup(modal) {
 
 function reInitTable() {
     setTimeout(function () {
-        $('#kt_datatable').KTDatatable('destroy');
-        KTDatatable.init();
+        $('#kt_datatable').KTDatatable('reload');
     }, 400);
 }
 
