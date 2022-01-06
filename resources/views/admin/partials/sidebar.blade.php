@@ -98,7 +98,7 @@
                         </div>
                     </li>
 
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
                                 <i class="font-icon fas fa-cog"></i>
@@ -120,6 +120,22 @@
 
                             </ul>
                         </div>
+                        @can('user_operator_settings_manage')
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{activeMenu('admin.user_operator_settings.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.user_operator_settings.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Operator Settings</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        @endcan
                     </li>
 
                 </ul>

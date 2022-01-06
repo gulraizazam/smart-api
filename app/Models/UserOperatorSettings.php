@@ -137,12 +137,12 @@ class UserOperatorSettings extends BaseModal
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = Self::operators_filters($request, $account_id, $apply_filter);
-
-        if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
-        } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
-        }
+        list($orderBy, $order) = getSortBy($request);
+        return self::when(count($where), fn($q) => $q->where($where))
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart)
+            ->when($orderBy!='name', fn($q)=>$q->orderBy($orderBy,$order))
+            ->get();
     }
 
     /**
@@ -157,7 +157,7 @@ class UserOperatorSettings extends BaseModal
     {
 
         $where = array();
-
+        $filters = getFilters($request->all());
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -178,13 +178,13 @@ class UserOperatorSettings extends BaseModal
                 }
             }
         }
-        if ($request->get('operator_name')) {
+        if (count($filters) > 0 && hasFilter($filters, 'operator_name')) {
             $where[] = array(
                 'operator_name',
                 'like',
-                '%' . $request->get('operator_name') . '%'
+                '%' . $filters['operator_name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'operators', 'operator_name', $request->get('operator_name'));
+            Filters::put(Auth::User()->id, 'operators', 'operator_name', $filters['operator_name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'operators', 'operator_name');
