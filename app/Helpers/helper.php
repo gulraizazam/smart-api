@@ -15,7 +15,7 @@
 
         $iDisplayLength = intval($request->pagination['perpage'] ?? $defaultPerPage);
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval(isset($request->pagination['page']) ? $request->pagination['page'] - 1 : 0);
+        $iDisplayStart = intval(isset($request->pagination['page']) ? (($request->pagination['page'] - 1) * $iDisplayLength) : 0);
         $page = intval($request->pagination['page'] ?? 1);
         $pages = ceil($iTotalRecords / $iDisplayLength);
         return [

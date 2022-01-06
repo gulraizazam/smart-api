@@ -21,6 +21,7 @@ class Settings extends BaseModal
     protected $table = 'settings';
 
     protected static $_table = 'settings';
+
     /**
      * Get Total Records
      *
@@ -29,10 +30,10 @@ class Settings extends BaseModal
      *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false,$apply_filter)
+    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter)
     {
         $where = Self::settings_filters($request, $account_id, $apply_filter);
-        if(count($where)) {
+        if (count($where)) {
             return self::where($where)->count();
         } else {
             return self::count();
@@ -52,12 +53,12 @@ class Settings extends BaseModal
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = Self::settings_filters($request, $account_id, $apply_filter);
-
-        if(count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
-        } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
-        }
+        list($orderBy, $order) = getSortBy($request);
+        return self::when(count($where), fn($q) => $q->where($where))
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart)
+            ->orderBy($orderBy,$order)
+            ->get();
     }
 
     /**
@@ -71,8 +72,8 @@ class Settings extends BaseModal
     static public function settings_filters($request, $account_id, $apply_filter)
     {
         $where = array();
-
-        if($account_id) {
+        $filters = getFilters($request->all());
+        if ($account_id) {
             $where[] = array(
                 'account_id',
                 '=',
@@ -92,13 +93,13 @@ class Settings extends BaseModal
                 }
             }
         }
-        if ($request->get('setting_name')) {
+        if (count($filters) > 0 && hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('setting_name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'settings', 'setting_name', $request->get('setting_name'));
+            Filters::put(Auth::User()->id, 'settings', 'setting_name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'settings', 'setting_name');
@@ -112,13 +113,13 @@ class Settings extends BaseModal
                 }
             }
         }
-        if ($request->get('setting_data')) {
+        if (count($filters) > 0 && hasFilter($filters, 'data')) {
             $where[] = array(
                 'data',
                 'like',
-                '%' . $request->get('setting_data') . '%'
+                '%' . $filters['data'] . '%'
             );
-            Filters::put(Auth::User()->id, 'settings', 'setting_data', $request->get('setting_data'));
+            Filters::put(Auth::User()->id, 'settings', 'setting_data', $filters['data']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'settings', 'setting_data');
@@ -196,9 +197,9 @@ class Settings extends BaseModal
             $data['data'] = implode(':', $range);
         }
 
-        if(!isset($data['is_featured'])) {
+        if (!isset($data['is_featured'])) {
             $data['is_featured'] = 0;
-        } else if($data['is_featured'] == '') {
+        } else if ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
 
@@ -207,7 +208,7 @@ class Settings extends BaseModal
             'account_id' => $account_id
         ])->first();
 
-        if(!$record) {
+        if (!$record) {
             return null;
         }
 
