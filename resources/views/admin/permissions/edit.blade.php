@@ -1,7 +1,7 @@
-<!--begin::Modal content-->
-<div class="modal-content">
+ <!--begin::Modal content-->
+ <div class="modal-content">
     <!--begin::Modal header-->
-    <div class="modal-header" id="kt_modal_add_user_header">
+    <div class="modal-header" id="kt_modal_edit_user_header">
         <!--begin::Modal title-->
         <h2 class="fw-bolder">Edit Permission</h2>
         <!--end::Modal title-->
@@ -22,15 +22,14 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_permission_form" class="form" method="post" action="{{route('admin.permissions.update', $permission->id)}}">
-            @method('put')
+        <form id="modal_add_permission_form" class="form" method="post" action="{{route('admin.permissions.store')}}">
             <!--begin::Scroll-->
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="fv-rowS">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                        <input type="text" name="name" class="form-control form-control-lg form-control-solid mb-2" value="{{old('name', $permission->name ?? '')}}" placeholder="Name" />
+                        <input type="text" id="permission_name" name="name" class="form-control form-control-lg form-control-solid mb-2" value="" placeholder="Name" />
                         {{--<a href="#" class="text-sm font-weight-bold">Forgot password ?</a>--}}
                     </div>
                 </div>
@@ -38,19 +37,18 @@
 
                     <div class="fv-row">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Title</label>
-                        <input type="text" name="title" class="form-control form-control-lg form-control-solid" value="{{old('title', $permission->title ?? '')}}" placeholder="Title" />
+                        <input type="text" id="permission_title" name="title" class="form-control form-control-lg form-control-solid" value="" placeholder="Title" />
                     </div>
                 </div>
+                
                 <div class="form-group">
                     <div class="fv-row">
                     <!--begin::Label-->
                     <label class="required fw-bold fs-6 mb-2 pl-0">Parent</label>
                     <!--end::Label-->
                     <!--begin::Input-->
-                    <select class="form-control form-control-solid mb-3 mb-lg-0 select2" id="kt_select2_8" name="parent_id">
-                        @foreach($permissions as $key => $permission_name)
-                            <option value="{{$key}}" {{$permission->parent_id == $key ? 'selected' : ''}}> {{$permission_name}}</option>
-                        @endforeach
+                    <select id="permission_parent" class="form-control edit-permissions-dropdown form-control-solid mb-3 mb-lg-0 select2" name="parent_id">
+                       
                     </select>
                     </div>
                 </div>

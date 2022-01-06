@@ -172,7 +172,7 @@ function statuses(data) {
 
 function editRow(id) {
 
-    $("#modal_add_user").modal("show");
+    $("#modal_edit_user").modal("show");
 
     $.ajax({
         headers: {
@@ -182,9 +182,10 @@ function editRow(id) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#user-create").html(response);
+            
+            setEditData(response);
+
             reInitSelect2(".select2", "");
-            reInitValidation(UserValidation);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -220,6 +221,7 @@ function changePassword(id) {
 }
 
 function createUsers($route) {
+   
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -228,15 +230,82 @@ function createUsers($route) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#user-create").html(response);
+           
+            setCreateData(response, 'add_');
+           
             reInitSelect2(".select2", "");
-            reInitValidation(UserValidation);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
             reInitValidation(UserValidation);
         }
     });
+}
+
+function setCreateData(response, start_id) {
+
+
+    let roles = response.data.roles;
+    let locations = response.data.locations;
+    let roles_options = '<option value="">Select</option>';
+    let location_otions = '<option value="">Select</option>';
+
+    console.log(roles);
+
+    for (let i = 0; i< roles.length; i++) {
+        
+        roles_options += '<option value="'+roles[i].id+'">'+roles[i].name+'</option>';
+    };
+    
+
+    Object.values(locations).forEach(function(value, index) {
+    
+       location_otions = '<option value="">Select</option>\
+            <optgroup label="'+value.name+'">';
+            Object.values(value.children).forEach(function(child, index) {
+            
+                location_otions += '<option value="'+child.id+'">'+child.name+'</option>';
+            });
+            
+            location_otions += '</optgroup>';
+    });
+    
+    $("#add_user_roles").html(roles_options);
+    $("#add_user_centers").html(location_otions);
+}
+
+function setEditData(response) {
+
+    let user = response.data.user;
+    $("#modal_edit_user_form").attr("action", route('admin.users.update', {id: user.id}));
+
+   
+    let roles = response.data.roles;
+    let locations = response.data.locations;
+    let roles_options = '<option value="">Select</option>';
+    let location_otions = '<option value="">Select</option>';
+
+    Object.entries(roles).forEach(function(role, index) {
+        
+        roles_options += '<option value="'+role[0]+'">'+role[1]+'</option>';
+    });
+    
+
+    Object.values(locations).forEach(function(value, index) {
+    
+       location_otions = '<option value="">Select</option>\
+            <optgroup label="'+value.name+'">';
+            Object.values(value.children).forEach(function(child, index) {
+            
+                location_otions += '<option value="'+child.id+'">'+child.name+'</option>';
+            });
+            
+            location_otions += '</optgroup>';
+    });
+    
+    $("#edit_user_roles").html(roles_options);
+    $("#edit_user_centers").html(location_otions);
+    
 }
 
 function applyFilters(datatable) {

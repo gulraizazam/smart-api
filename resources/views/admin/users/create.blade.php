@@ -30,12 +30,12 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="add_user_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Email</label>
-                            <input type="email" name="email" class="form-control form-control-lg form-control-solid" />
+                            <input type="email" id="add_user_email" name="email" class="form-control form-control-lg form-control-solid" />
                         </div>
                     </div>
                 </div>
@@ -44,12 +44,12 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone</label>
-                            <input type="number" name="phone" class="form-control form-control-lg form-control-solid mb-2" />
+                            <input type="number" id="add_user_phone" name="phone" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
-                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
+                            <select id="add_user_gender" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
                                 <option value=""></option>
                                 <option value="1">Male</option>
                                 <option value="2">Female</option>
@@ -63,7 +63,7 @@
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Commission</label>
                             <div class="input-group">
-                                <input type="number" min="0" max="100" name="commission" class="form-control form-control-lg form-control-solid mb-2"/>
+                                <input id="add_user_commission" type="number" min="0" max="100" name="commission" class="form-control form-control-lg form-control-solid mb-2"/>
                                 <div class="input-group-append popup-percentage">
                                     <span class="input-group-text">%</span>
                                 </div>
@@ -72,7 +72,7 @@
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Password</label>
-                            <input type="password" name="password" class="form-control form-control-lg form-control-solid mb-2" />
+                            <input id="add_user_password" type="password" name="password" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                     </div>
@@ -82,26 +82,16 @@
                     <div class="row">
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Centres</label>
-                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
-                                <option value="">Select</option>
-                                @foreach($locations as $locaiton)
-                                    <optgroup label="{{$locaiton['name']}}">
-                                        @foreach($locaiton['children'] as $child)
-                                            <option value="{{$child['id']}}"><?php echo $child['name']; ?></option>
-                                        @endforeach
-                                    </optgroup>
-                                @endforeach
+                            <select id="add_user_centers" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
+                               
                             </select>
                         </div>
                     </div>
                     <div class="row">
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Roles</label>
-                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
-                                <option value="">Select</option>
-                                @foreach($roles as $role)
-                                    <option value="{{$role->id ?? 0}}"> {{$role->name ?? ''}}</option>
-                                @endforeach
+                            <select id="add_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
+                            
                             </select>
                         </div>
                     </div>

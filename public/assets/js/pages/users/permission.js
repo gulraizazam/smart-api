@@ -107,9 +107,8 @@ function makeCreatePopup(response) {
     let permissions = response.data.permissions;
     let options = '<option value="">Select</option>';
 
-    Object.entries(permissions).forEach(function(values, index) {
-        console.log(values[index]);
-        options += '<option value="'+index+'">'+values+'</option>';
+    Object.entries(permissions).forEach(function(value, index) {
+        options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
     
 
@@ -118,7 +117,7 @@ function makeCreatePopup(response) {
 
 function editRow( id) {
 
-    $("#modal_add_permission").modal("show");
+    $("#modal_edit_permission").modal("show");
 
     $.ajax({
         headers: {
@@ -128,7 +127,7 @@ function editRow( id) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#permission-create").html(response);
+            makeEditPopup(response);
             reInitSelect2("#kt_select2_8", "Select an Parent Group");
             reInitValidation(KTPermissionValidation);
         },
@@ -139,6 +138,26 @@ function editRow( id) {
         }
     });
 
+}
+
+function makeEditPopup(response) {
+
+    let permissions = response.data.permissions;
+    let permission = response.data.permission;
+    let options = '<option value="">Select</option>';
+
+    Object.entries(permissions).forEach(function(value, index) {
+        options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+    });
+
+    $(".edit-permissions-dropdown").html(options);
+
+    $("#permission_name").val(permission.name);
+
+    $("#permission_title").val(permission.title);
+
+    $("#permission_parent").val(permission.parent_id);
+    
 }
 
 function applyFilters(datatable) {

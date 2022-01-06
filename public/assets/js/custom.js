@@ -3,11 +3,11 @@ $(document).ready(function () {
     $(document).on("change", ".select2", function () {
 
        if ($(this).val() != '') {
-           $(".is-invalid").parents(".form-group").find(".fv-plugins-message-container").hide();
-           $(".is-invalid").parent(".fv-row").find(".select2-selection").removeClass("select2-is-invalid");
+            $(this).parents(".fv-row").find(".fv-plugins-message-container").hide();
+            $(this).parent(".fv-row").find(".select2-selection").removeClass("select2-is-invalid");
        } else {
-           $(".is-invalid").parents(".form-group").find(".fv-plugins-message-container").hide();
-           $(".is-invalid").parent(".fv-row").find(".select2-selection").addClass("select2-is-invalid");
+            $(this).parents(".fv-row").find(".fv-plugins-message-container").show();
+            $(this).parent(".fv-row").find(".select2-selection").addClass("select2-is-invalid");
        }
    });
 
@@ -27,6 +27,16 @@ $(document).ready(function () {
 
 
 });
+
+// not working
+function resetFielsValidation() {
+    $("input").parents(".fv-row").find(".fv-help-block").hide();
+    $("input").parents(".fv-row").removeClass(".is-invalid");
+
+    $("input").parents(".fv-row").find(".fv-help-block").hide();
+    $("input").parent(".fv-row").find(".select2-selection").removeClass("select2-is-invalid");
+}
+
 
 function deleteSuccessAndReset(data, datatable) {
     $(".delete-records").addClass("d-none");

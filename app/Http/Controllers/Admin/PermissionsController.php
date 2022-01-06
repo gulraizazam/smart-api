@@ -149,7 +149,6 @@ class PermissionsController extends Controller
             'permissions' => $permissions
         ]);
         
-        //return view('admin.permissions.create', compact('permissions'))->render();
     }
 
     /**
@@ -219,7 +218,11 @@ class PermissionsController extends Controller
             }
         }
 
-        return view('admin.permissions.edit', compact('permission', 'permissions'));
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'permissions' => $permissions,
+            'permission' => $permission
+        ]);
+
     }
 
     /**

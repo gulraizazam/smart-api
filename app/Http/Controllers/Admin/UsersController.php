@@ -439,7 +439,14 @@ class UsersController extends Controller
 
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
 
-        return view('admin.users.create', compact('roles', 'roles_commissions', 'locations', 'user'));
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'roles' => $roles,
+            'roles_commissions' => $roles_commissions,
+            'locations' => $locations,
+            'user' => $user
+        ]);
+
+        //return view('admin.users.create', compact('roles', 'roles_commissions', 'locations', 'user'));
     }
 
     /**
@@ -647,7 +654,25 @@ class UsersController extends Controller
 
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
 
-        return view('admin.users.edit', compact('user', 'roles', 'roles_commissions', 'user_has_locations', 'locations'));
+        $user_roles = $user->user_roles()->pluck('id');
+
+        if ($user_roles) { 
+            $user_roles = $user_roles->toArray();
+        } else { 
+            $user_roles = array();
+        }
+
+
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'roles' => $roles,
+            'user' => $user,
+            'locations' => $locations,
+            'roles_commissions' => $roles_commissions,
+            'user_has_locations' => $user_has_locations,
+            'user_roles' => $user_roles
+        ]);
+        
+        //return view('admin.users.edit', compact('user', 'roles', 'roles_commissions', 'user_has_locations', 'locations'));
     }
 
     /**

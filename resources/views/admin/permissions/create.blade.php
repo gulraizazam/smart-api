@@ -1,5 +1,5 @@
-<!--begin::Modal content-->
-<div class="modal-content">
+ <!--begin::Modal content-->
+ <div class="modal-content">
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_add_user_header">
         <!--begin::Modal title-->
@@ -40,16 +40,15 @@
                         <input type="text" name="title" class="form-control form-control-lg form-control-solid" value="" placeholder="Title" />
                     </div>
                 </div>
+                
                 <div class="form-group">
                     <div class="fv-row">
                     <!--begin::Label-->
                     <label class="required fw-bold fs-6 mb-2 pl-0">Parent</label>
                     <!--end::Label-->
                     <!--begin::Input-->
-                    <select class="form-control form-control-solid mb-3 mb-lg-0 select2" id="kt_select2_8" name="parent_id">
-                        @foreach($permissions as $key => $permission)
-                            <option value="{{$key}}"> {{$permission}}</option>
-                        @endforeach
+                    <select class="form-control permissions-dropdown form-control-solid mb-3 mb-lg-0 select2" name="parent_id">
+                       
                     </select>
                     </div>
                 </div>

@@ -80,15 +80,29 @@
     <div class="modal fade" id="modal_add_user" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="user-create">
-            {{--moel shuold be apend here--}}
+            
+            @include('admin.users.create')
+
         </div>
         <!--end::Modal dialog-->
     </div>
 
+
+    <div class="modal fade" id="modal_edit_user" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
+            
+             @include('admin.users.edit')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+
     <div class="modal fade" id="change_modal" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="change_password">
-            {{--moel shuold be apend here--}}
+            {{-- @include('admin.users.change_password') --}}
         </div>
         <!--end::Modal dialog-->
     </div>

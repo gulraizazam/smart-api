@@ -1,7 +1,7 @@
 <!--begin::Modal content-->
 <div class="modal-content">
     <!--begin::Modal header-->
-    <div class="modal-header" id="kt_modal_add_user_header">
+    <div class="modal-header" id="kt_modal_edit_user_header">
         <!--begin::Modal title-->
         <h2 class="fw-bolder">Edit User</h2>
         <!--end::Modal title-->
@@ -22,16 +22,16 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_user_form" method="post" action="{{route('admin.users.update', $user->id)}}">
+        <form id="modal_edit_user_form" method="post" action="">
             @method('put')
             <!--begin::Scroll-->
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_edit_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input type="text" name="name" value="{{$user->name ?? ''}}" class="form-control form-control-lg form-control-solid mb-2">
+                            <input id="edit_user_name" type="text" name="name" value="{{$user->name ?? ''}}" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                 </div>
@@ -41,12 +41,12 @@
                         <div class="fv-row col-md-6">
                             <i onclick="phoneReset('phone-field')" class="fa fa-edit"></i>
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone</label>
-                            <input type="number" name="phone" value="{{$user->phone ?? ''}}" class="form-control phone-field form-control-lg form-control-solid mb-2" />
+                            <input id="edit_user_phone" type="number" name="phone" value="{{$user->phone ?? ''}}" class="form-control phone-field form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Email</label>
-                            <input type="email" name="email" value="{{$user->email ?? ''}}" class="form-control form-control-lg form-control-solid" />
+                            <input id="edit_user_email" type="email" name="email" value="{{$user->email ?? ''}}" class="form-control form-control-lg form-control-solid" />
                         </div>
 
                     </div>
@@ -57,17 +57,17 @@
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
-                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
-                                <option value=""></option>
-                                <option value="1" {{isset($user->gender) && $user->gender == '1' ? 'selected' : ''}}>Male</option>
-                                <option value="2" {{isset($user->gender) && $user->gender == '2' ? 'selected' : ''}}>Female</option>
+                            <select id="edit_user_gender" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
+                                <option value="">Select</option>
+                                <option value="1">Male</option>
+                                <option value="2">Female</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Commission</label>
                             <div class="input-group">
-                                <input type="number" min="0" maxlength="100" value="{{$user->commission ?? ''}}" name="commission" class="form-control commission-field form-control-lg form-control-solid mb-2"/>
+                                <input id="edit_user_commission" type="number" min="0" maxlength="100" value="{{$user->commission ?? ''}}" name="commission" class="form-control commission-field form-control-lg form-control-solid mb-2"/>
                                 <div class="input-group-append popup-percentage">
                                     <span class="input-group-text">%</span>
                                 </div>
@@ -83,34 +83,21 @@
                     <div class="row">
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Centres</label>
-                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
-                                <option value="">Select</option>
-                                @foreach($locations as $locaiton)
-                                    <optgroup label="{{$locaiton['name']}}">
-                                        @foreach($locaiton['children'] as $child)
-                                            <option value="{{$child['id']}}" {{(in_array($child['id'],$user_has_locations)) ? 'selected' : ''}}><?php echo $child['name']; ?></option>
-                                        @endforeach
-                                    </optgroup>
-                                @endforeach
+                            <select id="edit_user_centers" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
+                                
                             </select>
                         </div>
                     </div>
 
-                    @php($user_roles = $user->user_roles()->pluck('id'))
-                    @if($user_roles)
-                        @php($user_roles = $user_roles->toArray())
-                    @else
-                        @php($user_roles = array())
-                    @endif
 
                     <div class="row">
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Roles</label>
-                            <select class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
-                                <option value="">Select</option>
+                            <select id="edit_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
+                                {{-- <option value="">Select</option>
                                 @foreach($roles as $key => $value)
                                     <option value="{{$key ?? 0}}" {{(in_array($key, $user_roles)) ? 'selected' : ''}}> {{$value ?? ''}}</option>
-                                @endforeach
+                                @endforeach --}}
                             </select>
                         </div>
                     </div>
