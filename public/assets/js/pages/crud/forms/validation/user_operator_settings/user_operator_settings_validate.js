@@ -1,17 +1,17 @@
 
-var SettingsValidation = function () {
+var UserOperatorSettingsValidation = function () {
     // Private functions
     var validation = function () {
-        let modal_id = 'modal_settings_form';
+        let modal_id = 'modal_user_operator_settings_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    data: {
+                    test_mode: {
                         validators: {
                             notEmpty: {
-                                message: 'The data field is required'
+                                message: 'The Enable Test Mode field is required'
                             }
                         }
                     },
@@ -27,7 +27,7 @@ var SettingsValidation = function () {
             }
         );
         validate.on('core.form.invalid', function (e) {
-            select2Validation();
+            // select2Validation();
         });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
@@ -44,13 +44,13 @@ var SettingsValidation = function () {
 
     return {
         init: function() {
-            // validation();
+            validation();
         }
     };
 }();
 
 jQuery(document).ready(function() {
-    SettingsValidation.init();
+    UserOperatorSettingsValidation.init();
 });
 
 

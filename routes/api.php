@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,7 +24,10 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('settings/{id}/edit', [SettingsController::class,'edit'])->name('settings.edit');
     Route::put('settings/{id}', [SettingsController::class,'update'])->name('settings.update');
     Route::post('settings/datatable', [SettingsController::class, 'datatable'])->name('settings.datatable');
-
+    // User Operator Settings
+    Route::post('user_operator_settings/datatable', [UserOperatorSettingsController::class,'datatable'])->name('user_operator_settings.datatable');
+    Route::get('user_operator_settings/{id}/edit', [UserOperatorSettingsController::class,'edit'])->name('user_operator_settings.edit');
+    Route::put('user_operator_settings/{id}', [UserOperatorSettingsController::class,'update'])->name('user_operator_settings.update');
 
 });
 

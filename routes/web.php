@@ -1,6 +1,7 @@
 <?php
 
-    use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UserOperatorSettingsController;
+use Illuminate\Support\Facades\Route;
     use App\Http\Controllers\Admin\SettingsController;
     use App\Http\Controllers\Admin\PermissionsController;
     use App\Http\Controllers\Admin\RolesController;
@@ -76,8 +77,8 @@
         Route::patch('user_types/active/{id}', [UserTypesController::class, 'active']) ->name('user_types.active');
         Route::patch('user_types/inactive/{id}', [UserTypesController::class, 'inactive'])->name('user_types.inactive');
         Route::resource('user_types', UserTypesController::class);
-
-
+        // User Operator Settings
+        Route::get('user_operator_settings', [UserOperatorSettingsController::class,'index'])->name('user_operator_settings.index');
 
 
     });
