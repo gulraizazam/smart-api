@@ -250,8 +250,6 @@ function setCreateData(response, start_id) {
     let roles_options = '<option value="">Select</option>';
     let location_otions = '<option value="">Select</option>';
 
-    console.log(roles);
-
     for (let i = 0; i< roles.length; i++) {
         
         roles_options += '<option value="'+roles[i].id+'">'+roles[i].name+'</option>';

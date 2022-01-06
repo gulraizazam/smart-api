@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
     use App\Http\Controllers\Admin\UsersController;
     use App\Http\Controllers\Admin\UserTypesController;
     use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+    use App\Http\Controllers\Admin\TownController;
 
     /*
     |--------------------------------------------------------------------------
@@ -79,6 +80,22 @@ use Illuminate\Support\Facades\Route;
         Route::resource('user_types', UserTypesController::class);
         // User Operator Settings
         Route::get('user_operator_settings', [UserOperatorSettingsController::class,'index'])->name('user_operator_settings.index');
+
+
+
+         // Towns Routes
+
+        Route::get('towns/import', [TownController::class, 'importTowns'])->name('towns.import');
+
+        Route::get('towns/upload', [TownController::class, 'uploadLeads'])->name('towns.upload');
+
+        Route::post('towns/datatable', [TownController::class, 'datatable'])->name('towns.datatable');
+
+        Route::patch('towns/active/{id}', [TownController::class, 'active'])->name('towns.active');
+
+        Route::patch('towns/inactive/{id}', [TownController::class, 'inactive'])->name('towns.inactive');
+
+        Route::resource('towns', TownController::class);
 
 
     });

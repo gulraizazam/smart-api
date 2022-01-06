@@ -111,7 +111,7 @@ class UserTypesController extends Controller
 
         if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
             $ids = explode(',', $filters['delete']);
-            $usertypes = UserTypes::getBulkData($request->get('id'));
+            $usertypes = UserTypes::getBulkData($ids);
             if ($usertypes) {
                 foreach ($usertypes as $usertype) {
                     // Check if child records exists or not, If exist then disallow to delete it.

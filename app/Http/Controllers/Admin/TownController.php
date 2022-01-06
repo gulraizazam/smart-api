@@ -1,0 +1,417 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Helpers\Filters;
+use App\Http\Requests\Admin\FileUploadTownRequest;
+use App\Models\Cities;
+use App\Models\Towns;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Gate;
+use Auth;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Validator;
+use File;
+
+class TownController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        if (!Gate::allows('towns_manage')) {
+            return abort(401);
+        }
+
+        $filters = Filters::all(Auth::User()->id, 'towns');
+
+        $cities = Cities::where([
+            ['account_id', '=', Auth::User()->account_id],
+            ['slug', '=', 'custom'],
+            ['active', '=', '1'],
+        ])->get()->pluck('name', 'id');
+        $cities->prepend('Select a City', '');
+
+        return view('admin.towns.index', compact('cities'));
+    }
+
+    /**
+     * Display a listing of towns.
+     *
+     * @param \Illuminate\Http\Request
+     * @return \Illuminate\Http\Response
+     */
+    public function datatable(Request $request)
+    {
+        $apply_filter = false;
+        if ($request->get('action')) {
+            $action = $request->get('action');
+            if (isset($action[0]) && $action[0] == 'filter_cancel') {
+                Filters::flush(Auth::User()->id, 'towns');
+            } else if ($action == 'filter') {
+                $apply_filter = true;
+            }
+        }
+
+        $records = array();
+        $records["data"] = array();
+
+        $filters = getFilters($request->all());
+
+        if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
+            $ids = explode(',', $filters['delete']);
+            $towns = Towns::getBulkData($ids);
+            if ($towns) {
+                foreach ($towns as $town) {
+                    // Check if child records exists or not, If exist then disallow to delete it.
+                    if (!Towns::isChildExists($town->id, Auth::User()->account_id)) {
+                        $town->delete();
+                    }
+                }
+            }
+            $records["status"] = true;
+            $records["message"] = "Records has been deleted successfully!";
+        }
+
+        
+        list($orderBy, $order) = getSortBy($request);
+
+        // Get Total Records
+        $iTotalRecords = Towns::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+
+        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+        $towns = Towns::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+
+        $Cities = Cities::getAllRecordsDictionary(Auth::User()->account_id);
+
+        if ($towns) {
+            foreach ($towns as $town) {
+                $records["data"][] = array(
+                    'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="' . $town->id . '"/><span></span></label>',
+                    'name' => $town->name,
+                    'city_id' => (array_key_exists($town->city_id, $Cities)) ? $Cities[$town->city_id]->name : 'N/A',
+                    'status' => view('admin.towns.status', compact('town'))->render(),
+                    'actions' => view('admin.towns.actions', compact('town'))->render(),
+                );
+            }
+        }
+
+        $records["meta"] = [
+            'field' => $orderBy,
+            'page' => $page,
+            'pages' => $pages,
+            'perpage' => $iDisplayLength,
+            'total' => $iTotalRecords,
+            'sort' => $order,
+        ];
+
+        $records["permissions"] = [
+            'towns_active' => Gate::allows('towns_active'),
+            'towns_inactive' => Gate::allows('towns_inactive'),
+        ];
+
+        $records["recordsTotal"] = $iTotalRecords;
+        $records["recordsFiltered"] = $iTotalRecords;
+
+        return response()->json($records);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        if (!Gate::allows('towns_create')) {
+            return abort(401);
+        }
+        $cities = Cities::where([
+            ['account_id', '=', Auth::User()->account_id],
+            ['slug', '=', 'custom'],
+            ['active', '=', '1'],
+        ])->get()->pluck('full_name', 'id');
+        $cities->prepend('Select a City', '');
+
+        return view('admin.towns.create', compact('cities'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        if (!Gate::allows('towns_create')) {
+            return abort(401);
+        }
+
+        $validator = $this->verifyFields($request);
+
+        if ($validator->fails()) {
+            return response()->json(array(
+                'status' => 0,
+                'message' => $validator->messages()->all(),
+            ));
+        }
+
+        if (Towns::createRecord($request, Auth::User()->account_id)) {
+            flash('Record has been created successfully.')->success()->important();
+
+            return response()->json(array(
+                'status' => 1,
+                'message' => 'Record has been created successfully.',
+            ));
+        } else {
+            return response()->json(array(
+                'status' => 0,
+                'message' => 'Something went wrong, please try again later.',
+            ));
+        }
+    }
+
+    /**
+     * Validate form fields
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return Validator $validator;
+     */
+    protected function verifyFields(Request $request)
+    {
+        return $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'city_id' => 'required'
+        ]);
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        if (!Gate::allows('towns_edit')) {
+            return abort(401);
+        }
+
+        $town = Towns::getData($id);
+
+        if (!$town) {
+            return view('error');
+        }
+
+        $cities = Cities::where([
+            ['account_id', '=', Auth::User()->account_id],
+            ['slug', '=', 'custom'],
+            ['active', '=', '1'],
+            ['is_featured', '=', '1']
+        ])->get()->pluck('full_name', 'id');
+        $cities->prepend('Select a City', '');
+
+        return view('admin.towns.edit', compact('cities', 'town'));
+    }
+
+    /**
+     * Update town.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        if (!Gate::allows('towns_edit')) {
+            return abort(401);
+        }
+
+        $validator = $this->verifyFields($request);
+
+        if ($validator->fails()) {
+            return response()->json(array(
+                'status' => 0,
+                'message' => $validator->messages()->all(),
+            ));
+        }
+
+        if (Towns::updateRecord($id, $request, Auth::User()->account_id)) {
+            flash('Record has been updated successfully.')->success()->important();
+
+            return response()->json(array(
+                'status' => 1,
+                'message' => 'Record has been updated successfully.',
+            ));
+        } else {
+            return response()->json(array(
+                'status' => 0,
+                'message' => 'Something went wrong, please try again later.',
+            ));
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        if (! Gate::allows('towns_destroy')) {
+            return abort(401);
+        }
+
+        Towns::DeleteRecord($id);
+
+        return redirect()->route('admin.towns.index');
+    }
+
+    /**
+     * Inactive Record from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function inactive($id)
+    {
+        if (!Gate::allows('towns_inactive')) {
+            return abort(401);
+        }
+        Towns::InactiveRecord($id);
+
+        return redirect()->route('admin.towns.index');
+    }
+
+    /**
+     * Inactive Record from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function active($id)
+    {
+        if (!Gate::allows('towns_active')) {
+            return abort(401);
+        }
+
+        Towns::activeRecord($id);
+
+        return redirect()->route('admin.towns.index');
+    }
+
+    /**
+     * Import Town.
+     *
+     * @param Request $request
+     */
+    public function importTowns(Request $request)
+    {
+        if (!Gate::allows('towns_import')) {
+            flash('You are not authorized to access this resource.')->error()->important();
+            return redirect()->route('admin.towns.index');
+        }
+
+        return view('admin.towns.import');
+    }
+
+    /**
+     * Upload excel file.
+     *
+     * @param \App\Http\Requests\Admin\FileUploadLeadsRequest $request
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function uploadLeads(FileUploadTownRequest $request)
+    {
+        if (!Gate::allows('towns_import')) {
+            flash('You are not authorized to access this resource.')->error()->important();
+            return redirect()->route('admin.Towns.index');
+        }
+
+        if ($request->hasfile('towns_file')) {
+            // Check if directory not exists then create it
+            $dir = public_path('/towndata');
+            if (!File::isDirectory($dir)) {
+                // path does not exist so create directory
+                File::makeDirectory($dir, 777, true, true);
+                File::put($dir . '/index.html', 'Direct access is forbidden');
+            }
+
+            $File = $request->file('towns_file');
+
+            // Store File Information
+            $name = str_replace('.' . $File->getClientOriginalExtension(), '', $File->getClientOriginalName());
+            $ext = $File->getClientOriginalExtension();
+            $full_name = $File->getClientOriginalName();
+            $full_name_new = $name . '-' . rand(11111111, 99999999) . '.' . $ext;
+
+            $File->move($dir, $full_name_new);
+
+            // Read File and dump data
+            $SpreadSheet = IOFactory::load($dir . DIRECTORY_SEPARATOR . $full_name_new);
+            $SheetData = $SpreadSheet->getActiveSheet(0)->toArray(null, true, true, true);
+
+            if (count($SheetData)) {
+                if (
+                    isset($SheetData[1])
+                    && (
+                        trim(strtolower($SheetData[1]['A'])) == 'name' &&
+                        trim(strtolower($SheetData[1]['B'])) == 'city' &&
+                        trim(strtolower($SheetData[1]['C'])) == 'active' &&
+                        trim(strtolower($SheetData[1]['D'])) == 'account'
+                    )) {
+
+                    $Cities = Cities::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
+
+                    $TownData = array();
+                    $count = 0;
+                    foreach ($SheetData as $SingleRow) {
+                        if($count != 0){
+                            $city_info = Cities::where('name', '=', $SingleRow['B'])->first();
+                            $TownData[] = array(
+                                'name' => $SingleRow['A'],
+                                'city_id' => $city_info->id,
+                                'active' => $SingleRow['C'],
+                                'account_id' => $SingleRow['D'],
+                                'created_at' => Carbon::createFromFormat('Y-m-d H:i:s', Carbon::now())->format('Y-m-d'),
+                                'updated_at' => Carbon::createFromFormat('Y-m-d H:i:s', Carbon::now())->format('Y-m-d')
+                            );
+                        }
+                        $count++;
+                    }
+
+                    Towns::insert($TownData);
+
+                    return redirect()->route('admin.towns.index');
+                } else {
+                    flash('Invalid data provided. Pattern should: name, city, active, account')->error()->important();
+                }
+            } else {
+                flash('No input file specified..')->error()->important();
+            }
+
+            return redirect()->route('admin.towns.import');
+        }
+    }
+
+}

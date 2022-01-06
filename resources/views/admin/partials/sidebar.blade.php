@@ -48,56 +48,102 @@
                         </a>
                     </li>
 
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.users.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
-                        <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <span class="svg-icon menu-icon">
-                                <i class="font-icon fa fa-users"></i>
-                            </span>
-                            <span class="menu-text">User Management</span>
-                            <i class="menu-arrow"></i>
-                        </a>
-                        <div class="menu-submenu">
-                            <i class="menu-arrow"></i>
-                            <ul class="menu-subnav">
-                                <li class="menu-item {{activeMenu('admin.permissions.index')}}" aria-haspopup="true">
-                                    <a href="{{route('admin.permissions.index')}}" class="menu-link">
-                                        <i class="menu-bullet menu-bullet-dot">
-                                            <span></span>
-                                        </i>
-                                        <span class="menu-text">Permissions</span>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{activeMenu('admin.roles.index')}}" aria-haspopup="true">
-                                    <a href="{{route('admin.roles.index')}}" class="menu-link">
-                                        <i class="menu-bullet menu-bullet-dot">
-                                            <span></span>
-                                        </i>
-                                        <span class="menu-text">Roles</span>
-                                    </a>
-                                </li>
+                    @if(Gate::allows('permissions_manage') || Gate::allows('roles_manage') || Gate::allows('users_manage') || Gate::allows('user_types_manage'))
+                        <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.users.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <span class="svg-icon menu-icon">
+                                    <i class="font-icon fa fa-users"></i>
+                                </span>
+                                <span class="menu-text">User Management</span>
+                                <i class="menu-arrow"></i>
+                            </a>
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                   
+                                    @can('permissions_manage')    
+                                
+                                    <li class="menu-item {{activeMenu('admin.permissions.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.permissions.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Permissions</span>
+                                        </a>
+                                    </li>
+                                    @endcan
 
-                                <li class="menu-item {{activeMenu('admin.users.index')}}" aria-haspopup="true">
-                                    <a href="{{route('admin.users.index')}}" class="menu-link">
-                                        <i class="menu-bullet menu-bullet-dot">
-                                            <span></span>
-                                        </i>
-                                        <span class="menu-text">Users</span>
-                                    </a>
-                                </li>
+                                    @can('roles_manage')    
+                                        <li class="menu-item {{activeMenu('admin.roles.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.roles.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Roles</span>
+                                            </a>
+                                        </li>
+                                    @endcan
 
-                                <li class="menu-item {{activeMenu('admin.user_types.index')}}" aria-haspopup="true">
-                                    <a href="{{route('admin.user_types.index')}}" class="menu-link">
-                                        <i class="menu-bullet menu-bullet-dot">
-                                            <span></span>
-                                        </i>
-                                        <span class="menu-text">User Types</span>
-                                    </a>
-                                </li>
+                                    @can('users_manage')  
+                                        <li class="menu-item {{activeMenu('admin.users.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.users.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Users</span>
+                                            </a>
+                                        </li>
+                                    @endcan
 
-                            </ul>
-                        </div>
-                    </li>
+                                    @can('user_types_manage')
+                                        <li class="menu-item {{activeMenu('admin.user_types.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.user_types.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">User Types</span>
+                                            </a>
+                                        </li>
+                                    @endcan
 
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+
+                    @if(
+                    Gate::allows('settings_manage') ||
+                    Gate::allows('user_operator_settings_manage') ||
+                    Gate::allows('sms_templates_manage') ||
+                    Gate::allows('regions_manage') ||
+                    Gate::allows('cities_manage') ||
+                    Gate::allows('payment_modes_manage') ||
+                    Gate::allows('custom_forms_manage') ||
+                    Gate::allows('custom_form_feedbacks_manage') ||
+                    Gate::allows('locations_manage') ||
+                    Gate::allows('doctors_manage') ||
+                    Gate::allows('staff_targets_manage') ||
+                    Gate::allows('centre_targets_manage') ||
+                    Gate::allows('lead_sources_manage') ||
+                    Gate::allows('services_manage') ||
+                    Gate::allows('lead_statuses_manage') ||
+                    Gate::allows('appointment_statuses_manage') ||
+                    Gate::allows('cancellation_reasons_manage')||
+                    Gate::allows('resources_manage') ||
+                    Gate::allows('resourcerotas_manage') ||
+                    Gate::allows('discounts_manage') ||
+                    Gate::allows('logs_manage') ||
+                    Gate::allows('packages_manage') ||
+                    Gate::allows('plans_manage') ||
+                    Gate::allows('finances_manage') ||
+                    Gate::allows('invoices_manage') ||
+                    Gate::allows('refunds_manage') ||
+                    Gate::allows('pabao_records_manage') ||
+                    Gate::allows('machineType_manage') ||
+                    Gate::allows('towns_manage')
+
+
+                )
                     <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
@@ -136,7 +182,27 @@
                                 </ul>
                             </div>
                         @endcan
+
+                        @can('towns_manage')
+                        
+                        <div class="menu-submenu">
+                            <i class="menu-arrow"></i>
+                            <ul class="menu-subnav">
+                                <li class="menu-item {{activeMenu('admin.towns.index')}}" aria-haspopup="true">
+                                    <a href="{{route('admin.towns.index')}}" class="menu-link">
+                                        <i class="menu-bullet menu-bullet-dot">
+                                            <span></span>
+                                        </i>
+                                        <span class="menu-text">Towns</span>
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </div>
+                    @endcan
+
                     </li>
+                    @endif
 
                 </ul>
                 <!--end::Menu Nav-->
