@@ -90,7 +90,7 @@
                     </div>
 
 
-                    <div class="row">
+                    <div class="row mt-10">
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Roles</label>
                             <select id="edit_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
