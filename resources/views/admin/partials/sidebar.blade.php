@@ -31,7 +31,7 @@
             <div id="kt_aside_menu" class="aside-menu my-4" data-menu-vertical="1" data-menu-scroll="1" data-menu-dropdown-timeout="500">
                 <!--begin::Menu Nav-->
                 <ul class="menu-nav">
-                    <li class="menu-item menu-item-active" aria-haspopup="true">
+                    <li class="menu-item {{activeMenu('admin.home')}}" aria-haspopup="true">
                         <a href="{{route('admin.home')}}" class="menu-link">
                                     <span class="svg-icon menu-icon">
                                         <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Design/Layers.svg-->
@@ -98,7 +98,7 @@
                         </div>
                     </li>
 
-                    <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
                                 <i class="font-icon fas fa-cog"></i>
@@ -109,8 +109,8 @@
                         <div class="menu-submenu">
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
-                                <li class="menu-item" aria-haspopup="true">
-                                    <a href="{{route('admin.permissions.index')}}" class="menu-link">
+                                <li class="menu-item {{activeMenu('admin.settings.index')}}" aria-haspopup="true">
+                                    <a href="{{route('admin.settings.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
                                         </i>
