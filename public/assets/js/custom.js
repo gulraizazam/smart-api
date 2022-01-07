@@ -91,7 +91,7 @@ function sendDeleteRequest(route) {
 
                reloadDataTable();
            } else {
-             toastr.error(response.message);   
+             toastr.error(response.message);
            }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -124,7 +124,7 @@ function statuses(data, status_url) {
         }
 
     } else {
-    
+
         status += '<span class="switch switch-icon">\
         <label>\
             <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" name="select">\
@@ -150,7 +150,7 @@ function updateStatus(route, id, $this) {
         confirmButtonClass: 'btn btn-danger font-weight-bold'
     }).then(function(result) {
         if (result.value) {
-           
+
            $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -175,7 +175,7 @@ function updateStatus(route, id, $this) {
             } else {
                 $this.prop("checked", true);
             }
-            
+
         }
     });
 }
@@ -245,4 +245,12 @@ function advanceFilters() {
 
 function phoneReset(className) {
     $("." + className).val('');
+}
+
+function showPreLoader(){
+    $('.page-loader-base').show();
+}
+
+function hidePreLoader(){
+    $('.page-loader-base').hide();
 }

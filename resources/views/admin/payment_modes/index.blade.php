@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Global Settings', 'title' => 'Global Settings'])
+    @include('admin.partials.breadcrumb', ['module' => 'Payment Modes', 'title' => 'Payment Modes'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,14 +31,36 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Global Settings</h3>
+                            <h3 class="card-label">Payment Modes</h3>
                         </div>
+                        <div class="card-toolbar">
+                            <!--begin::Dropdown-->
+                            @if(Gate::allows('payment_modes_destroy'))
+                                <div class="delete-records d-none">
+                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
+                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
+                                        <i class="fa fa-trash-alt"></i>Delete
+                                    </a>
+                                </div>&nbsp;&nbsp;&nbsp;
+                            @endif
+                            <a id="delete-table-rows" href="{{route('admin.payment_modes.sort')}}" class="btn btn-info">
+                                <i class="fa fa-sort-amount-up"></i>Sort
+                            </a>&nbsp;&nbsp;
+                            @if(Gate::allows('payment_modes_create'))
+                                <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_payment_mode">
+                                    <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
+                                    <i class="la la-plus"></i>
+                                    Add New
+                                </a>
+                        @endif
 
+                        <!--end::Button-->
+                        </div>
                     </div>
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                    @include('admin.settings.filters')
+                    @include('admin.payment_modes.filters')
                     <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -53,16 +75,34 @@
         <!--end::Entry-->
     </div>
     <!--end::Content-->
-    @include('admin.settings.edit')
+
+    <div class="modal fade" id="modal_add_payment_mode" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="paymment-mode-create">
+
+            @include('admin.payment_modes.create')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
 
 
+    <div class="modal fade" id="modal_edit_user" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
+
+            @include('admin.payment_modes.edit')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/admin_settings/settings.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/payment_modes.js')}}"></script>
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/settings/settings_validate.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/payment_modes.js')}}"></script>
     @endpush
 
 @endsection

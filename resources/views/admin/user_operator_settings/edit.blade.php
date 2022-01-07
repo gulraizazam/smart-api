@@ -94,7 +94,6 @@
 
             <!--end::Actions-->
             </form>
-            </div>
             <!--end::Form-->
         </div>
         <!--end::Modal body-->

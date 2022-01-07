@@ -60,9 +60,9 @@
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
                                 <ul class="menu-subnav">
-                                   
-                                    @can('permissions_manage')    
-                                
+
+                                    @can('permissions_manage')
+
                                     <li class="menu-item {{activeMenu('admin.permissions.index')}}" aria-haspopup="true">
                                         <a href="{{route('admin.permissions.index')}}" class="menu-link">
                                             <i class="menu-bullet menu-bullet-dot">
@@ -73,7 +73,7 @@
                                     </li>
                                     @endcan
 
-                                    @can('roles_manage')    
+                                    @can('roles_manage')
                                         <li class="menu-item {{activeMenu('admin.roles.index')}}" aria-haspopup="true">
                                             <a href="{{route('admin.roles.index')}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
@@ -84,7 +84,7 @@
                                         </li>
                                     @endcan
 
-                                    @can('users_manage')  
+                                    @can('users_manage')
                                         <li class="menu-item {{activeMenu('admin.users.index')}}" aria-haspopup="true">
                                             <a href="{{route('admin.users.index')}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
@@ -110,7 +110,6 @@
                             </div>
                         </li>
                     @endif
-
                     @if(
                     Gate::allows('settings_manage') ||
                     Gate::allows('user_operator_settings_manage') ||
@@ -144,7 +143,7 @@
 
 
                 )
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
                                 <i class="font-icon fas fa-cog"></i>
@@ -182,9 +181,25 @@
                                 </ul>
                             </div>
                         @endcan
+                        @can('payment_modes_manage')
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{activeMenu('admin.payment_modes.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.payment_modes.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Payment Modes</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        @endcan
 
                         @can('towns_manage')
-                        
+
                         <div class="menu-submenu">
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">

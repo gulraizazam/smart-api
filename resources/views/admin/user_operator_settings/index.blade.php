@@ -56,11 +56,11 @@
     @include('admin.user_operator_settings.edit')
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/user_operator_settings/user_operator_settings.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/user_operator_settings.js')}}"></script>
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/user_operator_settings/user_operator_settings_validate.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/user_operator_settings_validate.js')}}"></script>
     @endpush
 
 @endsection
