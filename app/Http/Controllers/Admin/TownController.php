@@ -42,15 +42,6 @@ class TownController extends Controller
             return abort(401);
         }
 
-        // $filters = Filters::all(Auth::User()->id, 'towns');
-
-        // $cities = Cities::where([
-        //     ['account_id', '=', Auth::User()->account_id],
-        //     ['slug', '=', 'custom'],
-        //     ['active', '=', '1'],
-        // ])->get()->pluck('name', 'id');
-        // $cities->prepend('Select a City', '');
-
         return view('admin.towns.index');
     }
 
