@@ -42,16 +42,16 @@ class TownController extends Controller
             return abort(401);
         }
 
-        $filters = Filters::all(Auth::User()->id, 'towns');
+        // $filters = Filters::all(Auth::User()->id, 'towns');
 
-        $cities = Cities::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['slug', '=', 'custom'],
-            ['active', '=', '1'],
-        ])->get()->pluck('name', 'id');
-        $cities->prepend('Select a City', '');
+        // $cities = Cities::where([
+        //     ['account_id', '=', Auth::User()->account_id],
+        //     ['slug', '=', 'custom'],
+        //     ['active', '=', '1'],
+        // ])->get()->pluck('name', 'id');
+        // $cities->prepend('Select a City', '');
 
-        return view('admin.towns.index', compact('cities'));
+        return view('admin.towns.index');
     }
 
     /**
@@ -131,8 +131,21 @@ class TownController extends Controller
             'inactive' => Gate::allows('towns_inactive'),
         ];
 
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+        $filters = Filters::all(Auth::User()->id, 'towns');
+
+        $cities = Cities::where([
+            ['account_id', '=', Auth::User()->account_id],
+            ['slug', '=', 'custom'],
+            ['active', '=', '1'],
+        ])->get()->pluck('name', 'id');
+        $cities->prepend('Select a City', '');
+
+        $records['filter_values'] = [
+            'cities' => $cities,
+            'status' => config('constants.status')
+        ];
+
+        $records['active_filters'] = $filters;
 
         return response()->json($records);
     }
@@ -227,13 +240,13 @@ class TownController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('towns_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $town = Towns::getData($id);
 
         if (!$town) {
-            return view('error');
+            return ApiHelper::apiResponse($this->unauthorized, 'Resource not found.', false);
         }
 
         $cities = Cities::where([
@@ -244,7 +257,11 @@ class TownController extends Controller
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
 
-        return view('admin.towns.edit', compact('cities', 'town'));
+
+       return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'cities' => $cities,
+            'town' => $town,
+        ]);
     }
 
     /**
@@ -293,12 +310,12 @@ class TownController extends Controller
     public function destroy($id)
     {
         if (! Gate::allows('towns_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
         }
 
         Towns::DeleteRecord($id);
 
-        return redirect()->route('admin.towns.index');
+        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
     }
 
     /**

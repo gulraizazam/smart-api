@@ -73,6 +73,10 @@ class Towns extends BaseModal
 
         $where = array();
 
+        $filters = getFilters($request->all());
+
+        $apply_filter = checkFilters($filters, 'towns');
+
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -93,13 +97,13 @@ class Towns extends BaseModal
                 }
             }
         }
-        if ($request->get('name')) {
+        if(count($filters) > 0 && hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'towns', 'name', $request->get('name'));
+            Filters::put(Auth::User()->id, 'towns', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'towns', 'name');
@@ -113,13 +117,13 @@ class Towns extends BaseModal
                 }
             }
         }
-        if ($request->get('city_id') != '') {
+        if(count($filters) > 0 && hasFilter($filters, 'city_id')) {
             $where[] = array(
                 'city_id',
                 '=',
-                $request->get('city_id')
+                $filters['city_id']
             );
-            Filters::put(Auth::User()->id, 'towns', 'city_id', $request->get('city_id'));
+            Filters::put(Auth::User()->id, 'towns', 'city_id', $filters['city_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'towns', 'city_id');
@@ -133,13 +137,13 @@ class Towns extends BaseModal
                 }
             }
         }
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'towns', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'towns', 'status', $filters['status']);
         } else {
             if ( $apply_filter ){
                 Filters::forget( Auth::user()->id, 'towns', 'status');
