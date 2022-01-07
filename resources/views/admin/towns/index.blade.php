@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-        @include('admin.partials.breadcrumb', ['module' => 'User Type List', 'title' => 'User Type'])
+        @include('admin.partials.breadcrumb', ['module' => 'Town List', 'title' => 'Towns'])
 
         <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,14 +31,14 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">User Types</h3>
+                            <h3 class="card-label">Towns</h3>
                         </div>
 
                     </div>
 
                     <div class="card-body">
                      <!--begin::Search Form-->
-                        @include('admin.user_types.filters')
+                        @include('admin.towns.filters')
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -54,11 +54,11 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_user_type" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_add_towns" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="user_type_edit">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="towns_edit">
            
-            @include('admin.user_types.edit')
+            @include('admin.towns.edit')
         </div>
         <!--end::Modal dialog-->
     </div>

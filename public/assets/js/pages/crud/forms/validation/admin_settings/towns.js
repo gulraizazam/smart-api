@@ -2,7 +2,7 @@
 var TownValidation = function () {
     // Private functions
     var validation = function () {
-        let modal_id = 'modal_town_form';
+        let modal_id = 'modal_towns_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
@@ -16,7 +16,7 @@ var TownValidation = function () {
                         }
                     },
 
-                    city: {
+                    city_id: {
                         validators: {
                             notEmpty: {
                                 message: 'The city field is required'

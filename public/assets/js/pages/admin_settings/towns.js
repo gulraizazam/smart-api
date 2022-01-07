@@ -5,9 +5,9 @@ var table_columns = [
      {
         field: 'name',
         title: 'Name',
-        width: 600,
+        width: 'auto',
     },{
-        field: 'city',
+        field: 'city_id',
         title: 'City',
         width: 'auto',
     }, {
@@ -51,7 +51,7 @@ var table_columns = [
                         </li>';
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
-                        <a href="'+url+'" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="editRow(`'+url+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
@@ -75,15 +75,15 @@ var table_columns = [
         return '';
     }
 
-    function editRow(id, modal) {
+    function editRow(url) {
 
-        $("#modal_add_user_type").modal("show");
+        $("#modal_add_towns").modal("show");
 
         $.ajax({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
-            url: route('admin.user_types.edit', {id: id}),
+            url: url,
             type: "GET",
             cache: false,
             success: function (response) {
@@ -96,7 +96,7 @@ var table_columns = [
             error: function (xhr, ajaxOptions, thrownError) {
                 errorMessage(xhr);
 
-                reInitValidation(UserTypeValidation);
+                reInitValidation(TownValidation);
             }
         });
 
@@ -106,24 +106,23 @@ var table_columns = [
     function setEditData(response) {
 
 
-        let types = response.data.types;
-        let usertype = response.data.usertype;
+        let town = response.data.town;
+        let cities = response.data.cities;
 
-        let action = route('admin.user_types.update', {id: usertype.id});
-        $("#modal_user_type_form").attr("action", action);
+        let action = route('admin.towns.update', {id: town.id});
+        $("#modal_towns_form").attr("action", action);
 
         let options = '<option value="">Select</option>';
 
-        Object.entries(types).forEach(function(value, index) {
+        Object.entries(cities).forEach(function(value, index) {
             
             options += '<option value="'+value[0]+'">'+value[1]+'</option>';
         });
         
-        console.log(usertype.type);
-        $("#user_type").html(options);
+        $("#town_city_id").html(options);
         
-        $("#user_type_name").val(usertype.name);
-        $("#user_type").val(usertype.type);
+        $("#town_name").val(town.name);
+        $("#town_city_id").val(town.city_id);
 
     }
 
@@ -134,7 +133,8 @@ var table_columns = [
             let filters =  {
                 delete: '',
                 name: $("#search_name").val(),
-                type: $("#search_type").val(),
+                city_id: $("#search_city").val(),
+                status: $("#search_status").val(),
                 filter: 'filter',
             }
             datatable.search(filters, 'search');
@@ -148,10 +148,37 @@ var table_columns = [
             let filters =  {
                 delete: '',
                 name: '',
-                type: '',
+                city_id: '',
+                status: '',
                 filter: 'filter_cancel',
             }
             datatable.search(filters, 'search');
         });
 
+    }
+
+    function setFilters(filter_values, active_filters) {
+        
+        let cities = filter_values.cities;
+        let status = filter_values.status;
+        let city_options = '';
+        let status_options = '<option value="">All</option>';
+
+        Object.entries(status).forEach(function(value, index) {
+            status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        });
+
+        Object.entries(cities).forEach(function(value, index) {
+            
+            city_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        });
+        
+        $("#search_city").html(city_options);
+
+        $("#search_status").html(status_options);
+
+        $("#search_name").val(active_filters.name);
+
+        $("#search_status").val(active_filters.status);
+        $("#search_city").val(active_filters.city_id);
     }

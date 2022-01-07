@@ -3,6 +3,8 @@
 let perPage = 20;
 let row_ids = [];
 let permissions = [];
+let active_filters = [];
+let filter_values = [];
 var datatable;
 
 var KTDatatable = function() {
@@ -21,6 +23,11 @@ var KTDatatable = function() {
                         map: function (data) { /*to get response, we can remove this */
                             /* get permissions array for actions */
                             permissions = data.permissions;
+
+                            if (typeof setFilters === 'function') {
+                                setFilters(data.filter_values, data.active_filters);
+                            }
+                            
 
                            if (typeof data.status !== 'undefined') {
                                deleteSuccessAndReset(data, datatable);
