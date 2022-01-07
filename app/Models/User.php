@@ -381,14 +381,15 @@ class User extends Authenticatable
      *
      * @return (mixed)
      */
-    static public function activeRecord($id){
+    static public function activeRecord($id, $status){
 
         $user = User::getData($id);
 
         if ($user == null) {
-            return view('error_full');
+            session()->flash('error', 'Resource not found.');
+            return false;
         } else {
-            $record = $user->update(['active'=>1]);
+            $record = $user->update(['active'=> $status]);
 
             session()->flash('success', 'Record has been activated successfully.');
 

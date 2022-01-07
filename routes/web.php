@@ -69,8 +69,8 @@ use Illuminate\Support\Facades\Route;
         Route::get('users/password/{id}', [UsersController::class, 'changePassword'])->name('users.change_password');
         Route::patch('users/password', [UsersController::class, 'savePassword'])->name('users.save_password');
 
-        Route::patch('users/active/{id}', [UsersController::class, 'active'])->name('users.active');
-        Route::patch('users/inactive/{id}', [UsersController::class, 'inactive'])->name('users.inactive');
+        Route::post('users/status', [UsersController::class, 'status'])->name('users.status');
+    
 
         Route::resource('users', UsersController::class);
 
@@ -91,9 +91,7 @@ use Illuminate\Support\Facades\Route;
 
         Route::post('towns/datatable', [TownController::class, 'datatable'])->name('towns.datatable');
 
-        Route::patch('towns/active/{id}', [TownController::class, 'active'])->name('towns.active');
-
-        Route::patch('towns/inactive/{id}', [TownController::class, 'inactive'])->name('towns.inactive');
+        Route::post('towns/status', [TownController::class, 'status'])->name('towns.status');
 
         Route::resource('towns', TownController::class);
 

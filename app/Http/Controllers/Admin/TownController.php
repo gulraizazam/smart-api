@@ -14,9 +14,23 @@ use Auth;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Validator;
 use File;
+use App\HelperModule\ApiHelper;
 
 class TownController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -93,11 +107,10 @@ class TownController extends Controller
         if ($towns) {
             foreach ($towns as $town) {
                 $records["data"][] = array(
-                    'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="' . $town->id . '"/><span></span></label>',
+                    'id' => $town->id,
                     'name' => $town->name,
                     'city_id' => (array_key_exists($town->city_id, $Cities)) ? $Cities[$town->city_id]->name : 'N/A',
-                    'status' => view('admin.towns.status', compact('town'))->render(),
-                    'actions' => view('admin.towns.actions', compact('town'))->render(),
+                    'active' => $town->active,
                 );
             }
         }
@@ -112,8 +125,10 @@ class TownController extends Controller
         ];
 
         $records["permissions"] = [
-            'towns_active' => Gate::allows('towns_active'),
-            'towns_inactive' => Gate::allows('towns_inactive'),
+            'edit' => Gate::allows('towns_edit'),
+            'delete' => Gate::allows('towns_destroy'),
+            'active' => Gate::allows('towns_active'),
+            'inactive' => Gate::allows('towns_inactive'),
         ];
 
         $records["recordsTotal"] = $iTotalRecords;
@@ -292,31 +307,20 @@ class TownController extends Controller
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id)
-    {
-        if (!Gate::allows('towns_inactive')) {
-            return abort(401);
-        }
-        Towns::InactiveRecord($id);
-
-        return redirect()->route('admin.towns.index');
-    }
-
-    /**
-     * Inactive Record from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function active($id)
+    public function status(Request $request)
     {
         if (!Gate::allows('towns_active')) {
             return abort(401);
         }
 
-        Towns::activeRecord($id);
+        $response = Towns::activeRecord($request->id, $request->status);
 
-        return redirect()->route('admin.towns.index');
+        if ($response) {
+            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+       
     }
 
     /**

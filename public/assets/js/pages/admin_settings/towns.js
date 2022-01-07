@@ -15,7 +15,8 @@ var table_columns = [
         title: 'status',
         width: 'auto',
         template: function (data) {
-            return statuses(data);
+            let status_url = route('admin.towns.status');
+            return statuses(data, status_url);
         }
     }, {
         field: 'actions',
@@ -29,52 +30,48 @@ var table_columns = [
         }
     }];
 
-    function statuses(data) {
-        let csrf = $('meta[name="csrf-token"]').attr('content');
-        let id = data.id;
-        let inactive_url = route('admin.towns.inactive', {id: data.id});
-        let active_url = route('admin.towns.active', {id: data.id});
-        let status_url = route('admin.towns.status', {id: data.id});
-        let status = '';
-        if (data.active) {
-            if (permissions.towns_active) {
-                status += '<span class="switch switch-icon">\
-                <label>\
-                    <input onchange="updateStatus(false);" type="checkbox" checked="checked" name="select">\
-                    <span></span>\
-                </label>\
-                </span>';
-            } else {
-                status += '<span><span class="label label-lg font-weight-bold label-light-success label-inline">Active </span></span>';
-            }
-    
-        } else {
-            if (permissions.towns_inactive) {
-                status += '<span class="switch switch-icon">\
-                <label>\
-                    <input onchange="updateStatus(`'+status_url+'`, true);" type="checkbox" checked="checked" name="select">\
-                    <span></span>\
-                </label>\
-                </span>';
-            } else {
-                status += '<span><span class="label label-lg font-weight-bold label-light-danger label-inline">Inactive</span> </span>';
-            }
-        }
-    
-        return status;
-    }
 
     function actions(data) {
 
         let id = data.id;
-
-        if (permissions.edit) {
-            return  '<a href="javascript:void(0);" onclick="editRow('+id+')" class="btn btn-sm btn-primary">\
-            <span class="navi-icon"><i class="la la-pencil"></i></span>\
-            <span class="navi-text">Edit</span>\
-            </a>';
+    
+        let csrf = $('meta[name="csrf-token"]').attr('content');
+        let url = route('admin.towns.edit', {id: id});
+        let delete_url = route('admin.towns.destroy', {id: id});
+    
+        if (permissions.edit && permissions.delete) {
+            let actions = '<div class="dropdown dropdown-inline action-dots">\
+            <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+                <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+            </a>\
+            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
+                <ul class="navi flex-column navi-hover py-2">\
+                    <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
+                        Choose an action: \
+                        </li>';
+            if (permissions.edit) {
+                actions += '<li class="navi-item">\
+                        <a href="'+url+'" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Edit</span>\
+                        </a>\
+                    </li>';
+            }
+            if (permissions.delete) {
+                actions += '<li class="navi-item">\
+                            <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-trash"></i></span>\
+                            <span class="navi-text">Delete</span>\
+                            </a>\
+                         </li>';
+            }
+    
+            actions += '</ul>\
+            </div>\
+        </div>';
+    
+            return actions;
         }
-
         return '';
     }
 

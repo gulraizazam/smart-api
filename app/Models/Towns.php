@@ -296,19 +296,19 @@ class Towns extends BaseModal
      *
      * @return (mixed)
      */
-    static function activeRecord($id)
+    static function activeRecord($id, $status = 1)
     {
         $town = Towns::getData($id);
 
         if (!$town) {
 
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.towns.index');
+            session()->flash('error', 'Resource not found.');
+           return false;
         }
+       
+        $record = $town->update(['active' => $status]);
 
-        $record = $town->update(['active' => 1]);
-
-        flash('Record has been activated successfully.')->success()->important();
+        session()->flash('success', 'Status has been changed successfully.');
 
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 

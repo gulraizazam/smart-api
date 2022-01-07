@@ -100,7 +100,43 @@ function sendDeleteRequest(route) {
     });
 }
 
-function updateStatus(route) {
+function statuses(data, status_url) {
+
+    let id = data.id;
+    let active = data.active;
+    let status = '';
+
+    if (active) {
+        if (permissions.active && permissions.inactive) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        } else {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
+
+    } else {
+    
+        status += '<span class="switch switch-icon">\
+        <label>\
+            <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" name="select">\
+            <span></span>\
+        </label>\
+        </span>';
+    }
+
+    return status;
+}
+
+function updateStatus(route, id, $this) {
 
     swal.fire({
         title: 'Are you sure you want to change?',
@@ -120,13 +156,12 @@ function updateStatus(route) {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 url: route,
-                type: "PATCH",
+                data: {id: id, status: $this.is(":checked") ? '1' : '0'},
+                type: "POST",
                 cache: false,
                 success: function (response) {
                     if (response.status) {
                         toastr.success(response.message);
-
-                        reloadDataTable();
                     }
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
@@ -134,6 +169,13 @@ function updateStatus(route) {
                 }
             });
 
+        } else {
+            if ($this.is(":checked")) {
+                $this.prop("checked", false);
+            } else {
+                $this.prop("checked", true);
+            }
+            
         }
     });
 }

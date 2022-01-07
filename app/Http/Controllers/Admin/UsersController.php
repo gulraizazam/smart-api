@@ -392,7 +392,6 @@ class UsersController extends Controller
                     'roles' => $user->user_roles()->pluck('name'),
                     'created_at' => Carbon::parse($user->created_at)->format('F j,Y h:i A'),
                     'active' => $user->active,
-                    'status' => view('admin.users.status', compact('user'))->render(),
                 ];
                 ++$index;
             }
@@ -400,8 +399,8 @@ class UsersController extends Controller
             $records["permissions"] = [
                 'edit' => Gate::allows('users_edit'),
                 'change_password' => Gate::allows('users_change_password'),
-                'users_active' => Gate::allows('users_active'),
-                'users_inactive' => Gate::allows('users_inactive'),
+                'active' => Gate::allows('users_active'),
+                'inactive' => Gate::allows('users_inactive'),
                 'delete' => Gate::allows('users_destroy'),
             ];
 
@@ -789,33 +788,20 @@ class UsersController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id)
-    {
-        if (!Gate::allows('users_inactive')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
-        }
-
-        User::InactiveRecord($id);
-
-        return ApiHelper::apiResponse($this->success, 'Inactivated successfully.');
-
-    }
-
-    /**
-     * Inactive Record from storage.
-     *
-     * @param int $id
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function active($id)
+    public function status(Request $request)
     {
         if (!Gate::allows('users_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        User::activeRecord($id);
+       
+        $response = User::activeRecord($request->id, $request->status);
 
-        return ApiHelper::apiResponse($this->success, 'Activated successfully.');
+        if ($response) {
+            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+       
     }
 
     /*

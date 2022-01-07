@@ -81,7 +81,8 @@ var table_columns = [
         title: 'status',
         width: 'auto',
         template: function (data) {
-            return statuses(data);
+            let status_url = route('admin.users.status');
+            return statuses(data, status_url);
         }
     },  {
         field: 'actions',
@@ -146,29 +147,6 @@ function actions(data) {
     return '';
 }
 
-function statuses(data) {
-    let csrf = $('meta[name="csrf-token"]').attr('content');
-    let id = data.id;
-    let inactive_url = route('admin.users.inactive', {id: data.id});
-    let active_url = route('admin.users.active', {id: data.id});
-    let status = '';
-    if (data.active) {
-        if (permissions.users_active) {
-            status += '<button onclick="updateStatus(`'+inactive_url+'`);" class="btn btn-sm btn-primary" type="button">Active</button>';
-        } else {
-            status += '<span><span class="label label-lg font-weight-bold label-light-success label-inline">Active </span></span>';
-        }
-
-    } else {
-        if (permissions.users_inactive) {
-            status += '<button onclick="updateStatus(`'+active_url+'`);" class="btn btn-sm btn-warning" type="button">Inactive</button>';
-        } else {
-            status += '<span><span class="label label-lg font-weight-bold label-light-danger label-inline">Inactive</span> </span>';
-        }
-    }
-
-    return status;
-}
 
 function editRow(id) {
 
