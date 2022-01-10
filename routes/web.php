@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Support\Facades\Route;
     use App\Http\Controllers\Admin\SettingsController;
@@ -70,7 +71,7 @@ use Illuminate\Support\Facades\Route;
         Route::patch('users/password', [UsersController::class, 'savePassword'])->name('users.save_password');
 
         Route::post('users/status', [UsersController::class, 'status'])->name('users.status');
-    
+
 
         Route::resource('users', UsersController::class);
 
@@ -95,5 +96,8 @@ use Illuminate\Support\Facades\Route;
 
         Route::resource('towns', TownController::class);
 
+        // Payment Modes
+        Route::get('payment_modes',[PaymentModesController::class,'index'])->name('payment_modes.index');
+        Route::get('payment_modes/sort',[PaymentModesController::class,'sortorder'])->name('payment_modes.sort');
 
     });

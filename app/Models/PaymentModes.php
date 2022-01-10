@@ -119,7 +119,7 @@ class PaymentModes extends BaseModal
     static public function payment_modes_filters($request, $account_id, $apply_filter)
     {
         $where = array();
-
+        $filters = getFilters($request->all());
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -140,13 +140,13 @@ class PaymentModes extends BaseModal
                 }
             }
         }
-        if ($request->get('name')) {
+        if (count($filters) > 0 && hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'payment_modes', 'name', $request->get('name'));
+            Filters::put(Auth::User()->id, 'payment_modes', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'payment_modes', 'name');
@@ -160,13 +160,13 @@ class PaymentModes extends BaseModal
                 }
             }
         }
-        if ($request->get('payment_type') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'payment_type')) {
             $where[] = array(
                 'payment_type',
                 '=',
-                $request->get('payment_type')
+                $filters['payment_type']
             );
-            Filters::put(Auth::User()->id, 'payment_modes', 'payment_type', $request->get('payment_type'));
+            Filters::put(Auth::User()->id, 'payment_modes', 'payment_type', $filters['payment_type']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'payment_modes', 'payment_type');
@@ -180,13 +180,13 @@ class PaymentModes extends BaseModal
                 }
             }
         }
-        if ($request->get('type') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'type')) {
             $where[] = array(
                 'type',
                 '=',
-                $request->get('type')
+                $filters['type']
             );
-            Filters::put(Auth::User()->id, 'payment_modes', 'type', $request->get('type'));
+            Filters::put(Auth::User()->id, 'payment_modes', 'type', $filters['type']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'payment_modes', 'type');
@@ -201,13 +201,13 @@ class PaymentModes extends BaseModal
             }
         }
 
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if ( count($filters) > 0 && hasFilter($filters, 'status') ){
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'payment_modes', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'payment_modes', 'status', $filters['status']);
         } else {
             if ( $apply_filter ){
                 Filters::forget( Auth::user()->id, 'payment_modes', 'status');

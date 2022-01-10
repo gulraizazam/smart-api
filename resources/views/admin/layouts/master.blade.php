@@ -32,7 +32,14 @@
 <!--end::Head-->
 <!--begin::Body-->
 <body id="kt_body" class="header-fixed header-mobile-fixed subheader-enabled subheader-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading">
-
+<div class="page-loader page-loader-base">
+    <div class="blockui">
+        <span>Please wait...</span>
+        <span>
+            <div class="spinner spinner-primary"></div>
+        </span>
+    </div>
+</div>
 <div class="d-flex flex-column flex-root">
     <!--begin::Page-->
     <div class="d-flex flex-row flex-column-fluid page">
