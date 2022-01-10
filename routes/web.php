@@ -90,11 +90,7 @@ use Illuminate\Support\Facades\Route;
 
         Route::get('towns/upload', [TownController::class, 'uploadLeads'])->name('towns.upload');
 
-        Route::post('towns/datatable', [TownController::class, 'datatable'])->name('towns.datatable');
-
-        Route::post('towns/status', [TownController::class, 'status'])->name('towns.status');
-
-        Route::resource('towns', TownController::class);
+        Route::resource('towns', TownController::class)->only('index');
 
         // Payment Modes
         Route::get('payment_modes',[PaymentModesController::class,'index'])->name('payment_modes.index');

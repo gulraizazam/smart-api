@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\TownController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +43,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('payment_modes_sort', [PaymentModesController::class, 'sortOrderGet'])->name('payment_modes.sort_get');
     // Payment Modes Routes End
 
+
+    //Town routes
+
+    Route::post('towns/datatable', [TownController::class, 'datatable'])->name('towns.datatable');
+
+    Route::post('towns/status', [TownController::class, 'status'])->name('towns.status');
+
+    Route::resource('towns', TownController::class)->except('index');
 
 });
 
