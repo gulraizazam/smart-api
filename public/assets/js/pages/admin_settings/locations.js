@@ -1,5 +1,5 @@
 
-var table_url = route('admin.towns.datatable');
+var table_url = route('admin.locations.datatable');
 
 var table_columns = [
      {
@@ -7,15 +7,35 @@ var table_columns = [
         title: 'Name',
         width: 'auto',
     },{
-        field: 'city.name',
+        field: 'fdo_name',
+        title: 'FDO Name',
+        width: 'auto',
+    },{
+        field: 'fdo_phone',
+        title: 'FDO Phone',
+        width: 'auto',
+    },{
+        field: 'address',
+        title: 'Address',
+        width: 'auto',
+    },{
+        field: 'city',
         title: 'City',
+        width: 'auto',
+    },{
+        field: 'region',
+        title: 'Region',
+        width: 'auto',
+    },{
+        field: 'created_at',
+        title: 'Created At',
         width: 'auto',
     }, {
         field: 'status',
         title: 'status',
         width: 'auto',
         template: function (data) {
-            let status_url = route('admin.towns.status');
+            let status_url = route('admin.locations.status');
             return statuses(data, status_url);
         }
     }, {
@@ -32,15 +52,15 @@ var table_columns = [
 
 
     function actions(data) {
+        if (typeof data.id !== 'undefined') {
+            let id = data.id;
 
-        let id = data.id;
+            let csrf = $('meta[name="csrf-token"]').attr('content');
+            let url = route('admin.locations.edit', {id: id});
+            let delete_url = route('admin.locations.destroy', {id: id});
 
-        let csrf = $('meta[name="csrf-token"]').attr('content');
-        let url = route('admin.towns.edit', {id: id});
-        let delete_url = route('admin.towns.destroy', {id: id});
-
-        if (permissions.edit && permissions.delete) {
-            let actions = '<div class="dropdown dropdown-inline action-dots">\
+            if (permissions.edit && permissions.delete) {
+                let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
             </a>\
@@ -49,35 +69,37 @@ var table_columns = [
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-            if (permissions.edit) {
-                actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+url+'`);" class="navi-link">\
+                if (permissions.edit) {
+                    actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
-            }
-            if (permissions.delete) {
-                actions += '<li class="navi-item">\
+                }
+                if (permissions.delete) {
+                    actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-trash"></i></span>\
                             <span class="navi-text">Delete</span>\
                             </a>\
                          </li>';
-            }
+                }
 
-            actions += '</ul>\
+                actions += '</ul>\
             </div>\
         </div>';
 
-            return actions;
+                return actions;
+            }
         }
         return '';
     }
 
     function editRow(url) {
+        return '';
 
-        $("#modal_add_towns").modal("show");
+        $("#modal_add_locations").modal("show");
 
         $.ajax({
             headers: {
@@ -109,8 +131,8 @@ var table_columns = [
         let town = response.data.town;
         let cities = response.data.cities;
 
-        let action = route('admin.towns.update', {id: town.id});
-        $("#modal_towns_form").attr("action", action);
+        let action = route('admin.locations.update', {id: town.id});
+        $("#modal_locations_form").attr("action", action);
 
         let options = '<option value="">Select</option>';
 
@@ -133,11 +155,19 @@ var table_columns = [
             let filters =  {
                 delete: '',
                 name: $("#search_name").val(),
+                fdo_name: $("#search_fdo_name").val(),
+                fdo_phone: $("#search_fdo_phone").val(),
+                address: $("#search_address").val(),
                 city_id: $("#search_city").val(),
+                region_id: $("#search_region").val(),
+                create_from: $("#created_from").val(),
+                create_to: $("#created_to").val(),
                 status: $("#search_status").val(),
                 filter: 'filter',
             }
+
             datatable.search(filters, 'search');
+
         });
 
     }
@@ -148,7 +178,13 @@ var table_columns = [
             let filters =  {
                 delete: '',
                 name: '',
+                fdo_name: '',
+                fdo_phone: '',
+                address: '',
                 city_id: '',
+                region_id: '',
+                create_from: '',
+                create_to: '',
                 status: '',
                 filter: 'filter_cancel',
             }
@@ -160,8 +196,13 @@ var table_columns = [
     function setFilters(filter_values, active_filters) {
 
         let cities = filter_values.cities;
+        let regions = filter_values.regions;
+        let services = filter_values.services;
+
         let status = filter_values.status;
-        let city_options = '';
+        let city_options = '<option value="">Select A City</option>';
+        let region_options = '<option value="">Select A Region</option>';
+        let services_options = '<option value="">Select A Service</option>';
         let status_options = '<option value="">All</option>';
 
         Object.entries(status).forEach(function(value, index) {
@@ -173,12 +214,71 @@ var table_columns = [
             city_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
         });
 
-        $("#search_city").html(city_options);
+        Object.entries(regions).forEach(function(value, index) {
 
+            region_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        });
+
+        Object.entries(services).forEach(function(value, index) {
+
+            services_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        });
+
+        $("#search_city").html(city_options);
+        $("#search_region").html(region_options);
+        $("#service_region").html(region_options);
         $("#search_status").html(status_options);
 
         $("#search_name").val(active_filters.name);
+        $("#search_fdo_name").val(active_filters.fdo_name);
+        $("#search_fdo_phone").val(active_filters.fdo_phone);
+        $("#search_address").val(active_filters.address);
 
         $("#search_status").val(active_filters.status);
         $("#search_city").val(active_filters.city_id);
+        $("#service_region").val(active_filters.service_id);
     }
+
+function createCentre($route) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+
+            setCreateData(response);
+
+            reInitSelect2(".select2", "");
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            reInitValidation(Validation);
+        }
+    });
+}
+
+function setCreateData(response) {
+
+
+    let cities = response.data.cities;
+    let services = response.data.services;
+    let cities_options = '<option value="">Select</option>';
+    let service_options = '<option value="">Select</option>';
+
+    Object.values(cities).forEach(function(value, index) {
+
+        cities_options += '<option value="'+value[0]+'">'+value+'</option>';
+    });
+
+    Object.values(services).forEach(function(value, index) {
+
+        service_options = '<option value="">Select</option>';
+    });
+
+    $("#add_location_cities").html(cities_options);
+    $("#add_location_centres").html(service_options);
+}

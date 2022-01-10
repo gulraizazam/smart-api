@@ -216,6 +216,24 @@
                         </div>
                     @endcan
 
+                        @can('locations_manage')
+
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{activeMenu('admin.locations.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.locations.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Centres</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        @endcan
+
                     </li>
                     @endif
 

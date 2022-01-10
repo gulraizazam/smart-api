@@ -53,15 +53,11 @@ class TownController extends Controller
      */
     public function datatable(Request $request)
     {
-        $apply_filter = false;
-        if ($request->get('action')) {
-            $action = $request->get('action');
-            if (isset($action[0]) && $action[0] == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, 'towns');
-            } else if ($action == 'filter') {
-                $apply_filter = true;
-            }
-        }
+        $filename = 'towns';
+
+        $filters = getFilters($request->all());
+
+        $apply_filter = checkFilters($filters, $filename);
 
         $records = array();
         $records["data"] = array();
@@ -83,7 +79,7 @@ class TownController extends Controller
             $records["message"] = "Records has been deleted successfully!";
         }
 
-        
+
         list($orderBy, $order) = getSortBy($request);
 
         // Get Total Records
@@ -96,31 +92,24 @@ class TownController extends Controller
         $Cities = Cities::getAllRecordsDictionary(Auth::User()->account_id);
 
         if ($towns) {
-            foreach ($towns as $town) {
-                $records["data"][] = array(
-                    'id' => $town->id,
-                    'name' => $town->name,
-                    'city_id' => (array_key_exists($town->city_id, $Cities)) ? $Cities[$town->city_id]->name : 'N/A',
-                    'active' => $town->active,
-                );
-            }
+            $records["data"] = $towns;
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+
+            $records["permissions"] = [
+                'edit' => Gate::allows('towns_edit'),
+                'delete' => Gate::allows('towns_destroy'),
+                'active' => Gate::allows('towns_active'),
+                'inactive' => Gate::allows('towns_inactive'),
+            ];
         }
-
-        $records["meta"] = [
-            'field' => $orderBy,
-            'page' => $page,
-            'pages' => $pages,
-            'perpage' => $iDisplayLength,
-            'total' => $iTotalRecords,
-            'sort' => $order,
-        ];
-
-        $records["permissions"] = [
-            'edit' => Gate::allows('towns_edit'),
-            'delete' => Gate::allows('towns_destroy'),
-            'active' => Gate::allows('towns_active'),
-            'inactive' => Gate::allows('towns_inactive'),
-        ];
 
         $filters = Filters::all(Auth::User()->id, 'towns');
 
@@ -144,12 +133,12 @@ class TownController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create()
     {
         if (!Gate::allows('towns_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $cities = Cities::where([
             ['account_id', '=', Auth::User()->account_id],
@@ -158,7 +147,9 @@ class TownController extends Controller
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
 
-        return view('admin.towns.create', compact('cities'));
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'cities' => $cities,
+        ]);
     }
 
     /**
@@ -328,7 +319,7 @@ class TownController extends Controller
         }
 
         return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
-       
+
     }
 
     /**
