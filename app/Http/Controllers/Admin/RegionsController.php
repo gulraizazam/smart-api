@@ -49,6 +49,9 @@ class RegionsController extends Controller
     public function datatable(Request $request)
     {
         try {
+            if (!Gate::allows('regions_manage')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $apply_filter = false;
             $filters = getFilters($request->all());
             if (hasFilter($filters, 'filter')) {
@@ -132,6 +135,9 @@ class RegionsController extends Controller
     public function sortOrderSave(Request $request)
     {
         try {
+            if (!Gate::allows('regions_sort')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $itemIDs = $request->item_ids;
             if (count($itemIDs)) {
                 foreach ($itemIDs as $key => $itemID) {
@@ -147,6 +153,9 @@ class RegionsController extends Controller
 
     public function sortOrder()
     {
+        if (!Gate::allows('regions_sort')) {
+            return abort(401);
+        }
         return view('admin.regions.sort');
     }
 
@@ -158,6 +167,9 @@ class RegionsController extends Controller
     public function sortOrderGet()
     {
         try {
+            if (!Gate::allows('regions_sort')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $regions = Regions::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
             return ApiHelper::apiResponse($this->success, 'Success', true, $regions);
         } catch (\Exception $e) {
