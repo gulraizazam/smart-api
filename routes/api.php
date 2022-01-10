@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\PaymentModesController;
+use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Http\Request;
@@ -51,6 +52,17 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('towns/status', [TownController::class, 'status'])->name('towns.status');
 
     Route::resource('towns', TownController::class)->except('index');
+
+    // Regions Routes Start
+    Route::post('regions/datatable', [RegionsController::class, 'datatable'])->name('regions.datatable');
+    Route::post('regions', [RegionsController::class, 'store'])->name('regions.store');
+    Route::get('regions/{id}/edit', [RegionsController::class, 'edit'])->name('regions.edit');
+    Route::put('regions/{id}', [RegionsController::class, 'update'])->name('regions.update');
+    Route::delete('regions/{id}', [RegionsController::class, 'destroy'])->name('regions.destroy');
+    Route::post('regions/status', [RegionsController::class, 'status'])->name('regions.status');
+    Route::post('regions_sort_save', [RegionsController::class, 'sortOrderSave'])->name('regions.sort_save');
+    Route::get('regions_sort', [RegionsController::class, 'sortOrderGet'])->name('regions.sort_get');
+    // Regions Routes End
 
 });
 
