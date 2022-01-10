@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Sort Payment Modes', 'title' => 'Sort Payment Modes'])
+    @include('admin.partials.breadcrumb', ['module' => 'Sort Regions', 'title' => 'Sort Regions'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -35,11 +35,11 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Sort Payment Modes</h3>
+                            <h3 class="card-label">Sort Regions</h3>
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            <a href="{{route('admin.payment_modes.index')}}" class="btn btn-primary">
+                            <a href="{{route('admin.regions.index')}}" class="btn btn-primary">
                                 <i class="fa fa-arrow-left"></i> Sort
                             </a>
                             <!--end::Button-->
@@ -63,7 +63,7 @@
         <!--begin::Page Vendors(used by this page)-->
         <script src="{{asset('assets/plugins/custom/draggable/draggable.bundle.js?v=7.2.9')}}"></script>
         <!--end::Page Vendors-->
-        <script src="{{asset('assets/js/pages/admin_settings/payment_modes_sort.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/regions_sort.js')}}"></script>
     @endpush
 
 @endsection
