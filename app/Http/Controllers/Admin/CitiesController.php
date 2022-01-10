@@ -99,7 +99,7 @@ class CitiesController extends Controller
 
             if ($Cities) {
                 foreach ($Cities as $citie) {
-                    $citie->is_featured = $citie->is_featured ==1 ? 'Yes' : 'No';
+                    $citie->is_featured = $citie->is_featured == 1 ? 'Yes' : 'No';
                     $citie->region_id = (array_key_exists($citie->region_id, $Regions)) ? $Regions[$citie->region_id]->name : 'N/A';
                 }
             }
@@ -307,10 +307,7 @@ class CitiesController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = Cities::DeleteRecord($id);
-            if ($response['status']) {
-                return ApiHelper::apiResponse($this->success, $response['message']);
-            }
-            return ApiHelper::apiResponse($this->success, $response['message'], false);
+            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
@@ -325,56 +322,20 @@ class CitiesController extends Controller
     public function status(Request $request)
     {
         try {
-            $msg = null;
             if ($request->status == 0) {
                 if (!Gate::allows('cities_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                Cities::inactiveRecord($request->id);
-                $msg = 'Inactivated successfully.';
+                $response = Cities::inactiveRecord($request->id);
             } else {
                 if (!Gate::allows('cities_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                Cities::activeRecord($request->id);
-                $msg = 'Activated successfully.';
+                $response = Cities::activeRecord($request->id);
             }
-            return ApiHelper::apiResponse($this->success, $msg);
+            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
-    }
-
-    /**
-     * Inactive Record from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function inactive($id)
-    {
-        if (!Gate::allows('cities_inactive')) {
-            return abort(401);
-        }
-        Cities::InactiveRecord($id);
-
-        return redirect()->route('admin.cities.index');
-    }
-
-    /**
-     * Inactive Record from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function active($id)
-    {
-        if (!Gate::allows('cities_active')) {
-            return abort(401);
-        }
-
-        Cities::activeRecord($id);
-
-        return redirect()->route('admin.cities.index');
     }
 }

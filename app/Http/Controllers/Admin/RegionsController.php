@@ -280,10 +280,7 @@ class RegionsController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = Regions::DeleteRecord($id);
-            if ($response['status']) {
-                return ApiHelper::apiResponse($this->success, $response['message']);
-            }
-            return ApiHelper::apiResponse($this->success, $response['message'], false);
+            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
@@ -298,56 +295,21 @@ class RegionsController extends Controller
     public function status(Request $request)
     {
         try {
-            $msg = null;
             if ($request->status == 0) {
                 if (!Gate::allows('regions_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                Regions::inactiveRecord($request->id);
-                $msg = 'Inactivated successfully.';
+                $response=Regions::inactiveRecord($request->id);
             } else {
                 if (!Gate::allows('regions_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                Regions::activeRecord($request->id);
-                $msg = 'Activated successfully.';
+                $response=Regions::activeRecord($request->id);
             }
-            return ApiHelper::apiResponse($this->success, $msg);
+            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
     }
 
-    /**
-     * Inactive Record from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function inactive($id)
-    {
-        if (!Gate::allows('regions_inactive')) {
-            return abort(401);
-        }
-        Regions::InactiveRecord($id);
-
-        return redirect()->route('admin.regions.index');
-    }
-
-    /**
-     * Inactive Record from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function active($id)
-    {
-        if (!Gate::allows('regions_active')) {
-            return abort(401);
-        }
-
-        Regions::activeRecord($id);
-
-        return redirect()->route('admin.regions.index');
-    }
 }

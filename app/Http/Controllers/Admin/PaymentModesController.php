@@ -270,8 +270,8 @@ class PaymentModesController extends Controller
             if (!Gate::allows('payment_modes_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            PaymentModes::deleteRecord($id);
-            return ApiHelper::apiResponse($this->success, 'Deleted Successfully!');
+            $response = PaymentModes::deleteRecord($id);
+            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
@@ -287,39 +287,20 @@ class PaymentModesController extends Controller
     public function status(Request $request)
     {
         try {
-            $msg = null;
             if ($request->status == 0) {
                 if (!Gate::allows('payment_modes_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                PaymentModes::inactiveRecord($request->id);
-                $msg = 'Inactivated successfully.';
+                $response = PaymentModes::inactiveRecord($request->id);
             } else {
                 if (!Gate::allows('payment_modes_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                PaymentModes::activeRecord($request->id);
-                $msg = 'Activated successfully.';
+                $response = PaymentModes::activeRecord($request->id);
             }
-            return ApiHelper::apiResponse($this->success, $msg);
+            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
-    }
-
-    /**
-     * Inactive Record from storage.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function active($id)
-    {
-        if (!Gate::allows('payment_modes_active')) {
-            return abort(401);
-        }
-        PaymentModes::activeRecord($id);
-
-        return redirect()->route('admin.payment_modes.index');
     }
 }

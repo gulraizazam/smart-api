@@ -233,7 +233,7 @@ class Cities extends BaseModal
                 }
             }
         }
-        if (count($filters) && $filters['name']!='') {
+        if (count($filters) && $filters['name'] != '') {
             $where[] = array(
                 'name',
                 'like',
@@ -253,7 +253,7 @@ class Cities extends BaseModal
                 }
             }
         }
-        if (count($filters) && $filters['is_featured']!='') {
+        if (count($filters) && $filters['is_featured'] != '') {
             $where[] = array(
                 'is_featured',
                 '=',
@@ -273,7 +273,7 @@ class Cities extends BaseModal
                 }
             }
         }
-        if (count($filters) && $filters['region_id']!='') {
+        if (count($filters) && $filters['region_id'] != '') {
             $where[] = array(
                 'region_id',
                 '=',
@@ -299,7 +299,7 @@ class Cities extends BaseModal
             'custom'
         );
 
-        if (count($filters) && $filters['status']!=''){
+        if (count($filters) && $filters['status'] != '') {
             $where[] = array(
                 'active',
                 '=',
@@ -307,15 +307,15 @@ class Cities extends BaseModal
             );
             Filters::put(Auth::user()->id, 'cities', 'status', $filters['status']);
         } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, 'cities', 'status');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'cities', 'status');
             } else {
-                if ( Filters::get(Auth::user()->id, 'cities', 'status' ) == 0 || Filters::get(Auth::user()->id, 'cities', 'status' ) == 1 ){
-                    if ( Filters::get(Auth::user()->id, 'cities', 'status' ) != null ){
+                if (Filters::get(Auth::user()->id, 'cities', 'status') == 0 || Filters::get(Auth::user()->id, 'cities', 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, 'cities', 'status') != null) {
                         $where[] = array(
                             'active',
                             '=',
-                            Filters::get( Auth::user()->id, 'cities', 'status')
+                            Filters::get(Auth::user()->id, 'cities', 'status')
                         );
                     }
                 }
@@ -387,12 +387,12 @@ class Cities extends BaseModal
     {
         $citie = Cities::getData($id);
         if (!$citie) {
-            return ['status'=>false,'message'=>'Resource not found.'];
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Cities::isChildExists($id, Auth::User()->account_id)) {
-            return ['status'=>false,'message'=>'Child records exist, unable to delete resource'];
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
 
         $record = $citie->delete();
@@ -400,7 +400,7 @@ class Cities extends BaseModal
         //log request for delete for audit trail
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-        return ['status'=>true,'message'=>'Record has been deleted successfully.'];
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
     /**
@@ -412,21 +412,13 @@ class Cities extends BaseModal
      */
     static public function inactiveRecord($id)
     {
-
         $citie = Cities::getData($id);
-
         if (!$citie) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.cities.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $citie->update(['active' => 0]);
-
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -438,22 +430,13 @@ class Cities extends BaseModal
      */
     static function activeRecord($id)
     {
-
         $citie = Cities::getData($id);
-
         if (!$citie) {
-
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.cities.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $citie->update(['active' => 1]);
-
-        flash('Record has been activated successfully.')->success()->important();
-
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
