@@ -320,16 +320,16 @@ class Regions extends BaseModal
         $region = Regions::getData($id);
 
         if (!$region) {
-            return ['status'=>false,'message'=>'Resource not found.'];
+            return collect(['status'=>false,'message'=>'Resource not found.']);
         }
 
         if ($region->slug == 'all') {
-            return ['status'=>false,'message'=>'Root region can not be deleted.'];
+            return collect(['status'=>false,'message'=>'Root region can not be deleted.']);
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Regions::isChildExists($id, Auth::User()->account_id)) {
-            return ['status'=>false,'message'=>'Child records exist, unable to delete resource'];
+            return collect(['status'=>false,'message'=>'Child records exist, unable to delete resource']);
         }
 
         /*
@@ -347,7 +347,7 @@ class Regions extends BaseModal
         //log request for delete for audit trail
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-        return ['status'=>true,'message'=>'Record has been deleted successfully.'];
+        return collect(['status'=>true,'message'=>'Record has been deleted successfully.']);
     }
 
     /**
@@ -359,21 +359,14 @@ class Regions extends BaseModal
      */
     static public function inactiveRecord($id)
     {
-
         $region = Regions::getData($id);
-
         if (!$region) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.regions.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $region->update(['active' => 0]);
 
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -385,22 +378,13 @@ class Regions extends BaseModal
      */
     static function activeRecord($id)
     {
-
         $region = Regions::getData($id);
-
         if (!$region) {
-
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.regions.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
-        $record = $region->update(['active' => 1]);
-
-        flash('Record has been activated successfully.')->success()->important();
-
+        $region->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**

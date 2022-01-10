@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -63,6 +64,17 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('regions_sort_save', [RegionsController::class, 'sortOrderSave'])->name('regions.sort_save');
     Route::get('regions_sort', [RegionsController::class, 'sortOrderGet'])->name('regions.sort_get');
     // Regions Routes End
+
+    // Cities Routes Start
+    Route::post('cities/datatable', [CitiesController::class, 'datatable'])->name('cities.datatable');
+    Route::post('cities', [CitiesController::class, 'store'])->name('cities.store');
+    Route::get('cities/{id}/edit', [CitiesController::class, 'edit'])->name('cities.edit');
+    Route::put('cities/{id}', [CitiesController::class, 'update'])->name('cities.update');
+    Route::delete('cities/{id}', [CitiesController::class, 'destroy'])->name('cities.destroy');
+    Route::post('cities/status', [CitiesController::class, 'status'])->name('cities.status');
+    Route::post('cities_sort_save', [CitiesController::class, 'sortOrderSave'])->name('cities.sort_save');
+    Route::get('cities_sort', [CitiesController::class, 'sortOrderGet'])->name('cities.sort_get');
+    // Cities Routes End
 
 });
 

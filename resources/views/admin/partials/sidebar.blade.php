@@ -143,7 +143,7 @@
 
 
                 )
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.regions.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.regions.index','admin.cities.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
                                 <i class="font-icon fas fa-cog"></i>
@@ -207,6 +207,22 @@
                                                 <span></span>
                                             </i>
                                             <span class="menu-text">Regions</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        @endcan
+                        @can('cities_manage')
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{activeMenu('admin.cities.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.cities.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Cities</span>
                                         </a>
                                     </li>
 

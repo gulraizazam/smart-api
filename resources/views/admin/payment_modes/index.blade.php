@@ -43,9 +43,11 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
+                            @can('payment_modes_sort')
                             <a id="delete-table-rows" href="{{route('admin.payment_modes.sort')}}" class="btn btn-info">
                                 <i class="fa fa-sort-amount-up"></i>Sort
                             </a>&nbsp;&nbsp;
+                            @endcan
                             @if(Gate::allows('payment_modes_create'))
                                 <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_payment_mode">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
