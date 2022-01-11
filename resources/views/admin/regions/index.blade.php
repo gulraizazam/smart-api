@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Payment Modes', 'title' => 'Payment Modes'])
+    @include('admin.partials.breadcrumb', ['module' => 'Regions', 'title' => 'Regions'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,11 +31,11 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Payment Modes</h3>
+                            <h3 class="card-label">Regions</h3>
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('payment_modes_destroy'))
+                            @if(Gate::allows('regions_destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
@@ -43,13 +43,13 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
-                            @can('payment_modes_sort')
-                            <a id="delete-table-rows" href="{{route('admin.payment_modes.sort')}}" class="btn btn-info">
+                            @can('regions_sort')
+                            <a id="delete-table-rows" href="{{route('admin.regions.sort')}}" class="btn btn-info">
                                 <i class="fa fa-sort-amount-up"></i>Sort
-                            </a>&nbsp;&nbsp;
+                            </a> &nbsp;&nbsp;
                             @endcan
-                            @if(Gate::allows('payment_modes_create'))
-                                <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_payment_mode">
+                            @if(Gate::allows('regions_create'))
+                                <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_region">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                     <i class="la la-plus"></i>
                                     Add New
@@ -62,7 +62,7 @@
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                    @include('admin.payment_modes.filters')
+                    @include('admin.regions.filters')
                     <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -78,33 +78,33 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_payment_mode" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_add_region" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="paymment-mode-create">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="region-create">
 
-            @include('admin.payment_modes.create')
+            @include('admin.regions.create')
 
         </div>
         <!--end::Modal dialog-->
     </div>
 
 
-    <div class="modal fade" id="modal_edit_user" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_edit_regions" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="region-edit">
 
-            @include('admin.payment_modes.edit')
+            @include('admin.regions.edit')
 
         </div>
         <!--end::Modal dialog-->
     </div>
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/admin_settings/payment_modes.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/regions.js')}}"></script>
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/payment_modes.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/regions.js')}}"></script>
     @endpush
 
 @endsection

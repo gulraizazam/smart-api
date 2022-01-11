@@ -272,21 +272,13 @@ class PaymentModes extends BaseModal
      */
     static public function inactiveRecord($id)
     {
-
         $payment_mode = PaymentModes::getData($id);
-
         if (!$payment_mode) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.payment_modes.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $payment_mode->update(['active' => 0]);
-
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -298,21 +290,13 @@ class PaymentModes extends BaseModal
      */
     static public function activeRecord($id)
     {
-
         $payment_mode = PaymentModes::getData($id);
-
         if (!$payment_mode) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.payment_modes.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $payment_mode->update(['active' => 1]);
-
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -324,27 +308,17 @@ class PaymentModes extends BaseModal
      */
     static public function deleteRecord($id)
     {
-
         $payment_mode = PaymentModes::getData($id);
-
         if (!$payment_mode) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.payment_modes.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         // Check if child records exists or not, If exist then disallow to delete it.
         if (PaymentModes::isChildExists($id, Auth::User()->account_id)) {
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.payment_modes.index');
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-
         $record = $payment_mode->delete();
-
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
     /**

@@ -73,7 +73,7 @@ class Regions extends BaseModal
             $regionids = array($regionids);
         }
 
-        if($regionids) {
+        if ($regionids) {
             if ($get_slug) {
                 if ($order_by && $order) {
                     return self::where('account_id', '=', $account_id)->where('slug', '=', $get_slug)->whereIn('id', $regionids)->orderBy($order_by, $order)->get();
@@ -150,13 +150,13 @@ class Regions extends BaseModal
      *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false,$apply_filter = false)
+    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
         $where = Self::regions_filters($request, $account_id, $apply_filter);
         if (count($where)) {
             return self::where([
                 [$where],
-                ['slug','=','custom']
+                ['slug', '=', 'custom']
             ])->count();
         } else {
             return self::count();
@@ -173,16 +173,16 @@ class Regions extends BaseModal
      *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false,$apply_filter = false)
+    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = Self::regions_filters($request, $account_id, $apply_filter);
         if (count($where)) {
             return self::where([
                 [$where],
-                ['slug','=','custom']
+                ['slug', '=', 'custom']
             ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
         } else {
-            return self::where('slug','=','custom')->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
+            return self::where('slug', '=', 'custom')->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
         }
     }
 
@@ -196,6 +196,7 @@ class Regions extends BaseModal
      */
     static public function regions_filters($request, $account_id, $apply_filter)
     {
+        $filters = getFilters($request->all());
         $where = array();
         if ($account_id) {
             $where[] = array(
@@ -204,7 +205,7 @@ class Regions extends BaseModal
                 $account_id
             );
             Filters::put(Auth::User()->id, 'regions', 'account_id', $account_id);
-        }  else {
+        } else {
 
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'regions', 'account_id');
@@ -218,13 +219,13 @@ class Regions extends BaseModal
                 }
             }
         }
-        if ($request->get('name')) {
+        if (count($filters) > 0 && $filters['name'] != '') {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'regions', 'name', $request->get('name'));
+            Filters::put(Auth::User()->id, 'regions', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'regions', 'name');
@@ -239,23 +240,23 @@ class Regions extends BaseModal
             }
         }
 
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if (count($filters) > 0 && $filters['status'] != null) {
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'regions', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'regions', 'status', $filters['status']);
         } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, 'regions', 'status');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'regions', 'status');
             } else {
-                if ( Filters::get(Auth::user()->id, 'regions', 'status') == 0 || Filters::get(Auth::user()->id, 'regions', 'status' ) == 1){
-                    if (Filters::get(Auth::user()->id, 'regions', 'status' ) != null ){
+                if (Filters::get(Auth::user()->id, 'regions', 'status') == 0 || Filters::get(Auth::user()->id, 'regions', 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, 'regions', 'status') != null) {
                         $where[] = array(
                             'active',
                             '=',
-                            Filters::get( Auth::user()->id, 'regions', 'status')
+                            Filters::get(Auth::user()->id, 'regions', 'status')
                         );
                     }
                 }
@@ -291,7 +292,7 @@ class Regions extends BaseModal
 
         // Set Account ID
         $data['account_id'] = $account_id;
-        $data['slug'] = 'region';
+        $data['slug'] = 'custom';
 
         $record = self::create($data);
 
@@ -319,21 +320,16 @@ class Regions extends BaseModal
         $region = Regions::getData($id);
 
         if (!$region) {
-
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.regions.index');
+            return collect(['status'=>false,'message'=>'Resource not found.']);
         }
 
         if ($region->slug == 'all') {
-            flash('Root region can not be deleted.')->error()->important();
-            return redirect()->route('admin.regions.index');
+            return collect(['status'=>false,'message'=>'Root region can not be deleted.']);
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Regions::isChildExists($id, Auth::User()->account_id)) {
-
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.regions.index');
+            return collect(['status'=>false,'message'=>'Child records exist, unable to delete resource']);
         }
 
         /*
@@ -351,11 +347,7 @@ class Regions extends BaseModal
         //log request for delete for audit trail
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
-
+        return collect(['status'=>true,'message'=>'Record has been deleted successfully.']);
     }
 
     /**
@@ -367,21 +359,14 @@ class Regions extends BaseModal
      */
     static public function inactiveRecord($id)
     {
-
         $region = Regions::getData($id);
-
         if (!$region) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.regions.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $region->update(['active' => 0]);
 
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -393,22 +378,13 @@ class Regions extends BaseModal
      */
     static function activeRecord($id)
     {
-
         $region = Regions::getData($id);
-
         if (!$region) {
-
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.regions.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
-        $record = $region->update(['active' => 1]);
-
-        flash('Record has been activated successfully.')->success()->important();
-
+        $region->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**

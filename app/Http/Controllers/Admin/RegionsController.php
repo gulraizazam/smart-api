@@ -3,17 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
-use App\Models\PaymentModes;
+use App\Models\Regions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Input;
 use App\Helpers\Filters;
 use Illuminate\Support\Facades\Validator;
 
-class PaymentModesController extends Controller
+class RegionsController extends Controller
 {
 
     protected $error;
@@ -27,18 +25,23 @@ class PaymentModesController extends Controller
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
+    /**
+     * Display a listing of regions
+     *
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\never
+     */
     public function index()
     {
-        if (!Gate::allows('payment_modes_manage')) {
+        if (!Gate::allows('regions_manage')) {
             return abort(401);
         }
-        $filters = Filters::all(Auth::User()->id, 'payment_modes');
-        return view('admin.payment_modes.index', compact('filters'));
+        $filters = Filters::all(Auth::User()->id, 'regions');
+        return view('admin.regions.index', compact('filters'));
     }
 
 
     /**
-     * Display a listing of Payment Modes.
+     * Display a listing of Regions.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -46,14 +49,14 @@ class PaymentModesController extends Controller
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('payment_modes_manage')) {
+            if (!Gate::allows('regions_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $apply_filter = false;
             $filters = getFilters($request->all());
             if (hasFilter($filters, 'filter')) {
                 if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                    Filters::flush(Auth::User()->id, 'payment_modes');
+                    Filters::flush(Auth::User()->id, 'regions');
                 } else if ($filters['filter'] == 'filter') {
                     $apply_filter = true;
                 }
@@ -64,11 +67,11 @@ class PaymentModesController extends Controller
             list($orderBy, $order) = getSortBy($request);
             if (count($filters) > 0 && hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
-                $PaymentModes = PaymentModes::getBulkData($ids);
-                if ($PaymentModes) {
-                    foreach ($PaymentModes as $city) {
+                $Regions = Regions::getBulkData($ids);
+                if ($Regions) {
+                    foreach ($Regions as $city) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!PaymentModes::isChildExists($city->id, Auth::User()->account_id)) {
+                        if (!Regions::isChildExists($city->id, Auth::User()->account_id)) {
                             $city->delete();
                         }
                     }
@@ -77,21 +80,22 @@ class PaymentModesController extends Controller
                 $records['message'] = 'Records has been deleted successfully!';
             }
             // Get Total Records
-            $iTotalRecords = PaymentModes::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
-
+            $iTotalRecords = Regions::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
-            $PaymentModes = PaymentModes::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-            foreach ($PaymentModes as $paymentMode) {
-                $paymentMode->type = ucwords($paymentMode->type);
-                $paymentMode->payment_type = config('constants.payment_type.' . $paymentMode->payment_type);
-            }
-            $records["data"] = $PaymentModes;
+            $Regions = Regions::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+            $records["data"] = $Regions;
             $records["permissions"] = [
-                'edit' => Gate::allows('payment_modes_edit'),
-                'delete' => Gate::allows('payment_modes_destroy'),
-                'active' => Gate::allows('payment_modes_active'),
-                'inactive' => Gate::allows('payment_modes_inactive'),
+                'edit' => Gate::allows('regions_edit'),
+                'delete' => Gate::allows('regions_destroy'),
+                'active' => Gate::allows('regions_active'),
+                'inactive' => Gate::allows('regions_inactive'),
+            ];
+
+            $filters = Filters::all(Auth::User()->id, 'regions');
+            $records['active_filters'] = $filters;
+            $records['filter_values'] = [
+                'status' => config('constants.status')
             ];
             $records["meta"] = [
                 'field' => $orderBy,
@@ -114,24 +118,30 @@ class PaymentModesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('payment_modes_create')) {
+        if (!Gate::allows('regions_create')) {
             return abort(401);
         }
 
-        return view('admin.payment_modes.create', compact('city'));
+        return view('admin.regions.create', compact('city'));
     }
 
 
-    public function sortorder_save(Request $request)
+    /**
+     * Save sort order of regions
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sortOrderSave(Request $request)
     {
         try {
-            if (!Gate::allows('payment_modes_sort')) {
+            if (!Gate::allows('regions_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $itemIDs = $request->item_ids;
             if (count($itemIDs)) {
                 foreach ($itemIDs as $key => $itemID) {
-                    PaymentModes::where('id', '=', $itemID)->update(array('sort_number' => $key));
+                    Regions::where('id', '=', $itemID)->update(array('sort_number' => $key));
                 }
                 return ApiHelper::apiResponse($this->success, 'Records are sorted Successfully!');
             }
@@ -141,35 +151,34 @@ class PaymentModesController extends Controller
         }
     }
 
-    public function sortorder()
+    public function sortOrder()
     {
-        if (!Gate::allows('payment_modes_sort')) {
+        if (!Gate::allows('regions_sort')) {
             return abort(401);
         }
-        return view('admin.payment_modes.sort');
+        return view('admin.regions.sort');
     }
 
     /**
-     * get records for sorting Payment Modes
+     * get records for sorting Regions
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function sortOrderGet()
     {
         try {
-            if (!Gate::allows('payment_modes_sort')) {
+            if (!Gate::allows('regions_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $payment_modes = PaymentModes::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
-            return ApiHelper::apiResponse($this->success, 'Success', true, $payment_modes);
+            $regions = Regions::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
+            return ApiHelper::apiResponse($this->success, 'Success', true, $regions);
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
     }
 
-
     /**
-     * Update record of Payment Modes
+     * Store a newly created region
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -177,15 +186,14 @@ class PaymentModesController extends Controller
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('payment_modes_create')) {
+            if (!Gate::allows('regions_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            if (PaymentModes::createRecord($request, Auth::User()->account_id)) {
+            if (Regions::createRecord($request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
@@ -196,6 +204,8 @@ class PaymentModesController extends Controller
 
 
     /**
+     * Validate form fields
+     *
      * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
@@ -203,13 +213,12 @@ class PaymentModesController extends Controller
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'type' => 'required'
         ]);
     }
 
 
     /**
-     * Get data for edit Payment Mode
+     * Get data for Edit Region
      *
      * @param $id
      * @return \Illuminate\Http\JsonResponse
@@ -217,14 +226,14 @@ class PaymentModesController extends Controller
     public function edit($id)
     {
         try {
-            if (!Gate::allows('payment_modes_edit')) {
+            if (!Gate::allows('regions_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $payment_mode = PaymentModes::getData($id);
-            if (!$payment_mode) {
+            $region = Regions::getData($id);
+            if (!$region) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
-            return ApiHelper::apiResponse($this->success, 'Success', true, $payment_mode);
+            return ApiHelper::apiResponse($this->success, 'Success', true, $region);
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
@@ -232,7 +241,7 @@ class PaymentModesController extends Controller
 
 
     /**
-     * Update record of Payment Modes
+     * Update region
      *
      * @param Request $request
      * @param $id
@@ -241,14 +250,14 @@ class PaymentModesController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('payment_modes_edit')) {
+            if (!Gate::allows('regions_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            if (PaymentModes::updateRecord($id, $request, Auth::User()->account_id)) {
+            if (Regions::updateRecord($id, $request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
@@ -259,7 +268,7 @@ class PaymentModesController extends Controller
 
 
     /**
-     * Remove Payment Mode
+     * Remove/delete Region
      *
      * @param $id
      * @return \Illuminate\Http\JsonResponse
@@ -267,19 +276,18 @@ class PaymentModesController extends Controller
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('payment_modes_destroy')) {
+            if (!Gate::allows('regions_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $response = PaymentModes::deleteRecord($id);
+            $response = Regions::DeleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
     }
 
-
     /**
-     * Change status of Payment Modes
+     * Change status of Region
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -288,19 +296,20 @@ class PaymentModesController extends Controller
     {
         try {
             if ($request->status == 0) {
-                if (!Gate::allows('payment_modes_inactive')) {
+                if (!Gate::allows('regions_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                $response = PaymentModes::inactiveRecord($request->id);
+                $response=Regions::inactiveRecord($request->id);
             } else {
-                if (!Gate::allows('payment_modes_active')) {
+                if (!Gate::allows('regions_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                $response = PaymentModes::activeRecord($request->id);
+                $response=Regions::activeRecord($request->id);
             }
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
     }
+
 }

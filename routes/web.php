@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\PaymentModesController;
+use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\SettingsController;
@@ -110,5 +112,13 @@ use App\Http\Controllers\Admin\LocationsController;
 
         // Payment Modes
         Route::get('payment_modes',[PaymentModesController::class,'index'])->name('payment_modes.index');
+
+        // Regions
+        Route::get('regions',[RegionsController::class,'index'])->name('regions.index');
+        Route::get('regions/sort',[RegionsController::class,'sortOrder'])->name('regions.sort');
+
+        // Cities
+        Route::get('cities',[CitiesController::class,'index'])->name('cities.index');
+        Route::get('cities/sort',[CitiesController::class,'sortOrder'])->name('cities.sort');
 
     });
