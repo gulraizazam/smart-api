@@ -108,7 +108,7 @@ class LeadStatuses extends BaseModal
     static public function lead_statuses_filters($request, $account_id, $apply_filter)
     {
         $where = array();
-
+        $filters = getFilters($request->all());
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -116,7 +116,7 @@ class LeadStatuses extends BaseModal
                 $account_id
             );
             Filters::put(Auth::User()->id, 'lead_statuses', 'account_id', $account_id);
-        }  else {
+        } else {
 
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'lead_statuses', 'account_id');
@@ -130,13 +130,13 @@ class LeadStatuses extends BaseModal
                 }
             }
         }
-        if ($request->get('lead_status_name')) {
+        if (count($filters) && $filters['name'] != '') {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('lead_status_name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'lead_statuses', 'lead_status_name', $request->get('lead_status_name'));
+            Filters::put(Auth::User()->id, 'lead_statuses', 'lead_status_name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'lead_statuses', 'lead_status_name');
@@ -151,23 +151,23 @@ class LeadStatuses extends BaseModal
             }
         }
 
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if (count($filters) && $filters['status'] != '') {
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'lead_statuses', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'lead_statuses', 'status', $filters['status']);
         } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, 'lead_statuses', 'status');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'lead_statuses', 'status');
             } else {
-                if ( Filters::get(Auth::user()->id, 'lead_statuses', 'status') == 0 || Filters::get(Auth::user()->id, 'lead_statuses', 'status') == 1){
-                    if ( Filters::get(Auth::user()->id, 'lead_statuses', 'status') != null ){
+                if (Filters::get(Auth::user()->id, 'lead_statuses', 'status') == 0 || Filters::get(Auth::user()->id, 'lead_statuses', 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, 'lead_statuses', 'status') != null) {
                         $where[] = array(
                             'active',
                             '=',
-                            Filters::get( Auth::user()->id, 'lead_statuses', 'status')
+                            Filters::get(Auth::user()->id, 'lead_statuses', 'status')
                         );
                     }
                 }
@@ -294,25 +294,16 @@ class LeadStatuses extends BaseModal
         $lead_statuse = LeadStatuses::getData($id);
 
         if (!$lead_statuse) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.lead_statuses.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);;
         }
-
         // Check if child records exists or not, If exist then disallow to delete it.
         if (LeadStatuses::isChildExists($id, Auth::User()->account_id)) {
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.lead_statuses.index');
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-
         $record = $lead_statuse->delete();
-
         //log request for delete for audit trail
-
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
     /**
@@ -324,21 +315,13 @@ class LeadStatuses extends BaseModal
      */
     static public function InactiveRecord($id)
     {
-
         $lead_statuse = LeadStatuses::getData($id);
-
         if (!$lead_statuse) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.lead_statuses.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $lead_statuse->update(['active' => 0]);
-
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::InactiveEventLogger(self::$_table, 'Inactive', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -350,22 +333,15 @@ class LeadStatuses extends BaseModal
      */
     static public function activeRecord($id)
     {
-
         $lead_statuse = LeadStatuses::getData($id);
-
         if (!$lead_statuse) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.lead_statuses.index');
+            return collect(['status' => true, 'message' => 'Resource not found.']);
         }
-
         $record = $lead_statuse->update(['active' => 1]);
-
-        flash('Record has been activated successfully.')->success()->important();
-
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
+
     /**
      * Update Record
      *
@@ -453,13 +429,13 @@ class LeadStatuses extends BaseModal
             ['parent_id', '=', '0']
         ];
 
-        if($excludeIds && !is_array($excludeIds)) {
+        if ($excludeIds && !is_array($excludeIds)) {
             $excludeIds = array($excludeIds);
         } else {
             $excludeIds = [];
         }
 
-        if(count($excludeIds)) {
+        if (count($excludeIds)) {
             return self::where($where)->whereNotIn('id', $excludeIds)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
         } else {
             return self::where($where)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');

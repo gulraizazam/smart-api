@@ -40,7 +40,7 @@
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
                             <a href="{{route('admin.regions.index')}}" class="btn btn-primary">
-                                <i class="fa fa-arrow-left"></i> Sort
+                                <i class="fa fa-arrow-left"></i> Back
                             </a>
                             <!--end::Button-->
                         </div>
