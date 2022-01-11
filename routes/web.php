@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CitiesController;
+use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
@@ -105,5 +106,9 @@ use Illuminate\Support\Facades\Route;
         // Cities
         Route::get('cities',[CitiesController::class,'index'])->name('cities.index');
         Route::get('cities/sort',[CitiesController::class,'sortOrder'])->name('cities.sort');
+
+        // Lead Sources
+        Route::get('lead_sources',[LeadSourcesController::class,'index'])->name('lead_sources.index');
+        Route::get('lead_sources/sort',[LeadSourcesController::class,'sortOrder'])->name('lead_sources.sort');
 
     });

@@ -45,7 +45,7 @@ class LeadSources extends BaseModal
      */
     static public function getActiveOnly()
     {
-        return self::where(['active' => 1])->OrderBy('sort_no','asc')->get();
+        return self::where(['active' => 1])->OrderBy('sort_no', 'asc')->get();
     }
 
     /**
@@ -98,6 +98,7 @@ class LeadSources extends BaseModal
     static public function lead_sources_filters($request, $account_id, $apply_filter)
     {
         $where = array();
+        $filters = getFilters($request->all());
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -105,7 +106,7 @@ class LeadSources extends BaseModal
                 $account_id
             );
             Filters::put(Auth::User()->id, 'lead_sources', 'account_id', $account_id);
-        }  else {
+        } else {
 
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'lead_sources', 'account_id');
@@ -119,13 +120,13 @@ class LeadSources extends BaseModal
                 }
             }
         }
-        if ($request->get('lead_status_name')) {
+        if (count($filters) && $filters['name'] != '') {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('lead_status_name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'lead_sources', 'lead_status_name', $request->get('lead_status_name'));
+            Filters::put(Auth::User()->id, 'lead_sources', 'lead_status_name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'lead_sources', 'lead_status_name');
@@ -140,23 +141,23 @@ class LeadSources extends BaseModal
             }
         }
 
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if (count($filters) && $filters['status'] != '') {
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'lead_sources', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'lead_sources', 'status', $filters['status']);
         } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, 'lead_sources', 'status');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'lead_sources', 'status');
             } else {
-                if ( Filters::get(Auth::user()->id, 'lead_sources', 'status') == 0 || Filters::get(Auth::user()->id, 'lead_sources', 'status') == 1 ){
-                    if ( Filters::get( Auth::user()->id ,'lead_sources', 'status') != null ){
+                if (Filters::get(Auth::user()->id, 'lead_sources', 'status') == 0 || Filters::get(Auth::user()->id, 'lead_sources', 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, 'lead_sources', 'status') != null) {
                         $where[] = array(
                             'active',
                             '=',
-                            Filters::get( Auth::user()->id, 'lead_sources', 'status')
+                            Filters::get(Auth::user()->id, 'lead_sources', 'status')
                         );
                     }
                 }
@@ -187,19 +188,13 @@ class LeadSources extends BaseModal
      */
     static public function createRecord($request, $account_id)
     {
-
         $data = $request->all();
-
         // Set Account ID
         $data['account_id'] = $account_id;
-
         $record = self::create($data);
         $record->update(['sort_no' => $record->id]);
-
         //log request for Create for Audit Trail
-
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
         return $record;
     }
 
@@ -212,29 +207,17 @@ class LeadSources extends BaseModal
      */
     static public function DeleteRecord($id)
     {
-
         $lead_source = LeadSources::getData($id);
-
         if (!$lead_source) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.lead_sources.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         // Check if child records exists or not, If exist then disallow to delete it.
         if (LeadSources::isChildExists($id, Auth::User()->account_id)) {
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.lead_sources.index');
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-
         $record = $lead_source->delete();
-
-        //log request for delete for audit trail
-
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
     /**
@@ -246,21 +229,13 @@ class LeadSources extends BaseModal
      */
     static public function InactiveRecord($id)
     {
-
         $lead_source = LeadSources::getData($id);
-
         if (!$lead_source) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.lead_sources.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $lead_source->update(['active' => 0]);
-
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -272,22 +247,13 @@ class LeadSources extends BaseModal
      */
     static public function activeRecord($id)
     {
-
         $lead_source = LeadSources::getData($id);
-
         if (!$lead_source) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.lead_sources.index');
+            return collect(['status' => true, 'message' => 'Resource not found.']);
         }
-
         $record = $lead_source->update(['active' => 1]);
-
-        flash('Record has been activated successfully.')->success()->important();
-
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-        return $record;
-
+        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
