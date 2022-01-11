@@ -1,9 +1,9 @@
 <!--begin::Modal content-->
 <div class="modal-content">
     <!--begin::Modal header-->
-    <div class="modal-header" id="kt_modal_edit_user_header">
+    <div class="modal-header" id="kt_modal_add_user_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit Region</h2>
+        <h2 class="fw-bolder">Add Lead Source</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -22,16 +22,14 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_edit_regions_form" method="post" action="">
-        @method('put')
-        <!--begin::Scroll-->
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_edit_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-
+        <form id="modal_add_lead_sources_form" method="post" action="{{route('admin.lead_sources.store')}}">
+            <!--begin::Scroll-->
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input type="text" id="edit_regions_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="add_lead_sources_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                 </div>

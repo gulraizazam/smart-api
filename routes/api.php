@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CitiesController;
+use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -75,6 +76,17 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('cities_sort_save', [CitiesController::class, 'sortOrderSave'])->name('cities.sort_save');
     Route::get('cities_sort', [CitiesController::class, 'sortOrderGet'])->name('cities.sort_get');
     // Cities Routes End
+
+    // Lead Sources Routes Start
+    Route::post('lead_sources/datatable', [LeadSourcesController::class, 'datatable'])->name('lead_sources.datatable');
+    Route::post('lead_sources', [LeadSourcesController::class, 'store'])->name('lead_sources.store');
+    Route::get('lead_sources/{id}/edit', [LeadSourcesController::class, 'edit'])->name('lead_sources.edit');
+    Route::put('lead_sources/{id}', [LeadSourcesController::class, 'update'])->name('lead_sources.update');
+    Route::delete('lead_sources/{id}', [LeadSourcesController::class, 'destroy'])->name('lead_sources.destroy');
+    Route::post('lead_sources/status', [LeadSourcesController::class, 'status'])->name('lead_sources.status');
+    Route::post('lead_sources_sort_save', [LeadSourcesController::class, 'sortOrderSave'])->name('lead_sources.sort_save');
+    Route::get('lead_sources_sort', [LeadSourcesController::class, 'sortOrderGet'])->name('lead_sources.sort_get');
+    // Lead Sources Routes End
 
 });
 
