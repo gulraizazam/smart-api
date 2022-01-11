@@ -32,14 +32,14 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input id="town_name" type="text" name="name" value="{{$usertype->name ?? ''}}" class="form-control form-control-lg form-control-solid mb-2">
+                            <input id="town_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
-                    
+
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cities </label>
                             <select id="town_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
-                                
+
                             </select>
                         </div>
                     </div>
@@ -51,7 +51,7 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary" data-kt-users-modal-action="submit">
+                <button type="submit" class="btn btn-primary" >
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>

@@ -6,13 +6,14 @@ use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Support\Facades\Route;
-    use App\Http\Controllers\Admin\SettingsController;
-    use App\Http\Controllers\Admin\PermissionsController;
-    use App\Http\Controllers\Admin\RolesController;
-    use App\Http\Controllers\Admin\UsersController;
-    use App\Http\Controllers\Admin\UserTypesController;
-    use Rap2hpoutre\LaravelLogViewer\LogViewerController;
-    use App\Http\Controllers\Admin\TownController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Admin\RolesController;
+use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Admin\UserTypesController;
+use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+use App\Http\Controllers\Admin\TownController;
+use App\Http\Controllers\Admin\LocationsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -95,9 +96,23 @@ use Illuminate\Support\Facades\Route;
 
         Route::resource('towns', TownController::class)->only('index');
 
+        // Locations
+        Route::post('locations/verify', [LocationsController::class, 'verify'])->name('locations.verify');
+        Route::put('locations/verify_edit', [LocationsController::class, 'verify_edit'])->name('locations.verify_edit');
+        Route::post('locations/datatable', [LocationsController::class, 'datatable'])->name('locations.datatable');
+        Route::patch('locations/active/{id}', [LocationsController::class, 'active'])->name('locations.active');
+        Route::post('locations/status', [LocationsController::class, 'status'])->name('locations.status');
+        Route::get('locations/sort', [LocationsController::class, 'sortorder'])->name('locations.sort');
+        Route::get('locations/sort_get', [LocationsController::class, 'getSortOrder'])->name('locations.sort_get');
+        Route::put('locations/edit_update/{id}', [LocationsController::class, 'update'])->name('locations.updatelocation');
+
+        Route::resource('locations', LocationsController::class);
+
+        Route::post('lcation_sort_save', [LocationsController::class, 'sortorder_save'])->name('locations.sort_save');
+
+
         // Payment Modes
         Route::get('payment_modes',[PaymentModesController::class,'index'])->name('payment_modes.index');
-        Route::get('payment_modes/sort',[PaymentModesController::class,'sortorder'])->name('payment_modes.sort');
 
         // Regions
         Route::get('regions',[RegionsController::class,'index'])->name('regions.index');

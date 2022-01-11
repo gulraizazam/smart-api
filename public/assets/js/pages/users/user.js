@@ -5,8 +5,8 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 25,
-        title: '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input class="select-all-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>',
+        width: 'auto',
+        title: renderCheckbox(),
         template: function (data) {
             let id = data.id;
             return '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>';
@@ -160,7 +160,7 @@ function editRow(id) {
         type: "GET",
         cache: false,
         success: function (response) {
-            
+
             setEditData(response);
 
             reInitSelect2(".select2", "");
@@ -199,7 +199,7 @@ function changePassword(id) {
 }
 
 function createUsers($route) {
-   
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -208,9 +208,9 @@ function createUsers($route) {
         type: "GET",
         cache: false,
         success: function (response) {
-           
-            setCreateData(response, 'add_');
-           
+
+            setCreateData(response);
+
             reInitSelect2(".select2", "");
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -220,7 +220,7 @@ function createUsers($route) {
     });
 }
 
-function setCreateData(response, start_id) {
+function setCreateData(response) {
 
 
     let roles = response.data.roles;
@@ -229,23 +229,23 @@ function setCreateData(response, start_id) {
     let location_otions = '<option value="">Select</option>';
 
     for (let i = 0; i< roles.length; i++) {
-        
+
         roles_options += '<option value="'+roles[i].id+'">'+roles[i].name+'</option>';
-    };
-    
+    }
+
 
     Object.values(locations).forEach(function(value, index) {
-    
+
        location_otions = '<option value="">Select</option>\
             <optgroup label="'+value.name+'">';
             Object.values(value.children).forEach(function(child, index) {
-            
+
                 location_otions += '<option value="'+child.id+'">'+child.name+'</option>';
             });
-            
+
             location_otions += '</optgroup>';
     });
-    
+
     $("#add_user_roles").html(roles_options);
     $("#add_user_centers").html(location_otions);
 }
@@ -253,36 +253,36 @@ function setCreateData(response, start_id) {
 function setEditData(response) {
 
     let user = response.data.user;
-   
+
     let user_roles = response.data.user_roles;
     let user_has_locations = response.data.user_has_locations;
-   
+
     $("#modal_edit_user_form").attr("action", route('admin.users.update', {id: user.id}));
 
-   
+
     let roles = response.data.roles;
     let locations = response.data.locations;
     let roles_options = '<option value="">Select</option>';
     let location_otions = '<option value="">Select</option>';
 
     Object.entries(roles).forEach(function(role, index) {
-        
+
         roles_options += '<option value="'+role[0]+'">'+role[1]+'</option>';
     });
-    
+
 
     Object.values(locations).forEach(function(value, index) {
-    
+
        location_otions = '<option value="">Select</option>\
             <optgroup label="'+value.name+'">';
             Object.values(value.children).forEach(function(child, index) {
-            
+
                 location_otions += '<option value="'+child.id+'">'+child.name+'</option>';
             });
-            
+
             location_otions += '</optgroup>';
     });
-    
+
     $("#edit_user_roles").html(roles_options);
     $("#edit_user_centers").html(location_otions);
 
@@ -291,9 +291,7 @@ function setEditData(response) {
     $("#edit_user_phone").val(user.phone);
     $("#edit_user_gender").val(user.gender);
     $("#edit_user_commission").val(user.commission);
-    
 
-    console.log(user_roles);
     $('#edit_user_roles').val(user_roles).change();
 
 
