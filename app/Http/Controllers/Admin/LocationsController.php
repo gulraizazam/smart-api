@@ -244,7 +244,7 @@ class LocationsController extends Controller
             ['active', '=', '1'],
             ['is_featured', '=', '1']
         ])->get()->pluck('full_name', 'id');
-        $cities->prepend('Select a City', '');
+
 
         $ServiceLocations = array();
 

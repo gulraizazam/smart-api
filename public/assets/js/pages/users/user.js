@@ -292,8 +292,6 @@ function setEditData(response) {
     $("#edit_user_gender").val(user.gender);
     $("#edit_user_commission").val(user.commission);
 
-
-    console.log(user_roles);
     $('#edit_user_roles').val(user_roles).change();
 
 

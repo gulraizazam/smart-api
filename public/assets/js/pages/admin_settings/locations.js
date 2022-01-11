@@ -198,8 +198,8 @@ var table_columns = [
         let cities = filter_values.cities;
         let regions = filter_values.regions;
         let services = filter_values.services;
-
         let status = filter_values.status;
+
         let city_options = '<option value="">Select A City</option>';
         let region_options = '<option value="">Select A Region</option>';
         let services_options = '<option value="">Select A Service</option>';
@@ -252,7 +252,7 @@ function createCentre($route) {
 
             setCreateData(response);
 
-            reInitSelect2(".select2", "");
+            //reInitSelect2(".select2", "Select");
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -265,20 +265,49 @@ function setCreateData(response) {
 
 
     let cities = response.data.cities;
-    let services = response.data.services;
-    let cities_options = '<option value="">Select</option>';
-    let service_options = '<option value="">Select</option>';
+    let cities_options = '<option value="">Select A City</option>';
 
     Object.values(cities).forEach(function(value, index) {
 
         cities_options += '<option value="'+value[0]+'">'+value+'</option>';
     });
 
-    Object.values(services).forEach(function(value, index) {
+    $("#add_location_cities").html(cities_options);
 
-        service_options = '<option value="">Select</option>';
+    let service_options = makeServiceOptions(response);
+
+    $("#add_location_services").html(service_options);
+}
+
+function makeServiceOptions(response) {
+
+    let services = response.data.services;
+    let service_options = '<option value="">Select</option>';
+
+    let tmp_id = '';
+    let id = 0;
+    let val = 'Select';
+
+    Object.values(services).forEach(function(value, index) {
+        if (value.id == 0) {
+            return;
+        }
+
+
+        if(value.id < 0) {
+            tmp_id = (value.id * -1);
+            id = value.id * -1;
+            val = '<b>'+value.name ?? ''+'</b>';
+        } else {
+            tmp_id = (value.id * 1);
+            id = value.id ;
+            val = value.name ?? '';
+        }
+
+        //in_array($tmp_id, $ServiceLocations)
+
+        service_options += '<option value="'+id+'">'+val+'</option>';
     });
 
-    $("#add_location_cities").html(cities_options);
-    $("#add_location_centres").html(service_options);
+    return service_options;
 }

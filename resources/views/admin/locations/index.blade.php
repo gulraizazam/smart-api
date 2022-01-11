@@ -98,6 +98,7 @@
 
     @push('js')
         <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/locations.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/file-upload/image-input.js')}}"></script>
     @endpush
 
 @endsection

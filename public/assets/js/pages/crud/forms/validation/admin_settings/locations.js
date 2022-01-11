@@ -2,7 +2,7 @@
 var Validation = function () {
     // Private functions
     var validation = function () {
-        let modal_id = 'modal_locations_form';
+        let modal_id = 'modal_add_location_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
@@ -15,14 +15,70 @@ var Validation = function () {
                             }
                         }
                     },
+                    fdo_name: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The fdo name field is required'
+                            }
+                        }
+                    },
+                    fdo_phone: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The fdo phone field is required'
+                            }
+                        }
+                    },
 
-                    city_id: {
+                    "cities[]": {
                         validators: {
                             notEmpty: {
                                 message: 'The city field is required'
                             }
                         }
-                    }
+                    },
+                    address: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The address field is required'
+                            }
+                        }
+                    },
+                    google_map: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The google map field is required'
+                            }
+                        }
+                    },
+                    "services[]": {
+                        validators: {
+                            notEmpty: {
+                                message: 'The services field is required'
+                            }
+                        }
+                    },
+                    tax_percentage: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The tax percentage field is required'
+                            }
+                        }
+                    },
+                    ntn: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The ntn field is required'
+                            }
+                        }
+                    },
+                    stn: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The stn field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {

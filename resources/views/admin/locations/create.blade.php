@@ -22,19 +22,19 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_user_form" method="post" action="{{route('admin.users.store')}}">
+        <form id="modal_add_location_form" method="post" action="{{route('admin.locations.store')}}">
             <!--begin::Scroll-->
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_location_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
                             <input type="text" id="add_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">FDO Name</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">FDO Name <span class="text text-danger">*</span></label>
                             <input type="text" id="add_fdo_name" name="fdo_name" class="form-control form-control-lg form-control-solid" />
                         </div>
 
@@ -44,46 +44,69 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">FDO Phone</label>
-                            <input type="number" id="add_fsd_phone" name="fsd_phone" class="form-control form-control-lg form-control-solid mb-2" />
+                            <label class="required fw-bold fs-6 mb-2 pl-0">FDO Phone <span class="text text-danger">*</span></label>
+                            <input type="number" id="add_fdo_phone" name="fdo_phone" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
-                            <select id="add_user_gender" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
-                                <option value=""></option>
-                                <option value="1">Male</option>
-                                <option value="2">Female</option>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
+                            <select id="add_location_cities" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="cities[]">
+
                             </select>
                         </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="row">
 
 
-
-
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="row">
                         <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centres</label>
-                            <select id="add_location_centres" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
-
-                            </select>
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Address <span class="text text-danger">*</span></label>
+                            <input type="text" id="add_address" name="address" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                    </div>
-                    <div class="row mt-10">
+
                         <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">City</label>
-                            <select id="add_location_cities" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="cities[]">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Services <span class="text text-danger">*</span></label>
+                            <select id="add_location_services" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="services[]">
+
 
                             </select>
                         </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Google Map <span class="text text-danger">*</span></label>
+                            <input type="text" id="add_google_map" name="google_map" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Tax Percentage <span class="text text-danger">*</span></label>
+                            <input type="text" id="add_tax_percentage" name="tax_percentage" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">NTN <span class="text text-danger">*</span></label>
+                            <input type="text" id="add_ntn" name="ntn" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">STN <span class="text text-danger">*</span></label>
+                            <input type="text" id="add_stn" name="stn" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Select Logo</label>
+                            <div class="col-lg-9 col-xl-6">
+                                <div class="image-input image-input-outline" id="kt_image_1">
+                                    <div class="image-input-wrapper" style="background-image: url(assets/media/users/100_1.jpg)"></div>
+                                    <label class="btn btn-xs btn-icon btn-circle btn-white btn-hover-text-primary btn-shadow" data-action="change" data-toggle="tooltip" title="" data-original-title="Change avatar">
+                                        <i class="fa fa-pen icon-sm text-muted"></i>
+                                        <input type="file" name="file" accept=".png, .jpg, .jpeg" />
+                                        <input type="hidden" name="file" />
+                                    </label>
+                                    <span class="btn btn-xs btn-icon btn-circle btn-white btn-hover-text-primary btn-shadow" data-action="cancel" data-toggle="tooltip" title="Cancel avatar">
+                                        <i class="ki ki-bold-close icon-xs text-muted"></i>
+                                    </span>
+                                </div>
+
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
