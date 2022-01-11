@@ -50,7 +50,7 @@
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
-                            <select id="add_location_cities" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="cities[]">
+                            <select id="add_location_cities" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
 
                             </select>
                         </div>
@@ -96,7 +96,7 @@
                                     <div class="image-input-wrapper" style="background-image: url(assets/media/users/100_1.jpg)"></div>
                                     <label class="btn btn-xs btn-icon btn-circle btn-white btn-hover-text-primary btn-shadow" data-action="change" data-toggle="tooltip" title="" data-original-title="Change avatar">
                                         <i class="fa fa-pen icon-sm text-muted"></i>
-                                        <input type="file" name="file" accept=".png, .jpg, .jpeg" />
+                                        <input id="file" type="file" name="file" accept=".png, .jpg, .jpeg" />
                                         <input type="hidden" name="file" />
                                     </label>
                                     <span class="btn btn-xs btn-icon btn-circle btn-white btn-hover-text-primary btn-shadow" data-action="cancel" data-toggle="tooltip" title="Cancel avatar">

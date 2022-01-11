@@ -5,8 +5,8 @@ var table_columns = [
     {
     field: 'id',
     sortable: false,
-    width: 25,
-    title: '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input class="select-all-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>',
+        width: 'auto',
+        title: renderCheckbox(),
         template: function (data) {
             let id = data.id;
             return '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>';
@@ -88,7 +88,7 @@ function createPermission($route) {
         type: "GET",
         cache: false,
         success: function (response) {
-            
+
             makeCreatePopup(response);
 
             reInitSelect2("#kt_select2_8", "Select an Parent Group");
@@ -108,7 +108,7 @@ function makeCreatePopup(response) {
     Object.entries(permissions).forEach(function(value, index) {
         options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
-    
+
 
     $(".permissions-dropdown").html(options);
 }
@@ -155,7 +155,7 @@ function makeEditPopup(response) {
     $("#permission_title").val(permission.title);
 
     $("#permission_parent").val(permission.parent_id);
-    
+
 }
 
 function applyFilters(datatable) {

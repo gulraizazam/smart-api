@@ -348,7 +348,7 @@ class Locations extends BaseModal
                 ->whereIn('id', ACL::getUserCentres())
                 ->whereNull('deleted_at')
                 ->groupBy('service_has_locations.location_id', 'locations.id')
-//                ->orderby($orderBy, $order)
+                ->orderby('sort_no', 'asc')
                 ->limit($iDisplayLength)->offset($iDisplayStart)->get();
         }
     }
@@ -821,10 +821,13 @@ class Locations extends BaseModal
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-            $file->move('centre_logo', $file->getClientOriginalName());
+           // $file->move('centre_logo', $file->getClientOriginalName());
+            $fileName = time().'-'.$file->getClientOriginalName();
+            $file->storeAs('public/centre_logo', $fileName);
             $ext = $file->getClientOriginalExtension();
-            $data['image_src'] = $file->getClientOriginalName();
+            $data['image_src'] = $fileName;
         }
+
         $record = self::create($data);
         $record->update(['sort_no' => $record->id]);
         //log request for Create for Audit Trail
@@ -945,9 +948,10 @@ class Locations extends BaseModal
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-            $file->move('centre_logo', $file->getClientOriginalName());
+            $fileName = time().'-'.$file->getClientOriginalName();
+            $file->storeAs('public/centre_logo', $fileName);
             $ext = $file->getClientOriginalExtension();
-            $data['image_src'] = $file->getClientOriginalName();
+            $data['image_src'] = $fileName;
         }
         $record = self::where([
             'id' => $id,

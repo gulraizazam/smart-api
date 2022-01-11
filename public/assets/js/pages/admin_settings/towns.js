@@ -2,6 +2,16 @@
 var table_url = route('admin.towns.datatable');
 
 var table_columns = [
+    {
+        field: 'id',
+        sortable: false,
+        width: 'auto',
+        title: renderCheckbox(),
+        template: function (data) {
+            let id = data.id;
+            return '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>';
+        }
+    },
      {
         field: 'name',
         title: 'Name',
@@ -22,7 +32,7 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 80,
+        width: 100,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
@@ -74,6 +84,39 @@ var table_columns = [
         }
         return '';
     }
+
+    function createTown($route) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+
+            setCreateData(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            reInitValidation(Validation);
+        }
+    });
+}
+
+    function setCreateData(response) {
+
+        let cities = response.data.cities;
+        let cities_options = '<option value="">Select a City</option>';
+
+        Object.entries(cities).forEach(function(value, index) {
+            cities_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        });
+
+        $("#add_town_city_id").html(cities_options);
+
+}
 
     function editRow(url) {
 

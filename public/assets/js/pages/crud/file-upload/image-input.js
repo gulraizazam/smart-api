@@ -6,6 +6,7 @@ var KTImageInputDemo = function () {
 	var initDemos = function () {
 		// Example 1
 		var avatar1 = new KTImageInput('kt_image_1');
+        var avatar2 = new KTImageInput('kt_image_2');
 	}
 
 	return {

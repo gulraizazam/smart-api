@@ -2,29 +2,45 @@
 var table_url = route('admin.locations.datatable');
 
 var table_columns = [
+    {
+        field: 'id',
+        sortable: false,
+        width: 'auto',
+        title: renderCheckbox(),
+        template: function (data) {
+            let id = data.id;
+            return '<label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
+        }
+    },
      {
         field: 'name',
         title: 'Name',
+         sortable: false,
         width: 'auto',
     },{
         field: 'fdo_name',
         title: 'FDO Name',
+        sortable: false,
         width: 'auto',
     },{
         field: 'fdo_phone',
         title: 'FDO Phone',
+        sortable: false,
         width: 'auto',
     },{
         field: 'address',
         title: 'Address',
+        sortable: false,
         width: 'auto',
     },{
         field: 'city',
         title: 'City',
+        sortable: false,
         width: 'auto',
     },{
         field: 'region',
         title: 'Region',
+         sortable: false,
         width: 'auto',
     },{
         field: 'created_at',
@@ -97,9 +113,8 @@ var table_columns = [
     }
 
     function editRow(url) {
-        return '';
 
-        $("#modal_add_locations").modal("show");
+        $("#modal_edit_locations").modal("show");
 
         $.ajax({
             headers: {
@@ -128,23 +143,37 @@ var table_columns = [
     function setEditData(response) {
 
 
-        let town = response.data.town;
+        let location = response.data.location;
+        let service_location = response.data.service_location;
+
         let cities = response.data.cities;
-
-        let action = route('admin.locations.update', {id: town.id});
-        $("#modal_locations_form").attr("action", action);
-
-        let options = '<option value="">Select</option>';
+        let cities_options = '<option value="">Select A City</option>';
 
         Object.entries(cities).forEach(function(value, index) {
-
-            options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+            cities_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
         });
 
-        $("#town_city_id").html(options);
+        $("#edit_location_cities").html(cities_options);
 
-        $("#town_name").val(town.name);
-        $("#town_city_id").val(town.city_id);
+        let service_options = makeServiceOptions(response);
+
+        $("#edit_location_services").html(service_options);
+
+        $("#edit_name").val(location.name);
+        $("#edit_fdo_name").val(location.fdo_name);
+        $("#edit_fdo_phone").val(location.fdo_phone);
+        $("#edit_address").val(location.address);
+        $("#edit_google_map").val(location.google_map);
+        $("#edit_tax_percentage").val(location.tax_percentage);
+        $("#edit_ntn").val(location.ntn);
+        $("#edit_stn").val(location.stn);
+        let image = asset_url +'storage/centre_logo/'+ location.image_src;
+        $("#edit-image").css('background-image', "url(" + image + ")");
+        $("#edit_location_cities").val(location.city_id).change();
+        $("#edit_location_services").val(service_location).change();
+
+
+
 
     }
 
@@ -267,9 +296,8 @@ function setCreateData(response) {
     let cities = response.data.cities;
     let cities_options = '<option value="">Select A City</option>';
 
-    Object.values(cities).forEach(function(value, index) {
-
-        cities_options += '<option value="'+value[0]+'">'+value+'</option>';
+    Object.entries(cities).forEach(function(value, index) {
+        cities_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
 
     $("#add_location_cities").html(cities_options);

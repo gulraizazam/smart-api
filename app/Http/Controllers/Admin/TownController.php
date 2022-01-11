@@ -156,35 +156,24 @@ class TownController extends Controller
      * Store a newly created resource in storage.
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         if (!Gate::allows('towns_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         if (Towns::createRecord($request, Auth::User()->account_id)) {
-            flash('Record has been created successfully.')->success()->important();
-
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been created successfully.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         }
     }
 

@@ -45,18 +45,17 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
+                            @if(Gate::allows('locations_sort'))
+                                <a id="delete-table-rows" href="{{route('admin.locations.sort_get')}}" class="btn btn-info">
+                                    <i class="fa fa-sort-amount-up"></i>Sort
+                                </a>&nbsp;&nbsp;
+                            @endif
+
                             @if(Gate::allows('locations_create'))
                                 <a href="javascript:void(0);" onclick="createCentre('{{ route('admin.locations.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_locations">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>&nbsp;&nbsp;
-                            @endif
-
-                            @if(Gate::allows('locations_sort'))
-                                <a href="{{ route('admin.locations.sort') }}" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_user">
-                                    <i class="la la-plus"></i>
-                                    sort Centers
-                                </a>
                             @endif
 
                         <!--end::Button-->
@@ -84,9 +83,18 @@
 
     <div class="modal fade" id="modal_add_locations" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="locations_edit">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="locations_add">
 
             @include('admin.locations.create')
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_edit_locations" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="locations_edit">
+
+            @include('admin.locations.edit')
         </div>
         <!--end::Modal dialog-->
     </div>

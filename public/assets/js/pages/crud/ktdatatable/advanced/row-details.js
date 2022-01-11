@@ -27,7 +27,7 @@ var KTDatatable = function() {
                             if (typeof setFilters === 'function') {
                                 setFilters(data.filter_values, data.active_filters);
                             }
-                            
+
 
                            if (typeof data.status !== 'undefined') {
                                deleteSuccessAndReset(data, datatable);
@@ -117,7 +117,8 @@ jQuery(document).ready(function() {
 
     /*To get selected row ids for deletion*/
     $(document).on("click", ".select-all-checkboxes", function () {
-        if ($(this).is(":checked")) {
+
+        if ($(this).is(":checked") && $(".table-checkboxes").length > 0) {
             $(".table-checkboxes").prop('checked', true);
             $(".delete-records").removeClass('d-none');
            $(".checkbox-count").text($(".table-checkboxes:checked").length);

@@ -1,7 +1,7 @@
 <!--begin::Modal content-->
 <div class="modal-content">
     <!--begin::Modal header-->
-    <div class="modal-header">
+    <div class="modal-header" id="kt_modal_add_location_header">
         <!--begin::Modal title-->
         <h2 class="fw-bolder">Edit Centre</h2>
         <!--end::Modal title-->
@@ -22,26 +22,91 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_locations_form" method="post" action="">
+        <form id="modal_edit_location_form" method="post" action="">
             <!--begin::Scroll-->
-            @method('put')
-
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_edit_location_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input id="town_name" type="text" name="name" value="{{$usertype->name ?? ''}}" class="form-control form-control-lg form-control-solid mb-2">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">FDO Name <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_fdo_name" name="fdo_name" class="form-control form-control-lg form-control-solid" />
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="row">
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">FDO Phone <span class="text text-danger">*</span></label>
+                            <input type="number" id="edit_fdo_phone" name="fdo_phone" class="form-control form-control-lg form-control-solid mb-2" />
+                        </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Cities </label>
-                            <select id="town_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
+                            <select id="edit_location_cities" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
 
                             </select>
                         </div>
+
+
+                        <div class="fv-row col-md-12">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Address <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_address" name="address" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-12">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Services <span class="text text-danger">*</span></label>
+                            <select id="edit_location_services" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="services[]">
+
+
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Google Map <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_google_map" name="google_map" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Tax Percentage <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_tax_percentage" name="tax_percentage" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">NTN <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_ntn" name="ntn" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">STN <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_stn" name="stn" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Select Logo</label>
+                            <div class="col-lg-9 col-xl-6">
+                                <div class="image-input image-input-outline" id="kt_image_2">
+                                    <div class="image-input-wrapper" id="edit-image"></div>
+                                    <label class="btn btn-xs btn-icon btn-circle btn-white btn-hover-text-primary btn-shadow" data-action="change" data-toggle="tooltip" title="" data-original-title="Change avatar">
+                                        <i class="fa fa-pen icon-sm text-muted"></i>
+                                        <input id="file" type="file" name="file" accept=".png, .jpg, .jpeg" />
+                                        <input type="hidden" name="file" />
+                                    </label>
+                                    <span class="btn btn-xs btn-icon btn-circle btn-white btn-hover-text-primary btn-shadow" data-action="cancel" data-toggle="tooltip" title="Cancel avatar">
+                                        <i class="ki ki-bold-close icon-xs text-muted"></i>
+                                    </span>
+                                </div>
+
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -51,7 +116,7 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary" data-kt-users-modal-action="submit">
+                <button type="submit" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>
@@ -62,6 +127,3 @@
     <!--end::Modal body-->
 </div>
 <!--end::Modal content-->
-
-
-

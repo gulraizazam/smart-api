@@ -34,6 +34,39 @@
                             <h3 class="card-label">Towns</h3>
                         </div>
 
+                        <div class="card-toolbar">
+                            <!--begin::Dropdown-->
+                            @if(Gate::allows('towns_destroy'))
+                                <div class="delete-records d-none">
+                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
+                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
+                                        <i class="fa fa-trash-alt"></i>Delete
+                                    </a>
+                                </div>&nbsp;&nbsp;&nbsp;
+                            @endif
+                            {{--@can('towns_sort')
+                                <a id="delete-table-rows" href="{{route('admin.towns.sort')}}" class="btn btn-info">
+                                    <i class="fa fa-sort-amount-up"></i> Sort
+                                </a>&nbsp;&nbsp;
+                            @endcan--}}
+                            @if(Gate::allows('towns_create'))
+                                <a href="javascript:void(0);" onclick="createTown('{{ route('admin.towns.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_towns">
+                                    <i class="la la-plus"></i>
+                                    Add New
+                                </a>
+                            @endif
+
+                            @if(Gate::allows('towns_import'))
+
+                                <a href="{{ route('admin.towns.import') }}" class="btn btn-primary">s
+                                    <i class="la la-plus"></i>
+                                    Import
+                                </a>
+                        @endif
+
+                        <!--end::Button-->
+                        </div>
+
                     </div>
 
                     <div class="card-body">
@@ -56,8 +89,17 @@
 
     <div class="modal fade" id="modal_add_towns" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="towns_add">
+
+            @include('admin.towns.create')
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_edit_towns" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="towns_edit">
-           
+
             @include('admin.towns.edit')
         </div>
         <!--end::Modal dialog-->

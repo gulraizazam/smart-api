@@ -255,8 +255,17 @@ function hidePreLoader(){
     $('.page-loader-base').hide();
 }
 
+function showSpinner() {
+    $(".spinner-button").addClass("spinner spinner-white spinner-right mr-3").prop('disabled', true);
+}
+
+function hideSpinner() {
+    $(".spinner-button").removeClass("spinner spinner-white spinner-right mr-3").prop('disabled', false);
+}
+
 function submitForm(action, method, data, callback) {
 
+    showSpinner();
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -271,11 +280,13 @@ function submitForm(action, method, data, callback) {
                     'status': response.status,
                     'message': response.message,
                 });
+                hideSpinner();
             } else {
                 callback({
                     'status': response.status,
                     'message': response.message,
                 });
+                hideSpinner();
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -284,12 +295,74 @@ function submitForm(action, method, data, callback) {
                     'status': 0,
                     'message': 'You are not authorized to access this resource',
                 });
+                hideSpinner();
             } else {
                 callback({
                     'status': 0,
                     'message': 'Unable to process your request, please try again later.',
                 });
+                hideSpinner();
             }
         }
     });
+}
+
+function submitFileForm(action, method, form_id, callback) {
+
+    showSpinner();
+
+    var form = $('#' + form_id)[0];
+
+    var data = new FormData(form);
+
+    let files = $('#file')[0].files;
+    if(files.length){
+        data.append('file',files[0]);
+    }
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: action,
+        type: method,
+        data: data,
+        contentType: false,
+        processData: false,
+        cache: false,
+        success: function (response) {
+            if (response.status == true) {
+                callback({
+                    'status': response.status,
+                    'message': response.message,
+                });
+                hideSpinner();
+            } else {
+                callback({
+                    'status': response.status,
+                    'message': response.message,
+                });
+                hideSpinner();
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            if (xhr.status == '401') {
+                callback({
+                    'status': 0,
+                    'message': 'You are not authorized to access this resource',
+                });
+                hideSpinner();
+            } else {
+                callback({
+                    'status': 0,
+                    'message': 'Unable to process your request, please try again later.',
+                });
+                hideSpinner();
+            }
+        }
+    });
+}
+
+function renderCheckbox() {
+    return '<label class="custom_checkbox checkbox-all"><input class="select-all-checkboxes" type="checkbox"><strong></strong></label>';
 }
