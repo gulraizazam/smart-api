@@ -104,7 +104,7 @@ var TownValidation = function () {
                 } else {
                     toastr.error(response.message);
                 }
-            });
+            }, form);
         });
     }
 
