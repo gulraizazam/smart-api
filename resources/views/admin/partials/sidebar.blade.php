@@ -143,7 +143,7 @@
 
 
                 )
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.payment_modes.sort','admin.regions.index','admin.regions.sort','admin.cities.index','admin.cities.sort','admin.lead_sources.index','admin.lead_sources.sort','admin.towns.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.payment_modes.sort','admin.regions.index','admin.regions.sort','admin.cities.index','admin.cities.sort','admin.lead_sources.index','admin.lead_sources.sort','admin.towns.index','admin.lead_statuses.index','admin.lead_statuses.sort'])}}" aria-haspopup="true" data-menu-toggle="hover">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
                                 <i class="font-icon fas fa-cog"></i>
@@ -264,6 +264,23 @@
                                 </ul>
                             </div>
                         @endcan
+<<<<<<< HEAD
+                        @can('lead_statuses_manage')
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{openMenu(['admin.lead_statuses.index','admin.lead_statuses.sort'],'menu-item-active')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.lead_statuses.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Lead Statuses</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        @endcan
+=======
 
                         @can('locations_manage')
 
@@ -283,6 +300,7 @@
                             </div>
                         @endcan
 
+>>>>>>> dev
                     </li>
                     @endif
 

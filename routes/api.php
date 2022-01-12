@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\LeadSourcesController;
+use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -77,17 +78,6 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('cities_sort', [CitiesController::class, 'sortOrderGet'])->name('cities.sort_get');
     // Cities Routes End
 
-    // Lead Sources Routes Start
-    Route::post('lead_sources/datatable', [LeadSourcesController::class, 'datatable'])->name('lead_sources.datatable');
-    Route::post('lead_sources', [LeadSourcesController::class, 'store'])->name('lead_sources.store');
-    Route::get('lead_sources/{id}/edit', [LeadSourcesController::class, 'edit'])->name('lead_sources.edit');
-    Route::put('lead_sources/{id}', [LeadSourcesController::class, 'update'])->name('lead_sources.update');
-    Route::delete('lead_sources/{id}', [LeadSourcesController::class, 'destroy'])->name('lead_sources.destroy');
-    Route::post('lead_sources/status', [LeadSourcesController::class, 'status'])->name('lead_sources.status');
-    Route::post('lead_sources_sort_save', [LeadSourcesController::class, 'sortOrderSave'])->name('lead_sources.sort_save');
-    Route::get('lead_sources_sort', [LeadSourcesController::class, 'sortOrderGet'])->name('lead_sources.sort_get');
-    // Lead Sources Routes End
-
     // Locations
     Route::post('locations/verify', [LocationsController::class, 'verify'])->name('locations.verify');
     Route::put('locations/verify_edit', [LocationsController::class, 'verify_edit'])->name('locations.verify_edit');
@@ -98,6 +88,17 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::put('locations/edit_update/{id}', [LocationsController::class, 'update'])->name('locations.updatelocation');
     Route::post('lcation_sort_save', [LocationsController::class, 'sortorder_save'])->name('locations.sort_save');
     Route::resource('locations', LocationsController::class)->except('index');
+
+    // Lead Statuses Routes Start
+    Route::post('lead_statuses/datatable', [LeadStatusesController::class, 'datatable'])->name('lead_statuses.datatable');
+    Route::post('lead_statuses', [LeadStatusesController::class, 'store'])->name('lead_statuses.store');
+    Route::get('lead_statuses/{id}/edit', [LeadStatusesController::class, 'edit'])->name('lead_statuses.edit');
+    Route::put('lead_statuses/{id}', [LeadStatusesController::class, 'update'])->name('lead_statuses.update');
+    Route::delete('lead_statuses/{id}', [LeadStatusesController::class, 'destroy'])->name('lead_statuses.destroy');
+    Route::post('lead_statuses/status', [LeadStatusesController::class, 'status'])->name('lead_statuses.status');
+    Route::post('lead_statuses_sort_save', [LeadStatusesController::class, 'sortOrderSave'])->name('lead_statuses.sort_save');
+    Route::get('lead_statuses_sort', [LeadStatusesController::class, 'sortOrderGet'])->name('lead_statuses.sort_get');
+    // Lead Statuses Routes End
 
 });
 
