@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
+use App\Helpers\GeneralFunctions;
 use App\Helpers\GroupsTree;
 use App\Helpers\NodesTree;
 use App\Models\Services;
@@ -17,6 +19,19 @@ use App\Models\TaxTreatmentType;
 
 class ServicesController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of Permission.
      *
@@ -67,17 +82,9 @@ class ServicesController extends Controller
 
         $records = $this->getExtraData($records);
 
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
-        $parentGroups->toList($parentGroups, -1);
-
-        $Services = $parentGroups->nodeList;
-
-        //dd($Services);
+        $Services = GeneralFunctions::ServicesTree();
 
         if (! empty($Services)) {
-            unset($Services[0]);
             $records["data"] = $Services;
 
             $records["permissions"] = [
@@ -132,12 +139,12 @@ class ServicesController extends Controller
     /**
      * Show the form for creating new Permission.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create()
     {
         if (!Gate::allows('services_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $BaseServices = Services::getGroupsActiveOnly();
@@ -156,7 +163,12 @@ class ServicesController extends Controller
 
         $select_tax_treatment_type = 1;
 
-        return view('admin.services.create', compact('Services', 'service', 'tax_treatment_types', 'select_tax_treatment_type'));
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'parent_services' => $Services,
+            'service' => $service,
+            'tax_treatment_types' => $tax_treatment_types,
+            'select_tax_treatment_type' => $select_tax_treatment_type
+        ]);
     }
 
     /**

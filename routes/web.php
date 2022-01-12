@@ -122,7 +122,7 @@ use App\Http\Controllers\Admin\ServicesController;
         // Lead Statuses
         Route::get('lead_statuses',[LeadStatusesController::class,'index'])->name('lead_statuses.index');
         Route::get('lead_statuses/sort',[LeadStatusesController::class,'sortOrder'])->name('lead_statuses.sort');
-        
+
         // Services
         Route::post('services/datatable', [ServicesController::class, 'datatable'])->name('services.datatable');
         Route::post('services/status', [ServicesController::class, 'status'])->name('services.status');

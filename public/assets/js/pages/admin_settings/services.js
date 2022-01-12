@@ -8,19 +8,18 @@ var table_columns = [
         width: 'auto',
         title: renderCheckbox(),
         template: function (data) {
-            let id = data.id;
             return childCheckbox(data);
         }
     }, {
         field: 'name',
         title: 'Name',
         sortable: false,
-        width: 'auto',
+        width: 300,
         template: function (data) {
-            if (data.parent_id  == 0) {
-                return '<b>'+data.name+'</b>';
+            if (data.parent_id == 0) {
+                return '<b class="text text-dark" style="font-size: 12px;">'+data.name+'</b>';
             }
-            return data.name;
+            return '<span class="ml-3">'+data.name+'</span>';
         }
     },{
         field: 'duration',
@@ -47,7 +46,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            if (data.name == 'All Services') {
+            if (data.slug == 'all') {
                 return '-';
             }
             if (typeof data.price !== 'undefined') {
@@ -62,7 +61,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            if (data.name == 'All Services') {
+            if (data.parent_id == 0) {
                 return '-';
             }
             if (typeof data.complimentory !== 'undefined') {
@@ -276,7 +275,7 @@ function setFilters(filter_values, active_filters) {
     hideShowAdvanceFilters(active_filters);
 }
 
-function createCentre($route) {
+function createService($route) {
 
     $.ajax({
         headers: {
@@ -288,8 +287,6 @@ function createCentre($route) {
         success: function (response) {
 
             setCreateData(response);
-
-            //reInitSelect2(".select2", "Select");
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -301,51 +298,22 @@ function createCentre($route) {
 function setCreateData(response) {
 
 
-    let cities = response.data.cities;
-    let cities_options = '<option value="">Select A City</option>';
+    let services = response.data.parent_services;
+    let durations = response.data.durations;
+    let services_options = '<option value="">Parent Service</option>';
+    let duration_options = '<option value="">Select a Duration</option>';
 
-    Object.entries(cities).forEach(function(value, index) {
-        cities_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+    Object.entries(services).forEach(function(value, index) {
+        services_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
 
-    $("#add_location_cities").html(cities_options);
-
-    let service_options = makeServiceOptions(response);
-
-    $("#add_location_services").html(service_options);
-}
-
-function makeServiceOptions(response) {
-
-    let services = response.data.services;
-    let service_options = '<option value="">Select</option>';
-
-    let tmp_id = '';
-    let id = 0;
-    let val = 'Select';
-
-    Object.values(services).forEach(function(value, index) {
-        if (value.id == 0) {
-            return;
-        }
-
-
-        if(value.id < 0) {
-            tmp_id = (value.id * -1);
-            id = value.id * -1;
-            val = '<b>'+value.name ?? ''+'</b>';
-        } else {
-            tmp_id = (value.id * 1);
-            id = value.id ;
-            val = value.name ?? '';
-        }
-
-        //in_array($tmp_id, $ServiceLocations)
-
-        service_options += '<option value="'+id+'">'+val+'</option>';
+    Object.entries(durations).forEach(function(value, index) {
+        duration_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
 
-    return service_options;
+    $("#add_service_duration").html(duration_options);
+
+    $("#add_services").html(service_options);
 }
 
 function hideShowAdvanceFilters(active_filters) {

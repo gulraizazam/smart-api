@@ -46,19 +46,11 @@
                             @endif
 
                             @if(Gate::allows('services_create'))
-                                <a href="javascript:void(0);" onclick="createTown('{{ route('admin.towns.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_towns">
+                                <a href="javascript:void(0);" onclick="createService('{{ route('admin.services.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_towns">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
                             @endif
-
-                            @if(Gate::allows('towns_import'))
-
-                                <a href="{{ route('admin.towns.import') }}" class="btn btn-primary">s
-                                    <i class="la la-plus"></i>
-                                    Import
-                                </a>
-                        @endif
 
                         <!--end::Button-->
                         </div>

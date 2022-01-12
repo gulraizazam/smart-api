@@ -637,4 +637,9 @@ class Services extends BaseModal
         }
         return  $result;
     }
+
+    public function children()
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
 }
