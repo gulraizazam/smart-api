@@ -149,7 +149,6 @@ function setFilters(filter_values, active_filters) {
     Object.entries(status).forEach(function(value, index) {
         status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
-    console.log(active_filters);
     $("#search_status").html(status_options);
     $("#search_name").val(active_filters.lead_status_name);
     $("#search_status").val(active_filters.status);

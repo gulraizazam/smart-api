@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Sort Cities', 'title' => 'Sort Cities'])
+    @include('admin.partials.breadcrumb', ['module' => 'Sort Lead Statuses', 'title' => 'Sort Lead Statuses'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -35,11 +35,11 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Sort Cities</h3>
+                            <h3 class="card-label">Sort Lead Statuses</h3>
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            <a href="{{route('admin.cities.index')}}" class="btn btn-primary">
+                            <a href="{{route('admin.lead_statuses.index')}}" class="btn btn-primary">
                                 <i class="fa fa-arrow-left"></i> Back
                             </a>
                             <!--end::Button-->
@@ -63,7 +63,7 @@
         <!--begin::Page Vendors(used by this page)-->
         <script src="{{asset('assets/plugins/custom/draggable/draggable.bundle.js?v=7.2.9')}}"></script>
         <!--end::Page Vendors-->
-        <script src="{{asset('assets/js/pages/admin_settings/cities_sort.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/lead_statuses_sort.js')}}"></script>
     @endpush
 
 @endsection

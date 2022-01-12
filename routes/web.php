@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\LeadSourcesController;
+use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
@@ -125,5 +126,9 @@ use App\Http\Controllers\Admin\LocationsController;
         // Lead Sources
         Route::get('lead_sources',[LeadSourcesController::class,'index'])->name('lead_sources.index');
         Route::get('lead_sources/sort',[LeadSourcesController::class,'sortOrder'])->name('lead_sources.sort');
+
+        // Lead Statuses
+        Route::get('lead_statuses',[LeadStatusesController::class,'index'])->name('lead_statuses.index');
+        Route::get('lead_statuses/sort',[LeadStatusesController::class,'sortOrder'])->name('lead_statuses.sort');
 
     });
