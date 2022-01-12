@@ -48,15 +48,8 @@ class UsersController extends Controller
         if (!Gate::allows('users_manage')) {
             return abort(401);
         }
-        $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
-        $locations->prepend('All', '');
 
-        $roles = Role::get()->pluck('name', 'id');
-        $roles->prepend('All', '');
-
-        $filters = Filters::all(Auth::User()->id, 'users');
-
-        return view('admin.users.index', compact('locations', 'roles', 'filters'));
+        return view('admin.users.index');
     }
 
     /**
@@ -362,6 +355,8 @@ class UsersController extends Controller
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         }
 
+        $records = $this->getExtraData($records);
+
         if ($Users) {
 
             $index = 0;
@@ -416,6 +411,28 @@ class UsersController extends Controller
         }
 
         return ApiHelper::apiDataTable($records);
+    }
+
+    private function getExtraData($records = []) {
+
+
+        $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
+        $locations->prepend('All', '');
+
+        $roles = Role::get()->pluck('name', 'id');
+        $roles->prepend('All', '');
+
+        $filters = Filters::all(Auth::User()->id, 'users');
+
+        $records['filter_values'] = [
+            'roles' => $roles,
+            'locations' => $locations,
+            'status' => config('constants.status')
+        ];
+
+        $records['active_filters'] = $filters;
+
+        return $records;
     }
 
     /**

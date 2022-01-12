@@ -8,8 +8,7 @@ var table_columns = [
         width: 'auto',
         title: renderCheckbox(),
         template: function (data) {
-            let id = data.id;
-            return '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>';
+            return childCheckbox(data);
         }
     },
     {
@@ -341,4 +340,60 @@ function resetAllFilters(datatable) {
         datatable.search(filters, 'search');
     });
 
+}
+
+function setFilters(filter_values, active_filters) {
+
+    let locations = filter_values.locations;
+    let roles = filter_values.roles;
+    let status = filter_values.status;
+
+    let location_options = '<option value="">Select</option>';
+    let role_options = '<option value="">Select</option>';
+    let status_options = '<option value="">All</option>';
+
+    Object.entries(status).forEach(function(value, index) {
+        status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+    });
+
+    Object.entries(locations).forEach(function(value, index) {
+
+        location_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+    });
+
+    Object.entries(roles).forEach(function(value, index) {
+
+        role_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+    });
+
+    $("#search_role").html(role_options);
+    $("#search_center").html(location_options);
+    $("#search_status").html(status_options);
+
+    $("#search_name").val(active_filters.name);
+    $("#search_phone").val(active_filters.phone);
+    $("#search_gender").val(active_filters.gender);
+    $("#search_commission").val(active_filters.commission);
+    $("#search_email").val(active_filters.email);
+    $("#search_created_from").val(active_filters.created_from);
+    $("#search_created_to").val(active_filters.created_to);
+
+    $("#search_role").val(active_filters.role_id);
+    $("#search_center").val(active_filters.location_id);
+    $("#search_status").val(active_filters.status);
+
+    hideShowAdvanceFilters(active_filters);
+}
+
+function hideShowAdvanceFilters(active_filters) {
+    if (active_filters.location_id != ''
+        || active_filters.gender != ''
+        || active_filters.commission != ''
+        || active_filters.email != ''
+        || active_filters.created_from != ''
+        || active_filters.created_to != '') {
+
+        $(".advance-filters").show();
+        $(".advance-arrow").addClass("fa fa-caret-down");
+    }
 }

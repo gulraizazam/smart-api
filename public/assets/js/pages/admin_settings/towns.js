@@ -44,8 +44,7 @@ var table_columns = [
     function actions(data) {
 
         let id = data.id;
-
-        let csrf = $('meta[name="csrf-token"]').attr('content');
+        
         let url = route('admin.towns.edit', {id: id});
         let delete_url = route('admin.towns.destroy', {id: id});
 
