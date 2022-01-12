@@ -142,8 +142,10 @@ function editRow(url) {
 
 function setEditData(response) {
 
-
     let location = response.data.location;
+
+    $("#modal_edit_location_form").attr("action", route('admin.locations.update', {id: location.id}));
+
     let service_location = response.data.service_location;
 
     let cities = response.data.cities;

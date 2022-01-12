@@ -9,7 +9,7 @@ var table_columns = [
         title: renderCheckbox(),
         template: function (data) {
             let id = data.id;
-            return '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>';
+            return childCheckbox(data);
         }
     }, {
         field: 'title',

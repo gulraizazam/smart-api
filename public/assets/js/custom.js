@@ -259,8 +259,11 @@ function showSpinner() {
     $(".spinner-button").addClass("spinner spinner-white spinner-right mr-3").prop('disabled', true);
 }
 
-function hideSpinner() {
+function hideSpinner(form = '') {
     $(".spinner-button").removeClass("spinner spinner-white spinner-right mr-3").prop('disabled', false);
+    form.reset();
+    $(".image-input-wrapper").css('background-image', "url()");
+    $(".image-input-wrapper").parent(".image-input").find("span").removeClass("btn-shadow");
 }
 
 function submitForm(action, method, data, callback) {
@@ -336,13 +339,13 @@ function submitFileForm(action, method, form_id, callback) {
                     'status': response.status,
                     'message': response.message,
                 });
-                hideSpinner();
+                hideSpinner(form);
             } else {
                 callback({
                     'status': response.status,
                     'message': response.message,
                 });
-                hideSpinner();
+                hideSpinner(form);
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -351,13 +354,13 @@ function submitFileForm(action, method, form_id, callback) {
                     'status': 0,
                     'message': 'You are not authorized to access this resource',
                 });
-                hideSpinner();
+                hideSpinner(form);
             } else {
                 callback({
                     'status': 0,
                     'message': 'Unable to process your request, please try again later.',
                 });
-                hideSpinner();
+                hideSpinner(form);
             }
         }
     });

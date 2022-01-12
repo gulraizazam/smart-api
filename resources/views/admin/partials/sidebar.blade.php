@@ -264,7 +264,7 @@
                                 </ul>
                             </div>
                         @endcan
-<<<<<<< HEAD
+
                         @can('lead_statuses_manage')
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
@@ -280,7 +280,7 @@
                                 </ul>
                             </div>
                         @endcan
-=======
+
 
                         @can('locations_manage')
 
@@ -300,7 +300,6 @@
                             </div>
                         @endcan
 
->>>>>>> dev
                     </li>
                     @endif
 
