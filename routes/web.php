@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
@@ -120,5 +121,8 @@ use App\Http\Controllers\Admin\LocationsController;
         // Lead Statuses
         Route::get('lead_statuses',[LeadStatusesController::class,'index'])->name('lead_statuses.index');
         Route::get('lead_statuses/sort',[LeadStatusesController::class,'sortOrder'])->name('lead_statuses.sort');
+
+        // Appointment Statuses
+        Route::get('appointment_statuses',[AppointmentStatusesController::class,'index'])->name('appointment_statuses.index');
 
     });

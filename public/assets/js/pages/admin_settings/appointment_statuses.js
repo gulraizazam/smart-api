@@ -1,4 +1,4 @@
-var table_url = route('admin.lead_statuses.datatable');
+var table_url = route('admin.appointment_statuses.datatable');
 
 var table_columns = [
     {
@@ -29,26 +29,32 @@ var table_columns = [
         sortable: false,
     },
     {
+        field: 'allow_message',
+        title: 'Allow Send SMS',
+        width: 'auto',
+        sortable: false,
+    },
+    {
         field: 'is_default',
-        title: 'Default for Open Leads',
+        title: 'Default Status for New Appointments',
         width: 'auto',
         sortable: false,
     },
     {
         field: 'is_arrived',
-        title: 'Default for Arrived Leads',
+        title: 'Default Status for Arrived Appointments',
         width: 'auto',
         sortable: false,
     },
     {
-        field: 'is_converted',
-        title: 'Default for Converted Leads',
+        field: 'is_cancelled',
+        title: 'Default Status for Cancelled Appointments',
         width: 'auto',
         sortable: false,
     },
     {
-        field: 'is_junk',
-        title: 'Default for Junk Leads',
+        field: 'is_unscheduled',
+        title: 'Default Status for Un-Scheduled Appointments',
         width: 'auto',
         sortable: false,
     },
@@ -58,7 +64,7 @@ var table_columns = [
         width: 'auto',
         sortable: false,
         template: function (data) {
-            let status_url = route('admin.lead_statuses.status');
+            let status_url = route('admin.appointment_statuses.status');
             return statuses(data, status_url);
         }
     }, {
@@ -79,8 +85,8 @@ function actions(data) {
     let id = data.id;
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
-    let url = route('admin.lead_statuses.edit', {id: id});
-    let delete_url = route('admin.lead_statuses.destroy', {id: id});
+    let url = route('admin.appointment_statuses.edit', {id: id});
+    let delete_url = route('admin.appointment_statuses.destroy', {id: id});
 
     if (permissions.edit && permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -139,37 +145,46 @@ function editRow(url) {
 }
 
 function setEditData(response) {
-    let lead_status = response.data.lead_statuse;
-    let parentLeadStatuses = response.data.parentLeadStatuses;
-    let action = route('admin.lead_statuses.update', {id: lead_status.id});
+    let lead_status = response.data;
+    let parentLeadStatuses = lead_status.parent_options;
+    let action = route('admin.appointment_statuses.update', {id: lead_status.id});
 
-    $("#modal_edit_lead_statuses_form").attr("action", action);
-    $("#edit_lead_statuses_name").val(lead_status.name);
+    $("#modal_edit_appointment_statuses_form").attr("action", action);
+    $("#edit_appointment_statuses_name").val(lead_status.name);
     let parent_options = '<option value="">Parent Group</option>';
 
     Object.entries(parentLeadStatuses).forEach(function (value, index) {
         parent_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
-    $("#modal_edit_lead_statuses_form input[name=is_default]").prop('checked', false);
-    $("#modal_edit_lead_statuses_form input[name=is_default][value=" + lead_status.is_default + "]").prop('checked', true);
-
-    $("#modal_edit_lead_statuses_form input[name=is_arrived]").prop('checked', false);
-    $("#modal_edit_lead_statuses_form input[name=is_arrived][value=" + lead_status.is_arrived + "]").prop('checked', true);
-
-    $("#modal_edit_lead_statuses_form input[name=is_converted]").prop('checked', false);
-    $("#modal_edit_lead_statuses_form input[name=is_converted][value=" + lead_status.is_converted + "]").prop('checked', true);
-
-    $("#modal_edit_lead_statuses_form input[name=is_junk]").prop('checked', false);
-    $("#modal_edit_lead_statuses_form input[name=is_junk][value=" + lead_status.is_junk + "]").prop('checked', true);
-
-    $("#edit_lead_statuses_parent_id").html(parent_options);
+    $("#edit_appointment_statuses_parent_id").html(parent_options);
     if (lead_status.parent_id) {
-        $("#edit_lead_statuses_parent_id").val(lead_status.parent_id).change();
+        $("#edit_appointment_statuses_parent_id").val(lead_status.parent_id).change();
+    } else {
+        $("#edit_appointment_statuses_parent_id").change();
     }
-    $('#add_lead_statuses_is_comment').prop('checked', false);
+
+    $("#modal_edit_appointment_statuses_form input[name=is_default]").prop('checked', false);
+    $("#modal_edit_appointment_statuses_form input[name=is_default][value=" + lead_status.is_default + "]").prop('checked', true);
+
+    $("#modal_edit_appointment_statuses_form input[name=is_arrived]").prop('checked', false);
+    $("#modal_edit_appointment_statuses_form input[name=is_arrived][value=" + lead_status.is_arrived + "]").prop('checked', true);
+
+    $("#modal_edit_appointment_statuses_form input[name=is_cancelled]").prop('checked', false);
+    $("#modal_edit_appointment_statuses_form input[name=is_cancelled][value=" + lead_status.is_cancelled + "]").prop('checked', true);
+
+    $("#modal_edit_appointment_statuses_form input[name=is_unscheduled]").prop('checked', false);
+    $("#modal_edit_appointment_statuses_form input[name=is_unscheduled][value=" + lead_status.is_unscheduled + "]").prop('checked', true);
+
+
+    $('#edit_appointment_statuses_is_comment').prop('checked', false);
     if (lead_status.is_comment == 1) {
-        $('#modal_edit_lead_statuses_form input[name=is_comment]').prop('checked', true);
+        $('#modal_edit_appointment_statuses_form input[name=is_comment]').prop('checked', true);
+    }
+
+    $('#edit_appointment_statuses_allow_message').prop('checked', false);
+    if (lead_status.allow_message == 1) {
+        $('#modal_edit_appointment_statuses_form input[name=allow_message]').prop('checked', true);
     }
 
 }
@@ -207,13 +222,45 @@ function setFilters(filter_values, active_filters) {
         status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
     Object.entries(parents).forEach(function (value, index) {
-        parent_options += '<option value="' + value[1].id + '">' + value[1].name + '</option>';
+        parent_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
     $("#search_status").html(status_options);
-    $("#add_lead_statuses_parent_id").html(parent_options);
+    $("#add_appointment_statuses_parent_id").html(parent_options);
 
-    $("#search_name").val(active_filters.lead_status_name);
+    $("#search_name").val(active_filters.appointment_status_name);
     $("#search_status").val(active_filters.status);
 
 }
+
+function notParent(val) {
+    let form = ($(val).parents('form'))[0];
+    let value = $(val).val();
+    if (value == '' || value == null) {
+        $('.not-have-parent').show();
+    } else {
+        $(form).find("input[name='is_default'][value='1']").prop('checked', false);
+        $(form).find("input[name='is_default'][value='0']").prop('checked', true);
+
+        $(form).find("input[name='is_arrived'][value='1']").prop('checked', false);
+        $(form).find("input[name='is_arrived'][value='0']").prop('checked', true);
+
+        $(form).find("input[name='is_cancelled'][value='1']").prop('checked', false);
+        $(form).find("input[name='is_cancelled'][value='0']").prop('checked', true);
+
+        $(form).find("input[name='is_unscheduled'][value='1']").prop('checked', false);
+        $(form).find("input[name='is_unscheduled'][value='0']").prop('checked', true);
+
+        $(form).find("input[name='allow_message']").prop('checked', false);
+
+        $('.not-have-parent').hide();
+    }
+}
+
+$('#add_appointment_statuses_parent_id').change(function () {
+    notParent(this);
+});
+
+$('#edit_appointment_statuses_parent_id').change(function () {
+    notParent(this);
+});
