@@ -4,8 +4,8 @@ var table_url = route('admin.roles.datatable');
 var table_columns = [ {
     field: 'id',
     sortable: false,
-    width: 25,
-    title: '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input class="select-all-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>',
+    width: 'auto',
+    title: renderCheckbox(),
         template: function (data) {
             let id = data.id;
             return '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>';

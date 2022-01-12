@@ -53,10 +53,10 @@ class Towns extends BaseModal
     {
         $where = Self::towns_filters($request, $account_id, $apply_filter);
 
-        if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+        if (!count($where)) {
+            return self::with('city')->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
+            return self::with('city')->limit($iDisplayLength)->offset($iDisplayStart)->get();
         }
     }
 
@@ -306,13 +306,10 @@ class Towns extends BaseModal
 
         if (!$town) {
 
-            session()->flash('error', 'Resource not found.');
            return false;
         }
-       
-        $record = $town->update(['active' => $status]);
 
-        session()->flash('success', 'Status has been changed successfully.');
+        $record = $town->update(['active' => $status]);
 
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 

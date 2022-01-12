@@ -2,12 +2,22 @@
 var table_url = route('admin.towns.datatable');
 
 var table_columns = [
+    {
+        field: 'id',
+        sortable: false,
+        width: 'auto',
+        title: renderCheckbox(),
+        template: function (data) {
+            let id = data.id;
+            return '<th data-field="RecordID" class="datatable-cell-center datatable-cell datatable-cell-check"><span style="width: 20px;"><label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label></span></th>';
+        }
+    },
      {
         field: 'name',
         title: 'Name',
         width: 'auto',
     },{
-        field: 'city_id',
+        field: 'city.name',
         title: 'City',
         width: 'auto',
     }, {
@@ -22,7 +32,7 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 80,
+        width: 100,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
@@ -34,11 +44,11 @@ var table_columns = [
     function actions(data) {
 
         let id = data.id;
-    
+
         let csrf = $('meta[name="csrf-token"]').attr('content');
         let url = route('admin.towns.edit', {id: id});
         let delete_url = route('admin.towns.destroy', {id: id});
-    
+
         if (permissions.edit && permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -65,15 +75,48 @@ var table_columns = [
                             </a>\
                          </li>';
             }
-    
+
             actions += '</ul>\
             </div>\
         </div>';
-    
+
             return actions;
         }
         return '';
     }
+
+    function createTown($route) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+
+            setCreateData(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            reInitValidation(Validation);
+        }
+    });
+}
+
+    function setCreateData(response) {
+
+        let cities = response.data.cities;
+        let cities_options = '<option value="">Select a City</option>';
+
+        Object.entries(cities).forEach(function(value, index) {
+            cities_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        });
+
+        $("#add_town_city_id").html(cities_options);
+
+}
 
     function editRow(url) {
 
@@ -87,11 +130,11 @@ var table_columns = [
             type: "GET",
             cache: false,
             success: function (response) {
-            
+
                 setEditData(response);
 
                 reInitSelect2(".select2", "");
-            
+
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 errorMessage(xhr);
@@ -115,12 +158,12 @@ var table_columns = [
         let options = '<option value="">Select</option>';
 
         Object.entries(cities).forEach(function(value, index) {
-            
+
             options += '<option value="'+value[0]+'">'+value[1]+'</option>';
         });
-        
+
         $("#town_city_id").html(options);
-        
+
         $("#town_name").val(town.name);
         $("#town_city_id").val(town.city_id);
 
@@ -158,7 +201,7 @@ var table_columns = [
     }
 
     function setFilters(filter_values, active_filters) {
-        
+
         let cities = filter_values.cities;
         let status = filter_values.status;
         let city_options = '';
@@ -169,10 +212,10 @@ var table_columns = [
         });
 
         Object.entries(cities).forEach(function(value, index) {
-            
+
             city_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
         });
-        
+
         $("#search_city").html(city_options);
 
         $("#search_status").html(status_options);

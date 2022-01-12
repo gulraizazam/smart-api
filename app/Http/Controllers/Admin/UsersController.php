@@ -445,7 +445,6 @@ class UsersController extends Controller
             'user' => $user
         ]);
 
-        //return view('admin.users.create', compact('roles', 'roles_commissions', 'locations', 'user'));
     }
 
     /**
@@ -655,9 +654,9 @@ class UsersController extends Controller
 
         $user_roles = $user->user_roles()->pluck('id');
 
-        if ($user_roles) { 
+        if ($user_roles) {
             $user_roles = $user_roles->toArray();
-        } else { 
+        } else {
             $user_roles = array();
         }
 
@@ -670,7 +669,7 @@ class UsersController extends Controller
             'user_has_locations' => $user_has_locations,
             'user_roles' => $user_roles
         ]);
-        
+
         //return view('admin.users.edit', compact('user', 'roles', 'roles_commissions', 'user_has_locations', 'locations'));
     }
 
@@ -690,9 +689,9 @@ class UsersController extends Controller
         $validator = $this->verifyUpdateFields($request);
 
         if ($validator->fails()) {
-        
+
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
-            
+
         }
         if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
@@ -743,7 +742,7 @@ class UsersController extends Controller
                 }
             }
         }
-        
+
         session()->flash('success', 'Record has been updated successfully.');
 
         return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
@@ -793,7 +792,7 @@ class UsersController extends Controller
         if (!Gate::allows('users_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-       
+
         $response = User::activeRecord($request->id, $request->status);
 
         if ($response) {
@@ -801,7 +800,7 @@ class UsersController extends Controller
         }
 
         return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
-       
+
     }
 
     /*

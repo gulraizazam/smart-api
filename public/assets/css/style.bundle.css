@@ -64813,7 +64813,7 @@ code {
 }
 
 .modal-open {
-    overflow: auto !important;
+    overflow-y: auto !important;
     padding: 0 !important;
 }
 
