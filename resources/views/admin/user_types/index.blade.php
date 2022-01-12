@@ -34,6 +34,18 @@
                             <h3 class="card-label">User Types</h3>
                         </div>
 
+                        <div class="card-toolbar">
+
+                            @if(Gate::allows('user_types_create'))
+                                <a href="javascript:void(0);" onclick="createUserType('{{ route('admin.user_types.create') }}');" class="btn btn-primary">
+                                    <i class="la la-plus"></i>
+                                    Add New
+                                </a>
+                            @endif
+
+                        <!--end::Button-->
+                        </div>
+
                     </div>
 
                     <div class="card-body">
@@ -56,8 +68,17 @@
 
     <div class="modal fade" id="modal_add_user_type" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="user_type_add">
+
+            @include('admin.user_types.create')
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_edit_user_type" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="user_type_edit">
-           
+
             @include('admin.user_types.edit')
         </div>
         <!--end::Modal dialog-->

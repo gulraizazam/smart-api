@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit User Type</h2>
+        <h2 class="fw-bolder">Create User Type</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -22,10 +22,9 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_user_type_form" method="post" action="">
+        <form id="user_type_add_form" method="post" action="">
             <!--begin::Scroll-->
             @csrf
-            @method('put')
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -33,13 +32,13 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input id="user_type_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input id="user_type_add_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Type </label>
-                            <select id="user_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
+                            <select id="user_type_add_field" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
 
                             </select>
                         </div>

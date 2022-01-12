@@ -40,7 +40,7 @@
                         <input type="text" id="permission_title" name="title" class="form-control form-control-lg form-control-solid" value="" placeholder="Title" />
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <div class="fv-row">
                     <!--begin::Label-->
@@ -48,7 +48,7 @@
                     <!--end::Label-->
                     <!--begin::Input-->
                     <select id="permission_parent" class="form-control edit-permissions-dropdown form-control-solid mb-3 mb-lg-0 select2" name="parent_id">
-                       
+
                     </select>
                     </div>
                 </div>
@@ -59,7 +59,7 @@
             <!--begin::Actions-->
             <div class="text-center pt-15">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary" data-kt-users-modal-action="submit">
+                <button type="submit" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>

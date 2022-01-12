@@ -36,9 +36,46 @@ function actions(data) {
     return '';
 }
 
-function editRow(id, modal) {
+function createUserType($route) {
 
     $("#modal_add_user_type").modal("show");
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+
+            setCreateData(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            reInitValidation(UserAddTypeValidation);
+        }
+    });
+
+
+}
+
+function setCreateData(response) {
+
+    let types = response.data.types;
+    let options = '<option value="">Select</option>';
+
+    Object.entries(types).forEach(function(value, index) {
+        options += '<option value="'+value[1].name+'">'+value[1].name+'</option>';
+    });
+
+    $("#user_type_add_field").html(options);
+
+}
+
+function editRow(id, modal) {
+
+    $("#modal_edit_user_type").modal("show");
 
     $.ajax({
         headers: {
@@ -48,11 +85,11 @@ function editRow(id, modal) {
         type: "GET",
         cache: false,
         success: function (response) {
-           
+
             setEditData(response);
 
             reInitSelect2(".select2", "");
-        
+
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -76,13 +113,12 @@ function setEditData(response) {
     let options = '<option value="">Select</option>';
 
     Object.entries(types).forEach(function(value, index) {
-        
+
         options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
-    
-    console.log(usertype.type);
+
     $("#user_type").html(options);
-    
+
     $("#user_type_name").val(usertype.name);
     $("#user_type").val(usertype.type);
 

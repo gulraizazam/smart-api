@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 use Carbon\Carbon;
@@ -49,27 +48,6 @@ class LocationsController extends Controller
         if (!Gate::allows('locations_manage')) {
             return abort(401);
         }
-
-//        $filters = Filters::all(Auth::User()->id, 'locations');
-//
-//        $cities = Cities::where([
-//            ['account_id', '=', Auth::User()->account_id],
-//            ['slug', '=', 'custom'],
-//            ['active', '=', '1'],
-//            ['is_featured', '=', '1']
-//        ])->get()->pluck('name', 'id');
-//        $cities->prepend('Select a City', '');
-//
-//        $regions = Regions::getActiveSorted(ACL::getUserRegions());
-//        $regions->prepend('Select a Region', '');
-//
-//        /* Create Nodes with Parents */
-//        $parentGroups = new NodesTree();
-//        $parentGroups->current_id = -1;
-//        $parentGroups->build(0, Auth::User()->account_id);
-//        $parentGroups->toList($parentGroups, -1);
-//
-//        $Services = $parentGroups->nodeList;
 
         return view('admin.locations.index');
     }

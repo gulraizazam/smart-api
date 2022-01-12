@@ -44,7 +44,7 @@ var table_columns = [
     function actions(data) {
 
         let id = data.id;
-        
+
         let url = route('admin.towns.edit', {id: id});
         let delete_url = route('admin.towns.destroy', {id: id});
 
@@ -86,7 +86,7 @@ var table_columns = [
 
     function createTown($route) {
 
-    $.ajax({
+        $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
@@ -102,7 +102,7 @@ var table_columns = [
             reInitValidation(Validation);
         }
     });
-}
+    }
 
     function setCreateData(response) {
 
