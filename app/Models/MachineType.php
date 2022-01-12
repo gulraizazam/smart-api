@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Auth;
+use phpDocumentor\Reflection\Types\Self_;
 
 class MachineType extends BaseModal
 {
@@ -21,6 +22,10 @@ class MachineType extends BaseModal
     protected $table = 'machine_types';
 
     protected static $_table = 'machine_types';
+
+    protected $casts = [
+        'created_at' => 'datetime:F n,Y h:i A'
+    ];
 
     /*
      * Get the services against location id
@@ -79,61 +84,14 @@ class MachineType extends BaseModal
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = Self::machinetype_filters($request, $account_id, $apply_filter);
-
         $orderBy = 'created_at';
         $order = 'desc';
-        if ($request->get('order')) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            if ($orderBy == 'created_at') {
-                $orderBy = 'machine_types.created_at';
-            }
-            $order = $request->get('order')[0]['dir'];
 
-            Filters::put(Auth::User()->id, 'machinetypes', 'order_by', $orderBy);
-            Filters::put(Auth::User()->id, 'machinetypes', 'order', $order);
-        } else {
-            if (
-                Filters::get(Auth::User()->id, 'machinetypes', 'order_by')
-                && Filters::get(Auth::User()->id, 'machinetypes', 'order')
-            ) {
-                $orderBy = Filters::get(Auth::User()->id, 'machinetypes', 'order_by');
-                $order = Filters::get(Auth::User()->id, 'machinetypes', 'order');
-
-                if ($orderBy == 'created_at') {
-                    $orderBy = 'machine_types.created_at';
-                }
-            } else {
-                $orderBy = 'created_at';
-                $order = 'desc';
-                if ($orderBy == 'created_at') {
-                    $orderBy = 'machine_types.created_at';
-                }
-
-                Filters::put(Auth::User()->id, 'machinetypes', 'order_by', $orderBy);
-                Filters::put(Auth::User()->id, 'machinetypes', 'order', $order);
-            }
-        }
-        if (count($where)) {
-            return DB::table('machine_types')
-                ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
-                ->where($where)
-                ->whereNull('deleted_at')
-                ->groupBy('machine_type_has_services.machine_type_id')
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
-        } else {
-            return DB::table('machine_types')
-                ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
-                ->whereNull('deleted_at')
-                ->groupBy('machine_type_has_services.machine_type_id')
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
-        }
+        return self::with('machinetype_has_services')->when(count($where), fn($q) => $q->where($where))
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart)
+            ->orderby($orderBy, $order)
+            ->get();
     }
 
     /*
