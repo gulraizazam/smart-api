@@ -1,9 +1,9 @@
 <!--begin::Modal content-->
 <div class="modal-content">
     <!--begin::Modal header-->
-    <div class="modal-header" id="kt_modal_edit_user_header">
+    <div class="modal-header" id="kt_modal_add_user_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit Lead Status</h2>
+        <h2 class="fw-bolder">Add Appointment Status</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -22,65 +22,69 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_edit_lead_statuses_form" method="post" action="">
-        @method('put')
-        <!--begin::Scroll-->
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_edit_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-
+        <form id="modal_add_appointment_statuses_form" method="post" action="{{route('admin.appointment_statuses.store')}}">
+            <!--begin::Scroll-->
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input type="text" id="edit_lead_statuses_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="add_appointment_statuses_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Parent</label>
-                            <select name="parent_id" id="edit_lead_statuses_parent_id" class="form-control select2">
+                            <select name="parent_id" id="add_appointment_statuses_parent_id" class="form-control select2">
                                 <option value="">Choose Parent</option>
                             </select>
                         </div>
                     </div>
                     <div class="row mt-5">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Default for Open Leads</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Ask for Comments?</label>
+                            <div class="checkbox-inline">
+                                <label class="checkbox"><input id="add_appointment_statuses_is_comment" name="is_comment" value="1" type="checkbox"/><span></span>Yes</label>
+                            </div>
+                        </div>
+                        <div class="fv-row col-md-6 not-have-parent">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Allow SMS for this Status?</label>
+                            <div class="checkbox-inline">
+                                <label class="checkbox"><input name="allow_message" value="1" type="checkbox"/><span></span>Yes</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-5 not-have-parent">
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Default Status for New Appointments?</label>
                             <div class="radio-inline">
                                 <label class="radio"><input name="is_default" value="1" type="radio"/><span></span>Yes</label>
-                                <label class="radio"><input name="is_default" value="0" type="radio"><span></span>No</label>
+                                <label class="radio"><input name="is_default" value="0" checked type="radio"><span></span>No</label>
                             </div>
                         </div>
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Default for Arrived Leads</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Default Status for Arrived Appointments?</label>
                             <div class="radio-inline">
                                 <label class="radio"><input name="is_arrived" value="1" type="radio"/><span></span>Yes</label>
-                                <label class="radio"><input name="is_arrived" value="0" type="radio"><span></span>No</label>
+                                <label class="radio"><input name="is_arrived" value="0" checked type="radio"><span></span>No</label>
                             </div>
                         </div>
                     </div>
-                    <div class="row mt-5">
+                    <div class="row mt-5 not-have-parent">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Default for Converted Leads</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Default Status for Cancelled Appointments?</label>
                             <div class="radio-inline">
-                                <label class="radio"><input name="is_converted" value="1" type="radio"/><span></span>Yes</label>
-                                <label class="radio"><input name="is_converted" value="0" type="radio"><span></span>No</label>
+                                <label class="radio"><input name="is_cancelled" value="1" type="radio"/><span></span>Yes</label>
+                                <label class="radio"><input name="is_cancelled" value="0" checked type="radio"><span></span>No</label>
                             </div>
                         </div>
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Default for Junk Leads</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Default Status for Un-Scheduled Appointments?</label>
                             <div class="radio-inline">
-                                <label class="radio"><input name="is_junk" value="1" type="radio"/><span></span>Yes</label>
-                                <label class="radio"><input name="is_junk" value="0" type="radio"><span></span>No</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-5">
-                        <div class="fv-row col-md-12">
-                            <div class="checkbox-inline">
-                                <label class="checkbox"><input id="add_lead_statuses_is_comment" name="is_comment" value="1" type="checkbox"/><span></span>Ask for Comments</label>
+                                <label class="radio"><input name="is_unscheduled" value="1" type="radio"/><span></span>Yes</label>
+                                <label class="radio"><input name="is_unscheduled" value="0" checked type="radio"><span></span>No</label>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
             <!--end::Scroll-->
             <!--begin::Actions-->

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
@@ -121,7 +122,7 @@ use App\Http\Controllers\Admin\ServicesController;
         // Lead Statuses
         Route::get('lead_statuses',[LeadStatusesController::class,'index'])->name('lead_statuses.index');
         Route::get('lead_statuses/sort',[LeadStatusesController::class,'sortOrder'])->name('lead_statuses.sort');
-
+        
         // Services
         Route::post('services/datatable', [ServicesController::class, 'datatable'])->name('services.datatable');
         Route::post('services/status', [ServicesController::class, 'status'])->name('services.status');
@@ -130,5 +131,8 @@ use App\Http\Controllers\Admin\ServicesController;
         //Route::get('services_sort_save', ['uses' => 'Admin\ServicesController@sortorder_save', 'as' => 'services.sort_save']);
         //Route::get('services/statusAjax', ['uses' => 'Admin\ServicesController@statusAjax', 'as' => 'services.statusAjax']);
 
+
+        // Appointment Statuses
+        Route::get('appointment_statuses',[AppointmentStatusesController::class,'index'])->name('appointment_statuses.index');
 
     });

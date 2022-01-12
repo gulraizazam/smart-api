@@ -29,23 +29,8 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre Name <span class="text text-danger">*</span></label>
                             <input type="text" id="add_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
-                        </div>
-
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">FDO Name <span class="text text-danger">*</span></label>
-                            <input type="text" id="add_fdo_name" name="fdo_name" class="form-control form-control-lg form-control-solid" />
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="row">
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">FDO Phone <span class="text text-danger">*</span></label>
-                            <input type="number" id="add_fdo_phone" name="fdo_phone" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
@@ -55,11 +40,21 @@
                             </select>
                         </div>
 
-
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Address <span class="text text-danger">*</span></label>
                             <input type="text" id="add_address" name="address" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">FDO Name <span class="text text-danger">*</span></label>
+                            <input type="text" id="add_fdo_name" name="fdo_name" class="form-control form-control-lg form-control-solid" />
+                        </div>
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">FDO Phone <span class="text text-danger">*</span></label>
+                            <input type="number" id="add_fdo_phone" name="fdo_phone" class="form-control form-control-lg form-control-solid mb-2" />
+                        </div>
+
 
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Services <span class="text text-danger">*</span></label>

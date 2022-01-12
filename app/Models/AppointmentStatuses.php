@@ -141,6 +141,7 @@ class AppointmentStatuses extends BaseModal
     static public function appointment_statuses_filters($request, $account_id, $apply_filter)
     {
         $where = array();
+        $filters = getFilters($request->all());
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -162,13 +163,13 @@ class AppointmentStatuses extends BaseModal
                 }
             }
         }
-        if ($request->get('appointment_status_name')) {
+        if (count($filters) && $filters['name']!='') {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('appointment_status_name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'appointment_statuses', 'appointment_status_name', $request->get('appointment_status_name'));
+            Filters::put(Auth::User()->id, 'appointment_statuses', 'appointment_status_name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointment_statuses', 'appointment_status_name');
@@ -182,13 +183,13 @@ class AppointmentStatuses extends BaseModal
                 }
             }
         }
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if ( count($filters) && $filters['status']!='' ){
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'appointment_statuses', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'appointment_statuses', 'status', $filters['status']);
         } else {
             if ( $apply_filter ){
                 Filters::forget( Auth::user()->id, 'appointment_statuses', 'status');
@@ -304,22 +305,13 @@ class AppointmentStatuses extends BaseModal
      */
     static public function inactiveRecord($id)
     {
-
         $appointment_statuse = AppointmentStatuses::getData($id);
-
         if (!$appointment_statuse) {
-
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.appointment_statusess.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $appointment_statuse->update(['active' => 0]);
-
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -331,22 +323,13 @@ class AppointmentStatuses extends BaseModal
      */
     static public function activeRecord($id)
     {
-
         $appointment_statuse = AppointmentStatuses::getData($id);
-
         if (!$appointment_statuse) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.appointment_statusess.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $appointment_statuse->update(['active' => 1]);
-
-        flash('Record has been activated successfully.')->success()->important();
-
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-        return $record;
-
+        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
@@ -358,28 +341,17 @@ class AppointmentStatuses extends BaseModal
      */
     static public function deleteRecord($id)
     {
-
         $appointment_statuse = AppointmentStatuses::getData($id);
-
         if (!$appointment_statuse) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.appointment_statusess.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         // Check if child records exists or not, If exist then disallow to delete it.
         if (AppointmentStatuses::isChildExists($id, Auth::User()->account_id)) {
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.appointment_statusess.index');
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-
         $record = $appointment_statuse->delete();
-
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
-
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
     /**
