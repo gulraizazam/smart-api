@@ -1,6 +1,9 @@
 "use strict";
 
 let perPage = 20;
+if (typeof changePages !== 'undefined') {
+    perPage = changePages;
+}
 let row_ids = [];
 let permissions = [];
 let active_filters = [];
