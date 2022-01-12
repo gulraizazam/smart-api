@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TownController;
-
+use App\Http\Controllers\Admin\LocationsController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -87,6 +87,17 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('lead_sources_sort_save', [LeadSourcesController::class, 'sortOrderSave'])->name('lead_sources.sort_save');
     Route::get('lead_sources_sort', [LeadSourcesController::class, 'sortOrderGet'])->name('lead_sources.sort_get');
     // Lead Sources Routes End
+
+    // Locations
+    Route::post('locations/verify', [LocationsController::class, 'verify'])->name('locations.verify');
+    Route::put('locations/verify_edit', [LocationsController::class, 'verify_edit'])->name('locations.verify_edit');
+    Route::post('locations/datatable', [LocationsController::class, 'datatable'])->name('locations.datatable');
+    Route::patch('locations/active/{id}', [LocationsController::class, 'active'])->name('locations.active');
+    Route::post('locations/status', [LocationsController::class, 'status'])->name('locations.status');
+    Route::get('locations/sort', [LocationsController::class, 'sortorder'])->name('locations.sort');
+    Route::put('locations/edit_update/{id}', [LocationsController::class, 'update'])->name('locations.updatelocation');
+    Route::post('lcation_sort_save', [LocationsController::class, 'sortorder_save'])->name('locations.sort_save');
+    Route::resource('locations', LocationsController::class)->except('index');
 
 });
 
