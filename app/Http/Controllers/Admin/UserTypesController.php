@@ -44,17 +44,19 @@ class UserTypesController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create()
     {
         if (!Gate::allows('user_types_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $user_types = UserTypes::all();
 
-        return view('admin.user_types.create', compact('user_types'));
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'types' => $user_types,
+        ]);
     }
 
     /**
@@ -76,7 +78,6 @@ class UserTypesController extends Controller
         }
 
         if (UserTypes::createRecord($request, Auth::User()->account_id, Auth::User()->id)) {
-            session()->flash('success', 'Record has been created successfully.');
 
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         } else {

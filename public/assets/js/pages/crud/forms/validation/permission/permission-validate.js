@@ -45,7 +45,7 @@ var UserValidation = function () {
                 } else {
                     toastr.error(response.message);
                 }
-            });
+            }, form);
         });
     }
 
@@ -60,43 +60,3 @@ var UserValidation = function () {
 jQuery(document).ready(function() {
     UserValidation.init();
 });
-
-
-function submitForm(action, method, data, callback) {
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: action,
-        type: method,
-        data: data,
-        cache: false,
-        success: function (response) {
-            if (response.status == true) {
-                callback({
-                    'status': response.status,
-                    'message': response.message,
-                });
-            } else {
-                callback({
-                    'status': response.status,
-                    'message': response.message,
-                });
-            }
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            if (xhr.status == '401') {
-                callback({
-                    'status': 0,
-                    'message': 'You are not authorized to access this resource',
-                });
-            } else {
-                callback({
-                    'status': 0,
-                    'message': 'Unable to process your request, please try again later.',
-                });
-            }
-        }
-    });
-}

@@ -84,7 +84,7 @@
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Centres</label>
                             <select id="edit_user_centers" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
-                                
+
                             </select>
                         </div>
                     </div>
@@ -105,7 +105,7 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary" data-kt-users-modal-action="submit">
+                <button type="submit" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>
