@@ -225,7 +225,7 @@ function setCreateData(response) {
     let roles = response.data.roles;
     let locations = response.data.locations;
     let roles_options = '<option value="">Select</option>';
-    let location_otions = '<option value="">Select</option>';
+    let location_options = '<option value="">Select</option>';
 
     for (let i = 0; i< roles.length; i++) {
 
@@ -235,18 +235,17 @@ function setCreateData(response) {
 
     Object.values(locations).forEach(function(value, index) {
 
-       location_otions = '<option value="">Select</option>\
+        location_options += '<option value="">Select</option>\
             <optgroup label="'+value.name+'">';
             Object.values(value.children).forEach(function(child, index) {
-
-                location_otions += '<option value="'+child.id+'">'+child.name+'</option>';
+                location_options += '<option value="'+child.id+'">'+child.name+'</option>';
             });
 
-            location_otions += '</optgroup>';
+        location_options += '</optgroup>';
     });
 
     $("#add_user_roles").html(roles_options);
-    $("#add_user_centers").html(location_otions);
+    $("#add_user_centers").html(location_options);
 }
 
 function setEditData(response) {
@@ -272,7 +271,7 @@ function setEditData(response) {
 
     Object.values(locations).forEach(function(value, index) {
 
-        location_options = '<optgroup label="'+value.name+'">';
+        location_options += '<optgroup label="'+value.name+'">';
             Object.values(value.children).forEach(function(child, index) {
 
                 location_options += '<option value="'+child.id+'">'+child.name+'</option>';

@@ -96,7 +96,6 @@ function actions(data) {
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
-        let csrf = $('meta[name="csrf-token"]').attr('content');
         let url = route('admin.services.edit', {id: id});
         let delete_url = route('admin.locations.destroy', {id: id});
 
