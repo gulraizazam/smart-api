@@ -7,8 +7,10 @@ use App\Helpers\Filters;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Auth;
+use phpDocumentor\Reflection\Types\Self_;
 
 class MachineType extends BaseModal
 {
@@ -22,12 +24,24 @@ class MachineType extends BaseModal
 
     protected static $_table = 'machine_types';
 
+    protected $casts = [
+        'created_at' => 'datetime:F d,Y h:i A'
+    ];
+
     /*
      * Get the services against location id
      */
     public function machinetype_has_services()
     {
         return $this->hasMany('App\Models\MachineTypeHasServices', 'machine_type_id')->withoutGlobalScope(SoftDeletingScope::class);
+    }
+
+    /**
+     * Services of Machine Types Relation.
+     * @return mixed
+     */
+    public function services(){
+        return $this->belongsToMany('App\Models\Services','machine_type_has_services',"machine_type_id",'service_id')->withTrashed();
     }
 
     /**
@@ -78,62 +92,105 @@ class MachineType extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::machinetype_filters($request, $account_id, $apply_filter);
-
         $orderBy = 'created_at';
         $order = 'desc';
-        if ($request->get('order')) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            if ($orderBy == 'created_at') {
-                $orderBy = 'machine_types.created_at';
-            }
-            $order = $request->get('order')[0]['dir'];
+        return self::with('services')->Filters($request,$account_id,$apply_filter)
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart)
+            ->orderby($orderBy, $order)
+            ->get();
+    }
 
-            Filters::put(Auth::User()->id, 'machinetypes', 'order_by', $orderBy);
-            Filters::put(Auth::User()->id, 'machinetypes', 'order', $order);
+    public function scopeFilters($query, $request, $account_id, $apply_filter){
+        $filters = getFilters($request->all());
+        if ($account_id) {
+            $query = $query->where('account_id', $account_id);
+            Filters::put(Auth::User()->id, 'machinetypes', 'account_id', $account_id);
         } else {
-            if (
-                Filters::get(Auth::User()->id, 'machinetypes', 'order_by')
-                && Filters::get(Auth::User()->id, 'machinetypes', 'order')
-            ) {
-                $orderBy = Filters::get(Auth::User()->id, 'machinetypes', 'order_by');
-                $order = Filters::get(Auth::User()->id, 'machinetypes', 'order');
-
-                if ($orderBy == 'created_at') {
-                    $orderBy = 'machine_types.created_at';
-                }
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'machinetypes', 'account_id');
             } else {
-                $orderBy = 'created_at';
-                $order = 'desc';
-                if ($orderBy == 'created_at') {
-                    $orderBy = 'machine_types.created_at';
+                if (Filters::get(Auth::User()->id, 'machinetypes', 'account_id')) {
+                    $query = $query->where('account_id', Filters::get(Auth::User()->id, 'machinetypes', 'account_id'));
                 }
-
-                Filters::put(Auth::User()->id, 'machinetypes', 'order_by', $orderBy);
-                Filters::put(Auth::User()->id, 'machinetypes', 'order', $order);
             }
         }
-        if (count($where)) {
-            return DB::table('machine_types')
-                ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
-                ->where($where)
-                ->whereNull('deleted_at')
-                ->groupBy('machine_type_has_services.machine_type_id')
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
+
+        if (count($filters) && $filters['name']!='') {
+            $query = $query->where('name','like', '%' . $filters['name'] . '%');
+            Filters::put(Auth::User()->id, 'machinetypes', 'name', $filters['name']);
         } else {
-            return DB::table('machine_types')
-                ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
-                ->whereNull('deleted_at')
-                ->groupBy('machine_type_has_services.machine_type_id')
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'machinetypes', 'name');
+            } else {
+                if (Filters::get(Auth::User()->id, 'machinetypes', 'name')) {
+                    $query = $query->where('name','like', '%' . Filters::get(Auth::User()->id, 'machinetypes', 'name') . '%');
+                }
+            }
         }
+        if (count($filters) && $filters['service']!='') {
+            $where[] = array(
+                'machine_type_has_services.service_id',
+                '=',
+                $filters['service']
+            );
+            $query = $query->whereHas('services',fn($q)=>$q->where('id', $filters['service']));
+            Filters::put(Auth::User()->id, 'machinetypes', 'service', $filters['service']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'machinetypes', 'service');
+            } else {
+                if (Filters::get(Auth::User()->id, 'machinetypes', 'service')) {
+                    $query = $query->whereHas('services',fn($q)=>$q->where('id', Filters::get(Auth::User()->id, 'machinetypes', 'service')));
+                }
+            }
+        }
+
+        if (count($filters) && $filters['created_from']!='') {
+            $created_from=Carbon::createFromFormat('m/d/Y',$filters['created_from'])->startOfDay()->toDateTimeString();
+            $query = $query->where('created_at','>=', $created_from);
+            Filters::put(Auth::User()->id, 'machinetypes', 'created_from', $filters['created_from']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'machinetypes', 'created_from');
+            } else {
+                if (Filters::get(Auth::User()->id, 'machinetypes', 'created_from')) {
+                    $created_from=Carbon::createFromFormat('m/d/Y',Filters::get(Auth::User()->id, 'machinetypes', 'created_from'))->startOfDay()->toDateTimeString();
+                    $query = $query->where('created_at','>=', $created_from);
+                }
+            }
+        }
+
+        if (count($filters) && $filters['created_to']!='') {
+            $created_to=Carbon::createFromFormat('m/d/Y',$filters['created_to'])->endOfDay()->toDateTimeString();
+            $query = $query->where('created_at','<=', $created_to);
+            Filters::put(Auth::User()->id, 'machinetypes', 'created_to', $filters['created_to']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'machinetypes', 'created_to');
+            } else {
+                if (Filters::get(Auth::User()->id, 'machinetypes', 'created_to')) {
+                    $created_to=Carbon::createFromFormat('m/d/Y',Filters::get(Auth::User()->id, 'machinetypes', 'created_to'))->endOfDay()->toDateTimeString();
+                    $query = $query->where('created_at','<=', $created_to);
+                }
+            }
+        }
+
+        if (count($filters) && $filters['status']!='') {
+            $query = $query->where('active', $filters['status']);
+            Filters::put(Auth::user()->id, 'machinetypes', 'status', $filters['status']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'machinetypes', 'status');
+            } else {
+                if (Filters::get(Auth::user()->id, 'machinetypes', 'status') == 0 || Filters::get(Auth::user()->id, 'machinetypes', 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, 'machinetypes', 'status') != null) {
+                        $query = $query->where('active', Filters::get(Auth::user()->id, 'machinetypes', 'status'));
+                    }
+                }
+            }
+        }
+
     }
 
     /*
@@ -142,6 +199,7 @@ class MachineType extends BaseModal
     static public function machinetype_filters($request, $account_id, $apply_filter)
     {
         $where = array();
+        $filters = getFilters($request->all());
         if ($account_id) {
             $where[] = array(
                 'machine_types.account_id',
@@ -162,13 +220,13 @@ class MachineType extends BaseModal
                 }
             }
         }
-        if ($request->get('name')) {
+        if (count($filters) && isset($filters['name'])) {
             $where[] = array(
                 'machine_types.name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'machinetypes', 'name', $request->get('name'));
+            Filters::put(Auth::User()->id, 'machinetypes', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'machinetypes', 'name');
@@ -182,13 +240,13 @@ class MachineType extends BaseModal
                 }
             }
         }
-        if ($request->get('service') != '') {
+        if (count($filters) && isset($filters['service'])) {
             $where[] = array(
                 'machine_type_has_services.service_id',
                 '=',
-                $request->get('service')
+                $filters['service']
             );
-            Filters::put(Auth::User()->id, 'machinetypes', 'service', $request->get('service'));
+            Filters::put(Auth::User()->id, 'machinetypes', 'service', $filters['service']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'machinetypes', 'service');
@@ -203,13 +261,13 @@ class MachineType extends BaseModal
             }
         }
 
-        if ($request->get('created_from') != '') {
+        if (count($filters) && isset($filters['created_from'])) {
             $where[] = array(
                 'machine_types.created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
-            Filters::put(Auth::User()->id, 'machinetypes', 'created_from', $request->get('created_from') . ' 00:00:00');
+            Filters::put(Auth::User()->id, 'machinetypes', 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'machinetypes', 'created_from');
@@ -224,13 +282,13 @@ class MachineType extends BaseModal
             }
         }
 
-        if ($request->get('created_to') != '') {
+        if (count($filters) && isset($filters['created_to'])) {
             $where[] = array(
                 'machine_types.created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
-            Filters::put(Auth::User()->id, 'machinetypes', 'created_to', $request->get('created_to') . ' 23:59:59');
+            Filters::put(Auth::User()->id, 'machinetypes', 'created_to', $filters['created_to'] . ' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'machinetypes', 'created_to');
@@ -245,13 +303,13 @@ class MachineType extends BaseModal
             }
         }
 
-        if ($request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null) {
+        if (count($filters) && isset($filters['status'])) {
             $where[] = array(
                 'machine_types.active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'machinetypes', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'machinetypes', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'machinetypes', 'status');
@@ -329,17 +387,12 @@ class MachineType extends BaseModal
         $machinetype = MachineType::getData($id);
 
         if (!$machinetype) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.machinetypes.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         $record = $machinetype->update(['active' => 0]);
-
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
 
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
@@ -350,19 +403,13 @@ class MachineType extends BaseModal
     static public function activeRecord($id)
     {
         $machinetype = MachineType::getData($id);
-
         if (!$machinetype) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.machinetypes.index');
+            return collect(['status' => true, 'message' => 'Resource not found.']);
         }
-
         $record = $machinetype->update(['active' => 1]);
-
-        flash('Record has been activated successfully.')->success()->important();
-
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
@@ -375,25 +422,16 @@ class MachineType extends BaseModal
     static public function deleteRecord($id)
     {
         $machinetype = MachineType::getData($id);
-
         if (!$machinetype) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.machinetypes.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-
         // Check if child records exists or not, If exist then disallow to delete it.
         if (MachineType::isChildExists($id, Auth::User()->account_id)) {
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.machinetypes.index');
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-
         $record = $machinetype->delete();
-
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
     /**

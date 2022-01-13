@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
+use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -123,10 +124,20 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointment_statuses/status', [AppointmentStatusesController::class, 'status'])->name('appointment_statuses.status');
     // Appointment Statuses Routes End
 
+    // Machine Types Routes Start
+    Route::post('machine_types/datatable', [MachineTypeController::class, 'datatable'])->name('machine_types.datatable');
+    Route::post('machine_types', [MachineTypeController::class, 'store'])->name('machine_types.store');
+    Route::get('machine_types/{id}/edit', [MachineTypeController::class, 'edit'])->name('machine_types.edit');
+    Route::put('machine_types/{id}', [MachineTypeController::class, 'update'])->name('machine_types.update');
+    Route::delete('machine_types/{id}', [MachineTypeController::class, 'destroy'])->name('machine_types.destroy');
+    Route::post('machine_types/status', [MachineTypeController::class, 'status'])->name('machine_types.status');
+    // Machine Types Routes End
+
     // Services
     Route::post('services/datatable', [ServicesController::class, 'datatable'])->name('services.datatable');
     Route::post('services/status', [ServicesController::class, 'status'])->name('services.status');
     Route::resource('services', ServicesController::class)->except('index');
+
 
 });
 

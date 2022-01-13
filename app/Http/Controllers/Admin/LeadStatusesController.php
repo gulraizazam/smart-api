@@ -121,7 +121,7 @@ class LeadStatusesController extends Controller
 
             return ApiHelper::apiDataTable($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -181,7 +181,7 @@ class LeadStatusesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -199,7 +199,7 @@ class LeadStatusesController extends Controller
             $lead_statuses = LeadStatuses::where(['account_id' => Auth::User()->account_id])->orderby('sort_no', 'ASC')->get();
             return ApiHelper::apiResponse($this->success, 'Success', true, $lead_statuses);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -224,7 +224,7 @@ class LeadStatusesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -262,7 +262,7 @@ class LeadStatusesController extends Controller
             $parentLeadStatuses = LeadStatuses::getParentRecords(false, Auth::User()->account_id, $lead_statuse->id, true);
             return ApiHelper::apiResponse($this->success, 'Success', true, compact('lead_statuse', 'parentLeadStatuses'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -289,7 +289,7 @@ class LeadStatusesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -308,7 +308,7 @@ class LeadStatusesController extends Controller
             $response = LeadStatuses::DeleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -334,7 +334,7 @@ class LeadStatusesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 

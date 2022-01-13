@@ -133,7 +133,7 @@ class CitiesController extends Controller
 
             return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -170,7 +170,7 @@ class CitiesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -196,7 +196,7 @@ class CitiesController extends Controller
             $cities = Cities::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
             return ApiHelper::apiResponse($this->success, 'Success', true, $cities);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -222,7 +222,7 @@ class CitiesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -262,7 +262,7 @@ class CitiesController extends Controller
             return ApiHelper::apiResponse($this->success, 'Success', true, $city);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -289,7 +289,7 @@ class CitiesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -309,7 +309,7 @@ class CitiesController extends Controller
             $response = Cities::DeleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -335,7 +335,7 @@ class CitiesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 }

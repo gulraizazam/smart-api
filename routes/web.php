@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
+use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
@@ -128,5 +129,8 @@ use App\Http\Controllers\Admin\ServicesController;
 
         // Appointment Statuses
         Route::get('appointment_statuses',[AppointmentStatusesController::class,'index'])->name('appointment_statuses.index');
+
+        // Machine Types
+        Route::get('machine_types',[MachineTypeController::class,'index'])->name('machine_types.index');
 
     });
