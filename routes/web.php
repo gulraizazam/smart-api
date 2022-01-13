@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\UserTypesController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
+use App\Http\Controllers\Admin\ServicesController;
 
     /*
     |--------------------------------------------------------------------------
@@ -121,6 +122,15 @@ use App\Http\Controllers\Admin\LocationsController;
         // Lead Statuses
         Route::get('lead_statuses',[LeadStatusesController::class,'index'])->name('lead_statuses.index');
         Route::get('lead_statuses/sort',[LeadStatusesController::class,'sortOrder'])->name('lead_statuses.sort');
+
+        // Services
+        Route::post('services/datatable', [ServicesController::class, 'datatable'])->name('services.datatable');
+        Route::post('services/status', [ServicesController::class, 'status'])->name('services.status');
+        Route::resource('services', ServicesController::class);
+        //Route::get('services_sort', [ServicesController::class, 'sortorder'])->name( 'services.sort');
+        //Route::get('services_sort_save', ['uses' => 'Admin\ServicesController@sortorder_save', 'as' => 'services.sort_save']);
+        //Route::get('services/statusAjax', ['uses' => 'Admin\ServicesController@statusAjax', 'as' => 'services.statusAjax']);
+
 
         // Appointment Statuses
         Route::get('appointment_statuses',[AppointmentStatusesController::class,'index'])->name('appointment_statuses.index');

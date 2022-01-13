@@ -1,6 +1,9 @@
 "use strict";
 
 let perPage = 20;
+if (typeof changePages !== 'undefined') {
+    perPage = changePages;
+}
 let row_ids = [];
 let permissions = [];
 let active_filters = [];
@@ -62,6 +65,7 @@ var KTDatatable = function() {
             },*/
 
 			// column sorting
+             fixedColumns: true,
 			sortable: true,
 
 			pagination: true,
