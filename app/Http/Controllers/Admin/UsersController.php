@@ -369,9 +369,9 @@ class UsersController extends Controller
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
                         if ($locationchecked->slug == 'custom') {
-                            $locations[] = $loc[$location]->city->name.'-'.$loc[$location]->name;
+                            $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
                         } else {
-                            $locations[] = $loc[$location]->name;
+                            $locations[] = $loc[$location]->name ?? '';
                         }
                     }
                 }
@@ -438,7 +438,7 @@ class UsersController extends Controller
     /**
      * Show the form for creating new User.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create()
     {
