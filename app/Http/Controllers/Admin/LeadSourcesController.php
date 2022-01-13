@@ -108,7 +108,7 @@ class LeadSourcesController extends Controller
             ];
             return ApiHelper::apiDataTable($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -160,7 +160,7 @@ class LeadSourcesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -178,7 +178,7 @@ class LeadSourcesController extends Controller
             $lead_sources = LeadSources::where(['account_id' => Auth::User()->account_id])->orderby('sort_no', 'ASC')->get();
             return ApiHelper::apiResponse($this->success, 'Success', true, $lead_sources);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -204,7 +204,7 @@ class LeadSourcesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -240,7 +240,7 @@ class LeadSourcesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Success', true, $lead_source);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -266,7 +266,7 @@ class LeadSourcesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -285,7 +285,7 @@ class LeadSourcesController extends Controller
             $response = LeadSources::DeleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -311,7 +311,7 @@ class LeadSourcesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 

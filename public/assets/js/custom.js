@@ -89,7 +89,7 @@ function sendDeleteRequest(route) {
            if (response.status) {
                toastr.success(response.message);
 
-               reloadDataTable();
+               reInitTable();
            } else {
              toastr.error(response.message);
            }
@@ -182,15 +182,12 @@ function updateStatus(route, id, $this) {
 
 /*functions*/
 
-function reloadDataTable() {
-    $('#kt_datatable').KTDatatable('reload');
-}
 
 function errorMessage(xhr) {
     if (xhr.status == '401') {
         toastr.error("You are not authorized to access this resource");
     } else {
-        toastr.error("Unable to process your request, please try again later.");
+        toastr.error(xhr.responseJSON.message);
     }
 }
 

@@ -71,6 +71,10 @@ var KTDatatable = function() {
 
 		});
 
+        datatable.on('datatable-on-ajax-fail',function (event,error){
+            toastr.error(error.responseJSON.message);
+        });
+
 		$('#delete-table-rows').on('click', function() {
             deleteConfirm(datatable);
 		});

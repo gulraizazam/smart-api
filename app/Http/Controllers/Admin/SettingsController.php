@@ -54,69 +54,74 @@ class SettingsController extends Controller
      */
     public function datatable(Request $request)
     {
-        $apply_filter = false;
-        $filters = getFilters($request->all());
-        if (hasFilter($filters, 'filter')) {
-            if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, 'settings');
-            } else if ($filters['filter'] == 'filter') {
-                $apply_filter = true;
-            }
-        }
-        $records = array();
-        $records["data"] = array();
-        list($orderBy, $order) = getSortBy($request);
-        // Get Total Records
-        $iTotalRecords = Settings::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+        try {
 
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
-        $settings = Settings::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-
-        if ($settings) {
-            foreach ($settings as $setting) {
-                switch ($setting->slug) {
-                    case 'sys-discounts':
-                        $exploded = explode(':', $setting->data);
-                        $setting->data = 'Min: ' . $exploded[0] . '%, Max: ' . $exploded[1] . '%';
-                        break;
-                    case 'sys-birthdaypromotion':
-                        $exploded = explode(':', $setting->data);
-                        $setting->data = 'Pre Days: ' . $exploded[0] . ', Post Days: ' . $exploded[1];
-                        break;
-                    case 'sys-list-mode':
-                        $setting->data = config('constants.listing_array')[$setting->data];
-                        break;
-                    case 'sys-back-date-appointment':
-                        $setting->data = $setting->data == 0 ? 'Disabled' : 'Enabled';
-                        break;
-                    case 'sys-current-sms-operator':
-                        $setting->data = $setting->data == 1 ? config('constants.operator_array.1') : config('constants.operator_array.2');
-                        break;
-                    case 'sys-consultancy-invoice-medical-operator':
-                        $setting->data = $setting->data == 1 ? config('constants.invoice_consultancy_medical_form.1') : config('constants.invoice_consultancy_medical_form.2');
-                        break;
-                    case 'sys-virtual-consultancy':
-                        $setting->data = $setting->data == 1 ? config('constants.consultancy_type.1') : config('constants.consultancy_type.2');
-                        break;
+            $apply_filter = false;
+            $filters = getFilters($request->all());
+            if (hasFilter($filters, 'filter')) {
+                if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
+                    Filters::flush(Auth::User()->id, 'settings');
+                } else if ($filters['filter'] == 'filter') {
+                    $apply_filter = true;
                 }
             }
-            $records["data"] = $settings;
+            $records = array();
+            $records["data"] = array();
+            list($orderBy, $order) = getSortBy($request);
+            // Get Total Records
+            $iTotalRecords = Settings::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-            $records["permissions"] = [
-                'edit' => Gate::allows('settings_edit'),
-            ];
-            $records["meta"] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
+            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+            $settings = Settings::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+
+            if ($settings) {
+                foreach ($settings as $setting) {
+                    switch ($setting->slug) {
+                        case 'sys-discounts':
+                            $exploded = explode(':', $setting->data);
+                            $setting->data = 'Min: ' . $exploded[0] . '%, Max: ' . $exploded[1] . '%';
+                            break;
+                        case 'sys-birthdaypromotion':
+                            $exploded = explode(':', $setting->data);
+                            $setting->data = 'Pre Days: ' . $exploded[0] . ', Post Days: ' . $exploded[1];
+                            break;
+                        case 'sys-list-mode':
+                            $setting->data = config('constants.listing_array')[$setting->data];
+                            break;
+                        case 'sys-back-date-appointment':
+                            $setting->data = $setting->data == 0 ? 'Disabled' : 'Enabled';
+                            break;
+                        case 'sys-current-sms-operator':
+                            $setting->data = $setting->data == 1 ? config('constants.operator_array.1') : config('constants.operator_array.2');
+                            break;
+                        case 'sys-consultancy-invoice-medical-operator':
+                            $setting->data = $setting->data == 1 ? config('constants.invoice_consultancy_medical_form.1') : config('constants.invoice_consultancy_medical_form.2');
+                            break;
+                        case 'sys-virtual-consultancy':
+                            $setting->data = $setting->data == 1 ? config('constants.consultancy_type.1') : config('constants.consultancy_type.2');
+                            break;
+                    }
+                }
+                $records["data"] = $settings;
+
+                $records["permissions"] = [
+                    'edit' => Gate::allows('settings_edit'),
+                ];
+                $records["meta"] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+            }
+
+            return ApiHelper::apiDataTable($records);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-
-        return response()->json($records);
     }
 
 
@@ -241,7 +246,7 @@ class SettingsController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Success', true, $setting);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -273,7 +278,7 @@ class SettingsController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
