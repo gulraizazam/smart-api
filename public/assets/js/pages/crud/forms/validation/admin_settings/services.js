@@ -15,67 +15,39 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    fdo_name: {
+                    parent_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The fdo name field is required'
+                                message: 'The parent service field is required'
                             }
                         }
                     },
-                    fdo_phone: {
+                    duration: {
                         validators: {
                             notEmpty: {
-                                message: 'The fdo phone field is required'
+                                message: 'The duration field is required'
                             }
                         }
                     },
 
-                    city_id: {
+                    color: {
                         validators: {
                             notEmpty: {
-                                message: 'The city field is required'
+                                message: 'The color field is required'
                             }
                         }
                     },
-                    address: {
+                    price: {
                         validators: {
                             notEmpty: {
-                                message: 'The address field is required'
+                                message: 'The price field is required'
                             }
                         }
                     },
-                    google_map: {
+                    end_node: {
                         validators: {
                             notEmpty: {
-                                message: 'The google map field is required'
-                            }
-                        }
-                    },
-                    "services[]": {
-                        validators: {
-                            notEmpty: {
-                                message: 'The services field is required'
-                            }
-                        }
-                    },
-                    tax_percentage: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The tax percentage field is required'
-                            }
-                        }
-                    },
-                    ntn: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The ntn field is required'
-                            }
-                        }
-                    },
-                    stn: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The stn field is required'
+                                message: 'The end node field is required'
                             }
                         }
                     },
@@ -94,7 +66,7 @@ var AddValidation = function () {
            select2Validation();
         });
         validate.on('core.form.valid', function(event) {
-            submitFileForm($(form).attr('action'), $(form).attr('method'), modal_id, function (response) {
+            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
@@ -102,7 +74,7 @@ var AddValidation = function () {
                 } else {
                     toastr.error(response.message);
                 }
-            });
+            }, form);
         });
     }
 
@@ -129,67 +101,39 @@ var EditValidation = function () {
                             }
                         }
                     },
-                    fdo_name: {
+                    parent_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The fdo name field is required'
+                                message: 'The parent service field is required'
                             }
                         }
                     },
-                    fdo_phone: {
+                    duration: {
                         validators: {
                             notEmpty: {
-                                message: 'The fdo phone field is required'
+                                message: 'The duration field is required'
                             }
                         }
                     },
 
-                    city_id: {
+                    color: {
                         validators: {
                             notEmpty: {
-                                message: 'The city field is required'
+                                message: 'The color field is required'
                             }
                         }
                     },
-                    address: {
+                    price: {
                         validators: {
                             notEmpty: {
-                                message: 'The address field is required'
+                                message: 'The price field is required'
                             }
                         }
                     },
-                    google_map: {
+                    end_node: {
                         validators: {
                             notEmpty: {
-                                message: 'The google map field is required'
-                            }
-                        }
-                    },
-                    "services[]": {
-                        validators: {
-                            notEmpty: {
-                                message: 'The services field is required'
-                            }
-                        }
-                    },
-                    tax_percentage: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The tax percentage field is required'
-                            }
-                        }
-                    },
-                    ntn: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The ntn field is required'
-                            }
-                        }
-                    },
-                    stn: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The stn field is required'
+                                message: 'The end node field is required'
                             }
                         }
                     },
@@ -205,10 +149,10 @@ var EditValidation = function () {
             }
         );
         validate.on('core.form.invalid', function (e) {
-            select2Validation();
+           select2Validation();
         });
         validate.on('core.form.valid', function(event) {
-            submitFileForm($(form).attr('action'), $(form).attr('method'), modal_id, function (response) {
+            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
@@ -216,7 +160,7 @@ var EditValidation = function () {
                 } else {
                     toastr.error(response.message);
                 }
-            });
+            }, form);
         });
     }
 

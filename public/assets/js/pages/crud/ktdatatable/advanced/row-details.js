@@ -65,6 +65,7 @@ var KTDatatable = function() {
             },*/
 
 			// column sorting
+             fixedColumns: true,
 			sortable: true,
 
 			pagination: true,

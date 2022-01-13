@@ -65,7 +65,8 @@ var table_columns = [
                 return '-';
             }
             if (typeof data.complimentory !== 'undefined') {
-                return '<span>'+data.complimentory == 0 ? 'Yes' : 'No'+'</span>';
+                let status = data.complimentory == 1 ? 'Yes' : 'No';
+                return '<span>'+status+'</span>';
             }
             return 'No';
         }
@@ -96,7 +97,7 @@ function actions(data) {
         let id = data.id;
 
         let csrf = $('meta[name="csrf-token"]').attr('content');
-        let url = route('admin.locations.edit', {id: id});
+        let url = route('admin.services.edit', {id: id});
         let delete_url = route('admin.locations.destroy', {id: id});
 
         if (permissions.edit && permissions.delete) {
@@ -138,7 +139,7 @@ function actions(data) {
 
 function editRow(url) {
 
-    $("#modal_edit_locations").modal("show");
+    $("#modal_edit_services").modal("show");
 
     $.ajax({
         headers: {
@@ -166,40 +167,64 @@ function editRow(url) {
 
 function setEditData(response) {
 
-    let location = response.data.location;
+    let service = response.data.service;
 
-    $("#modal_edit_location_form").attr("action", route('admin.locations.update', {id: location.id}));
+    $("#modal_edit_services_form").attr("action", route('admin.services.update', {id: service.id}));
 
-    let service_location = response.data.service_location;
+    let services = response.data.parent_services;
+    let durations = response.data.durations;
+    let tax_treatment_types = response.data.tax_treatment_types;
+    let select_tax_treatment_type = response.data.select_tax_treatment_type;
+    let services_options = '<option value="">Parent Service</option>';
+    let duration_options = '<option value="">Select a Duration</option>';
+    let radios = '';
 
-    let cities = response.data.cities;
-    let cities_options = '<option value="">Select A City</option>';
+    Object.entries(tax_treatment_types).forEach(function(value, index) {
 
-    Object.entries(cities).forEach(function(value, index) {
-        cities_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        radios += '<label class="radio">\
+            <input type="radio" name="tax_treatment_type_id" value="'+value[1].id+'">\
+            <span></span>\
+        '+value[1].name+'\
+        </label>';
     });
 
-    $("#edit_location_cities").html(cities_options);
+    Object.entries(services).forEach(function(value, index) {
+        services_options += '<option value="'+value[1].id+'">'+value[1].name+'</option>';
+    });
 
-    let service_options = makeServiceOptions(response);
+    Object.entries(durations).forEach(function(value, index) {
+        duration_options += '<option value="'+value[1]+'">'+value[1]+'</option>';
+    });
 
-    $("#edit_location_services").html(service_options);
+    $("#edit_duration").html(duration_options);
 
-    $("#edit_name").val(location.name);
-    $("#edit_fdo_name").val(location.fdo_name);
-    $("#edit_fdo_phone").val(location.fdo_phone);
-    $("#edit_address").val(location.address);
-    $("#edit_google_map").val(location.google_map);
-    $("#edit_tax_percentage").val(location.tax_percentage);
-    $("#edit_ntn").val(location.ntn);
-    $("#edit_stn").val(location.stn);
-    let image = asset_url +'storage/centre_logo/'+ location.image_src;
-    $("#edit-image").css('background-image', "url(" + image + ")");
-    $("#edit_location_cities").val(location.city_id).change();
-    $("#edit_location_services").val(service_location).change();
+    $("#edit_parent_service").html(services_options);
 
+    $(".tax-radios").html(radios);
 
+    $(".tax-radios").find("input").each(function () {
+        if ($(this).val() == select_tax_treatment_type) {
+            $(this).prop("checked", true);
+        }
+    });
 
+    $("#edit_parent_service").val(service.parent_id);
+    $("#edit_service_name").val(service.name);
+    $("#edit_duration").val(service.duration);
+    $("#edit_color").val(service.color);
+    $("#edit_price").val(service.price);
+
+    if (service.end_node == 1) {
+        $("#edit_end_node").prop("checked", true);
+    } else {
+        $("#edit_end_node").prop("checked", false);
+    }
+
+    if (service.complimentory == 1) {
+        $("#edit_complimentory").prop("checked", true);
+    } else {
+        $("#edit_complimentory").prop("checked", false);
+    }
 
 }
 
@@ -300,20 +325,39 @@ function setCreateData(response) {
 
     let services = response.data.parent_services;
     let durations = response.data.durations;
+    let tax_treatment_types = response.data.tax_treatment_types;
+    let select_tax_treatment_type = response.data.select_tax_treatment_type;
     let services_options = '<option value="">Parent Service</option>';
     let duration_options = '<option value="">Select a Duration</option>';
+    let radios = '';
+
+    Object.entries(tax_treatment_types).forEach(function(value, index) {
+
+        radios += '<label class="radio">\
+            <input type="radio" name="tax_treatment_type_id" value="'+value[1].id+'">\
+            <span></span>\
+        '+value[1].name+'\
+        </label>';
+    });
 
     Object.entries(services).forEach(function(value, index) {
-        services_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        services_options += '<option value="'+value[1].id+'">'+value[1].name+'</option>';
     });
 
     Object.entries(durations).forEach(function(value, index) {
-        duration_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        duration_options += '<option value="'+value[1]+'">'+value[1]+'</option>';
     });
 
-    $("#add_service_duration").html(duration_options);
+    $("#add_duration").html(duration_options);
 
-    $("#add_services").html(service_options);
+    $("#add_parent_service").html(services_options);
+    $(".tax-radios").html(radios);
+
+    $(".tax-radios").find("input").each(function () {
+        if ($(this).val() == select_tax_treatment_type) {
+            $(this).prop("checked", true);
+        }
+    });
 }
 
 function hideShowAdvanceFilters(active_filters) {

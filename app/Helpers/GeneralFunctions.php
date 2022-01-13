@@ -178,4 +178,26 @@
             return $allService;
         }
 
+
+        public static function duration()
+        {
+            $timeStep   = 5;
+            $timeArray  = [];
+            $startTime  = new \DateTime('00:00');
+            $endTime    = new \DateTime('23:55');
+
+            while($startTime <= $endTime)
+            {
+                $timeArray[] = $startTime->format('H:i');
+                $startTime->add(new \DateInterval('PT'.$timeStep.'M'));
+            }
+
+            return $timeArray;
+        }
+
+        public static function parentServices()
+        {
+            return Services::where('parent_id', 0)->where('slug', '!=', 'all')->get(['id', 'name']);
+        }
+
 	}

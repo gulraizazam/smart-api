@@ -264,6 +264,7 @@ function hideSpinnerRestForm(form = '') {
     form.reset();
     $(".image-input-wrapper").css('background-image', "url()");
     $(".image-input-wrapper").parent(".image-input").find("span").removeClass("btn-shadow");
+    $("#complimentary").addClass("d-none");
 }
 
 function submitForm(action, method, data, callback, form = '') {
@@ -372,4 +373,9 @@ function renderCheckbox() {
 
 function childCheckbox(data) {
     return '<label class="checkbox checkbox-single checkbox-all"><input value="'+data.id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
+}
+
+
+function switchComplimentary($id) {
+    $("#" + $id).toggleClass("d-none");
 }

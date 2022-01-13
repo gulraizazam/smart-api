@@ -346,8 +346,7 @@ class Services extends BaseModal
         $service = Services::getData($id);
 
         if (!$service) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.services.index');
+            return false;
         }
 
         $dactivation_flag = false;
@@ -357,9 +356,7 @@ class Services extends BaseModal
 
             $dactivation_flag = true;
 
-            flash('Record has been inactivated successfully.')->success()->important();
         } else {
-            // Group tried to inactivate, inactivate all sub groups and childs
 
             /* Create Nodes with Parents */
             $parentGroups = new NodesTree();
@@ -379,10 +376,9 @@ class Services extends BaseModal
 
                 $dactivation_flag = true;
 
-                flash('Records have been inactivated successfully.')->success()->important();
-            } else {
-                flash('Error in inactivation of records.')->error()->important();
+                return true;
             }
+            return false;
         }
 
         AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
@@ -402,7 +398,7 @@ class Services extends BaseModal
             }
         }
 
-        return 'true';
+        return true;
 
     }
 
@@ -419,13 +415,10 @@ class Services extends BaseModal
         $service = Services::getData($id);
 
         if (!$service) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.lead_statuses.index');
+            return false;
         }
 
         $record = $service->update(['active' => 1]);
-
-        flash('Record has been inactivated successfully.')->success()->important();
 
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 
@@ -600,7 +593,7 @@ class Services extends BaseModal
             DiscountHasLocations::where(['service_id' => $id])->count()||
             DoctorHasLocations::where(['service_id' => $id])->count()||
             ServiceHasLocations::where(['service_id' => $id])->count() ||
-            Invoices::join('invoice_details','invoices.id','=','invoice_details.invoice_id')->where(['invoice_details.service_id' => $id],['invoices.invoice_status_id' => $invoicestatus->id])->count() ||
+            Invoices::join('invoice_details','invoices.id','=','invoice_details.invoice_id')->where(['invoice_details.service_id' => $id],['invoices.invoice_status_id' => $invoicestatus->id ?? 0])->count() ||
             Appointments::where(['service_id' => $id])->count() ||
             StaffTargetServices::where(['service_id' => $id])->count()
         ) {

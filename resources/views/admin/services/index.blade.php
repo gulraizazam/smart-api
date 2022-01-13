@@ -46,7 +46,7 @@
                             @endif
 
                             @if(Gate::allows('services_create'))
-                                <a href="javascript:void(0);" onclick="createService('{{ route('admin.services.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_towns">
+                                <a href="javascript:void(0);" onclick="createService('{{ route('admin.services.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_services">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
