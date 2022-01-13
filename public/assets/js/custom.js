@@ -219,8 +219,16 @@ function closePopup(modal) {
 }
 
 function reInitTable() {
+
     setTimeout(function () {
-        $('#kt_datatable').KTDatatable('reload');
+        /**
+        /*@reload has bug so we can't use this
+         */
+        //$('#kt_datatable').KTDatatable('reload');
+
+        /*this is for reload datatable*/
+        datatable.search({ datatable_reload: 'reload' }, 'search');
+
     }, 400);
 }
 
@@ -256,11 +264,14 @@ function showSpinner() {
     $(".spinner-button").addClass("spinner spinner-white spinner-right mr-3").prop('disabled', true);
 }
 
-function hideSpinnerRestForm(form = '') {
+function hideSpinnerRestForm(form = null) {
     $(".spinner-button").removeClass("spinner spinner-white spinner-right mr-3").prop('disabled', false);
-    form.reset();
+   if (form) {
+       form.reset();
+   }
     $(".image-input-wrapper").css('background-image', "url()");
     $(".image-input-wrapper").parent(".image-input").find("span").removeClass("btn-shadow");
+    $("#complimentary").addClass("d-none");
 }
 
 function submitForm(action, method, data, callback, form = '') {
@@ -369,4 +380,9 @@ function renderCheckbox() {
 
 function childCheckbox(data) {
     return '<label class="checkbox checkbox-single checkbox-all"><input value="'+data.id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
+}
+
+
+function switchComplimentary($id) {
+    $("#" + $id).toggleClass("d-none");
 }

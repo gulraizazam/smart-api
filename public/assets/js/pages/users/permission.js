@@ -39,6 +39,7 @@ function actions(data) {
 
     let id = data.id;
     let url = route('admin.permissions.destroy', {id: id});
+    let edit_url = route('admin.permissions.edit', {id: id});
 
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
@@ -55,7 +56,7 @@ function actions(data) {
                     </li>';
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="editRow(' + id + ');" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
                     </a>\
@@ -113,7 +114,7 @@ function makeCreatePopup(response) {
     $(".permissions-dropdown").html(options);
 }
 
-function editRow( id) {
+function editRow( url) {
 
     $("#modal_edit_permission").modal("show");
 
@@ -121,7 +122,7 @@ function editRow( id) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.permissions.edit', {id: id}),
+        url: url,
         type: "GET",
         cache: false,
         success: function (response) {
@@ -140,9 +141,12 @@ function editRow( id) {
 
 function makeEditPopup(response) {
 
-    let permissions = response.data.permissions;
     let permission = response.data.permission;
+
+    let permissions = response.data.permissions;
     let options = '<option value="">Select</option>';
+
+    $("#modal_edit_permission_form").attr("action", route('admin.permissions.update', {id: permission.id}));
 
     Object.entries(permissions).forEach(function(value, index) {
         options += '<option value="'+value[0]+'">'+value[1]+'</option>';

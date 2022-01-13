@@ -1,20 +1,13 @@
 
-var AddUserValidation = function () {
+var AddValidation = function () {
     // Private functions
-    var AddValidation = function () {
-        let modal_id = 'modal_add_user_form';
+    var validation = function () {
+        let modal_id = 'modal_add_services_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    email: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The email field is required'
-                            }
-                        }
-                    },
                     name: {
                         validators: {
                             notEmpty: {
@@ -22,45 +15,39 @@ var AddUserValidation = function () {
                             }
                         }
                     },
-                    phone: {
+                    parent_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The phone field is required'
+                                message: 'The parent service field is required'
                             }
                         }
                     },
-                    gender: {
+                    duration: {
                         validators: {
                             notEmpty: {
-                                message: 'The gender field is required'
+                                message: 'The duration field is required'
                             }
                         }
                     },
-                    password: {
+
+                    color: {
                         validators: {
                             notEmpty: {
-                                message: 'The password field is required'
+                                message: 'The color field is required'
                             }
                         }
                     },
-                    'roles[]': {
+                    price: {
                         validators: {
                             notEmpty: {
-                                message: 'The roles field is required'
+                                message: 'The price field is required'
                             }
                         }
                     },
-                    commission: {
+                    end_node: {
                         validators: {
                             notEmpty: {
-                                message: 'The commission field is required'
-                            }
-                        }
-                    },
-                    'centers[]': {
-                        validators: {
-                            notEmpty: {
-                                message: 'The commission field is required'
+                                message: 'The end node field is required'
                             }
                         }
                     },
@@ -80,8 +67,7 @@ var AddUserValidation = function () {
         });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
+                if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
                     reInitTable();
@@ -93,29 +79,21 @@ var AddUserValidation = function () {
     }
 
     return {
-        // public functions
         init: function() {
-            AddValidation();
+            validation();
         }
     };
 }();
 
-var EditUserValidation = function () {
+var EditValidation = function () {
     // Private functions
-    var EditValidation = function () {
-        let modal_id = 'modal_edit_user_form';
+    var validation = function () {
+        let modal_id = 'modal_edit_services_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    email: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The email field is required'
-                            }
-                        }
-                    },
                     name: {
                         validators: {
                             notEmpty: {
@@ -123,45 +101,39 @@ var EditUserValidation = function () {
                             }
                         }
                     },
-                    phone: {
+                    parent_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The phone field is required'
+                                message: 'The parent service field is required'
                             }
                         }
                     },
-                    gender: {
+                    duration: {
                         validators: {
                             notEmpty: {
-                                message: 'The gender field is required'
+                                message: 'The duration field is required'
                             }
                         }
                     },
-                    password: {
+
+                    color: {
                         validators: {
                             notEmpty: {
-                                message: 'The password field is required'
+                                message: 'The color field is required'
                             }
                         }
                     },
-                    'roles[]': {
+                    price: {
                         validators: {
                             notEmpty: {
-                                message: 'The roles field is required'
+                                message: 'The price field is required'
                             }
                         }
                     },
-                    commission: {
+                    end_node: {
                         validators: {
                             notEmpty: {
-                                message: 'The commission field is required'
-                            }
-                        }
-                    },
-                    'centers[]': {
-                        validators: {
-                            notEmpty: {
-                                message: 'The commission field is required'
+                                message: 'The end node field is required'
                             }
                         }
                     },
@@ -181,8 +153,7 @@ var EditUserValidation = function () {
         });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
+                if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
                     reInitTable();
@@ -194,14 +165,13 @@ var EditUserValidation = function () {
     }
 
     return {
-        // public functions
         init: function() {
-            EditValidation();
+            validation();
         }
     };
 }();
 
 jQuery(document).ready(function() {
-    AddUserValidation.init();
-    EditUserValidation.init();
+    AddValidation.init();
+    EditValidation.init();
 });

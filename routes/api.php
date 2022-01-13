@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
+use App\Http\Controllers\Admin\ServicesController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -130,6 +132,12 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::delete('machine_types/{id}', [MachineTypeController::class, 'destroy'])->name('machine_types.destroy');
     Route::post('machine_types/status', [MachineTypeController::class, 'status'])->name('machine_types.status');
     // Machine Types Routes End
+
+    // Services
+    Route::post('services/datatable', [ServicesController::class, 'datatable'])->name('services.datatable');
+    Route::post('services/status', [ServicesController::class, 'status'])->name('services.status');
+    Route::resource('services', ServicesController::class)->except('index');
+
 
 });
 

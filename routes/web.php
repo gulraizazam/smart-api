@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\UserTypesController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
+use App\Http\Controllers\Admin\ServicesController;
 
     /*
     |--------------------------------------------------------------------------
@@ -122,6 +123,9 @@ use App\Http\Controllers\Admin\LocationsController;
         // Lead Statuses
         Route::get('lead_statuses',[LeadStatusesController::class,'index'])->name('lead_statuses.index');
         Route::get('lead_statuses/sort',[LeadStatusesController::class,'sortOrder'])->name('lead_statuses.sort');
+
+        // Services
+        Route::resource('services', ServicesController::class)->only('index');
 
         // Appointment Statuses
         Route::get('appointment_statuses',[AppointmentStatusesController::class,'index'])->name('appointment_statuses.index');

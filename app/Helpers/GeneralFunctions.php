@@ -5,22 +5,23 @@
 	 * Date: 3/22/2018
 	 * Time: 3:49 PM.
 	 */
-	
+
 	namespace App\Helpers;
-	
+
 	use App\Models\Appointments;
-	use Illuminate\Support\Facades\Gate;
-	
+    use App\Models\Services;
+    use Illuminate\Support\Facades\Gate;
+
 	class GeneralFunctions
 	{
 		public static function cleanNumber($phoneNumber)
 		{
 			$phoneNumber = str_replace(' ', '', $phoneNumber); // Replaces all spaces with hyphens.
 			$phoneNumber = str_replace('-', '', $phoneNumber); // Replaces all spaces with hyphens.
-			
+
 			return self::cleanCountryCodes(preg_replace('/[^0-9\-]/', '', $phoneNumber)); // Removes special chars.
 		}
-		
+
 		private static function cleanCountryCodes($phoneNumber)
 		{
 			//if($_SERVER['REMOTE_ADDR'] == '202.166.167.242'){dd($phoneNumber);}
@@ -36,10 +37,10 @@
 			if ($phoneNumber[0] == '0') {
 				return $phoneNumber = substr($phoneNumber, 1);
 			}
-			
+
 			return $phoneNumber;
 		}
-		
+
 		public static function prepareNumber($phoneNumber)
 		{
 			// Adjust Country Code for Pakistan
@@ -49,7 +50,7 @@
 				return $phoneNumber;
 			}
 		}
-		
+
 		public static function prepareNumber4Call($phoneNumber,$type = 0)
 		{
 			if (!Gate::allows('contact')) {
@@ -65,7 +66,8 @@
 				}
 			}
 		}
-		public static function prepareNumber4CallSMS($phoneNumber)
+
+        public static function prepareNumber4CallSMS($phoneNumber)
 		{
 			// Adjust Country Code for Pakistan
 			if ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10) {
@@ -74,7 +76,7 @@
 				return $phoneNumber;
 			}
 		}
-		
+
 		/**
 		 * @param $type in string form
 		 *
@@ -84,7 +86,7 @@
 		{
 			return $type == config('constants.appointment_type_consultancy_string') ? config('constants.appointment_type_consultancy') : config('constants.appointment_type_service');
 		}
-		
+
 		public static function contactStatus($contact)
 		{
 			if (!Gate::allows('contact')) {
@@ -116,16 +118,86 @@
 				return $id;
 			}
 		}
-		
+
 		public static function clearnString($string) {
-			
+
 			return str_replace([' ','-', '+'], '', $string);
 		}
-		
+
 		public static function getAppointmentType($appointment_id) {
 			$appointment = Appointments::select('appointment_type_id')->find($appointment_id);
-			
+
 			return $appointment->appointment_type_id ?? 0;
 		}
-		
+
+        public static function ServicesTree() {
+
+            $allService = Services::where('parent_id', 0)
+                ->where('slug', 'all')
+                ->first();
+
+            $services = Services::with('children')
+                ->where('parent_id', 0)
+                ->where('slug', '!=', 'all')
+                ->get();
+
+            $mergedServices = [];
+            foreach ($services as $key => $service) {
+
+                $children = collect($service->children)->flatten();
+                unset($service->children);
+
+                if ($key === 0) {
+                    $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
+                }
+
+                $mergedServices[] = $service->toArray();
+                $children = $children->toArray();
+                foreach ($children as $child) {
+                    $mergedServices[] = $child;
+                }
+
+            }
+
+            return $mergedServices;
+        }
+
+
+        private static function appendAllService() {
+            $allService = [];
+            $allService['id'] = 0;
+            $allService['parent_id'] = 0;
+            $allService['name'] = "All Services";
+            $allService['slug'] = 'custom';
+            $allService['active'] = 1;
+            $allService['color'] = "#2d2aea";
+            $allService['price'] = 0;
+            $allService['complimentory'] = 0;
+            $allService['duration'] = 0;
+
+            return $allService;
+        }
+
+
+        public static function duration()
+        {
+            $timeStep   = 5;
+            $timeArray  = [];
+            $startTime  = new \DateTime('00:00');
+            $endTime    = new \DateTime('23:55');
+
+            while($startTime <= $endTime)
+            {
+                $timeArray[] = $startTime->format('H:i');
+                $startTime->add(new \DateInterval('PT'.$timeStep.'M'));
+            }
+
+            return $timeArray;
+        }
+
+        public static function parentServices()
+        {
+            return Services::where('parent_id', 0)->where('slug', '!=', 'all')->get(['id', 'name']);
+        }
+
 	}
