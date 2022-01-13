@@ -82,7 +82,7 @@ class ServicesController extends Controller
 
         $records = $this->getExtraData($records);
 
-        $Services = GeneralFunctions::ServicesTree();
+        $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
 
         if (! empty($Services)) {
             $records["data"] = $Services;
@@ -113,10 +113,7 @@ class ServicesController extends Controller
 
     private function getExtraData($records = []) {
 
-
         $filters = Filters::all(Auth::User()->id, 'services');
-
-
 
         /* Create Nodes with Parents */
         $parentGroups = new NodesTree();

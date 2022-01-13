@@ -511,8 +511,8 @@ class Resources extends BaseModal
     {
         $where = Self::resources_filters($request, $account_id, $apply_filter);
 
-        $orderBy = 'created_at';
-        $order = 'desc';
+        list($orderBy, $order) = getSortBy($request);
+
         if ($request->get('order')) {
             $orderColumn = $request->get('order')[0]['column'];
             $orderBy = $request->get('columns')[$orderColumn]['data'];
