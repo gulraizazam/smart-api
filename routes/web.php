@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
+use App\Http\Controllers\admin\LogsController;
+use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
@@ -137,5 +139,12 @@ use App\Http\Controllers\Admin\ResourcesController;
         Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
         Route::resource('resources', ResourcesController::class);
         //Resource Route end
+
+        // Machine Types
+        Route::get('machine_types',[MachineTypeController::class,'index'])->name('machine_types.index');
+
+        // Logs Types
+        Route::get('logs',[LogsController::class,'index'])->name('logs.index');
+
 
     });

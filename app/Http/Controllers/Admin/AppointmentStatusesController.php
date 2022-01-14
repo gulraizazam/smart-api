@@ -126,7 +126,7 @@ class AppointmentStatusesController extends Controller
 
             return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -174,7 +174,7 @@ class AppointmentStatusesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -212,7 +212,7 @@ class AppointmentStatusesController extends Controller
             $appointment_statuse->parent_options = $parentAppointmentStatuses;
             return ApiHelper::apiResponse($this->success, 'Success', true, $appointment_statuse);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -239,7 +239,7 @@ class AppointmentStatusesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -259,7 +259,7 @@ class AppointmentStatusesController extends Controller
             $response = AppointmentStatuses::deleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -285,7 +285,7 @@ class AppointmentStatusesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 

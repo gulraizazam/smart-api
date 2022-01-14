@@ -3,17 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
-use App\Models\Regions;
+use App\Helpers\Filters;
+use App\Helpers\GeneralFunctions;
+use App\Helpers\NodesTree;
+use App\Models\MachineType;
+use App\Models\MachineTypeHasServices;
+use App\Models\Services;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use App\Http\Controllers\Controller;
-use App\Helpers\Filters;
 use Illuminate\Support\Facades\Validator;
 
-class RegionsController extends Controller
+class MachineTypeController extends Controller
 {
-
     protected $error;
     protected $success;
     protected $unauthorized;
@@ -26,22 +29,20 @@ class RegionsController extends Controller
     }
 
     /**
-     * Display a listing of regions
+     * Display a listing of the machine type.
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\never
      */
     public function index()
     {
-        if (!Gate::allows('regions_manage')) {
+        if (!Gate::allows('machineType_manage')) {
             return abort(401);
         }
-        $filters = Filters::all(Auth::User()->id, 'regions');
-        return view('admin.regions.index', compact('filters'));
+        return view('admin.machine_types.index');
     }
 
-
     /**
-     * Display a listing of Regions.
+     * Display the machinetype in datatable.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -49,52 +50,57 @@ class RegionsController extends Controller
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('regions_manage')) {
+            if (!Gate::allows('machineType_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $apply_filter = false;
             $filters = getFilters($request->all());
             if (hasFilter($filters, 'filter')) {
                 if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                    Filters::flush(Auth::User()->id, 'regions');
+                    Filters::flush(Auth::User()->id, 'machinetypes');
                 } else if ($filters['filter'] == 'filter') {
                     $apply_filter = true;
                 }
             }
-
             $records = array();
             $records["data"] = array();
-            list($orderBy, $order) = getSortBy($request);
+
             if (count($filters) > 0 && hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
-                $Regions = Regions::getBulkData($ids);
-                if ($Regions) {
-                    foreach ($Regions as $city) {
+                $machinetypes = MachineType::getBulkData($ids);
+                if ($machinetypes) {
+                    foreach ($machinetypes as $machinetype) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!Regions::isChildExists($city->id, Auth::User()->account_id)) {
-                            $city->delete();
+                        if (!MachineType::isChildExists($machinetype->id, Auth::User()->account_id)) {
+                            $machinetype->delete();
                         }
                     }
                 }
                 $records['status'] = true;
                 $records['message'] = 'Records has been deleted successfully!';
             }
+
             // Get Total Records
-            $iTotalRecords = Regions::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+            $iTotalRecords = MachineType::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+
+            list($orderBy, $order) = getSortBy($request);
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
-            $Regions = Regions::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-            $records["data"] = $Regions;
-            $records["permissions"] = [
-                'edit' => Gate::allows('regions_edit'),
-                'delete' => Gate::allows('regions_destroy'),
-                'active' => Gate::allows('regions_active'),
-                'inactive' => Gate::allows('regions_inactive'),
-            ];
+            $machinetypes = MachineType::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
-            $filters = Filters::all(Auth::User()->id, 'regions');
+            $services = GeneralFunctions::ServicesTree();
+
+            $records["data"] = $machinetypes;
+            $records["permissions"] = [
+                'edit' => Gate::allows('machineType_edit'),
+                'delete' => Gate::allows('machineType_destroy'),
+                'active' => Gate::allows('machineType_active'),
+                'inactive' => Gate::allows('machineType_inactive'),
+            ];
+            $filters = Filters::all(Auth::User()->id, 'machinetypes');
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
+                'services' => $services,
                 'status' => config('constants.status')
             ];
             $records["meta"] = [
@@ -105,80 +111,49 @@ class RegionsController extends Controller
                 'total' => $iTotalRecords,
                 'sort' => $order,
             ];
-            return response()->json($records);
+
+            return ApiHelper::apiDataTable($records);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
     /**
-     * Show the form for creating new Permission.
+     * Show the form for creating a new machine type.
      *
      * @return \Illuminate\Http\Response
      */
     public function create()
     {
-        if (!Gate::allows('regions_create')) {
-            return abort(401);
+
+        if (!Gate::allows('machineType_create')) {
+            return abort('401');
         }
+        /*Get Service as we get in resouce create module*/
+        $allserviceslug = Services::where('slug', '=', 'all')->first();
 
-        return view('admin.regions.create', compact('city'));
-    }
-
-
-    /**
-     * Save sort order of regions
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function sortOrderSave(Request $request)
-    {
-        try {
-            if (!Gate::allows('regions_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $itemIDs = $request->item_ids;
-            if (count($itemIDs)) {
-                foreach ($itemIDs as $key => $itemID) {
-                    Regions::where('id', '=', $itemID)->update(array('sort_number' => $key));
+        $parentGroups = new NodesTree();
+        $parentGroups->current_id = -1;
+        $parentGroups->build(0, Auth::User()->account_id, true, true);
+        $parentGroups->toList($parentGroups, -1);
+        $Services = $parentGroups->nodeList;
+        foreach ($Services as $key => $ser) {
+            if ($key) {
+                if (isset($allserviceslug->name)) {
+                    if ($ser['name'] == $allserviceslug->name) {
+                        unset($Services[$key]);
+                    }
                 }
-                return ApiHelper::apiResponse($this->success, 'Records are sorted Successfully!');
             }
-            return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
-        } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
         }
-    }
+        /*end*/
+        $ServiceMachinetype = array();
 
-    public function sortOrder()
-    {
-        if (!Gate::allows('regions_sort')) {
-            return abort(401);
-        }
-        return view('admin.regions.sort');
+        return view('admin.machinetypes.create', compact('Services', 'ServiceMachinetype'));
     }
 
     /**
-     * get records for sorting Regions
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function sortOrderGet()
-    {
-        try {
-            if (!Gate::allows('regions_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $regions = Regions::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
-            return ApiHelper::apiResponse($this->success, 'Success', true, $regions);
-        } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
-
-    /**
-     * Store a newly created region
+     * Store a newly created machine type in storage.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -186,14 +161,25 @@ class RegionsController extends Controller
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('regions_create')) {
+            if (!Gate::allows('machineType_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            if (Regions::createRecord($request, Auth::User()->account_id)) {
+            if ($machinetype = MachineType::createRecord($request, Auth::User()->account_id)) {
+                $data = $request->all();
+                if (isset($data['services']) && count($data['services'])) {
+                    $servicesData = array();
+                    foreach ($data['services'] as $service) {
+                        $servicesData = array(
+                            'machine_type_id' => $machinetype->id,
+                            'service_id' => $service,
+                        );
+                        MachineTypeHasServices::createRecord($servicesData, $machinetype);
+                    }
+                }
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
@@ -213,12 +199,23 @@ class RegionsController extends Controller
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
+            'services' => 'required',
         ]);
     }
 
+    /**
+     * Display the specified resource.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        //
+    }
 
     /**
-     * Get data for Edit Region
+     * Show the form for editing the specified resource.
      *
      * @param $id
      * @return \Illuminate\Http\JsonResponse
@@ -226,22 +223,23 @@ class RegionsController extends Controller
     public function edit($id)
     {
         try {
-            if (!Gate::allows('regions_edit')) {
+            if (!Gate::allows('machineType_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $region = Regions::getData($id);
-            if (!$region) {
+            $machine_type = MachineType::getData($id);
+            if (!$machine_type) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
-            return ApiHelper::apiResponse($this->success, 'Success', true, $region);
+            $service_machine_type = $machine_type->machinetype_has_services()->pluck('service_id')->toArray();
+            $services = GeneralFunctions::ServicesTree();
+            return ApiHelper::apiResponse($this->success, 'Success', true, ['machine_type' => $machine_type, 'service_machine_type' => $service_machine_type, 'services' => $services]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
-     * Update region
+     * Update the specified resource in storage.
      *
      * @param Request $request
      * @param $id
@@ -250,14 +248,27 @@ class RegionsController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('regions_edit')) {
+            if (!Gate::allows('machineType_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            if (Regions::updateRecord($id, $request, Auth::User()->account_id)) {
+
+            if ($machinetype = MachineType::updateRecord($id, $request, Auth::User()->account_id)) {
+                $machinetype->machinetype_has_services()->delete();
+                $data = $request->all();
+                if (isset($data['services']) && count($data['services'])) {
+                    $servicesData = array();
+                    foreach ($data['services'] as $service) {
+                        $servicesData = array(
+                            'machine_type_id' => $machinetype->id,
+                            'service_id' => $service,
+                        );
+                        MachineTypeHasServices::updateRecord($servicesData, $machinetype);
+                    }
+                }
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
@@ -268,7 +279,7 @@ class RegionsController extends Controller
 
 
     /**
-     * Remove/delete Region
+     * Remove the specified resource from storage.
      *
      * @param $id
      * @return \Illuminate\Http\JsonResponse
@@ -276,10 +287,10 @@ class RegionsController extends Controller
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('regions_destroy')) {
+            if (!Gate::allows('machineType_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $response = Regions::DeleteRecord($id);
+            $response = MachineType::deleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -287,7 +298,7 @@ class RegionsController extends Controller
     }
 
     /**
-     * Change status of Region
+     * Change status of Lead Source
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -296,15 +307,15 @@ class RegionsController extends Controller
     {
         try {
             if ($request->status == 0) {
-                if (!Gate::allows('regions_inactive')) {
+                if (!Gate::allows('cities_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                $response=Regions::inactiveRecord($request->id);
+                $response = MachineType::inactiveRecord($request->id);
             } else {
-                if (!Gate::allows('regions_active')) {
+                if (!Gate::allows('cities_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                $response=Regions::activeRecord($request->id);
+                $response = MachineType::activeRecord($request->id);
             }
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {

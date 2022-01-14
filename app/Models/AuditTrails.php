@@ -19,13 +19,24 @@ class AuditTrails extends BaseModal
 
     protected $table = 'audit_trails';
 
+    protected $casts =[
+        'created_at'=>'datetime:D M, j Y, H:i:a'
+    ];
 
     /**
      * sent the location name to resource with location_id.
      */
     public function user()
     {
-        return $this->belongsTo('App\User');
+        return $this->belongsTo('App\Models\User');
+    }
+
+    public function auditTable(){
+        return $this->belongsTo(AuditTrailTables::class,'audit_trail_table_name','id');
+    }
+
+    public function auditAction(){
+        return $this->belongsTo(AuditTrailActions::class,'audit_trail_action_name','id');
     }
 
     /*
@@ -285,7 +296,7 @@ class AuditTrails extends BaseModal
      */
     static public function getRecords($iDisplayStart, $iDisplayLength, $account_id = false)
     {
-        return self::limit($iDisplayLength)->offset($iDisplayStart)->where('parent_id', '=', '0')->orderBy('id', 'DESC')->get();
+        return self::with(['auditTable','auditAction','user'])->limit($iDisplayLength)->offset($iDisplayStart)->where('parent_id', '=', '0')->orderBy('id', 'DESC')->get();
     }
 
     /*

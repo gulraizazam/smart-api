@@ -103,7 +103,7 @@ class PaymentModesController extends Controller
             ];
             return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -137,7 +137,7 @@ class PaymentModesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -163,7 +163,7 @@ class PaymentModesController extends Controller
             $payment_modes = PaymentModes::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
             return ApiHelper::apiResponse($this->success, 'Success', true, $payment_modes);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -190,7 +190,7 @@ class PaymentModesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -226,7 +226,7 @@ class PaymentModesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Success', true, $payment_mode);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -253,7 +253,7 @@ class PaymentModesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -273,7 +273,7 @@ class PaymentModesController extends Controller
             $response = PaymentModes::deleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -300,7 +300,7 @@ class PaymentModesController extends Controller
             }
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return ApiHelper::apiException($e);
         }
     }
 }

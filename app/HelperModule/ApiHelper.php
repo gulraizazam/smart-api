@@ -36,7 +36,7 @@ class ApiHelper
      * @param array $data
      * @return \Illuminate\Http\JsonResponse
      */
-    public static function apiDataTable($data = []) 
+    public static function apiDataTable($data = [])
     {
         try {
             return response()->json($data);
@@ -45,19 +45,33 @@ class ApiHelper
         }
     }
 
-    public static function makeResponse($data = [], $view = null, $code = 200, $status = true, $message = "Record found") 
+    public static function makeResponse($data = [], $view = null, $code = 200, $status = true, $message = "Record found")
     {
         try {
             if (request()->hasHeader("Authorization")) {
-                return self::apiResponse($code, $message, $status, $data); 
+                return self::apiResponse($code, $message, $status, $data);
             }
-
             return view($view, $data);
-            
-    
         } catch (\Exception $e) {
             return response()->json(['status' => config('constants.api_status.error'), 'message' => $e->getMessage(), 'data' => null], config('constants.api_status.error'));
         }
+    }
+
+    /**
+     * Api Exception Response
+     *
+     * @param \Exception $e
+     * @param string $type
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public static function apiException(\Exception $e)
+    {
+        $code = config('constants.api_status.error');
+        $msg = 'Something went wrong, please try again later.';
+        if (config('app.debug')) {
+            $msg = $e->getMessage();
+        }
+        return self::apiResponse($code, $msg, false);
     }
 
 }
