@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
+use App\Http\Controllers\admin\LogsController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
@@ -137,6 +138,10 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('services/datatable', [ServicesController::class, 'datatable'])->name('services.datatable');
     Route::post('services/status', [ServicesController::class, 'status'])->name('services.status');
     Route::resource('services', ServicesController::class)->except('index');
+
+    // Logs Routes Start
+    Route::post('logs/datatable', [LogsController::class, 'datatable'])->name('logs.datatable');
+    // Logs Routes End
 
 
 });
