@@ -25,6 +25,10 @@ class Resources extends BaseModal
 
     protected static $_table = 'resources';
 
+    protected $casts = [
+        'created_at' => 'datetime:F d,Y h:i A'
+    ];
+
     /**
      * Get minTime of resource rota days with respect to doctor and machine
      * @param $location_id
@@ -447,7 +451,7 @@ class Resources extends BaseModal
     public function resource_types()
     {
 
-        return $this->belongsTo('App\Models\ResourceTypes');
+        return $this->belongsTo('App\Models\ResourceTypes', 'resource_type_id');
     }
 
     /**
@@ -509,18 +513,11 @@ class Resources extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::resources_filters($request, $account_id, $apply_filter);
+        $where = self::resources_filters($request, $account_id, $apply_filter);
 
         list($orderBy, $order) = getSortBy($request);
 
-        if ($request->get('order')) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            if ($orderBy == 'created_at') {
-                $orderBy = 'created_at';
-            }
-            $order = $request->get('order')[0]['dir'];
-
+        if ($request->has('sort')) {
             Filters::put(Auth::User()->id, 'resources', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'resources', 'order', $order);
         } else {
@@ -531,29 +528,21 @@ class Resources extends BaseModal
                 $orderBy = Filters::get(Auth::User()->id, 'resources', 'order_by');
                 $order = Filters::get(Auth::User()->id, 'resources', 'order');
 
-                if ($orderBy == 'created_at') {
-                    $orderBy = 'created_at';
-                }
             } else {
-                $orderBy = 'created_at';
-                $order = 'desc';
-                if ($orderBy == 'created_at') {
-                    $orderBy = 'created_at';
-                }
 
                 Filters::put(Auth::User()->id, 'resources', 'order_by', $orderBy);
                 Filters::put(Auth::User()->id, 'resources', 'order', $order);
             }
         }
         if (count($where)) {
-            return Resources::where($where)
+            return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->orderby($orderBy, $order)
                 ->get();
         } else {
-            return Resources::whereIn('location_id', ACL::getUserCentres())
+            return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->orderby($orderBy, $order)
@@ -564,6 +553,10 @@ class Resources extends BaseModal
     static public function resources_filters($request, $account_id, $apply_filter)
     {
         $where = array();
+
+        $filename = 'resources';
+        $filters = getFilters($request->all());
+        $apply_filter = checkFilters($filters, $filename);
 
         if ($account_id) {
             $where[] = array(
@@ -585,13 +578,13 @@ class Resources extends BaseModal
                 }
             }
         }
-        if ($request->get('name')) {
+        if (count($filters) > 0 && hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'resources', 'name', $request->get('name'));
+            Filters::put(Auth::User()->id, 'resources', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'name');
@@ -605,13 +598,13 @@ class Resources extends BaseModal
                 }
             }
         }
-        if ($request->get('resource_type_id') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'resource_type_id')) {
             $where[] = array(
                 'resource_type_id',
                 '=',
-                $request->get('resource_type_id')
+                $filters['resource_type_id']
             );
-            Filters::put(Auth::User()->id, 'resources', 'resource_type_id', $request->get('resource_type_id'));
+            Filters::put(Auth::User()->id, 'resources', 'resource_type_id', $filters['resource_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'resource_type_id');
@@ -625,13 +618,13 @@ class Resources extends BaseModal
                 }
             }
         }
-        if ($request->get('location_id') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'location_id')) {
             $where[] = array(
                 'location_id',
                 '=',
-                $request->get('location_id')
+                $filters['location_id']
             );
-            Filters::put(Auth::User()->id, 'resources', 'location_id', $request->get('location_id'));
+            Filters::put(Auth::User()->id, 'resources', 'location_id', $filters['location_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'location_id');
@@ -646,13 +639,13 @@ class Resources extends BaseModal
             }
         }
 
-        if ($request->get('machine_type_id') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'machine_type_id')) {
             $where[] = array(
                 'machine_type_id',
                 '=',
-                $request->get('machine_type_id')
+                $filters['machine_type_id']
             );
-            Filters::put(Auth::User()->id, 'resources', 'machine_type_id', $request->get('machine_type_id'));
+            Filters::put(Auth::User()->id, 'resources', 'machine_type_id', $filters['machine_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'machine_type_id');
@@ -667,13 +660,13 @@ class Resources extends BaseModal
             }
         }
 
-        if ($request->get('created_from') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'resources.created_at',
                 '>=',
                 $request->get('created_from') . ' 00:00:00'
             );
-            Filters::put(Auth::User()->id, 'resources', 'created_from', $request->get('created_from') . ' 00:00:00');
+            Filters::put(Auth::User()->id, 'resources', 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'created_from');
@@ -688,13 +681,13 @@ class Resources extends BaseModal
             }
         }
 
-        if ($request->get('created_to') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'resources.created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
-            Filters::put(Auth::User()->id, 'resources', 'created_to', $request->get('created_to') . ' 23:59:59');
+            Filters::put(Auth::User()->id, 'resources', 'created_to', $filters['created_to'] . ' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'created_to');
@@ -709,13 +702,13 @@ class Resources extends BaseModal
             }
         }
 
-        if ($request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null) {
+        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
             $where[] = array(
                 'resources.active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'resources', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'resources', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'resources', 'status');
@@ -810,17 +803,14 @@ class Resources extends BaseModal
         $resource = Resources::getData($id);
 
         if (!$resource) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.resources.index');
+            return false;
         }
 
         $record = $resource->update(['active' => 1]);
 
-        flash('Record has been activated successfully.')->success()->important();
-
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 
-        return $record;
+        return true;
     }
 
     /**

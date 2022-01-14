@@ -144,7 +144,7 @@
 
                 )
 
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.payment_modes.sort','admin.regions.index','admin.regions.sort','admin.cities.index','admin.cities.sort','admin.lead_sources.index','admin.lead_sources.sort','admin.towns.index','admin.lead_statuses.index','admin.lead_statuses.sort','admin.appointment_statuses.index', 'admin.locations.index', 'admin.services.index','admin.machine_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.payment_modes.sort','admin.regions.index','admin.regions.sort','admin.cities.index','admin.cities.sort','admin.lead_sources.index','admin.lead_sources.sort','admin.towns.index','admin.lead_statuses.index','admin.lead_statuses.sort','admin.appointment_statuses.index', 'admin.locations.index', 'admin.services.index','admin.machine_types.index','admin.resources.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
 
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
@@ -355,8 +355,26 @@
                             </div>
                         @endcan
 
+                        @can('resources_manage')
+
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{activeMenu('admin.resources.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.resources.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Resource</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        @endcan
+
                     </li>
-                        
+
                     @endif
 
                 </ul>

@@ -452,21 +452,23 @@ class Services extends BaseModal
         $service = Services::getData($id);
 
         if (!$service) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.services.index');
+            return [
+                'status' => false,
+                'message' => 'Resource not found.'
+            ];
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Services::isChildExists($id, Auth::User()->account_id)) {
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.services.index');
+            return [
+                'status' => false,
+                'message' => 'Child records exist, unable to delete resource.'
+            ];
         }
 
         $record = $service->delete();
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        flash('Record has been deleted successfully.')->success()->important();
 
         // Delete Bundle Service
         $bundleWithService = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
@@ -485,7 +487,10 @@ class Services extends BaseModal
             ])->delete();
         }
 
-        return $record;
+        return [
+            'status' => true,
+            'message' => 'Record has been deleted successfully.'
+        ];
 
     }
 

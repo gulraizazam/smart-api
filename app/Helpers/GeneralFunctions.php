@@ -138,11 +138,11 @@
                 ->first();
 
             if ($total > 0) {
+
                 $filename = 'services';
                 $filters = getFilters($request->all());
                 $apply_filter = checkFilters($filters, $filename);
 
-                list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $total);
                 if (count($filters) > 0 && hasFilter($filters, 'name')) {
                     $where[] = [
                         'name',
@@ -189,11 +189,10 @@
             }
 
             $query = Services::with('children')
-                ->where('parent_id', 0)
                 ->where('slug', '!=', 'all');
             if (isset($where) && count($where) > 0) {
                 $query->where([
-                    [$where]
+                    [$where],
                 ]);
             }
 
