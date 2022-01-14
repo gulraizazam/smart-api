@@ -10,6 +10,7 @@
 
 	use App\Models\Appointments;
     use App\Models\Services;
+    use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Gate;
 
 	class GeneralFunctions
@@ -130,16 +131,73 @@
 			return $appointment->appointment_type_id ?? 0;
 		}
 
-        public static function ServicesTree() {
+        public static function ServicesTree($request = null, $total = 0) {
 
             $allService = Services::where('parent_id', 0)
                 ->where('slug', 'all')
                 ->first();
 
-            $services = Services::with('children')
+            if ($total > 0) {
+                $filename = 'services';
+                $filters = getFilters($request->all());
+                $apply_filter = checkFilters($filters, $filename);
+
+                list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $total);
+                if (count($filters) > 0 && hasFilter($filters, 'name')) {
+                    $where[] = [
+                        'name',
+                        'like',
+                        '%'.$filters['name'].'%',
+                    ];
+                    Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
+                } else {
+                    if ($apply_filter) {
+                        Filters::forget(Auth::User()->id, $filename, 'name');
+                    } else {
+                        if (Filters::get(Auth::User()->id, $filename, 'name')) {
+                            $where[] = [
+                                'name',
+                                'like',
+                                '%'.Filters::get(Auth::user()->id, $filename, 'name').'%',
+                            ];
+                        }
+                    }
+                }
+            }
+
+            if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
+                $where[] = [
+                    'active',
+                    '=',
+                    $filters['status'],
+                ];
+                Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::user()->id, $filename, 'status');
+                } else {
+                    if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
+                        if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
+                            $where[] = [
+                                'active',
+                                '=',
+                                Filters::get(Auth::user()->id, $filename, 'status'),
+                            ];
+                        }
+                    }
+                }
+            }
+
+            $query = Services::with('children')
                 ->where('parent_id', 0)
-                ->where('slug', '!=', 'all')
-                ->get();
+                ->where('slug', '!=', 'all');
+            if (isset($where) && count($where) > 0) {
+                $query->where([
+                    [$where]
+                ]);
+            }
+
+            $services = $query->get();
 
             $mergedServices = [];
             foreach ($services as $key => $service) {

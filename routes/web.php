@@ -19,6 +19,7 @@ use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
+use App\Http\Controllers\Admin\ResourcesController;
 
     /*
     |--------------------------------------------------------------------------
@@ -131,10 +132,19 @@ use App\Http\Controllers\Admin\ServicesController;
         // Appointment Statuses
         Route::get('appointment_statuses',[AppointmentStatusesController::class,'index'])->name('appointment_statuses.index');
 
+
+        //Resource Route start
+        Route::post('resources/datatable', [ResourcesController::class, 'datatable'])->name('resources.datatable');
+        Route::post('resources/status', [ResourcesController::class, 'status'])->name('resources.status');
+        Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
+        Route::resource('resources', ResourcesController::class);
+        //Resource Route end
+
         // Machine Types
         Route::get('machine_types',[MachineTypeController::class,'index'])->name('machine_types.index');
 
         // Logs Types
         Route::get('logs',[LogsController::class,'index'])->name('logs.index');
+
 
     });
