@@ -180,11 +180,14 @@ function setEditData(response) {
 
     Object.entries(tax_treatment_types).forEach(function(value, index) {
 
-        radios += '<label class="radio">\
+        if (typeof value[1].id !== 'undefined') {
+            radios += '<label class="radio">\
             <input type="radio" name="tax_treatment_type_id" value="'+value[1].id+'">\
             <span></span>\
         '+value[1].name+'\
         </label>';
+        }
+
     });
 
     Object.entries(services).forEach(function(value, index) {
@@ -199,7 +202,9 @@ function setEditData(response) {
 
     $("#edit_parent_service").html(services_options);
 
-    $(".tax-radios").html(radios);
+    if (radios != '') {
+        $(".tax-radios").html(radios);
+    }
 
     $(".tax-radios").find("input").each(function () {
         if ($(this).val() == select_tax_treatment_type) {
@@ -234,13 +239,6 @@ function applyFilters(datatable) {
         let filters =  {
             delete: '',
             name: $("#search_name").val(),
-            fdo_name: $("#search_fdo_name").val(),
-            fdo_phone: $("#search_fdo_phone").val(),
-            address: $("#search_address").val(),
-            city_id: $("#search_city").val(),
-            region_id: $("#search_region").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
             status: $("#search_status").val(),
             filter: 'filter',
         }
@@ -257,13 +255,6 @@ function resetAllFilters(datatable) {
         let filters =  {
             delete: '',
             name: '',
-            fdo_name: '',
-            fdo_phone: '',
-            address: '',
-            city_id: '',
-            region_id: '',
-            created_from: '',
-            created_to: '',
             status: '',
             filter: 'filter_cancel',
         }
@@ -331,12 +322,13 @@ function setCreateData(response) {
     let radios = '';
 
     Object.entries(tax_treatment_types).forEach(function(value, index) {
-
-        radios += '<label class="radio">\
-            <input type="radio" name="tax_treatment_type_id" value="'+value[1].id+'">\
+        if (typeof value[1].id !== 'undefined') {
+            radios += '<label class="radio">\
+            <input type="radio" name="tax_treatment_type_id" value="' + value[1].id + '">\
             <span></span>\
-        '+value[1].name+'\
+        ' + value[1].name + '\
         </label>';
+        }
     });
 
     Object.entries(services).forEach(function(value, index) {
@@ -350,7 +342,10 @@ function setCreateData(response) {
     $("#add_duration").html(duration_options);
 
     $("#add_parent_service").html(services_options);
-    $(".tax-radios").html(radios);
+
+    if (radios != '') {
+        $(".tax-radios").html(radios);
+    }
 
     $(".tax-radios").find("input").each(function () {
         if ($(this).val() == select_tax_treatment_type) {
