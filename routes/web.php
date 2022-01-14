@@ -134,10 +134,7 @@ use App\Http\Controllers\Admin\ResourcesController;
 
 
         //Resource Route start
-        Route::post('resources/datatable', [ResourcesController::class, 'datatable'])->name('resources.datatable');
-        Route::post('resources/status', [ResourcesController::class, 'status'])->name('resources.status');
-        Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
-        Route::resource('resources', ResourcesController::class);
+        Route::resource('resources', ResourcesController::class)->only('index');
         //Resource Route end
 
         // Machine Types

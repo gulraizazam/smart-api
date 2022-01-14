@@ -97,7 +97,7 @@ function actions(data) {
         let id = data.id;
 
         let url = route('admin.services.edit', {id: id});
-        let delete_url = route('admin.locations.destroy', {id: id});
+        let delete_url = route('admin.services.destroy', {id: id});
 
         if (permissions.edit && permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -166,68 +166,74 @@ function editRow(url) {
 
 function setEditData(response) {
 
-    let service = response.data.service;
+    try {
 
-    $("#modal_edit_services_form").attr("action", route('admin.services.update', {id: service.id}));
+        let service = response.data.service;
 
-    let services = response.data.parent_services;
-    let durations = response.data.durations;
-    let tax_treatment_types = response.data.tax_treatment_types;
-    let select_tax_treatment_type = response.data.select_tax_treatment_type;
-    let services_options = '<option value="">Parent Service</option>';
-    let duration_options = '<option value="">Select a Duration</option>';
-    let radios = '';
+        $("#modal_edit_services_form").attr("action", route('admin.services.update', {id: service.id}));
 
-    Object.entries(tax_treatment_types).forEach(function(value, index) {
+        let services = response.data.parent_services;
+        let durations = response.data.durations;
+        let tax_treatment_types = response.data.tax_treatment_types;
+        let select_tax_treatment_type = response.data.select_tax_treatment_type;
+        let services_options = '<option value="">Parent Service</option>';
+        let duration_options = '<option value="">Select a Duration</option>';
+        let radios = '';
 
-        if (typeof value[1].id !== 'undefined') {
-            radios += '<label class="radio">\
-            <input type="radio" name="tax_treatment_type_id" value="'+value[1].id+'">\
+        Object.entries(tax_treatment_types).forEach(function (value, index) {
+
+            if (typeof value[1].id !== 'undefined') {
+                radios += '<label class="radio">\
+            <input type="radio" name="tax_treatment_type_id" value="' + value[1].id + '">\
             <span></span>\
-        '+value[1].name+'\
+        ' + value[1].name + '\
         </label>';
+            }
+
+        });
+
+        Object.entries(services).forEach(function (value, index) {
+            services_options += '<option value="' + value[1].id + '">' + value[1].name + '</option>';
+        });
+
+        Object.entries(durations).forEach(function (value, index) {
+            duration_options += '<option value="' + value[1] + '">' + value[1] + '</option>';
+        });
+
+        $("#edit_duration").html(duration_options);
+
+        $("#edit_parent_service").html(services_options);
+
+        if (radios != '') {
+            $(".tax-radios").html(radios);
         }
 
-    });
+        $(".tax-radios").find("input").each(function () {
+            if ($(this).val() == select_tax_treatment_type) {
+                $(this).prop("checked", true);
+            }
+        });
 
-    Object.entries(services).forEach(function(value, index) {
-        services_options += '<option value="'+value[1].id+'">'+value[1].name+'</option>';
-    });
+        $("#edit_parent_service").val(service.parent_id);
+        $("#edit_service_name").val(service.name);
+        $("#edit_duration").val(service.duration);
+        $("#edit_color").val(service.color);
+        $("#edit_price").val(service.price);
 
-    Object.entries(durations).forEach(function(value, index) {
-        duration_options += '<option value="'+value[1]+'">'+value[1]+'</option>';
-    });
-
-    $("#edit_duration").html(duration_options);
-
-    $("#edit_parent_service").html(services_options);
-
-    if (radios != '') {
-        $(".tax-radios").html(radios);
-    }
-
-    $(".tax-radios").find("input").each(function () {
-        if ($(this).val() == select_tax_treatment_type) {
-            $(this).prop("checked", true);
+        if (service.end_node == 1) {
+            $("#edit_end_node").prop("checked", true);
+        } else {
+            $("#edit_end_node").prop("checked", false);
         }
-    });
 
-    $("#edit_parent_service").val(service.parent_id);
-    $("#edit_service_name").val(service.name);
-    $("#edit_duration").val(service.duration);
-    $("#edit_color").val(service.color);
-    $("#edit_price").val(service.price);
+        if (service.complimentory == 1) {
+            $("#edit_complimentory").prop("checked", true);
+        } else {
+            $("#edit_complimentory").prop("checked", false);
+        }
 
-    if (service.end_node == 1) {
-        $("#edit_end_node").prop("checked", true);
-    } else {
-        $("#edit_end_node").prop("checked", false);
-    }
-
-    if (service.complimentory == 1) {
-        $("#edit_complimentory").prop("checked", true);
-    } else {
-        $("#edit_complimentory").prop("checked", false);
+    } catch (error) {
+        showException(error);
     }
 
 }
@@ -286,8 +292,6 @@ function setFilters(filter_values, active_filters) {
     $("#search_status").val(active_filters.status);
     $("#search_city").val(active_filters.city_id);
     $("#service_region").val(active_filters.service_id);
-
-    hideShowAdvanceFilters(active_filters);
 }
 
 function createService($route) {
@@ -312,57 +316,49 @@ function createService($route) {
 
 function setCreateData(response) {
 
+    try {
 
-    let services = response.data.parent_services;
-    let durations = response.data.durations;
-    let tax_treatment_types = response.data.tax_treatment_types;
-    let select_tax_treatment_type = response.data.select_tax_treatment_type;
-    let services_options = '<option value="">Parent Service</option>';
-    let duration_options = '<option value="">Select a Duration</option>';
-    let radios = '';
+        let services = response.data.parent_services;
+        let durations = response.data.durations;
+        let tax_treatment_types = response.data.tax_treatment_types;
+        let select_tax_treatment_type = response.data.select_tax_treatment_type;
+        let services_options = '<option value="">Parent Service</option>';
+        let duration_options = '<option value="">Select a Duration</option>';
+        let radios = '';
 
-    Object.entries(tax_treatment_types).forEach(function(value, index) {
-        if (typeof value[1].id !== 'undefined') {
-            radios += '<label class="radio">\
+        Object.entries(tax_treatment_types).forEach(function (value, index) {
+            if (typeof value[1].id !== 'undefined') {
+                radios += '<label class="radio">\
             <input type="radio" name="tax_treatment_type_id" value="' + value[1].id + '">\
             <span></span>\
         ' + value[1].name + '\
         </label>';
+            }
+        });
+
+        Object.entries(services).forEach(function (value, index) {
+            services_options += '<option value="' + value[1].id + '">' + value[1].name + '</option>';
+        });
+
+        Object.entries(durations).forEach(function (value, index) {
+            duration_options += '<option value="' + value[1] + '">' + value[1] + '</option>';
+        });
+
+        $("#add_duration").html(duration_options);
+
+        $("#add_parent_service").html(services_options);
+
+        if (radios != '') {
+            $(".tax-radios").html(radios);
         }
-    });
 
-    Object.entries(services).forEach(function(value, index) {
-        services_options += '<option value="'+value[1].id+'">'+value[1].name+'</option>';
-    });
+        $(".tax-radios").find("input").each(function () {
+            if ($(this).val() == select_tax_treatment_type) {
+                $(this).prop("checked", true);
+            }
+        });
 
-    Object.entries(durations).forEach(function(value, index) {
-        duration_options += '<option value="'+value[1]+'">'+value[1]+'</option>';
-    });
-
-    $("#add_duration").html(duration_options);
-
-    $("#add_parent_service").html(services_options);
-
-    if (radios != '') {
-        $(".tax-radios").html(radios);
-    }
-
-    $(".tax-radios").find("input").each(function () {
-        if ($(this).val() == select_tax_treatment_type) {
-            $(this).prop("checked", true);
-        }
-    });
-}
-
-function hideShowAdvanceFilters(active_filters) {
-    if (active_filters.city_id != ''
-        || active_filters.region_id != ''
-        || active_filters.address != ''
-        || active_filters.email != ''
-        || active_filters.created_from != ''
-        || active_filters.created_to != '') {
-
-        $(".advance-filters").show();
-        $(".advance-arrow").addClass("fa fa-caret-down");
+    } catch (error) {
+        showException(error);
     }
 }

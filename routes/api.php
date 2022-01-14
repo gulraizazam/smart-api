@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
+use App\Http\Controllers\Admin\ResourcesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -142,6 +143,12 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     // Logs Routes Start
     Route::post('logs/datatable', [LogsController::class, 'datatable'])->name('logs.datatable');
     // Logs Routes End
+
+    //Resource Route start
+    Route::post('resources/datatable', [ResourcesController::class, 'datatable'])->name('resources.datatable');
+    Route::post('resources/status', [ResourcesController::class, 'status'])->name('resources.status');
+    Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
+    Route::resource('resources', ResourcesController::class)->except('index');
 
 
 });

@@ -10,7 +10,7 @@
             <!--end::Logo-->
             <!--begin::Toggle-->
             <button class="brand-toggle btn btn-sm px-0" id="kt_aside_toggle">
-                        <span class="svg-icon svg-icon svg-icon-xl">
+                <span class="svg-icon svg-icon svg-icon-xl">
                             <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Navigation/Angle-double-left.svg-->
                             <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
                                 <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -143,7 +143,10 @@
 
 
                 )
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.payment_modes.sort','admin.regions.index','admin.regions.sort','admin.cities.index','admin.cities.sort','admin.lead_sources.index','admin.lead_sources.sort','admin.towns.index','admin.lead_statuses.index','admin.lead_statuses.sort','admin.appointment_statuses.index', 'admin.locations.index', 'admin.services.index','admin.machine_types.index','admin.logs.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+
+
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.payment_modes.sort','admin.regions.index','admin.regions.sort','admin.cities.index','admin.cities.sort','admin.lead_sources.index','admin.lead_sources.sort','admin.towns.index','admin.lead_statuses.index','admin.lead_statuses.sort','admin.appointment_statuses.index', 'admin.locations.index', 'admin.services.index','admin.machine_types.index','admin.resources.index','admin.logs.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
                                 <i class="font-icon fas fa-cog"></i>
@@ -353,6 +356,25 @@
                             </div>
                         @endcan
 
+                        @can('resources_manage')
+
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{activeMenu('admin.resources.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.resources.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Resource</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+
+                        @endcan
+
                         @can('logs_manage')
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
@@ -363,6 +385,7 @@
                                                 <span></span>
                                             </i>
                                             <span class="menu-text">Logs</span>
+
                                         </a>
                                     </li>
 
