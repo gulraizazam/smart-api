@@ -320,7 +320,7 @@
                                 </ul>
                             </div>
                         @endcan
-                        
+
                         @can('machineType_manage')
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
@@ -356,6 +356,7 @@
                         @endcan
 
                     </li>
+                        
                     @endif
 
                 </ul>
