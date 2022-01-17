@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
+use App\Http\Controllers\Admin\RefundsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -157,6 +158,13 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('resources/status', [ResourcesController::class, 'status'])->name('resources.status');
     Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
     Route::resource('resources', ResourcesController::class)->except('index');
+
+
+    //Refunds route start
+    Route::post('refunds/datatable', [RefundsController::class, 'datatable'])->name('refunds.datatable');
+    Route::get('refunds/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refunds.refund_create');
+    Route::get('refunds/detail/{id}', [RefundsController::class, 'detail'])->name('refunds.detail');
+    Route::resource('refunds',RefundsController::class)->except('index');
 
 
 });

@@ -22,6 +22,13 @@ class CreatePackageServicesTable extends Migration
             $table->unsignedTinyInteger('is_consumed')->default(0);
             $table->double('orignal_price', 11, 2)->default(0.00);
             $table->double('price', 11, 2)->default(0.00);
+
+            $table->unsignedTinyInteger('is_exclusive')->nullable();
+            $table->double('tax_exclusive_price', 11, 2)->default(0.00);
+            $table->double('tax_percenatage', 11, 2)->default(0.00);
+            $table->double('tax_price', 11, 2)->default(0.00);
+            $table->double('tax_including_price', 11, 2)->default(0.00);
+
             $table->timestamps();
 
             $table->foreign('package_id')->references('id')->on('packages');
