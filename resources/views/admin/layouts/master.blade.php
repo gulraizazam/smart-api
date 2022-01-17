@@ -84,6 +84,10 @@
 
 <script src="{{asset('assets/js/pages/widgets.js')}}"></script>
 
+<script>
+    const debug = "{{config('app.debug')}}";
+</script>
+
 <script src="{{asset('assets/js/custom.js')}}"></script>
 
 @stack('datatable-js')

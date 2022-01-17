@@ -386,3 +386,10 @@ function childCheckbox(data) {
 function switchComplimentary($id) {
     $("#" + $id).toggleClass("d-none");
 }
+
+function showException(error) {
+    if (debug) {
+        toastr.error(error);
+        console.log(error);
+    }
+}

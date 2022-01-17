@@ -48,11 +48,8 @@ class ServicesController extends Controller
 
     public function datatable(Request $request)
     {
-        $filename = 'locations';
 
         $filters = getFilters($request->all());
-
-        $apply_filter = checkFilters($filters, $filename);
 
         $records = array();
         $records["data"] = array();
@@ -76,13 +73,14 @@ class ServicesController extends Controller
         list($orderBy, $order) = getSortBy($request);
 
         // Get Total Records
-        $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+        $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
 
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
-        $records = $this->getExtraData($records);
 
         $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
+
+        $records = $this->getExtraData($records);
 
         if (! empty($Services)) {
             $records["data"] = $Services;
@@ -143,14 +141,6 @@ class ServicesController extends Controller
         if (!Gate::allows('services_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
-        /*$BaseServices = Services::getGroupsActiveOnly();
-
-        if ($BaseServices) {
-            $Services = GroupsTree::buildOptions(GroupsTree::buildTree($BaseServices->toArray()), 0);
-        } else {
-            $Services = array();
-        }*/
 
         $service = new \stdClass();
         $service->duration = null;
@@ -257,8 +247,6 @@ class ServicesController extends Controller
             'tax_treatment_types' => $tax_treatment_types,
             'select_tax_treatment_type' => $select_tax_treatment_type
         ]);
-
-        //return view('admin.services.edit', compact('service', 'Services', 'tax_treatment_types', 'select_tax_treatment_type'));
     }
 
     /**
@@ -306,11 +294,15 @@ class ServicesController extends Controller
     public function destroy($id)
     {
         if (!Gate::allows('services_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
         }
-        Services::deleteRecord($id);
 
-        return redirect()->route('admin.services.index');
+        $result = Services::deleteRecord($id);
+
+        if ($result['status']) {
+            return ApiHelper::apiResponse($this->success, $result['message']);
+        }
+        return ApiHelper::apiResponse($this->success, $result['message'], false);
     }
 
     /**
@@ -339,7 +331,7 @@ class ServicesController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong..', false);
+            return ApiHelper::apiException($e);
         }
 
     }

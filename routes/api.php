@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
+use App\Http\Controllers\Admin\ResourcesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -150,6 +151,12 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::put('sms_templates/{id}', [SMSTemplatesController::class, 'update'])->name('sms_templates.update');
     Route::post('sms_templates/status', [SMSTemplatesController::class, 'status'])->name('sms_templates.status');
     // Sms Templates End
+
+    //Resource Route start
+    Route::post('resources/datatable', [ResourcesController::class, 'datatable'])->name('resources.datatable');
+    Route::post('resources/status', [ResourcesController::class, 'status'])->name('resources.status');
+    Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
+    Route::resource('resources', ResourcesController::class)->except('index');
 
 
 });
