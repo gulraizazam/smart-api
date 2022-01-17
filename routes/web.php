@@ -8,6 +8,7 @@ use App\Http\Controllers\admin\LogsController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
+use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\SettingsController;
@@ -144,6 +145,8 @@ use App\Http\Controllers\Admin\RefundsController;
         // Logs Types
         Route::get('logs',[LogsController::class,'index'])->name('logs.index');
 
+        // Sms Templates
+        Route::get('sms_templates',[SMSTemplatesController::class,'index'])->name('sms_templates.index');
 
        // Refund Route
         Route::resource('refunds',RefundsController::class)->only('index');
