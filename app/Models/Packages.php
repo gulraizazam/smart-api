@@ -3,15 +3,16 @@
 namespace App\Models;
 
 use App\Helpers\Filters;
-use App\User;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use App\Models\AuditTrails;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use App\Helpers\ACL;
 use PHPUnit\Util\Filter;
 use App\Helpers\GeneralFunctions;
+
 class Packages extends BaseModal
 {
     use SoftDeletes;
@@ -30,7 +31,7 @@ class Packages extends BaseModal
      * */
     public function user()
     {
-        return $this->belongsTo('App\User', 'patient_id')->withTrashed();
+        return $this->belongsTo(User::class, 'patient_id')->withTrashed();
     }
     /**
      * Get the packages.
@@ -275,14 +276,8 @@ class Packages extends BaseModal
 
         $where = self::filters( $request , $account_id , $id , $apply_filter , $filename );
 
-        $orderBy = 'created_at';
-        $order = 'desc';
+        list($orderBy, $order) = getSortBy($request);
 
-        if ($request->get('order')[0]['dir']) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            $order = $request->get('order')[0]['dir'];
-        }
         if (count($where)) {
             return self::where($where)->whereIn('location_id', ACL::getUserCentres())->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
         } else {
@@ -291,7 +286,11 @@ class Packages extends BaseModal
     }
 
     static public function filters( $request , $account_id , $id = false , $apply_filter , $filename ){
+
         $where = array();
+
+        $filters = getFilters($request->all());
+        $apply_filter = checkFilters($filters, $filename);
 
         if($id != false){
             $where[] = array(
@@ -335,13 +334,13 @@ class Packages extends BaseModal
             }
         }
 
-        if ($request->get('patient_id') && $request->get('patient_id') != '' ) {
+        if (count($filters) > 0 && hasFilter($filters, 'patient_id')) {
             $where[] = array(
                 'patient_id',
                 '=',
-                $request->get('patient_id')
+                $filters['patient_id']
             );
-            Filters::put(Auth::User()->id, $filename, 'patient_id', $request->get('patient_id'));
+            Filters::put(Auth::User()->id, $filename, 'patient_id', $filters['patient_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'patient_id');
@@ -355,13 +354,13 @@ class Packages extends BaseModal
                 }
             }
         }
-        if ($request->get('id') && $request->get('id') != '' ) {
+        if (count($filters) > 0 && hasFilter($filters, 'id')) {
             $where[] = array(
                 'patient_id',
                 '=',
-                GeneralFunctions::patientSearch($request->get('id'))
+                GeneralFunctions::patientSearch($filters['id'])
             );
-            Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($request->get('id')));
+            Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'id');
@@ -376,13 +375,13 @@ class Packages extends BaseModal
             }
         }
 
-        if ($request->get('package_id') && $request->get('package_id') != '' ) {
+        if (count($filters) > 0 && hasFilter($filters, 'package_id')) {
             $where[] = array(
                 'id',
                 '=',
-                $request->get('package_id')
+                $filters['package_id']
             );
-            Filters::put(Auth::User()->id, $filename, 'package_id', $request->get('package_id'));
+            Filters::put(Auth::User()->id, $filename, 'package_id', $filters['package_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'package_id');
@@ -396,13 +395,13 @@ class Packages extends BaseModal
                 }
             }
         }
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
-            Filters::put(Auth::User()->id, $filename, 'created_from', $request->get('created_from') . ' 00:00:00');
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_from');
@@ -417,13 +416,13 @@ class Packages extends BaseModal
             }
         }
 
-        if ( $request->get('created_to') && $request->get('created_to') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
-            Filters::put(Auth::User()->id, $filename, 'created_to', $request->get('created_to') . ' 23:59:59');
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_to');
@@ -438,13 +437,13 @@ class Packages extends BaseModal
             }
         }
 
-        if ($request->get('location_id') && $request->get('location_id')) {
+        if (count($filters) > 0 && hasFilter($filters, 'location_id')) {
             $where[] = array(
                 'location_id',
                 '=',
-                $request->get('location_id')
+                $filters['location_id']
             );
-            Filters::put(Auth::User()->id, $filename, 'location_id', $request->get('location_id'));
+            Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'location_id');
@@ -460,13 +459,13 @@ class Packages extends BaseModal
         }
 
 
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, $filename, 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
         } else {
             if ( $apply_filter ){
                 Filters::forget( Auth::user()->id, $filename, 'status');

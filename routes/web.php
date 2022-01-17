@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
+use App\Http\Controllers\Admin\RefundsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -142,6 +143,14 @@ use App\Http\Controllers\Admin\ResourcesController;
 
         // Logs Types
         Route::get('logs',[LogsController::class,'index'])->name('logs.index');
+
+
+        //Refunds route start
+        Route::post('refunds/datatable', [RefundsController::class, 'datatable'])->name('refunds.datatable');
+        Route::get('refunds/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refunds.refund_create');
+        Route::get('refunds/detail/{id}', [RefundsController::class, 'detail'])->name('refunds.detail');
+        Route::resource('refunds',RefundsController::class);
+        //Refunds route end
 
 
     });

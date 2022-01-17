@@ -128,7 +128,7 @@ function editRow(url) {
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
 
-            reInitValidation(TownValidation);
+            reInitValidation(EditValidation);
         }
     });
 
@@ -284,7 +284,7 @@ function createService($route) {
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-            reInitValidation(Validation);
+            reInitValidation(AddValidation);
         }
     });
 }

@@ -18,7 +18,8 @@ class CreatePackagesTable extends Migration
             $table->String('random_id')->nullable();
             $table->String('name')->nullable();
             $table->String('sessioncount');
-            $table->double('total_price', 11, 2)->nullabale();
+            $table->double('total_price', 11, 2)->default(0);
+            $table->double('total_price_bk', 11, 2)->default(0);
             $table->unsignedBigInteger('is_refund')->default(0);
             $table->unsignedTinyInteger('is_exclusive')->nullable();
 
