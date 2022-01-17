@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -143,6 +144,13 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     // Logs Routes Start
     Route::post('logs/datatable', [LogsController::class, 'datatable'])->name('logs.datatable');
     // Logs Routes End
+
+    // Sms Templates Start
+    Route::post('sms_templates/datatable', [SMSTemplatesController::class, 'datatable'])->name('sms_templates.datatable');
+    Route::get('sms_templates/{id}/edit', [SMSTemplatesController::class, 'edit'])->name('sms_templates.edit');
+    Route::put('sms_templates/{id}', [SMSTemplatesController::class, 'update'])->name('sms_templates.update');
+    Route::post('sms_templates/status', [SMSTemplatesController::class, 'status'])->name('sms_templates.status');
+    // Sms Templates End
 
     //Resource Route start
     Route::post('resources/datatable', [ResourcesController::class, 'datatable'])->name('resources.datatable');

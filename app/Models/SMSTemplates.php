@@ -12,7 +12,7 @@ class SMSTemplates extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'slug', 'account_id', 'content', 'active', 'created_at', 'updated_at','slug'];
+    protected $fillable = ['name', 'slug', 'account_id', 'content', 'active', 'created_at', 'updated_at', 'slug'];
 
     protected static $_fillable = ['name', 'slug', 'content', 'active', 'slug'];
 
@@ -28,11 +28,11 @@ class SMSTemplates extends BaseModal
      *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false,$apply_filter = false)
+    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
         $where = Self::sms_templates_filters($request, $account_id, $apply_filter);
 
-        if(count($where)) {
+        if (count($where)) {
             return self::where($where)->count();
         } else {
             return self::count();
@@ -53,7 +53,7 @@ class SMSTemplates extends BaseModal
     {
         $where = Self::sms_templates_filters($request, $account_id, $apply_filter);
 
-        if(count($where)) {
+        if (count($where)) {
             return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
         } else {
             return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
@@ -72,6 +72,7 @@ class SMSTemplates extends BaseModal
     {
 
         $where = array();
+        $filters = getFilters($request->all());
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -79,7 +80,7 @@ class SMSTemplates extends BaseModal
                 $account_id
             );
             Filters::put(Auth::User()->id, 'sms_templates', 'account_id', $account_id);
-        }  else {
+        } else {
 
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'sms_templates', 'account_id');
@@ -93,70 +94,70 @@ class SMSTemplates extends BaseModal
                 }
             }
         }
-        if ($request->get('lead_status_name')) {
+        if (count($filters) && isset($filters['name']) && $filters['name']) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('lead_status_name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'sms_templates', 'lead_status_name', $request->get('lead_status_name'));
+            Filters::put(Auth::User()->id, 'sms_templates', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'sms_templates', 'lead_status_name');
+                Filters::forget(Auth::User()->id, 'sms_templates', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'sms_templates', 'lead_status_name')) {
+                if (Filters::get(Auth::User()->id, 'sms_templates', 'name')) {
                     $where[] = array(
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'sms_templates', 'lead_status_name') . '%'
+                        '%' . Filters::get(Auth::User()->id, 'sms_templates', 'name') . '%'
                     );
                 }
             }
         }
-        if ($request->get('lead_status_content')) {
+        if (count($filters) && isset($filters['slug']) && $filters['slug']) {
             $where[] = array(
-                'content',
+                'slug',
                 'like',
-                '%' . $request->get('lead_status_content') . '%'
+                '%' . $filters['slug'] . '%'
             );
-            Filters::put(Auth::User()->id, 'sms_templates', 'lead_status_content', $request->get('lead_status_content'));
+            Filters::put(Auth::User()->id, 'sms_templates', 'slug', $filters['slug']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'sms_templates', 'lead_status_content');
+                Filters::forget(Auth::User()->id, 'sms_templates', 'slug');
             } else {
-                if (Filters::get(Auth::User()->id, 'sms_templates', 'lead_status_content')) {
+                if (Filters::get(Auth::User()->id, 'sms_templates', 'slug')) {
                     $where[] = array(
-                        'content',
+                        'slug',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'sms_templates', 'lead_status_content') . '%'
+                        '%' . Filters::get(Auth::User()->id, 'sms_templates', 'slug') . '%'
                     );
                 }
             }
         }
 
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if (count($filters) && isset($filters['status']) && ($filters['status']==1 || $filters['status']==0)) {
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'sms_templates', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'sms_templates', 'status', $filters['status']);
         } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, 'sms_templates', 'status');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'sms_templates', 'status');
             } else {
-                if ( Filters::get(Auth::user()->id, 'sms_templates', 'status') == 0 || Filters::get(Auth::user()->id, 'sms_templates', 'status') == 1){
-                    if ( Filters::get(Auth::user()->id, 'sms_templates', 'status') != null ){
+                if (Filters::get(Auth::user()->id, 'sms_templates', 'status') == 0 || Filters::get(Auth::user()->id, 'sms_templates', 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, 'sms_templates', 'status') != null) {
                         $where[] = array(
                             'active',
                             '=',
-                            Filters::get( Auth::user()->id, 'sms_templates', 'status')
+                            Filters::get(Auth::user()->id, 'sms_templates', 'status')
                         );
                     }
                 }
             }
         }
-        return $where ;
+        return $where;
     }
 
     /**
@@ -197,9 +198,9 @@ class SMSTemplates extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if(!isset($data['is_featured'])) {
+        if (!isset($data['is_featured'])) {
             $data['is_featured'] = 0;
-        } else if($data['is_featured'] == '') {
+        } else if ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
 
@@ -209,7 +210,7 @@ class SMSTemplates extends BaseModal
             'account_id' => $account_id
         ])->first();
 
-        if(!$record) {
+        if (!$record) {
             return null;
         }
 
@@ -244,7 +245,7 @@ class SMSTemplates extends BaseModal
      */
     static public function isChildExists($id, $account_id)
     {
-        if(
+        if (
             Locations::where(['city_id' => $id, 'account_id' => $account_id])->count() ||
             Leads::where(['city_id' => $id, 'account_id' => $account_id])->count() ||
             Appointments::where(['city_id' => $id, 'account_id' => $account_id])->count()
