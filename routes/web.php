@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\RefundsController;
+use App\Http\Controllers\Admin\DiscountsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -151,6 +152,10 @@ use App\Http\Controllers\Admin\RefundsController;
        // Refund Route
         Route::resource('refunds',RefundsController::class)->only('index');
         //Refunds route end
+
+        //Discount route Start
+        Route::resource('discounts', DiscountsController::class)->only('index');
+        //Discount route end
 
 
     });
