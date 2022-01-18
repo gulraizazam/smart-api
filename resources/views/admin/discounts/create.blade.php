@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Add Resources</h2>
+        <h2 class="fw-bolder">Add Discounts</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -22,13 +22,64 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_resources_form" method="post" action="{{route('admin.resources.store')}}">
+        <form id="modal_add_discounts_form" method="post" action="{{route('admin.discounts.store')}}">
             <!--begin::Scroll-->
 
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resources_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
+                            <div class="radio-inline tax-radios mb-3">
+                                <label class="radio">
+                                    <input type="radio" value="Treatment" checked name="discount_type">
+                                    <span></span>
+                                    Treatment
+                                </label>
+                            </div>
+
+                                <div class="radio-inline tax-radios">
+                                    <label class="radio">
+                                        <input type="radio" value="Consultancy" name="discount_type">
+                                        <span></span>
+                                        Consultancy
+                                    </label>
+
+                            </div>
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Group</label>
+                            <div class="radio-inline tax-radios mb-3">
+                                <label class="radio">
+                                    <input type="radio" class="group_slug" value="default" checked name="slug">
+                                    <span></span>
+                                    Default
+                                </label>
+                            </div>
+
+                            <div class="radio-inline tax-radios mb-3">
+                                <label class="radio">
+                                    <input type="radio" class="group_slug" value="custom" name="slug">
+                                    <span></span>
+                                    Custom
+                                </label>
+
+                            </div>
+
+                            <div class="radio-inline tax-radios">
+                                <label class="radio">
+                                    <input type="radio" class="group_slug" value="birthday" name="slug">
+                                    <span></span>
+                                    Birthday
+                                </label>
+
+                            </div>
+
+                        </div>
+
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
@@ -36,27 +87,54 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre <span class="text text-danger">*</span></label>
-                            <select id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
-
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Type <span class="text text-danger">*</span></label>
+                            <select id="add_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
+                                <option value="">Select Amount Type</option>
+                                <option value="Fixed">Fixed</option>
+                                <option value="Percentage">Percentage</option>
                             </select>
+                        </div>
+
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
+                            <input min="0" id="add_amount" class="form-control" type="number" name="amount">
+                        </div>
+                    </div>
+
+                    <div class="row birthday_range d-none">
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Pre Days</label>
+                            <input id="add_pre_days" class="form-control" type="number" name="pre_days">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Machine Type <span class="text text-danger">*</span></label>
-                            <select id="add_machine_type_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="machine_type_id">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Post Days</label>
+                            <input id="add_post_days" class="form-control" type="number" name="post_days">
+                        </div>
+                    </div>
 
-                            </select>
+                    <div class="row">
+
+                        <div class="fv-row col-md-6 mt-5 input-daterange custom-datepicker">
+                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">From <span class="text text-danger">*</span></label>
+                            <input type="text" id="add_start" class="form-control datatable-input" name="start">
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Resource Type <span class="text text-danger">*</span></label>
-                            <select id="add_resource_type_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="resource_type_id">
-
-                            </select>
+                        <div class="fv-row col-md-6 mt-5 input-daterange custom-datepicker">
+                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
+                            <input type="text" id="add_end" class="form-control datatable-input" name="end">
                         </div>
+
+                        <span class="switch switch-icon mt-5">
+                           <label for="add_active" class="fw-bold fs-6">
+                            <input id="add_active" value="1" type="checkbox" name="active">
+                            <span></span>
+                           </label>
+                           <span class="fs-6 pl-2">Active</span>
+                        </span>
 
                     </div>
+
                 </div>
 
             </div>

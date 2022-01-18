@@ -2,25 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Models\DiscountHasLocations;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
-use DB;
 use App\Models\Discounts;
 use App\Models\Locations;
-use App\Models\Services;
 use App\Helpers\NodesTree;
-use Auth;
-use PHPUnit\Util\Filter;
-use Validator;
-use Session;
-use Illuminate\Support\Facades\Input;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Helpers\Widgets\ServiceWidget;
-use Config;
+use Illuminate\Support\Facades\Config;
+use PHPUnit\Exception;
 
 
 class DiscountsController extends Controller
@@ -55,80 +51,70 @@ class DiscountsController extends Controller
     /**
      * Show the form for creating a new Discount.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create()
     {
         if (!Gate::allows('discounts_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $discount = new \stdClass();
-        $discount->service_id = null;
-        $discount->location_id = null;
 
-        $locations = Locations::getActiveSorted();
+        try {
 
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id, true, true);
-        $parentGroups->toList($parentGroups, -1);
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'discount_types' => config('constants.discount_types'),
+                'discount_groups' => config('constants.discount_groups'),
+                'amount_types' => config('constants.amount_types'),
+            ]);
 
-        $Services = $parentGroups->nodeList;
-
-        $discountServices = array();
-
-        return view('admin.discounts.create', compact('discount', 'locations', 'Services', 'discountServices'));
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
     /**
      * Store a newly created discount in storage.
      *
      * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         if (!Gate::allows('discounts_create')) {
-            return abort(401);
-        }
-        $validator = $this->verifyFields($request);
-        if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
-        }
-        $data = $request->all();
-        $data['account_id'] = Auth::User()->account_id;
-        if ($request->slug == 'custom' || $request->slug == 'default') {
-            $data['pre_days'] = 0;
-            $data['post_days'] = 0;
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        if (Input::get('active') == null) {
-            $data['active'] = '0';
-        }
+        try {
 
-        if ($request->start <= $request->end) {
-
-            if (Discounts::createDiscount($data)) {
-                flash('Record has been created successfully.')->success()->important();
-
-                return response()->json(array(
-                    'status' => 1,
-                    'message' => 'Record has been created successfully.',
-                ));
-            } else {
-                return response()->json(array(
-                    'status' => 0,
-                    'message' => 'Something went wrong, please try again later.',
-                ));
+            $validator = $this->verifyFields($request);
+            if ($validator->fails()) {
+                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => array('Date range invalid, Kindly define again'),
-            ));
+            $data = $request->all();
+            $data['account_id'] = Auth::User()->account_id;
+            if ($request->slug == 'custom' || $request->slug == 'default') {
+                $data['pre_days'] = 0;
+                $data['post_days'] = 0;
+            }
+
+            if ($request->active == null) {
+                $data['active'] = '0';
+            }
+
+            if ($request->start <= $request->end) {
+
+                if (Discounts::createDiscount($data)) {
+
+                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                }
+                return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -136,11 +122,11 @@ class DiscountsController extends Controller
      * Validate form fields
      *
      * @param  \Illuminate\Http\Request $request
-     * @return Validator $validator;
+     * @return \Illuminate\Contracts\Validation\Validator $validator;
      */
     protected function verifyFields(Request $request)
     {
-        return $validator = Validator::make($request->all(), [
+        return Validator::make($request->all(), [
             'name' => 'required',
             'type' => 'required',
             'amount' => 'required',
@@ -154,86 +140,90 @@ class DiscountsController extends Controller
      * Display the discount in datatable form.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
-        list($orderBy, $order) = getSortBy($request);
 
-        $filename = 'discounts';
-        $filters = getFilters($request->all());
+        try {
 
-        $apply_filter = checkFilters($filters, $filename);
+            $records = [];
+            $records["data"] = [];
 
-        $where = $this->applyFilters($request, $filters, $apply_filter, $filename);
+            $filename = 'discounts';
+            $filters = getFilters($request->all());
+            $apply_filter = checkFilters($filters, $filename);
 
-        $total_query = Discounts::select('id');
-        if (count($where)) {
-            $total_query->where($where);
-        }
-        $iTotalRecords = $total_query->count();
 
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
-        $records = array();
-        $records["data"] = array();
-
-        $query = Discounts::select('*');
-        if ($request->get('startdate') && $request->get('startdate') != '') {
-            $query->whereDate('start', '>=', $request->get('startdate'));
-        }
-        if ($request->get('enddate') && $request->get('enddate') != '') {
-            $query->whereDate('end', '<=', $request->get('enddate'));
-        }
-
-        if (count($where)) {
-            $query->where($where);
-        }
-
-        $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
-
-        $records = $this->getFiltersData($records);
-
-        if ($Discounts) {
-            foreach ($Discounts as $discount) {
-                $serviceExplod = explode(",", $discount->service_id);
-                $locationExplod = explode(",", $discount->location_id);
-                $records["data"][] = array(
-                    'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="' . $discount->id . '"/><span></span></label>',
-                    'name' => $discount->name,
-                    'type' => $discount->type,
-                    'amount' => $discount->amount,
-                    'discount_type' => $discount->discount_type,
-                    'start' => $discount->start ? \Carbon\Carbon::parse($discount->start)->format('D M, j Y') : null,
-                    'end' => $discount->end ? \Carbon\Carbon::parse($discount->end)->format('D M, j Y') : null,
-                    'created_at' => Carbon::parse($discount->created_at)->format('F j,Y h:i A'),
-                );
+            if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
+                $ids = explode(',', $filters['delete']);
+                $Discounts = Discounts::whereIn('id', $ids);
+                if ($Discounts) {
+                    $Discounts->delete();
+                }
+                $records["status"] = true;
+                $records["message"] = "Records has been deleted successfully!";
             }
 
-            $records["meta"] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
-        }
+            $where = $this->applyFilters($filters, $apply_filter, $filename);
 
-        if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
-            $ids = explode(',', $filters['delete']);
-            $Discounts = Discounts::whereIn('id', $ids);
+            $total_query = Discounts::select('id');
+            if (count($where)) {
+                $total_query->where($where);
+            }
+            $iTotalRecords = $total_query->count();
+
+            list($orderBy, $order) = getSortBy($request);
+
+            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+            $query = Discounts::select('*');
+            if ($request->get('startdate') && $request->get('startdate') != '') {
+                $query->whereDate('start', '>=', $request->get('startdate'));
+            }
+            if ($request->get('enddate') && $request->get('enddate') != '') {
+                $query->whereDate('end', '<=', $request->get('enddate'));
+            }
+
+            if (count($where)) {
+                $query->where($where);
+            }
+
+            $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+
+            $records = $this->getFiltersData($records);
+
             if ($Discounts) {
-                $Discounts->delete();
-            }
-            $records["status"] = true; // pass custom message(useful for getting status of group actions)
-            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
-        }
 
-        return response()->json($records);
+                $records["data"] = $Discounts;
+
+                $records["meta"] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+            }
+
+            $records["permissions"] = [
+                'edit' => Gate::allows('discounts_edit'),
+                'delete' => Gate::allows('discounts_destroy'),
+                'active' => Gate::allows('discounts_active'),
+                'inactive' => Gate::allows('discounts_inactive'),
+                'create' => Gate::allows('discounts_create'),
+                'allocate' => Gate::allows('discounts_allocate'),
+            ];
+
+            return ApiHelper::apiDataTable($records);
+
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
-    private function applyFilters($request, $filters, $apply_filter, $filename = 'discounts') {
+    private function applyFilters($filters, $apply_filter, $filename = 'discounts') {
 
         $where = [];
 
@@ -306,7 +296,7 @@ class DiscountsController extends Controller
                 'like',
                 '%' . $filters['amount'] . '%'
             );
-            Filters::put(Auth::User()->id, $filename, 'amount', $request->get('amount'));
+            Filters::put(Auth::User()->id, $filename, 'amount', $filters['amount']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'amount');
@@ -464,11 +454,19 @@ class DiscountsController extends Controller
 
         $Services = $parentGroups->nodeList;
 
+        if (isset($filters['created_from'])) {
+            $filters['created_from'] = date('m/d/Y', strtotime($filters['created_from']));
+        }
+        if (isset($filters['created_to'])) {
+            $filters['created_to'] = date('m/d/Y', strtotime($filters['created_to']));
+        }
+
         $records['active_filters'] = $filters;
 
         $records['filter_values'] = [
             'services' => $Services,
             'locations' => $locations,
+            'status' => config('constants.status')
         ];
 
         return $records;
@@ -479,39 +477,60 @@ class DiscountsController extends Controller
      * Show the form for editing the specified discount information.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         if (!Gate::allows('discounts_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        $discount = Discounts::getData($id);
+        try {
 
-        if ($discount == null) {
+            $discount = Discounts::getData($id);
 
-            return view('error');
+            if ($discount == null) {
 
-        } else {
+                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
 
-            $discountServices = explode(",", $discount->service_id);
+            } else {
 
-            if (!$discountServices) {
+                $discountServices = explode(",", $discount->service_id);
 
-                $discountServices = array();
+                if (!$discountServices) {
+
+                    $discountServices = array();
+                }
+                /* Create Nodes with Parents */
+                $parentGroups = new NodesTree();
+                $parentGroups->current_id = -1;
+                $parentGroups->build(0, Auth::User()->account_id, true, true);
+                $parentGroups->toList($parentGroups, -1);
+
+                $Services = $parentGroups->nodeList;
+
+                $locations = Locations::getActiveSorted();
+
+                if ($discount) {
+                    $Discount = $discount->toArray();
+
+                    if ($Discount['start']) {
+                        $Discount['start'] = $discount->dateFormat($Discount['start'], "Y-m-d");
+                    }
+                    if ($Discount['end']) {
+                        $Discount['end'] = $discount->dateFormat($Discount['end'], "Y-m-d");
+                    }
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'discount' => $Discount ?? $discount,
+                    'locations' => $locations,
+                    'services' => $Services,
+                    'discount_services' => $discountServices,
+                ]);
             }
-            /* Create Nodes with Parents */
-            $parentGroups = new NodesTree();
-            $parentGroups->current_id = -1;
-            $parentGroups->build(0, Auth::User()->account_id, true, true);
-            $parentGroups->toList($parentGroups, -1);
-
-            $Services = $parentGroups->nodeList;
-
-            $locations = Locations::getActiveSorted();
-
-            return view('admin.discounts.edit', compact('discount', 'locations', 'Services', 'discountServices'));
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -520,21 +539,18 @@ class DiscountsController extends Controller
      *
      * @param  \Illuminate\Http\Request $request
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         if (!Gate::allows('discounts_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         $data = $request->all();
@@ -544,79 +560,76 @@ class DiscountsController extends Controller
             $data['post_days'] = 0;
         }
 
-        if (Input::get('active') == null) {
+        if ($request->active == null) {
             $data['active'] = '0';
         }
 
         if ($request->start <= $request->end) {
 
             if (Discounts::updateDiscount($data, $id)) {
-                flash('Record has been updated successfully.')->success()->important();
 
-                return response()->json(array(
-                    'status' => 1,
-                    'message' => 'Record has been updated successfully.',
-                ));
-            } else {
-                return response()->json(array(
-                    'status' => 0,
-                    'message' => 'Something went wrong, please try again later.',
-                ));
+                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+
             }
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => array('Date range invalid, Kindly define again'),
-            ));
+
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+
         }
 
-    }
+        return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
 
-    /**
-     * Inactive discount record from storage or database.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function inactive($id)
-    {
-        if (!Gate::allows('discounts_inactive')) {
-            return abort(401);
-        }
-        Discounts::inactiveRecord($id);
-
-        return redirect()->route('admin.discounts.index');
     }
 
     /**
      * Active discount record from storage or database.
      *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @param  Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function active($id)
+    public function status(Request $request)
     {
         if (!Gate::allows('discounts_active')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        Discounts::activeRecord($id);
 
-        return redirect()->route('admin.discounts.index');
+        try {
+
+            if ($request->status == 1) {
+                $response = Discounts::activeRecord($request->id);
+            } else {
+                $response = Discounts::inactiveRecord($request->id);
+            }
+
+            if ($response) {
+                return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+            }
+            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
         if (!Gate::allows('discounts_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        Discounts::deleteRecord($id);
-        return redirect()->route('admin.discounts.index');
+
+        try {
+
+            Discounts::deleteRecord($id);
+
+            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
 
     }
 
@@ -628,15 +641,27 @@ class DiscountsController extends Controller
     public function displayDlocation($id)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $discount = Discounts::find($id);
 
-        $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
+        try {
 
-        $discount_has_location = DiscountHasLocations::where('discount_id', '=', $discount->id)->get();
+            $discount = Discounts::find($id);
 
-        return view('admin.discounts.location', compact('discount', 'location', 'discount_has_location'));
+            $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
+
+            $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
+
+            return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
+                'discount' => $discount,
+                'location' => $location,
+                'discount_has_location' => $discount_has_location,
+            ]);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+
+        }
     }
 
     /**
@@ -647,7 +672,7 @@ class DiscountsController extends Controller
     public function getDservices(Request $request)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $discount_info = Discounts::find($request->discount_id);
 
@@ -656,11 +681,11 @@ class DiscountsController extends Controller
         } else {
             $serive = ServiceWidget::generateServiceArrayConsultancy($request, Auth::User()->account_id);
         }
-        return response()->json(array(
-            'status' => true,
-            'd' => $serive,
+
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'services' => $serive,
             'locaiton_id_1' => $request->id,
-        ));
+        ]);
     }
 
     /**
@@ -671,7 +696,7 @@ class DiscountsController extends Controller
     public function saveDservices(Request $request)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $myString = $request->id;
@@ -686,9 +711,9 @@ class DiscountsController extends Controller
             ['location_id', '=', $myArray[0]],
             ['service_id', '=', $myArray[1]],
             ['discount_id', '=', $request->discount_id]
-        ])->get();
+        ])->count();
 
-        if (count($checked) == '0') {
+        if ($checked == '0') {
 
             $record = DiscountHasLocations::create($data);
 
@@ -697,17 +722,11 @@ class DiscountsController extends Controller
 
             $myarray = ['record' => $record, 'record_locaiton_name' => $record_location_name, 'record_service_name' => $record_service_name];
 
-            return response()->json(array(
-                'status' => true,
-                'mydata' => $myarray
-            ));
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $myarray);
 
-        } else {
-            return response()->json(array(
-                'status' => false,
-                'mydata' => null
-            ));
         }
+
+        return ApiHelper::apiResponse($this->success, 'Duplicate record found.', false);
     }
 
     /**
@@ -719,11 +738,14 @@ class DiscountsController extends Controller
     {
 
         if (!Gate::allows('discounts_allocate')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         DiscountHasLocations::find($request->id)->delete();
-        return response()->json($request->id);
+
+        return ApiHelper::apiResponse($this->success, 'Row deleted', true, [
+            'id' => $request->id
+        ]);
 
     }
 }

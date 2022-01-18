@@ -23,28 +23,39 @@
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Resource Type:</label>
-            <select class="form-control filter-field select2" id="search_resource_type_id">
-            </select>
+            <label>Type:</label>
+            <input type="text" class="form-control filter-field" placeholder="Enter Type" id="search_type" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Centre:</label>
-            <select class="form-control filter-field select2" id="search_location_id">
-            </select>
+            <label>Amount:</label>
+            <input type="text" class="form-control filter-field" placeholder="Enter Amount" id="search_amount" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Machine Type:</label>
-            <select class="form-control filter-field select2" id="search_machine_type_id">
+            <label>Discount Type:</label>
+            <select class="form-control filter-field select2" id="search_discount_type">
             </select>
         </div>
-
 
     </div>
 
     <div class="row mb-8 advance-filters" style="display: none;">
 
+        <div class="col-lg-3 mb-lg-0 mb-6">
+            <label>From:</label>
+            <div class="input-daterange input-group to-from-datepicker" >
+                <input type="text" class="form-control filter-field datatable-input" placeholder="From" id="search_start" />
+
+            </div>
+        </div>
+
+        <div class="col-lg-3 mb-lg-0 mb-6">
+            <label>To:</label>
+            <div class="input-daterange input-group to-from-datepicker" >
+                <input type="text" class="form-control filter-field datatable-input" placeholder="To" id="search_end" />
+            </div>
+        </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Create at:</label>

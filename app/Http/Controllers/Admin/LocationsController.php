@@ -451,7 +451,7 @@ class LocationsController extends Controller
     public function destroy($id)
     {
         if (!Gate::allows('locations_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $result = Locations::deleteRecord($id);
 
@@ -464,7 +464,7 @@ class LocationsController extends Controller
     public function status(Request $request)
     {
         if (!Gate::allows('locations_active')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $response = Locations::activeRecord($request->id, $request->status);
@@ -491,7 +491,7 @@ class LocationsController extends Controller
     public function sortorder()
     {
         if (!Gate::allows('locations_sort')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $locations =Locations::whereNull('deleted_at')->whereSlug('custom')->where(['account_id' => Auth::User()->account_id])->orderby('sort_no', 'ASC')->get();
 
@@ -504,7 +504,7 @@ class LocationsController extends Controller
     public function sortorder_save(Request $request)
     {
         if (!Gate::allows('locations_sort')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $itemIDs = $request->item_ids;

@@ -46,7 +46,7 @@
                             @endif
 
                             @if(Gate::allows('discounts_create'))
-                                <a href="javascript:void(0);" onclick="createService('{{ route('admin.discounts.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_resources">
+                                <a href="javascript:void(0);" onclick="createDiscount('{{ route('admin.discounts.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_discounts">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
@@ -75,9 +75,9 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_resources" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_add_discounts" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="services_add">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="discounts_add">
 
             @include('admin.discounts.create')
 
@@ -85,11 +85,21 @@
         <!--end::Modal dialog-->
     </div>
 
-    <div class="modal fade" id="modal_edit_resources" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_edit_discounts" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="services_edit">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="discounts_edit">
 
             @include('admin.discounts.edit')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_allocate_discounts" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="discounts_allocate">
+
+            @include('admin.discounts.allocate')
 
         </div>
         <!--end::Modal dialog-->

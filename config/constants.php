@@ -220,4 +220,18 @@ return [
         'error' => 500,
         'unauthorized' => 401,
     ],
+
+    'discount_groups' => [
+        'default' => 'Default',
+        'custom' => 'Custom',
+        'birthday' => 'Birthday',
+    ],
+    'discount_types' => [
+        'Treatment' => 'Treatment',
+        'Consultancy' => 'Consultancy',
+    ],
+    'amount_types' => [
+        'Fixed' => 'Fixed',
+        'Percentage' => 'Percentage'
+    ],
 ];
