@@ -229,9 +229,10 @@ class ResourcesController extends Controller
                 /*End*/
 
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
-            } else {
-                return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
             }
+
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -245,7 +246,7 @@ class ResourcesController extends Controller
      */
     protected function verifyFields(Request $request)
     {
-        return $validator = Validator::make($request->all(), [
+        return Validator::make($request->all(), [
             'name' => 'required',
             'resource_type_id' => 'required',
             'location_id' => 'required',
@@ -347,7 +348,6 @@ class ResourcesController extends Controller
             'machines' => $machinetypes,
             'resource_types' => $resource_types,
             'locations' => $locations,
-            'filters' => $filters,
             'status' => config('constants.status')
         ];
 
@@ -372,7 +372,7 @@ class ResourcesController extends Controller
     public function status(Request $request)
     {
         if (!Gate::allows('resources_active')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         try {
 
@@ -509,7 +509,7 @@ class ResourcesController extends Controller
     public function destroy($id)
     {
         if (!Gate::allows('resources_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         try {
 

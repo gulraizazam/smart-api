@@ -49,64 +49,69 @@ class ServicesController extends Controller
     public function datatable(Request $request)
     {
 
-        $filters = getFilters($request->all());
+        try {
 
-        $records = array();
-        $records["data"] = array();
+            $filters = getFilters($request->all());
 
-        if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
-            $ids = explode(',', $filters['delete']);
-            $Locations = Services::getBulkData($ids);
-            if ($Locations) {
+            $records = array();
+            $records["data"] = array();
 
-                foreach ($Locations as $Location) {
-                    // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!Services::isChildExists($Location->id, Auth::User()->account_id)) {
-                        $Location->delete();
+            if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
+                $ids = explode(',', $filters['delete']);
+                $Locations = Services::getBulkData($ids);
+                if ($Locations) {
+
+                    foreach ($Locations as $Location) {
+                        // Check if child records exists or not, If exist then disallow to delete it.
+                        if (!Services::isChildExists($Location->id, Auth::User()->account_id)) {
+                            $Location->delete();
+                        }
                     }
                 }
+                $records["status"] = true;
+                $records["message"] = "Records has been deleted successfully!";
             }
-            $records["status"] = true;
-            $records["message"] = "Records has been deleted successfully!";
+
+            list($orderBy, $order) = getSortBy($request);
+
+            // Get Total Records
+            $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
+
+            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+
+            $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
+
+            $records = $this->getExtraData($records);
+
+            if (!empty($Services)) {
+                $records["data"] = $Services;
+
+                $records["permissions"] = [
+                    'edit' => Gate::allows('services_edit'),
+                    'delete' => Gate::allows('services_destroy'),
+                    'active' => Gate::allows('services_active'),
+                    'inactive' => Gate::allows('services_inactive'),
+                    'create' => Gate::allows('services_create'),
+                    'sort' => Gate::allows('services_sort'),
+                ];
+
+                $records["meta"] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+
+            } //end
+
+
+            return ApiHelper::apiDataTable($records);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-
-        list($orderBy, $order) = getSortBy($request);
-
-        // Get Total Records
-        $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
-
-        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
-
-        $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
-
-        $records = $this->getExtraData($records);
-
-        if (! empty($Services)) {
-            $records["data"] = $Services;
-
-            $records["permissions"] = [
-                'edit' => Gate::allows('services_edit'),
-                'delete' => Gate::allows('services_destroy'),
-                'active' => Gate::allows('services_active'),
-                'inactive' => Gate::allows('services_inactive'),
-                'create' => Gate::allows('services_create'),
-                'sort' => Gate::allows('services_sort'),
-            ];
-
-            $records["meta"] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
-
-        } //end
-
-
-        return response()->json($records);
     }
 
     private function getExtraData($records = []) {
@@ -294,7 +299,7 @@ class ServicesController extends Controller
     public function destroy($id)
     {
         if (!Gate::allows('services_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $result = Services::deleteRecord($id);
@@ -316,7 +321,7 @@ class ServicesController extends Controller
         try {
 
             if (!Gate::allows('services_active') && !Gate::allows('services_inactive')) {
-                return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
             if ($request->status == 1) {

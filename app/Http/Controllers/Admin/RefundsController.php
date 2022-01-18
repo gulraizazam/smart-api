@@ -59,75 +59,80 @@ class RefundsController extends Controller
      */
     public function datatable(Request $request)
     {
+        try {
 
-        $filename = 'plansrefunds';
+            $filename = 'plansrefunds';
 
-        $filters = getFilters($request->all());
+            $filters = getFilters($request->all());
 
-        $apply_filter = checkFilters($filters, $filename);
+            $apply_filter = checkFilters($filters, $filename);
 
-        $records = array();
-        $records["data"] = array();
+            $records = array();
+            $records["data"] = array();
 
-        // Get Total Records
-        $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, false , $apply_filter , $filename);
+            // Get Total Records
+            $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, false, $apply_filter, $filename);
 
 
-        list($orderBy, $order) = getSortBy($request);
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            list($orderBy, $order) = getSortBy($request);
+            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
-        $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, false,$apply_filter , $filename);
+            $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, false, $apply_filter, $filename);
 
-        $records = $this->getFiltersData($records, $filename);
+            $records = $this->getFiltersData($records, $filename);
 
-        if ($packages) {
-            foreach ($packages as $package) {
-                $session_count = PackageBundles::where('package_id', '=', $package->id)->count();
-                /*We discuss in future what happen next*/
-                $cash_receive = PackageAdvances::where([
-                    ['package_id', '=', $package->id],
-                    ['cash_flow', '=', 'in'],
-                    ['is_cancel', '=', '0']
-                ])->sum('cash_amount');
+            if ($packages) {
+                foreach ($packages as $package) {
+                    $session_count = PackageBundles::where('package_id', '=', $package->id)->count();
+                    /*We discuss in future what happen next*/
+                    $cash_receive = PackageAdvances::where([
+                        ['package_id', '=', $package->id],
+                        ['cash_flow', '=', 'in'],
+                        ['is_cancel', '=', '0']
+                    ])->sum('cash_amount');
 
-                if($cash_receive!=0){
+                    if ($cash_receive != 0) {
 
-                    $records["data"][] = array(
-                        'id' => $package->id ?? 0,
-                        'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
-                        'name' => $package->user?->name ?? '-',
-                        'phone' => $package->user ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '-',
-                        'package_id' => $package?->name ?? '-',
-                        'location_id' => $package->location->city->name . "-" . $package->location?->name,
-                        'session_count' => $session_count,
-                        'total' => number_format($package->total_price),
-                        'cash_receive' => number_format($cash_receive),
-                        'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
-                    );
-                } else {
-                    $iTotalRecords--;
+                        $records["data"][] = array(
+                            'id' => $package->id ?? 0,
+                            'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
+                            'name' => $package->user?->name ?? '-',
+                            'phone' => $package->user ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '-',
+                            'package_id' => $package?->name ?? '-',
+                            'location_id' => $package->location->city->name . "-" . $package->location?->name,
+                            'session_count' => $session_count,
+                            'total' => number_format($package->total_price),
+                            'cash_receive' => number_format($cash_receive),
+                            'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
+                        );
+                    } else {
+                        $iTotalRecords--;
+                    }
                 }
+
+                $records["meta"] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+
             }
 
-            $records["meta"] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
+            $records["permissions"] = [
+                'delete' => Gate::allows('refunds_destroy'),
+                'active' => Gate::allows('refunds_active'),
+                'inactive' => Gate::allows('refunds_inactive'),
+                'refund' => Gate::allows('refunds_refund'),
             ];
 
+            return ApiHelper::apiDataTable($records);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-
-        $records["permissions"] = [
-            'delete' => Gate::allows('refunds_destroy'),
-            'active' => Gate::allows('refunds_active'),
-            'inactive' => Gate::allows('refunds_inactive'),
-            'refund' => Gate::allows('refunds_refund'),
-        ];
-
-        return ApiHelper::apiDataTable($records);
     }
 
     private function getFiltersData($records, $filename = 'plansrefunds') {
@@ -177,7 +182,7 @@ class RefundsController extends Controller
     public function refund_create($id)
     {
         if (! Gate::allows('refunds_refund')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $return_tax_amount = '';

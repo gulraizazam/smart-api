@@ -25,6 +25,85 @@ $(document).ready(function () {
         },
     });
 
+    $('.custom-datepicker').datepicker({
+        todayHighlight: true,
+        format: 'yyyy-mm-dd',
+        templates: {
+            leftArrow: '<i class="la la-angle-left"></i>',
+            rightArrow: '<i class="la la-angle-right"></i>',
+        },
+    });
+
+
+    /*for percentage amount*/
+
+    $(".group_slug").click( function () {
+        if ($(this).val() === 'birthday') {
+            $(".birthday_range").removeClass("d-none");
+        } else {
+            $(".birthday_range").addClass("d-none");
+        }
+    });
+
+    $(".edit_group_slug").click( function () {
+        if ($(this).val() === 'birthday') {
+            $(".edit_birthday_range").removeClass("d-none");
+        } else {
+            $(".edit_birthday_range").addClass("d-none");
+        }
+    });
+
+    $("#add_amount_type").change( function () {
+
+        if ($(this).val() === 'Percentage') {
+            $("#add_amount").attr("max", 100);
+            if ($("#add_amount").val() > 100) {
+                $("#add_amount").val("");
+            }
+            $("#add_amount").attr("max", 100);
+        } else {
+            $("#add_amount").removeAttr("max");
+        }
+    });
+
+    $("#add_amount").on("keyup", function() {
+
+        if ($(this).attr("max") == 100) {
+            var val = parseInt(this.value);
+            if(val > 100 || val < 0)
+            {
+                this.value ='';
+                toastr.error("For percentage type, amount is not allowed greater than 100");
+            }
+        }
+
+    })
+
+    $("#edit_amount_type").change( function () {
+
+        if ($(this).val() === 'Percentage') {
+            $("#edit_amount").attr("max", 100);
+            if ($("#edit_amount").val() > 100) {
+                $("#edit_amount").val("");
+            }
+            $("#edit_amount").attr("max", 100);
+        } else {
+            $("#edit_amount").removeAttr("max");
+        }
+    });
+
+    $("#edit_amount").on("keyup", function() {
+
+        if ($(this).attr("max") == 100) {
+            var val = parseInt(this.value);
+            if(val > 100 || val < 0)
+            {
+                this.value ='';
+                toastr.error("For percentage type, amount is not allowed greater than 100");
+            }
+        }
+
+    })
 
 });
 
@@ -297,7 +376,7 @@ function submitForm(action, method, data, callback, form = '') {
                     'status': response.status,
                     'message': response.message,
                 });
-                hideSpinnerRestForm(form);
+                hideSpinnerRestForm();
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -306,13 +385,13 @@ function submitForm(action, method, data, callback, form = '') {
                     'status': 0,
                     'message': 'You are not authorized to access this resource',
                 });
-                hideSpinnerRestForm(form);
+                hideSpinnerRestForm();
             } else {
                 callback({
                     'status': 0,
                     'message': 'Unable to process your request, please try again later.',
                 });
-                hideSpinnerRestForm(form);
+                hideSpinnerRestForm();
             }
         }
     });
@@ -353,7 +432,7 @@ function submitFileForm(action, method, form_id, callback) {
                     'status': response.status,
                     'message': response.message,
                 });
-                hideSpinnerRestForm(form);
+                hideSpinnerRestForm();
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -362,13 +441,13 @@ function submitFileForm(action, method, form_id, callback) {
                     'status': 0,
                     'message': 'You are not authorized to access this resource',
                 });
-                hideSpinnerRestForm(form);
+                hideSpinnerRestForm();
             } else {
                 callback({
                     'status': 0,
                     'message': 'Unable to process your request, please try again later.',
                 });
-                hideSpinnerRestForm(form);
+                hideSpinnerRestForm();
             }
         }
     });
@@ -392,4 +471,8 @@ function showException(error) {
         toastr.error(error);
         console.log(error);
     }
+}
+
+function serviceLocation(id, location_name, service_name) {
+    return '<tr id="HR_" class="HR_SERVICES HR_'+id+'"><td>'+location_name+'</td><td>'+service_name+'</td><td><button onClick="deleteModel('+id+')" class=\'btn btn-sm btn-danger\'>Delete</button></td></tr>';
 }

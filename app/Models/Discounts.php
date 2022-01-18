@@ -23,6 +23,26 @@ class Discounts extends BaseModal
 
     protected static $_table = 'discounts';
 
+    protected $casts = [
+        'created_at' => 'datetime:F d,Y h:i A'
+    ];
+
+    public function setStartAttribute($start) {
+        $this->attributes['start'] = $this->dateFormat($start);
+    }
+
+    public function setEndAttribute($end) {
+        $this->attributes['end'] = $this->dateFormat($end);
+    }
+
+    public function getStartAttribute($start) {
+        return $this->dateFormat($start, "F d,Y");
+    }
+
+    public function getEndAttribute($end) {
+        return $this->dateFormat($end, "F d,Y");
+    }
+
     /**
      * Get the Users.
      */
@@ -97,13 +117,11 @@ class Discounts extends BaseModal
 
         if($discount==null) {
 
-            return view('error_full');
+            return false;
 
         } else {
 
             $record = $discount->update(['active' => 0]);
-
-            flash('Record has been inactivated successfully.')->success()->important();
 
             AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
 
@@ -124,13 +142,11 @@ class Discounts extends BaseModal
 
         if($discount==null) {
 
-            return view('error_full');
+            return false;
 
         } else{
 
             $record = $discount->update(['active' => 1]);
-
-            flash('Record has been activated successfully.')->success()->important();
 
             AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 
