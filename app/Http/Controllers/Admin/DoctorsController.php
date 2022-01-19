@@ -514,11 +514,10 @@ class DoctorsController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $user = User::getData($id);
-            if ($user == null) {
-                return view('error');
-            } else {
-                return view('admin.doctors.change_password', compact('user'));
+            if (!$user) {
+                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
+            return ApiHelper::apiResponse($this->success, 'No Record Found!', true, $user);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -538,24 +537,17 @@ class DoctorsController extends Controller
             }
             $data = [];
             $validator = $this->verifyPasswordFields($request);
-
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            try {
-                $id = decrypt($request->get('id'));
-            } catch (DecryptException $e) {
-                return ApiHelper::apiResponse($this->success, 'Are you mad? what were you trying to do? :@.', false);
-            }
+            $id = $request->get('id');
 
             $data['password'] = bcrypt($request->get('password'));
 
             $result = User::updateRecord($data, $id);
-
             if ($result) {
                 return ApiHelper::apiResponse($this->success, 'Password has been changed successfully.');
             }
-
             return ApiHelper::apiResponse($this->success, 'Are you mad? what were you trying to do? :@.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -795,7 +787,7 @@ class DoctorsController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             DoctorHasLocations::find($request->id)->delete();
-            return ApiHelper::apiResponse($this->success, 'Doctor location has been deleted!',true, ['id'=>$request->id]);
+            return ApiHelper::apiResponse($this->success, 'Doctor location has been deleted!', true, ['id' => $request->id]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }

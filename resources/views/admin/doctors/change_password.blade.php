@@ -22,9 +22,9 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_change_form" method="PATCH" action="{{route('admin.users.save_password')}}">
+        <form id="modal_change_form" method="PATCH" action="{{route('admin.doctors.save_password')}}">
             <!--begin::Scroll-->
-            <input type="hidden" name="id" value="{{encrypt($user->id)}}">
+            <input type="hidden" id="password_change_id" name="id">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_password_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -32,12 +32,12 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">New Password</label>
-                            <input type="password" name="password" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="password" id="password" name="password" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">New Password Confirmation</label>
-                            <input type="password" name="password_confirmation" class="form-control form-control-lg form-control-solid" />
+                            <input type="password" id="password_confirmation" name="password_confirmation" class="form-control form-control-lg form-control-solid" />
                         </div>
                     </div>
                 </div>

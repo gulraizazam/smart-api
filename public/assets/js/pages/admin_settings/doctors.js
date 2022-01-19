@@ -229,7 +229,6 @@ function setAllocateData(response) {
         let discount = response.data.doctor;
         let locations = response.data.location;
         let discount_locations = response.data.doctor_has_location;
-        console.log(discount_locations);
         let location_options = '<option value="">Select Centre</option>';
         let location_services = '';
 
@@ -324,18 +323,20 @@ function changePassword(id) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.users.change_password', {id: id}),
+        url: route('admin.doctors.change_password', {id: id}),
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#change_password").html(response);
-            reInitSelect2(".select2", "");
-            reInitValidation(PasswordValidation);
+               if(response.status == true){
+                    $('#password_change_id').val(id);
+               }
+               else{
+                   console.log(response);
+                   toastr.error(response.message);
+               }
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-
-            reInitValidation(PasswordValidation);
         }
     });
 }

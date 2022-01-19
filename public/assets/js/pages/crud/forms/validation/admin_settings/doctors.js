@@ -210,7 +210,7 @@ var PasswordValidation = function () {
                                 message: 'The confirm password field is required'
                             }
                         }
-                    }
+                    },
                 },
 
                 plugins: {
@@ -304,9 +304,8 @@ var AllocateValidation = function () {
 jQuery(document).ready(function() {
     AddUserValidation.init();
     EditUserValidation.init();
-    // PasswordValidation.init();
-    // console.log('test 123');
     AllocateValidation.init();
+    PasswordValidation.init();
 });
 
 function submitData(callback) {
