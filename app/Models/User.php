@@ -311,16 +311,12 @@ class User extends Authenticatable
         $doctor = User::getData($id);
 
         if (!$doctor) {
-
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.doctors.index');
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (User::isExists($id, Auth::User()->account_id)) {
-
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.doctors.index');
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
 
         $record = $doctor->delete();
@@ -328,10 +324,7 @@ class User extends Authenticatable
         //log request for delete for audit trail
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
     /**
      * isExit

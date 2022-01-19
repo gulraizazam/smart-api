@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CitiesController;
+use App\Http\Controllers\Admin\DoctorsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\admin\LogsController;
@@ -157,6 +158,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('resources/status', [ResourcesController::class, 'status'])->name('resources.status');
     Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
     Route::resource('resources', ResourcesController::class)->except('index');
+
+    // Doctors Route Start
+    Route::post('doctors/datatable', [DoctorsController::class, 'datatable'])->name('doctors.datatable');
+    Route::get('doctors/password/{id}', [DoctorsController::class, 'changePassword'])->name('doctors.change_password');
+    Route::patch('doctors/password', [DoctorsController::class, 'savePassword'])->name('doctors.save_password');
+    Route::post('doctors/status', [DoctorsController::class, 'status'])->name('doctors.status');
+    Route::resource('doctors', DoctorsController::class)->except(['index','create','show']);
+    // Doctors Route End
 
 
 });

@@ -2,9 +2,10 @@
 
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CitiesController;
+use App\Http\Controllers\Admin\DoctorsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
-use App\Http\Controllers\admin\LogsController;
+use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
@@ -146,5 +147,8 @@ use App\Http\Controllers\Admin\ResourcesController;
 
         // Sms Templates
         Route::get('sms_templates',[SMSTemplatesController::class,'index'])->name('sms_templates.index');
+
+        // Doctors Templates
+        Route::get('doctors',[DoctorsController::class,'index'])->name('doctors.index');
 
     });
