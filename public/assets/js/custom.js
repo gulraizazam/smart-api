@@ -472,7 +472,3 @@ function showException(error) {
         console.log(error);
     }
 }
-
-function serviceLocation(id, location_name, service_name) {
-    return '<tr id="HR_" class="HR_SERVICES HR_'+id+'"><td>'+location_name+'</td><td>'+service_name+'</td><td><button onClick="deleteModel('+id+')" class=\'btn btn-sm btn-danger\'>Delete</button></td></tr>';
-}

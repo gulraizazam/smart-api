@@ -203,7 +203,7 @@ var AllocateValidation = function () {
                 } else {
                     toastr.error(response.message);
                 }
-            }, form);
+            });
         });
     }
 
@@ -220,7 +220,7 @@ jQuery(document).ready(function() {
     AllocateValidation.init();
 });
 
-function submitData(callback, form = '') {
+function submitData(callback) {
 
     let ids = [];
     ids.push($("#locations").val());
@@ -243,7 +243,7 @@ function submitData(callback, form = '') {
                     'status': response.status,
                     'message': response.message,
                 });
-                hideSpinnerRestForm(form);
+                hideSpinnerRestForm();
             } else {
                 callback({
                     'status': response.status,
