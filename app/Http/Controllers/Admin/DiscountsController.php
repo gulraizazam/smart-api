@@ -722,7 +722,7 @@ class DiscountsController extends Controller
 
             $myarray = ['record' => $record, 'record_locaiton_name' => $record_location_name, 'record_service_name' => $record_service_name];
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, $myarray);
+            return ApiHelper::apiResponse($this->success, 'Record Saved successfully.', true, $myarray);
 
         }
 
