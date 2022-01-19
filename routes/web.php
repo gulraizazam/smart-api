@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\DiscountsController;
+use App\Http\Controllers\Admin\CentreTargetsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -156,6 +157,9 @@ use App\Http\Controllers\Admin\DiscountsController;
         //Discount route Start
         Route::resource('discounts', DiscountsController::class)->only('index');
         //Discount route end
+
+        //Centre Target
+        Route::resource('centre_targets', CentreTargetsController::class)->only('index');
 
 
     });

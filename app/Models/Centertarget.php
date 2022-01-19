@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use DB;
-use Session;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use App\Models\AuditTrails;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use App\Helpers\Filters;
@@ -43,7 +43,7 @@ class Centertarget extends BaseModal
      */
     static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::centertarget_filters($request, $account_id, $apply_filter);
+        $where = self::centertarget_filters($request, $account_id, $apply_filter);
         return Centertarget::where($where)->count();
     }
 
@@ -57,20 +57,13 @@ class Centertarget extends BaseModal
      *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false,$apply_filter = false)
+    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false,$apply_filter = false, $filters = [])
     {
-        $where = Self::centertarget_filters($request, $account_id, $apply_filter);
+        $where = self::centertarget_filters($request, $account_id, $apply_filter, $filters);
 
-        $orderBy = 'created_at';
-        $order = 'desc';
+        if ($request->has('sort')) {
 
-        if ($request->get('order')) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            if ($orderBy == 'created_at') {
-                $orderBy = 'created_at';
-            }
-            $order = $request->get('order')[0]['dir'];
+            list($orderBy, $order) = getSortBy($request);
 
             Filters::put(Auth::User()->id, 'centertarget', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'centertarget', 'order', $order);
@@ -111,7 +104,7 @@ class Centertarget extends BaseModal
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function centertarget_filters($request, $account_id, $apply_filter)
+    static public function centertarget_filters($request, $account_id, $apply_filter, $filters = [])
     {
         $where = array();
         if ($account_id) {
@@ -135,13 +128,13 @@ class Centertarget extends BaseModal
                 }
             }
         }
-        if ($request->get('year')) {
+        if (count($filters) > 0 && hasFilter($filters, 'year')) {
             $where[] = array(
                 'year',
                 '=',
-                $request->get('year')
+                $filters['year']
             );
-            Filters::put(Auth::User()->id, 'centertarget', 'year', $request->get('year'));
+            Filters::put(Auth::User()->id, 'centertarget', 'year', $filters['year']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'year');
@@ -155,13 +148,13 @@ class Centertarget extends BaseModal
                 }
             }
         }
-        if ($request->get('month')) {
+        if (count($filters) > 0 && hasFilter($filters, 'month')) {
             $where[] = array(
                 'month',
                 '=',
-                $request->get('month')
+                $filters['month']
             );
-            Filters::put(Auth::User()->id, 'centertarget', 'month', $request->get('month'));
+            Filters::put(Auth::User()->id, 'centertarget', 'month', $filters['month']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'month');
@@ -175,13 +168,13 @@ class Centertarget extends BaseModal
                 }
             }
         }
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
-            Filters::put(Auth::User()->id, 'centertarget', 'created_from', $request->get('created_from'));
+            Filters::put(Auth::User()->id, 'centertarget', 'created_from', $filters['created_from']);
         } else {
             if($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'created_from');
@@ -195,13 +188,13 @@ class Centertarget extends BaseModal
                 }
             }
         }
-        if ($request->get('created_to') && $request->get('created_to') != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
-            Filters::put(Auth::User()->id, 'centertarget', 'created_to', $request->get('created_to'));
+            Filters::put(Auth::User()->id, 'centertarget', 'created_to', $filters['created_to']);
         } else {
             if($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'created_to');
@@ -215,6 +208,7 @@ class Centertarget extends BaseModal
                 }
             }
         }
+
         return $where;
     }
 

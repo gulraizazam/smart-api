@@ -19,6 +19,8 @@ $(document).ready(function () {
 
     $('.to-from-datepicker').datepicker({
         todayHighlight: true,
+        format: 'yyyy-mm-dd',
+        orientation: 'bottom',
         templates: {
             leftArrow: '<i class="la la-angle-left"></i>',
             rightArrow: '<i class="la la-angle-right"></i>',
@@ -27,6 +29,7 @@ $(document).ready(function () {
 
     $('.custom-datepicker').datepicker({
         todayHighlight: true,
+        orientation: 'bottom',
         format: 'yyyy-mm-dd',
         templates: {
             leftArrow: '<i class="la la-angle-left"></i>',
