@@ -151,6 +151,7 @@ class DoctorsController extends Controller
                 'active' => Gate::allows('doctors_active'),
                 'inactive' => Gate::allows('doctors_inactive'),
                 'delete' => Gate::allows('doctors_destroy'),
+                'allocate' => Gate::allows('doctors_allocate'),
             ];
 
             $filters = Filters::all(Auth::User()->id, 'doctors');
@@ -707,9 +708,14 @@ class DoctorsController extends Controller
             }
             $doctor = User::find($id);
             $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
-            $doctor_has_location = DoctorHasLocations::where('user_id', '=', $doctor->id)->get();
+            $doctor_has_location = DoctorHasLocations::with(['service', 'location.city'])->where('user_id', '=', $doctor->id)->get();
 
-            return view('admin.doctors.location', compact('doctor', 'location', 'doctor_has_location'));
+//            return view('admin.doctors.location', compact('doctor', 'location', 'doctor_has_location'));
+            return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
+                'doctor' => $doctor,
+                'location' => $location,
+                'doctor_has_location' => $doctor_has_location,
+            ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -728,7 +734,7 @@ class DoctorsController extends Controller
             }
             $serive = ServiceWidget::generateServiceArrayArray($request, Auth::User()->account_id);
 
-            $myarray = ['d' => $serive, 'locaiton_id_1' => $request->id];
+            $myarray = ['services' => $serive, 'locaiton_id_1' => $request->id];
             return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -789,7 +795,7 @@ class DoctorsController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             DoctorHasLocations::find($request->id)->delete();
-            return ApiHelper::apiResponse($this->success, 'Doctor location has been deleted!', $request->id);
+            return ApiHelper::apiResponse($this->success, 'Doctor location has been deleted!',true, ['id'=>$request->id]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
