@@ -303,3 +303,6 @@ input {
     display: block;
     border-color:#fff;
 }
+.disable-filed {
+    background-color: #eef1f5 !important;
+}

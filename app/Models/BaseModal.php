@@ -55,4 +55,8 @@ class BaseModal extends Model
         return self::whereIn('id', $id)->get();
     }
 
+    public function dateFormat($date, $format = "Y-m-d") {
+        return date($format, strtotime($date));
+    }
+
 }

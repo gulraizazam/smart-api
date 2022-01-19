@@ -18,6 +18,8 @@ use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
+use App\Http\Controllers\Admin\RefundsController;
+use App\Http\Controllers\Admin\DiscountsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -166,6 +168,24 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('doctors/status', [DoctorsController::class, 'status'])->name('doctors.status');
     Route::resource('doctors', DoctorsController::class)->except(['index','create','show']);
     // Doctors Route End
+
+
+    //Refunds route start
+    Route::post('refunds/datatable', [RefundsController::class, 'datatable'])->name('refunds.datatable');
+    Route::get('refunds/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refunds.refund_create');
+    Route::get('refunds/detail/{id}', [RefundsController::class, 'detail'])->name('refunds.detail');
+    Route::resource('refunds',RefundsController::class)->except('index');
+
+
+    //Discount route Start
+    Route::post('discounts/datatable', [DiscountsController::class, 'datatable'])->name('discounts.datatable');
+    Route::post('discounts/status', [DiscountsController::class, 'status'])->name('discounts.status');
+    Route::get('discounts/locations/{id}', [DiscountsController::class, 'displayDlocation'])->name('discounts.location_manage');
+    Route::get('getDservice', [DiscountsController::class, 'getDservices'])->name('discounts.get_Dservice');
+    Route::post('saveDervice', [DiscountsController::class, 'saveDservices'])->name('discounts.save_Dervice');
+    Route::post('deleteDservice', [DiscountsController::class, 'deleteDservice'])->name('discounts.delete_service');
+
+    Route::resource('discounts', DiscountsController::class)->except('index');
 
 
 });

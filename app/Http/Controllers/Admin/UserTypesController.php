@@ -195,7 +195,7 @@ class UserTypesController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('user_types_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, false, 'You are not authorized to access this resource.');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $usertype = UserTypes::getData($id);
