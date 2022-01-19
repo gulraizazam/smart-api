@@ -376,7 +376,7 @@ function submitForm(action, method, data, callback, form = '') {
                     'status': response.status,
                     'message': response.message,
                 });
-                hideSpinnerRestForm();
+                // hideSpinnerRestForm(form);
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {

@@ -1,19 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\admin;
+namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
-use App\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use DB;
-use Illuminate\Support\Facades\Input;
-use Auth;
-use Validator;
 use App\Models\AuditTrails;
-use App\Models\AuditTrailTables;
-use App\Models\AuditTrailActions;
 
 class LogsController extends Controller
 {
