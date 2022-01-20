@@ -115,6 +115,7 @@ class CentreTargetsController extends Controller
                 'inactive' => Gate::allows('centre_targets_inactive'),
                 'create' => Gate::allows('centre_targets_create'),
                 'allocate' => Gate::allows('centre_targets_allocate'),
+                'manage' => Gate::allows('centre_targets_manage'),
             ];
 
             return ApiHelper::apiDataTable($records);
@@ -210,43 +211,37 @@ class CentreTargetsController extends Controller
     public function store(Request $request)
     {
         if (!Gate::allows('centre_targets_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        $validator = $this->verifyFields($request);
+        try {
 
-        if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
-        }
+            $validator = $this->verifyFields($request);
 
-        $record = Centertarget::where(array(
-            'month' => $request->get('month'),
-            'year' => $request->get('year'),
-            'account_id' => Auth::User()->account_id
-        ))->first();
+            if ($validator->fails()) {
+                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            }
 
-        if ($record) {
-            $staff_target = Centertarget::updateRecord($record->id, $request, Auth::User()->account_id);
-        } else {
-            $staff_target = Centertarget::createRecord($request, Auth::User()->account_id);
-        }
+            $record = Centertarget::where(array(
+                'month' => $request->get('month'),
+                'year' => $request->get('year'),
+                'account_id' => Auth::User()->account_id
+            ))->first();
 
-        if ($staff_target) {
+            if ($record) {
+                $staff_target = Centertarget::updateRecord($record->id, $request, Auth::User()->account_id);
+            } else {
+                $staff_target = Centertarget::createRecord($request, Auth::User()->account_id);
+            }
 
-            flash('Record has been created successfully.')->success()->important();
+            if ($staff_target) {
+                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            }
 
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been created successfully.',
-            ));
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.');
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
     }
 
@@ -254,11 +249,11 @@ class CentreTargetsController extends Controller
      * Validate form fields
      *
      * @param  \Illuminate\Http\Request $request
-     * @return Validator $validator;
+     * @return \Illuminate\Contracts\Validation\Validator $validator;
      */
     protected function verifyFields(Request $request)
     {
-        return $validator = Validator::make($request->all(), [
+        return Validator::make($request->all(), [
             'year' => 'required',
             'month' => 'required',
         ]);
@@ -268,36 +263,36 @@ class CentreTargetsController extends Controller
      * Show the form for editing center target.
      *
      * @param  int $id ,$request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
 
         if (!Gate::allows('centre_targets_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $center_target = Centertarget::find($id);
 
         if (!$center_target) {
-            return view('error', compact('lead_statuse'));
+            return ApiHelper::apiResponse($this->success, 'Resource not found', false);
         }
-
-        $months[''] = 'Select a Month';
 
         $months_data = Config::get("constants.months_array");
         foreach ($months_data as $key => $value) {
             $months[$key] = $value;
         }
 
-
-        $years[''] = 'Select a Year';
         $years_data = range(Carbon::now()->year, Carbon::now()->subYears(10)->year);
-        foreach ($years_data as $key => $value) {
+        foreach ($years_data as $value) {
             $years[$value] = $value;
         }
 
-        return view('admin.centre_targets.edit', compact('center_target', 'months', 'years'));
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'center_target' => $center_target,
+            'months' => $months,
+            'years' => $years,
+        ]);
     }
 
     /**
@@ -305,21 +300,18 @@ class CentreTargetsController extends Controller
      *
      * @param  \Illuminate\Http\Request $request
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         if (!Gate::allows('centre_targets_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         /*$record = Centertarget::where(array(
             'month' => $request->get('month'),
@@ -335,36 +327,29 @@ class CentreTargetsController extends Controller
         }
 
         if ($staff_target) {
-
-            flash('Record has been updated successfully.')->success()->important();
-
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been updated successfully.',
-            ));
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         }
+
+        return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
     }
 
     /**
      * Show details of center target.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function display($id)
     {
         if (!Gate::allows('centre_targets_manage')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        $centertarget = Centertarget::find($id);
+        $centertarget = Centertarget::with('center_target_meta.location')->find($id);
 
-        return view('admin.centre_targets.target_view', compact('centertarget'));
+        return ApiHelper::apiResponse($this->success, 'Record Found.', true, [
+            'center_target' => $centertarget
+        ]);
 
     }
 
@@ -372,18 +357,22 @@ class CentreTargetsController extends Controller
      * Remove StaffTarget from storage.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id, Request $request)
     {
         if (!Gate::allows('centre_targets_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        Centertarget::deleteRecord($id);
+        try {
 
-        flash('Record has been deleted successfully.')->success()->important();
+            Centertarget::deleteRecord($id);
 
-        return redirect()->route('admin.centre_targets.index');
+            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
 

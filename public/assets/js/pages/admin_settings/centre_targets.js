@@ -43,6 +43,7 @@ function actions(data) {
 
         let url = route('admin.centre_targets.edit', {id: id});
         let delete_url = route('admin.centre_targets.destroy', {id: id});
+        let display_url = route('admin.centre_targets.display', {id: id});
 
         if (permissions.edit && permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -59,6 +60,14 @@ function actions(data) {
                     <a href="javascript:void(0);" onclick="editRow(`' + url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
+                    </a>\
+                </li>';
+            }
+            if (permissions.manage) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="display(`' + display_url + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-eye"></i></span>\
+                        <span class="navi-text">Display</span>\
                     </a>\
                 </li>';
             }
@@ -83,6 +92,9 @@ function actions(data) {
 
 function createCentreTarget($route) {
 
+    resetFormAndData("add_");
+    $("#modal_add_centre_targets_form")[0].reset();
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -102,15 +114,20 @@ function createCentreTarget($route) {
 
 }
 
-loadActiveLocation = function () {
+loadActiveLocation = function (prefix = "add_") {
 
-    $('.centre_require_field').addClass("d-none");
+    resetFormAndData(prefix);
 
-    var year = $('#add_year').val();
-    var month = $('#add_month').val();
+    if (prefix == "edit_") {
+        $("#edit_working_days").val('0')
+        $(".edit_target_amount").val('0')
+    }
+
+    var year = $('#'+prefix+'year').val();
+    var month = $('#'+prefix+'month').val();
 
     if(year == '' || month == '') {
-        $('.centre_require_field').removeClass("d-none");
+        $('#'+prefix+'centre_require_field').removeClass("d-none");
         return false;
     }
 
@@ -128,7 +145,13 @@ loadActiveLocation = function () {
         success: function(response) {
 
             if(response.status) {
-                setTargets(response);
+                setTargets(response, prefix);
+
+                if(response.data.center_target_status == 0){
+                    $('#'+prefix+'centre_edit_perform').addClass("d-none");
+                } else {
+                    $('#'+prefix+'centre_edit_perform').removeClass("d-none");
+                }
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -137,23 +160,37 @@ loadActiveLocation = function () {
     });
 }
 
-function setTargets(response) {
+function setTargets(response, prefix) {
 
-    let center_target_working_days = response.data.center_target_working_days;
-    let locations = response.data.target_location;
-    let location_options = '';
+    try {
 
-    Object.values(locations).forEach( function (value) {
-        location_options += getTable(value.location_name, value.location_id, value.target_amount);
-    });
+        let center_target_working_days = response.data.center_target_working_days;
+        let locations = response.data.target_location;
+        let location_options = '';
 
-    $("#centre_target_location").append(location_options);
-    $(".center_target_table").removeClass("d-none");
+        Object.values(locations).forEach(function (value) {
+            location_options += getTable(value.location_name, value.location_id, value.target_amount, prefix);
+        });
+
+        $("#" + prefix + "centre_target_location").append(location_options);
+        $("." + prefix + "center_target_table").removeClass("d-none");
+
+        $("#" + prefix + "working_days").val(center_target_working_days);
+    } catch (error) {
+        showException(error);
+    }
 
 }
 
-function getTable(location_name, id, target_amount) {
-    return ' <tr> <td>'+location_name+'</td><td> <input class="form-control" type="number" value="'+target_amount+'" name="target_amount['+id+']"> </td></tr>';
+function resetFormAndData(prefix) {
+
+    $('#'+prefix+'centre_edit_perform').addClass("d-none");
+    $('#'+prefix+'centre_require_field').addClass("d-none");
+    $("."+prefix+"target-row").remove();
+}
+
+function getTable(location_name, id, target_amount, prefix = "add_") {
+    return ' <tr class="'+prefix+'target-row"> <td>'+location_name+'</td><td> <input class="form-control '+prefix+'target_amount" type="number" value="'+target_amount+'" name="target_amount['+id+']"> </td></tr>';
 }
 
 function setCreateData(response) {
@@ -185,7 +222,7 @@ function setCreateData(response) {
 
 function editRow(url) {
 
-    $("#modal_edit_discounts").modal("show");
+    $("#modal_edit_centre_targets").modal("show");
 
     $.ajax({
         headers: {
@@ -214,40 +251,33 @@ function setEditData(response) {
 
     try {
 
-        let discount = response.data.discount;
+        let years = response.data.years;
 
-        $("#modal_edit_discounts_form").attr("action", route('admin.discounts.update', {id: discount.id}));
+        let months = response.data.months;
 
-        if (discount.discount_type == 'Treatment') {
-            $(".treatment").prop("checked", true);
-        }
-        if (discount.discount_type == 'Consultancy') {
-            $(".consultancy").prop("checked", true);
-        }
+        let center_target = response.data.center_target;
 
-        if (discount.slug == 'default') {
-            $(".default").prop("checked", true);
-            $(".edit_birthday_range").addClass("d-none");
-        }
-        if (discount.slug == 'custom') {
-            $(".custom").prop("checked", true);
-            $(".edit_birthday_range").addClass("d-none");
-        }
-        if (discount.slug == 'birthday') {
-            $(".birthday").prop("checked", true);
-            $(".edit_birthday_range").removeClass("d-none");
+        $("#modal_edit_centre_targets_form").attr("action", route('admin.centre_targets.update', {id: center_target.id}));
 
-        }
+        let months_options = '<option value="">Select a Year</option>';
+        let years_options = '<option value="">Select a Month</option>';
 
-        $("#edit_name").val(discount.name);
-        $("#edit_amount_type").val(discount.type);
-        $("#edit_amount").val(discount.amount);
-        $("#edit_pre_days").val(discount.pre_days);
-        $("#edit_post_days").val(discount.post_days);
-        $("#edit_start").val(discount.start);
-        $("#edit_end").val(discount.end);
+        Object.entries(months).forEach(function (value, index) {
+            months_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+        });
 
-        $("#edit_active").prop("checked", discount.active);
+        Object.entries(years).forEach(function (value, index) {
+            years_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+        });
+
+
+        $("#edit_month").html(months_options);
+        $("#edit_year").html(years_options);
+        $("#edit_working_days").val(center_target.working_days);
+        $("#edit_month").val(center_target.month);
+        $("#edit_year").val(center_target.year);
+
+        loadActiveLocation("edit_");
 
     } catch (error) {
         showException(error);
@@ -320,4 +350,52 @@ function setFilters(filter_values, active_filters) {
     } catch (err) {
         showException(error);
     }
+}
+
+function display($route) {
+
+    $(".display-rows").remove();
+    $("#modal_display_centre_targets").modal("show");
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+
+            setDisplayData(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+}
+
+function setDisplayData(response) {
+
+    try {
+
+        let rows = '';
+        let center_target = response.data.center_target;
+
+        Object.values(center_target.center_target_meta).forEach(function (value, index) {
+
+            rows += displayRows(value.location.name, value.target_amount, index);
+        });
+
+        $(".month_value").text(center_target.month);
+        $(".year_value").text(center_target.year);
+
+        $("#display-target").append(rows);
+    } catch (error) {
+        showException(error);
+    }
+}
+
+function displayRows(location_name, amount, sr) {
+    return '<tr class="display-rows"> <td>'+sr+'</td><td>'+location_name+'</td><td align="right">'+amount+'</td></tr>';
 }

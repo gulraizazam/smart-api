@@ -25,11 +25,16 @@
         <form id="modal_add_centre_targets_form" method="post" action="{{route('admin.centre_targets.store')}}">
             <!--begin::Scroll-->
 
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_centre_targets_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
-                <div class="alert alert-warning centre_require_field d-none" role="alert">
+                <div id="add_centre_require_field" class="alert alert-warning d-none" role="alert">
                     <i class="fa fa-exclamation-circle"></i>
                     Please select all options to continue.
+                </div>
+
+                <div id="add_centre_edit_perform" class="alert alert-info d-none" role="alert">
+                    <i class="fa fa-exclamation-circle"></i>
+                    You are going to update existing record.
                 </div>
 
                 <div class="form-group">
@@ -49,7 +54,7 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Working Days <span class="text text-danger">*</span></label>
-                            <input min="0" id="add_working_days" class="form-control" type="number" name="working_days">
+                            <input min="0" id="add_working_days" value="0" class="form-control" type="number" name="working_days">
                         </div>
                     </div>
 
@@ -59,8 +64,8 @@
             <!--end::Scroll-->
             <!--begin::Actions-->
 
-            <div class="table-responsive center_target_table d-none">
-                <table id="centre_target_location" class="table table-striped table-bordered table-advance table-hover">
+            <div class="table-responsive add_center_target_table d-none">
+                <table id="add_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
 
                     <thead>
                     <tr>

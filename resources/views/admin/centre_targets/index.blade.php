@@ -95,11 +95,11 @@
         <!--end::Modal dialog-->
     </div>
 
-    <div class="modal fade" id="modal_allocate_discounts" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_display_centre_targets" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="discounts_allocate">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="centre_targets_display">
 
-            @include('admin.discounts.allocate')
+            @include('admin.centre_targets.display')
 
         </div>
         <!--end::Modal dialog-->
