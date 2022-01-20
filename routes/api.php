@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\CentreTargetsController;
+use App\Http\Controllers\Admin\PackageAdvancesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -198,6 +199,18 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('centre_targets/diplay/{id}', [CentreTargetsController::class, 'display'])->name( 'centre_targets.display');
     Route::post('centre_targets/datatable', [CentreTargetsController::class, 'datatable'])->name( 'centre_targets.datatable');
     Route::resource('centre_targets', CentreTargetsController::class)->except('index');
+
+    //Package Advance route start
+    Route::post('packagesadvances/datatable', [PackageAdvancesController::class, 'datatable'])->name('packagesadvances.datatable');
+    Route::post('packagesadvances/status', [PackageAdvancesController::class, 'status'])->name('packagesadvances.status');
+    Route::post('packagesadvances/cancel/{id}', [PackageAdvancesController::class, 'cancel'])->name('packagesadvances.cancel');
+    Route::get('packagesadvances/getpackages', [PackageAdvancesController::class, 'getpackages'])->name('packagesadvances.getpackages');
+    Route::get('packagesadvances/getpackagesinfo', [PackageAdvancesController::class, 'getpackagesinfo'])->name('packagesadvances.getpackagesinfo');
+    Route::get('packagesadvances/getpackagesinfo_update', [PackageAdvancesController::class, 'getpackagesinfo_update'])->name('packagesadvances.getpackagesinfo_update');
+    Route::get('packagesadvances/savepackagesadvances', [PackageAdvancesController::class, 'savepackagesadvances'])->name('packagesadvances.savepackagesadvances');
+    Route::get('packagesadvances/updatepackagesadvances', [PackageAdvancesController::class, 'updatepackagesadvances'])->name('packagesadvances.updatepackagesadvances');
+    Route::get('packagesadvances/update_record_final', [PackageAdvancesController::class, 'update_record_final'])->name('packagesadvances.update_record_final');
+    Route::resource('packagesadvances', PackageAdvancesController::class)->except('index');
 
 });
 

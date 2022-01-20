@@ -347,7 +347,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_created_from").val(active_filters.created_from);
         $("#search_created_to").val(active_filters.created_to);
 
-    } catch (err) {
+    } catch (error) {
         showException(error);
     }
 }
