@@ -265,7 +265,7 @@ function setFilters(filter_values, active_filters) {
         hideShowAdvanceFilters(active_filters);
 
     } catch (err) {
-
+        showException(error);
     }
 }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
+use App\Helpers\GeneralFunctions;
 use App\Models\DiscountHasLocations;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -191,7 +192,7 @@ class DiscountsController extends Controller
 
             $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
 
-            $records = $this->getFiltersData($records);
+            $records = $this->getFiltersData($records, $filename);
 
             if ($Discounts) {
 
@@ -441,9 +442,7 @@ class DiscountsController extends Controller
         return $where;
     }
 
-    private function getFiltersData($records) {
-
-        $filters = Filters::all(Auth::User()->id, 'discounts');
+    private function getFiltersData($records, $filename) {
 
         $locations = Locations::getlocation();
 
@@ -454,14 +453,7 @@ class DiscountsController extends Controller
 
         $Services = $parentGroups->nodeList;
 
-        if (isset($filters['created_from'])) {
-            $filters['created_from'] = date('m/d/Y', strtotime($filters['created_from']));
-        }
-        if (isset($filters['created_to'])) {
-            $filters['created_to'] = date('m/d/Y', strtotime($filters['created_to']));
-        }
-
-        $records['active_filters'] = $filters;
+        $records['active_filters'] = Filters::all(Auth::User()->id, $filename);
 
         $records['filter_values'] = [
             'services' => $Services,

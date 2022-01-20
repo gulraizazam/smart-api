@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\DiscountsController;
+use App\Http\Controllers\Admin\CentreTargetsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -191,6 +192,12 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::resource('discounts', DiscountsController::class)->except('index');
 
+
+    //Centre Target
+    Route::post('centre_targets/load-centres', [CentreTargetsController::class, 'leadtargetcentre'])->name( 'centre_targets.load_target_centre');
+    Route::get('centre_targets/diplay/{id}', [CentreTargetsController::class, 'display'])->name( 'centre_targets.display');
+    Route::post('centre_targets/datatable', [CentreTargetsController::class, 'datatable'])->name( 'centre_targets.datatable');
+    Route::resource('centre_targets', CentreTargetsController::class)->except('index');
 
 });
 

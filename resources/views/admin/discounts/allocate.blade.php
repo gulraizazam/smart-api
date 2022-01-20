@@ -60,13 +60,13 @@
             </div>
             <!--end::Scroll-->
             <!--begin::Actions-->
-            <hr>
-            {{--<div class="text-center">
-                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button">
-                    <span class="indicator-label">Submit</span>
-                </button>
-            </div>--}}
+        {{--<hr>
+        {{-- class="text-center">
+            <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary spinner-button">
+                <span class="indicator-label">Submit</span>
+            </button>
+        </div>--}}
             <!--end::Actions-->
         </form>
 
