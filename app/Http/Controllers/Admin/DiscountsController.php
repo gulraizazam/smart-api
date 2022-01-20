@@ -453,7 +453,7 @@ class DiscountsController extends Controller
 
         $Services = $parentGroups->nodeList;
 
-        $records['active_filters'] = GeneralFunctions::getActiveFilters($filename);
+        $records['active_filters'] = Filters::all(Auth::User()->id, $filename);
 
         $records['filter_values'] = [
             'services' => $Services,

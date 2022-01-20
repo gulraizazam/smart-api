@@ -308,18 +308,4 @@ class GeneralFunctions
         return $options;
     }
 
-    public static function getActiveFilters($fileName) {
-
-        $filters = Filters::all(Auth::User()->id, $fileName);
-
-        if (isset($filters['created_from'])) {
-            $filters['created_from'] = date('m/d/Y', strtotime($filters['created_from']));
-        }
-        if (isset($filters['created_to'])) {
-            $filters['created_to'] = date('m/d/Y', strtotime($filters['created_to']));
-        }
-
-        return $filters;
-    }
-
 }

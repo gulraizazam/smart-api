@@ -137,7 +137,7 @@ class CentreTargetsController extends Controller
             $years[$value] = $value;
         }
 
-        $records['active_filters'] = GeneralFunctions::getActiveFilters($filename);
+        $records['active_filters'] = Filters::all(Auth::user()->id, $filename);;
 
         $records['filter_values'] = [
             'months' => $months,
