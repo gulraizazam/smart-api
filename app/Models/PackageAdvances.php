@@ -1,28 +1,29 @@
 <?php
-	
+
 	namespace App\Models;
-	
+
 	use App\Helpers\Filters;
-	use App\Models\AuditTrails;
+    use App\Helpers\GeneralFunctions;
+    use App\Models\AuditTrails;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Http\Request;
 	use Auth;
 	use Illuminate\Database\Eloquent\SoftDeletes;
 	use PHPUnit\Util\Filter;
 	use Carbon\Carbon;
-	
+
 	class PackageAdvances extends BaseModal
 	{
 		use SoftDeletes;
-		
+
 		protected $fillable = ['cash_flow', 'cash_amount', 'active', 'patient_id', 'payment_mode_id', 'account_id', 'appointment_type_id', 'appointment_id','location_id', 'created_by', 'updated_by', 'created_at', 'updated_at', 'package_id', 'deleted_at','invoice_id','is_cancel','is_tax'];
-		
+
 		protected static $_fillable = ['cash_flow', 'cash_amount', 'active', 'patient_id', 'payment_mode_id', 'appointment_type_id', 'appointment_id','location_id', 'created_by', 'updated_by', 'package_id','invoice_id','is_cancel','is_tax', 'created_at', 'updated_at', 'deleted_at'];
-		
+
 		protected $table = 'package_advances';
-		
+
 		protected static $_table = 'package_advances';
-		
+
 		/*
 		 * get the payment modes
 		 * */
@@ -30,7 +31,7 @@
 		{
 			return $this->belongsTo('App\Models\PaymentModes', 'payment_mode_id')->withTrashed();
 		}
-		
+
 		/*
 		 * get the payment modes
 		 * */
@@ -45,7 +46,7 @@
 		{
 			return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
 		}
-		
+
 		/*
 		* get the user
 		* */
@@ -53,7 +54,7 @@
 		{
 			return $this->belongsTo('App\User', 'patient_id')->withTrashed();
 		}
-		
+
 		/*
 		* get the Invoice information
 		*/
@@ -61,7 +62,7 @@
 		{
 			return $this->belongsTo('App\Models\Invoices', 'invoice_id')->withTrashed();
 		}
-		
+
 		/*
 		* get the appointment information
 		*/
@@ -69,7 +70,7 @@
 		{
 			return $this->belongsTo('App\Models\Appointments', 'appointment_id')->withTrashed();
 		}
-		
+
 		/*
 		 * Create Record
 		 *
@@ -81,14 +82,14 @@
 		static public function createRecord($data, $parent_data)
 		{
 			$parent_id = $parent_data->id;
-			
+
 			$record = self::create($data);
-			
+
 			AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parent_id);
-			
+
 			return $record;
 		}
-		
+
 		/*
 		 * Create Record
 		 *
@@ -100,12 +101,12 @@
 		static public function createRecord_forinvoice($data)
 		{
 			$record = self::create($data);
-			
+
 			AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-			
+
 			return $record;
 		}
-		
+
 		/*
 		 * Update Record
 		 *
@@ -116,18 +117,18 @@
 		 * */
 		static public function updateRecord($data, $parent_data)
 		{
-			
+
 			$id = $parent_data->id;
-			
+
 			$record = self::create($data);
-			
+
 			$old_data = '0';
-			
+
 			AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
-			
+
 			return $record;
 		}
-		
+
 		/*
 		 * Update Record from treatment plan finance edit
 		 *
@@ -135,7 +136,7 @@
 		 *
 		 * $return mixed
 		 */
-		
+
 		static public function updateRecordFinanceedit($request,$account_id,$amount_status)
 		{
 			$old_data = (self::find($request->package_advances_id))->toArray();
@@ -145,59 +146,59 @@
 			$data['payment_mode_id'] = $request->payment_mode_id;
 			$data['created_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
 			$data['updated_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
-			
+
 			$record = self::where([
 				'id' => $request->package_advances_id,
 				'account_id' => $account_id
 			])->first();
-			
+
 			if (!$record) {
 				return null;
 			}
-			
+
 			$record->update($data);
-			
+
 			AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $request->package_advances_id);
-			
+
 			return true;
 		}
-		
-		
+
+
 		/*
 		 * Create Record
 		 *
 		 * */
 		static public function createRecord_onlyadvances($data)
 		{
-			
+
 			$record = self::create($data);
-			
+
 			AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-			
+
 			return $record;
 		}
-		
+
 		/*
 		 * update Record
 		 *
 		 * */
 		static public function updateRecord_onlyadvances($data, $id)
 		{
-			
+
 			$old_data = (PackageAdvances::find($id))->toArray();
-			
+
 			$record = self::where([
 				'id' => $id,
 			])->first();
-			
+
 			$record->update($data);
-			
+
 			AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
-			
+
 			return $record;
 		}
-		
-		
+
+
 		/**
 		 * inactive Record
 		 *
@@ -207,23 +208,23 @@
 		 */
 		static public function inactiveRecord($id)
 		{
-			
+
 			$packagesadvances = PackageAdvances::getData($id);
-			
+
 			if (!$packagesadvances) {
 				flash('Resource not found.')->error()->important();
 				return redirect()->route('admin.packageadvances.index');
 			}
-			
+
 			$record = $packagesadvances->update(['active' => 0]);
-			
+
 			flash('Record has been inactivated successfully.')->success()->important();
-			
+
 			AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-			
+
 			return $record;
 		}
-		
+
 		/**
 		 * active Record
 		 *
@@ -233,24 +234,24 @@
 		 */
 		static function activeRecord($id)
 		{
-			
+
 			$packagesadvances = PackageAdvances::getData($id);
-			
+
 			if (!$packagesadvances) {
-				
+
 				flash('Resource not found.')->error()->important();
 				return redirect()->route('admin.packagesadvances.index');
 			}
-			
+
 			$record = $packagesadvances->update(['active' => 1]);
-			
+
 			flash('Record has been activated successfully.')->success()->important();
-			
+
 			AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-			
+
 			return $record;
 		}
-		
+
 		/**
 		 * Delete Record
 		 *
@@ -261,51 +262,51 @@
 		static public function DeleteRecord($id)
 		{
 			$packagesadvances = PackageAdvances::getData($id);
-			
+
 			if (!$packagesadvances) {
-				
+
 				flash('Resource not found.')->error()->important();
 				return redirect()->route('admin.packagesadvances.index');
 			}
-			
+
 			// Check if child records exists or not, If exist then disallow to delete it.
 			if (PackageAdvances::isChildExists($id, Auth::User()->account_id)) {
-				
+
 				flash('Child records exist, unable to delete resource')->error()->important();
 				return redirect()->route('admin.packagesadvances.index');
 			}
-			
+
 			$record = $packagesadvances->delete();
-			
+
 			//log request for delete for audit trail
-			
+
 			AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-			
+
 			flash('Record has been deleted successfully.')->success()->important();
-			
+
 			return $record;
-			
+
 		}
-		
+
 		/*
 		 *Delete the rocord of cash in finance editing
 		 */
 		static public function deletefinaceRecord($request){
-			
+
 			$package_advance = Self::withTrashed()->find($request->package_advance_id);
-			
-			
+
+
 			$record = $package_advance->delete();
-			
+
 			$data = $package_advance->toArray() ;
 
 //        AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $request->package_advance_id);
-			
+
 			AuditTrails::softDeleteEventLogger(self::$_table, 'delete', $data, self::$_fillable, $request->package_advance_id );
-			
+
 			return $record;
 		}
-		
+
 		/**
 		 * Cancel Record
 		 *
@@ -314,23 +315,23 @@
 		 * @return (mixed)
 		 */
 		static public function CancelRecord($id,$account_id){
-			
+
 			$old_data = (PackageAdvances::find($id))->toArray();
-			
+
 			$record = self::where([
 				'id' => $id,
 				'account_id' => $account_id
 			])->first();
-			
+
 			if (!$record) {
 				return null;
 			}
 			$record->update(['is_cancel' => '1']);
-			
+
 			$data = (PackageAdvances::find($id))->toArray();
-			
+
 			//AuditTrails::EditEventLogger(self::$_table, 'cancel', $data, self::$_fillable, $old_data, $id);
-			
+
 			return $record;
 		}
 		/**
@@ -351,7 +352,7 @@
 			//
 			//        return false;
 		}
-		
+
 		/**
 		 * Get Total Records
 		 *
@@ -362,16 +363,16 @@
 		 */
 		static public function getTotalRecords(Request $request, $account_id = false, $id = false, $apply_filter = false, $filename )
 		{
-			
+
 			$where = self::filters_packageAdvances( $request , $account_id , $id , $apply_filter,$filename ) ;
-			
+
 			if (count($where)) {
 				return self::where($where)->count();
 			} else {
 				return self::count();
 			}
 		}
-		
+
 		/**
 		 * Get Records
 		 *
@@ -384,7 +385,7 @@
 		 */
 		static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false , $apply_filter = false,$filename )
 		{
-			
+
 			$where = self::filters_packageAdvances( $request , $account_id , $id , $apply_filter, $filename ) ;
 			if (count($where)) {
 				return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
@@ -392,10 +393,14 @@
 				return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
 			}
 		}
-		
+
 		static public function filters_packageAdvances( $request , $account_id , $id = false , $apply_filter = false,$filename ){
-			$where = array();
-			
+
+
+            $where = array();
+
+            $filters = getFilters($request->all());
+
 			if($id != false){
 				$where[] = array(
 					'patient_id',
@@ -416,7 +421,7 @@
 					}
 				}
 			}
-			
+
 			if ($account_id) {
 				$where[] = array(
 					'account_id',
@@ -437,13 +442,13 @@
 					}
 				}
 			}
-			if ($request->get('patient_id') && $request->get('patient_id') != '') {
+			if (hasFilter($filters, 'patient_id')) {
 				$where[] = array(
 					'patient_id',
 					'=',
-					$request->get('patient_id')
+                    $filters['patient_id']
 				);
-				Filters::put(Auth::user()->id , $filename, 'patient_id', $request->get('patient_id'));
+				Filters::put(Auth::user()->id , $filename, 'patient_id',  $filters['patient_id']);
 			} else {
 				if ( $apply_filter ){
 					Filters::forget( Auth::user()->id , $filename, 'patient_id');
@@ -457,57 +462,82 @@
 					}
 				}
 			}
-			if ($request->get('package_id')) {
+			if (hasFilter($filters, 'package_id')) {
 				$where[] = array(
 					'package_id',
 					'like',
-					'%' . $request->get('package_id') . '%'
+					'%' . $filters['package_id'] . '%'
 				);
 			}
-			if ($request->get('id')) {
+
+            /*if (hasFilter($filters, 'id')) {
 				$where[] = array(
 					'patient_id',
 					'like',
-					'%' . \App\Helpers\GeneralFunctions::patientSearch($request->get('id')) . '%'
+					'%' . \App\Helpers\GeneralFunctions::patientSearch($filters['id']) . '%'
 				);
-			}
-			if ($request->get('cash_flow')) {
+			}*/
+
+
+            if (hasFilter($filters, 'id')) {
+                $where[] = array(
+                    'patient_id',
+                    'like',
+                    '%' . GeneralFunctions::patientSearch($filters['id']) . '%'
+                );
+                Filters::put(Auth::user()->id , $filename, 'id',  $filters['id']);
+            } else {
+                if ( $apply_filter ){
+                    Filters::forget( Auth::user()->id , $filename, 'id');
+                } else {
+                    if (Filters::get(Auth::user()->id , $filename , 'id')){
+                        $where[] = array(
+                            'patient_id',
+                            'like',
+                            '%' . GeneralFunctions::patientSearch(Filters::get(Auth::user()->id , $filename, 'id')) . '%'
+                        );
+                    }
+                }
+            }
+
+
+			if (hasFilter($filters, 'cash_flow')) {
 				$where[] = array(
 					'cash_flow',
 					'like',
-					'%' . $request->get('cash_flow') . '%'
+					'%' . $filters['cash_flow'] . '%'
 				);
 			}
-			if ($request->get('payment_mode_id')) {
+			if (hasFilter($filters, 'payment_mode_id')) {
 				$where[] = array(
 					'payment_mode_id',
 					'like',
-					'%' . $request->get('payment_mode_id') . '%'
+					'%' . $filters['payment_mode_id'] . '%'
 				);
 			}
-			if ($request->get('is_refund') != '') {
+			if (hasFilter($filters, 'is_refund')) {
 				$where[] = array(
 					'is_refund',
 					'=',
-					$request->get('is_refund')
+                    $filters['is_refund']
 				);
 			}
-			if ($request->get('is_cancel') != '') {
+			if (hasFilter($filters, 'is_cancel')) {
 				$where[] = array(
 					'is_cancel',
 					'=',
-					$request->get('is_cancel')
+					$filters['is_cancel']
 				);
 			}
-			
-			
-			if ($request->get('created_from') && $request->get('created_from') != '') {
+
+
+			if (hasFilter($filters, 'created_from')) {
 				$where[] = array(
 					'created_at',
 					'>=',
-					$request->get('created_from') . ' 00:00:00'
+                    $filters['created_from'] . ' 00:00:00'
 				);
-				Filters::put(Auth::User()->id, $filename, 'created_from', $request->get('created_from') . ' 00:00:00');
+				Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::User()->id, $filename, 'created_from');
@@ -521,14 +551,14 @@
 					}
 				}
 			}
-			
-			if ($request->get('created_to') != '') {
+
+			if (hasFilter($filters, 'created_to')) {
 				$where[] = array(
 					'created_at',
 					'<=',
-					$request->get('created_to') . ' 23:59:59'
+                    $filters['created_to'] . ' 23:59:59'
 				);
-				Filters::put(Auth::User()->id, $filename, 'created_to', $request->get('created_to') . ' 23:59:59');
+				Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::User()->id, $filename, 'created_to');
@@ -544,7 +574,7 @@
 			}
 			return $where ;
 		}
-		
+
 		static public function getAppointmentPackage($appointment_id, $patient_id, $id = null){
 			if (is_null($id)) {
 				$cash_amount=self::where([
@@ -560,7 +590,7 @@
 					['cash_flow', '=', 'out']
 				])->value('cash_amount');
 			}
-			
+
 			echo $cash_amount;
 		}
 	}

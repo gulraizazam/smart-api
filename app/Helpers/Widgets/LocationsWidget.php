@@ -222,7 +222,7 @@ class LocationsWidget
                     }
                     foreach ($centers as $centerlives) {
                         $locationchecked = Locations::find($centerlives);
-                        if (!in_array($locationchecked->region_id, $array1)) {
+                        if ($locationchecked && !in_array($locationchecked->region_id, $array1)) {
                             $location_array_1[] = $centerlives;
                         }
                     }

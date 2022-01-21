@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
+use App\Helpers\GeneralFunctions;
 use App\Models\PackageAdvances;
 use App\Models\Packages;
 use Illuminate\Http\Request;
@@ -36,19 +37,6 @@ class PackageAdvancesController extends Controller
         $package = Packages::get()->pluck('name', 'id');
         $package->prepend('All', '');
 
-        $filters = Filters::all(Auth::User()->id, 'packageAdvances');
-
-        if($user_id = Filters::get(Auth::User()->id, 'packageAdvances', 'patient_id')) {
-            $patient = User::where(array(
-                'id' => $user_id
-            ))->first();
-            if($patient) {
-                $patient = $patient->toArray();
-            }
-        } else {
-            $patient = [];
-        }
-
         $total_cash_in = PackageAdvances::where('cash_flow', '=', 'in')->sum('cash_amount');
         $total_cash_out = PackageAdvances::where('cash_flow', '=', 'out')->sum('cash_amount');
 
@@ -64,39 +52,7 @@ class PackageAdvancesController extends Controller
             'total_cash_in' => $total_cash_in,
             'total_cash_out' => $total_cash_out,
             'balance' => $balance,
-            'filters' => $filters,
-            'patient' => $patient
         ], 'admin.packagesadvances.index');
-
-    }
-
-    public function getFilterData() {
-
-        $paymentmodes = PaymentModes::get()->pluck('name', 'id');
-        $paymentmodes->prepend('All', '');
-
-        $package = Packages::get()->pluck('name', 'id');
-        $package->prepend('All', '');
-
-        $filters = Filters::all(Auth::User()->id, 'packageAdvances');
-
-        if($user_id = Filters::get(Auth::User()->id, 'packageAdvances', 'patient_id')) {
-            $patient = User::where(array(
-                'id' => $user_id
-            ))->first();
-            if($patient) {
-                $patient = $patient->toArray();
-            }
-        } else {
-            $patient = [];
-        }
-
-        $total_cash_in = PackageAdvances::where('cash_flow', '=', 'in')->sum('cash_amount');
-        $total_cash_out = PackageAdvances::where('cash_flow', '=', 'out')->sum('cash_amount');
-
-        $balance = $total_cash_in - $total_cash_out;
-
-        compact('paymentmodes', 'package', 'total_cash_in', 'total_cash_out', 'balance', 'filters', 'patient');
 
     }
 
@@ -272,6 +228,8 @@ class PackageAdvancesController extends Controller
 
         $packagesadvances = PackageAdvances::getRecords( $request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, false, $apply_filter,$jason_var );
 
+        $records = $this->getFilterData($records);
+
         if ($packagesadvances) {
             $balance = 0;
             foreach ($packagesadvances as $packagesadvances) {
@@ -320,16 +278,16 @@ class PackageAdvancesController extends Controller
                         $cash_in = '-';
                     }
                     $records["data"][] = array(
-                        'patient_id' => \App\Helpers\GeneralFunctions::patientSearchStringAdd($packagesadvances->user->id),
+                        'patient_id' => GeneralFunctions::patientSearchStringAdd($packagesadvances->user->id),
                         'patient' => $packagesadvances->user->name,
-                        'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
+                        'phone' => GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
                         'transtype' => $transtype,
                         'cash_in' => $cash_in,
                         'cash_out' => $cash_out,
                         'balance' => number_format($balance),
                         'cash_amount' => '1',
                         'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A'),
-                        'actions' => view('admin.packagesadvances.actions', compact('packagesadvances'))->render(),
+                        //'actions' => view('admin.packagesadvances.actions', compact('packagesadvances'))->render(),
                     );
                 } else {
                     $iTotalRecords--;
@@ -341,6 +299,32 @@ class PackageAdvancesController extends Controller
         $records["recordsFiltered"] = $iTotalRecords;
 
         return response()->json($records);
+    }
+
+    private function getFilterData($records) {
+
+        $filters = Filters::all(Auth::User()->id, 'packageAdvances');
+
+        if($user_id = Filters::get(Auth::User()->id, 'packageAdvances', 'patient_id')) {
+            $patient = User::where(array(
+                'id' => $user_id
+            ))->first();
+            if($patient) {
+                $patient = $patient->toArray();
+            }
+        } else {
+            $patient = [];
+        }
+
+
+        $records['active_filters'] = $filters;
+
+        $records['filter_values'] = [
+            'patient' => $patient,
+        ];
+
+        return $records;
+
     }
 
     /**

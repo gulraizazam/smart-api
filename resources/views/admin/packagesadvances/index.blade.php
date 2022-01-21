@@ -65,8 +65,30 @@
                     </div>
 
                     <div class="card-body">
+                        <table class="table table-bordered ">
+                            <thead>
+                            <tr role="row" class="heading">
+                                <th width="20%">Total Cash In</th>
+                                <th width="20%">Total Cash Out</th>
+                                <th width="20%">Balance</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><?php echo number_format($total_cash_in); ?></td>
+                                <td><?php echo number_format($total_cash_out); ?></td>
+                                <td><?php echo number_format($balance); ?></td>
+                            </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="clearfix"></div>
+
+                    <div class="card-body">
                         <!--begin::Search Form-->
-                    @include('admin.packagesadvances.filters')
+                        @include('admin.packagesadvances.filters')
                     <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -86,7 +108,7 @@
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="centre_targets_add">
 
-            @include('admin.packagesadvances.create')
+            {{--@include('admin.packagesadvances.create')--}}
 
         </div>
         <!--end::Modal dialog-->
@@ -98,6 +120,7 @@
 
     @push('js')
         <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/finances.js')}}"></script>
+        <script src="{{asset('assets/js/pages/users/ajaxbaseselect2.js')}}"></script>
     @endpush
 
 @endsection

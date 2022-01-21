@@ -3,15 +3,13 @@
     <div class="row mb-6">
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Year:</label>
-            <select class="form-control filter-field select2" id="search_year">
-            </select>
+            <label>Patient ID:</label>
+            <input class="form-control filter-field" id="search_patient_id" name="patient_id">
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Month:</label>
-            <select class="form-control filter-field select2" id="search_month">
-            </select>
+            <label>Patient:</label>
+            <select class="form-control filter-field select2" id="search_patient"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">

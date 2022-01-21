@@ -64,13 +64,10 @@ function applyFilters(datatable) {
 
         let filters =  {
             delete: '',
-            name: $("#search_name").val(),
-            resource_type_id: $("#search_resource_type_id").val(),
-            location_id: $("#search_location_id").val(),
-            machine_type_id: $("#search_machine_type_id").val(),
+            id: $("#search_patient_id").val(),
+            patient_id: $("#search_patient").val(),
             created_from: $("#search_created_from").val(),
             created_to: $("#search_created_to").val(),
-            status: $("#search_status").val(),
             filter: 'filter',
         }
 
@@ -85,13 +82,10 @@ function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
-            name: '',
-            resource_type_id: '',
-            location_id: '',
-            machine_type_id: '',
+            id: '',
+            patient_id: '',
             created_from: '',
             created_to: '',
-            status: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -100,49 +94,20 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
+
     try {
 
-        let status = filter_values.status;
-        let locations = filter_values.locations;
-        let resource_types = filter_values.resource_types;
-        let machines = filter_values.machines;
+        let patients = filter_values.patient;
 
-        let status_options = '<option value="">All</option>';
-        let resource_options = '<option value="">All</option>';
-        let location_options = '<option value="">All</option>';
-        let machines_options = '<option value="">All</option>';
-
-        Object.entries(status).forEach(function (value, index) {
-            status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
-
-        Object.entries(locations).forEach(function (value, index) {
-            location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
-
-        Object.entries(resource_types).forEach(function (value, index) {
-            resource_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
-
-        Object.entries(machines).forEach(function (value, index) {
-            machines_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
-
-
-        $("#search_status").html(status_options);
-        $("#search_resource_type_id").html(resource_options);
-        $("#search_location_id").html(location_options);
-        $("#search_machine_type_id").html(machines_options);
-
-        $("#search_name").val(active_filters.name);
-        $("#search_resource_type_id").val(active_filters.resource_type_id);
-        $("#search_location_id").val(active_filters.location_id);
-        $("#search_machine_type_id").val(active_filters.machine_type_id);
+        $("#search_patient_id").val(active_filters.id);
         $("#search_created_from").val(active_filters.created_from);
         $("#search_created_to").val(active_filters.created_to);
-        $("#search_status").val(active_filters.status);
 
-        hideShowAdvanceFilters(active_filters);
+        let patient_options = "";
+        Object.values(patients).forEach( function (value) {
+            patient_options += '<option value="'+value.id+'">'+value.name+'-'+value.phone+'</option>';
+        });
+        $("#search_patient").html(active_filters.created_to);
 
     } catch (error) {
         showException(error);
