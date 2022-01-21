@@ -154,7 +154,7 @@ class LeadStatusesController extends Controller
         if (!Gate::allows('lead_statuses_sort')) {
             return abort(401);
         }
-        return view('admin.lead_statuses.Sort');
+        return view('admin.lead_statuses.sort');
     }
 
     /**

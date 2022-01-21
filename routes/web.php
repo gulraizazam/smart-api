@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AppointmentStatusesController;
+use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\DoctorsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
@@ -115,6 +116,7 @@ use App\Http\Controllers\Admin\PackageAdvancesController;
 
         // Payment Modes
         Route::get('payment_modes',[PaymentModesController::class,'index'])->name('payment_modes.index');
+        Route::get('payment_modes/sort',[PaymentModesController::class,'sortOrder'])->name('payment_modes.sort');
 
         // Regions
         Route::get('regions',[RegionsController::class,'index'])->name('regions.index');
@@ -162,6 +164,10 @@ use App\Http\Controllers\Admin\PackageAdvancesController;
         //Discount route Start
         Route::resource('discounts', DiscountsController::class)->only('index');
         //Discount route end
+
+        //Packages route Start
+        Route::get('bundles',[BundlesController::class,'index'])->name('bundles.index');
+        //Packages route end
 
         //Centre Target
         Route::resource('centre_targets', CentreTargetsController::class)->only('index');
