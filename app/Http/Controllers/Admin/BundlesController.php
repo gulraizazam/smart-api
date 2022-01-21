@@ -55,15 +55,8 @@ class BundlesController extends Controller
             if (!Gate::allows('packages_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $apply_filter = false;
             $filters = getFilters($request->all());
-            if (hasFilter($filters, 'filter')) {
-                if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                    Filters::flush(Auth::User()->id, 'bundles');
-                } else if ($filters['filter'] == 'filter') {
-                    $apply_filter = true;
-                }
-            }
+            $apply_filter = checkFilters($filters, 'bundles');
 
             $records = array();
             $records["data"] = array();

@@ -354,7 +354,7 @@ class Bundles extends BaseModal
             }
         }
 
-        if (hasFilter($filters, 'status') && ($filters['status'] == 0 || $filters['status'] == 1)) {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',
