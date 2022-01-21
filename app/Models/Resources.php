@@ -664,7 +664,7 @@ class Resources extends BaseModal
             $where[] = array(
                 'resources.created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
             Filters::put(Auth::User()->id, 'resources', 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {

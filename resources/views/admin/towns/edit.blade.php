@@ -22,7 +22,7 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_towns_form" method="post" action="">
+        <form id="modal_edit_towns_form" method="post" action="">
             <!--begin::Scroll-->
             @method('put')
 
@@ -30,15 +30,15 @@
 
                 <div class="form-group">
                     <div class="row">
-                        <div class="fv-row col-md-6">
+                        <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input id="town_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input id="edit_town_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
 
-                        <div class="fv-row col-md-6">
+                        <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cities </label>
-                            <select id="town_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
+                            <select id="edit_town_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
 
                             </select>
                         </div>
@@ -51,7 +51,7 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary" >
+                <button type="submit" class="btn btn-primary spinner-button" >
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>

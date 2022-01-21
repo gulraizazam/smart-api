@@ -57,10 +57,10 @@ var AddTownValidation = function () {
     };
 }();
 
-var TownValidation = function () {
+var EditTownValidation = function () {
     // Private functions
     var validation = function () {
-        let modal_id = 'modal_towns_form';
+        let modal_id = 'modal_edit_towns_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
@@ -117,5 +117,5 @@ var TownValidation = function () {
 
 jQuery(document).ready(function() {
     AddTownValidation.init();
-    TownValidation.init();
+    EditTownValidation.init();
 });

@@ -53,7 +53,7 @@ var AddUserValidation = function () {
                 } else {
                     toastr.error(response.message);
                 }
-            });
+            }, form);
         });
     }
 

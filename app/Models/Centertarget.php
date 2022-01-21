@@ -128,7 +128,7 @@ class Centertarget extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'year')) {
+        if (hasFilter($filters, 'year')) {
             $where[] = array(
                 'year',
                 '=',
@@ -148,7 +148,7 @@ class Centertarget extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'month')) {
+        if (hasFilter($filters, 'month')) {
             $where[] = array(
                 'month',
                 '=',
@@ -168,7 +168,7 @@ class Centertarget extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'created_at',
                 '>=',
@@ -188,7 +188,7 @@ class Centertarget extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'created_at',
                 '<=',

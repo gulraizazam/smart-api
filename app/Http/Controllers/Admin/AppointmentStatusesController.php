@@ -50,21 +50,18 @@ class AppointmentStatusesController extends Controller
             if (!Gate::allows('appointment_statuses_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $apply_filter = false;
+
+            $filename = 'appointment_statuses';
+
             $filters = getFilters($request->all());
-            if (hasFilter($filters, 'filter')) {
-                if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                    Filters::flush(Auth::User()->id, 'appointment_statuses');
-                } else if ($filters['filter'] == 'filter') {
-                    $apply_filter = true;
-                }
-            }
+
+            $apply_filter = checkFilters($filters, $filename);
 
             $records = array();
             $records["data"] = array();
 
             list($orderBy, $order) = getSortBy($request);
-            if (count($filters) > 0 && hasFilter($filters, 'delete')) {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $AppointmentStatuses = AppointmentStatuses::getBulkData($ids);
                 if ($AppointmentStatuses) {
@@ -89,6 +86,7 @@ class AppointmentStatusesController extends Controller
             $AppointmentStatuses = AppointmentStatuses::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
             if ($AppointmentStatuses) {
+
                 foreach ($AppointmentStatuses as $appointment_statuse) {
                     $appointment_statuse->parent_id = ($appointment_statuse->parent_id && array_key_exists($appointment_statuse->parent_id, $allAppointmentStatuses)) ? $allAppointmentStatuses[$appointment_statuse->parent_id]->name : '-';
                     $appointment_statuse->is_comment = ($appointment_statuse->is_comment) ? 'Yes' : 'No';
@@ -108,7 +106,7 @@ class AppointmentStatusesController extends Controller
                 'inactive' => Gate::allows('appointment_statuses_inactive'),
             ];
 
-            $filters = Filters::all(Auth::User()->id, 'appointment_statuses');
+            $filters = Filters::all(Auth::user()->id, 'appointment_statuses');
             $records['active_filters'] = $filters;
             $parentAppointmentStatuses = AppointmentStatuses::getParentRecords(false, Auth::User()->account_id, [] , true);
             $records['filter_values'] = [

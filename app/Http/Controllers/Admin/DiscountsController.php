@@ -156,7 +156,7 @@ class DiscountsController extends Controller
             $apply_filter = checkFilters($filters, $filename);
 
 
-            if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Discounts = Discounts::whereIn('id', $ids);
                 if ($Discounts) {
@@ -249,7 +249,7 @@ class DiscountsController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -270,7 +270,7 @@ class DiscountsController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'type')) {
+        if (hasFilter($filters, 'type')) {
             $where[] = array(
                 'type',
                 'like',
@@ -291,7 +291,7 @@ class DiscountsController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'amount')) {
+        if (hasFilter($filters, 'amount')) {
             $where[] = array(
                 'amount',
                 'like',
@@ -312,7 +312,7 @@ class DiscountsController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'discount_type')) {
+        if (hasFilter($filters, 'discount_type')) {
             $where[] = array(
                 'discount_type',
                 '=',
@@ -333,7 +333,7 @@ class DiscountsController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'created_at',
                 '>=',
@@ -354,7 +354,7 @@ class DiscountsController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'created_at',
                 '<=',
@@ -374,7 +374,7 @@ class DiscountsController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'startdate')) {
+        if (hasFilter($filters, 'startdate')) {
             $where[] = array(
                 'start',
                 '>=',
@@ -395,7 +395,7 @@ class DiscountsController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'enddate')) {
+        if (hasFilter($filters, 'enddate')) {
             $where[] = array(
                 'end',
                 '<=',
@@ -416,7 +416,7 @@ class DiscountsController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',

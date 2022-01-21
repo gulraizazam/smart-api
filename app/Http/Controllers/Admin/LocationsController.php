@@ -172,10 +172,8 @@ class LocationsController extends Controller
             ['active', '=', '1'],
             ['is_featured', '=', '1']
         ])->get()->pluck('name', 'id');
-        $cities->prepend('Select a City', '');
 
         $regions = Regions::getActiveSorted(ACL::getUserRegions());
-        $regions->prepend('Select a Region', '');
 
         /* Create Nodes with Parents */
         $parentGroups = new NodesTree();
@@ -271,6 +269,7 @@ class LocationsController extends Controller
                 }
             }
             $user_already_have = UserHasLocations::where('location_id', '=', $location->id)->select('user_id')->groupby('user_id')->get();
+            $user_already_have_location = [];
             foreach ($user_already_have as $users) {
                 $user_already_have_location[] = $users->user_id;
             }

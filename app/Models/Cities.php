@@ -191,7 +191,7 @@ class Cities extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::cities_filters($request, $account_id, $apply_filter);
+        $where = self::cities_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
             return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
@@ -233,7 +233,7 @@ class Cities extends BaseModal
                 }
             }
         }
-        if (count($filters) && $filters['name'] != '') {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -253,7 +253,7 @@ class Cities extends BaseModal
                 }
             }
         }
-        if (count($filters) && $filters['is_featured'] != '') {
+        if (hasFilter($filters, 'is_featured')) {
             $where[] = array(
                 'is_featured',
                 '=',
@@ -273,7 +273,7 @@ class Cities extends BaseModal
                 }
             }
         }
-        if (count($filters) && $filters['region_id'] != '') {
+        if (hasFilter($filters, 'region_id')) {
             $where[] = array(
                 'region_id',
                 '=',
@@ -299,7 +299,7 @@ class Cities extends BaseModal
             'custom'
         );
 
-        if (count($filters) && $filters['status'] != '') {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',

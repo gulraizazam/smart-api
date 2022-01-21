@@ -468,7 +468,6 @@ function setFilters(filter_values, active_filters) {
 
     $("#search_name").val(active_filters.name);
     $("#search_phone").val(active_filters.phone);
-    $("#search_gender").val(active_filters.gender);
     $("#search_commission").val(active_filters.commission);
     $("#search_email").val(active_filters.email);
     $("#search_created_from").val(active_filters.created_from);
@@ -476,17 +475,15 @@ function setFilters(filter_values, active_filters) {
 
     $("#search_role").val(active_filters.role_id);
     $("#search_status").val(active_filters.status);
+    $("#search_gender").val(active_filters.gender).change();
 
     hideShowAdvanceFilters(active_filters);
 }
 
 function hideShowAdvanceFilters(active_filters) {
-    if (active_filters.location_id != ''
-        || active_filters.gender != ''
-        || active_filters.commission != ''
-        || active_filters.email != ''
-        || active_filters.created_from != ''
-        || active_filters.created_to != '') {
+    if ((typeof active_filters.gender !== 'undefined' && active_filters.gender != '')
+        || (typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
+        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')) {
 
         $(".advance-filters").show();
         $(".advance-arrow").addClass("fa fa-caret-down");

@@ -5,7 +5,7 @@ use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\DoctorsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
-use App\Http\Controllers\admin\LogsController;
+use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;

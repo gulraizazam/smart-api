@@ -67,21 +67,18 @@ class DoctorsController extends Controller
             if (!Gate::allows('lead_sources_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $apply_filter = false;
+
+            $filename = 'doctors';
+
             $filters = getFilters($request->all());
-            if (hasFilter($filters, 'filter')) {
-                if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                    Filters::flush(Auth::User()->id, 'doctors');
-                } else if ($filters['filter'] == 'filter') {
-                    $apply_filter = true;
-                }
-            }
+
+            $apply_filter = checkFilters($filters, $filename);
 
             $records = [];
             $records['data'] = [];
 
             list($orderBy, $order) = getSortBy($request);
-            if (count($filters) > 0 && hasFilter($filters, 'delete')) {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $users = User::getBulkData($ids);
                 if ($users) {
@@ -186,7 +183,7 @@ class DoctorsController extends Controller
             list($orderBy, $order) = getSortBy($request);
 
 
-            if (isset($filters['name']) && $filters['name'] != '') {
+            if (hasFilter($filters, 'name')) {
                 $where[] = [
                     'users.name',
                     'like',
@@ -206,7 +203,7 @@ class DoctorsController extends Controller
                     }
                 }
             }
-            if (isset($filters['email']) && $filters['email'] != '') {
+            if (hasFilter($filters, 'email')) {
                 $where[] = [
                     'users.email',
                     'like',
@@ -227,7 +224,7 @@ class DoctorsController extends Controller
                 }
             }
 
-            if (isset($filters['phone']) && $filters['phone'] != '') {
+            if (hasFilter($filters, 'phone')) {
                 $where[] = [
                     'users.phone',
                     'like',
@@ -248,7 +245,7 @@ class DoctorsController extends Controller
                 }
             }
 
-            if (isset($filters['gender']) && $filters['gender'] != '') {
+            if (hasFilter($filters, 'gender')) {
                 $where[] = [
                     'users.gender',
                     '=',
@@ -268,7 +265,7 @@ class DoctorsController extends Controller
                     }
                 }
             }
-            if (isset($filters['role_id']) && $filters['role_id'] != '') {
+            if (hasFilter($filters, 'role_id')) {
                 $where[] = [
                     'role_has_users.role_id',
                     '=',
@@ -303,12 +300,11 @@ class DoctorsController extends Controller
                 '=',
                 2,
             ];
-            if (isset($filters['created_from']) && $filters['created_from'] != '') {
-                $created_from = Carbon::createFromFormat('m/d/Y', $filters['created_from'])->startOfDay()->toDateTimeString();
+            if (hasFilter($filters, 'created_from')) {
                 $where[] = [
                     'users.created_at',
                     '>=',
-                    $created_from,
+                    $filters['created_from'] . ' 00:00:00',
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'created_from', $filters['created_from']);
             } else {
@@ -317,21 +313,19 @@ class DoctorsController extends Controller
                 } else {
 
                     if (Filters::get(Auth::User()->id, 'doctors', 'created_from')) {
-                        $created_from = Carbon::createFromFormat('m/d/Y', Filters::get(Auth::User()->id, 'doctors', 'created_from'))->startOfDay()->toDateTimeString();
                         $where[] = [
                             'users.created_at',
                             '>=',
-                            $created_from,
+                            Filters::get(Auth::User()->id, 'doctors', 'created_from') . ' 00:00:00',
                         ];
                     }
                 }
             }
-            if (isset($filters['created_to']) && $filters['created_to'] != '') {
-                $created_to = Carbon::createFromFormat('m/d/Y', $filters['created_to'])->endOfDay()->toDateTimeString();
+            if (hasFilter($filters, 'created_to')) {
                 $where[] = [
                     'users.created_at',
                     '<=',
-                    $created_to,
+                    $filters['created_to'] . ' 23:59:59'
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'created_to', $filters['created_to']);
             } else {
@@ -339,17 +333,16 @@ class DoctorsController extends Controller
                     Filters::forget(Auth::User()->id, 'doctors', 'created_to');
                 } else {
                     if (Filters::get(Auth::User()->id, 'doctors', 'created_to')) {
-                        $created_to = Carbon::createFromFormat('m/d/Y', Filters::get(Auth::User()->id, 'doctors', 'created_to'))->endOfDay()->toDateTimeString();
                         $where[] = [
                             'users.created_at',
                             '<=',
-                            $created_to,
+                            Filters::get(Auth::User()->id, 'doctors', 'created_to') . ' 23:59:59',
                         ];
                     }
                 }
             }
 
-            if (isset($filters['status']) && $filters['status'] != '' && ($filters['status'] == 1 || $filters['status'] == 0)) {
+            if (hasFilter($filters, 'status')) {
                 $where[] = [
                     'users.active',
                     '=',

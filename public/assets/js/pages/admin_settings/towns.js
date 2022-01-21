@@ -119,7 +119,7 @@ var table_columns = [
 
     function editRow(url) {
 
-        $("#modal_add_towns").modal("show");
+        $("#modal_edit_towns").modal("show");
 
         $.ajax({
             headers: {
@@ -152,7 +152,7 @@ var table_columns = [
         let cities = response.data.cities;
 
         let action = route('admin.towns.update', {id: town.id});
-        $("#modal_towns_form").attr("action", action);
+        $("#modal_edit_towns_form").attr("action", action);
 
         let options = '<option value="">Select</option>';
 
@@ -161,10 +161,10 @@ var table_columns = [
             options += '<option value="'+value[0]+'">'+value[1]+'</option>';
         });
 
-        $("#town_city_id").html(options);
+        $("#edit_town_city_id").html(options);
 
-        $("#town_name").val(town.name);
-        $("#town_city_id").val(town.city_id);
+        $("#edit_town_name").val(town.name);
+        $("#edit_town_city_id").val(town.city_id);
 
     }
 

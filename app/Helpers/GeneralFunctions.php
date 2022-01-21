@@ -149,8 +149,7 @@ class GeneralFunctions
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $total);
-            if (count($filters) > 0 && hasFilter($filters, 'name')) {
+            if (hasFilter($filters, 'name')) {
                 $where[] = [
                     'name',
                     'like',
@@ -170,7 +169,7 @@ class GeneralFunctions
                     }
                 }
             }
-            if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
+            if (hasFilter($filters, 'status')) {
                 $where[] = [
                     'active',
                     '=',

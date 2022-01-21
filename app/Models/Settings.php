@@ -52,7 +52,7 @@ class Settings extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::settings_filters($request, $account_id, $apply_filter);
+        $where = self::settings_filters($request, $account_id, $apply_filter);
         list($orderBy, $order) = getSortBy($request);
         return self::when(count($where), fn($q) => $q->where($where))
             ->limit($iDisplayLength)
@@ -93,7 +93,7 @@ class Settings extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -113,7 +113,7 @@ class Settings extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'data')) {
+        if (hasFilter($filters, 'data')) {
             $where[] = array(
                 'data',
                 'like',

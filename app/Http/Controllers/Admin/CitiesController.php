@@ -59,21 +59,18 @@ class CitiesController extends Controller
             if (!Gate::allows('cities_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $apply_filter = false;
+
+            $filename = 'cities';
+
             $filters = getFilters($request->all());
-            if (hasFilter($filters, 'filter')) {
-                if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                    Filters::flush(Auth::User()->id, 'cities');
-                } else if ($filters['filter'] == 'filter') {
-                    $apply_filter = true;
-                }
-            }
+
+            $apply_filter = checkFilters($filters, $filename);
 
             $records = array();
             $records["data"] = array();
 
             list($orderBy, $order) = getSortBy($request);
-            if (count($filters) > 0 && hasFilter($filters, 'delete')) {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Cities = Cities::getBulkData($ids);
                 if ($Cities) {
