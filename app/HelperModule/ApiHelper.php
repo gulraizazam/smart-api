@@ -69,7 +69,7 @@ class ApiHelper
         $code = config('constants.api_status.error');
         $msg = 'Something went wrong, please try again later.';
         if (config('app.debug')) {
-            $msg = $e->getMessage();
+            $msg = $e->getMessage(). ' Line '.$e->getLine(). ' File '.$e->getFile();
         }
         return self::apiResponse($code, $msg, false);
     }

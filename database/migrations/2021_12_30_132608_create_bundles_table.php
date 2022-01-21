@@ -21,6 +21,8 @@ class CreateBundlesTable extends Migration
             $table->unsignedBigInteger('total_services')->default(0);
             $table->unsignedTinyInteger('apply_discount')->default(1);
             $table->enum('type', ['single', 'multiple'])->default('multiple');
+            $table->date('start')->nullable();
+            $table->date('end')->nullable();
 
             $table->unsignedTinyInteger('active')->default(1);
             $table->unsignedBigInteger('tax_treatment_type_id');

@@ -1,11 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\AppointmentStatusesController;
+use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\DoctorsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
-use App\Http\Controllers\admin\LogsController;
+use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
@@ -167,7 +168,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('doctors/password/{id}', [DoctorsController::class, 'changePassword'])->name('doctors.change_password');
     Route::patch('doctors/password', [DoctorsController::class, 'savePassword'])->name('doctors.save_password');
     Route::post('doctors/status', [DoctorsController::class, 'status'])->name('doctors.status');
-    Route::resource('doctors', DoctorsController::class)->except(['index','create','show']);
+    Route::resource('doctors', DoctorsController::class)->except(['index', 'create', 'show']);
     Route::get('doctors/locations/{id}', [DoctorsController::class, 'displaylocation'])->name('doctors.location_manage');
     Route::get('doctors/get-service', [DoctorsController::class, 'getservices'])->name('doctors.get_service');
     Route::post('doctors/save_service', [DoctorsController::class, 'saveservices'])->name('doctors.save_service');
@@ -179,7 +180,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('refunds/datatable', [RefundsController::class, 'datatable'])->name('refunds.datatable');
     Route::get('refunds/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refunds.refund_create');
     Route::get('refunds/detail/{id}', [RefundsController::class, 'detail'])->name('refunds.detail');
-    Route::resource('refunds',RefundsController::class)->except('index');
+    Route::resource('refunds', RefundsController::class)->except('index');
 
 
     //Discount route Start
@@ -191,6 +192,13 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('deleteDservice', [DiscountsController::class, 'deleteDservice'])->name('discounts.delete_service');
 
     Route::resource('discounts', DiscountsController::class)->except('index');
+
+    //Packages Route start
+    Route::post('bundles/datatable', [BundlesController::class, 'datatable'])->name('bundles.datatable');
+    Route::post('bundles/status', [BundlesController::class, 'status'])->name('bundles.status');
+    Route::get('bundles/detail/{id}', [BundlesController::class, 'detail'])->name('bundles.detail');
+    Route::resource('bundles', BundlesController::class)->except(['index', 'create', 'show']);
+    //Packages Route End
 
 
     //Centre Target
