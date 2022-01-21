@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\DiscountsController;
+use App\Http\Controllers\Admin\CentreTargetsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -166,5 +167,8 @@ use App\Http\Controllers\Admin\DiscountsController;
         //Packages route Start
         Route::get('bundles',[BundlesController::class,'index'])->name('bundles.index');
         //Packages route end
+
+        //Centre Target
+        Route::resource('centre_targets', CentreTargetsController::class)->only('index');
 
     });

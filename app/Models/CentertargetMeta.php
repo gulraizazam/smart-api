@@ -81,6 +81,10 @@ class CentertargetMeta extends Model
             ['centertarget_id','=',$record_parent->id]
         ])->first();
 
+        if (!$record) {
+            return false;
+        }
+
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['month'] = $record_parent->month;
@@ -92,6 +96,7 @@ class CentertargetMeta extends Model
             $data['target_amount'] = 0;
         }
         $data['centertarget_id'] = $record_parent->id;
+
         $record = $record->update($data);
 
         AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable,$old_data,$data,$parent_id);
