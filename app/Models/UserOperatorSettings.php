@@ -136,7 +136,7 @@ class UserOperatorSettings extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::operators_filters($request, $account_id, $apply_filter);
+        $where = self::operators_filters($request, $account_id, $apply_filter);
         list($orderBy, $order) = getSortBy($request);
         return self::when(count($where), fn($q) => $q->where($where))
             ->limit($iDisplayLength)
@@ -178,7 +178,7 @@ class UserOperatorSettings extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'operator_name')) {
+        if (hasFilter($filters, 'operator_name')) {
             $where[] = array(
                 'operator_name',
                 'like',

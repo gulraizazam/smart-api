@@ -89,7 +89,7 @@ class LeadStatuses extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::lead_statuses_filters($request, $account_id, $apply_filter);
+        $where = self::lead_statuses_filters($request, $account_id, $apply_filter);
         if (count($where)) {
             return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
         } else {
@@ -130,7 +130,7 @@ class LeadStatuses extends BaseModal
                 }
             }
         }
-        if (count($filters) && $filters['name'] != '') {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -151,7 +151,7 @@ class LeadStatuses extends BaseModal
             }
         }
 
-        if (count($filters) && $filters['status'] != '') {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',

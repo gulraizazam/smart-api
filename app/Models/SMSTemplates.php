@@ -51,7 +51,7 @@ class SMSTemplates extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::sms_templates_filters($request, $account_id, $apply_filter);
+        $where = self::sms_templates_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
             return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
@@ -94,7 +94,7 @@ class SMSTemplates extends BaseModal
                 }
             }
         }
-        if (count($filters) && isset($filters['name']) && $filters['name']) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -114,7 +114,7 @@ class SMSTemplates extends BaseModal
                 }
             }
         }
-        if (count($filters) && isset($filters['slug']) && $filters['slug']) {
+        if (hasFilter($filters, 'slug')) {
             $where[] = array(
                 'slug',
                 'like',
@@ -135,7 +135,7 @@ class SMSTemplates extends BaseModal
             }
         }
 
-        if (count($filters) && isset($filters['status']) && ($filters['status']==1 || $filters['status']==0)) {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',

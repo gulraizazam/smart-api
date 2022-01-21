@@ -38,7 +38,7 @@ var UserOperatorSettingsValidation = function () {
                 } else {
                     toastr.error(response.message);
                 }
-            });
+            }, form);
         });
     }
 

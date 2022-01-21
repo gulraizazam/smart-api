@@ -1,0 +1,19 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+    <h4 class="modal-title">@lang('global.app_edit')</h4>
+</div>
+<div class="modal-body">
+    <div class="portlet-body form">
+        <div class="form-group">
+            <div class="form-body">
+                <!-- Starts Form Validation Messages -->
+            @include('partials.messages')
+            <!-- Ends Form Validation Messages -->
+                @include('admin.packagesadvances.update_fields')
+            </div>
+        </div>
+    </div>
+    <script src="{{ url('js/admin/packagesadvances/update.js') }}" type="text/javascript"></script>
+</div>
+
+

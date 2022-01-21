@@ -274,7 +274,7 @@ class ResourcesController extends Controller
             $records = array();
             $records["data"] = array();
 
-            if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $resources = Resources::getBulkData($ids);
                 if ($resources) {
@@ -352,10 +352,10 @@ class ResourcesController extends Controller
         ];
 
         if (isset($filters['created_from'])) {
-            $filters['created_from'] = date('m/d/Y', strtotime($filters['created_from']));
+            $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
         }
         if (isset($filters['created_to'])) {
-            $filters['created_to'] = date('m/d/Y', strtotime($filters['created_to']));
+            $filters['created_to'] = date('Y-m-d', strtotime($filters['created_to']));
         }
 
         $records['active_filters'] = $filters;

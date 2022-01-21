@@ -51,13 +51,11 @@ class Towns extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::towns_filters($request, $account_id, $apply_filter);
+        $where = self::towns_filters($request, $account_id, $apply_filter);
 
-        if (!count($where)) {
-            return self::with('city')->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
-        } else {
-            return self::with('city')->limit($iDisplayLength)->offset($iDisplayStart)->get();
-        }
+        return self::with('city')->when(count($where), fn ($query) =>
+            $query->where($where)
+        )->limit($iDisplayLength)->offset($iDisplayStart)->get();
     }
 
     /**
@@ -97,7 +95,7 @@ class Towns extends BaseModal
                 }
             }
         }
-        if(count($filters) > 0 && hasFilter($filters, 'name')) {
+        if(hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -117,7 +115,7 @@ class Towns extends BaseModal
                 }
             }
         }
-        if(count($filters) > 0 && hasFilter($filters, 'city_id')) {
+        if(hasFilter($filters, 'city_id')) {
             $where[] = array(
                 'city_id',
                 '=',
@@ -137,7 +135,9 @@ class Towns extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
+
+        if (hasFilter($filters, 'status')) {
+
             $where[] = array(
                 'active',
                 '=',
@@ -159,6 +159,7 @@ class Towns extends BaseModal
                 }
             }
         }
+
         return $where;
     }
 

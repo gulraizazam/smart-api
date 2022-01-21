@@ -4,14 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
 use App\Models\Settings;
-use App\Models\UserOperatorSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
-use DB;
-use Auth;
-use Config;
-use Validator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use App\Helpers\Filters;
 
 class SettingsController extends Controller
@@ -56,15 +53,11 @@ class SettingsController extends Controller
     {
         try {
 
-            $apply_filter = false;
+            $filename = 'settings';
             $filters = getFilters($request->all());
-            if (hasFilter($filters, 'filter')) {
-                if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                    Filters::flush(Auth::User()->id, 'settings');
-                } else if ($filters['filter'] == 'filter') {
-                    $apply_filter = true;
-                }
-            }
+
+            $apply_filter = checkFilters($filters, $filename);
+
             $records = array();
             $records["data"] = array();
             list($orderBy, $order) = getSortBy($request);

@@ -64,7 +64,7 @@ class TownController extends Controller
 
         $filters = getFilters($request->all());
 
-        if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
+        if(hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $towns = Towns::getBulkData($ids);
             if ($towns) {
@@ -88,8 +88,6 @@ class TownController extends Controller
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $towns = Towns::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-
-        $Cities = Cities::getAllRecordsDictionary(Auth::User()->account_id);
 
         if ($towns) {
             $records["data"] = $towns;

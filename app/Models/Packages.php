@@ -278,11 +278,7 @@ class Packages extends BaseModal
 
         list($orderBy, $order) = getSortBy($request);
 
-        if (count($where)) {
-            return self::where($where)->whereIn('location_id', ACL::getUserCentres())->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
-        } else {
-            return self::whereIn('location_id', ACL::getUserCentres())->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
-        }
+        return self::when(count($where), fn ($query) => $query->where($where))->whereIn('location_id', ACL::getUserCentres())->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
     }
 
     static public function filters( $request , $account_id , $id = false , $apply_filter , $filename ){
@@ -334,7 +330,7 @@ class Packages extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'patient_id')) {
+        if (hasFilter($filters, 'patient_id')) {
             $where[] = array(
                 'patient_id',
                 '=',
@@ -354,7 +350,7 @@ class Packages extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'id')) {
+        if (hasFilter($filters, 'id')) {
             $where[] = array(
                 'patient_id',
                 '=',
@@ -375,7 +371,7 @@ class Packages extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'package_id')) {
+        if (hasFilter($filters, 'package_id')) {
             $where[] = array(
                 'id',
                 '=',
@@ -395,7 +391,7 @@ class Packages extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'created_at',
                 '>=',
@@ -416,7 +412,7 @@ class Packages extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'created_at',
                 '<=',
@@ -437,7 +433,7 @@ class Packages extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'location_id')) {
+        if (hasFilter($filters, 'location_id')) {
             $where[] = array(
                 'location_id',
                 '=',
@@ -459,7 +455,7 @@ class Packages extends BaseModal
         }
 
 
-        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',

@@ -2,14 +2,10 @@
 
 namespace App\Models;
 
-use App\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use DB;
-use Session;
-use App\Models\AuditTrails;
-use Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 
@@ -307,7 +303,7 @@ class Locations extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::locations_filters($request, $account_id, $apply_filter);
+        $where = self::locations_filters($request, $account_id, $apply_filter);
 
         if ($request->has('sort')) {
             list($orderBy, $order) = getSortBy($request);
@@ -413,7 +409,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'locations.name',
                 'like',
@@ -433,7 +429,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'fdo_name')) {
+        if (hasFilter($filters, 'fdo_name')) {
             $where[] = array(
                 'fdo_name',
                 'like',
@@ -453,7 +449,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'fdo_phone')) {
+        if (hasFilter($filters, 'fdo_phone')) {
             $where[] = array(
                 'fdo_phone',
                 'like',
@@ -473,7 +469,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'address')) {
+        if (hasFilter($filters, 'address')) {
             $where[] = array(
                 'locations.address',
                 'like',
@@ -493,7 +489,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'city_id')) {
+        if (hasFilter($filters, 'city_id')) {
             $where[] = array(
                 'locations.city_id',
                 '=',
@@ -513,7 +509,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'region_id')) {
+        if (hasFilter($filters, 'region_id')) {
             $where[] = array(
                 'locations.region_id',
                 '=',
@@ -533,7 +529,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'service_id')) {
+        if (hasFilter($filters, 'service_id')) {
             $where[] = array(
                 'service_has_locations.service_id',
                 '=',
@@ -553,7 +549,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'locations.created_at',
                 '>=',
@@ -573,7 +569,7 @@ class Locations extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'locations.created_at',
                 '<=',
@@ -594,7 +590,7 @@ class Locations extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'status')) {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'locations.active',
                 '=',

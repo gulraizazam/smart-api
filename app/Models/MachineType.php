@@ -116,7 +116,7 @@ class MachineType extends BaseModal
             }
         }
 
-        if (count($filters) && $filters['name']!='') {
+        if (hasFilter($filters, 'name')) {
             $query = $query->where('name','like', '%' . $filters['name'] . '%');
             Filters::put(Auth::User()->id, 'machinetypes', 'name', $filters['name']);
         } else {
@@ -128,7 +128,7 @@ class MachineType extends BaseModal
                 }
             }
         }
-        if (count($filters) && $filters['service']!='') {
+        if (hasFilter($filters, 'service')) {
             $where[] = array(
                 'machine_type_has_services.service_id',
                 '=',
@@ -146,37 +146,33 @@ class MachineType extends BaseModal
             }
         }
 
-        if (count($filters) && $filters['created_from']!='') {
-            $created_from=Carbon::createFromFormat('m/d/Y',$filters['created_from'])->startOfDay()->toDateTimeString();
-            $query = $query->where('created_at','>=', $created_from);
+        if (hasFilter($filters, 'created_from')) {
+            $query = $query->where('created_at','>=',  $filters['created_from'] . ' 00:00:00');
             Filters::put(Auth::User()->id, 'machinetypes', 'created_from', $filters['created_from']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'machinetypes', 'created_from');
             } else {
                 if (Filters::get(Auth::User()->id, 'machinetypes', 'created_from')) {
-                    $created_from=Carbon::createFromFormat('m/d/Y',Filters::get(Auth::User()->id, 'machinetypes', 'created_from'))->startOfDay()->toDateTimeString();
-                    $query = $query->where('created_at','>=', $created_from);
+                    $query = $query->where('created_at','>=', Filters::get(Auth::User()->id, 'machinetypes', 'created_from') . ' 00:00:00');
                 }
             }
         }
 
-        if (count($filters) && $filters['created_to']!='') {
-            $created_to=Carbon::createFromFormat('m/d/Y',$filters['created_to'])->endOfDay()->toDateTimeString();
-            $query = $query->where('created_at','<=', $created_to);
+        if (hasFilter($filters, 'created_to')) {
+            $query = $query->where('created_at','<=', $filters['created_to'] . ' 23:59:59');
             Filters::put(Auth::User()->id, 'machinetypes', 'created_to', $filters['created_to']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'machinetypes', 'created_to');
             } else {
                 if (Filters::get(Auth::User()->id, 'machinetypes', 'created_to')) {
-                    $created_to=Carbon::createFromFormat('m/d/Y',Filters::get(Auth::User()->id, 'machinetypes', 'created_to'))->endOfDay()->toDateTimeString();
-                    $query = $query->where('created_at','<=', $created_to);
+                    $query = $query->where('created_at','<=', Filters::get(Auth::User()->id, 'machinetypes', 'created_to') . ' 23:59:59');
                 }
             }
         }
 
-        if (count($filters) && $filters['status']!='') {
+        if (hasFilter($filters, 'status')) {
             $query = $query->where('active', $filters['status']);
             Filters::put(Auth::user()->id, 'machinetypes', 'status', $filters['status']);
         } else {

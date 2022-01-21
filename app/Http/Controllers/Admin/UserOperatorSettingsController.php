@@ -50,17 +50,15 @@ class UserOperatorSettingsController extends Controller
         if (!Gate::allows('user_operator_settings_manage'))
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 
-        $apply_filter = false;
+        $filename = 'operators';
+
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'filter')) {
-            if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, 'operators');
-            } else if ($filters['filter'] == 'filter') {
-                $apply_filter = true;
-            }
-        }
+
+        $apply_filter = checkFilters($filters, $filename);
+
         $records = array();
         $records["data"] = array();
+
         list($orderBy, $order) = getSortBy($request);
 
         // Get Total Records

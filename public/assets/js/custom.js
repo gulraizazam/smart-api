@@ -3,10 +3,10 @@ $(document).ready(function () {
     $(document).on("change", ".select2", function () {
 
        if ($(this).val() != '') {
-            $(this).parents(".fv-row").find(".fv-plugins-message-container").hide();
+            $(this).parents(".fv-row").find(".fv-plugins-message-container").find(".fv-help-block").hide();
             $(this).parent(".fv-row").find(".select2-selection").removeClass("select2-is-invalid");
        } else {
-            $(this).parents(".fv-row").find(".fv-plugins-message-container").show();
+            $(this).parents(".fv-row").find(".fv-plugins-message-container").find(".fv-help-block").show();
             $(this).parent(".fv-row").find(".select2-selection").addClass("select2-is-invalid");
        }
    });

@@ -1,20 +1,13 @@
 
-var AddUserValidation = function () {
+var AddValidation = function () {
     // Private functions
-    var AddValidation = function () {
-        let modal_id = 'modal_add_payment_mode_form';
+    var validation = function () {
+        let modal_id = 'modal_add_resources_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    payment_type: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The payment type field is required'
-                            }
-                        }
-                    },
                     name: {
                         validators: {
                             notEmpty: {
@@ -22,10 +15,25 @@ var AddUserValidation = function () {
                             }
                         }
                     },
-                    type: {
+                    location_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The user type field is required'
+                                message: 'The centre field is required'
+                            }
+                        }
+                    },
+                    machine_type_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The machine type field is required'
+                            }
+                        }
+                    },
+
+                    resource_type_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The resource type field is required'
                             }
                         }
                     },
@@ -41,12 +49,11 @@ var AddUserValidation = function () {
             }
         );
         validate.on('core.form.invalid', function (e) {
-            select2Validation();
+           select2Validation();
         });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
+                if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
                     reInitTable();
@@ -58,29 +65,21 @@ var AddUserValidation = function () {
     }
 
     return {
-        // public functions
         init: function() {
-            AddValidation();
+            validation();
         }
     };
 }();
 
-var EditUserValidation = function () {
+var EditValidation = function () {
     // Private functions
-    var EditValidation = function () {
-        let modal_id = 'modal_edit_payment_modes_form';
+    var validation = function () {
+        let modal_id = 'modal_edit_resources_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    payment_type: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The payment type field is required'
-                            }
-                        }
-                    },
                     name: {
                         validators: {
                             notEmpty: {
@@ -88,10 +87,25 @@ var EditUserValidation = function () {
                             }
                         }
                     },
-                    type: {
+                    location_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The user type field is required'
+                                message: 'The centre field is required'
+                            }
+                        }
+                    },
+                    machine_type_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The machine type field is required'
+                            }
+                        }
+                    },
+
+                    resource_type_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The resource type field is required'
                             }
                         }
                     },
@@ -107,71 +121,29 @@ var EditUserValidation = function () {
             }
         );
         validate.on('core.form.invalid', function (e) {
-            select2Validation();
+           select2Validation();
         });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
+                if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
                     reInitTable();
                 } else {
                     toastr.error(response.message);
                 }
-            });
+            }, form);
         });
     }
 
     return {
-        // public functions
         init: function() {
-            EditValidation();
+            validation();
         }
     };
 }();
 
 jQuery(document).ready(function() {
-    AddUserValidation.init();
-    EditUserValidation.init();
+    AddValidation.init();
+    EditValidation.init();
 });
-
-
-function submitForm(action, method, data, callback) {
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: action,
-        type: method,
-        data: data,
-        cache: false,
-        success: function (response) {
-            if (response.status == true) {
-                callback({
-                    'status': response.status,
-                    'message': response.message,
-                });
-            } else {
-                callback({
-                    'status': response.status,
-                    'message': response.message,
-                });
-            }
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            if (xhr.status == '401') {
-                callback({
-                    'status': 0,
-                    'message': 'You are not authorized to access this resource',
-                });
-            } else {
-                callback({
-                    'status': 0,
-                    'message': 'Unable to process your request, please try again later.',
-                });
-            }
-        }
-    });
-}

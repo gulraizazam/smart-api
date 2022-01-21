@@ -219,7 +219,7 @@ class Regions extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && $filters['name'] != '') {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -240,7 +240,7 @@ class Regions extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && $filters['status'] != null) {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',

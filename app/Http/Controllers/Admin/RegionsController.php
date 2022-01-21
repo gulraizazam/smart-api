@@ -107,6 +107,7 @@ class RegionsController extends Controller
             ];
             return response()->json($records);
         } catch (\Exception $e) {
+            dd($e);
             return ApiHelper::apiException($e);
         }
     }

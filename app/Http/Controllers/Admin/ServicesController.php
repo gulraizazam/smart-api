@@ -56,7 +56,7 @@ class ServicesController extends Controller
             $records = array();
             $records["data"] = array();
 
-            if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Locations = Services::getBulkData($ids);
                 if ($Locations) {

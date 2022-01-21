@@ -99,7 +99,7 @@ class PaymentModes extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::payment_modes_filters($request, $account_id, $apply_filter);
+        $where = self::payment_modes_filters($request, $account_id, $apply_filter);
 
         if(count($where)) {
             return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
@@ -140,7 +140,7 @@ class PaymentModes extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -160,7 +160,7 @@ class PaymentModes extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'payment_type')) {
+        if (hasFilter($filters, 'payment_type')) {
             $where[] = array(
                 'payment_type',
                 '=',
@@ -180,7 +180,7 @@ class PaymentModes extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'type')) {
+        if (hasFilter($filters, 'type')) {
             $where[] = array(
                 'type',
                 '=',
@@ -201,7 +201,7 @@ class PaymentModes extends BaseModal
             }
         }
 
-        if ( count($filters) > 0 && hasFilter($filters, 'status') ){
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',

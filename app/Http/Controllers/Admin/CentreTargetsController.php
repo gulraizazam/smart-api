@@ -63,7 +63,7 @@ class CentreTargetsController extends Controller
             $records = array();
             $records["data"] = array();
 
-            if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $centretarget = Centertarget::getBulkData($ids);
                 if ($centretarget) {

@@ -1,4 +1,3 @@
-
 var table_url = route('admin.locations.datatable');
 
 var table_columns = [
@@ -269,7 +268,7 @@ function setFilters(filter_values, active_filters) {
 
     $("#search_status").val(active_filters.status);
     $("#search_city").val(active_filters.city_id);
-    $("#service_region").val(active_filters.service_id);
+    $("#search_region").val(active_filters.region_id);
 
     hideShowAdvanceFilters(active_filters);
 }
@@ -347,12 +346,12 @@ function makeServiceOptions(response) {
 }
 
 function hideShowAdvanceFilters(active_filters) {
-    if (active_filters.city_id != ''
-        || active_filters.region_id != ''
-        || active_filters.address != ''
-        || active_filters.email != ''
-        || active_filters.created_from != ''
-        || active_filters.created_to != '') {
+    if ((typeof active_filters.city_id !== 'undefined' && active_filters.city_id != '')
+        || (typeof active_filters.region_id !== 'undefined' && active_filters.region_id != '')
+        || (typeof active_filters.address !== 'undefined' && active_filters.address != '')
+        || (typeof active_filters.email !== 'undefined' && active_filters.email != '')
+        || (typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
+        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')) {
 
         $(".advance-filters").show();
         $(".advance-arrow").addClass("fa fa-caret-down");

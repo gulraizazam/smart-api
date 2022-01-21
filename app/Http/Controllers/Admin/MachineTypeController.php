@@ -53,19 +53,17 @@ class MachineTypeController extends Controller
             if (!Gate::allows('machineType_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $apply_filter = false;
+
+            $filename = 'machinetypes';
+
             $filters = getFilters($request->all());
-            if (hasFilter($filters, 'filter')) {
-                if (isset($filters['filter']) && $filters['filter'] == 'filter_cancel') {
-                    Filters::flush(Auth::User()->id, 'machinetypes');
-                } else if ($filters['filter'] == 'filter') {
-                    $apply_filter = true;
-                }
-            }
+
+            $apply_filter = checkFilters($filters, $filename);
+
             $records = array();
             $records["data"] = array();
 
-            if (count($filters) > 0 && hasFilter($filters, 'delete')) {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $machinetypes = MachineType::getBulkData($ids);
                 if ($machinetypes) {

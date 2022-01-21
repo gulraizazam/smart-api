@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\CentreTargetsController;
+use App\Http\Controllers\Admin\PackageAdvancesController;
 
     /*
     |--------------------------------------------------------------------------
@@ -170,5 +171,9 @@ use App\Http\Controllers\Admin\CentreTargetsController;
 
         //Centre Target
         Route::resource('centre_targets', CentreTargetsController::class)->only('index');
+
+
+        //Package Advance route start
+        Route::resource('packagesadvances', PackageAdvancesController::class)->only('index');
 
     });
