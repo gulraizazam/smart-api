@@ -1,4 +1,3 @@
-
 var PasswordValidation = function () {
     // Private functions
     var password_validation = function () {
@@ -18,9 +17,12 @@ var PasswordValidation = function () {
                     },
                     password_confirmation: {
                         validators: {
-                            notEmpty: {
-                                message: 'The confirm password field is required'
-                            }
+                            identical: {
+                                compare: function () {
+                                    return form.querySelector('[name="password"]').value;
+                                },
+                                message: 'The confirm password does not match',
+                            },
                         }
                     }
 
@@ -36,9 +38,9 @@ var PasswordValidation = function () {
             }
         );
         validate.on('core.form.invalid', function (e) {
-           select2Validation();
+            select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
@@ -53,12 +55,12 @@ var PasswordValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             password_validation();
         }
     };
 }();
 
-jQuery(document).ready(function() {
+jQuery(document).ready(function () {
     PasswordValidation.init();
 });

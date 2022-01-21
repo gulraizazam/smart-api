@@ -206,9 +206,12 @@ var PasswordValidation = function () {
                     },
                     password_confirmation: {
                         validators: {
-                            notEmpty: {
-                                message: 'The confirm password field is required'
-                            }
+                            identical: {
+                                compare: function () {
+                                    return form.querySelector('[name="password"]').value;
+                                },
+                                message: 'The confirm password does not match',
+                            },
                         }
                     },
                 },
