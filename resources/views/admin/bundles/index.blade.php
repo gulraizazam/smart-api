@@ -44,7 +44,7 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
                             @if(Gate::allows('packages_create'))
-                                <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_region">
+                                <a href="javascript:void(0);" class="btn btn-primary" id="create-btn" data-toggle="modal" data-target="#modal_bundles">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                     <i class="la la-plus"></i>
                                     Add New
@@ -73,7 +73,7 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_region" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_bundles" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="region-create">
 
@@ -84,11 +84,11 @@
     </div>
 
 
-    <div class="modal fade" id="modal_edit_lead_statuses" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_details_bundles" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="region-edit">
 
-            @include('admin.bundles.edit')
+            @include('admin.bundles.detail')
 
         </div>
         <!--end::Modal dialog-->
@@ -99,7 +99,7 @@
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/appointment_statuses.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/bundles.js')}}"></script>
     @endpush
 
 @endsection

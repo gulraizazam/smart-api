@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_add_user_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Add Package</h2>
+        <h2 class="fw-bolder" id="model-title" >Add Package</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -23,7 +23,9 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_bundles_form" method="post" action="{{route('admin.bundles.store')}}">
+        <form id="modal_bundles_form" method="post" action="{{route('admin.bundles.store')}}">
+            <div id="put_input">
+            </div>
             <!--begin::Scroll-->
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true"
                  data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"
@@ -34,13 +36,13 @@
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span>
                             </label>
-                            <input type="text" id="add_bundles_name" name="name"
+                            <input type="text" id="bundles_name" name="name"
                                    class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Offered Price <span class="text text-danger">*</span>
                             </label>
-                            <input type="number" id="add_bundles_price" name="price"
+                            <input type="number" id="bundles_price" name="price"
                                    class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
@@ -55,18 +57,18 @@
                         </div>
                         <div class="fv-row col-md-6 not-have-parent">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Tax</label>
-                            <div class="radio-list" id="add_bundles_tax">
+                            <div class="radio-list" id="bundles_tax">
                             </div>
                         </div>
                     </div>
                     <div class="row mt-5">
                         <div class="fv-row col-10">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Default Status for New Appointments?</label>
-                            <select id="add_services" class="form-control form-control-lg select2 form-control-solid">
+                            <select id="services" class="form-control form-control-lg select2 form-control-solid">
                             </select>
                         </div>
                         <div class="fv-row col-2">
-                            <button class="btn btn-primary btn-block btn-sm mt-10" type="button" id="add_service_btn"><i class="la la-plus"></i>
+                            <button class="btn btn-primary btn-block btn-sm mt-10" type="button" onclick="addRow()" id="add_service_btn"><i class="la la-plus"></i>
                                 Add
                             </button>
                         </div>
@@ -75,13 +77,13 @@
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Services Price <span
                                     class="text text-danger">*</span> </label>
-                            <input type="number" id="add_service_price" readonly
+                            <input type="number" id="service_price" readonly
                                    class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total Services <span
                                     class="text text-danger">*</span> </label>
-                            <input type="number" id="add_total_services" readonly name="total_services"
+                            <input type="number" id="total_services" readonly name="total_services"
                                    class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
@@ -89,19 +91,19 @@
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Valid From <span
                                     class="text text-danger">*</span> </label>
-                            <input type="text" id="add_start" name="start"
+                            <input type="text" id="start" name="start" readonly
                                    class="custom-datepicker form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Valid To <span
                                     class="text text-danger">*</span> </label>
-                            <input type="text" id="add_end" name="end"
+                            <input type="text" id="end" name="end" readonly
                                    class="custom-datepicker form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                     <div class="row mt-5">
                         <div class="fv-row col-md-12">
-                            <table class="table table-bordered table-striped">
+                            <table class="table table-bordered">
                                 <thead class=text-center">
                                     <tr>
                                         <th>Service Name</th>
@@ -110,7 +112,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="service_body">
-
                                 </tbody>
                             </table>
                         </div>
