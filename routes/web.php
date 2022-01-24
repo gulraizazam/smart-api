@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
+use App\Http\Controllers\Admin\ResourceRotasController;
 
     /*
     |--------------------------------------------------------------------------
@@ -175,5 +176,8 @@ use App\Http\Controllers\Admin\PackageAdvancesController;
 
         //Package Advance route start
         Route::resource('packagesadvances', PackageAdvancesController::class)->only('index');
+
+        //Resource Rota Management
+        Route::resource('resourcerotas', ResourceRotasController::class)->only('index');
 
     });

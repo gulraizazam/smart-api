@@ -306,3 +306,6 @@ input {
 .disable-filed {
     background-color: #eef1f5 !important;
 }
+.rota-form {
+    max-width: 900px;
+}
