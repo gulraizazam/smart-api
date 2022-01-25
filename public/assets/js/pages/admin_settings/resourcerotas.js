@@ -85,10 +85,10 @@ $(document).ready(function () {
 
             $('#mondayElement_1').prop('checked', true);
 
-            $('#tuesdayOperation_1 :input').attr('disabled', true);
+            $('#tuesdayOperation_1 :input').prop('disabled', true);
             $('#tuesdayElement_1').prop('checked', true);
 
-            $('#wednesdayOperation_1 :input').attr('disabled', true);
+            $('#wednesdayOperation_1 :input').prop('disabled', true);
             $('#wednesdayElement_1').prop('checked', true);
 
             $('#thursdayOperation_1 :input').attr('disabled', true);
@@ -208,13 +208,6 @@ var table_columns = [
         title: 'Regions',
         sortable: false,
         width: 'auto',
-        /*template: function (data) {
-            let cityName = '';
-            if (typeof data.location.city !== 'undefined') {
-                cityName = data.location.city.name + '-';
-            }
-           return cityName + data.location.name;
-        }*/
     },{
         field: 'city',
         title: 'City',
@@ -246,6 +239,16 @@ var table_columns = [
         template: function (data) {
             return statuses(data, route('admin.resourcerotas.status'));
         }
+    }, {
+        field: 'actions',
+        title: 'Actions',
+        sortable: false,
+        width: 80,
+        overflow: 'visible',
+        autoHide: false,
+        template: function (data) {
+            return actions(data);
+        }
     }];
 
 function actions(data) {
@@ -254,6 +257,7 @@ function actions(data) {
 
         let url = route('admin.resourcerotas.edit', {id: id});
         let delete_url = route('admin.resourcerotas.destroy', {id: id});
+        let calender_url = route('admin.resourcerotas.calender', {id: id});
 
         if (permissions.edit && permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -274,9 +278,9 @@ function actions(data) {
                 </li>';
             }
 
-            if (permissions.edit) {
+            if (permissions.calender) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" class="navi-link">\
+                    <a href="'+calender_url+'" class="navi-link">\
                         <span class="navi-icon"><i class="la la-eye"></i></span>\
                         <span class="navi-text">Calendar</span>\
                     </a>\
@@ -314,6 +318,7 @@ function createRota($route) {
         success: function (response) {
 
             setCreateData(response);
+            setCreateEditData(response);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -325,6 +330,29 @@ function createRota($route) {
 function setCreateData(response) {
 
     try {
+        $(".rota-title").text("Add Rota");
+        $(".common-section").addClass("d-none");
+        $(".add-section").removeClass("d-none");
+
+        let form = $(".rota-form");
+
+        form[0].reset();
+
+        reInitSelect2();
+
+        form.attr('id', 'modal_resourcerotas_form')
+
+        form.attr("action", route('admin.resourcerotas.store'));
+
+        $(".action-method").val('post')
+
+        $(".doctor_section").addClass("d-none");
+        $("#is_consultancy_1").attr("checked", true);
+        $("#is_treatment_1").attr("checked", true);
+
+        AddValidation.init();
+
+        setDefaultValues(form);
 
         let cities = response.data.cities;
         let resource_types = response.data.resource_types;
@@ -346,6 +374,14 @@ function setCreateData(response) {
     } catch (error) {
         showException(error);
     }
+}
+
+function setDefaultValues(form) {
+    let data = new Date().toISOString().split('T')[0];
+    $("#start").val(data)
+    $("#end").val(data)
+
+    $(".current-timepicker").timepicker('setTime', '09:00 AM');
 }
 
 function getLocations($this) {
@@ -417,8 +453,8 @@ function setResources(response) {
         let doctors = response.data.doctors;
         let machine = response.data.machine;
 
-        let doctors_options = '<option>Select a Doctor</option>';
-        let machine_options = '<option>Select a Machine</option>';
+        let doctors_options = '<option value="">Select a Doctor</option>';
+        let machine_options = '<option value="">Select a Machine</option>';
 
         Object.entries(doctors).forEach(function (value) {
             doctors_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
@@ -439,16 +475,19 @@ function setResources(response) {
 function toggleResource($this) {
 
     $(".resource_fields").addClass("d-none");
+    $(".doctor_section").addClass("d-none");
     if ($this.val() == '1') {
         $("#machine_field").removeClass("d-none");
+        $("#Rota_type_operation").addClass("d-none");
     } else {
         $("#doctor_field").removeClass("d-none");
+        $("#Rota_type_operation").removeClass("d-none");
     }
 }
 
 function editRow(url) {
 
-    $("#modal_edit_resources").modal("show");
+    $("#modal_resourcerotas").modal("show");
 
     $.ajax({
         headers: {
@@ -460,6 +499,7 @@ function editRow(url) {
         success: function (response) {
 
             setEditData(response);
+            setCreateEditData(response, true);
 
             reInitSelect2(".select2", "");
 
@@ -478,43 +518,133 @@ function setEditData(response) {
 
     try {
 
-        let resource = response.data.resource;
-        let machine_types = response.data.machine_types;
-        let resource_types = response.data.resource_types;
-        let locations = response.data.locations;
+        $(".rota-title").text("Edit Rota");
+        $(".common-section").addClass("d-none");
+        $(".edit-section").removeClass("d-none");
 
-        $("#modal_edit_resources_form").attr("action", route('admin.resources.update', {id: resource.id}));
+        let city = response.data.city;
+        let citi = response.data.citi;
+        let location = response.data.location;
+        let resourceRota = response.data.resourceRota;
+        let resource_name = response.data.resource_name;
+
+        $(".rota-form").attr('id', 'modal_edit_resourcerotas_form')
+        $(".rota-form").attr("action", route('admin.resourcerotas.update', {id: resourceRota.id}));
+
+        $(".action-method").val('put')
+        EditValidation.init();
+
+        let fullCity = citi.region_id ? citi.region.name +' - '+ city : city;
+
+        $("#city-name").text(fullCity);
+        $("#resource-name").text(resource_name.name);
+        $("#centre-name").text(location);
+        $("#rota-start-date").text(resourceRota.start);
+        $("#start").val(resourceRota.start);
+        $("#end").val(resourceRota.end);
 
 
-        let machine_options = '<option value="">Select</option>';
-        let location_options = '<option value="">Select</option>';
-        let resource_options = '<option value="">Select</option>';
+        if (resourceRota.resource_type_id == 1) {
+            $(".doctor_section").addClass("d-none");
+        } else {
+            $(".doctor_section").removeClass("d-none");
+        }
 
-        Object.entries(machine_types).forEach(function (value, index) {
-            machine_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
+        if (resourceRota.is_treatment == 1) {
+            $("#is_consultancy_1").attr("checked", false);
+            $("#is_treatment_1").attr("checked", true);
+        }
 
-        Object.entries(locations).forEach(function (value, index) {
-            location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
+        if (resourceRota.is_consultancy == 1) {
+            $("#is_treatment_1").attr("checked", false);
+            $("#is_consultancy_1").attr("checked", true);
+        }
 
-        Object.entries(resource_types).forEach(function (value, index) {
-            resource_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
+        if (resourceRota.is_treatment == 1 && resourceRota.is_consultancy == 1) {
+            $("#is_consultancy_1").attr("checked", true);
+            $("#is_treatment_1").attr("checked", true);
+        }
 
-        $("#edit_machine_type_id").html(machine_options);
-        $("#edit_location_id").html(location_options);
-        $("#edit_resource_type_id").html(resource_options);
+        /*Monday*/
+        $("#monday_from").val(resourceRota.time_f_monday);
+        $("#monday_to").val(resourceRota.time_to_monday);
+        $("#break_monday_from").val(resourceRota.break_from_monday);
+        $("#break_monday_to").val(resourceRota.break_to_monday);
 
-        $("#edit_name").val(resource.name);
-        $("#edit_location_id").val(resource.location_id);
-        $("#edit_machine_type_id").val(resource.machine_type_id);
-        $("#edit_resource_type_id").val(resource.resource_type_id);
+        /*Tuesday*/
+        $("#time_f_tuesday").val(resourceRota.time_f_tuesday);
+        $("#time_to_tuesday").val(resourceRota.time_to_tuesday);
+        $("#break_from_tuesday").val(resourceRota.break_from_tuesday);
+        $("#break_to_tuesday").val(resourceRota.break_to_tuesday);
+
+        /*Wednesday*/
+        $("#time_f_wednesday").val(resourceRota.time_f_wednesday);
+        $("#time_to_wednesday").val(resourceRota.time_to_wednesday);
+        $("#break_from_wednesday").val(resourceRota.break_from_wednesday);
+        $("#break_to_wednesday").val(resourceRota.break_to_wednesday);
+
+        /*Thursday*/
+        $("#time_f_thursday").val(resourceRota.time_f_thursday);
+        $("#time_to_thursday").val(resourceRota.time_to_thursday);
+        $("#break_from_thursday").val(resourceRota.break_from_thursday);
+        $("#break_to_thursday").val(resourceRota.break_to_thursday);
+
+        /*Friday*/
+        $("#time_f_friday").val(resourceRota.time_f_friday);
+        $("#time_to_friday").val(resourceRota.time_to_friday);
+        $("#break_from_friday").val(resourceRota.break_from_friday);
+        $("#break_to_friday").val(resourceRota.break_to_friday);
+
+        /*Saturday*/
+        $("#time_f_saturday").val(resourceRota.time_f_saturday);
+        $("#time_to_saturday").val(resourceRota.time_to_saturday);
+        $("#break_from_saturday").val(resourceRota.break_from_saturday);
+        $("#break_to_saturday").val(resourceRota.break_to_saturday);
+
+        /*Sunday*/
+        $("#time_f_sunday").val(resourceRota.time_f_sunday);
+        $("#time_to_sunday").val(resourceRota.time_to_sunday);
+        $("#break_from_sunday").val(resourceRota.break_from_sunday);
+        $("#break_to_sunday").val(resourceRota.break_to_sunday);
 
     } catch (error) {
         showException(error);
     }
 
+}
+
+function setCreateEditData(response, edit = false) {
+
+    let citi = response.data.citi;
+    let resourceRota = response.data.resourceRota;
+    let resource_name = response.data.resource_name;
+
+
+    if (edit) {
+        $("#city_id").removeAttr('name');
+        $("#location_id").removeAttr('name');
+        $("#resource_type_id").removeAttr('name');
+        $("#machine_id").removeAttr('name');
+        $("#doctor_id").removeAttr('name');
+
+        $("#edit_city_id").attr('name', 'city_id').val(citi.id);
+        $("#edit_location_id").attr('name', 'location_id').val(resourceRota.location_id);
+        $("#edit_resource_type_id").attr('name', 'resource_type_id').val(resource_name.resource_type_id);
+        $("#edit_machine_id").attr('name', 'resource_machine').val();
+        $("#edit_doctor_id").attr('name', 'resource_doctor').val();
+    } else {
+        $("#city_id").attr('name', 'city_id');
+        $("#location_id").attr('name', 'location_id');
+        $("#resource_type_id").attr('name', 'resource_type_id');
+        $("#machine_id").attr('name', 'resource_machine');
+        $("#doctor_id").attr('name', 'resource_doctor');
+
+        $("#edit_city_id").removeAttr('name');
+        $("#edit_location_id").removeAttr('name');
+        $("#edit_resource_type_id").removeAttr('name');
+        $("#edit_machine_id").removeAttr('name');
+        $("#edit_doctor_id").removeAttr('name');
+    }
 }
 
 

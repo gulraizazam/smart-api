@@ -513,9 +513,12 @@ class ResourcesController extends Controller
         }
         try {
 
-            Resources::deleteRecord($id);
+            $response = Resources::deleteRecord($id);
 
-            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+            if ($response['status']) {
+                return ApiHelper::apiResponse($this->success, $response['message']);
+            }
+            return ApiHelper::apiResponse($this->success, $response['message'], false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }

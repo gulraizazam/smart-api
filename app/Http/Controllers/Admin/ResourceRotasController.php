@@ -21,6 +21,7 @@ use Carbon\Carbon;
 use App\Models\ResourceHasRotaDays;
 use App\Models\Doctors;
 use App\Helpers\Widgets\RotaManagement;
+use PHPUnit\Exception;
 
 
 class ResourceRotasController extends Controller
@@ -139,39 +140,38 @@ class ResourceRotasController extends Controller
      * Store a newly created resource rota in storage/Database.
      *
      * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         if (!Gate::allows('resourcerotas_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         $response = ResourceHasRota::createRecord($request, Auth::User()->account_id);
 
         if ($response['status']) {
-            flash($response['message'])->success()->important();
+            return ApiHelper::apiResponse($this->success, $response['message']);
         }
-        return response()->json($response);
+
+        return ApiHelper::apiResponse($this->success, $response['message'], false);
+
     }
 
     /**
      * Validate form fields
      *
      * @param  \Illuminate\Http\Request $request
-     * @return Validator $validator;
+     * @return \Illuminate\Contracts\Validation\Validator $validator;
      */
     protected function verifyFields(Request $request)
     {
-        return $validator = Validator::make($request->all(), [
+        return Validator::make($request->all(), [
             'start' => 'required',
             'end' => 'required',
 
@@ -187,335 +187,339 @@ class ResourceRotasController extends Controller
     public function datatable(Request $request)
     {
 
-        $fileName = 'resourcehasrota';
+        try {
 
-        $filters = getFilters($request->all());
+            $fileName = 'resourcehasrota';
 
-        $apply_filter = checkFilters($filters, $fileName);
+            $filters = getFilters($request->all());
 
-        $records = array();
-        $records["data"] = array();
+            $apply_filter = checkFilters($filters, $fileName);
 
-        if (hasFilter($filters, 'delete')) {
-            $ids = explode(',', $filters['delete']);
-            $resourcehasrota = ResourceHasRota::getBulkData($ids);
-            if ($resourcehasrota) {
-                foreach ($resourcehasrota as $resourcehasrota) {
-                    // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!ResourceHasRota::isChildExists($resourcehasrota->id, Auth::User()->account_id)) {
-                        $resourcehasrota->delete();
+            $records = array();
+            $records["data"] = array();
+
+            if (hasFilter($filters, 'delete')) {
+                $ids = explode(',', $filters['delete']);
+                $resourcehasrota = ResourceHasRota::getBulkData($ids);
+                if ($resourcehasrota) {
+                    foreach ($resourcehasrota as $resourcehasrota) {
+                        // Check if child records exists or not, If exist then disallow to delete it.
+                        if (!ResourceHasRota::isChildExists($resourcehasrota->id, Auth::User()->account_id)) {
+                            $resourcehasrota->delete();
+                        }
                     }
                 }
+                $records["status"] = true; // pass custom message(useful for getting status of group actions)
+                $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
             }
-            $records["status"] = true; // pass custom message(useful for getting status of group actions)
-            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
-        }
 
-        list($orderBy, $order) = getSortBy($request);
+            list($orderBy, $order) = getSortBy($request);
 
-        $where = array();
-        $wherename = array();
+            $where = array();
+            $wherename = array();
 
-        if (hasFilter($filters, 'resource_type_id')) {
-            $where[] = array(
-                'resource_has_rota.resource_type_id',
-                '=',
-                $filters['resource_type_id']
-            );
-            Filters::put(Auth::User()->id, $fileName, 'resource_type_id', $filters['resource_type_id']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $fileName, 'resource_type_id');
+            if (hasFilter($filters, 'resource_type_id')) {
+                $where[] = array(
+                    'resource_has_rota.resource_type_id',
+                    '=',
+                    $filters['resource_type_id']
+                );
+                Filters::put(Auth::User()->id, $fileName, 'resource_type_id', $filters['resource_type_id']);
             } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'resource_type_id')) {
-                    $where[] = array(
-                        'resource_has_rota.resource_type_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $fileName, 'resource_type_id')
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'region_id')) {
-            $where[] = array(
-                'resource_has_rota.region_id',
-                '=',
-                $filters['region_id']
-            );
-            Filters::put(Auth::User()->id, $fileName, 'region_id', $filters['region_id']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $fileName, 'region_id');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'region_id')) {
-                    $where[] = array(
-                        'resource_has_rota.region_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $fileName, 'region_id')
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'city_id')) {
-            $where[] = array(
-                'resource_has_rota.city_id',
-                '=',
-                $filters['city_id']
-            );
-            Filters::put(Auth::User()->id, $fileName, 'city_id', $filters['city_id']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $fileName, 'city_id');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'city_id')) {
-                    $where[] = array(
-                        'resource_has_rota.city_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $fileName, 'city_id')
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'location_id')) {
-            $where[] = array(
-                'resource_has_rota.location_id',
-                '=',
-                $filters['location_id']
-            );
-            Filters::put(Auth::User()->id, $fileName, 'location_id', $filters['location_id']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $fileName, 'location_id');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'location_id')) {
-                    $where[] = array(
-                        'resource_has_rota.location_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $fileName, 'location_id')
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'account_id')){
-            $where[] = array(
-                'resource_has_rota.account_id',
-                '=',
-                Auth::User()->account_id
-            );
-            Filters::put(Auth::User()->id, $fileName, 'account_id', Auth::User()->account_id);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $fileName, 'account_id');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'account_id')) {
-                    $where[] = array(
-                        'resource_has_rota.account_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $fileName, 'account_id')
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'resourcename')) {
-            $wherename[] = array(
-                'resources.name',
-                'like',
-                '%' . $filters['resourcename'] . '%'
-            );
-            Filters::put(Auth::User()->id, $fileName, 'resourcename', $filters['resourcename']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $fileName, 'resourcename');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'resourcename')) {
-                    $wherename[] = array(
-                        'resources.name',
-                        'like',
-                        '%' . Filters::get(Auth::User()->id, $fileName, 'resourcename') . '%'
-                    );
-                }
-            }
-        }
-
-        if ( hasFilter($filters, 'startdate')){
-            $where[] = array(
-                'resource_has_rota.start',
-                '>=',
-                $filters['startdate']
-            );
-            Filters::put(Auth::user()->id , $fileName, 'startdate', $filters['startdate']);
-        } else {
-            if ($apply_filter){
-                Filters::forget(Auth::User()->id, $fileName, 'startdate');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'startdate')) {
-                    $where[] = array(
-                        'resource_has_rota.start',
-                        '>=',
-                        Filters::get(Auth::user()->id , $fileName, 'startdate')
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'enddate')){
-            $where[] = array(
-                'resource_has_rota.end',
-                '<=',
-                $filters['enddate']
-            );
-            Filters::put(Auth::user()->id , $fileName, 'enddate', $filters['enddate']);
-        } else {
-            if ($apply_filter){
-                Filters::forget(Auth::User()->id, $fileName, 'enddate');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'enddate')) {
-                    $where[] = array(
-                        'resource_has_rota.end',
-                        '<=',
-                        Filters::get(Auth::user()->id , $fileName, 'enddate')
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
-                'resource_has_rota.created_at',
-                '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
-            Filters::put(Auth::User()->id, $fileName, 'created_from', $filters['created_from'] . ' 00:00:00');
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $fileName, 'created_from');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'created_from')) {
-                    $where[] = array(
-                        'resource_has_rota.created_at',
-                        '>=',
-                        Filters::get(Auth::User()->id, $fileName, 'created_from') . ' 00:00:00'
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
-                'resource_has_rota.created_at',
-                '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
-            Filters::put(Auth::User()->id, $fileName, 'created_to', $filters['created_to'] . ' 23:59:59');
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $fileName, 'created_to');
-            } else {
-                if (Filters::get(Auth::User()->id, $fileName, 'created_to')) {
-                    $where[] = array(
-                        'resource_has_rota.created_at',
-                        '<=',
-                        Filters::get(Auth::User()->id, $fileName, 'created_to') . ' 23:59:59'
-                    );
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'status')){
-            $where[] = array(
-                'resource_has_rota.active',
-                '=',
-                $filters['status']
-            );
-            Filters::put(Auth::user()->id, $fileName, 'status', $filters['status']);
-        } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, $fileName, 'status');
-            } else {
-                if ( Filters::get(Auth::user()->id, $fileName, 'status') == 0 || Filters::get(Auth::user()->id, 'resourcehasrota', 'status') == 1){
-                    if ( Filters::get(Auth::user()->id, $fileName, 'status') != null ){
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'resource_type_id');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'resource_type_id')) {
                         $where[] = array(
-                            'resource_has_rota.active',
+                            'resource_has_rota.resource_type_id',
                             '=',
-                            Filters::get( Auth::user()->id, $fileName, 'status')
+                            Filters::get(Auth::User()->id, $fileName, 'resource_type_id')
                         );
                     }
                 }
             }
-        }
 
-
-        $total_query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')->whereNull('resource_has_rota.deleted_at')->where($wherename)->whereIn('resource_has_rota.location_id', ACL::getUserCentres())->select('resource_has_rota.id');
-
-        $total_query->when(count($where) > 0, fn ($q) => $q->where($where));
-
-        $iTotalRecords = $total_query->count();
-
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
-        $query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')->where($wherename)->whereNull('resource_has_rota.deleted_at')->whereIn('resource_has_rota.location_id', ACL::getUserCentres())->select('resource_has_rota.*');
-
-        $query->when(hasFilter($filters, 'startdate'), fn ($q) =>
-            $q->whereDate('resource_has_rota.start', '>=', $filters['startdate'])
-        );
-
-        $query->when(hasFilter($filters, 'startdate'), fn ($q) =>
-            $q->whereDate('resource_has_rota.end', '<=', $filters['enddate'])
-        );
-
-        $query->when(count($where) > 0, fn ($q) => $q->where($where));
-
-        $resourcehasrota = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
-        $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
-
-        $records = $this->filtersData($records);
-
-        if ($resourcehasrota) {
-            foreach ($resourcehasrota as $resourcerota) {
-                $resourcetypeinfo = ResourceTypes::where('id', '=', $resourcerota->resource_type_id)->first();
-                $resourceinfo = Resources::where('id', '=', $resourcerota->resource_id)->first();
-                $city = Cities::where('id', '=', $resourcerota->city_id)->first();
-                $location = Locations::where('id', '=', $resourcerota->location_id)->first();
-                $records["data"][] = array(
-                    'id' => $resourceinfo->id,
-                    'name' => $resourceinfo->name,
-                    'type' => $resourcetypeinfo->name,
-                    'region' => (array_key_exists($resourcerota->region_id, $Regions)) ? $Regions[$resourcerota->region_id]->name : 'N/A',
-                    'city' => $city->name,
-                    'location' => $location->name,
-                    'from' => $resourcerota->start ? \Carbon\Carbon::parse($resourcerota->start)->format('D M, j Y') : null,
-                    'to' => $resourcerota->end ? \Carbon\Carbon::parse($resourcerota->end)->format('D M, j Y') : null,
-                    'created_at' => Carbon::parse($resourcerota->created_at)->format('F j,Y h:i A'),
-                    //'status' => view('admin.resourcerotas.status', compact('resourcerota'))->render(),
-                    //'actions' => view('admin.resourcerotas.actions', compact('resourcerota'))->render(),
+            if (hasFilter($filters, 'region_id')) {
+                $where[] = array(
+                    'resource_has_rota.region_id',
+                    '=',
+                    $filters['region_id']
                 );
+                Filters::put(Auth::User()->id, $fileName, 'region_id', $filters['region_id']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'region_id');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'region_id')) {
+                        $where[] = array(
+                            'resource_has_rota.region_id',
+                            '=',
+                            Filters::get(Auth::User()->id, $fileName, 'region_id')
+                        );
+                    }
+                }
             }
 
-            $records["meta"] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
+            if (hasFilter($filters, 'city_id')) {
+                $where[] = array(
+                    'resource_has_rota.city_id',
+                    '=',
+                    $filters['city_id']
+                );
+                Filters::put(Auth::User()->id, $fileName, 'city_id', $filters['city_id']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'city_id');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'city_id')) {
+                        $where[] = array(
+                            'resource_has_rota.city_id',
+                            '=',
+                            Filters::get(Auth::User()->id, $fileName, 'city_id')
+                        );
+                    }
+                }
+            }
+
+            if (hasFilter($filters, 'location_id')) {
+                $where[] = array(
+                    'resource_has_rota.location_id',
+                    '=',
+                    $filters['location_id']
+                );
+                Filters::put(Auth::User()->id, $fileName, 'location_id', $filters['location_id']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'location_id');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'location_id')) {
+                        $where[] = array(
+                            'resource_has_rota.location_id',
+                            '=',
+                            Filters::get(Auth::User()->id, $fileName, 'location_id')
+                        );
+                    }
+                }
+            }
+
+            if (hasFilter($filters, 'account_id')) {
+                $where[] = array(
+                    'resource_has_rota.account_id',
+                    '=',
+                    Auth::User()->account_id
+                );
+                Filters::put(Auth::User()->id, $fileName, 'account_id', Auth::User()->account_id);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'account_id');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'account_id')) {
+                        $where[] = array(
+                            'resource_has_rota.account_id',
+                            '=',
+                            Filters::get(Auth::User()->id, $fileName, 'account_id')
+                        );
+                    }
+                }
+            }
+
+            if (hasFilter($filters, 'resourcename')) {
+                $wherename[] = array(
+                    'resources.name',
+                    'like',
+                    '%' . $filters['resourcename'] . '%'
+                );
+                Filters::put(Auth::User()->id, $fileName, 'resourcename', $filters['resourcename']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'resourcename');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'resourcename')) {
+                        $wherename[] = array(
+                            'resources.name',
+                            'like',
+                            '%' . Filters::get(Auth::User()->id, $fileName, 'resourcename') . '%'
+                        );
+                    }
+                }
+            }
+
+            if (hasFilter($filters, 'startdate')) {
+                $where[] = array(
+                    'resource_has_rota.start',
+                    '>=',
+                    $filters['startdate']
+                );
+                Filters::put(Auth::user()->id, $fileName, 'startdate', $filters['startdate']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'startdate');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'startdate')) {
+                        $where[] = array(
+                            'resource_has_rota.start',
+                            '>=',
+                            Filters::get(Auth::user()->id, $fileName, 'startdate')
+                        );
+                    }
+                }
+            }
+
+            if (hasFilter($filters, 'enddate')) {
+                $where[] = array(
+                    'resource_has_rota.end',
+                    '<=',
+                    $filters['enddate']
+                );
+                Filters::put(Auth::user()->id, $fileName, 'enddate', $filters['enddate']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'enddate');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'enddate')) {
+                        $where[] = array(
+                            'resource_has_rota.end',
+                            '<=',
+                            Filters::get(Auth::user()->id, $fileName, 'enddate')
+                        );
+                    }
+                }
+            }
+
+            if (hasFilter($filters, 'created_from')) {
+                $where[] = array(
+                    'resource_has_rota.created_at',
+                    '>=',
+                    $filters['created_from'] . ' 00:00:00'
+                );
+                Filters::put(Auth::User()->id, $fileName, 'created_from', $filters['created_from'] . ' 00:00:00');
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'created_from');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'created_from')) {
+                        $where[] = array(
+                            'resource_has_rota.created_at',
+                            '>=',
+                            Filters::get(Auth::User()->id, $fileName, 'created_from') . ' 00:00:00'
+                        );
+                    }
+                }
+            }
+
+            if (hasFilter($filters, 'created_to')) {
+                $where[] = array(
+                    'resource_has_rota.created_at',
+                    '<=',
+                    $filters['created_to'] . ' 23:59:59'
+                );
+                Filters::put(Auth::User()->id, $fileName, 'created_to', $filters['created_to'] . ' 23:59:59');
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $fileName, 'created_to');
+                } else {
+                    if (Filters::get(Auth::User()->id, $fileName, 'created_to')) {
+                        $where[] = array(
+                            'resource_has_rota.created_at',
+                            '<=',
+                            Filters::get(Auth::User()->id, $fileName, 'created_to') . ' 23:59:59'
+                        );
+                    }
+                }
+            }
+
+            if (hasFilter($filters, 'status')) {
+                $where[] = array(
+                    'resource_has_rota.active',
+                    '=',
+                    $filters['status']
+                );
+                Filters::put(Auth::user()->id, $fileName, 'status', $filters['status']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::user()->id, $fileName, 'status');
+                } else {
+                    if (Filters::get(Auth::user()->id, $fileName, 'status') == 0 || Filters::get(Auth::user()->id, 'resourcehasrota', 'status') == 1) {
+                        if (Filters::get(Auth::user()->id, $fileName, 'status') != null) {
+                            $where[] = array(
+                                'resource_has_rota.active',
+                                '=',
+                                Filters::get(Auth::user()->id, $fileName, 'status')
+                            );
+                        }
+                    }
+                }
+            }
+
+
+            $total_query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')->whereNull('resource_has_rota.deleted_at')->where($wherename)->whereIn('resource_has_rota.location_id', ACL::getUserCentres())->select('resource_has_rota.id');
+
+            $total_query->when(count($where) > 0, fn($q) => $q->where($where));
+
+            $iTotalRecords = $total_query->count();
+
+            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+            $query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')->where($wherename)->whereNull('resource_has_rota.deleted_at')->whereIn('resource_has_rota.location_id', ACL::getUserCentres())->select('resource_has_rota.*');
+
+            $query->when(hasFilter($filters, 'startdate'), fn($q) => $q->whereDate('resource_has_rota.start', '>=', $filters['startdate'])
+            );
+
+            $query->when(hasFilter($filters, 'startdate'), fn($q) => $q->whereDate('resource_has_rota.end', '<=', $filters['enddate'])
+            );
+
+            $query->when(count($where) > 0, fn($q) => $q->where($where));
+
+            $resourcehasrota = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
+
+            $records = $this->filtersData($records);
+
+            if ($resourcehasrota) {
+                foreach ($resourcehasrota as $resourcerota) {
+                    $resourcetypeinfo = ResourceTypes::where('id', '=', $resourcerota->resource_type_id)->first();
+                    $resourceinfo = Resources::where('id', '=', $resourcerota->resource_id)->first();
+                    $city = Cities::where('id', '=', $resourcerota->city_id)->first();
+                    $location = Locations::where('id', '=', $resourcerota->location_id)->first();
+                    $records["data"][] = array(
+                        'id' => $resourcerota->id,
+                        'name' => $resourceinfo->name,
+                        'type' => $resourcetypeinfo->name,
+                        'region' => (array_key_exists($resourcerota->region_id, $Regions)) ? $Regions[$resourcerota->region_id]->name : 'N/A',
+                        'city' => $city->name,
+                        'location' => $location->name,
+                        'from' => $resourcerota->start ? \Carbon\Carbon::parse($resourcerota->start)->format('D M, j Y') : null,
+                        'to' => $resourcerota->end ? \Carbon\Carbon::parse($resourcerota->end)->format('D M, j Y') : null,
+                        'created_at' => Carbon::parse($resourcerota->created_at)->format('F j,Y h:i A'),
+                        'active' => $resourcerota->active,
+                    );
+                }
+
+                $records["meta"] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+
+            }
+
+            $records["permissions"] = [
+                'edit' => Gate::allows('resourcerotas_edit'),
+                'delete' => Gate::allows('resourcerotas_destroy'),
+                'active' => Gate::allows('resourcerotas_active'),
+                'inactive' => Gate::allows('resourcerotas_inactive'),
+                'create' => Gate::allows('resourcerotas_create'),
+                'calender' => Gate::allows('resourcerotas_calender'),
             ];
 
+            return ApiHelper::apiDataTable($records);
+
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
         }
-
-        $records["permissions"] = [
-            'edit' => Gate::allows('resourcerotas_edit'),
-            'delete' => Gate::allows('resourcerotas_destroy'),
-            'active' => Gate::allows('resourcerotas_active'),
-            'inactive' => Gate::allows('resourcerotas_inactive'),
-            'create' => Gate::allows('resourcerotas_create'),
-        ];
-
-        return ApiHelper::apiDataTable($records);
     }
 
     private function filtersData($records) {
@@ -548,50 +552,47 @@ class ResourceRotasController extends Controller
     /**
      * Inactive Record from storage.
      *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @param  Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function inactive($id)
-    {
-        if (!Gate::allows('resourcerotas_inactive')) {
-            return abort(401);
-        }
-        ResourceHasRota::inactiveRecord($id);
-
-
-        return redirect()->route('admin.resourcerotas.index');
-    }
-
-    /**
-     * Inactive Record from storage.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function active($id)
+    public function status(Request $request)
     {
         if (!Gate::allows('resourcerotas_active')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        ResourceHasRota::activeRecord($id);
+        try {
 
-        return redirect()->route('admin.resourcerotas.index');
+            if ($request->status == 1) {
+                $response = ResourceHasRota::activeRecord($request->id);
+            } else {
+                $response = ResourceHasRota::inactiveRecord($request->id);
+            }
+
+            if ($response['status']) {
+                return ApiHelper::apiResponse($this->success, $response['message']);
+            }
+
+            return ApiHelper::apiResponse($this->success, $response['message'], false);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
     /**
      * Show the form for editing the specified resource.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         if (!Gate::allows('resourcerotas_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $resourceRota = ResourceHasRota::find($id);
-        $citie = Cities::find($resourceRota->city_id);
+        $citi = Cities::with('region')->find($resourceRota->city_id);
         $city = $resourceRota->city->name;
         $location = $resourceRota->location->name;
         $resource_name = Resources::where('id', '=', $resourceRota->resource_id)->first();
@@ -634,7 +635,14 @@ class ResourceRotasController extends Controller
                 }
             }
         }
-        return view('admin.resourcerotas.edit', compact('resourceRota', 'resource_name', 'city', 'citie', 'location'));
+
+        return ApiHelper::apiResponse($this->success, 'Data found', true, [
+            'resourceRota' => $resourceRota,
+            'resource_name' => $resource_name,
+            'city' => $city,
+            'citi' => $citi,
+            'location' => $location
+        ]);
 
     }
 
@@ -648,16 +656,13 @@ class ResourceRotasController extends Controller
     public function update(Request $request, $id)
     {
         if (!Gate::allows('resourcerotas_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         $resourcerota = ResourceHasRota::find($id);
@@ -665,19 +670,13 @@ class ResourceRotasController extends Controller
         if ($resourcerota->end <= $request->end) {
 
             $response = ResourceHasRota::updateRecord($id, $request, Auth::User()->account_id);
-            if ($response['status']) {
 
-                flash($response['message'])->success()->important();
-            }
-            return response()->json($response);
 
-        } else {
+            return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
 
-            return array(
-                'status' => 0,
-                'message' => array('Your To date must be equal or greater than your previous To date ' . $resourcerota->end),
-            );
         }
+
+        return ApiHelper::apiResponse($this->success, 'Your To date must be equal or greater than your previous To date ' . $resourcerota->end, false);
 
     }
 
@@ -685,16 +684,26 @@ class ResourceRotasController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
         if (!Gate::allows('resourcerotas_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        ResourceHasRota::deleteRecord($id);
+        try {
 
-        return redirect()->route('admin.resourcerotas.index');
+            $response = ResourceHasRota::deleteRecord($id);
+
+            if ($response['status']) {
+                return ApiHelper::apiResponse($this->success, $response['message']);
+            }
+
+            return ApiHelper::apiResponse($this->success, $response['message'], false);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
     /**

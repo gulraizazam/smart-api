@@ -46,7 +46,7 @@
                             @endif
 
                             @if(Gate::allows('resourcerotas_create'))
-                                <a href="javascript:void(0);" onclick="createRota('{{ route('admin.resourcerotas.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_resourcerotas">
+                                <a href="javascript:void(0);" onclick="createRota('{{ route('admin.resourcerotas.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_resourcerotas">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
@@ -75,21 +75,21 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_resourcerotas" tabindex="-1" aria-hidden="true">
+    {{--<div class="modal fade" id="modal_add_resourcerotas" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered rota-form" id="resourcerotas_add">
+        <div class="modal-dialog modal-dialog-centered rota-form-to" id="resourcerotas_add">
 
             @include('admin.resourcerotas.create')
 
         </div>
         <!--end::Modal dialog-->
-    </div>
+    </div>--}}
 
-    <div class="modal fade" id="modal_edit_resourcerotas" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_resourcerotas" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="resourcerotas_edit">
+        <div class="modal-dialog modal-dialog-centered rota-form-to" id="resourcerotas_edit">
 
-            @include('admin.resourcerotas.edit')
+            @include('admin.resourcerotas.create')
 
         </div>
         <!--end::Modal dialog-->
