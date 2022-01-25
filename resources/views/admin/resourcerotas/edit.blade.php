@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit Rota</h2>
+        <h2 class="fw-bolder rota-title">Add Rota</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -22,16 +22,16 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15">
         <!--begin::Form-->
-        <form class="rota-form" id="modal_resourcerotas_form" method="post" action="">
+        <form id="modal_edit_resourcerotas_form" method="post" action="">
             <!--begin::Scroll-->
 
-            <input class="action-method" type="hidden" name="_method" value="post">
+            @method('put')
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resourcerotas_scroll">
 
                 <div class="form-group">
 
-                    <div class="row common-section edit-section d-none">
+                    <div class="row">
 
                         <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">Resource Name:</strong></div>
                         <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm" id="resource-name"></strong></div>
@@ -44,44 +44,6 @@
 
                         <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">Rota Start Date:</strong></div>
                         <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm"  id="rota-start-date"></strong></div>
-
-                    </div>
-
-                    <div class="row common-section add-section d-none">
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
-                            <select id="city_id" onchange="getLocations($(this))" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre <span class="text text-danger">*</span></label>
-                            <select id="location_id" onchange="getResource($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Resource Type <span class="text text-danger">*</span></label>
-                            <select id="resource_type_id" onchange="toggleResource($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="resource_type_id">
-
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-12 mt-5 resource_fields d-none" id="machine_field">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Machine <span class="text text-danger">*</span></label>
-                            <select id="machine_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="resource_machine">
-
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-12 mt-5 resource_fields d-none" id="doctor_field">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Doctor <span class="text text-danger">*</span></label>
-                            <select id="doctor_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="resource_doctor">
-
-                            </select>
-                        </div>
-
 
                     </div>
 
@@ -109,13 +71,13 @@
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl" id="mondayOperation_1">
+                    <div class="row mt-10 hideonmbl" id="edit_mondayOperation_1">
 
                         <div class="fv-row col-md-4">
 
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="mondayElement_1" checked type="checkbox" name="mondaychecked" class="mr-2">
+                                    <input id="edit_mondayElement_1" checked type="checkbox" name="mondaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Monday</strong>
@@ -124,7 +86,7 @@
 
                             <div class="ml-2">
                                 <label class="checkbox">
-                                    <input type="checkbox" id="copy_all_1" name="copy_all" value='' style="display: none;">
+                                    <input type="checkbox" id="edit_copy_all_1" name="copy_all" value='' style="display: none;">
                                     <strong style="font-size: 12px;border-bottom: 1px solid #333; cursor: pointer;margin-left: 100px;
     margin-top: -18px;">Copy As All</strong>
                                     <span style="display: none;"></span>
@@ -134,29 +96,29 @@
                         </div>
 
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_monday', old('time_f_monday'), ['id' => 'monday_from', 'class' => 'form-control timepickermondaytime_1 mondayfrom_1 monday_from' ]) !!}
+                            {!! Form::text('time_f_monday', old('time_f_monday'), ['id' => 'edit_monday_from', 'class' => 'form-control current-timepicker timepicker mondaytime_1 mondayfrom_1' ]) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('time_to_monday', old('time_to_monday'), ['id' => 'monday_to', 'class' => 'form-control timepicker mondaytime_1 mondayto_1 monday_to']) !!}
+                            {!! Form::text('time_to_monday', old('time_to_monday'), ['id' => 'edit_monday_to', 'class' => 'form-control current-timepicker timepicker mondaytime_1 mondayto_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('break_from_monday', old('break_from_monday'), ['id' => 'break_monday_from', 'class' => 'form-control timepicker monday_breake_time break_mondayfrom break_monday_from']) !!}
+                            {!! Form::text('break_from_monday', old('break_from_monday'), ['id' => 'edit_break_monday_from', 'class' => 'form-control timepicker monday_breake_time break_mondayfrom']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('break_to_monday', old('break_to_monday'), ['id' => 'break_monday_to', 'class' => 'form-control timepicker monday_breake_time break_mondayto break_to_monday']) !!}
+                            {!! Form::text('break_to_monday', old('break_to_monday'), ['id' => 'edit_break_monday_to', 'class' => 'form-control timepicker monday_breake_time break_mondayto']) !!}
                         </div>
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl" id="tuesdayOperation_1">
+                    <div class="row mt-10 hideonmbl" id="edit_tuesdayOperation_1">
 
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="tuesdayElement_1" checked type="checkbox" name="tuesdaychecked" class="mr-2">
+                                    <input id="edit_tuesdayElement_1" checked type="checkbox" name="tuesdaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Tuesday</strong>
@@ -164,28 +126,28 @@
                         </div>
 
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_tuesday', old('time_f_tuesday'), ['class' => 'form-control timepicker time_to_Rota_1 tuesdaytime_1 ftime_1 time_f_tuesday' ]) !!}
+                            {!! Form::text('time_f_tuesday', old('time_f_tuesday'), ['id' => 'edit_time_f_tuesday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 tuesdaytime_1 ftime_1' ]) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('time_to_tuesday', old('time_to_tuesday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 tuesdaytime_1 ttime_1 time_to_tuesday' ]) !!}
+                            {!! Form::text('time_to_tuesday', old('time_to_tuesday'), ['id' => 'edit_time_to_tuesday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 tuesdaytime_1 ttime_1' ]) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('break_from_tuesday', old('break_from_tuesday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime tuesdaytime_break f_time_break break_from_tuesday']) !!}
+                            {!! Form::text('break_from_tuesday', old('break_from_tuesday'), ['id' => 'edit_break_from_tuesday', 'class' => 'form-control timepicker breaktime tuesdaytime_break f_time_break']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('break_to_tuesday', old('break_to_tuesday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime tuesdaytime_break t_time_break break_to_tuesday']) !!}
+                            {!! Form::text('break_to_tuesday', old('break_to_tuesday'), ['id' => 'edit_break_to_tuesday', 'class' => 'form-control timepicker breaktime tuesdaytime_break t_time_break']) !!}
                         </div>
 
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl" id="wednesdayOperation_1">
+                    <div class="row mt-10 hideonmbl" id="edit_wednesdayOperation_1">
 
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="wednesdayElement_1" type="checkbox" name="wednesdaychecked" checked class="mr-2">
+                                    <input id="edit_wednesdayElement_1" type="checkbox" name="wednesdaychecked" checked class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Wednesday</strong>
@@ -193,29 +155,29 @@
                         </div>
 
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_wednesday', old('time_f_wednesday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 wednesdaytime_1 ftime_1 time_f_wednesday']) !!}
+                            {!! Form::text('time_f_wednesday', old('time_f_wednesday'), ['id' => 'edit_time_f_wednesday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 wednesdaytime_1 ftime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('time_to_wednesday', old('time_to_wednesday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 wednesdaytime_1 ttime_1 time_to_wednesday']) !!}
+                            {!! Form::text('time_to_wednesday', old('time_to_wednesday'), ['id' => 'edit_time_to_wednesday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 wednesdaytime_1 ttime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('break_from_wednesday', old('break_from_wednesday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime wednesdaytime_break f_time_break break_from_wednesday']) !!}
+                            {!! Form::text('break_from_wednesday', old('break_from_wednesday'), ['id' => 'edit_break_from_wednesday', 'class' => 'form-control timepicker breaktime wednesdaytime_break f_time_break']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('break_to_wednesday', old('break_to_wednesday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime wednesdaytime_break t_time_break break_to_wednesday']) !!}
+                            {!! Form::text('break_to_wednesday', old('break_to_wednesday'), ['id' => 'edit_break_to_wednesday', 'class' => 'form-control timepicker breaktime wednesdaytime_break t_time_break']) !!}
                         </div>
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl" id="thursdayOperation_1">
+                    <div class="row mt-10 hideonmbl" id="edit_thursdayOperation_1">
 
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="thursdayElement_1" type="checkbox" name="thursdaychecked" checked class="mr-2">
+                                    <input id="edit_thursdayElement_1" type="checkbox" name="thursdaychecked" checked class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Thursday</strong>
@@ -223,26 +185,26 @@
                         </div>
 
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_thursday', old('time_f_thursday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 thursdaytime_1 ftime_1 time_f_thursday' ]) !!}
+                            {!! Form::text('time_f_thursday', old('time_f_thursday'), ['id' => 'edit_time_f_thursday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 thursdaytime_1 ftime_1' ]) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_to_thursday', old('time_to_thursday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 thursdaytime_1 ttime_1 time_to_thursday']) !!}
+                            {!! Form::text('time_to_thursday', old('time_to_thursday'), ['id' => 'edit_time_to_thursday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 thursdaytime_1 ttime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('break_from_thursday', old('break_from_thursday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime thursdaytime_break f_time_break break_from_thursday']) !!}
+                            {!! Form::text('break_from_thursday', old('break_from_thursday'), ['id' => 'edit_break_from_thursday', 'class' => 'form-control timepicker timepicker-no-seconds breaktime thursdaytime_break f_time_break']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('break_to_thursday', old('break_to_thursday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime thursdaytime_break t_time_break break_to_thursday']) !!}
+                            {!! Form::text('break_to_thursday', old('break_to_thursday'), ['id' => 'edit_break_to_thursday', 'class' => 'form-control timepicker timepicker-no-seconds breaktime thursdaytime_break t_time_break']) !!}
                         </div>
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl" id="fridayOperation_1">
+                    <div class="row mt-10 hideonmbl" id="edit_fridayOperation_1">
 
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="fridayElement_1" type="checkbox" name="fridaychecked" checked class="mr-2">
+                                    <input id="edit_fridayElement_1" type="checkbox" name="fridaychecked" checked class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Friday</strong>
@@ -250,26 +212,26 @@
                         </div>
 
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_friday', old('time_f_friday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 fridaytime_1 ftime_1 time_f_friday']) !!}
+                            {!! Form::text('time_f_friday', old('time_f_friday'), ['id' => 'edit_time_f_friday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 fridaytime_1 ftime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_to_friday', old('time_to_friday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 fridaytime_1 ttime_1 time_to_friday']) !!}
+                            {!! Form::text('time_to_friday', old('time_to_friday'), ['id' => 'edit_time_to_friday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 fridaytime_1 ttime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('break_from_friday', old('break_from_friday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime fridaytime_break f_time_break break_from_friday']) !!}
+                            {!! Form::text('break_from_friday', old('break_from_friday'), ['id' => 'edit_break_from_friday', 'class' => 'form-control timepicker breaktime fridaytime_break f_time_break']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('break_to_friday', old('break_to_friday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime fridaytime_break t_time_break break_to_friday']) !!}
+                            {!! Form::text('break_to_friday', old('break_to_friday'), ['id' => 'edit_break_to_friday', 'class' => 'form-control timepicker breaktime fridaytime_break t_time_break']) !!}
                         </div>
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl" id="saturdayOperation_1">
+                    <div class="row mt-10 hideonmbl" id="edit_saturdayOperation_1">
 
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="saturdayElement_1" type="checkbox" name="saturdaychecked" checked class="mr-2">
+                                    <input id="edit_saturdayElement_1" type="checkbox" name="saturdaychecked" checked class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Saturday</strong>
@@ -277,26 +239,26 @@
                         </div>
 
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_saturday', old('time_f_saturday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 saturdaytime_1 ftime_1 time_f_saturday']) !!}
+                            {!! Form::text('time_f_saturday', old('time_f_saturday'), ['id' => 'edit_time_f_saturday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 saturdaytime_1 ftime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_to_saturday', old('time_to_saturday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 saturdaytime_1 ttime_1 time_to_saturday']) !!}
+                            {!! Form::text('time_to_saturday', old('time_to_saturday'), ['id' => 'edit_time_to_saturday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 saturdaytime_1 ttime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('break_from_saturday', old('break_from_saturday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime saturdaytime_break f_time_break break_from_saturday']) !!}
+                            {!! Form::text('break_from_saturday', old('break_from_saturday'), ['id' => 'edit_break_from_saturday', 'class' => 'form-control timepicker breaktime saturdaytime_break f_time_break']) !!}
                         </div>
                         <div class="fv-row col-md-2">
-                            {!! Form::text('break_to_saturday', old('break_to_saturday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime saturdaytime_break t_time_break break_to_saturday']) !!}
+                            {!! Form::text('break_to_saturday', old('break_to_saturday'), ['id' => 'edit_break_to_saturday', 'class' => 'form-control timepicker breaktime saturdaytime_break t_time_break']) !!}
                         </div>
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl" id="sundayOperation_1">
+                    <div class="row mt-10 hideonmbl" id="edit_sundayOperation_1">
 
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="sundayElement_1" type="checkbox" name="sundaychecked" checked class="mr-2">
+                                    <input id="edit_sundayElement_1" type="checkbox" name="sundaychecked" checked class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Sunday</strong>
@@ -304,19 +266,19 @@
                         </div>
 
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_sunday', old('time_f_sunday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 sundaytime_1 ftime_1 time_f_sunday']) !!}
+                            {!! Form::text('time_f_sunday', old('time_f_sunday'), ['id' => 'edit_time_f_sunday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 sundaytime_1 ftime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('time_to_sunday', old('time_to_sunday'), ['class' => 'form-control timepicker timepicker-no-seconds time_to_Rota_1 sundaytime_1 ttime_1 time_to_sunday']) !!}
+                            {!! Form::text('time_to_sunday', old('time_to_sunday'), ['id' => 'edit_time_to_sunday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 sundaytime_1 ttime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('break_from_sunday', old('break_from_sunday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime sundaytime_break f_time_break break_from_sunday']) !!}
+                            {!! Form::text('break_from_sunday', old('break_from_sunday'), ['id' => 'edit_break_from_sunday', 'class' => 'form-control timepicker breaktime sundaytime_break f_time_break']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('break_to_sunday', old('break_to_sunday'), ['class' => 'form-control timepicker timepicker-no-seconds breaktime sundaytime_break t_time_break break_to_sunday']) !!}
+                            {!! Form::text('break_to_sunday', old('break_to_sunday'), ['id' => 'edit_break_to_sunday', 'class' => 'form-control timepicker breaktime sundaytime_break t_time_break']) !!}
                         </div>
 
                     </div>
@@ -326,8 +288,8 @@
                         <div class="col-md-4"></div>
                         <div class="fv-row col-md-4 mt-5">
                             <label class="checkbox is_consultancy_1">
-                                <input type="hidden" id="is_consultancy" name="is_consultancy" value="0"/>
-                                <input id="is_consultancy_1" type="checkbox" name="is_consultancy" value="1" checked class="is_consultancy_1 mr-2">
+                                <input type="hidden" name="is_consultancy" value="0"/>
+                                <input id="edit_is_consultancy_1" type="checkbox" name="is_consultancy" value="1" checked class="mr-2">
                                 <span></span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Consultancy</strong>
                             </label>
@@ -335,8 +297,8 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="checkbox is_treatment_1">
-                                <input type="hidden" id="is_treatment" name="is_treatment" value="0"/>
-                                <input  id="is_treatment_1" type="checkbox" name="is_treatment" value="1" checked class="is_treatment_1 mr-2">
+                                <input type="hidden" name="is_treatment" value="0"/>
+                                <input  id="edit_is_treatment_1" type="checkbox" name="is_treatment" value="1" checked class="mr-2">
                                 <span></span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Treatment</strong>
                             </label>
@@ -362,3 +324,6 @@
     <!--end::Modal body-->
 </div>
 <!--end::Modal content-->
+
+
+

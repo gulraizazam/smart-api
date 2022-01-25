@@ -22,38 +22,14 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15">
         <!--begin::Form-->
-        <form class="rota-form" id="modal_resourcerotas_form" method="post" action="{{route('admin.resourcerotas.store')}}">
+        <form class="rota-form" id="modal_add_resourcerotas_form" method="post" action="{{route('admin.resourcerotas.store')}}">
             <!--begin::Scroll-->
-
-            <input class="action-method" type="hidden" name="_method" value="post">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resourcerotas_scroll">
 
                 <div class="form-group">
 
-                    <div class="row common-section edit-section d-none">
-
-                        <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">Resource Name:</strong></div>
-                        <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm" id="resource-name"></strong></div>
-
-                        <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">City:</strong></div>
-                        <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm"  id="city-name"></strong></div>
-
-                        <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">Centre:</strong></div>
-                        <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm"  id="centre-name"></strong></div>
-
-                        <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">Rota Start Date:</strong></div>
-                        <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm"  id="rota-start-date"></strong></div>
-
-                        <input id="edit_city_id" type="hidden">
-                        <input id="edit_location_id" type="hidden">
-                        <input id="edit_resource_type_id" type="hidden">
-                        <input id="edit_machine_id" type="hidden">
-                        <input id="edit_doctor_id" type="hidden">
-
-                    </div>
-
-                    <div class="row common-section add-section d-none">
+                    <div class="row">
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
@@ -116,7 +92,7 @@
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl" id="mondayOperation_1">
+                    <div class="row mt-10 hideonmbl mondayOperation_1">
 
                         <div class="fv-row col-md-4">
 

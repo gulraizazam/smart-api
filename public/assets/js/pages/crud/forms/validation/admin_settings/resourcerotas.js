@@ -1,7 +1,7 @@
 
 var AddValidation = function () {
     var validation = function () {
-        let modal_id = 'modal_resourcerotas_form';
+        let modal_id = 'modal_add_resourcerotas_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
@@ -134,3 +134,8 @@ var EditValidation = function () {
         }
     };
 }();
+
+jQuery(document).ready(function() {
+    AddValidation.init();
+    EditValidation.init();
+});
