@@ -158,7 +158,7 @@
     border: #ffffff !important;
 }
 
-input {
+div > input {
     max-height: 38px !important;
     background-color: #ffffff !important;
     border: 1px solid #E4E6EF !important;
@@ -305,4 +305,7 @@ input {
 }
 .disable-filed {
     background-color: #eef1f5 !important;
+}
+.rota-form-to {
+    max-width: 900px;
 }

@@ -19,7 +19,7 @@ class BaseModal extends Model
 
         return self::where([
             ['id','=',$id],
-            ['account_id','=',Auth::User()->account_id]
+            ['account_id','=',Auth::user()->account_id]
         ])->first();
     }
 

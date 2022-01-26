@@ -4,17 +4,9 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Resources;
-use App\Models\ResourceTypes;
-use Illuminate\Support\Facades\Input;
-use DB;
-use App\Models\AuditTrails;
-use Auth;
-use Session;
-use Validator;
-use App\Models\ResourceHasRotaDays;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 
 class ResourceHasRota extends BaseModal
@@ -69,7 +61,16 @@ class ResourceHasRota extends BaseModal
         if ($request->start <= $request->end) {
 
             $data = $request->all();
-            $resourcetype_id = ResourceTypes::where('name', '=', $request->resource_type_id)->first();
+
+            $resourcetype_id = ResourceTypes::find($request->resource_type_id);
+
+            if (!$resourcetype_id) {
+                return array(
+                    'status' => false,
+                    'message' => 'Resource type not found.',
+                );
+            }
+
             $data['resource_type_id'] = $resourcetype_id->id;
 
             /*checked coming rota for machine or doctor*/
@@ -83,8 +84,8 @@ class ResourceHasRota extends BaseModal
                 }
             } else {
                 return array(
-                    'status' => 0,
-                    'message' => array('Resource not selected, Kindly define'),
+                    'status' => false,
+                    'message' => 'Resource not selected, Kindly define',
                 );
             }
             /*End*/
@@ -93,36 +94,36 @@ class ResourceHasRota extends BaseModal
             $checked = ResourceHasRota::CheckDate($request, $data);
             if ($checked == 'true') {
                 return array(
-                    'status' => 0,
-                    'message' => array('Date range overlap, Kindly define again'),
+                    'status' => false,
+                    'message' => 'Date range overlap, Kindly define again',
                 );
             }
             /*End*/
 
             /*Check if copy all exit or not Monday timing or not copy all*/
-            if (Input::get('copy_all') == '1') {
+            if ($request->get('copy_all') == '1') {
                 $week = array('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
                 foreach ($week as $day) {
                     if($request->get('time_f_monday') && $request->get('time_to_monday')) {
                         if ($request->get('time_f_monday') == $request->get('time_to_monday')) {
                             return array(
-                                'status' => 0,
-                                'message' => array('Time range must be different, Kindly define again'),
+                                'status' => false,
+                                'message' => 'Time range must be different, Kindly define again',
                             );
                         } else {
                             $data[$day] = implode(',', array(Carbon::parse($request->get('time_f_monday'))->format('H:i'), Carbon::parse($request->get('time_to_monday'))->format('H:i')));
                         }
                     } else {
                         return array(
-                            'status' => 0,
-                            'message' => array('From or To require, kindly define again'),
+                            'status' => false,
+                            'message' => 'From or To require, kindly define again',
                         );
                     }
                     if($request->get('break_from_monday') && $request->get('break_to_monday')) {
                         if($request->get('break_from_monday') == $request->get('break_to_monday')) {
                             return array(
-                                'status' => 0,
-                                'message' => array('Time range must be different, Kindly define again'),
+                                'status' => false,
+                                'message' => 'Time range must be different, Kindly define again',
                             );
                         } else {
                             if (
@@ -132,8 +133,8 @@ class ResourceHasRota extends BaseModal
                                 $data[$day . '_off'] = implode(',', array(Carbon::parse($request->get('break_from_monday'))->format('H:i'), Carbon::parse($request->get('break_to_monday'))->format('H:i')));
                             } else {
                                 return array(
-                                    'status' => 0,
-                                    'message' => array('Break time must be between From and To, Kindly Define again'),
+                                    'status' => false,
+                                    'message' => 'Break time must be between From and To, Kindly Define again',
                                 );
                             }
                         }
@@ -143,8 +144,8 @@ class ResourceHasRota extends BaseModal
                         }
                         if($request->get('break_from_monday') || $request->get('break_to_monday')){
                             return array(
-                                'status' => 0,
-                                'message' => array('From Break or To Break require, kindly define again'),
+                                'status' => false,
+                                'message' => 'From Break or To Break require, kindly define again',
                             );
                         }
                     }
@@ -165,16 +166,16 @@ class ResourceHasRota extends BaseModal
                         if($request->get('time_f_' . $day) && $request->get('time_to_' . $day)){
                             if($request->get('time_f_' . $day) == $request->get('time_to_' . $day)){
                                 return array(
-                                    'status' => 0,
-                                    'message' => array('Time range must be different, Kindly define again'),
+                                    'status' => false,
+                                    'message' => 'Time range must be different, Kindly define again',
                                 );
                             } else {
                                 $data[$day] = implode(',', array(Carbon::parse($request->get('time_f_' . $day))->format('H:i'), Carbon::parse($request->get('time_to_' . $day))->format('H:i')));
                             }
                         } else {
                             return array(
-                                'status' => 0,
-                                'message' => array('From or To require, kindly define again'),
+                                'status' => false,
+                                'message' => 'From or To require, kindly define again',
                             );
                         }
                     }
@@ -184,8 +185,8 @@ class ResourceHasRota extends BaseModal
                         if($request->get('break_from_' . $day) && $request->get('break_to_' . $day)){
                             if($request->get('break_from_' . $day) == $request->get('break_to_' . $day)){
                                 return array(
-                                    'status' => 0,
-                                    'message' => array('Time range must be different, Kindly define again'),
+                                    'status' => false,
+                                    'message' => 'Time range must be different, Kindly define again',
                                 );
                             } else {
                                 if (
@@ -195,8 +196,8 @@ class ResourceHasRota extends BaseModal
                                     $data[$day .'_off'] = implode(',', array(Carbon::parse($request->get('break_from_'. $day))->format('H:i'), Carbon::parse($request->get('break_to_'. $day))->format('H:i')));
                                 } else {
                                     return array(
-                                        'status' => 0,
-                                        'message' => array('Break time must be between From and To, Kindly Define again'),
+                                        'status' => false,
+                                        'message' => 'Break time must be between From and To, Kindly Define again',
                                     );
                                 }
                             }
@@ -206,8 +207,8 @@ class ResourceHasRota extends BaseModal
                             }
                             if($request->get('break_from_' . $day) || $request->get('break_to_' . $day)){
                                 return array(
-                                    'status' => 0,
-                                    'message' => array('From Break or To Break require, kindly define again'),
+                                    'status' => false,
+                                    'message' => 'From Break or To Break require, kindly define again',
                                 );
                             }
                         }
@@ -228,14 +229,14 @@ class ResourceHasRota extends BaseModal
             ResourceHasRotaDays::createRotaDaysRecord($request, $resourcerota, $week, $data);
 
             return array(
-                'status' => 1,
+                'status' => true,
                 'message' => 'Record has been created successfully.',
             );
 
         } else {
             return array(
-                'status' => 0,
-                'message' => array('Date range invalid, Kindly define again'),
+                'status' => false,
+                'message' => 'Date range invalid, Kindly define again',
             );
         }
     }
@@ -252,50 +253,55 @@ class ResourceHasRota extends BaseModal
         $resourcehasrota = ResourceHasRota::getData($id);
 
         if ($resourcehasrota == null) {
-            return view('error_full');
-        } else {
-
-            $today = Carbon::now()->toDateString();
-
-            $resource_rota_days = ResourceHasRotaDays::where('resource_has_rota_id', '=', $resourcehasrota->id)->whereDate('date', '>=', $today)->get();
-            $status = true;
-            foreach ($resource_rota_days as $rota_days) {
-                if ($resourcehasrota->resource_type_id == 2) {
-                    $appointment_info = Appointments::where([
-                        ['resource_has_rota_day_id', '=', $rota_days->id],
-                        ['location_id','=',$resourcehasrota->location_id]
-                    ])->get();
-                    if (count($appointment_info)) {
-                        $status = false;
-                    }
-                }
-                if ($resourcehasrota->resource_type_id == 1) {
-                    $appointment_info = Appointments::where([
-                        ['resource_has_rota_day_id_for_machine', '=', $rota_days->id],
-                        ['location_id','=',$resourcehasrota->location_id]
-                    ])->get();
-                    if (count($appointment_info)) {
-                        $status = false;
-                    }
-                }
-            }
-            if ($status) {
-                foreach ($resource_rota_days as $rotadaysinactive) {
-                    $rotadaysinactive->update(['active' => 0]);
-                }
-                $record = $resourcehasrota->update(['active' => 0]);
-
-                flash('Record has been inactivated successfully.')->success()->important();
-
-                AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-            } else {
-                flash('Rota use in appointment, unable to Inactive.')->warning()->important();
-                $record = null;
-            }
-
-            return $record;
+            return [
+                'status' => false,
+                'message' => 'Resource not found.',
+            ];
         }
+
+        $today = Carbon::now()->toDateString();
+
+        $resource_rota_days = ResourceHasRotaDays::where('resource_has_rota_id', '=', $resourcehasrota->id)->whereDate('date', '>=', $today)->get();
+        $status = true;
+        foreach ($resource_rota_days as $rota_days) {
+            if ($resourcehasrota->resource_type_id == 2) {
+                $appointment_info = Appointments::where([
+                    ['resource_has_rota_day_id', '=', $rota_days->id],
+                    ['location_id','=',$resourcehasrota->location_id]
+                ])->get();
+                if (count($appointment_info)) {
+                    $status = false;
+                }
+            }
+            if ($resourcehasrota->resource_type_id == 1) {
+                $appointment_info = Appointments::where([
+                    ['resource_has_rota_day_id_for_machine', '=', $rota_days->id],
+                    ['location_id','=',$resourcehasrota->location_id]
+                ])->get();
+                if (count($appointment_info)) {
+                    $status = false;
+                }
+            }
+        }
+        if ($status) {
+            foreach ($resource_rota_days as $rotadaysinactive) {
+                $rotadaysinactive->update(['active' => 0]);
+            }
+            $record = $resourcehasrota->update(['active' => 0]);
+
+            AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+
+            return [
+                'status' => true,
+                'message' => 'Record has been inactivated successfully.',
+            ];
+
+        }
+
+        return [
+            'status' => false,
+            'message' => 'Rota use in appointment, unable to Inactive.',
+        ];
     }
 
     /**
@@ -311,24 +317,26 @@ class ResourceHasRota extends BaseModal
         $resourcehasrota = ResourceHasRota::getData($id);
 
         if ($resourcehasrota == null) {
-            return view('error_full');
-
-        } else {
-
-            $resource_rota_days = ResourceHasRotaDays::where('resource_has_rota_id', '=', $resourcehasrota->id)->get();
-
-            foreach ($resource_rota_days as $rota_day) {
-                $rota_day->update(['active' => 1]);
-            }
-
-            $record = $resourcehasrota->update(['active' => 1]);
-
-            flash('Record has been activated successfully.')->success()->important();
-
-            AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-            return $record;
+            return [
+                'status' => false,
+                'message' => "Resource not found.",
+            ];
         }
+
+        $resource_rota_days = ResourceHasRotaDays::where('resource_has_rota_id', '=', $resourcehasrota->id)->get();
+
+        foreach ($resource_rota_days as $rota_day) {
+            $rota_day->update(['active' => 1]);
+        }
+
+        $record = $resourcehasrota->update(['active' => 1]);
+
+        AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+
+        return [
+            'status' => true,
+            'message' => 'Record has been activated successfully.',
+        ];
     }
 
     /**
@@ -345,14 +353,19 @@ class ResourceHasRota extends BaseModal
 
         if ($resourcehasrota == null) {
 
-            return view('error_full');
+            return [
+                'status' => false,
+                'message' => 'Resource not found.',
+            ];
 
         } else {
 
             if (ResourceHasRota::isChildExists($id, Auth::User()->account_id)) {
 
-                flash('Child records exist, unable to delete resource')->error()->important();
-                return redirect()->route('admin.resourcerotas.index');
+                return [
+                    'status' => false,
+                    'message' => 'Child records exist, unable to delete resource',
+                ];
             }
 
             $resourcerotadays = ResourceHasRotaDays::where('resource_has_rota_id', '=', $resourcehasrota->id)->forceDelete();
@@ -361,9 +374,10 @@ class ResourceHasRota extends BaseModal
 
             AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-            flash('Record has been deleted successfully.')->success()->important();
-
-            return $record;
+            return [
+                'status' => true,
+                'message' => 'Record has been deleted successfully.',
+            ];
         }
     }
 
@@ -402,7 +416,7 @@ class ResourceHasRota extends BaseModal
             $data = $request->all();
             /*Enter resource Id to reuse checkDatefunction*/
             $data['resource_id'] = $resourcerota->resource_id;
-            if (Input::get('copy_all') == '1') {
+            if ($request->copy_all == '1') {
                 $week = array('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
                 foreach ($week as $day) {
                     if($request->get('time_f_monday') && $request->get('time_to_monday')){
@@ -412,7 +426,7 @@ class ResourceHasRota extends BaseModal
                                 'message' => array('Time range must be different, Kindly define again'),
                             );
                         } else {
-                            $data[$day] = implode(',', array(Carbon::parse(Input::get('time_f_monday'))->format('H:i'), Carbon::parse(Input::get('time_to_monday'))->format('H:i')));
+                            $data[$day] = implode(',', array(Carbon::parse($request->time_f_monday)->format('H:i'), Carbon::parse($request->time_to_monday)->format('H:i')));
                         }
                     } else {
                         return array(

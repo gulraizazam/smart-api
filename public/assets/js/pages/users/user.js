@@ -384,12 +384,13 @@ function setFilters(filter_values, active_filters) {
 }
 
 function hideShowAdvanceFilters(active_filters) {
-    if (active_filters.location_id != ''
-        || active_filters.gender != ''
-        || active_filters.commission != ''
-        || active_filters.email != ''
-        || active_filters.created_from != ''
-        || active_filters.created_to != '') {
+    if ((typeof active_filters.location_id !== 'undefined' && active_filters.location_id != '')
+        || (typeof active_filters.gender !== 'undefined' && active_filters.gender != '')
+        || (typeof active_filters.commission !== 'undefined' && active_filters.commission != '')
+        || (typeof active_filters.email !== 'undefined' && active_filters.email != '')
+        || (typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
+        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
+    ) {
 
         $(".advance-filters").show();
         $(".advance-arrow").addClass("fa fa-caret-down");

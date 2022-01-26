@@ -578,7 +578,7 @@ class Resources extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -598,7 +598,7 @@ class Resources extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'resource_type_id')) {
+        if (hasFilter($filters, 'resource_type_id')) {
             $where[] = array(
                 'resource_type_id',
                 '=',
@@ -618,7 +618,7 @@ class Resources extends BaseModal
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'location_id')) {
+        if (hasFilter($filters, 'location_id')) {
             $where[] = array(
                 'location_id',
                 '=',
@@ -639,7 +639,7 @@ class Resources extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'machine_type_id')) {
+        if (hasFilter($filters, 'machine_type_id')) {
             $where[] = array(
                 'machine_type_id',
                 '=',
@@ -660,7 +660,7 @@ class Resources extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'resources.created_at',
                 '>=',
@@ -681,7 +681,7 @@ class Resources extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'resources.created_at',
                 '<=',
@@ -702,7 +702,7 @@ class Resources extends BaseModal
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'resources.active',
                 '=',
@@ -826,23 +826,29 @@ class Resources extends BaseModal
         $resource = Resources::getData($id);
 
         if (!$resource) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.resources.index');
+            return [
+              'status' => false,
+              'message' => 'Resource not found.',
+            ];
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Resources::isChildExists($id, Auth::User()->account_id)) {
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.resources.index');
+
+            return [
+                'status' => false,
+                'message' => 'Child records exist, unable to delete resource',
+            ];
         }
 
         $record = $resource->delete();
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return [
+            'status' => true,
+            'message' => 'Record has been deleted successfully.',
+        ];
     }
 
     /**
