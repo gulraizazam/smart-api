@@ -1,81 +1,175 @@
 //To manage the functionality of Week days
 $(document).ready(function () {
 
-    $('#mondayElement_1, #edit_mondayElement_1').on('change', function () {
-        if ($('#mondayElement_1, #edit_mondayElement_1').is(':unchecked')) {
-            $('.mondayOperation_1 :input').attr('disabled', true);
+    $('#mondayElement_1').on('change', function () {
+        if ($('#mondayElement_1').is(':unchecked')) {
+            $('#mondayOperation_1 :input').attr('disabled', true);
             $('.mondaytime_1').val('', '');
             $('.monday_breake_time').val('', '');
         } else {
-            $('.mondayOperation_1 :input').removeAttr('disabled');
+            $('#mondayOperation_1 :input').removeAttr('disabled');
             $('.mondaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
             $('.monday_breake_time').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
-    $('#tuesdayElement_1, #tuesdayElement_1').on('change', function () {
-        if ($('#tuesdayElement_1, #tuesdayElement_1').is(':unchecked')) {
-            $('.tuesdayOperation_1 :input').attr('disabled', true);
+
+    $('#edit_mondayElement_1').on('change', function () {
+        if ($('#edit_mondayElement_1').is(':unchecked')) {
+            $('#edit_mondayOperation_1 :input').attr('disabled', true);
+            $('.edit_mondaytime_1').val('', '');
+            $('.edit_monday_breake_time').val('', '');
+        } else {
+            $('.mondayOperation_1 :input').removeAttr('disabled');
+            $('.edit_mondaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+            $('.edit_monday_breake_time').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+        }
+    });
+
+
+    $('#tuesdayElement_1').on('change', function () {
+        if ($('#tuesdayElement_1').is(':unchecked')) {
+            $('#tuesdayOperation_1 :input').attr('disabled', true);
             $('.tuesdaytime_1').val('', '');
             $('.tuesdaytime_break').val('', '');
         } else {
-            $('.tuesdayOperation_1 :input').removeAttr('disabled');
+            $('#tuesdayOperation_1 :input').removeAttr('disabled');
             $('.tuesdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
             $('.tuesdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
-    $('#wednesdayElement_1, #edit_wednesdayElement_1').on('change', function () {
-        if ($('#wednesdayElement_1, #edit_wednesdayElement_1').is(':unchecked')) {
-            $('.wednesdayOperation_1 :input').attr('disabled', true);
+
+    $('#edit_tuesdayElement_1').on('change', function () {
+        if ($('#edit_tuesdayElement_1').is(':unchecked')) {
+            $('#edit_tuesdayOperation_1 :input').attr('disabled', true);
+            $('.edit_tuesdaytime_1').val('', '');
+            $('.edit_tuesdaytime_break').val('', '');
+        } else {
+            $('#edit_tuesdayElement_1 :input').removeAttr('disabled');
+            $('.edit_tuesdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+            $('.edit_tuesdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+        }
+    });
+
+    $('#wednesdayElement_1').on('change', function () {
+        if ($('#wednesdayElement_1').is(':unchecked')) {
+            $('#wednesdayOperation_1 :input').attr('disabled', true);
             $('.wednesdaytime_1').val('', '');
             $('.wednesdaytime_break').val('', '');
         } else {
-            $('.wednesdayOperation_1 :input').removeAttr('disabled');
+            $('#wednesdayOperation_1 :input').removeAttr('disabled');
             $('.wednesdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
             $('.wednesdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
-    $('#thursdayElement_1, #edit_thursdayElement_1').on('change', function () {
-        if ($('#thursdayElement_1, #edit_thursdayElement_1').is(':unchecked')) {
-            $('.thursdayOperation_1 :input').attr('disabled', true);
+
+    $('#edit_wednesdayElement_1').on('change', function () {
+        if ($('#edit_wednesdayElement_1').is(':unchecked')) {
+            $('#edit_wednesdayOperation_1 :input').attr('disabled', true);
+            $('.edit_wednesdaytime_1').val('', '');
+            $('.edit_wednesdaytime_break').val('', '');
+        } else {
+            $('#edit_wednesdayOperation_1 :input').removeAttr('disabled');
+            $('.edit_wednesdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+            $('.edit_wednesdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+        }
+    });
+
+
+    $('#thursdayElement_1').on('change', function () {
+        if ($('#thursdayElement_1').is(':unchecked')) {
+            $('#thursdayOperation_1 :input').attr('disabled', true);
             $('.thursdaytime_1').val('', '');
             $('.thursdaytime_break').val('', '');
         } else {
-            $('.thursdayOperation_1 :input').removeAttr('disabled');
+            $('#thursdayOperation_1 :input').removeAttr('disabled');
             $('.thursdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
             $('.thursdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
-    $('#fridayElement_1, #edit_fridayElement_1').on('change', function () {
-        if ($('#fridayElement_1, #edit_fridayElement_1').is(':unchecked')) {
-            $('.fridayOperation_1 :input').attr('disabled', true);
+
+    $('#edit_thursdayElement_1').on('change', function () {
+        if ($('#edit_thursdayElement_1').is(':unchecked')) {
+            $('#edit_thursdayOperation_1 :input').attr('disabled', true);
+            $('.edit_thursdaytime_1').val('', '');
+            $('.edit_thursdaytime_break').val('', '');
+        } else {
+            $('#edit_thursdayOperation_1 :input').removeAttr('disabled');
+            $('.edit_thursdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+            $('.edit_thursdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+        }
+    });
+
+    $('#fridayElement_1').on('change', function () {
+        if ($('#fridayElement_1').is(':unchecked')) {
+            $('#fridayOperation_1 :input').attr('disabled', true);
             $('.fridaytime_1').val('', '');
             $('.fridaytime_break').val('', '');
         } else {
-            $('.fridayOperation_1 :input').removeAttr('disabled');
+            $('#fridayOperation_1 :input').removeAttr('disabled');
             $('.fridaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
             $('.fridaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
-    $('#saturdayElement_1, #edit_saturdayElement_1').on('change', function () {
-        if ($('#saturdayElement_1, #edit_saturdayElement_1').is(':unchecked')) {
-            $('.saturdayOperation_1 :input').attr('disabled', true);
+
+    $('#edit_fridayElement_1').on('change', function () {
+        if ($('#edit_fridayElement_1').is(':unchecked')) {
+            $('#edit_fridayOperation_1 :input').attr('disabled', true);
+            $('.edit_fridaytime_1').val('', '');
+            $('.edit_fridaytime_break').val('', '');
+        } else {
+            $('#edit_fridayOperation_1 :input').removeAttr('disabled');
+            $('.edit_fridaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+            $('.edit_fridaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+        }
+    });
+
+
+    $('#saturdayElement_1').on('change', function () {
+        if ($('#saturdayElement_1').is(':unchecked')) {
+            $('#saturdayOperation_1 :input').attr('disabled', true);
             $('.saturdaytime_1').val('', '');
             $('.saturdaytime_break').val('', '');
         } else {
-            $('.saturdayOperation_1 :input').removeAttr('disabled');
+            $('#saturdayOperation_1 :input').removeAttr('disabled');
             $('.saturdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
             $('.saturdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
-    $('#sundayElement_1, #edit_sundayElement_1').on('change', function () {
-        if ($('#sundayElement_1, #edit_sundayElement_1').is(':unchecked')) {
-            $('.sundayOperation_1 :input').attr('disabled', true);
+
+
+    $('#edit_saturdayElement_1').on('change', function () {
+        if ($('#edit_saturdayElement_1').is(':unchecked')) {
+            $('#edit_saturdayOperation_1 :input').attr('disabled', true);
+            $('.edit_saturdaytime_1').val('', '');
+            $('.edit_saturdaytime_break').val('', '');
+        } else {
+            $('#edit_saturdayOperation_1 :input').removeAttr('disabled');
+            $('.edit_saturdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+            $('.edit_saturdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+        }
+    });
+
+    $('#sundayElement_1').on('change', function () {
+        if ($('#sundayElement_1').is(':unchecked')) {
+            $('#sundayOperation_1 :input').attr('disabled', true);
             $('.sundaytime_1').val('', '');
             $('.sundaytime_break').val('', '');
         } else {
-            $('.sundayOperation_1 :input').removeAttr('disabled');
+            $('#sundayOperation_1 :input').removeAttr('disabled');
             $('.sundaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
             $('.sundaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+        }
+    });
+
+    $('#edit_sundayElement_1').on('change', function () {
+        if ($('#edit_sundayElement_1').is(':unchecked')) {
+            $('#edit_sundayOperation_1 :input').attr('disabled', true);
+            $('.edit_sundaytime_1').val('', '');
+            $('.edit_sundaytime_break').val('', '');
+        } else {
+            $('#edit_sundayOperation_1 :input').removeAttr('disabled');
+            $('.edit_sundaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+            $('.edit_sundaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
@@ -133,7 +227,6 @@ $(document).ready(function () {
             $('#fridayOperation_1 :input').attr('disabled', false);
             $('#saturdayOperation_1 :input').attr('disabled', false);
             $('#sundayOperation_1 :input').attr('disabled', false);
-            $('.check_final_1').show();
             $(".ftime_1").timepicker('setTime', new Date());
             $(".ttime_1").timepicker('setTime', new Date());
             $(".f_time_break").timepicker('setTime', null);
@@ -167,7 +260,7 @@ $(document).ready(function () {
             $('#edit_sundayOperation_1 :input').attr('disabled', true);
             $('#edit_sundayElement_1').prop('checked', true);
 
-            $('.check_final_1').hide();
+            $('.edit_check_final_1').hide();
 
             /*get the monday break timing*/
             var frombreakvalue = $('#edit_break_monday_from').val();
@@ -187,7 +280,7 @@ $(document).ready(function () {
         }
         else {
 
-            $('.check_final_1').show();
+            $('.edit_check_final_1').show();
             $('#copy_all_1').val('0');
             $('#edit_mondayOperation_1 :input').attr('disabled', false);
             $('#tuesdayOperation_1, #edit_tuesdayOperation_1').find("input").attr('disabled', false);
@@ -218,23 +311,50 @@ $(document).ready(function () {
 
     $('.monday_breake_time').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null).on('change', function(){
 
-        if ($('#copy_all_1, #edit_copy_all_1').is(":checked")) {
-            $('#copy_all_1, #edit_copy_all_1').trigger('change');
+        if ($('#copy_all_1').is(":checked")) {
+            $('#copy_all_1').trigger('change');
         }
         return true;
     });
 
-    $('#edit_monday_from, #monday_from').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
 
-        if ($('#copy_all_1, #edit_copy_all_1').is(":checked")) {
-            $('#copy_all_1, #edit_copy_all_1').trigger('change');
+    $('.edit_monday_breake_time').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null).on('change', function(){
+
+        if ($('#edit_copy_all_1').is(":checked")) {
+            $('#edit_copy_all_1').trigger('change');
         }
         return true;
     });
-    $('#monday_to, #edit_monday_to').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
 
-        if ($('#copy_all_1, #edit_copy_all_1').is(":checked")) {
-            $('#copy_all_1, #edit_copy_all_1').trigger('change');
+    $('#monday_from').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
+
+        if ($('#copy_all_1').is(":checked")) {
+            $('#copy_all_1').trigger('change');
+        }
+        return true;
+    });
+
+    $('#edit_monday_from').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
+
+        if ($('#edit_copy_all_1').is(":checked")) {
+            $('#edit_copy_all_1').trigger('change');
+        }
+        return true;
+    });
+
+
+    $('#monday_to').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
+
+        if ($('#copy_all_1').is(":checked")) {
+            $('#copy_all_1').trigger('change');
+        }
+        return true;
+    });
+
+    $('#edit_monday_to').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
+
+        if ($('#edit_copy_all_1').is(":checked")) {
+            $('#edit_copy_all_1').trigger('change');
         }
         return true;
     });
@@ -399,6 +519,7 @@ function setCreateData(response) {
         form[0].reset();
 
         $(".doctor_section").addClass("d-none");
+        $(".check_final_1").show();
         $("#is_consultancy_1").attr("checked", true);
         $("#is_treatment_1").attr("checked", true);
 
@@ -432,6 +553,9 @@ function setDefaultValues(form) {
     $("#end").val(data)
 
     $(".current-timepicker").timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+
+    form.find(".f_time_break").val('');
+    form.find(".t_time_break").val('');
 }
 
 function getLocations($this) {

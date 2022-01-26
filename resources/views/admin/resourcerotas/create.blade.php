@@ -83,8 +83,8 @@
 
 
                     <div class="row mt-10 hideonmbl">
-                        <div class="col col-md-2"><strong>On</strong></div>
-                        <div class="col col-md-2"><strong>Days</strong></div>
+                        <div class="col col-md-1"><strong>On</strong></div>
+                        <div class="col col-md-3"><strong>Days</strong></div>
                         <div class="col col-md-2"><strong>From</strong></div>
                         <div class="col col-md-2"><strong>To</strong></div>
                         <div class="col col-md-2"><strong>From Break</strong></div>
@@ -92,7 +92,7 @@
 
                     </div>
 
-                    <div class="row mt-10 hideonmbl mondayOperation_1">
+                    <div class="row mt-10 hideonmbl " id="mondayOperation_1">
 
                         <div class="fv-row col-md-4">
 
@@ -287,19 +287,19 @@
                         </div>
 
                         <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_sunday', old('time_f_sunday'), ['id' => 'time_f_sunday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 sundaytime_1 ftime_1']) !!}
+                            {!! Form::text('time_f_sunday', old('time_f_sunday'), ['id' => 'time_f_sunday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_sundaytime_1 ftime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('time_to_sunday', old('time_to_sunday'), ['id' => 'time_to_sunday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 sundaytime_1 ttime_1']) !!}
+                            {!! Form::text('time_to_sunday', old('time_to_sunday'), ['id' => 'time_to_sunday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_sundaytime_1 ttime_1']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('break_from_sunday', old('break_from_sunday'), ['id' => 'break_from_sunday', 'class' => 'form-control timepicker breaktime sundaytime_break f_time_break']) !!}
+                            {!! Form::text('break_from_sunday', old('break_from_sunday'), ['id' => 'break_from_sunday', 'class' => 'form-control timepicker breaktime edit_sundaytime_break f_time_break']) !!}
                         </div>
                         <div class="fv-row col-md-2">
 
-                            {!! Form::text('break_to_sunday', old('break_to_sunday'), ['id' => 'break_to_sunday', 'class' => 'form-control timepicker breaktime sundaytime_break t_time_break']) !!}
+                            {!! Form::text('break_to_sunday', old('break_to_sunday'), ['id' => 'break_to_sunday', 'class' => 'form-control timepicker breaktime edit_sundaytime_break t_time_break']) !!}
                         </div>
 
                     </div>
