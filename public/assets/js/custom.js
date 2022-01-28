@@ -47,6 +47,8 @@ $(document).ready(function () {
         },
     }).datepicker("setDate", new Date());
 
+    $('.timepicker').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+
 
     /*for percentage amount*/
 
@@ -319,7 +321,9 @@ function reInitTable() {
         //$('#kt_datatable').KTDatatable('reload');
 
         /*this is for reload datatable*/
-        datatable.search({ datatable_reload: 'reload' }, 'search');
+        if (typeof datatable !== 'undefined') {
+            datatable.search({ datatable_reload: 'reload' }, 'search');
+        }
 
     }, 400);
 }
