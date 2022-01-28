@@ -121,7 +121,9 @@ var KTDatatable = function() {
 
 jQuery(document).ready(function() {
 
-    KTDatatable.init();
+    if (typeof table_url !== 'undefined') {
+        KTDatatable.init();
+    }
 
     /*To get selected row ids for deletion*/
     $(document).on("click", ".select-all-checkboxes", function () {
