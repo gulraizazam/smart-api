@@ -32,15 +32,18 @@ class Filters
      * @return: void
      */
     private static function _init($userId, $file) {
-        $file_with_path = storage_path(self::$base_path . DIRECTORY_SEPARATOR . $userId);
+        if ($file && $file != '') {
+            $userId = self::randId($userId);
+            $file_with_path = storage_path(self::$base_path . DIRECTORY_SEPARATOR . $userId);
 
-        /*
-         * Check if directory exists or not
-         */
-        is_dir(storage_path(self::$base_path)) ?: mkdir(storage_path(self::$base_path), 0755, true);
-        is_dir($file_with_path) ?: mkdir($file_with_path, 0755, true);
+            /*
+             * Check if directory exists or not
+             */
+            is_dir(storage_path(self::$base_path)) ?: mkdir(storage_path(self::$base_path), 0755, true);
+            is_dir($file_with_path) ?: mkdir($file_with_path, 0755, true);
 
-        self::$valuestore = Valuestore::make(storage_path(self::$base_path . DIRECTORY_SEPARATOR . $userId . DIRECTORY_SEPARATOR . $file) . '.json');
+            self::$valuestore = Valuestore::make(storage_path(self::$base_path . DIRECTORY_SEPARATOR . $userId . DIRECTORY_SEPARATOR . $file) . '.json');
+        }
     }
 
 
@@ -76,6 +79,8 @@ class Filters
         } else {
             self::$valuestore->put($key, $value);
         }
+
+        Filters::RemoveEmptySubFolders(storage_path(self::$base_path));
 
         return true;
     }
@@ -122,6 +127,68 @@ class Filters
         self::_init($userId, $file);
 
         return self::$valuestore->get($key);
+    }
+
+    public static function randId($userId) {
+
+        $exist = self::getRandId($userId);
+
+        if (!$exist) {
+            $rand = uniqid();
+            session()->put($userId, $rand);
+            return $rand;
+        }
+        return $exist;
+    }
+
+    public static function getRandId($userId) {
+
+        if (session()->has($userId)) {
+            return session($userId);
+        }
+        return false;
+    }
+
+    public static function RemoveEmptySubFolders($dir) {
+
+        try {
+            return self::rmdir($dir);
+        } catch (\Exception $e) {
+            return true;
+        }
+
+    }
+
+
+    public static function rmdir($path) {
+
+        $res = scandir($path);
+        foreach ($res as $r) {
+            $ar = scandir($path . DIRECTORY_SEPARATOR .$r);
+            if (count($ar) == 2) {
+                rmdir($path . DIRECTORY_SEPARATOR . $r);
+            }
+        }
+
+        return false;
+    }
+
+    public static function remove_filters(): bool
+    {
+        try {
+
+            $dir = storage_path(self::$base_path. DIRECTORY_SEPARATOR . self::getRandId(auth()->id()));
+
+            foreach (scandir($dir) as $file) {
+                if ('.' === $file || '..' === $file) continue;
+                if (is_dir("$dir/$file")) self::remove_filters("$dir/$file");
+                else unlink("$dir/$file");
+            }
+            rmdir($dir);
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
 }

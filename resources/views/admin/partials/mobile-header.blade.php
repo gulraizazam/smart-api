@@ -3,7 +3,7 @@
 <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed">
     <!--begin::Logo-->
     <a href="{{route('admin.home')}}">
-        <img alt="Logo" src="{{asset('assets/media/logo/logo.svg')}}" />
+        <img alt="Logo" src="{{asset('assets/media/logos/logo.svg')}}" />
     </a>
     <!--end::Logo-->
     <!--begin::Toolbar-->
