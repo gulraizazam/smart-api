@@ -710,12 +710,12 @@ class ResourceRotasController extends Controller
      * Get information for calender view ajax base
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getcalenderinfoevents($id)
     {
         if (!Gate::allows('resourcerotas_manage')) {
-            return abort('401');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $resourceRota = ResourceHasRota::find($id);
@@ -751,6 +751,7 @@ class ResourceRotasController extends Controller
                 if (count($tem) <= '1') {
                     $tem = null;
                 }
+
                 $records[$index] = array(
                     'id' => $days->id,
                     'date' => $days->date,
@@ -766,6 +767,8 @@ class ResourceRotasController extends Controller
                 $index++;
             }
         }
+
+        //return ApiHelper::apiResponse($this->success, 'Record found.', true, $records);
         return Response()->json($records);
     }
 
@@ -773,12 +776,12 @@ class ResourceRotasController extends Controller
      * Get information for calender view
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getcalenderinfo($id)
     {
         if (!Gate::allows('resourcerotas_manage')) {
-            return abort('401');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $resourcehasrota = ResourceHasRota::getData($id);
 
@@ -786,76 +789,78 @@ class ResourceRotasController extends Controller
 
         if ($resourcehasrota == null) {
 
-            return view('error_full');
+            return ApiHelper::apiResponse($this->success, 'Resource rota not found.', false);
 
-        } else {
-
-            return view('admin.resourcerotas.calender', compact('id', 'resource'));
         }
+
+        return ApiHelper::apiResponse($this->success, 'Resource rota found.', true, [
+            'id' => $id,
+            'resource' => $resource
+        ]);
+    }
+
+    public function viewCalender() {
+
+        return view('admin.resourcerotas.calender');
     }
 
     /**
      * update information of Resource days in resource has rotas days
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store_calender_edit()
+    public function store_calender_edit(Request $request)
     {
 
         if (!Gate::allows('resourcerotas_manage')) {
 
-            return abort('401');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $rotahasdays = ResourceHasRotaDays::where('id', '=', Input::get('resource_days_id'))->first();
+        $rotahasdays = ResourceHasRotaDays::where('id', '=', $request->resource_days_id)->first();
 
         $resourceid = ResourceHasRota::where('id', '=', $rotahasdays->resource_has_rota_id)->first();
 
-        if (Input::get('dayElement') != 'on') {
+        if ($request->dayElement != 'on') {
 
-            if(Input::get('start_time') && Input::get('end_time')){
-                if (Input::get('start_time') == Input::get('end_time')) {
-                    flash('Time range must be different, kindly define again.')->warning()->important();
-                    return redirect()->route('admin.resourcerotas.calender', ['id' => $resourceid->id]);
+            if($request->start_time && $request->end_time) {
+                if ($request->start_time == $request->end_time) {
+                    return ApiHelper::apiResponse($this->success, 'Time range must be different, kindly define again.', false);
                 }
             } else {
-                flash('From or To require, kindly define again.')->warning()->important();
-                return redirect()->route('admin.resourcerotas.calender', ['id' => $resourceid->id]);
+                return ApiHelper::apiResponse($this->success, 'From or To require, kindly define again.', false);
             }
 
-            if(Input::get('start_off') && Input::get('end_off')){
-                if(Input::get('start_off') == Input::get('end_off')){
-                    flash('Time range must be different, kindly define again.')->warning()->important();
-                    return redirect()->route('admin.resourcerotas.calender', ['id' => $resourceid->id]);
+            if($request->start_off && $request->end_off){
+                if($request->start_off == $request->end_off){
+                    return ApiHelper::apiResponse($this->success, 'Time range must be different, kindly define again.', false);
                 } else {
                     if (
-                        strtotime(Input::get('start_off')) >= strtotime(Input::get('start_time')) &&
-                        strtotime(Input::get('end_off')) <= strtotime(Input::get('end_time'))
-                    ) {
+                        strtotime($request->start_off) >= strtotime($request->start_time) &&
+                        strtotime($request->end_off) <= strtotime($request->end_time)
+                        ) {
 
-                        $start_off = Input::get('start_off');
-                        $end_off = Input::get('end_off');
+                        $start_off = $request->start_off;
+                        $end_off = $request->end_off;
 
                     } else {
-                        flash('Break time must be between From and To, Kindly Define again.')->warning()->important();
-                        return redirect()->route('admin.resourcerotas.calender', ['id' => $resourceid->id]);
+                        return ApiHelper::apiResponse($this->success, 'Break time must be between From and To, Kindly Define again.', false);
                     }
                 }
             } else {
-                if(!Input::get('start_off') && !Input::get('end_off')){
+                if(!$request->start_off && !$request->end_off){
                     $start_off = null;
                     $end_off = null;
                 }
-                if(Input::get('start_off') || Input::get('end_off')){
-                    flash('From or To require, kindly define again.')->warning()->important();
-                    return redirect()->route('admin.resourcerotas.calender', ['id' => $resourceid->id]);
+                if($request->start_off || $request->end_off){
+                    return ApiHelper::apiResponse($this->success, 'From or To require, kindly define again.', false);
                 }
             }
         }
-        if (Input::get('dayElement') == null) {
+        if ($request->dayElement == null) {
 
-            $start_timestamp = Carbon::parse($rotahasdays->date . ' ' . Input::get('start_time'))->format('Y-m-d H:i') . ':00';
-            $end_timestamp = Carbon::parse($rotahasdays->date . ' ' . Input::get('end_time'))->format('Y-m-d H:i') . ':00';
+            $start_timestamp = Carbon::parse($rotahasdays->date . ' ' . $request->start_time)->format('Y-m-d H:i') . ':00';
+            $end_timestamp = Carbon::parse($rotahasdays->date . ' ' . $request->end_time)->format('Y-m-d H:i') . ':00';
 
             /*First I checked For doctor*/
             if ($resourceid->resource_type_id == 2) {
@@ -868,30 +873,30 @@ class ResourceRotasController extends Controller
             $not_allow = false;
             if (count($rota_appointments)) {
                 foreach ($rota_appointments as $rota_appointment) {
-                    if ($rota_appointment['scheduled_time'] && Input::get('start_time') && Input::get('end_time')) {
-                        if (!ResourceHasRota::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), Input::get('start_time'), Input::get('end_time'))) {
+                    if ($rota_appointment['scheduled_time'] && $request->start_time && $request->end_time) {
+                        if (!ResourceHasRota::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $request->start_time, $request->end_time)) {
                             $not_allow = true;
-                            flash('Provided rota timings are conflicts with appointments. Unable to update rota.')->warning()->important();
+                            return ApiHelper::apiResponse($this->success, 'Provided rota timings are conflicts with appointments. Unable to update rota.', false);
                             break;
                         }
                         if (ResourceHasRota::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), Input::get('start_off'), Input::get('end_off'))) {
                             $not_allow = true;
-                            flash('Provided rota break timings are conflicts with appointments. Unable to update rota.')->warning()->important();
+                            return ApiHelper::apiResponse($this->success, 'Provided rota break timings are conflicts with appointments. Unable to update rota.', false);
                             break;
                         }
                     }
                 }
             }
             if ($not_allow) {
-                return redirect()->route('admin.resourcerotas.calender', ['id' => $resourceid->id]);
+                return ApiHelper::apiResponse($this->success, 'Not Allowed', false);
             } else {
                 $rotahasdays->update([
-                        'start_time' => Input::get('start_time'),
-                        'end_time' => Input::get('end_time'),
-                        'start_timestamp' => $start_timestamp,
-                        'end_timestamp' => $end_timestamp,
-                        'start_off' => $start_off,
-                        'end_off' => $end_off
+                    'start_time' => $request->start_time,
+                    'end_time' => $request->end_time,
+                    'start_timestamp' => $start_timestamp,
+                    'end_timestamp' => $end_timestamp,
+                    'start_off' => $start_off,
+                    'end_off' => $end_off
                 ]);
             }
         } else {
@@ -912,13 +917,11 @@ class ResourceRotasController extends Controller
                     'end_off' => null,
                 ]);
             } else {
-                flash('Rota use in appointment, kindly define again.')->warning()->important();
-                return redirect()->route('admin.resourcerotas.calender', ['id' => $resourceid->id]);
+                return ApiHelper::apiResponse($this->success, 'Rota use in appointment, kindly define again.', false);
             }
         }
-        flash('Record has been updated successfully.')->success()->important();
 
-        return redirect()->route('admin.resourcerotas.calender', ['id' => $resourceid->id]);
+        return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
 
 

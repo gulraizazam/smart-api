@@ -228,7 +228,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('resourcerotas/status',[ResourceRotasController::class, 'status'])->name('resourcerotas.status');
     Route::get('resourcerotas/calender/{id}',[ResourceRotasController::class, 'getcalenderinfo'])->name('resourcerotas.calender');
     Route::get('resourcerotas/calender/events/{id}',[ResourceRotasController::class, 'getcalenderinfoevents'])->name('resourcerotas.events');
-    Route::get('resourcerotas/store_Calender_edit',[ResourceRotasController::class, 'store_calender_edit'])->name('resourcerotas.store_Calender_edit');
+    Route::post('resourcerotas/store_Calender_edit',[ResourceRotasController::class, 'store_calender_edit'])->name('resourcerotas.store_Calender_edit');
     Route::resource('resourcerotas', ResourceRotasController::class)->except('index');
 
 });
