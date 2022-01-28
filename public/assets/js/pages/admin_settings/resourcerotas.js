@@ -432,12 +432,13 @@ var table_columns = [
     }];
 
 function actions(data) {
+
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
         let url = route('admin.resourcerotas.edit', {id: id});
         let delete_url = route('admin.resourcerotas.destroy', {id: id});
-        let calender_url = route('admin.resourcerotas.calender', {id: id});
+        let calender_url = route('admin.resourcerotas.calender-view', {id: id});
 
         if (permissions.edit && permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
