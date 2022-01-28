@@ -179,5 +179,6 @@ use App\Http\Controllers\Admin\ResourceRotasController;
 
         //Resource Rota Management
         Route::resource('resourcerotas', ResourceRotasController::class)->only('index');
+        Route::get('resourcerotas/calender/view/{id}', [ResourceRotasController::class, 'viewCalender'])->name('resourcerotas.calender-view');
 
     });

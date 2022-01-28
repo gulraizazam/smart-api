@@ -309,3 +309,9 @@ div > input {
 .rota-form-to {
     max-width: 900px;
 }
+.fc-content > .fc-title {
+    color: #fff !important;
+}
+.full-page-view {
+    max-width: 100%;
+}

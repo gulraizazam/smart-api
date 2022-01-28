@@ -1,7 +1,7 @@
 
 <?php
         if($tem==null){
-            echo '#ff0000';
+            echo '#4169e1';
         } else{
             $start_rota =\Carbon\Carbon::parse($tem[0]);
 
@@ -15,6 +15,8 @@
                 echo '#87cefa';
             } else if($difference_rotadays==0){
                 echo '#ff0000';
+            } else {
+                echo '#87cefa';
             }
         }
 
