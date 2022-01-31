@@ -4,8 +4,18 @@
         Search
     </button>
 
-    <button class="btn btn-secondary btn-secondary--icon ml-3" onclick="resetFilters();" id="reset-filters">
-        <i class="la la-close"></i>
-        Reset
-    </button>
+    @if(isset($custom_reset))
+
+        <button class="btn btn-secondary btn-secondary--icon ml-3" onclick="resetInvoiceFilters();" id="reset-filters">
+            <i class="la la-close"></i>
+            Reset
+        </button>
+    @else
+        <button class="btn btn-secondary btn-secondary--icon ml-3" onclick="resetFilters();" id="reset-filters">
+            <i class="la la-close"></i>
+            Reset
+        </button>
+    @endif
+
+
 </div>
