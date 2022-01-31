@@ -24,6 +24,8 @@ use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\ResourceRotasController;
+use App\Http\Controllers\Admin\InvoicesController;
+use App\Http\Controllers\Admin\UsersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +50,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('user_operator_settings/datatable', [UserOperatorSettingsController::class, 'datatable'])->name('user_operator_settings.datatable');
     Route::get('user_operator_settings/{id}/edit', [UserOperatorSettingsController::class, 'edit'])->name('user_operator_settings.edit');
     Route::put('user_operator_settings/{id}', [UserOperatorSettingsController::class, 'update'])->name('user_operator_settings.update');
+
     // Operator Settings Routes End
 
     // Payment Modes Routes Start
@@ -230,6 +233,26 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('resourcerotas/calender/events/{id}',[ResourceRotasController::class, 'getcalenderinfoevents'])->name('resourcerotas.events');
     Route::post('resourcerotas/store_Calender_edit',[ResourceRotasController::class, 'store_calender_edit'])->name('resourcerotas.store_Calender_edit');
     Route::resource('resourcerotas', ResourceRotasController::class)->except('index');
+
+    //Invoice Management route start
+    Route::post('invoices/datatable', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
+
+    Route::post('invoices/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoices.cancel');
+
+    Route::get('invoices/displayInvoice/{id}', [InvoicesController::class, 'displayInvoice'])->name('invoices.displayInvoice');
+
+    Route::get('invoices/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
+
+    Route::get('invoices/log/{id}/{type}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
+
+    Route::get('invoices/sms_logs/{id}', [InvoicesController::class, 'showSMSLogs'])->name('invoices.sms_logs');
+
+    Route::post('invoices/send_logged_sms', [InvoicesController::class, 'sendLogSMS']);
+
+    Route::resource('invoices', InvoicesController::class)->except('index');
+    //Invoice Management route end
+
+    Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
 
 });
 
