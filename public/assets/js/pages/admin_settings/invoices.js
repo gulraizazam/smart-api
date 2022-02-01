@@ -301,8 +301,10 @@ function setInvoiceData(response) {
         let company_phone_number = response.data.company_phone_number;
         let account = response.data.account;
         let service = response.data.service;
+        let discount = response.data.discount;
+        let tax = response.data.tax;
 
-        let image = asset_url +'assets/media/logos/'+ location_info.image_src;
+        let image = asset_url + 'assets/media/logos/' + location_info.image_src;
 
         $(".invoice-image").attr('src', image);
         $("#invoice_info_created_at").text(Invoiceinfo.created_at);
@@ -322,13 +324,80 @@ function setInvoiceData(response) {
         $("#clinic_stn").text(location_info.stn)
 
 
-        $("#service_name").html(service.name);
+        $("#service_name").html(service?.name ?? '-');
+        let service_price = getServicePrice(Invoiceinfo);
+        $("#service_price").html(service_price ?? '-');
 
-        $("#discount_name").html(service.name);
+        if (discount != null) {
+            let discount_name = discount.name
+        } else {
+            let discount_name = '-';
+        }
+        $("#discount_name").html(discount_name);
+
+        if (discount.discount_type != null) {
+            let discount_type = discount.discount_type;
+        } else {
+            let discount_type = '-';
+        }
+
+        $("#discount_type").html(discount_type);
+
+        if (discount.discount_price != null) {
+            let discount_price = discount.discount_price;
+        } else {
+            let discount_price = '-';
+        }
+
+        $("#discount_price").html(discount_price);
+
+        if(Invoiceinfo.is_exclusive == '0')
+        if(Invoiceinfo.discount_price == null && bundle.type == 'single')
+        {{number_format((Invoiceinfo.service_price)-(Invoiceinfo.tax_price))}}
+    else
+        {{number_format(Invoiceinfo.tax_exclusive_serviceprice)}}
+    endif
+    elseif(Invoiceinfo.is_exclusive == '1')
+        {{number_format(Invoiceinfo.tax_exclusive_serviceprice)}}
+    }
+
+        $("#invoice_subtotal").html(discount?.subtotal ?? '-');
+        $("#invoice_tax").html(tax?.name ?? '-');
+        $("#invoice_tax_price").html(tax?.price ?? '-');
+        $("#total_price").html(tax?.price ?? '-');
 
     } catch (error) {
         showException(error);
     }
+
+}
+
+function getServicePrice(Invoiceinfo, bundle) {
+
+    let service_price = 0;
+    if (Invoiceinfo.is_exclusive == '0' && typeof bundle !== 'undefined' && bundle.type == 'single') {
+        if (Invoiceinfo.service_price == '0') {
+
+            service_price = Invoiceinfo.tax_including_price;
+
+        } else {
+            service_price = parseFloat(Invoiceinfo.service_price) - parseFloat(Invoiceinfo.tax_price);
+        }
+    } else if (Invoiceinfo.is_exclusive == '0' && typeof bundle !== 'undefined' && bundle.type == 'multiple') {
+        if (Invoiceinfo.service_price == '0') {
+            service_price = Invoiceinfo.tax_including_price;
+        } else {
+            service_price = Invoiceinfo.service_price;
+        }
+    } else if(Invoiceinfo.is_exclusive == '1') {
+        if (Invoiceinfo.service_price == '0') {
+            service_price = Invoiceinfo.tax_including_price;
+        } else {
+            service_price = Invoiceinfo.service_price;
+        }
+    }
+
+    return service_price;
 
 }
 
