@@ -77,7 +77,7 @@
 
     <div class="modal fade" id="modal_sms_logs" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-form" id="invoices_add">
+        <div class="modal-dialog modal-dialog-centered mediam-modal" id="invoices_add">
 
             @include('admin.invoices.sms_logs')
 
