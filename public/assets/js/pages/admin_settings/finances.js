@@ -25,13 +25,6 @@ var table_columns = [
         title: 'Phone',
         sortable: false,
         width: 'auto',
-        template: function (data) {
-            let cityName = '';
-            if (typeof data.location.city !== 'undefined') {
-                cityName = data.location.city.name + '-';
-            }
-           return cityName + data.location.name;
-        }
     },{
         field: 'transaction_type',
         title: 'Transaction type',
