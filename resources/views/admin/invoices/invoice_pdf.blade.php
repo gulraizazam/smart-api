@@ -164,7 +164,7 @@
             @endif
         <!-- </tr>
     </table> -->
-    
+
     <table>
         <tr>
             <td>
@@ -437,7 +437,7 @@
             <td><!-- left empty --></td>
             <td>
                 <p>Doctor's Signature</p> <br>
-                <span>{{$appointment_info->doctor->name}}</span>
+                <span>{{$appointment_info?->doctor?->name}}</span>
             </td>
         </tr>
     </table>

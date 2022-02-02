@@ -376,7 +376,7 @@ class InvoicesController extends Controller
         }else{
             $package_bundle = PackageBundles::where('package_id','=',$Invoiceinfo->package_id)->first();
         }
-        $bundle = Bundles::find($package_bundle->bundle_id);
+        $bundle = Bundles::find($package_bundle->bundle_id ?? 0);
         $location_info = Locations::find($Invoiceinfo->location_id);
 
         $invoicestatus = InvoiceStatuses::find($Invoiceinfo->invoice_status_id);
@@ -389,7 +389,7 @@ class InvoicesController extends Controller
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
-        if($appointment_info->appointment_type_id == 1){
+        if($appointment_info?->appointment_type_id == 1){
 
             $setting_info = Settings::where('slug','=','sys-consultancy-invoice-medical-operator')->first();
 
