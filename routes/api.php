@@ -240,10 +240,9 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('invoices/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoices.cancel');
 
     Route::get('invoices/displayInvoice/{id}', [InvoicesController::class, 'displayInvoice'])->name('invoices.displayInvoice');
+    Route::post('invoices/invoiceDatatable/{id}', [InvoicesController::class, 'invoiceDatatable'])->name('invoices.invoiceDatatable');
 
     Route::get('invoices/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
-
-    Route::get('invoices/log/{id}/{type}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
 
     Route::get('invoices/sms_logs/{id}', [InvoicesController::class, 'showSMSLogs'])->name('invoices.sms_logs');
 

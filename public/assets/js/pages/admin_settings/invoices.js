@@ -4,14 +4,6 @@ var table_url = route('admin.invoices.datatable');
 
 var table_columns = [
     {
-        field: 'id',
-        sortable: false,
-        width: 'auto',
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    }, {
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
@@ -109,7 +101,7 @@ function actions(data) {
             }
             if (permissions.cancel && invoice_status_id != cancel_id) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="deleteRow(`' + cancel_url + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="deleteRow(`' + cancel_url + '`, `POST`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-times"></i></span>\
                         <span class="navi-text">Cancel</span>\
                         </a>\
@@ -118,7 +110,7 @@ function actions(data) {
 
             if (permissions.log) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="viewLogs(`' + log_url + '`);" class="navi-link">\
+                        <a href="'+log_url+'" class="navi-link">\
                         <span class="navi-icon"><i class="la la-file"></i></span>\
                         <span class="navi-text">Log</span>\
                         </a>\
@@ -194,76 +186,6 @@ function setSmsLogs(response) {
 
 }
 
-function viewLogs($route) {
-
-    $("#modal_logs").modal("show");
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: $route,
-        type: "GET",
-        cache: false,
-        success: function (response) {
-
-            setLogs(response);
-
-            reInitSelect2(".select2", "");
-
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
-
-            reInitValidation(EditValidation);
-        }
-    });
-
-}
-
-function setLogs(response) {
-
-    try {
-
-        let resource = response.data.resource;
-        let machine_types = response.data.machine_types;
-        let resource_types = response.data.resource_types;
-        let locations = response.data.locations;
-
-        $("#modal_edit_resources_form").attr("action", route('admin.resources.update', {id: resource.id}));
-
-
-        let machine_options = '<option value="">Select</option>';
-        let location_options = '<option value="">Select</option>';
-        let resource_options = '<option value="">Select</option>';
-
-        Object.entries(machine_types).forEach(function (value, index) {
-            machine_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
-
-        Object.entries(locations).forEach(function (value, index) {
-            location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
-
-        Object.entries(resource_types).forEach(function (value, index) {
-            resource_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
-
-        $("#edit_machine_type_id").html(machine_options);
-        $("#edit_location_id").html(location_options);
-        $("#edit_resource_type_id").html(resource_options);
-
-        $("#edit_name").val(resource.name);
-        $("#edit_location_id").val(resource.location_id);
-        $("#edit_machine_type_id").val(resource.machine_type_id);
-        $("#edit_resource_type_id").val(resource.resource_type_id);
-
-    } catch (error) {
-        showException(error);
-    }
-
-}
-
 function viewInvoice($route) {
 
     $("#modal_display").modal("show");
@@ -328,43 +250,40 @@ function setInvoiceData(response) {
         let service_price = getServicePrice(Invoiceinfo);
         $("#service_price").html(service_price ?? '-');
 
+        let discount_name = '-';
         if (discount != null) {
-            let discount_name = discount.name
-        } else {
-            let discount_name = '-';
+            discount_name = discount.name
         }
+
+        let discount_type = '-';
+        if (discount != null) {
+            discount_type = discount.discount_type;
+        }
+
+        let discount_price = 0;
+        if (discount != null) {
+            discount_price = discount.discount_price;
+        }
+
+        let subtotal = 0;
+        if(Invoiceinfo.is_exclusive == '0') {
+            if(Invoiceinfo.discount_price == null && $bundle.type == 'single') {
+                subtotal = parseFloat(Invoiceinfo.service_price)-parseFloat(Invoiceinfo.tax_price);
+            } else {
+                subtotal = Invoiceinfo.tax_exclusive_serviceprice;
+            }
+        } else if(Invoiceinfo.is_exclusive == '1') {
+            subtotal = Invoiceinfo.tax_exclusive_serviceprice;
+        }
+
+        $("#invoice_subtotal").html(subtotal);
+        $("#discount_price").html(discount_price);
+        $("#discount_type").html(discount_type);
         $("#discount_name").html(discount_name);
 
-        if (discount.discount_type != null) {
-            let discount_type = discount.discount_type;
-        } else {
-            let discount_type = '-';
-        }
-
-        $("#discount_type").html(discount_type);
-
-        if (discount.discount_price != null) {
-            let discount_price = discount.discount_price;
-        } else {
-            let discount_price = '-';
-        }
-
-        $("#discount_price").html(discount_price);
-
-        if(Invoiceinfo.is_exclusive == '0')
-        if(Invoiceinfo.discount_price == null && bundle.type == 'single')
-        {{number_format((Invoiceinfo.service_price)-(Invoiceinfo.tax_price))}}
-    else
-        {{number_format(Invoiceinfo.tax_exclusive_serviceprice)}}
-    endif
-    elseif(Invoiceinfo.is_exclusive == '1')
-        {{number_format(Invoiceinfo.tax_exclusive_serviceprice)}}
-    }
-
-        $("#invoice_subtotal").html(discount?.subtotal ?? '-');
-        $("#invoice_tax").html(tax?.name ?? '-');
-        $("#invoice_tax_price").html(tax?.price ?? '-');
-        $("#total_price").html(tax?.price ?? '-');
+        $("#invoice_tax").html(Invoiceinfo?.tax_percenatage ?? '-');
+        $("#invoice_tax_price").html(Invoiceinfo?.tax_price ?? '-');
+        $("#total_price").html(Invoiceinfo?.tax_including_price ?? '-');
 
     } catch (error) {
         showException(error);

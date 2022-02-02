@@ -205,11 +205,11 @@ function deleteSuccessAndReset(data, datatable) {
    }
 }
 
-function deleteRow(route) {
-    deleteConfirm(null, route);
+function deleteRow(route, method = "DELETE") {
+    deleteConfirm(null, route, method);
 }
 
-function deleteConfirm(datatable = null, route = null) {
+function deleteConfirm(datatable = null, route = null, method) {
     swal.fire({
         title: 'Are you sure you want to delete?',
         type: 'danger',
@@ -229,19 +229,19 @@ function deleteConfirm(datatable = null, route = null) {
                 datatable.search(filters, 'search');
             }
             if (route) {
-                sendDeleteRequest(route)
+                sendDeleteRequest(route, method)
             }
         }
     });
 }
 
-function sendDeleteRequest(route) {
+function sendDeleteRequest(route, method) {
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
         url: route,
-        type: "DELETE",
+        type: method,
         cache: false,
         success: function (response) {
            if (response.status) {

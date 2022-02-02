@@ -226,7 +226,7 @@ class InvoicesController extends Controller
     public function cancel($id)
     {
         if (!Gate::allows('invoices_cancel')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $invoiceinformation = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
@@ -236,8 +236,7 @@ class InvoicesController extends Controller
         if ($invoiceinformation->package_id) {
             $package_information = Packages::find($invoiceinformation->package_id);
             if ($package_information->is_refund == '1') {
-                flash('Invoice belongs to package that already refunded, so you unable to delete it.')->warning()->important();
-                return redirect()->route('admin.invoices.index');
+                return ApiHelper::apiResponse($this->success, 'Invoice belongs to package that already refunded, so you unable to delete it.', false);
             }
 
         }
@@ -255,27 +254,32 @@ class InvoicesController extends Controller
 
         $appintment = Appointments::find($invocies->appointment_id);
 
-        $appointment_type = AppointmentTypes::where('id', '=', $appintment->appointment_type_id)->first();
+        $appointment_type = AppointmentTypes::where('id', '=', $appintment?->appointment_type_id)->first();
 
-        $data_package['cash_flow'] = 'in';
-        $data_package['cash_amount'] = $invocies->total_price;
-        $data_package['patient_id'] = $invocies->patient_id;
-        $data_package['payment_mode_id'] = '1';
-        $data_package['account_id'] = Auth::User()->account_id;
-        $data_package['appointment_type_id'] = $appointment_type->id;
-        $data_package['appointment_id'] = $invocies->appointment_id;
-        $data_package['location_id'] = $appintment->location_id;
-        $data_package['created_by'] = Auth::User()->id;
-        $data_package['updated_by'] = Auth::User()->id;
-        $data_package['invoice_id'] = $id;
-        $data_package['is_cancel'] = '1';
+        if ($appointment_type && $appintment && $invocies) {
+            $data_package['cash_flow'] = 'in';
+            $data_package['cash_amount'] = $invocies->total_price ?? 0;
+            $data_package['patient_id'] = $invocies->patient_id ?? 0;
+            $data_package['payment_mode_id'] = '1';
+            $data_package['account_id'] = Auth::User()->account_id;
+            $data_package['appointment_type_id'] = $appointment_type->id ?? 0;
+            $data_package['appointment_id'] = $invocies->appointment_id ?? 0;
+            $data_package['location_id'] = $appintment->location_id ?? 0;
+            $data_package['created_by'] = Auth::User()->id;
+            $data_package['updated_by'] = Auth::User()->id;
+            $data_package['invoice_id'] = $id;
+            $data_package['is_cancel'] = '1';
 
 
-        if ($invoice_detail->package_id != null) {
-            $data_package['package_id'] = $invoice_detail->package_id;
+            if ($invoice_detail->package_id != null) {
+                $data_package['package_id'] = $invoice_detail->package_id;
+            }
+            $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
+
+            return ApiHelper::apiResponse($this->success, 'Invoice has been canceled successfully.');
         }
-        $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
-        return redirect()->route('admin.invoices.index');
+
+        return ApiHelper::apiResponse($this->success, 'Record not found.', false);
 
     }
 
@@ -416,6 +420,7 @@ class InvoicesController extends Controller
         if (!Gate::allows('invoices_log')) {
             return abort(401);
         }
+
         $action_array = array(
             1 => 'Create',
             2 => 'Edit',
@@ -462,6 +467,84 @@ class InvoicesController extends Controller
             return view('admin.invoices.log', compact('finance_log', 'id'));
         }
         return $this->invoicelogexcel( $id, $finance_log );
+    }
+
+    public function invoiceDatatable(Request $request, $id) {
+
+        list($orderBy, $order) = getSortBy($request);
+        list( $finance_log, $iDisplayLength, $iTotalRecords, $pages, $page) = $this->getInvoicesData($id, $request, $orderBy, $order);
+
+        $records["data"] = $finance_log;
+                $records["meta"] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+
+       return ApiHelper::apiDataTable($records);
+    }
+
+    private function getInvoicesData($id, $request, $orderBy, $order) {
+
+        $action_array = array(
+            1 => 'Create',
+            2 => 'Edit',
+            3 => 'Delete',
+            4 => 'Inactive',
+            5 => 'Active',
+            6 => 'Cancel',
+        );
+        $table_array = array(
+            26 => 'Invoice',
+            27 => 'Invoice Detail',
+            25 => 'Finance',
+        );
+        $finance_log = array();
+
+        $package_advances = PackageAdvances::where('invoice_id', '=', $id)->orderBy('created_at','asc')->get();
+
+        foreach ($package_advances as $advance) {
+
+            $iTotalRecords = AuditTrails::where([
+                ['table_record_id', '=', $advance->id],
+                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
+            ])->count();
+
+            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+            $audit_info = AuditTrails::where([
+                ['table_record_id', '=', $advance->id],
+                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
+            ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at','asc')->get();
+
+            foreach ($audit_info as $audit){
+                $finance_log[$audit->id] = array(
+                    'id' => $audit->id,
+                    'action' => $action_array[$audit->audit_trail_action_name],
+                    'table' => $table_array[$audit->audit_trail_table_name],
+                    'user_id' => $audit->user->name,
+                    'created_at' => $audit->created_at,
+                    'updated_at' => $audit->updated_at,
+                );
+                $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
+
+                foreach ($audit_info_detail as $audit_detail) {
+                    $result = Financelog::Calculate_Val_advance($audit_detail);
+                    $finance_log[$audit->id][$audit_detail->field_name] = $result;
+                }
+            }
+        }
+
+        return [
+            $finance_log,
+            $iDisplayLength,
+            $iTotalRecords,
+            $pages,
+            $page
+        ];
     }
 
     /*
