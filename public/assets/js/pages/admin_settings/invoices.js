@@ -284,6 +284,7 @@ function setInvoiceData(response) {
         $("#invoice_tax").html(Invoiceinfo?.tax_percenatage ?? '-');
         $("#invoice_tax_price").html(Invoiceinfo?.tax_price ?? '-');
         $("#total_price").html(Invoiceinfo?.tax_including_price ?? '-');
+        $("#grand_total_price").html(Invoiceinfo?.tax_including_price ?? '-');
 
     } catch (error) {
         showException(error);
