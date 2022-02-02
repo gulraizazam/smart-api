@@ -1,136 +1,76 @@
-@inject('request', 'Illuminate\Http\Request')
-@inject('Auth', 'Auth')
-@inject('filters', 'App\Helpers\Filters')
-@extends('layouts.app')
-
-@section('stylesheets')
-    <!-- BEGIN PAGE LEVEL PLUGINS -->
-    <link href="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css'}}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{{ url('metronic/assets/global/plugins/select2/css/select2-bootstrap.min.css') }}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{{ url('metronic/assets/global/plugins/datatables/datatables.min.css') }}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{{ url('metronic/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.css') }}"
-          rel="stylesheet" type="text/css"/>
-    <link href="{{ url('metronic/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker3.min.css') }}"
-          rel="stylesheet" type="text/css"/>
-    <link href="{{ url('metronic/assets/pages/css/invoice.min.css') }}" rel="stylesheet" type="text/css"/>
-    <!-- END PAGE LEVEL PLUGINS -->
-@stop
-
-@section('title')
-    <!-- BEGIN PAGE TITLE-->
-    <h1 class="page-title">@lang('global.invoices.title')</h1>
-    <!-- END PAGE TITLE-->
-@endsection
+@extends('admin.layouts.master')
 
 @section('content')
-    <!-- Begin: Demo Datatable 1 -->
-    <div class="portlet light portlet-fit portlet-datatable bordered">
-        <div class="portlet-title">
-            <div class="caption font-green-sharp">
-                <i class="fa fa-history font-green-sharp"></i>
-                <span class="caption-subject bold uppercase"> @lang('global.app_log')</span>
-            </div>
-            <div class="actions">
-                <a href="{{ route('admin.invoices.index') }}" class="btn dark pull-right">@lang('global.app_back')</a>
-            </div>
-        </div>
-        <div class="portlet-body">
-            <div class="portlet light bordered">
-                <div class="portlet-title">
-                    <div class="caption">
-                        <span class="caption-subject font-green-sharp bold uppercase">Invoice ID {{$id}}</span>
-                    </div>
-                    @if (Gate::allows('invoices_log_excel'))
-                        <div class="actions">
-                            <a href="{{ route('admin.invoices.invoice_log', [ $id, 'excel']) }}" class="btn green pull-right">Excel</a>
-                        </div>
-                    @endif
-                </div>
-                <div class="portlet-body">
-                    <div class="portlet-body table-wrapper" style="overflow: auto;">
-                        @if(count($finance_log))
-                            @php $f_count = 1; @endphp
-                            <table id="table" class="table">
-                                <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Cash Flow</th>
-                                    <th>Cash Amount</th>
-                                    <th>Refund</th>
-                                    <th>Adjustment</th>
-                                    <th>Tax</th>
-                                    <th>Cancel</th>
-                                    <th>Refund Note</th>
-                                    <th>Payment Mode</th>
-                                    <th>Appointment Type</th>
-                                    <th>Location</th>
-                                    <th>Created By</th>
-                                    <th>Updated By</th>
-                                    <th>Plan</th>
-                                    <th>Invoice Id</th>
-                                    <th>Created At</th>
-                                    <th>Updated At</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($finance_log as $log)
-                                    <tr>
-                                        <td>{{$f_count++}}</td>
-                                        <td>{{isset($log['cash_flow'])?$log['cash_flow']:'-'}}</td>
-                                        <td>{{isset($log['cash_amount'])?$log['cash_amount']:'-'}}</td>
-                                        <td>{{isset($log['is_refund'])?$log['is_refund']:'-'}}</td>
-                                        <td>{{isset($log['is_adjustment'])?$log['is_adjustment']:'-'}}</td>
-                                        <td>{{isset($log['is_tax'])?$log['is_tax']:'-'}}</td>
-                                        <td>{{isset($log['is_cancel'])?$log['is_cancel']:'-'}}</td>
-                                        <td>{{isset($log['refund_note'])?$log['refund_note']:'-'}}</td>
-                                        <td>{{isset($log['payment_mode_id'])?$log['payment_mode_id']:'-'}}</td>
-                                        <td>{{isset($log['appointment_type_id'])?$log['appointment_type_id']:'-'}}</td>
-                                        <td>{{isset($log['location_id'])?$log['location_id']:'-'}}</td>
-                                        <td>{{isset($log['created_by'])?$log['created_by']:'-'}}</td>
-                                        <td>{{isset($log['updated_by'])?$log['updated_by']:'-'}}</td>
-                                        <td>{{isset($log['package_id'])?$log['package_id']:'-'}}</td>
-                                        <td>{{isset($log['invoice_id'])?$log['invoice_id']:'-'}}</td>
-                                        <td>{{isset($log['created_at'])?\Carbon\Carbon::parse($log['created_at'])->format('F j,Y h:i A'):'-'}}</td>
-                                        <td>{{isset($log['updated_at'])?\Carbon\Carbon::parse($log['updated_at'])->format('F j,Y h:i A'):'-'}}</td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <tr>
-                                <td colspan="4">No Finance log found.</td>
-                            </tr>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- End: Demo Datatable 1 -->
-        @stop
 
-        @section('javascript')
-            <!-- BEGIN PAGE LEVEL PLUGINS -->
-            <script src="{{ url('metronic/assets/global/plugins/datatables/datatables.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"
-                    type="text/javascript"></script>
-            <!-- END PAGE LEVEL PLUGINS -->
-            <!-- BEGIN PAGE LEVEL SCRIPTS -->
-            <script src="{{ url('metronic/assets/global/plugins/select2/js/select2.full.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/scripts/datatable.js') }}" type="text/javascript"></script>
-            <script src="{{ url('js/admin/invoices/datatable.js') }}" type="text/javascript"></script>
-            <!-- END PAGE LEVEL SCRIPTS -->
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js'}}"
-                    type="text/javascript"></script>
-            <script src="{{ url('js/admin/users/ajaxbaseselect2.js') }}" type="text/javascript"></script>
+    <!--begin::Content-->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+
+    @include('admin.partials.breadcrumb', ['module' => 'Invoices List', 'title' => 'Invoices'])
+
+    <!--begin::Entry-->
+        <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+
+                <!--begin::Card-->
+                <div class="card card-custom">
+                    <div class="card-header py-3">
+                        <div class="card-title">
+                            <span class="card-icon">
+                                <span class="svg-icon svg-icon-md svg-icon-primary">
+                                    <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
+                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                            <rect x="0" y="0" width="24" height="24" />
+                                            <rect fill="#000000" opacity="0.3" x="12" y="4" width="3" height="13" rx="1.5" />
+                                            <rect fill="#000000" opacity="0.3" x="7" y="9" width="3" height="8" rx="1.5" />
+                                            <path d="M5,19 L20,19 C20.5522847,19 21,19.4477153 21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 C4.55228475,3 5,3.44771525 5,4 L5,19 Z" fill="#000000" fill-rule="nonzero" />
+                                            <rect fill="#000000" opacity="0.3" x="17" y="11" width="3" height="6" rx="1.5" />
+                                        </g>
+                                    </svg>
+                                    <!--end::Svg Icon-->
+                                </span>
+                            </span>
+                            <h3 class="card-label">INVOICE ID {{$id}}</h3>
+                        </div>
+
+                        <div class="card-toolbar">
+
+                            @if (Gate::allows('invoices_log_excel'))
+                                <a href="{{ route('admin.invoices.invoice_log', [ $id, 'excel']) }}" class="btn btn-primary">
+                                    <i class="la la-file-export"></i>
+                                    Excel
+                                </a>
+                            @endif
+
+                        <!--end::Button-->
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!--begin: Datatable-->
+                        <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
+                        <!--end: Datatable-->
+
+                    </div>
+                </div>
+                <!--end::Card-->
+            </div>
+            <!--end::Container-->
+        </div>
+        <!--end::Entry-->
+    </div>
+    <!--end::Content-->
+
+    @push('datatable-js')
+        <script>
+            var invoice_id = "{{request('id')}}";
+        </script>
+        <script src="{{asset('assets/js/pages/admin_settings/invoice-log.js')}}"></script>
+    @endpush
+
+
+
 @endsection
