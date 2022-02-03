@@ -553,3 +553,7 @@ function showException(error) {
         console.log(error);
     }
 }
+
+function noRecordFoundTable(colspan) {
+    return '<tr class="text-center"><td colspan="'+colspan+'">No record found</td></tr>';
+}

@@ -280,46 +280,91 @@ function setPlanData(response) {
         let paymentmodes = response.data.paymentmodes;
         let services = response.data.services;
 
-        $("#user_name").text( package.user.name);
+        $("#user_name").text(package.user.name);
         $("#location_name").text(package.location.name);
+        $(".package_total_price").text(package?.total_price ?? 0);
 
-        let package_rows = '';
-        Object.values(packagebundles).forEach( function (package_bundle) {
+        let package_rows = noRecordFoundTable(9);
+        Object.values(packagebundles).forEach(function (package_bundle) {
             package_rows += '<tr> ' +
-                '<td><a href="javascript:void(0);" onclick="toggle('+package_bundle.id+')">' +
-                 package_bundle.bundle.name+'</a> </td>' +
-                '<td>'+package_bundle.service_price+'</td>' +
+                '<td><a href="javascript:void(0);" onclick="toggle(' + package_bundle.id + ')">' +
+                package_bundle.bundle.name + '</a> </td>' +
+                '<td>' + package_bundle.service_price + '</td>' +
                 '<td> ';
-                if(package_bundle.discount_id==null) {
-                    package_rows += '-';
-                }
-                else if(package_bundle.discount_name) {
-                    package_rows += package_bundle.discount_name;
-                } else {
-                    package_rows +=  package_bundle.discount.name;
-                }
+            if (package_bundle.discount_id == null) {
+                package_rows += '-';
+            } else if (package_bundle.discount_name) {
+                package_rows += package_bundle.discount_name;
+            } else {
+                package_rows += package_bundle.discount.name;
+            }
 
-                package_rows += '</td>' +
+            package_rows += '</td>' +
                 '<td>';
-                    if (package_rows.discount_type==null) {
-                        package_rows += '-';
-                    } else {
-                        package_rows += package_bundle.discount_type;
-                    }
-                package_rows += '</td>';
-                '<td>';
-                if (package_bundle.discount_price==null) {
-                    package_rows += '0.00';
-                } else { echo $packagebundles->discount_price;}?> </td>' +
-                '<td>{{$packagebundles->tax_exclusive_net_amount}}</td><td>{{$packagebundles->tax_percenatage}}</td>' +
-                '<td>{{$packagebundles->tax_price}}</td>' +
-                '<td>{{$packagebundles->tax_including_price}}</td>' +
+            if (package_rows.discount_type == null) {
+                package_rows += '-';
+            } else {
+                package_rows += package_bundle.discount_type;
+            }
+            package_rows += '</td>';
+            '<td>';
+            if (package_bundle.discount_price == null) {
+                package_rows += '0.00';
+            } else {
+                package_rows += packagebundles.discount_price;
+            }
+            package_rows += '</td><td>' + packagebundles.tax_exclusive_net_amount + '</td>' +
+                '<td>' + packagebundles.tax_percenatage + '</td>' +
+                '<td>' + packagebundles.tax_price + '</td>' +
+                '<td>' + packagebundles.tax_including_price + '</td>' +
                 '</tr>';
+
+
+            Object.values(packageservices).forEach(function () {
+                if (packageservice.package_bundle_id == packagebundles.id) {
+                    if (packageservice.is_consumed == '0') {
+                        let consume = 'NO';
+                    } else {
+                        let consume = 'YES';
+                    }
+                    package_rows += '<tr class="' + packagebundles.id + '" style="display: none"><td>' +
+                        '</td><td>' + packageservice.service.name + '</td>' +
+                        '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>' +
+                        '<td>Tax % : ' + packageservice.tax_percenatage + '</td>' +
+                        '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>' +
+                        '<td colspan="4">Is Consumed : ' + consume + '</td></tr>';
+                }
+            });
         });
 
         $(".display_plans").html(package_rows);
-        return false;
 
+        let packageadvances_rows = noRecordFoundTable(4);;
+        if (packageadvances.length) {
+
+            Object.values(packageadvances).forEach(function (packageadvance) {
+
+                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                    packageadvances_rows += '<tr> ' +
+                    '<td>'+packageadvance.paymentmode.name+'</td>'+
+                    '<td>'+packageadvance.cash_flow+'</td>';
+                    if(packageadvance.cash_flow == 'out' && packageadvance.is_tax == 0) {
+                        packageadvances_rows += '<td>'+packageadvance.package_refund_price+'</td>';
+                    } else if(packageadvance.is_tax == 0) {
+                        packageadvances_rows += '<td class="cash-amount">'+packageadvance.cash_amount+'</td>';
+                    }
+
+                    packageadvances_rows += '<td>'+packageadvance.created_at_formated+'</td>';
+                '</tr>';
+                }
+
+            });
+
+        $(".package_advances").html(packageadvances_rows);
+    }
+
+
+        return false;
         $(".invoice-image").attr('src', image);
         $("#invoice_info_created_at").text(Invoiceinfo.created_at);
         $("#invoice_info_id").text(Invoiceinfo.id);

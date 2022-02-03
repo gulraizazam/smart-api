@@ -59,23 +59,20 @@
                             </tr>
                             </thead>
 
-                            <tbody class="display_plans">
-
-                                {{--<tr>
-                                    <td id="service_name"></td>
-                                    <td id="service_price"></td>
-                                    <td id="discount_name"></td>
-                                    <td id="discount_type"></td>
-                                    <td id="discount_price"></td>
-                                    <td id="invoice_subtotal"></td>
-                                    <td id="invoice_tax"></td>
-                                    <td id="invoice_tax_price"></td>
-                                    <td id="total_price"></td>
-                                </tr>--}}
-
-                            </tbody>
+                            <tbody class="display_plans"></tbody>
 
                         </table>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-10 col-xs-8"></div>
+                    <div class="col-md-2 col-xs-4 invoice-block">
+                        <ul class="list-unstyled amounts">
+                            <li>
+                                <strong style="font-weight: bold;">Total:</strong> <span class="package_total_price"></span>/-
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
@@ -93,7 +90,7 @@
                             </tr>
                             </thead>
 
-                            <tbody>
+                            <tbody class="package_advances">
                             <tr>
                                 <td id="payment_mode"></td>
                                 <td id="cash_flow"></td>
