@@ -1252,13 +1252,16 @@ class PackagesController extends Controller
 
         $packageservices = PackageService::where('package_id', '=', $package->id)->get();
 
-        $packageadvances = PackageAdvances::where([
+        $packageadvances = PackageAdvances::with('paymentmode')->where([
             ['package_id', '=', $package->id],
             ['is_cancel', '=', '0'],
             //['is_tax', '=', '0'],
             ['is_adjustment', '=', '0']
            //['is_refund', '=', '0']
         ])->get();
+
+
+        $packageadvances = $this->appointmentPackage($packageadvances);
 
         $cash_amount_in = PackageAdvances::where([
             ['package_id', '=', $package->id],
@@ -1291,6 +1294,29 @@ class PackagesController extends Controller
             'grand_total' => $grand_total
         ]);
 
+    }
+
+    private function appointmentPackage($packageadvances) {
+
+        if ($packageadvances->count() > 0) {
+
+            $packageAdvancesCollection = [];
+            foreach ($packageadvances as $packageadvance) {
+                if (!is_null($packageadvance->refund_note)) {
+                    $packageadvance->package_refund_price = PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id, $packageadvance->id);
+                } else {
+                    $packageadvance->package_refund_price = PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id);
+                }
+
+                $packageadvance->created_at_formated = Carbon::parse($packageadvance->created_at)->format('F j,Y h:i A');
+
+                $packageAdvancesCollection[] = $packageadvance;
+            }
+
+            return $packageAdvancesCollection;
+        }
+
+        return $packageadvances;
     }
 
     /**
