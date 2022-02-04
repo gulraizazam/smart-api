@@ -1,4 +1,128 @@
 
+$(document).ready( function () {
+
+    $("#add_patient_id").on("select2:select", function (e) {
+        getAppointments();
+    });
+
+
+    /*save data for both predefined discounts and keyup trigger*/
+    $("#AddPackage").click(function () {
+
+        showSpinner();
+
+        $('#wrongMessage').hide();
+        $('#inputfieldMessage').hide();
+        $('#percentageMessage').hide();
+        $('#AlreadyExitMessage').hide();
+        $(this).attr("disabled", true);
+        var random_id = $('#random_id_1').val();
+        var service_id = $('#service_id_1').val(); //Basicailly it is bundle id
+        var discount_id = $('#discount_id_1').val();
+        var net_amount = $('#net_amount_1').val();
+        var discount_type = $('#discount_type_1').val();
+        var discount_price = $('#discount_value_1').val();
+        var discount_slug = $("#slug_1").val();
+        var package_total = $('#package_total_1').val();
+
+        var is_exclusive = $('#is_exclusive').val();
+        var location_id = $('#location_id_1').val();
+
+        if (service_id && net_amount && location_id) {
+            if (discount_slug == 'custom') {
+                if (discount_price == '') {
+                    $('#inputfieldMessage').show();
+                    return false;
+                }
+                if (discount_type == 'Percentage') {
+                    if (discount_price > 100) {
+                        $('#percentageMessage').show();
+                        return false;
+                    }
+                }
+            }
+
+            var formData = {
+                'random_id': random_id,
+                'bundle_id': service_id, //Basicailly it is bundle id
+                'discount_id': discount_id,
+                'net_amount': net_amount,
+                'discount_type': discount_type,
+                'discount_price': discount_price,
+                'package_total': package_total,
+                'is_exclusive': is_exclusive,
+                'location_id': location_id,
+                'package_bundles[]': []
+            };
+
+            $(".package_bundles").each(function() {
+                formData['package_bundles[]'].push($(this).val());
+            });
+
+            $.ajax({
+                type: 'get',
+                url: route('admin.packages.savepackages_service'),
+                data: formData,
+                success: function (resposne) {
+
+                    if (resposne.status == '1') {
+
+                        $('#table_1').append("" +
+                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.myarray.record.id + "'>" +
+                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.myarray.record.id + ")'>" + resposne.myarray.service_name + "</a></td>" +
+                            "<td>" + resposne.myarray.service_price.toLocaleString() + "</td>" +
+                            "<td>" + resposne.myarray.discount_name + "</td>" +
+                            "<td>" + resposne.myarray.discount_type + "</td>" +
+                            "<td>" + resposne.myarray.discount_price + "</td>" +
+                            "<td>" + resposne.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                            "<td>" + resposne.myarray.record.tax_percenatage + "</td>" +
+                            "<td>" + resposne.myarray.record.tax_including_price.toLocaleString() + "</td>" +
+                            "<td>" +
+                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.myarray.record.id +"' />" +
+                            "<button class='btn btn-xs btn-danger' onClick='deleteModel(" + resposne.myarray.record.id + ")'>Delete</button>" +
+                            "</td>" +
+                            "</tr>");
+
+                        jQuery.each(resposne.myarray.record_detail, function (i, record_detail) {
+                            if (record_detail.is_consumed == '0') {
+                                var consume = 'NO';
+                            } else {
+                                var consume = 'YES';
+                            }
+                            $('#table_1').append("<tr class='inner_records_hr HR_" + resposne.myarray.record.id + " " + resposne.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Tax Amt. : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                        });
+                        toggle(resposne.myarray.record.id);
+
+                        $("#package_total_1").val(resposne.myarray.total);
+
+                        keyfunction_grandtotal();
+
+                        var rows = $('#table_1 tbody tr').length;
+
+                        if (rows >= 3) {
+                            $("#location_id_1").prop("disabled", true);
+                        }
+                        /*we enable add button after all functionality enable*/
+                        $('#AddPackage_1').attr("disabled", false);
+
+                    } else {
+                        $('#AlreadyExitMessage').show();
+                        $('#AddPackage_1').attr("disabled", false);
+                    }
+
+                    hideSpinnerRestForm();
+                }
+            });
+        } else {
+            hideSpinnerRestForm();
+           // toastr.error('Please fill out the required fields.')
+            $('#inputfieldMessage').show();
+            $(this).attr("disabled", false);
+        }
+    });
+    /*End*/
+
+});
 
 var table_url = route('admin.packages.datatable');
 
@@ -159,6 +283,153 @@ function actions(data) {
     return '';
 }
 
+function createPlan(url) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            $("#modal_edit_regions").modal("show");
+
+            setPlanData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            reInitValidation(AddValidation);
+        }
+    });
+
+    getServices();
+
+}
+
+function setPlanData(response) {
+    let region = response.data;
+    let action = route('admin.regions.update', {id: region.id});
+    $("#modal_edit_regions_form").attr("action", action);
+
+    $("#edit_regions_name").val(region.name);
+
+}
+
+function getServices() {
+
+    let location = $("#add_location_id").val();
+
+    let url = route('admin.packages.getservice');
+    if (location != '') {
+        url = route('admin.packages.getservice', {
+            _query: {
+                location_id: location
+            }
+        });
+    }
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            $("#modal_edit_regions").modal("show");
+
+            setServices(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            //reInitValidation(AddValidation);
+        }
+    });
+
+    getAppointments();
+}
+
+function setServices(response) {
+
+    try {
+
+        let services = response.data.service;
+        let service_options = '<option value=""> Select Service </option>';
+
+        Object.values(services).forEach(function (value) {
+            service_options += '<option value="'+value.id+'"> '+value.name+' </option>';
+        });
+
+        $("#add_service_id").html(service_options);
+
+    } catch (error) {
+        showException(error);
+    }
+}
+
+function getAppointments() {
+
+    let location = $("#add_location_id").val();
+    let patient = $("#add_patient_id").val();
+    console.log(location, patient);
+
+    if (location != '' && patient != '') {
+
+        let url = route('admin.packages.getappointmentinfo', {
+            _query: {
+                location_id: location,
+                patient_id: patient,
+            }
+        });
+
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: url,
+            type: "GET",
+            cache: false,
+            success: function (response) {
+                $("#modal_edit_regions").modal("show");
+
+                setAppointments(response);
+
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+                //reInitValidation(AddValidation);
+            }
+        });
+
+    }
+
+}
+
+function setAppointments(response) {
+
+    try {
+
+        let appointments = response.data.appointments;
+        let appointment_options = '<option value=""> Select Service </option>';
+
+        if (appointments.length) {
+
+            Object.values(appointments).forEach(function (value) {
+                appointment_options += '<option value="'+value.id+'"> '+value.name+' </option>';
+            });
+
+            $("#add_appointment_id").html(appointment_options);
+
+        }
+
+    } catch (error) {
+        showException(error);
+    }
+}
+
 function editRow(url) {
     $.ajax({
         headers: {
@@ -271,157 +542,24 @@ function setPlanData(response) {
 
     try {
 
-        let grand_total = response.data.grand_total;
-        let discount = response.data.discount;
-        let package = response.data.package;
-        let packageadvances = response.data.packageadvances;
-        let packagebundles = response.data.packagebundles;
-        let packageservices = response.data.packageservices;
+        let centers = response.data.locations;
         let paymentmodes = response.data.paymentmodes;
-        let services = response.data.services;
+        let range = response.data.range;
+        let random_id = response.data.random_id;
 
-        $("#user_name").text(package.user.name);
-        $("#location_name").text(package.location.name);
-        $(".package_total_price").text(package?.total_price ?? 0);
-
-        let package_rows = noRecordFoundTable(9);
-        Object.values(packagebundles).forEach(function (package_bundle) {
-            package_rows += '<tr> ' +
-                '<td><a href="javascript:void(0);" onclick="toggle(' + package_bundle.id + ')">' +
-                package_bundle.bundle.name + '</a> </td>' +
-                '<td>' + package_bundle.service_price + '</td>' +
-                '<td> ';
-            if (package_bundle.discount_id == null) {
-                package_rows += '-';
-            } else if (package_bundle.discount_name) {
-                package_rows += package_bundle.discount_name;
-            } else {
-                package_rows += package_bundle.discount.name;
-            }
-
-            package_rows += '</td>' +
-                '<td>';
-            if (package_rows.discount_type == null) {
-                package_rows += '-';
-            } else {
-                package_rows += package_bundle.discount_type;
-            }
-            package_rows += '</td>';
-            '<td>';
-            if (package_bundle.discount_price == null) {
-                package_rows += '0.00';
-            } else {
-                package_rows += packagebundles.discount_price;
-            }
-            package_rows += '</td><td>' + packagebundles.tax_exclusive_net_amount + '</td>' +
-                '<td>' + packagebundles.tax_percenatage + '</td>' +
-                '<td>' + packagebundles.tax_price + '</td>' +
-                '<td>' + packagebundles.tax_including_price + '</td>' +
-                '</tr>';
-
-
-            Object.values(packageservices).forEach(function () {
-                if (packageservice.package_bundle_id == packagebundles.id) {
-                    if (packageservice.is_consumed == '0') {
-                        let consume = 'NO';
-                    } else {
-                        let consume = 'YES';
-                    }
-                    package_rows += '<tr class="' + packagebundles.id + '" style="display: none"><td>' +
-                        '</td><td>' + packageservice.service.name + '</td>' +
-                        '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>' +
-                        '<td>Tax % : ' + packageservice.tax_percenatage + '</td>' +
-                        '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>' +
-                        '<td colspan="4">Is Consumed : ' + consume + '</td></tr>';
-                }
-            });
+        let modes_options = '<option value="">Select Payment Mode</option>';
+        Object.entries(paymentmodes).forEach(function (value) {
+            modes_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
-        $(".display_plans").html(package_rows);
+        let centers_options = '<option value="">Select Appointment</option>';
+        Object.entries(centers).forEach(function (value) {
+            centers_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+        });
 
-        let packageadvances_rows = noRecordFoundTable(4);;
-        if (packageadvances.length) {
+        $("#add_location_id").html(centers_options);
 
-            Object.values(packageadvances).forEach(function (packageadvance) {
-
-                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
-                    packageadvances_rows += '<tr> ' +
-                    '<td>'+packageadvance.paymentmode.name+'</td>'+
-                    '<td>'+packageadvance.cash_flow+'</td>';
-                    if(packageadvance.cash_flow == 'out' && packageadvance.is_tax == 0) {
-                        packageadvances_rows += '<td>'+packageadvance.package_refund_price+'</td>';
-                    } else if(packageadvance.is_tax == 0) {
-                        packageadvances_rows += '<td class="cash-amount">'+packageadvance.cash_amount+'</td>';
-                    }
-
-                    packageadvances_rows += '<td>'+packageadvance.created_at_formated+'</td>';
-                '</tr>';
-                }
-
-            });
-
-        $(".package_advances").html(packageadvances_rows);
-    }
-
-
-        return false;
-        $(".invoice-image").attr('src', image);
-        $("#invoice_info_created_at").text(Invoiceinfo.created_at);
-        $("#invoice_info_id").text(Invoiceinfo.id);
-
-        $("#client_id").text("C-" + patient.id);
-        $("#client_name").text(patient.name);
-        $("#client_email").text(patient.email);
-
-        $("#company_name").text(account.name)
-        $("#contact_no").text(company_phone_number.data)
-        $("#company_email").text(account.email)
-        $("#clinic_contact").text(account.contact)
-        $("#clinic_name").text(location_info.name)
-        $("#clinic_address").text(location_info.address)
-        $("#clinic_ntn").text(location_info.ntn)
-        $("#clinic_stn").text(location_info.stn)
-
-
-        $("#service_name").html(service?.name ?? '-');
-        let service_price = getServicePrice(Invoiceinfo);
-        $("#service_price").html(service_price ?? '-');
-
-        let discount_name = '-';
-        if (discount != null) {
-            discount_name = discount.name
-        }
-
-        let discount_type = '-';
-        if (discount != null) {
-            discount_type = discount.discount_type;
-        }
-
-        let discount_price = 0;
-        if (discount != null) {
-            discount_price = discount.discount_price;
-        }
-
-        let subtotal = 0;
-        if(Invoiceinfo.is_exclusive == '0') {
-            if(Invoiceinfo.discount_price == null && $bundle.type == 'single') {
-                subtotal = parseFloat(Invoiceinfo.service_price)-parseFloat(Invoiceinfo.tax_price);
-            } else {
-                subtotal = Invoiceinfo.tax_exclusive_serviceprice;
-            }
-        } else if(Invoiceinfo.is_exclusive == '1') {
-            subtotal = Invoiceinfo.tax_exclusive_serviceprice;
-        }
-
-        $("#invoice_subtotal").html(subtotal);
-        $("#discount_price").html(discount_price);
-        $("#discount_type").html(discount_type);
-        $("#discount_name").html(discount_name);
-
-        $("#invoice_tax").html(Invoiceinfo?.tax_percenatage ?? '-');
-        $("#invoice_tax_price").html(Invoiceinfo?.tax_price ?? '-');
-        $("#total_price").html(Invoiceinfo?.tax_including_price ?? '-');
-        $("#grand_total_price").html(Invoiceinfo?.tax_including_price ?? '-');
+        $("#add_payment_mode_id").html(modes_options);
 
     } catch (error) {
         showException(error);
@@ -438,12 +576,14 @@ function applyFilters(datatable) {
             id: $("#search_id").val(),
             patient_id: $("#search_patient_id").val(),
             patient_name: $("#search_patient_id").text(),
+            package_id: $("#search_plan_id").text(),
             location_id: $("#search_location_id").val(),
             service_id: $("#search_service_id").val(),
             invoice_status_id: $("#search_invoice_status_id").val(),
             appointment_type_id: $("#search_appointment_type_id").val(),
             created_from: $("#search_created_from").val(),
             created_to: $("#search_created_to").val(),
+            status: $("#search_status").val(),
             filter: 'filter',
         }
 
@@ -460,13 +600,14 @@ function resetAllFilters(datatable) {
             delete: '',
             id: '',
             patient_id: '',
-            patient_name: '',
+            package_id: '',
             location_id: '',
             service_id: '',
             invoice_status_id: '',
             appointment_type_id: '',
             created_from: '',
             created_to: '',
+            status: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -474,7 +615,7 @@ function resetAllFilters(datatable) {
 
 }
 
-function resetInvoiceFilters() {
+function resetCustomFilters() {
 
     $(".filter-field").val('');
     addUsers();
@@ -492,29 +633,42 @@ function setFilters(filter_values, active_filters) {
 
         let location_options = '<option value="">All</option>';
         let package_options = '<option value="">All</option>';
-        let patient_options = '<option value="">All</option>';
         let status_options = '<option value="">All</option>';
 
-        Object.entries(locations).forEach( function (value) {
-            location_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
-        });
+        if (locations) {
+            Object.entries(locations).forEach(function (value) {
+                location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+            });
+        }
 
-        Object.entries(packages).forEach( function (value) {
-            package_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
-        });
+        if (packages) {
+            Object.entries(packages).forEach(function (value) {
+                package_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+            });
+        }
 
-        Object.entries(status).forEach( function (value) {
-            status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
-        });
+        if (status) {
+            Object.entries(status).forEach(function (value) {
+                status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+            });
+        }
 
-        Object.entries(patients).forEach( function (value) {
-            patient_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
-        });
-
-        $("#search_patient_id").html(patient_options);
         $("#search_plan_id").html(package_options);
         $("#search_location_id").html(location_options);
         $("#search_status").html(status_options);
+
+        $("#search_id").val(active_filters.id);
+
+        if (typeof active_filters.patient_id !== 'undefined') {
+            $("#search_patient_id").html('<option value="'+active_filters.patient_id+'">'+active_filters.patient_name+'</option>');
+            $("#search_patient_id").val(active_filters.patient_id);
+        }
+
+        $("#search_plan_id").val(active_filters.package_id);
+        $("#search_location_id").val(active_filters.location_id);
+        $("#search_status").val(active_filters.status);
+        $("#search_created_from").val(active_filters.created_from);
+        $("#search_created_to").val(active_filters.created_to);
 
         hideShowAdvanceFilters(active_filters);
 
@@ -527,7 +681,6 @@ function hideShowAdvanceFilters(active_filters) {
 
     if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
         || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
-        || (typeof active_filters.invoice_status_id !== 'undefined' && active_filters.invoice_status_id != '')
         || (typeof active_filters.status !== 'undefined' && active_filters.status != '')
     ) {
 

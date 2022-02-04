@@ -1,6 +1,10 @@
 "use strict";
 
 let perPage = 20;
+let paginate = true;
+if (typeof changePaginate !== 'undefined') {
+    paginate = changePaginate;
+}
 if (typeof changePages !== 'undefined') {
     perPage = changePages;
 }
@@ -68,7 +72,7 @@ var KTDatatable = function() {
              fixedColumns: true,
 			sortable: true,
 
-			pagination: true,
+			pagination: paginate,
 
 			// columns definition
 			columns: typeof table_columns !== 'undefined' ? table_columns : [],

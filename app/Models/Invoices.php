@@ -266,8 +266,8 @@ class Invoices extends Model
                 '=',
                 $filters['patient_id']
             );
-            Filters::put(Auth::user()->id , $filename, 'patient_id', $filters['patient_id']) ;
-            Filters::put(Auth::user()->id , $filename, 'patient_name', $filters['patient_name']) ;
+            Filters::put(Auth::user()->id , $filename, 'patient_id', $filters['patient_id']);
+            Filters::put(Auth::user()->id , $filename, 'patient_name', $filters['patient_name']);
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id ,$filename, 'patient_id');

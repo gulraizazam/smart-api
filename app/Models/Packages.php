@@ -347,6 +347,7 @@ class Packages extends BaseModal
                 $filters['patient_id']
             );
             Filters::put(Auth::User()->id, $filename, 'patient_id', $filters['patient_id']);
+            Filters::put(Auth::user()->id , $filename, 'patient_name', $filters['patient_name']) ;
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'patient_id');
@@ -367,6 +368,7 @@ class Packages extends BaseModal
                 GeneralFunctions::patientSearch($filters['id'])
             );
             Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['id']));
+            Filters::put(Auth::User()->id, $filename, 'id', GeneralFunctions::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'id');

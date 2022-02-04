@@ -321,5 +321,9 @@ div > input {
 }
 
 #patient_id .select2-container--default .select2-selection--single .select2-selection__rendered {
-    padding: 0.65rem 0rem 0.65rem 1rem;;
+    padding: 0.65rem 0rem 0.65rem 1rem;
+}
+
+.select2-search .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0.65rem 0rem 0.65rem 1rem;
 }

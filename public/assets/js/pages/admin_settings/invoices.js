@@ -366,7 +366,7 @@ function resetAllFilters(datatable) {
 
 }
 
-function resetInvoiceFilters() {
+function resetCustomFilters() {
 
     $(".filter-field").val('');
     addUsers();
