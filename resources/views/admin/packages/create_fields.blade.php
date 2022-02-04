@@ -1,7 +1,7 @@
 {{--Message for success and wraning--}}
 <div id="duplicateErr" class="alert alert-danger display-hide">
     <button class="close" data-close="alert"></button>
-    Dupliocate record found, please select another one.
+    Duplicate record found, please select another one.
 </div>
 <div id="successMessage" class="alert alert-success display-hide">
     <button class="close" data-close="alert"></button>

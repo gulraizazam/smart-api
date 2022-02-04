@@ -111,7 +111,7 @@ class PackagesController extends Controller
     /**
      * Return an array of location base service.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getservices(Request $request)
     {
@@ -121,17 +121,13 @@ class PackagesController extends Controller
 
             $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
 
-            $locationinformation = Locations::find($request->location_id);
-
-            return response()->json(array(
-                'status' => true,
+            return ApiHelper::apiResponse($this->success, 'Recode found', true, [
                 'service' => $locationhasservice,
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            ]);
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'Recode not found', false);
     }
 
     /**
@@ -1477,17 +1473,9 @@ class PackagesController extends Controller
     {
         $appointmentArray = PlanAppointmentCalculation::tagAppointments($request);
 
-        if (count($appointmentArray) > 0) {
-            return response()->json(array(
-                'status' => true,
-                'data' => $appointmentArray,
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-                'data' => $appointmentArray,
-            ));
-        }
+        return ApiHelper::apiResponse($this->success, 'Recode found', true, [
+            'appointments' => $appointmentArray,
+        ]);
     }
 
     /*
@@ -1498,6 +1486,7 @@ class PackagesController extends Controller
         if (!Gate::allows('plans_log')) {
             return abort(401);
         }
+
         $action_array = array(
             1 => 'Create',
             2 => 'Edit',
@@ -1566,11 +1555,111 @@ class PackagesController extends Controller
         }
 
         if ($type === 'web') {
-            return view('admin.packages.log', compact('finance_log', 'id'));
+            return view('admin.packages.log');
         }
 
         return $this->packagelogexcel($id, $finance_log);
 
+    }
+
+    public function planDatatable(Request $request, $id) {
+
+        $records = [];
+
+        $action_array = array(
+            1 => 'Create',
+            2 => 'Edit',
+            3 => 'Delete',
+            4 => 'Inactive',
+            5 => 'Active',
+            6 => 'Cancel',
+        );
+        $table_array = array(
+            25 => 'Finance'
+        );
+        $finance_log = array();
+
+        $find_ids = PackageAdvances::withTrashed()->where('package_id', '=', $id)->pluck('id')->toArray();
+
+        array_push($find_ids, $id);
+
+        list($orderBy, $order) = getSortBy($request);
+
+        $iTotalRecords = AuditTrails::whereIn('table_record_id', $find_ids)
+            ->where('audit_trail_table_name',
+                Config::get('constants.package_advance_table_name_log')
+            )->count();
+
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+        $audittrails = AuditTrails::whereIn('table_record_id', $find_ids)
+            ->where('audit_trail_table_name',
+                Config::get('constants.package_advance_table_name_log')
+            )->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'asc')->get();
+
+        $count = 1;
+        foreach ($audittrails as $audittrail) {
+            $finance_log[$audittrail->id] = array(
+                'sr no' => $count++,
+                'id' => $audittrail->id,
+                'action' => $action_array[$audittrail->audit_trail_action_name],
+                'table' => $table_array[$audittrail->audit_trail_table_name],
+                'user_id' => $audittrail->user->name,
+                'created_at_orignal' => $audittrail->created_at,
+                'updated_at_orignal' => $audittrail->updated_at,
+                'detail_log' => array(),
+
+            );
+
+            $audittrail_changes = AuditTrailChanges::where('audit_trail_id', '=', $audittrail->id)->get();
+
+            foreach ($audittrail_changes as $changes) {
+                if ($action_array[$audittrail->audit_trail_action_name] == 'Delete') {
+                    if ($changes->field_name == 'cash_amount' || $changes->field_name == 'deleted_at') {
+                        $result = Financelog::Calculate_Val_advance($changes);
+                        $finance_log[$audittrail->id][$changes->field_name] = $result;
+                    }
+                } else {
+                    $result = Financelog::Calculate_Val_advance($changes);
+                    $finance_log[$audittrail->id][$changes->field_name] = $result;
+                }
+            }
+            if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
+
+                $type_2_detail = AuditTrailChanges::where('audit_trail_id', '=', $finance_log[$audittrail->id]['id'])->get();
+
+                foreach ($type_2_detail as $detail) {
+                    $result = Financelog::Calculate_Val($detail);
+                    $finance_log[$audittrail->id]['detail_log'][$detail->id] = array(
+                        'field_name' => $detail->field_name,
+                        'field_before' => $result['before'],
+                        'field_after' => $result['after']
+                    );
+                }
+            }
+        }
+
+        foreach ($finance_log as $key => $log) {
+            if ($log['sr no'] == 1 && $log['cash_flow'] == 'out' && $log['payment_mode_id'] == 'Settle Amount') {
+                unset($finance_log[$key]);
+            }
+        }
+
+        if (! empty($finance_log)) {
+
+            $records["data"] = $finance_log;
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+        }
+
+        return ApiHelper::apiDataTable($records);
     }
 
     /*

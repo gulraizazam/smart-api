@@ -46,7 +46,7 @@
                             @endif
 
                             @if(Gate::allows('plans_create'))
-                                <a href="javascript:void(0);" onclick="createRota('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_invoices">
+                                <a href="javascript:void(0);" onclick="createPlan('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_plan">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
@@ -59,7 +59,7 @@
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                        @include('admin.packages.filters')
+                        @include('admin.packages.filters', ['custom_reset' => 'custom_reset'])
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -95,6 +95,29 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_add_plan" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered big-modal" id="packages_add">
+
+            @include('admin.packages.create')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_edit_plan" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered big-modal" id="packages_edit">
+
+            @include('admin.packages.edit')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    @push('js')
+        {{--<script src="{{asset('assets/js/pages/admin_settings/plans.js')}}"></script>--}}
+    @endpush
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/plans.js')}}"></script>

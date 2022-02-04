@@ -66,7 +66,7 @@
     <div class="row">
         <div class="col-md-10">
 
-            @include('admin.partials.filter-buttons')
+            @include('admin.partials.filter-buttons', ['custom_reset', $custom_reset])
 
         </div>
     </div>

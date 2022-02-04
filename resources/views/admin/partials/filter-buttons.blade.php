@@ -6,7 +6,7 @@
 
     @if(isset($custom_reset) && $custom_reset != '')
 
-        <button class="btn btn-secondary btn-secondary--icon ml-3" onclick="resetInvoiceFilters();" id="reset-filters">
+        <button class="btn btn-secondary btn-secondary--icon ml-3" onclick="resetCustomFilters();" id="reset-filters">
             <i class="la la-close"></i>
             Reset
         </button>
