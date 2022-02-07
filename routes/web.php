@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\ResourceRotasController;
 use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackagesController;
+use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 
     /*
     |--------------------------------------------------------------------------
@@ -196,5 +197,9 @@ use App\Http\Controllers\Admin\PackagesController;
        // Non Refunds Route start
         Route::get('nonplansrefunds/index', [RefundsController::class, 'nonplansindex'])->name('nonplansrefunds.index');
         //Non Refunds Route end
+
+         // Custom User Form Feedbacks Routes
+        Route::resource('custom_form_feedbacks', CustomFormFeedbacksController::class)->only('index');
+
 
     });
