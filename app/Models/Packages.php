@@ -145,17 +145,20 @@ class Packages extends BaseModal
         $package = Packages::getData($id);
 
         if (!$package) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.packages.index');
+            return [
+                'status' => false,
+                'message' => 'Resource not found.',
+            ];
         }
 
         $record = $package->update(['active' => 0]);
 
-        flash('Record has been inactivated successfully.')->success()->important();
-
         AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
 
-        return $record;
+        return [
+            'status' => true,
+            'message' => 'Record has been inactivated successfully.',
+        ];
     }
 
     /**
@@ -172,17 +175,20 @@ class Packages extends BaseModal
 
         if (!$package) {
 
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.packages.index');
+            return [
+                'status' => false,
+                'message' => 'Resource not found.',
+            ];
         }
 
         $record = $package->update(['active' => 1]);
 
-        flash('Record has been activated successfully.')->success()->important();
-
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 
-        return $record;
+        return [
+            'status' => true,
+            'message' => 'Record has been activated successfully.',
+        ];
     }
 
     /**
@@ -197,16 +203,19 @@ class Packages extends BaseModal
         $package = Packages::getData($id);
 
         if (!$package) {
-
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.packages.index');
+            return [
+                'status' => false,
+                'message' => 'Resource not found.'
+            ];
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Packages::isChildExists($id, Auth::User()->account_id)) {
 
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.packages.index');
+            return [
+                'status' => false,
+                'message' => 'Child records exist, unable to delete resource'
+            ];
         }
 
         $record = $package->delete();
@@ -215,9 +224,10 @@ class Packages extends BaseModal
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return [
+            'status' => true,
+            'message' => 'Record has been deleted successfully.'
+        ];
     }
 
     /**
@@ -337,6 +347,7 @@ class Packages extends BaseModal
                 $filters['patient_id']
             );
             Filters::put(Auth::User()->id, $filename, 'patient_id', $filters['patient_id']);
+            Filters::put(Auth::user()->id , $filename, 'patient_name', $filters['patient_name']) ;
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'patient_id');
@@ -357,6 +368,7 @@ class Packages extends BaseModal
                 GeneralFunctions::patientSearch($filters['id'])
             );
             Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['id']));
+            Filters::put(Auth::User()->id, $filename, 'id', GeneralFunctions::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'id');
