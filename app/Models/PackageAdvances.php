@@ -591,6 +591,6 @@
 				])->value('cash_amount');
 			}
 
-			echo $cash_amount;
+			return $cash_amount;
 		}
 	}

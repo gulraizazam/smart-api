@@ -24,6 +24,9 @@ use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\ResourceRotasController;
+use App\Http\Controllers\Admin\InvoicesController;
+use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Admin\PackagesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +51,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('user_operator_settings/datatable', [UserOperatorSettingsController::class, 'datatable'])->name('user_operator_settings.datatable');
     Route::get('user_operator_settings/{id}/edit', [UserOperatorSettingsController::class, 'edit'])->name('user_operator_settings.edit');
     Route::put('user_operator_settings/{id}', [UserOperatorSettingsController::class, 'update'])->name('user_operator_settings.update');
+
     // Operator Settings Routes End
 
     // Payment Modes Routes Start
@@ -230,6 +234,77 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('resourcerotas/calender/events/{id}',[ResourceRotasController::class, 'getcalenderinfoevents'])->name('resourcerotas.events');
     Route::post('resourcerotas/store_Calender_edit',[ResourceRotasController::class, 'store_calender_edit'])->name('resourcerotas.store_Calender_edit');
     Route::resource('resourcerotas', ResourceRotasController::class)->except('index');
+
+    //Invoice Management route start
+    Route::post('invoices/datatable', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
+
+    Route::post('invoices/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoices.cancel');
+
+    Route::get('invoices/displayInvoice/{id}', [InvoicesController::class, 'displayInvoice'])->name('invoices.displayInvoice');
+    Route::post('invoices/invoiceDatatable/{id}', [InvoicesController::class, 'invoiceDatatable'])->name('invoices.invoiceDatatable');
+
+    Route::get('invoices/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
+
+    Route::get('invoices/sms_logs/{id}', [InvoicesController::class, 'showSMSLogs'])->name('invoices.sms_logs');
+
+    Route::post('invoices/send_logged_sms', [InvoicesController::class, 'sendLogSMS']);
+
+    Route::resource('invoices', InvoicesController::class)->except('index');
+    //Invoice Management route end
+
+    Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
+
+    /*packages*/
+    Route::post('plans/planDatatable/{id}', [PackagesController::class, 'planDatatable'])->name('packages.planDatatable');
+    Route::post('packages/datatable', [PackagesController::class, 'datatable'])->name('packages.datatable');
+
+    Route::post('packages/status', [PackagesController::class, 'status'])->name('packages.status');
+
+    Route::get('packages/getdiscountinfo',[PackagesController::class, 'getdiscountinfo'])->name('packages.getdiscountinfo');
+
+    Route::get('packages/getdiscountinfo_custom',[PackagesController::class, 'getdiscountinfocustom'])->name('packages.getdiscountinfo_custom');
+
+    Route::get('packages/savepackagesservice',[PackagesController::class, 'savepackages_service'])->name('packages.savepackages_service');
+
+    Route::post('packages/deletepackagesservice',[PackagesController::class, 'deletepackagesservice'])->name('packages.deletepackages_service');
+
+    Route::get('packages/deletepackagesexclusive',[PackagesController::class, 'deletepackagesexclusive'])->name('packages.deletepackages_exclusive');
+
+    Route::get('packages/getgrandtotal',[PackagesController::class, 'getgrandtotal'])->name('packages.getgrandtotal');
+
+    Route::get('packages/getgrandtotal_update',[PackagesController::class, 'getgrandtotal_update'])->name('packages.getgrandtotal_update');
+
+    Route::get('packages/savepackages',[PackagesController::class, 'savepackages'])->name('packages.savepackages');
+
+    Route::get('packages/updatepackages',[PackagesController::class, 'updatepackages'])->name('packages.updatepackages');
+
+    Route::get('packages/getserviceinfo',[PackagesController::class, 'getserviceinfo'])->name('packages.getserviceinfo');
+
+    Route::get('packages/display/{id}',[PackagesController::class, 'display'])->name('packages.display');
+
+    Route::get('packages/getservice',[PackagesController::class, 'getservices'])->name('packages.getservice');
+
+    Route::get('packages/getservice_for_discount_zero', [PackagesController::class, 'getservices_for_zero'])->name('packages.getserviceinfo_discount_zero');
+
+    Route::get('packages/pdf/{id}', [PackagesController::class, 'package_pdf'])->name('packages.package_pdf');
+
+    Route::get('packages/getpackage', [PackagesController::class, 'getpackage'])->name('packages.getpackage');
+
+    /*Routes for editing the cash in treatment plan*/
+    Route::get('packages/edit_cash/{id}/{package_id}',[PackagesController::class, 'editpackageadvancescashindex'])->name('packages.edit_cash');
+
+    Route::post('packages/delete_cash',[PackagesController::class, 'deletepackageadvancescash'])->name('packages.delete_cash');
+
+    Route::put('packages/edit_cash/store',[PackagesController::class, 'storepackageadvancescash'])->name('packages.edit_cash.store');
+    /*End*/
+
+    // Route for Sms log start
+    Route::get('packages/sms_logs/{id}', [PackagesController::class, 'showSMSLogs'])->name('packages.sms_logs');
+    Route::post('packages/send_logged_sms', [PackagesController::class, 'sendLogSMS'])->name('packages.resend_sms');
+    // End
+
+    Route::get('packages/getappointmentinfo',[PackagesController::class, 'getappointmentinfo'])->name('packages.getappointmentinfo');
+    Route::resource('packages', PackagesController::class)->except('index');
 
 });
 

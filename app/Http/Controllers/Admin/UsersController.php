@@ -837,9 +837,11 @@ class UsersController extends Controller
      * */
     public function getpatientid(Request $request)
     {
-        $patient = Patients::getPatientidAjax($request->q, Auth::User()->account_id);
+        $patients = Patients::getPatientidAjax($request->q, Auth::User()->account_id);
 
-        return response()->json($patient);
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'patients' => $patients
+        ]);
     }
 
     /*
