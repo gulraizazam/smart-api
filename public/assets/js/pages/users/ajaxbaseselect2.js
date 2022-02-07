@@ -4,7 +4,7 @@ $(document).ready(function () {
         width: '100%',
         placeholder: 'Select Patient',
         ajax: {
-            url: route('admin.users.getpatient'),
+            url: route('admin.users.getpatient.id'),
             dataType: 'json',
             delay: 250,
             data: function (params) {

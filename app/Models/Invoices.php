@@ -144,17 +144,8 @@ class Invoices extends Model
     {
         $where = self::filters_invoices( $request, $account_id , $id , $apply_filter, $filename );
 
-        $orderBy = 'created_at';
-        $order = 'desc';
 
-        if ($request->get('order')[0]['dir']) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            if ($orderBy == 'created_at') {
-                $orderBy = 'invoices.created_at';
-            }
-            $order = $request->get('order')[0]['dir'];
-        }
+        list($orderBy, $order) = getSortBy($request);
 
 
         if (count($where)) {
@@ -204,6 +195,8 @@ class Invoices extends Model
     {
         $where = array();
 
+        $filters = getFilters($request->all());
+
         if($id != false){
             $where[] = array(
                 'invoices.patient_id',
@@ -246,13 +239,13 @@ class Invoices extends Model
             }
         }
 
-        if ( $request->get('appointment_type_id')){
+        if (hasFilter($filters, 'appointment_type_id')) {
             $where[] = array(
                 'appointments.appointment_type_id',
                 '=',
-                $request->get('appointment_type_id')
+                $filters['appointment_type_id']
             );
-            Filters::put(Auth::user()->id, $filename, 'appointment_type_id', $request->get('appointment_type_id'));
+            Filters::put(Auth::user()->id, $filename, 'appointment_type_id', $filters['appointment_type_id']);
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id, $filename, 'appointment_type_id');
@@ -267,13 +260,14 @@ class Invoices extends Model
             }
         }
 
-        if ($request->get('patient_id')) {
+        if (hasFilter($filters, 'patient_id')) {
             $where[] = array(
                 'invoices.patient_id',
                 '=',
-                $request->get('patient_id')
+                $filters['patient_id']
             );
-            Filters::put(Auth::user()->id , $filename, 'patient_id', $request->get('patient_id')) ;
+            Filters::put(Auth::user()->id , $filename, 'patient_id', $filters['patient_id']);
+            Filters::put(Auth::user()->id , $filename, 'patient_name', $filters['patient_name']);
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id ,$filename, 'patient_id');
@@ -288,13 +282,13 @@ class Invoices extends Model
             }
         }
 
-        if ($request->get('id')) {
+        if (hasFilter($filters, 'id')) {
             $where[] = array(
                 'invoices.patient_id',
                 '=',
-                \App\Helpers\GeneralFunctions::patientSearch($request->get('id'))
+                \App\Helpers\GeneralFunctions::patientSearch($filters['id'])
             );
-            Filters::put(Auth::user()->id , $filename, 'patient_id', \App\Helpers\GeneralFunctions::patientSearch($request->get('id'))) ;
+            Filters::put(Auth::user()->id , $filename, 'id', \App\Helpers\GeneralFunctions::patientSearch($filters['id'])) ;
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id ,$filename, 'id');
@@ -309,13 +303,13 @@ class Invoices extends Model
             }
         }
 
-        if ($request->get('invoice_status_id')) {
+        if (hasFilter($filters, 'invoice_status_id')) {
             $where[] = array(
                 'invoices.invoice_status_id',
                 '=',
-                $request->get('invoice_status_id')
+                $filters['invoice_status_id']
             );
-            Filters::put( Auth::user()->id , $filename, 'invoice_status_id', $request->get('invoice_status_id')) ;
+            Filters::put( Auth::user()->id , $filename, 'invoice_status_id', $filters['invoice_status_id']) ;
         } else {
             if ($apply_filter){
                 Filters::forget( Auth::user()->id ,$filename, 'invoice_status_id');
@@ -330,13 +324,13 @@ class Invoices extends Model
             }
         }
 
-        if ($request->get('location_id')){
+        if (hasFilter($filters, 'location_id')) {
             $where[] = array(
                 'invoices.location_id',
                 '=',
-                $request->get('location_id')
+                $filters['location_id']
             );
-            Filters::put(Auth::user()->id, $filename, 'location_id', $request->get('location_id'));
+            Filters::put(Auth::user()->id, $filename, 'location_id', $filters['location_id']);
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id , $filename, 'location_id');
@@ -351,34 +345,34 @@ class Invoices extends Model
             }
         }
 
-        if ($request->get('service')) {
+        if (hasFilter($filters, 'service_id')) {
             $where[] = array(
                 'invoice_details.service_id',
                 '=',
-                $request->get('service')
+                $filters['service_id']
             );
-            Filters::put( Auth::user()->id , $filename, 'service', $request->get('service')) ;
+            Filters::put( Auth::user()->id , $filename, 'service_id', $filters['service_id']) ;
         } else {
             if ($apply_filter){
-                Filters::forget( Auth::user()->id ,$filename, 'service');
+                Filters::forget( Auth::user()->id ,$filename, 'service_id');
             } else {
-                if (Filters::get( Auth::user()->id, $filename, 'service')){
+                if (Filters::get( Auth::user()->id, $filename, 'service_id')){
                     $where[] = array(
                         'invoice_details.service_id',
                         '=',
-                        Filters::get( Auth::user()->id ,$filename, 'service')
+                        Filters::get( Auth::user()->id ,$filename, 'service_id')
                     );
                 }
             }
         }
 
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'invoices.created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
-            Filters::put(Auth::User()->id, $filename, 'created_from', $request->get('created_from') . ' 00:00:00');
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_from');
@@ -393,13 +387,13 @@ class Invoices extends Model
             }
         }
 
-        if ($request->get('created_to') && $request->get('created_to') != '') {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'invoices.created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
-            Filters::put(Auth::User()->id, $filename, 'created_to', $request->get('created_to') . ' 23:59:59');
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_to');

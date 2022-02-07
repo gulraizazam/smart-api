@@ -28,6 +28,8 @@ use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\ResourceRotasController;
+use App\Http\Controllers\Admin\InvoicesController;
+use App\Http\Controllers\Admin\PackagesController;
 
     /*
     |--------------------------------------------------------------------------
@@ -180,5 +182,15 @@ use App\Http\Controllers\Admin\ResourceRotasController;
         //Resource Rota Management
         Route::resource('resourcerotas', ResourceRotasController::class)->only('index');
         Route::get('resourcerotas/calender/view/{id}', [ResourceRotasController::class, 'viewCalender'])->name('resourcerotas.calender-view');
+
+        //Invoice Management route start
+        Route::get('invoices/log/{id}/{type}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
+        Route::resource('invoices', InvoicesController::class)->only('index');
+        //Invoice Management route end
+
+        // Package route start
+        Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');
+        Route::resource('packages', PackagesController::class)->only('index');
+        // Package Route end
 
     });

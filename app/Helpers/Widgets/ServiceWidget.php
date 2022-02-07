@@ -211,7 +211,7 @@ class ServiceWidget
 
 
     /*
-     * create Service Dropdown for plans aginst location id.
+     * create Service Dropdown for plans against location id.
      *
      * @param: $service_has_location (int) $account_id
      *
@@ -220,6 +220,8 @@ class ServiceWidget
     static public function generateServicelcoationArray($service_has_location, $account_id)
     {
         $date = Carbon::now();
+        $services = [];
+        $Services = [];
 
         $allService = Services::where(['slug' => 'all'])->select('id')->first();
 

@@ -61,22 +61,22 @@ class PlanAppointmentCalculation
             // First we need to find appointment with arrived status
             $appointment_info = Appointments::where([
                 ['patient_id', '=', $request->patient_id],
-                ['base_appointment_status_id', '=', $appointment_status->id],
-                ['appointment_type_id', '=', $appointment_type->id],
-                ['location_id', '=', $request->location_id]
+                ['base_appointment_status_id', '=', $appointment_status?->id],
+                ['appointment_type_id', '=', $appointment_type?->id],
+                ['location_id', '=', $request?->location_id]
             ])->orderBy('created_at', 'asc')->get();
 
             // Making array for above data
             foreach ($appointment_info as $appointment) {
-                $appointmentArray_appointment[$appointment->id] = array(
-                    'id' => $appointment->id . '.' . 'A',
-                    'name' => $appointment->service->name . " - " . Carbon::parse($appointment->created_at)->format('F j,Y h:i A') . " - " . $appointment->doctor->name,
+                $appointmentArray_appointment[$appointment?->id] = array(
+                    'id' => $appointment?->id . '.' . 'A',
+                    'name' => $appointment?->service->name . " - " . Carbon::parse($appointment?->created_at)->format('F j,Y h:i A') . " - " . $appointment->doctor->name,
                 );
-                $doctorids[] = $appointment->doctor_id;
+                $doctorids[] = $appointment?->doctor_id;
             }
 
             // Remember I create that funtion for getting doctors in creating rota here I take help of this function
-            $doctors = self::loadDoctorsByLocation($request->location_id, $doctorids);
+            $doctors = self::loadDoctorsByLocation($request?->location_id, $doctorids);
 
             if ($doctors) {
                 foreach ($doctors as $key => $doctor) {
