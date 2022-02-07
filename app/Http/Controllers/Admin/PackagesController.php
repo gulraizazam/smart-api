@@ -1010,94 +1010,100 @@ class PackagesController extends Controller
         if (!Gate::allows('plans_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $package = Packages::with('user', 'location')->find($id);
 
-        /*Due to finance editing we calculate that "total" through package bundle otherwise we can use package->total_amount*/
-        $total_price = PackageBundles::where('package_id', '=', $id)->sum('tax_including_price');
+        try { 
 
-        $packagebundles = PackageBundles::where('package_id', '=', $package->id)->get();
-        $packageservices = PackageService::where('package_id', '=', $package->id)->get();
+            $package = Packages::with('user', 'location')->find($id);
 
-        $packageadvances = PackageAdvances::with('paymentmode')->where([
-            ['package_id', '=', $package->id],
-            ['is_cancel', '=', '0'],
-           // ['is_tax', '=', '0'],
-            ['is_adjustment', '=', '0']
-           //['is_refund', '=', '0']
-        ])->get();
-        $user_has_location = UserHasLocations::where('user_id', '=', Auth::User()->id)->get()->toArray();
-        if ($user_has_location) {
-            foreach ($user_has_location as $userhaslocation) {
-                $location = Locations::where([
-                    ['id', '=', $userhaslocation['location_id']],
-                    ['account_id', '=', Auth::User()->account_id]
-                ])->first();
-                if($location){
-                    if ($location->slug == 'custom') {
-                        $locations[] = $location;
+            /*Due to finance editing we calculate that "total" through package bundle otherwise we can use package->total_amount*/
+            $total_price = PackageBundles::where('package_id', '=', $id)->sum('tax_including_price');
+
+            $packagebundles = PackageBundles::where('package_id', '=', $package->id)->get();
+            $packageservices = PackageService::where('package_id', '=', $package->id)->get();
+
+            $packageadvances = PackageAdvances::with('paymentmode')->where([
+                ['package_id', '=', $package->id],
+                ['is_cancel', '=', '0'],
+            // ['is_tax', '=', '0'],
+                ['is_adjustment', '=', '0']
+            //['is_refund', '=', '0']
+            ])->get();
+            $user_has_location = UserHasLocations::where('user_id', '=', Auth::User()->id)->get()->toArray();
+            if ($user_has_location) {
+                foreach ($user_has_location as $userhaslocation) {
+                    $location = Locations::where([
+                        ['id', '=', $userhaslocation['location_id']],
+                        ['account_id', '=', Auth::User()->account_id]
+                    ])->first();
+                    if($location){
+                        if ($location->slug == 'custom') {
+                            $locations[] = $location;
+                        }
                     }
                 }
+            } else {
+                $locations = [];
             }
-        } else {
-            $locations = [];
-        }
 
-        $cash_amount_in = PackageAdvances::where([
-            ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'in'],
-            ['is_cancel', '=', '0']
-        ])->sum('cash_amount');
+            $cash_amount_in = PackageAdvances::where([
+                ['package_id', '=', $package->id],
+                ['cash_flow', '=', 'in'],
+                ['is_cancel', '=', '0']
+            ])->sum('cash_amount');
 
-        $cash_amount_out = PackageAdvances::where([
-            ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'out']
-        ])->sum('cash_amount');
+            $cash_amount_out = PackageAdvances::where([
+                ['package_id', '=', $package->id],
+                ['cash_flow', '=', 'out']
+            ])->sum('cash_amount');
 
-        $cash_amount = $cash_amount_in - $cash_amount_out;
-        /*We discuss it in future what happen next*/
-        $grand_total = number_format($total_price - $cash_amount_in);
+            $cash_amount = $cash_amount_in - $cash_amount_out;
+            /*We discuss it in future what happen next*/
+            $grand_total = number_format($total_price - $cash_amount_in);
 
-        $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
-        $paymentmodes->prepend('Select Payment Mode', '');
+            $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
+            $paymentmodes->prepend('Select Payment Mode', '');
 
-        $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();
+            $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();
 
-        $range = explode(':', $customdiscountrange->data);
+            $range = explode(':', $customdiscountrange->data);
 
-        $service_has_location = ServiceHasLocations::where('location_id', '=', $package->location_id)->get();
+            $service_has_location = ServiceHasLocations::where('location_id', '=', $package->location_id)->get();
 
-        if ($service_has_location) {
-            $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
-        }
+            if ($service_has_location) {
+                $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
+            }
 
-        $finance_editing_days = Settings::where('slug', '=', 'sys-financeediting')->first();
+            $finance_editing_days = Settings::where('slug', '=', 'sys-financeediting')->first();
 
-        $end_previous_date = Carbon::now()->subDays($finance_editing_days->data)->toDateString();
+            $end_previous_date = Carbon::now()->subDays($finance_editing_days->data)->toDateString();
 
-        $data['patient_id'] = $package->patient_id;
+            $data['patient_id'] = $package->patient_id;
 
-        $data['location_id'] = $package->location_id;
+            $data['location_id'] = $package->location_id;
 
-        $data = (object) $data;
+            $data = (object) $data;
 
-        $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
+            $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
 
-        
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'package' => $package, 
-            'locations' => $locations, 
-            'packagebundles' => $packagebundles,
-            'packageservices' => $packageservices, 
-            'packageadvances' => $packageadvances,
-            'paymentmodes' => $paymentmodes,
-            'grand_total' => $grand_total,
-            'range' => $range, 
-            'locationhasservice' => $locationhasservice,
-            'total_price' => $total_price, 
-            'end_previous_date' => $end_previous_date, 
-            'appointmentArray' => $appointmentArray
-        ]);
+            
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+                'package' => $package, 
+                'locations' => $locations, 
+                'packagebundles' => $packagebundles,
+                'packageservices' => $packageservices, 
+                'packageadvances' => $packageadvances,
+                'paymentmodes' => $paymentmodes,
+                'grand_total' => $grand_total,
+                'range' => $range, 
+                'locationhasservice' => $locationhasservice,
+                'total_price' => $total_price, 
+                'end_previous_date' => $end_previous_date, 
+                'appointmentArray' => $appointmentArray
+            ]);
+
+    } catch(\Exception $e) {
     
+        return ApiHelper::apiException($e);
     }
 
     /**
