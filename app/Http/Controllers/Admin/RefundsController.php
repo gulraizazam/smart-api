@@ -406,15 +406,13 @@ class RefundsController extends Controller
      */
     public function nonplansdatatable(Request $request)
     {
-        $apply_filter = false;
-        if($request->get('action')) {
-            $action = $request->get('action');
-            if(isset($action[0]) && $action[0] == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, 'nonplansrefunds');
-            } else if($action == 'filter') {
-                $apply_filter = true;
-            }
-        }
+        try { 
+
+        $filename = 'nonplansrefunds';
+
+        $filters = getFilters($request->all());
+
+        $apply_filter = checkFilters($filters, $filename);
 
         $records = array();
         $records["data"] = array();
@@ -424,12 +422,12 @@ class RefundsController extends Controller
 
         $iTotalRecords = $data['iTotalRecords'];
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        list($orderBy, $order) = getSortBy($request);
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $nonplansrefunds = $data['nonplansrefunds'];
+
+        $records = $this->getFilters($records);
 
         if ($nonplansrefunds) {
             foreach ($nonplansrefunds as $nonplansrefunds) {
@@ -443,15 +441,34 @@ class RefundsController extends Controller
                     'location' => $appointmentinformation->location->name,
                     'service' => $appointmentinformation->service->name,
                     'type' => $appointmentinformation->appointment_type->name,
-                    'actions' => view('admin.nonplansrefunds.actions', compact('nonplansrefunds'))->render(),
                 );
             }
-        }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
 
-        return response()->json($records);
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+
+        }
+
+
+        return ApiHelper::apiDataTable($records);
+
+    } catch(\Exception $e) {
+        return ApiHelper::apiException($e);
+    }
+}
+
+    private function getFilters($records) {
+
+        $records['active_filters'] = Filters::all(Auth::User()->id, 'nonplansrefunds');
+
+        return $records;
+
     }
 
     /**
@@ -527,31 +544,21 @@ class RefundsController extends Controller
     public function nonplans_refund_store(Request $request)
     {
         if (!Gate::allows('refunds_refund')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         if (Refunds::createRecordfornonplans($request, Auth::User()->account_id)) {
 
-            flash('Record has been created successfully.')->success()->important();
+            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
 
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been created successfully.',
-            ));
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
         }
+        
+        return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
     }
 }

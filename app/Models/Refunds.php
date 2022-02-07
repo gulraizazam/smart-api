@@ -351,7 +351,7 @@ class Refunds extends Model
 
         foreach ($nonplansrefundspatient as $patient) {
             $appointment_info = Appointments::find($patient->appointment_id);
-            if (in_array($appointment_info->location->id, ACL::getUserCentres())) {
+            if ($appointment_info && in_array($appointment_info->location->id, ACL::getUserCentres())) {
                 $singlepatient_cash_in = self::where([
                     ['patient_id', '=', $patient->patient_id],
                     ['appointment_id', '=', $patient->appointment_id],
@@ -398,6 +398,8 @@ class Refunds extends Model
     {
         $where = array();
 
+        $filters = getFilters($request->all());
+
         if ($id != false) {
             $where[] = array(
                 'patient_id',
@@ -405,16 +407,18 @@ class Refunds extends Model
                 $id
             );
         }
-        if ($request->get('patient_id') && $request->get('patient_id') != '') {
+        if (hasFilter($filters, 'patient_id')) {
             $where[] = array(
                 'patient_id',
                 '=',
-                $request->get('patient_id')
+                $filters['patient_id']
             );
-            Filters::put(Auth::user()->id, 'nonplansrefunds', 'patient_id', $request->get('patient_id'));
+            Filters::put(Auth::user()->id, 'nonplansrefunds', 'patient_id', $filters['patient_id']);
+            Filters::put(Auth::user()->id, 'nonplansrefunds', 'patient_name', str_replace('undefined', '', $filters['patient_name']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'nonplansrefunds', 'patient_id');
+                Filters::forget(Auth::user()->id, 'nonplansrefunds', 'patient_name');
             } else {
                 if (Filters::get(Auth::user()->id, 'nonplansrefunds', 'patient_id')) {
                     $where[] = array(
@@ -426,13 +430,13 @@ class Refunds extends Model
             }
         }
 
-        if ($request->get('id') && $request->get('id') != '') {
+        if (hasFilter($filters, 'id')) {
             $where[] = array(
                 'patient_id',
                 '=',
-                \App\Helpers\GeneralFunctions::patientSearch($request->get('id'))
+                \App\Helpers\GeneralFunctions::patientSearch($filters['id'])
             );
-            Filters::put(Auth::user()->id, 'nonplansrefunds', 'patient_id', \App\Helpers\GeneralFunctions::patientSearch($request->get('id')));
+            Filters::put(Auth::user()->id, 'nonplansrefunds', 'id', \App\Helpers\GeneralFunctions::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'nonplansrefunds', 'id');
