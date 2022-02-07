@@ -63,16 +63,10 @@ class CustomFormFeedbacks extends BaseModal
     {
         $where = Self::custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename);
 
-        $orderBy = 'created_at';
-        $order = 'desc';
 
-        if ($request->get('order')) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            if ($orderBy == 'created_at') {
-                $orderBy = 'custom_form_feedbacks.created_at';
-            }
-            $order = $request->get('order')[0]['dir'];
+        if ($request->has('sort')) {
+
+            list($orderBy, $order) = getSortBy($request);
 
             Filters::put(Auth::User()->id, 'custom_form_feedbacks', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'custom_form_feedbacks', 'order', $order);
@@ -125,6 +119,8 @@ class CustomFormFeedbacks extends BaseModal
     {
         $where = array();
 
+        $filters = getFilters($request->all());
+
         if($id != false){
             $where[] = array(
                 'users.id',
@@ -167,13 +163,13 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        if ($request->get('name') && $request->get('name') != '') {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'custom_form_feedbacks.form_name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, $filename, 'name', $request->get('name'));
+            Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'name');
@@ -187,13 +183,13 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        if ($request->get('id') && $request->get('id') != '') {
+        if (hasFilter($filters, 'id')) {
             $where[] = array(
                 'users.id',
                 'like',
-                '%' . \App\Helpers\GeneralFunctions::patientSearch($request->get('id')) . '%'
+                '%' . \App\Helpers\GeneralFunctions::patientSearch($filters['id']) . '%'
             );
-            Filters::put(Auth::User()->id, $filename, 'id', \App\Helpers\GeneralFunctions::patientSearch($request->get('id')));
+            Filters::put(Auth::User()->id, $filename, 'id', \App\Helpers\GeneralFunctions::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'id');
@@ -207,13 +203,13 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        if ($request->get('patient_name')) {
+        if (hasFilter($filters, 'patient_name')) {
             $where[] = array(
                 'users.name',
                 'like',
-                '%' . $request->get('patient_name') . '%'
+                '%' . $filters['patient_name'] . '%'
             );
-            Filters::put(Auth::User()->id, $filename, 'patient_name', $request->get('patient_name'));
+            Filters::put(Auth::User()->id, $filename, 'patient_name', $filters['patient_name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'patient_name');
@@ -227,13 +223,13 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'custom_form_feedbacks.created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
-            Filters::put(Auth::User()->id, $filename, 'created_from', $request->get('created_from'));
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_from');
@@ -247,13 +243,13 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        if ($request->get('created_to') && $request->get('created_to') != '') {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'custom_form_feedbacks.created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
-            Filters::put(Auth::User()->id, $filename, 'created_to', $request->get('created_to'));
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_to');

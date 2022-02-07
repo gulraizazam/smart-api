@@ -23,24 +23,14 @@
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6" id="patient_id">
-            <label>Patient:</label>
-            <select class="form-control filter-field patient_id" id="search_patient_id"></select>
+            <label>Name:</label>
+            <input type="text" class="form-control filter-field" placeholder="Enter Name" id="search_name" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Plans:</label>
-            <select class="form-control filter-field select2" id="search_plan_id"></select>
+            <label>Patient Name:</label>
+            <input type="text" class="form-control filter-field" placeholder="Enter Patient Name" id="search_patient_name" />
         </div>
-
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Centre:</label>
-            <select class="form-control filter-field select2" id="search_location_id"></select>
-        </div>
-
-
-    </div>
-
-    <div class="row mb-8 advance-filters" style="display: none;">
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Create at:</label>
@@ -55,16 +45,11 @@
             </div>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Status:</label>
-            <select class="form-control filter-field select2" id="search_status">
-            </select>
-        </div>
-
     </div>
 
+
     <div class="row">
-        <div class="col-md-10">
+        <div class="col-md-12">
 
             @include('admin.partials.filter-buttons')
 
