@@ -193,4 +193,8 @@ use App\Http\Controllers\Admin\PackagesController;
         Route::resource('packages', PackagesController::class)->only('index');
         // Package Route end
 
+       // Non Refunds Route start
+        Route::get('nonplansrefunds/index', [RefundsController::class, 'nonplansindex'])->name('nonplansrefunds.index');
+        //Non Refunds Route end
+
     });
