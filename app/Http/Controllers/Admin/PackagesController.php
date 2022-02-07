@@ -1298,11 +1298,18 @@ class PackagesController extends Controller
 
             $packageAdvancesCollection = [];
             foreach ($packageadvances as $packageadvance) {
+                if ($packageadvance->cash_flow == 'out' && $packageadvance->is_tax == 0) { 
                 if (!is_null($packageadvance->refund_note)) {
-                    $packageadvance->package_refund_price = PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id, $packageadvance->id);
+                    $packageadvance->package_refund_price = number_format(PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id, $packageadvance->id));
                 } else {
-                    $packageadvance->package_refund_price = PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id);
+                    $packageadvance->package_refund_price = number_format(PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id));
                 }
+
+            } else if($packageadvance->is_tax == 0) {
+                $packageadvance->package_refund_price = number_format($packageadvance->cash_amount);
+            } else {
+                $packageadvance->package_refund_price = '00.00';
+            }
 
                 $packageadvance->created_at_formated = Carbon::parse($packageadvance->created_at)->format('F j,Y h:i A');
 
