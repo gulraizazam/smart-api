@@ -1,5 +1,5 @@
 
-var table_url = route('admin.packages.planDatatable', {id: invoice_id});
+var table_url = route('admin.packages.planDatatable', {id: plane_id});
 
 var table_columns = [
     {

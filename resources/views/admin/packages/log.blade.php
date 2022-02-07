@@ -69,7 +69,7 @@
 
     @push('datatable-js')
         <script>
-            var invoice_id = "{{request('id')}}";
+            var plane_id = "{{request('id')}}";
         </script>
         <script src="{{asset('assets/js/pages/admin_settings/plan-log.js')}}"></script>
     @endpush

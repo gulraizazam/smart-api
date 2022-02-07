@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder rota-title">Add Rota</h2>
+        <h2 class="fw-bolder">Edit Package</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -20,292 +20,185 @@
     </div>
     <!--end::Modal header-->
     <!--begin::Modal body-->
-    <div class="modal-body scroll-y mx-5 mx-xl-15">
+    <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+
+
+        <div id="duplicateErr" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Duplicate record found, please select another one.
+        </div>
+        <div id="successMessage" class="alert alert-success display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Plan successfully created
+        </div>
+        <div id="inputfieldMessage" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Kindly enter required fields or you enter wrong value.
+        </div>
+        <div id="wrongMessage" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Something went wrong!
+        </div>
+        <div id="percentageMessage" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Your discount limit exceeded.
+        </div>
+        <div id="AlreadyExitMessage" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Unable to enter same service with different price.
+        </div>
+        <div id="datanotexist" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            That center not have any service.
+        </div>
+        <div id="DiscountRange" class="alert alert-danger" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Your discount limit exceeded.
+        </div>
+
         <!--begin::Form-->
-        <form id="modal_edit_resourcerotas_form" method="post" action="">
+        <form id="modal_add_plan_form" method="post" action="{{route('admin.packages.store')}}">
             <!--begin::Scroll-->
 
-            @method('put')
-
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resourcerotas_scroll">
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
-
                     <div class="row">
 
-                        <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">Resource Name:</strong></div>
-                        <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm" id="resource-name"></strong></div>
-
-                        <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">City:</strong></div>
-                        <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm"  id="city-name"></strong></div>
-
-                        <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">Centre:</strong></div>
-                        <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm"  id="centre-name"></strong></div>
-
-                        <div class="fv-row col-md-4 mt-5"><strong class="font-size-h6-sm">Rota Start Date:</strong></div>
-                        <div class="fv-row col-md-8 mt-5"><strong class="font-size-h5-sm"  id="rota-start-date"></strong></div>
-
-                    </div>
-
-                    <div class="row">
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">From <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_start" class="form-control current-datepicker" name="start">
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centers <span class="text text-danger">*</span></label>
+                            <select onchange="getServices();" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                                <option value="">Select Centre</option>
+                            </select>
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_end" class="form-control current-datepicker" name="end">
+                        <div class="fv-row col-md-3 mt-5 select2-search">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
+                            <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id select2" name="patient_id">
+                                <option value="">Select Patient</option>
+                            </select>
                         </div>
 
-                    </div>
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
+                            <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
+                                <option value="">Select Appointment</option>
+                            </select>
+                        </div>
 
-
-                    <div class="row mt-10 hideonmbl">
-                        <div class="col col-md-1"><strong>On</strong></div>
-                        <div class="col col-md-3"><strong>Days</strong></div>
-                        <div class="col col-md-2"><strong>From</strong></div>
-                        <div class="col col-md-2"><strong>To</strong></div>
-                        <div class="col col-md-2"><strong>From Break</strong></div>
-                        <div class="col col-md-2"><strong>To Break</strong></div>
-
-                    </div>
-
-                    <div class="row mt-10 hideonmbl" id="edit_mondayOperation_1">
-
-                        <div class="fv-row col-md-4">
-
-                            <label class="checkbox">
-                                <span class="checkbox edit_check_final_1">
-                                    <input id="edit_mondayElement_1" checked type="checkbox" name="mondaychecked" class="mr-2">
+                        <div class="fv-row col-md-3 mt-5">
+                            <div class="checkbox-inline mt-12">
+                                <span>Is Exclusive </span> &nbsp;
+                                <label for="is_exclusive" class="checkbox checkbox-rounded">
+                                    <input id="is_exclusive" type="checkbox" checked="checked" name="is_exclusive">
                                     <span></span>
-                                </span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Monday</strong>
-                            </label>
-
-
-                            <div class="ml-2">
-                                <label class="checkbox">
-                                    <input type="checkbox" id="edit_copy_all_1" name="copy_all" value='' style="display: none;">
-                                    <strong style="font-size: 12px;border-bottom: 1px solid #333; cursor: pointer;margin-left: 100px;
-    margin-top: -18px;">Copy As All</strong>
-                                    <span style="display: none;"></span>
                                 </label>
                             </div>
-
-                        </div>
-
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_monday', old('time_f_monday'), ['id' => 'edit_monday_from', 'class' => 'form-control current-timepicker timepicker edit_mondaytime_1 mondayfrom_1' ]) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('time_to_monday', old('time_to_monday'), ['id' => 'edit_monday_to', 'class' => 'form-control current-timepicker timepicker edit_mondaytime_1 mondayto_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('break_from_monday', old('break_from_monday'), ['id' => 'edit_break_monday_from', 'class' => 'form-control timepicker edit_monday_breake_time break_mondayfrom']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('break_to_monday', old('break_to_monday'), ['id' => 'edit_break_monday_to', 'class' => 'form-control timepicker edit_monday_breake_time break_mondayto']) !!}
                         </div>
 
                     </div>
+                </div>
 
-                    <div class="row mt-10 hideonmbl" id="edit_tuesdayOperation_1">
+                <div class="form-group">
+                    <div class="row">
 
-                        <div class="fv-row col-md-4">
-                            <label class="checkbox">
-                                <span class="checkbox edit_check_final_1">
-                                    <input id="edit_tuesdayElement_1" checked type="checkbox" name="tuesdaychecked" class="mr-2">
-                                    <span></span>
-                                </span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Tuesday</strong>
-                            </label>
-                        </div>
-
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_tuesday', old('time_f_tuesday'), ['id' => 'edit_time_f_tuesday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_tuesdaytime_1 ftime_1' ]) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('time_to_tuesday', old('time_to_tuesday'), ['id' => 'edit_time_to_tuesday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_tuesdaytime_1 ttime_1' ]) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('break_from_tuesday', old('break_from_tuesday'), ['id' => 'edit_break_from_tuesday', 'class' => 'form-control timepicker breaktime edit_tuesdaytime_break f_time_break']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('break_to_tuesday', old('break_to_tuesday'), ['id' => 'edit_break_to_tuesday', 'class' => 'form-control timepicker breaktime edit_tuesdaytime_break t_time_break']) !!}
-                        </div>
-
-
-                    </div>
-
-                    <div class="row mt-10 hideonmbl" id="edit_wednesdayOperation_1">
-
-                        <div class="fv-row col-md-4">
-                            <label class="checkbox">
-                                <span class="checkbox edit_check_final_1">
-                                    <input id="edit_wednesdayElement_1" type="checkbox" name="wednesdaychecked" checked class="mr-2">
-                                    <span></span>
-                                </span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Wednesday</strong>
-                            </label>
-                        </div>
-
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_wednesday', old('time_f_wednesday'), ['id' => 'edit_time_f_wednesday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_wednesdaytime_1 ftime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('time_to_wednesday', old('time_to_wednesday'), ['id' => 'edit_time_to_wednesday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_wednesdaytime_1 ttime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('break_from_wednesday', old('break_from_wednesday'), ['id' => 'edit_break_from_wednesday', 'class' => 'form-control timepicker breaktime edit_wednesdaytime_break f_time_break']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('break_to_wednesday', old('break_to_wednesday'), ['id' => 'edit_break_to_wednesday', 'class' => 'form-control timepicker breaktime edit_wednesdaytime_break t_time_break']) !!}
-                        </div>
-
-                    </div>
-
-                    <div class="row mt-10 hideonmbl" id="edit_thursdayOperation_1">
-
-                        <div class="fv-row col-md-4">
-                            <label class="checkbox">
-                                <span class="checkbox edit_check_final_1">
-                                    <input id="edit_thursdayElement_1" type="checkbox" name="thursdaychecked" checked class="mr-2">
-                                    <span></span>
-                                </span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Thursday</strong>
-                            </label>
-                        </div>
-
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_thursday', old('time_f_thursday'), ['id' => 'edit_time_f_thursday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_thursdaytime_1 ftime_1' ]) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_to_thursday', old('time_to_thursday'), ['id' => 'edit_time_to_thursday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_thursdaytime_1 ttime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('break_from_thursday', old('break_from_thursday'), ['id' => 'edit_break_from_thursday', 'class' => 'form-control timepicker timepicker-no-seconds breaktime edit_thursdaytime_break f_time_break']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('break_to_thursday', old('break_to_thursday'), ['id' => 'edit_break_to_thursday', 'class' => 'form-control timepicker timepicker-no-seconds breaktime edit_thursdaytime_break t_time_break']) !!}
-                        </div>
-
-                    </div>
-
-                    <div class="row mt-10 hideonmbl" id="edit_fridayOperation_1">
-
-                        <div class="fv-row col-md-4">
-                            <label class="checkbox">
-                                <span class="checkbox edit_check_final_1">
-                                    <input id="edit_fridayElement_1" type="checkbox" name="fridaychecked" checked class="mr-2">
-                                    <span></span>
-                                </span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Friday</strong>
-                            </label>
-                        </div>
-
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_friday', old('time_f_friday'), ['id' => 'edit_time_f_friday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_fridaytime_1 ftime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_to_friday', old('time_to_friday'), ['id' => 'edit_time_to_friday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_fridaytime_1 ttime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('break_from_friday', old('break_from_friday'), ['id' => 'edit_break_from_friday', 'class' => 'form-control timepicker breaktime edit_fridaytime_break f_time_break']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('break_to_friday', old('break_to_friday'), ['id' => 'edit_break_to_friday', 'class' => 'form-control timepicker breaktime edit_fridaytime_break t_time_break']) !!}
-                        </div>
-
-                    </div>
-
-                    <div class="row mt-10 hideonmbl" id="edit_saturdayOperation_1">
-
-                        <div class="fv-row col-md-4">
-                            <label class="checkbox">
-                                <span class="checkbox edit_check_final_1">
-                                    <input id="edit_saturdayElement_1" type="checkbox" name="saturdaychecked" checked class="mr-2">
-                                    <span></span>
-                                </span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Saturday</strong>
-                            </label>
-                        </div>
-
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_saturday', old('time_f_saturday'), ['id' => 'edit_time_f_saturday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_saturdaytime_1 ftime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_to_saturday', old('time_to_saturday'), ['id' => 'edit_time_to_saturday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 edit_saturdaytime_1 ttime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('break_from_saturday', old('break_from_saturday'), ['id' => 'edit_break_from_saturday', 'class' => 'form-control timepicker breaktime edit_saturdaytime_break f_time_break']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('break_to_saturday', old('break_to_saturday'), ['id' => 'edit_break_to_saturday', 'class' => 'form-control timepicker breaktime edit_saturdaytime_break t_time_break']) !!}
-                        </div>
-
-                    </div>
-
-                    <div class="row mt-10 hideonmbl" id="edit_sundayOperation_1">
-
-                        <div class="fv-row col-md-4">
-                            <label class="checkbox">
-                                <span class="checkbox edit_check_final_1">
-                                    <input id="edit_sundayElement_1" type="checkbox" name="sundaychecked" checked class="mr-2">
-                                    <span></span>
-                                </span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Sunday</strong>
-                            </label>
-                        </div>
-
-                        <div class="fv-row col-md-2">
-                            {!! Form::text('time_f_sunday', old('time_f_sunday'), ['id' => 'edit_time_f_sunday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 sundaytime_1 ftime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('time_to_sunday', old('time_to_sunday'), ['id' => 'edit_time_to_sunday', 'class' => 'form-control timepicker current-timepicker time_to_Rota_1 sundaytime_1 ttime_1']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('break_from_sunday', old('break_from_sunday'), ['id' => 'edit_break_from_sunday', 'class' => 'form-control timepicker breaktime sundaytime_break f_time_break']) !!}
-                        </div>
-                        <div class="fv-row col-md-2">
-
-                            {!! Form::text('break_to_sunday', old('break_to_sunday'), ['id' => 'edit_break_to_sunday', 'class' => 'form-control timepicker breaktime sundaytime_break t_time_break']) !!}
-                        </div>
-
-                    </div>
-
-
-                    <div class="row doctor_section d-none" id="Rota_type_operation">
-                        <div class="col-md-4"></div>
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="checkbox is_consultancy_1">
-                                <input type="hidden" name="is_consultancy" value="0"/>
-                                <input id="edit_is_consultancy_1" type="checkbox" name="is_consultancy" value="1" checked class="mr-2">
-                                <span></span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Consultancy</strong>
-                            </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
+                            <select id="add_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                                <option value="">Select Service</option>
+                            </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="checkbox is_treatment_1">
-                                <input type="hidden" name="is_treatment" value="0"/>
-                                <input  id="edit_is_treatment_1" type="checkbox" name="is_treatment" value="1" checked class="mr-2">
-                                <span></span>
-                                &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Treatment</strong>
-                            </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts</label>
+                            <select id="add_discount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
+                                <option value="">Select Discount</option>
+                            </select>
                         </div>
+
+                        <div class="fv-row col-md-4 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
+                            <select id="add_discount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
+                                <option value="">Select Discount Type</option>
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-4 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type </label>
+                            <input type="number" name="discount_type" class="form-control" id="add_discount_type">
+                        </div>
+
+                        <div class="fv-row col-md-4 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
+                            <input type="number" name="price" class="form-control" id="add_price">
+                        </div>
+
+                        <div class="fv-row col-md-4 mt-5">
+                            <div class="text-center mt-10">
+                                <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button">
+                                    <span class="indicator-label">Add</span>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
+
+                <hr>
+
+                <div class="table-responsive add_center_target_table">
+                    <table id="add_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
+
+                        <thead>
+                        <tr>
+                            <th>Service Name</th>
+                            <th>Service/Bundle Price</th>
+                            <th>Discount Name</th>
+                            <th>Discount Price</th>
+                            <th>Amount</th>
+                            <th>Tax %</th>
+                            <th>Tax Amt.</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+
+                        <tbody class="plan_services"><tr class="text-center"><td colspan="8">No record found</td></tr></tbody>
+
+                    </table>
+                </div>
+
+                <div class="form-group">
+                    <div class="row">
+
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
+                            <input type="number" id="add_package_total" class="form-control" name="package_total_1">
+                        </div>
+
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
+                            <select id="add_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                                <option value="">Select Payment Mode</option>
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
+                            <input type="number" min="0" id="add_cash_amount" class="form-control" value="0" name="cash_amount">
+                        </div>
+
+
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
+                            <input type="number" min="0" name="total_price" value="0" class="form-control" id="add_total_price">
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr>
 
             </div>
             <!--end::Scroll-->

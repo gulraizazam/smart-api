@@ -965,7 +965,7 @@ class PackagesController extends Controller
     public function status( Request $request)
     {
         if (!Gate::allows('plans_inactive')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         if ($request->status == 1) {
@@ -1008,9 +1008,9 @@ class PackagesController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('plans_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $package = Packages::find($id);
+        $package = Packages::with('user', 'location')->find($id);
 
         /*Due to finance editing we calculate that "total" through package bundle otherwise we can use package->total_amount*/
         $total_price = PackageBundles::where('package_id', '=', $id)->sum('tax_including_price');
@@ -1018,7 +1018,7 @@ class PackagesController extends Controller
         $packagebundles = PackageBundles::where('package_id', '=', $package->id)->get();
         $packageservices = PackageService::where('package_id', '=', $package->id)->get();
 
-        $packageadvances = PackageAdvances::where([
+        $packageadvances = PackageAdvances::with('paymentmode')->where([
             ['package_id', '=', $package->id],
             ['is_cancel', '=', '0'],
            // ['is_tax', '=', '0'],
@@ -1082,7 +1082,22 @@ class PackagesController extends Controller
 
         $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
 
-        return view('admin.packages.edit', compact('package', 'locations', 'packagebundles', 'packageservices', 'packageadvances', 'paymentmodes', 'grand_total', 'range', 'locationhasservice', 'total_price', 'end_previous_date', 'appointmentArray'));
+        
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'package' => $package, 
+            'locations' => $locations, 
+            'packagebundles' => $packagebundles,
+            'packageservices' => $packageservices, 
+            'packageadvances' => $packageadvances,
+            'paymentmodes' => $paymentmodes,
+            'grand_total' => $grand_total,
+            'range' => $range, 
+            'locationhasservice' => $locationhasservice,
+            'total_price' => $total_price, 
+            'end_previous_date' => $end_previous_date, 
+            'appointmentArray' => $appointmentArray
+        ]);
+    
     }
 
     /**
@@ -1244,7 +1259,7 @@ class PackagesController extends Controller
 
         $package = Packages::with('user', 'location')->find($id);
 
-        $packagebundles = PackageBundles::where('package_id', '=', $package->id)->get();
+        $packagebundles = PackageBundles::with('bundle')->where('package_id', '=', $package->id)->get();
 
         $packageservices = PackageService::where('package_id', '=', $package->id)->get();
 
