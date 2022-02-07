@@ -90,7 +90,7 @@
                             </tr>
                             </thead>
 
-                            <tbody class="package_advances">
+                            <tbody class="plan_history">
                             <tr>
                                 <td id="payment_mode"></td>
                                 <td id="cash_flow"></td>

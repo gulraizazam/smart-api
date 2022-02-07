@@ -308,14 +308,6 @@ function createPlan(url) {
 
 }
 
-function setPlanData(response) {
-    let region = response.data;
-    let action = route('admin.regions.update', {id: region.id});
-    $("#modal_edit_regions_form").attr("action", action);
-
-    $("#edit_regions_name").val(region.name);
-
-}
 
 function getServices() {
 
@@ -542,24 +534,92 @@ function setPlanData(response) {
 
     try {
 
-        let centers = response.data.locations;
-        let paymentmodes = response.data.paymentmodes;
-        let range = response.data.range;
-        let random_id = response.data.random_id;
+        let packageadvances = response.data.packageadvances;
+        let package = response.data.package;
+        let packagebundles = response.data.packagebundles;
 
-        let modes_options = '<option value="">Select Payment Mode</option>';
-        Object.entries(paymentmodes).forEach(function (value) {
-            modes_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
+        let history_options = noRecordFoundTable(4);
 
-        let centers_options = '<option value="">Select Appointment</option>';
-        Object.entries(centers).forEach(function (value) {
-            centers_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
+        if (packageadvances.length) { 
+        
+             history_options = noRecordFoundTable(4);
+            Object.values(packageadvances).forEach(function (packageadvance) {
+               
+                if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) { 
+                    history_options += '<tr>';
+                    history_options += '<td>'+packageadvance.paymentmode.name+'</td>';
+                    history_options += '<td>'+packageadvance.cash_flow+'</td>';
+                    history_options += '<td>'+packageadvance.package_refund_price+'</td>';
+                    history_options += '<td>'+packageadvance.created_at_formated+'</td>';
+                    history_options += '<tr>';
+                }
+            });
+        }
 
-        $("#add_location_id").html(centers_options);
 
-        $("#add_payment_mode_id").html(modes_options);
+
+        @if(packagebundles.lengths)
+        @foreach($packagebundles as $packagebundles)
+            <tr>
+                <td><a href="javascript:void(0);"
+                       onclick="toggle({{$packagebundles->id}})"><?php echo $packagebundles->bundle->name; ?></a>
+                </td>
+                <td>{{number_format($packagebundles->service_price)}}</td>
+                <td>
+                    @if($packagebundles->discount_id == null)
+                        {{'-'}}
+                    @elseif($packagebundles->discount_name)
+                        {{$packagebundles->discount_name}}
+                    @else
+                        {{$packagebundles->discount->name}}
+                    @endif
+                </td>
+                <td><?php if ($packagebundles->discount_type == null) {
+                        echo '-';
+                    } else {
+                        echo $packagebundles->discount_type;
+                    } ?>
+                </td>
+                <td><?php if ($packagebundles->discount_price == null) {
+                        echo '0.00';
+                    } else {
+                        echo $packagebundles->discount_price;
+                    } ?>
+                </td>
+                <td>{{$packagebundles->tax_exclusive_net_amount}}</td>
+                <td>{{$packagebundles->tax_percenatage}}</td>
+                <td>{{$packagebundles->tax_price}}</td>
+                <td>{{$packagebundles->tax_including_price}}</td>
+
+            </tr>
+            @foreach ($packageservices as $packageservice)
+                @if($packageservice->package_bundle_id == $packagebundles->id )
+                    <?php if ($packageservice->is_consumed == '0') {
+                        $consume = 'NO';
+                    } else {
+                        $consume = 'YES';
+                    }?>
+                    <tr class="{{$packagebundles->id}}" style="display: none">
+                        <td></td>
+                        <td><?php echo $packageservice->service->name; ?></td>
+                        <td>Amount : {{$packageservice->tax_exclusive_price}}</td>
+                        <td>Tax % : {{$packageservice->tax_percenatage}}</td>
+                        <td>Tax Amt. : {{$packageservice->tax_including_price}}</td>
+                        <td colspan="4">Is Consumed : {{$consume}}</td>
+                    </tr>
+                @endif
+            @endforeach
+        @endforeach
+    @endif
+
+
+
+        $(".plan_history").html(history_options);
+
+        $(".package_total_price").text(package.total_price);
+        $("#user_name").text(package.user.name)
+        $("#location_name").text(package.location.name)
+        
 
     } catch (error) {
         showException(error);
