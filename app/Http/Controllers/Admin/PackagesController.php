@@ -1105,6 +1105,7 @@ class PackagesController extends Controller
     
         return ApiHelper::apiException($e);
     }
+}
 
     /**
      * calculate the grand total

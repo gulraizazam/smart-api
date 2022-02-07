@@ -306,6 +306,11 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('packages/getappointmentinfo',[PackagesController::class, 'getappointmentinfo'])->name('packages.getappointmentinfo');
     Route::resource('packages', PackagesController::class)->except('index');
 
+     //Non Refunds Route start
+     Route::post('nonplansrefunds/datatable', [RefundsController::class, 'nonplansdatatable'])->name('nonplansrefunds.datatable');
+     Route::get('nonplansrefunds/refund_create/{id}', [RefundsController::class, 'nonplans_refund_create'])->name('nonprefunds.refund_create');
+     Route::post('nonplansrefunds/store', [RefundsController::class, 'nonplans_refund_store'])->name('nonplansrefunds.store');
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
