@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\User;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -92,6 +92,7 @@ class CustomFormFeedbacks extends BaseModal
                 Filters::put(Auth::User()->id, 'custom_form_feedbacks', 'order', $order);
             }
         }
+        
         if (count($where)) {
             return self::join('users', 'users.id', '=', 'custom_form_feedbacks.reference_id')->select('*', 'custom_form_feedbacks.id as internal_id','custom_form_feedbacks.created_at as created_at_form')
                 ->where($where)
@@ -120,7 +121,7 @@ class CustomFormFeedbacks extends BaseModal
         $where = array();
 
         $filters = getFilters($request->all());
-
+       
         if($id != false){
             $where[] = array(
                 'users.id',
@@ -141,7 +142,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-
+        
         if ($account_id) {
             $where[] = array(
                 'users.account_id',
@@ -163,6 +164,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
+        
         if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'custom_form_feedbacks.form_name',
@@ -183,6 +185,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
+        
         if (hasFilter($filters, 'id')) {
             $where[] = array(
                 'users.id',
@@ -203,6 +206,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
+        
         if (hasFilter($filters, 'patient_name')) {
             $where[] = array(
                 'users.name',
@@ -243,6 +247,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
+        
         if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'custom_form_feedbacks.created_at',
@@ -268,7 +273,6 @@ class CustomFormFeedbacks extends BaseModal
             '=',
             '0'
         );
-
 
         return $where;
     }
@@ -299,7 +303,7 @@ class CustomFormFeedbacks extends BaseModal
     }
 
     public function user(){
-       return $this->belongsTo("App\User","reference_id");
+       return $this->belongsTo(User::class,"reference_id");
     }
 
     /**
@@ -419,7 +423,7 @@ class CustomFormFeedbacks extends BaseModal
     }
 
     public function patient(){
-        return $this->hasOne("App\User",'id','reference_id');
+        return $this->hasOne(User::class,'id','reference_id');
     }
 
 }

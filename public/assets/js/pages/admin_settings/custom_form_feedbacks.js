@@ -16,13 +16,13 @@ var table_columns = [
         sortable: false,
         width: 300,
     },{
-        field: 'name',
+        field: 'form_name',
         title: 'Name',
         sortable: false,
         width: 'auto',
     },{
         field: 'patient_name',
-        title: 'PhPatient Nameone',
+        title: 'Patient Name',
         sortable: false,
         width: 'auto',
     },{
@@ -44,9 +44,9 @@ var table_columns = [
 function actions(data) {
     
     if (typeof data.id !== 'undefined') {
-        let internal_id = data.internal_id;
+      
+        let internal_id = data.id;
 
-        let csrf = $('meta[name="csrf-token"]').attr('content');
         let edit_url = route('admin.custom_form_feedbacks.edit', {id: internal_id});
         let preview_url = route('admin.custom_form_feedbacks.filled_preview', {id: internal_id});
 
@@ -62,19 +62,19 @@ function actions(data) {
                     </li>';
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="navi-link">\
+                    <a href="'+edit_url+'" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
                     </a>\
                 </li>';
             }
-            if (permissions.delete) {
+            if (permissions.preview) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="deleteRow(`' + preview_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-trash"></i></span>\
-                        <span class="navi-text">Delete</span>\
-                        </a>\
-                        </li>';
+                <a href="'+preview_url+'" class="navi-link">\
+                    <span class="navi-icon"><i class="la la-eye"></i></span>\
+                    <span class="navi-text">Preview</span>\
+                </a>\
+            </li>';
             }
 
             actions += '</ul>\
@@ -87,14 +87,16 @@ function actions(data) {
     return '';
 }
 
+
 function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function() {
 
         let filters =  {
             delete: '',
-            id: $("#search_patient_id").val(),
-            patient_id: $("#search_patient").val(),
+            id: $("#search_id").val(),
+            name: $("#search_name").val(),
+            patient_name: $("#search_patient_name").val(),
             created_from: $("#search_created_from").val(),
             created_to: $("#search_created_to").val(),
             filter: 'filter',
@@ -112,7 +114,8 @@ function resetAllFilters(datatable) {
         let filters =  {
             delete: '',
             id: '',
-            patient_id: '',
+            name: '',
+            patient_name: '',
             created_from: '',
             created_to: '',
             filter: 'filter_cancel',
@@ -125,18 +128,12 @@ function resetAllFilters(datatable) {
 function setFilters(filter_values, active_filters) {
 
     try {
-
-        let patients = filter_values.patient;
-
-        $("#search_patient_id").val(active_filters.id);
+       
+        $("#search_id").val(active_filters.id);
+        $("#search_name").val(active_filters.name);
+        $("#search_patient_name").val(active_filters.patient_name);
         $("#search_created_from").val(active_filters.created_from);
         $("#search_created_to").val(active_filters.created_to);
-
-        let patient_options = "";
-        Object.values(patients).forEach( function (value) {
-            patient_options += '<option value="'+value.id+'">'+value.name+'-'+value.phone+'</option>';
-        });
-        $("#search_patient").html(active_filters.created_to);
 
     } catch (error) {
         showException(error);

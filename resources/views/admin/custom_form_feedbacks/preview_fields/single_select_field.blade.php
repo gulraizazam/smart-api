@@ -3,33 +3,38 @@
     <input id="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_NAME}}"
            name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_NAME}}" type="hidden"
            value="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_SINGLE}}"/>
-    <ul class="cf_input_option">
+    <ul class="cf_input_option" style="padding-left: 0;">
         @foreach($options as $option)
             @if($value == $option["label"])
-                <li class="md-radio cf_input_option_item">
-                    <input type="radio" disabled readonly
+                <li class="md-radio cf_input_option_item list-unstyled"">
+                    
+                
+                <label class="radio" style="height: 30px;">
+				    <input type="radio" 
                            id="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}"
                            name="{{str_replace(' ', '_', $title)}}"
                            value="{{$option["label"]}}"
                            class="md-radiobtn" checked="checked">
-                    <label class="cf_label"
-                           for="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}">
-                        <span></span>
-                        <span class="check" style="margin-top: 8px;"></span>
-                        <span class="box"></span> <h4>{{$option["label"]}}</h4></label>
+					
+                    
+                        <span class="box" ></span> <p class="single-title" style="margin-top:10px;font-size: 16px; margin-left:10px;">{{$option["label"]}}</p>
+                </label>
+
+                
                 </li>
             @else
-                <li class="md-radio cf_input_option_item">
-                    <input type="radio" disabled readonly
+                <li class="md-radio cf_input_option_item list-unstyled">
+
+                <label class="radio" style="height: 30px;">
+				    <input type="radio" 
                            id="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}"
                            name="{{str_replace(' ', '_', $title)}}"
-                           value="{{$option["label"]}}"
-                           class="md-radiobtn">
-                    <label class="cf_label"
-                           for="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}">
-                        <span></span>
-                        <span class="check" style="margin-top: 8px;"></span>
-                        <span class="box"></span> <h4>{{$option["label"]}}</h4></label>
+                           value="{{$option["label"]}}">
+					
+                    
+                        <span class="box" ></span> <p style="margin-top:10px;font-size: 16px; margin-left:10px;">{{$option["label"]}}</p>
+                </label>
+
                 </li>
             @endif
         @endforeach

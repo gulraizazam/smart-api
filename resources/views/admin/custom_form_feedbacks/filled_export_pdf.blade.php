@@ -1,9 +1,11 @@
-@extends('layouts.app-rs-pdf')
+@extends('admin.layouts.master-pdf')
 <style type="text/css">
     @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
     .cf_label {
         width: 100%;
     }
+
+
     
     .clearfix:before,
     .clearfix:after {
@@ -343,7 +345,8 @@
                     <tbody>
                     <tr class="data-split-wrap">
                         <td>
-                        <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(asset('centre_logo/logo_final.jpg')))}}" height="80">
+                        <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(asset('assets/media/logos/logo_final.png')))}}" height="80">
+                    
                         </td>
                         <td>
                             <p class="order-date text-right">#{{ $thisId }} / {{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $custom_form->created_at)->format('Y-M-d') }}</p>
@@ -410,9 +413,7 @@
 
 
                         @elseif($field->field_type ==7 && is_array($content))
-                            {{--<tr>--}}
-                                {{--<td colspan="2"></td>--}}
-                            {{--</tr>--}}
+                            
                     </tbody>
                 </table>
                 {{--<div class="test"><h3 class="cf-question-headings">{{$content["title"]}}</h3></div>--}}
@@ -427,13 +428,3 @@
 
         </div>
         @stop
-
-        @section('javascript')
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('js/admin/custom_form_feedbacks/fields.js') }}" type="text/javascript"></script>
-
-@endsection
-

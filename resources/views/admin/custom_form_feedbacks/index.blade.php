@@ -69,16 +69,6 @@
     <!--end::Content-->
 
 
-    <div class="modal fade" id="modal_edit_custom_form_feedbacks" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="custom_form_feedbacks_edit">
-
-            @include('admin.custom_form_feedbacks.edit')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/custom_form_feedbacks.js')}}"></script>
     @endpush

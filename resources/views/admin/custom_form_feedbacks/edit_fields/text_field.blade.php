@@ -5,8 +5,8 @@
            name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_NAME}}" type="hidden"
            value="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_TEXT}}"/>
     <div class="form-group cf_input_option">
-        <label>
-            <input type="text" class="form-control cf-input-border"
+        <label class="w-100 mt-5">
+            <input type="text" class="form-control cf-input-border under-border"
                    name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_TEXT_FIELD_NAME}}"
                    placeholder="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_TEXT_FIELD_PLACEHOLDER}}"
                    value="{{$value}}">
