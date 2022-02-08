@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Input;
 use Carbon\Carbon;
-use App\User;
+use App\Models\User;
 //use Barryvdh\DomPDF\Facade as PDF;
 //use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use Illuminate\Support\Facades\Lang;
@@ -294,14 +294,16 @@ class CustomFormFeedbacksController extends Controller
             return abort(401);
         }
 
-
         $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
 
         if (!$custom_form_feedback) {
             return view('error');
         }
 
-        return view('admin.custom_form_feedbacks.filled_preview', ['custom_form' => $custom_form_feedback, 'thisId' => $id]);
+        return ApiHelper::makeResponse([
+            'custom_form' => $custom_form_feedback,
+             'thisId' => $id
+            ], 'admin.custom_form_feedbacks.filled_preview');
     }
 
     /**
