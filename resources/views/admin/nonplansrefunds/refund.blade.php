@@ -24,8 +24,15 @@
         <!--begin::Form-->
         <form id="modal_edit_nonrefunds_form" method="post" action="{{route('admin.nonplansrefunds.store')}}">
             <!--begin::Scroll-->
-            @csrf
-            @method('put')
+           
+            {{--Some Hidden fields that helps for refunds save--}}
+            <input type="hidden" name="patient_id" id="patient_id" value="" class="form-control">
+            <input type="hidden" name="is_adjustment_amount" value="" class="form-control">
+            <input type="hidden" name="package_advance_id" value="" class="form-control">
+            <input type="hidden" name="date_backend" id="date_backend" value="" class="form-control">
+
+            {{--End--}}
+          
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resources_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
