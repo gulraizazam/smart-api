@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
+use App\Http\Controllers\Admin\CustomFormsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -217,4 +218,6 @@ use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as Patient
         /*Route End for patient card measurement */
         // Patients routes end
 
+        // Custom User Form Routes
+        Route::resource('custom_forms', CustomFormsController::class);
     });

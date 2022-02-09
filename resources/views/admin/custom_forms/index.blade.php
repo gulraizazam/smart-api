@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Plans List', 'title' => 'Plans'])
+    @include('admin.partials.breadcrumb', ['module' => 'Custom Form', 'title' => 'Custom Form'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,26 +31,41 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Plans</h3>
+                            <h3 class="card-label">Custom Form</h3>
                         </div>
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('plans_destroy'))
+                            @if(Gate::allows('custom_forms_destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
                                         <i class="fa fa-trash-alt"></i>Delete
                                     </a>
-                                </div>&nbsp;&nbsp;&nbsp;
+                                </div>&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('plans_create'))
-                                <a href="javascript:void(0);" onclick="createPlan('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_plan">
+                            @if(Gate::allows('custom_forms_create_medical_history_form'))
+                                <a href="{{ route('admin.custom_forms.create_medical') }}" class="btn btn-primary" >
                                     <i class="la la-plus"></i>
-                                    Add New
+                                    Add Medical Form
                                 </a>
                             @endif
+                            &nbsp;&nbsp;
+                            @if(Gate::allows('custom_forms_create_general'))
+                                <a href="{{ route('admin.custom_forms.create') }}" class="btn btn-primary">
+                                    <i class="la la-plus"></i>
+                                    Add General Form
+                                </a>
+                            @endif
+                            &nbsp;&nbsp;
+                            @if(Gate::allows('custom_forms_create_measurement'))
+                                <a href="{{ route('admin.custom_forms.create_measurement') }}" class="btn btn-primary">
+                                    <i class="la la-plus"></i>
+                                    Add Measurement Form
+                                </a>
+                            @endif
+
 
                         <!--end::Button-->
                         </div>
@@ -59,7 +74,7 @@
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                        @include('admin.packages.filters', ['custom_reset' => 'custom_reset'])
+                        @include('admin.custom_forms.filters')
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -75,52 +90,9 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_sms_logs" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered mediam-modal" id="invoices_add">
-
-            @include('admin.packages.sms_logs')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-    <div class="modal fade" id="modal_display" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="invoices_display">
-
-            @include('admin.packages.display')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-    <div class="modal fade" id="modal_add_plan" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="packages_add">
-
-            @include('admin.packages.create')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-    <div class="modal fade" id="modal_edit_plan" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="packages_edit">
-
-            @include('admin.packages.edit')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-    @push('js')
-        {{--<script src="{{asset('assets/js/pages/admin_settings/plans.js')}}"></script>--}}
-    @endpush
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/admin_settings/plans.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/custom_form.js')}}"></script>
     @endpush
 
 @endsection

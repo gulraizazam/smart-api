@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
+use App\Http\Controllers\Admin\CustomFormsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -324,6 +325,21 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
      Route::post('custom_form_feedbacks/{form_id}/submit_form', [CustomFormFeedbacksController::class, 'submit_form'])->name('custom_form_feedbacks.submit_form');
      Route::post('custom_form_feedbacks/{feedback_id}/update_field/{feedback_field_id}', [CustomFormFeedbacksController::class, 'update_field'])->name('custom_form_feedbacks.update_field');
      Route::resource('custom_form_feedbacks', CustomFormFeedbacksController::class)->except('index');
+
+     //Custom user form
+     Route::post('custom_forms/datatable', [CustomFormsController::class, 'datatable'])->name('custom_forms.datatable');
+     Route::post('custom_forms/status', [CustomFormsController::class, 'status'])->name('custom_forms.status');
+     Route::resource('custom_forms', CustomFormsController::class);
+     Route::post('custom_forms_mass_destroy', [CustomFormsController::class, 'massDestroy'])->name('custom_forms.mass_destroy');
+     Route::post('custom_forms/form_update/{id}', [CustomFormsController::class, 'form_update'])->name('custom_forms.form_update');
+     Route::post('custom_forms/{form_id}/update_field/{field_id}', [CustomFormsController::class, 'update_field'])->name('custom_forms.update_field');
+     Route::post('custom_forms/{id}/create_field/', [CustomFormsController::class, 'create_field'])->name('custom_forms.create_field');
+     Route::get('custom_forms/{id}/sort_fields/', [CustomFormsController::class, 'sort_fields'])->name('custom_forms.sort_fields');
+     Route::post('custom_forms/{form_id}/delete_field/{field_id}', [CustomFormsController::class, 'delete_field'])->name('custom_forms.delete_field');
+     Route::get('custom_forms_sort', [CustomFormsController::class, 'sortorder'])->name('custom_forms.sort');
+     Route::get('custom_forms_sort_save', [CustomFormsController::class, 'sortorder_save'])->name('custom_forms.sort_save');
+     Route::get('custom_forms_medical', [CustomFormsController::class, 'create_medical'])->name('custom_forms.create_medical');
+     Route::get('custom_forms_measurement', [CustomFormsController::class, 'create_measurement'])->name('custom_forms.create_measurement');
 
 
 });
