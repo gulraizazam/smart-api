@@ -53,7 +53,11 @@ class ApiHelper
             }
             return view($view, $data);
         } catch (\Exception $e) {
-            return response()->json(['status' => config('constants.api_status.error'), 'message' => $e->getMessage(), 'data' => null], config('constants.api_status.error'));
+            if (request()->hasHeader("Authorization")) {
+                return response()->json(['status' => config('constants.api_status.error'), 'message' => $e->getMessage(), 'data' => null], config('constants.api_status.error'));
+            }
+            
+            throw $e;
         }
     }
 
