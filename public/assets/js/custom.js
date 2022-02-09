@@ -160,8 +160,8 @@ $(document).ready(function () {
             return markup;
         },
         minimumInputLength: 3,
-          templateResult: formatRepo,
-         templateSelection: formatRepoSelection
+        templateResult: formatRepo,
+        templateSelection: formatRepoSelection
     });
 
     function formatRepo(item) {

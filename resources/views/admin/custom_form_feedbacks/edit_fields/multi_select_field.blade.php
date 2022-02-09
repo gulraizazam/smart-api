@@ -11,9 +11,9 @@
                     
                
                 <label  style="height: 30px;" class="custom_checkbox checkbox-all" for="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}">
-                        <input disabled readonly
-                        class="select-all-checkboxes" type="checkbox"
-                        name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_OPTION_NAME}}"
+                        <input
+                        class="field_option" type="checkbox"
+                        name="{{str_replace(' ', '_', $title)}}"
                         id="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}"
                         value="{{$option["label"]}}"
                        checked >
@@ -28,9 +28,9 @@
                 <div class="md-checkbox cf_input_option_item">
                    
                 <label  style="height: 30px;" class="custom_checkbox checkbox-all" for="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}">
-                        <input disabled readonly
-                        class="select-all-checkboxes" type="checkbox"
-                        name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_OPTION_NAME}}"
+                        <input
+                        class="field_option" type="checkbox"
+                        name="{{str_replace(' ', '_', $title)}}"
                         id="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}"
                         value="{{$option["label"]}}">
                         <strong></strong>

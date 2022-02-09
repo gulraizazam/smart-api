@@ -151,7 +151,7 @@ class CustomFormFeedbacksController extends Controller
         }
 
         $forms = CustomForms::getAllForms(Auth::User()->account_id)->toArray();
-        dd($forms);
+       
         if (!$forms) {
             flash('No Form Available to fill, please try again later.')->error()->important();
             return redirect()->route('admin.custom_form_feedbacks.index');
@@ -174,17 +174,22 @@ class CustomFormFeedbacksController extends Controller
     {
 
         if (!Gate::allows('custom_form_feedbacks_manage') && !Gate::allows('patients_customform_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
+        try { 
 
-        $data = $request->all();
+            $data = $request->all();
 
-        $data = CustomFormFeedbackDetails::updateRecord($request, Auth::User()->account_id, Auth::id(), $feedback_id, $feedback_field_id);
+            $data = CustomFormFeedbackDetails::updateRecord($request, Auth::User()->account_id, Auth::id(), $feedback_id, $feedback_field_id);
 
-        if ($data) {
-            return response()->json(array('data' => $data));
-        } else {
-            return response()->json(array("error" => $request->all(), 'feedback_id' => $feedback_id, 'feedback_field_id' => $feedback_field_id, 'data' => $data), 401);
+            if ($data) {
+                return ApiHelper::apiResponse($this->success, 'Record updated succesfully.', true,  $data);
+            } else {
+                return ApiHelper::apiResponse($this->success, 'Failed to update the recird.', false,  $data);
+            }
+
+        } catch(\Exception $e) {
+            ApiHelper::apiException($e);
         }
     }
 
@@ -417,15 +422,21 @@ class CustomFormFeedbacksController extends Controller
     {
 
         if (!Gate::allows('custom_form_feedbacks_edit') && !Gate::allows('patients_customform_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
+        try { 
 
-        if (CustomFormFeedbacks::updateRecord($id, $request, Auth::User()->account_id, Auth::id())) {
+            if (CustomFormFeedbacks::updateRecord($id, $request, Auth::User()->account_id, Auth::id())) {
 
-            return response()->json(["message" => "your Feedback is updated successfully", "code" => "200"], 200);
-        } else {
-            return response()->json(["message" => "Invalid request", "code" => 402], 402);
-        }
+                return ApiHelper::apiResponse($this->success, 'your Feedback is updated successfully.');
+
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Invalid request.', false);
+        
+        } catch(\Exception $e) {
+            ApiHelper::apiException($e);
+        }    
 
     }
 
@@ -438,27 +449,23 @@ class CustomFormFeedbacksController extends Controller
     public function destroy($id)
     {
         if (!Gate::allows('custom_form_feedbacks_manage')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $custom_form_feedback = CustomFormFeedbacks::getData($id);
 
         if (!$custom_form_feedback) {
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.custom_form_feedbacks.index');
+            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (CustomFormFeedbacks::isChildExists($id, Auth::User()->account_id)) {
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.custom_form_feedbacks.index');
+            return ApiHelper::apiResponse($this->success, 'Child records exist, unable to delete resource.', false);
         }
 
         CustomFormFeedbacks::deleteRecord($id);
 
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return redirect()->route('admin.custom_form_feedbacks.index');
+        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
     }
 
     /**

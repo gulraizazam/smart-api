@@ -1,14 +1,5 @@
 @extends('admin.layouts.master')
 
-<link href="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css'}}" rel="stylesheet"
-      type="text/css"/>
-<link href="{{ url('metronic/assets/global/plugins/select2/css/select2-bootstrap.min.css') }}" rel="stylesheet"
-      type="text/css"/>
-@section('title')
-    <!-- BEGIN PAGE TITLE-->
-    <h1 class="page-title">@lang('global.custom_form_feedbacks.title')</h1>
-    <!-- END PAGE TITLE-->
-@endsection
 
 @section('content')
     <!--begin::Content-->
@@ -68,13 +59,27 @@
                     </div>
 
                     <div class="row mt-15">
-
+                        
                         <div class="col-md-12">
-                           <h3 class="mb-5">Search Patient</h3>
-                           <select class="form-control filter-field patient_id" id="search_patient_id"></select>
+                            @include('admin.custom_form_feedbacks.edit_fields.select_patient')
+                          
                         </div>
                        
                     </div>
+
+                    <div class="form-group form-md-line-input cf_main_title mt-20">
+                    <div class="form-group form-md-line-input cf_input_question">
+                        <h1 class="rs-head">{{$custom_form->form_name}}</h1>
+                    </div>
+                </div>
+                <input id="feedback_id" name="feedback_id" type="hidden" value="{{$custom_form->id}}"/>
+
+                <div class="form-group form-md-line-input cf_main_title mt-10">
+                    <div class="form-group form-md-line-input cf_input_question">
+                        <p>{{$custom_form->form_description}}</p>
+                    </div>
+                </div>
+
 
 
                     <div class="row mt-15">
@@ -130,13 +135,8 @@
 
         @stop
 
-        @section('javascript')
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('js/admin/custom_form_feedbacks/fields.js') }}" type="text/javascript"></script>
-
+        @push('js')
+        
             <script type="text/javascript">
 
                 function updatePatient(){
@@ -147,9 +147,14 @@
                         if(parseInt(patient_id) > 0 ){
                             update_feedback({'reference_id':patient_id}, (res)=>{
 
+                                if (res.status) {
+                                    toastr.success(res.message);
+                                } else {
+                                    toastr.error(res.message); 
+                                }
                             },
                                 (xhr, ajaxOptions, thrownError)=>{
-
+                                    toastr.error("Unable to process the request, please try again."); 
                                 }
                             );
                         }
@@ -157,7 +162,7 @@
                     });
                 }
                 function fieldChangeUpdateBinding() {
-
+                   
                     $(".update-answer-fields").bind("change", function () {
 
                         field_id = this.id.split("cs_field_")[1];
@@ -176,7 +181,7 @@
                                 text_answer = this.querySelector("textarea[name=answer]").value;
                                 data["field_value"] = text_answer;
                             } else if (field_type == 3) {
-                                radio_answer = this.querySelector("input[name=field_option]:checked");
+                                radio_answer = this.querySelector(".field_option:checked");
                                 if (radio_answer) {
                                     radio_answer = radio_answer.value;
                                 } else {
@@ -185,7 +190,7 @@
                                 data["field_value"] = radio_answer;
                             }
                             else if (field_type == 4) {
-                                checkbox = this.querySelectorAll("input[name=field_option]:checked")
+                                checkbox = this.querySelectorAll(".field_option:checked")
                                 if (checkbox.length) {
                                     checkbox_answer = [];
                                     for (let i = 0; i < checkbox.length; i++) {
@@ -237,10 +242,15 @@
                             console.log("data : ");
                             console.log(data);
                             update_form_field(field_id, data, (response) => {
-                                console.log(response);
+                                
+                                if (response.status) {
+                                    toastr.success(response.message);
+                                } else {
+                                    toastr.error(response.message);
+                                }
 
                             }, (xhr, ajaxOptions, thrownError) => {
-
+                                toastr.success("Unable to process the request, please try again.");
                             });
                         }
                     });
@@ -248,7 +258,7 @@
                 }
 
                 function update_form_field(field_id, data, success_callback, error_callback) {
-
+                   
                     $.ajax({
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -267,11 +277,12 @@
 
 
                 function update_feedback(data, success_callback, error_callback){
+                   
                     $.ajax({
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        url: '{{route('admin.custom_form_feedbacks.update',7)}}',
+                        url: '{{route('admin.custom_form_feedbacks.update',$custom_form->id)}}',
                         type: 'PUT',
                         data: data,
                         cache: false,
@@ -283,15 +294,9 @@
                 $(document).ready(function () {
                     fieldChangeUpdateBinding();
                     updatePatient();
-
-                    $(".select2").select2({
-                        placeholder:"Select Patient"
-                    });
                 });
             </script>
-            <script src="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js'}}"
-                    type="text/javascript"></script>
-            <script src="{{ url('js/admin/users/ajaxbaseselect2.js') }}" type="text/javascript"></script>
+        
 
-@endsection
+@endpush
 
