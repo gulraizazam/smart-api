@@ -327,3 +327,8 @@ div > input {
 .select2-search .select2-container--default .select2-selection--single .select2-selection__rendered {
     padding: 0.65rem 0rem 0.65rem 1rem;
 }
+.under-border {
+    border-radius:0;
+    border:none;
+    border-bottom: 1px solid lightgrey;
+}
