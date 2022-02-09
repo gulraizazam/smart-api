@@ -48,6 +48,7 @@ function actions(data) {
         let internal_id = data.id;
 
         let edit_url = route('admin.custom_form_feedbacks.edit', {id: internal_id});
+        let delete_url = route('admin.custom_form_feedbacks.destroy', {id: internal_id});
         let preview_url = route('admin.custom_form_feedbacks.filled_preview', {id: internal_id});
 
         if (permissions.edit && permissions.preview) {
@@ -75,6 +76,16 @@ function actions(data) {
                     <span class="navi-text">Preview</span>\
                 </a>\
             </li>';
+            }
+
+            if (permissions.delete) {
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="deleteRow(`'+delete_url+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-trash"></i></span>\
+                            <span class="navi-text">Delete</span>\
+                        </a>\
+                    </li>';
+           
             }
 
             actions += '</ul>\
