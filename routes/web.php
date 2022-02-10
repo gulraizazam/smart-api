@@ -203,6 +203,7 @@ use App\Http\Controllers\Admin\CustomFormsController;
          // Custom User Form Feedbacks Routes
         Route::get('custom_form_feedbacks/{id}/print', [CustomFormFeedbacksController::class, 'filledPrint'])->name("custom_form_feedbacks.filled_print");
         Route::resource('custom_form_feedbacks', CustomFormFeedbacksController::class);
+        Route::get('custom_form_feedbacks/{form_id}/preview_form', [CustomFormFeedbacksController::class, 'preview_form'])->name("custom_form_feedbacks.preview_form");
 
         /*Route start for patient Pre define Custome Forms*/
         Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
@@ -213,6 +214,7 @@ use App\Http\Controllers\Admin\CustomFormsController;
         Route::get('customformfeedbackspatient/{id}',[PatientCustomFormController::class, 'index'])->name('customformfeedbackspatient.index');
         Route::get('customformfeedbackspatient/{id}/print', [CustomFormFeedbacksController::class, 'filledPrint'])->name("patient_custom_form_feedbacks.filled_print");
         Route::get('customformfeedbackspatient/{id}/export_pdf', [CustomFormFeedbacksController::class, 'exportPdf'])->name("patient_custom_form_feedbacks.export_pdf");
+        Route::get('custom_form_feedbacks/{form_id}/fill_form', [CustomFormFeedbacksController::class, 'fill_form'])->name("custom_form_feedbacks.fill_form");
         /*Route End for patient pre define Custome Forms*/
         /*Route Start for patient card measurement*/
         /*Route End for patient card measurement */

@@ -201,14 +201,14 @@ class CustomFormFields extends BaseModal
 
         static::created(function($item) {
 
-            Event::fire('custom_form_field.created', $item);
+            Event::dispatch('custom_form_field.created', $item);
 
         });
 
 
         static::updating(function($item) {
 
-            Event::fire('custom_form_field.updating', $item);
+            Event::dispatch('custom_form_field.updating', $item);
 
         });
 
@@ -216,7 +216,7 @@ class CustomFormFields extends BaseModal
 
         static::deleting(function($item) {
 
-            Event::fire('custom_form_field.deleting', $item);
+            Event::dispatch('custom_form_field.deleting', $item);
 
         });
 
