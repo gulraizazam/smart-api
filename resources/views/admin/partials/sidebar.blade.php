@@ -111,6 +111,44 @@
                         </li>
                     @endif
 
+                    <!-- Leads menu -->
+
+                    @if(Gate::allows('leads_manage'))
+
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.leads.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                            <span class="svg-icon menu-icon">
+                            <i class="fas fa-briefcase"></i>
+                            </span>
+                            <span class="menu-text">Leads</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="menu-submenu">
+                            <i class="menu-arrow"></i>
+                            <ul class="menu-subnav">
+                            @can('leads_manage')
+                                <li class="menu-item {{activeMenu('admin.leads.index')}}" aria-haspopup="true">
+                                    <a href="{{route('admin.leads.index')}}" class="menu-link">
+                                        <i class="menu-bullet menu-bullet-dot">
+                                            <span></span>
+                                        </i>
+                                        <span class="menu-text">Leads</span>
+                                    </a>
+                                </li>
+                            @endcan
+
+
+                            </ul>
+                        </div>
+
+                    </li>
+
+                        @endif
+
+
+                    <!-- End leads menu -->
+
                     @if(
                         Gate::allows('settings_manage') ||
                         Gate::allows('user_operator_settings_manage') ||
