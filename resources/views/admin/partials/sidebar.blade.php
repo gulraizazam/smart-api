@@ -112,40 +112,79 @@
                     @endif
 
                     @if(
-                    Gate::allows('settings_manage') ||
-                    Gate::allows('user_operator_settings_manage') ||
-                    Gate::allows('sms_templates_manage') ||
-                    Gate::allows('regions_manage') ||
-                    Gate::allows('cities_manage') ||
-                    Gate::allows('payment_modes_manage') ||
-                    Gate::allows('custom_forms_manage') ||
-                    Gate::allows('custom_form_feedbacks_manage') ||
-                    Gate::allows('locations_manage') ||
-                    Gate::allows('doctors_manage') ||
-                    Gate::allows('staff_targets_manage') ||
-                    Gate::allows('centre_targets_manage') ||
-                    Gate::allows('lead_sources_manage') ||
-                    Gate::allows('services_manage') ||
-                    Gate::allows('lead_statuses_manage') ||
-                    Gate::allows('appointment_statuses_manage') ||
-                    Gate::allows('cancellation_reasons_manage')||
-                    Gate::allows('resources_manage') ||
-                    Gate::allows('resourcerotas_manage') ||
-                    Gate::allows('discounts_manage') ||
-                    Gate::allows('logs_manage') ||
-                    Gate::allows('packages_manage') ||
-                    Gate::allows('plans_manage') ||
-                    Gate::allows('finances_manage') ||
-                    Gate::allows('invoices_manage') ||
-                    Gate::allows('refunds_manage') ||
-                    Gate::allows('pabao_records_manage') ||
-                    Gate::allows('machineType_manage') ||
-                    Gate::allows('towns_manage')
+                        Gate::allows('settings_manage') ||
+                        Gate::allows('user_operator_settings_manage') ||
+                        Gate::allows('sms_templates_manage') ||
+                        Gate::allows('regions_manage') ||
+                        Gate::allows('cities_manage') ||
+                        Gate::allows('payment_modes_manage') ||
+                        Gate::allows('custom_forms_manage') ||
+                        Gate::allows('custom_form_feedbacks_manage') ||
+                        Gate::allows('locations_manage') ||
+                        Gate::allows('doctors_manage') ||
+                        Gate::allows('staff_targets_manage') ||
+                        Gate::allows('centre_targets_manage') ||
+                        Gate::allows('lead_sources_manage') ||
+                        Gate::allows('services_manage') ||
+                        Gate::allows('lead_statuses_manage') ||
+                        Gate::allows('appointment_statuses_manage') ||
+                        Gate::allows('cancellation_reasons_manage')||
+                        Gate::allows('resources_manage') ||
+                        Gate::allows('resourcerotas_manage') ||
+                        Gate::allows('discounts_manage') ||
+                        Gate::allows('logs_manage') ||
+                        Gate::allows('packages_manage') ||
+                        Gate::allows('plans_manage') ||
+                        Gate::allows('finances_manage') ||
+                        Gate::allows('invoices_manage') ||
+                        Gate::allows('refunds_manage') ||
+                        Gate::allows('pabao_records_manage') ||
+                        Gate::allows('machineType_manage') ||
+                        Gate::allows('towns_manage')
+                    
+                    )
 
-
-                )
-
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.settings.index','admin.user_operator_settings.index','admin.payment_modes.index','admin.payment_modes.sort','admin.regions.index','admin.regions.sort','admin.cities.index','admin.cities.sort','admin.lead_sources.index','admin.lead_sources.sort','admin.towns.index','admin.lead_statuses.index','admin.lead_statuses.sort','admin.appointment_statuses.index', 'admin.locations.index', 'admin.services.index','admin.machine_types.index','admin.resources.index','admin.logs.index','admin.refunds.index','admin.sms_templates.index','admin.discounts.index','admin.centre_targets.index','admin.doctors.index','admin.bundles.index', 'admin.packagesadvances.index', 'admin.resourcerotas.index', 'admin.resourcerotas.calender-view', 'admin.invoices.index', 'admin.packages.index', 'admin.packages.log', 'admin.nonplansrefunds.index', 'admin.custom_form_feedbacks.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu([
+                        'admin.settings.index', 
+                        'admin.user_operator_settings.index', 
+                        'admin.payment_modes.index', 
+                        'admin.payment_modes.sort', 
+                        'admin.regions.index', 
+                        'admin.regions.sort',
+                        'admin.cities.index', 
+                        'admin.cities.sort', 
+                        'admin.lead_sources.index', 
+                        'admin.lead_sources.sort', 
+                        'admin.towns.index', 
+                        'admin.lead_statuses.index', 
+                        'admin.lead_statuses.sort', 
+                        'admin.appointment_statuses.index',
+                        'admin.locations.index',
+                        'admin.services.index', 
+                        'admin.machine_types.index', 
+                        'admin.resources.index', 
+                        'admin.logs.index', 
+                        'admin.refunds.index', 
+                        'admin.sms_templates.index', 
+                        'admin.discounts.index', 
+                        'admin.centre_targets.index', 
+                        'admin.doctors.index', 
+                        'admin.bundles.index', 
+                        'admin.packagesadvances.index',
+                        'admin.resourcerotas.index',
+                        'admin.resourcerotas.calender-view',
+                        'admin.invoices.index',
+                        'admin.packages.index', 
+                        'admin.packages.log',
+                        'admin.nonplansrefunds.index', 
+                        'admin.custom_form_feedbacks.index', 
+                        'admin.custom_form_feedbacks.edit', 
+                        'admin.custom_form_feedbacks.filled_preview', 
+                        'admin.custom_forms.index', 
+                        'admin.custom_forms.edit', 
+                        'admin.custom_form_feedbacks.preview_form', 
+                        'admin.custom_form_feedbacks.fill_form',
+                        ])}}" aria-haspopup="true" data-menu-toggle="hover">
 
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
@@ -592,6 +631,23 @@
                                                 <span></span>
                                             </i>
                                             <span class="menu-text">Custom Form Feedbacks</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        @endcan
+
+                        @can('custom_forms_manage')
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{activeMenu('admin.custom_forms.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.custom_forms.index')}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Custom Form</span>
                                         </a>
                                     </li>
 

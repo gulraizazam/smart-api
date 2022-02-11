@@ -50,7 +50,7 @@
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
-                        @endif
+                            @endif
 
                         <!--end::Button-->
                         </div>

@@ -354,7 +354,7 @@
                     </tr>
                     <tr class="data-split-wrap">
                         <td>
-                            <div class="patient_info">
+                            <div class="patient_info" style="margin-top: 35px;">
                                 <label><h1 class="sbold margin-top-15">Patient Detail</h1></label>
                                 <p><strong>Patient Name:</strong> {{$custom_form->patient?$custom_form->patient->name : "Null"}}</p>
                                 <p><strong>Patient ID:</strong> {{$custom_form->patient?' C-'.$custom_form->patient->id : ""}} </p>
@@ -362,7 +362,7 @@
                             </div>
                         </td>
                         <td>
-                            <div class="caompay-info pull-right">
+                            <div class="caompay-info pull-right" style="margin-top: 35px;">
                                  <label><h1 class="sbold margin-top-15">Company Detail</h1></label>
                                 <p><strong>Company Name:</strong> {{ Auth::user()->account->name }}</p>
                                 <p><strong>Contact:</strong> {{ Auth::user()->account->contact }} </p>

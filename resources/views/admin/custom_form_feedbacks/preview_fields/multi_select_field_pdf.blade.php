@@ -14,17 +14,18 @@
                     echo '<div class="full_width">';
                 }
             ?>
-                 <div class="md-checkbox cf_input_option_item">
+                 <div class="md-checkbox cf_input_option_item" style="display: inline-flex;">
                     <input type="checkbox" disabled readonly
+                          
                            id="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}"
                            name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_OPTION_NAME}}"
                            value="{{$option["label"]}}"
                            class="md-check" checked="checked">
-                    <label class="cf_label"
+                    <label class="cf_label" 
                         for="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}">
                         <!-- <span class="check" style="margin-top: 8px;"></span>
                         <span class="box"></span>  -->
-                       <span>{{$option["label"]}}</span>
+                       <span style="padding-left: 20px;padding-bottom:20px;">{{$option["label"]}}</span>
                     </label>
                 </div> 
             <?php
@@ -38,8 +39,9 @@
                     echo '<div class="full_width">';
                 }
             ?>
-                <div class="md-checkbox cf_input_option_item">
+                <div class="md-checkbox cf_input_option_item"style="display: inline-flex;">
                     <input type="checkbox" disabled readonly
+                          
                            id="{{\App\Helpers\CustomFormFeedbackHelper::getFieldOptionId($field_id, $option["label"])}}"
                            name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_OPTION_NAME}}"
                            value="{{$option["label"]}}"
@@ -49,7 +51,7 @@
                         <span></span>
                         <!-- <span class="check" style="margin-top: 8px;"></span> 
                          <span class="box"></span>  -->
-                        <span>{{$option["label"]}}</span>
+                        <span style="padding-left: 20px;padding-bottom:20px;">{{$option["label"]}}</span>
                      </label> 
                 </div>
             <?php

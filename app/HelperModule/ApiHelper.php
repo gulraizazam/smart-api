@@ -61,6 +61,14 @@ class ApiHelper
         }
     }
 
+    public static function denyAccess() {
+        
+        if (request()->hasHeader("Authorization")) {
+            return ApiHelper::apiResponse(config('constants.api_status.unauthorized'), 'You are not authorized to access this resource.', false);
+        }
+        return abort(401);
+    }
+
     /**
      * Api Exception Response
      *

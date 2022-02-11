@@ -4,8 +4,8 @@
            name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_NAME}}" type="hidden"
            value="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_OPTION}}">
     <div class="form-group form-md-line-input cf_input_option"/>
-    <label>
-        <select class="form-control cf-input-border"
+    <label class="w-100">
+        <select class="form-control cf-input-border under-border"
                 name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_OPTION_NAME}}">
             <option value="">Select</option>
             @foreach($options as $option)

@@ -5,8 +5,8 @@
            name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_NAME}}" type="hidden"
            value="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_FIELD_TYPE_TEXT}}"/>
     <div class="form-group cf_input_option">
-        <label>
-            <input type="text" class="form-control cf-input-border {{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_TEXT_FIELD_NAME}}"
+        <label class="w-100">
+            <input type="text" class="form-control under-border cf-input-border {{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_TEXT_FIELD_NAME}}"
                    name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_TEXT_FIELD_NAME}}_{{$index}}"
                    placeholder="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_TEXT_FIELD_PLACEHOLDER}}" required>
         </label>

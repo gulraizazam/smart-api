@@ -329,6 +329,11 @@ div > input {
 }
 .under-border {
     border-radius:0;
-    border:none;
-    border-bottom: 1px solid lightgrey;
+    border:none !important;
+    border-bottom: 1px solid lightgrey !important;
+}
+.large_font {
+    font-weight: bold;
+    font-size: 18px !important;
+    color: #333 !important;  
 }

@@ -183,9 +183,9 @@ class CustomFormFeedbacksController extends Controller
             $data = CustomFormFeedbackDetails::updateRecord($request, Auth::User()->account_id, Auth::id(), $feedback_id, $feedback_field_id);
 
             if ($data) {
-                return ApiHelper::apiResponse($this->success, 'Record updated succesfully.', true,  $data);
+                return ApiHelper::apiResponse($this->success, 'Record updated successfully.', true,  $data);
             } else {
-                return ApiHelper::apiResponse($this->success, 'Failed to update the recird.', false,  $data);
+                return ApiHelper::apiResponse($this->success, 'Failed to update the record.', false,  $data);
             }
 
         } catch(\Exception $e) {
@@ -273,7 +273,7 @@ class CustomFormFeedbacksController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('custom_form_feedbacks_edit')) {
-            return abort(401);
+            return ApiHelper::denyAccess();
         }
 
 
@@ -283,7 +283,11 @@ class CustomFormFeedbacksController extends Controller
             return view('error');
         }
         $patient_name = User::where('id', '=', $custom_form_feedback->reference_id)->first();
-        return view('admin.custom_form_feedbacks.edit', ['custom_form' => $custom_form_feedback, 'patient_name' => $patient_name]);
+        
+        return ApiHelper::makeResponse([
+            'custom_form' => $custom_form_feedback,
+             'patient_name' => $patient_name
+            ], 'admin.custom_form_feedbacks.edit');
     }
 
 
@@ -296,7 +300,7 @@ class CustomFormFeedbacksController extends Controller
     public function filled_preview($id)
     {
         if (!Gate::allows('custom_form_feedbacks_manage')) {
-            return abort(401);
+            return ApiHelper::denyAccess();
         }
 
         $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
