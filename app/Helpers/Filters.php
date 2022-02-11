@@ -173,22 +173,41 @@ class Filters
         return false;
     }
 
-    public static function remove_filters(): bool
+    public static function remove_filters($file = ''): bool
     {
         try {
 
             $dir = storage_path(self::$base_path. DIRECTORY_SEPARATOR . self::getRandId(auth()->id()));
-
-            foreach (scandir($dir) as $file) {
-                if ('.' === $file || '..' === $file) continue;
-                if (is_dir("$dir/$file")) self::remove_filters("$dir/$file");
-                else unlink("$dir/$file");
-            }
-            rmdir($dir);
-            return true;
+            
+            return self::deleteDirectory($dir);
+           
         } catch (\Exception $e) {
             return false;
         }
     }
+
+    private static function deleteDirectory($dir) {
+        if (!file_exists($dir)) {
+            return true;
+        }
+    
+        if (!is_dir($dir)) {
+            return unlink($dir);
+        }
+    
+        foreach (scandir($dir) as $item) {
+            if ($item == '.' || $item == '..') {
+                continue;
+            }
+    
+            if (!self::deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
+                return false;
+            }
+    
+        }
+    
+        return rmdir($dir);
+    }
+    
 
 }

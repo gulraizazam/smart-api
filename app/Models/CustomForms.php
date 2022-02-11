@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
 use App\Helpers\Filters;
+use Carbon\Carbon;
 
 class CustomForms extends BaseModal
 {
@@ -26,18 +27,45 @@ class CustomForms extends BaseModal
 
     const sort_field = 'sort_number';
 
+    public function getCreatedAtAttribute($value)
+    {
+        return Carbon::parse($value)->format('F j,Y h:i A'); 
+    }
+
     public static function activateRecord($id)
     {
-        $custom_form = self::getData($id);
-        $custom_form->update(['active' => 1]);
-        AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+        try { 
+            $custom_form = self::getData($id);
+            $custom_form->update(['active' => 1]);
+            AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+            return [
+                'status' => true,
+                'message' => 'Record has been activated successfully.',
+            ];
+        } catch(\Exception $e) {
+            return [
+                'status' => false,
+                'message' => 'Unable to process the request.',
+            ];
+        }
     }
 
     public static function inactivateRecord($id)
     {
-        $custom_form = CustomForms::getData($id);
-        $custom_form->update(['active' => 0]);
-        AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+        try{ 
+            $custom_form = CustomForms::getData($id);
+            $custom_form->update(['active' => 0]);
+            AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+            return [
+                'status' => true,
+                'message' => 'Record has been inactivated successfully.',
+            ];
+        } catch(\Exception $e) {
+            return [
+                'status' => false,
+                'message' => 'Unable to process the request.',
+            ];
+        }
     }
 
     public static function deleteRecord($id)
@@ -164,7 +192,7 @@ class CustomForms extends BaseModal
      */
     static public function getTotalRecords(Request $request, $account_id = false,$apply_filter = false)
     {
-        $where = Self::custom_forms_filters($request, $account_id, $apply_filter);
+        $where = self::custom_forms_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
             return self::where($where)->count();
@@ -185,17 +213,11 @@ class CustomForms extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false,$apply_filter = false)
     {
-        $where = Self::custom_forms_filters($request, $account_id, $apply_filter);
-        $orderBy = 'created_at';
-        $order = 'desc';
+        $where = self::custom_forms_filters($request, $account_id, $apply_filter);
+       
+        if ($request->has('sort')) {
 
-        if ($request->get('order')) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            if ($orderBy == 'created_at') {
-                $orderBy = 'custom_forms.created_at';
-            }
-            $order = $request->get('order')[0]['dir'];
+            list($orderBy, $order) = getSortBy($request);
 
             Filters::put(Auth::User()->id, 'custom_forms', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'custom_forms', 'order', $order);
@@ -239,6 +261,9 @@ class CustomForms extends BaseModal
     static public function custom_forms_filters($request, $account_id, $apply_filter)
     {
         $where = array();
+
+        $filters = getFilters($request->all());
+
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -260,13 +285,13 @@ class CustomForms extends BaseModal
                 }
             }
         }
-        if ($request->get('name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::User()->id, 'custom_forms', 'name', $request->get('name'));
+            Filters::put(Auth::User()->id, 'custom_forms', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'custom_forms', 'name');
@@ -280,13 +305,13 @@ class CustomForms extends BaseModal
                 }
             }
         }
-        if ($request->get('form_type_id') != '' ) {
+        if (hasFilter($filters, 'form_type_id')) {
             $where[] = array(
                 'custom_form_type',
                 '=',
-                $request->get('form_type_id')
+                $filters['form_type_id']
             );
-            Filters::put(Auth::User()->id, 'custom_forms', 'form_type_id', $request->get('form_type_id'));
+            Filters::put(Auth::User()->id, 'custom_forms', 'form_type_id', $filters['form_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'custom_forms', 'form_type_id');
@@ -300,13 +325,13 @@ class CustomForms extends BaseModal
                 }
             }
         }
-        if ($request->get('created_from')) {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
-            Filters::put(Auth::User()->id, 'custom_forms', 'created_from', $request->get('created_from'));
+            Filters::put(Auth::User()->id, 'custom_forms', 'created_from', $filters['created_from']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'custom_forms', 'created_from');
@@ -320,13 +345,13 @@ class CustomForms extends BaseModal
                 }
             }
         }
-        if ($request->get('created_to')) {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
-            Filters::put(Auth::User()->id, 'custom_forms', 'created_to', $request->get('created_to'));
+            Filters::put(Auth::User()->id, 'custom_forms', 'created_to', $filters['created_to']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'custom_forms', 'created_to');
@@ -340,13 +365,13 @@ class CustomForms extends BaseModal
                 }
             }
         }
-        if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+        if (hasFilter($filters, 'status')) {
             $where[] = array(
                 'active',
                 '=',
-                $request->get('status')
+                $filters['status']
             );
-            Filters::put(Auth::user()->id, 'custom_forms', 'status', $request->get('status'));
+            Filters::put(Auth::user()->id, 'custom_forms', 'status', $filters['status']);
         } else {
             if ( $apply_filter ){
                 Filters::forget( Auth::user()->id, 'custom_forms', 'status');
@@ -387,7 +412,7 @@ class CustomForms extends BaseModal
     static public function createForm($account_id, $data )
     {
         // Set Account ID
-        $data['account_id'] = Auth::User()->account_id;
+        $data['account_id'] = Auth::user()->account_id;
         $data["name"] = 'Untitled Form-' . time();
         $data["description"] = "";
         $data["form_type"] = 1;
@@ -486,14 +511,14 @@ class CustomForms extends BaseModal
 
         static::created(function($item) {
 
-            Event::fire('custom_form.created', $item);
+            Event::dispatch('custom_form.created', $item);
 
         });
 
 
         static::updating(function($item) {
 
-            Event::fire('custom_form.updating', $item);
+            Event::dispatch('custom_form.updating', $item);
 
         });
 
@@ -501,7 +526,7 @@ class CustomForms extends BaseModal
 
         static::deleting(function($item) {
 
-            Event::fire('custom_form.deleting', $item);
+            Event::dispatch('custom_form.deleting', $item);
 
         });
 
