@@ -15,6 +15,6 @@
     </div>
     <button
             class="btn btn-danger del mt-repeater-delete mt-repeater-del-right mt-repeater-btn-inline remove-question-me">
-        <i class="fa fa-close"></i>
+        <i class="la la-close"></i>
     </button>
 </div>

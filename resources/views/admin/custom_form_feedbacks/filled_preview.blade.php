@@ -107,8 +107,8 @@
 
 
                         <div class="col-md-8 text-center mt-10">
-                            <h1 >{{$custom_form->form_name}}</h1>
-                            <p>{{$custom_form->form_description}}</p>
+                            <h1 >{{$custom_form->form_name ?? ''}}</h1>
+                            <p>{{$custom_form->form_description ?? ''}}</p>
                         </div>
 
                     </div>
@@ -120,33 +120,33 @@
                             <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
                         
 
-                        @if($field->field_type ==1)
-                           <div class="col-md-6">
-                                @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ['field_id'=>$field->id, 'title'=>$content["title"],"value" => $field->field_value])
-                           </div>
-                        @elseif($field->field_type ==2)
-                        <div class="col-md-6">
-                            @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ['field_id'=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])
-                        </div>
-                        @elseif($field->field_type ==3)
-                        <div class="col-md-6">
-                            @include("admin.custom_form_feedbacks.preview_fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
-                        </div>
-                        @elseif($field->field_type ==4 && is_array($content))
-                        <div class="col-md-6">
-                            @include("admin.custom_form_feedbacks.preview_fields.multi_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                            @if($field->field_type ==1)
+                            <div class="col-md-6">
+                                    @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ['field_id'=>$field->id, 'title'=>$content["title"],"value" => $field->field_value])
                             </div>
-                        @elseif($field->field_type ==5 && is_array($content))
-                        <div class="col-md-6">
-                            @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                            @elseif($field->field_type ==2)
+                            <div class="col-md-6">
+                                @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ['field_id'=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])
                             </div>
-                        @elseif($field->field_type ==6 && is_array($content))
-                        <div class="col-md-6">
-                            @include("admin.custom_form_feedbacks.preview_fields.title_description_field", ["field_id"=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])</td>
+                            @elseif($field->field_type ==3)
+                            <div class="col-md-6">
+                                @include("admin.custom_form_feedbacks.preview_fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                            </div>
+                            @elseif($field->field_type ==4 && is_array($content))
+                            <div class="col-md-6">
+                                @include("admin.custom_form_feedbacks.preview_fields.multi_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                            </div>
+                            @elseif($field->field_type ==5 && is_array($content))
+                            <div class="col-md-6">
+                                @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                            </div>
+                            @elseif($field->field_type ==6 && is_array($content))
+                            <div class="col-md-6">
+                                @include("admin.custom_form_feedbacks.preview_fields.title_description_field", ["field_id"=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])</td>
                             </div>
 
-                        @elseif($field->field_type ==7 && is_array($content))
-                        @endif
+                            @elseif($field->field_type ==7 && is_array($content))
+                            @endif
                         @endforeach
 
                     </div>

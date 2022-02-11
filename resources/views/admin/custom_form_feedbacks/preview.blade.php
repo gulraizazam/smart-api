@@ -56,15 +56,15 @@
 
                                 <div class="form-group form-md-line-input cf_main_title">
                                 <div class="form-group form-md-line-input cf_input_question">
-                                    <h2 class="rs-head">{{$custom_form->name}}</h2>
+                                    <h2 class="rs-head">{{$custom_form->name ?? ''}}</h2>
                                 </div>
                             </div>
 
-                            <input id="feedback_id" name="feedback_id" type="hidden" value="{{$custom_form->id}}"/>
+                            <input id="feedback_id" name="feedback_id" type="hidden" value="{{$custom_form->id ?? ''}}"/>
 
                             <div class="form-group form-md-line-input cf_main_title mt-10">
                                 <div class="form-group form-md-line-input cf_input_question">
-                                    <p>{{$custom_form->description}}</p>
+                                    <p>{{$custom_form->description ?? ''}}</p>
                                 </div>
                             </div>
 
@@ -72,8 +72,9 @@
 
                             <div class="row mt-15">
 
+                            @if ($custom_form)
                             @foreach($custom_form->form_fields as $field)
-                                <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
+                                <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content ?? ''); ?>
 
                                 @if($field->field_type ==1)
                                 <div class="col-md-12">
@@ -105,6 +106,7 @@
                                 </div>    
                                 @endif
                             @endforeach
+                            @endif
                     </div>
 
                     </div>
