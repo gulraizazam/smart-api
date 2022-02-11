@@ -61,25 +61,7 @@
 </style>
 <div id="cs_field_{{$field_id}}" class="form-group form-group_tab form-md-line-input cf_card cf_field_item update-answer-fields">
     <h3 class="cf-question-headings" style="padding-bottom:22px;">{{$title}}</h3>
-    {{--<div class="cf_input_option table-responsive">--}}
-        <?php $rows = json_decode($value, true); ?>
-            {{--<table width="100%" class="table table-default">--}}
-                {{--<thead>--}}
-                {{--@foreach($options as $option)--}}
-                    {{--<th>{{$option["label"]}}</th>--}}
-                {{--@endforeach--}}
-                {{--</thead>--}}
-                {{--<tbody>--}}
-                {{--@foreach($rows as $row)--}}
-                    {{--<tr >--}}
-                        {{--@foreach($row["cols"] as $col)--}}
-                            {{--<td row ={{$loop->parent->index}} col={{$loop->index}}><p>{{$col["answer"]}}</p></td>--}}
-                        {{--@endforeach--}}
-                    {{--</tr>--}}
-                {{--@endforeach--}}
-                {{--</tbody>--}}
-            {{--</table>--}}
-    {{--</div>--}}
+   
     <table class="wrap-row-table">
             <thead>
                 <tr>
@@ -89,14 +71,16 @@
                 </tr>
             </thead>
             <tbody>
-            @foreach($rows as $row)
-                <tr>
-                    @foreach($row["cols"] as $col)
-                        <td>{{$col["answer"]}}</td> 
-                    @endforeach
-                </tr>
-               
-            @endforeach
+            @if ($rows)
+                @foreach($rows as $row)
+                    <tr>
+                        @foreach($row["cols"] as $col)
+                            <td>{{$col["answer"]}}</td> 
+                        @endforeach
+                    </tr>
+                
+                @endforeach
+            @endif
             </tbody>
     </table>
 </div>
