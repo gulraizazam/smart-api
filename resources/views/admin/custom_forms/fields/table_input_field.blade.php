@@ -34,6 +34,6 @@
         </button>
     </div>
     <button class="btn btn-danger del mt-repeater-delete mt-repeater-del-right mt-repeater-btn-inline remove-question-me">
-        <i class="las la-times"></i>
+        <i class="la la-times"></i>
     </button>
 </div>

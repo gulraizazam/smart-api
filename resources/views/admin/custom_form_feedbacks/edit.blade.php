@@ -84,6 +84,7 @@
 
                     <div class="row mt-15">
 
+                    @if ($custom_form)
                         @foreach($custom_form->form_fields as $field)
                             <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
 
@@ -117,6 +118,7 @@
                             </div>
                             @endif
                         @endforeach
+                      @endif  
                     </div>
 
 

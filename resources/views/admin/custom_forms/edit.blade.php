@@ -344,7 +344,6 @@ function fieldItemRemoveBinding() {
 }
 
 function fieldCloseButtonBinding() {
-    console.log("here we");
 
     
 }

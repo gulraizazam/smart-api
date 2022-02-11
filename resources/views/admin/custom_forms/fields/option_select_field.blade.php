@@ -26,6 +26,6 @@
     </div>
 
     <button class="btn btn-danger del mt-repeater-delete mt-repeater-del-right mt-repeater-btn-inline remove-question-me">
-        <i class="las la-timese"></i>
+        <i class="las la-close"></i>
     </button>
 </div>
