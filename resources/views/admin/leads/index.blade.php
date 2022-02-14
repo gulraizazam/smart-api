@@ -32,6 +32,27 @@
                                 </span>
                             </span>
                             <h3 class="card-label">Leads</h3>
+
+                        </div>
+
+                        <div class="form-group">
+                            <div class="row">
+                            <div class="city-popup">
+                                <span class="city-title">Change City</span>
+                                <select class="form-control city-select">
+                                    <option>1</option>
+                                    <option>2</option>
+                                    <option>3</option>
+                                </select>
+                                <div class="float-right city-edit-btn">
+                                    <button type="button" class="btn btn-sm btn-success"><i class="fa fa-check"></i></button>
+                                    <button type="button" class="btn btn-sm btn-danger"><i class="fa fa-times"></i></button>
+
+                                </div>
+                                <div class="arrow"></div>
+                            </div>
+
+                        </div>
                         </div>
 
                         <div class="card-toolbar">
@@ -45,8 +66,8 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('plans_create'))
-                                <a href="javascript:void(0);" onclick="createPlan('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_lead">
+                            @if(Gate::allows('leads_create'))
+                                <a href="javascript:void(0);" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
@@ -89,7 +110,7 @@
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered big-modal" id="leads_add">
 
-            @include('admin.leads.create')
+            {{--@include('admin.leads.create')--}}
 
         </div>
         <!--end::Modal dialog-->
@@ -106,11 +127,14 @@
     </div>
 
     @push('js')
-        <script src="{{asset('assets/js/pages/admin_settings/leads.js')}}"></script>
+        <script src="{{asset('assets/js/jquery.inputmask.bundle.min.js')}}"></script>
+        <script src="{{asset('assets/js/jquery.copy-to-clipboard.js')}}"></script>
+
+        {{--<script src="{{asset('assets/js/pages/crud/forms/validation/leads/leads.js')}}"></script>--}}
     @endpush
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/admin_settings/leads.js')}}"></script>
+        <script src="{{asset('assets/js/pages/leads/leads.js')}}"></script>
     @endpush
 
 @endsection
