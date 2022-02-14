@@ -335,5 +335,39 @@ div > input {
 .large_font {
     font-weight: bold;
     font-size: 18px !important;
-    color: #333 !important;  
+    color: #333 !important;
+}
+.city-popup {
+    width: 350px;
+    box-shadow: 2px 5px 10px 6px lightgrey;
+    padding: 20px 0px 20px 10px;
+    border: 2px solid lightgray;
+}
+.city-select {
+    width: 70%;
+    margin-top: 15px;
+}
+.city-edit-btn .btn-success {
+    margin-left: 5px;
+    width: 35px;
+}
+.city-edit-btn .btn-success {
+    width: 35px;
+}
+.city-edit-btn {
+    width: 30%;
+    margin-top: -35px;
+}
+
+.arrow {
+    background-color: red;
+    width: 20px;
+}
+.arrow:after {
+    position: absolute;
+    display: block;
+    width: 0;
+    height: 0;
+    border-color: transparent;
+    border-style: solid;
 }

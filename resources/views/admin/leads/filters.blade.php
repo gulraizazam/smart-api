@@ -22,9 +22,9 @@
             <input type="text" class="form-control filter-field" placeholder="Enter ID" id="search_id" />
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6" id="patient_id">
+        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Full Name:</label>
-            <select class="form-control filter-field patient_id" id="search_full_name"></select>
+            <select class="form-control filter-field" id="search_full_name"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">

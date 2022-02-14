@@ -180,6 +180,19 @@ $(document).ready(function () {
         }
     }
 
+    /*input mask*/
+    $(".cnic-mask").inputmask("99999-9999999-9", {
+        placeholder: "XXXXX-XXXXXXX-X",
+        clearMaskOnLostFocus: true
+    });
+
+    /*Copy to clipboard*/
+    var clipboard = new ClipboardJS('.clipboard');
+    clipboard.on('success', function(e) {
+        e.clearSelection();
+        toastr.info("phone is copied to clipboard.")
+    });
+
 });
 
 function addUsers() {
@@ -556,4 +569,8 @@ function showException(error) {
 
 function noRecordFoundTable(colspan) {
     return '<tr class="text-center"><td colspan="'+colspan+'">No record found</td></tr>';
+}
+
+function phoneField($this) {
+   return $this.value = $this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 }

@@ -2,16 +2,51 @@
 var AddUserValidation = function () {
     // Private functions
     var AddValidation = function () {
-        let modal_id = 'modal_add_regions_form';
+        let modal_id = 'modal_add_leads_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
+                    service_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The service field is required'
+                            }
+                        }
+                    },
+                   /* patient_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The patient field is required'
+                            }
+                        }
+                    },*/
+                    phone: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The phone field is required'
+                            }
+                        }
+                    },
                     name: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
+                                message: 'The full name field is required'
+                            }
+                        }
+                    },
+                    gender: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The gander field is required'
+                            }
+                        }
+                    },
+                    city_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The city field is required'
                             }
                         }
                     },
