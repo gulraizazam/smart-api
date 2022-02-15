@@ -358,16 +358,28 @@ div > input {
     width: 30%;
     margin-top: -35px;
 }
-
 .arrow {
-    background-color: red;
-    width: 20px;
-}
-.arrow:after {
     position: absolute;
-    display: block;
-    width: 0;
-    height: 0;
+    margin-top: 18px;
+    text-align: center;
+    margin-left: 140px;
     border-color: transparent;
     border-style: solid;
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 15px solid #fff;
 }
+
+.arrow:after {
+    margin-left: -10px;
+    border-bottom-width: 0;
+    border-top-color: #fff;
+}
+.city_editable {
+    margin-left: -135px;
+    margin-top: -150px;
+}
+
+

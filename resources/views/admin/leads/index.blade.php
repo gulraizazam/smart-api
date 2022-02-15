@@ -35,26 +35,6 @@
 
                         </div>
 
-                        <div class="form-group">
-                            <div class="row">
-                            <div class="city-popup">
-                                <span class="city-title">Change City</span>
-                                <select class="form-control city-select">
-                                    <option>1</option>
-                                    <option>2</option>
-                                    <option>3</option>
-                                </select>
-                                <div class="float-right city-edit-btn">
-                                    <button type="button" class="btn btn-sm btn-success"><i class="fa fa-check"></i></button>
-                                    <button type="button" class="btn btn-sm btn-danger"><i class="fa fa-times"></i></button>
-
-                                </div>
-                                <div class="arrow"></div>
-                            </div>
-
-                        </div>
-                        </div>
-
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
                             @if(Gate::allows('leads_destroy'))
@@ -96,11 +76,11 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_display_leads" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_change_status" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="leads_display">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="leads_change_status">
 
-            {{--@include('admin.leads.display')--}}
+            @include('admin.leads.change-status')
 
         </div>
         <!--end::Modal dialog-->

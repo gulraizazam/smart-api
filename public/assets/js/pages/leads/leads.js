@@ -25,20 +25,23 @@ var table_columns = [{
     width: 'auto',
     template: function (data) {
         let phone = data.phone;
-        return '<a href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="'+phone+'" data-original-title="Click to Copy" aria-describedby="tooltip'+data.id+'">'+phone+'</a>';
+        return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="'+phone+'" data-original-title="Click to Copy" aria-describedby="tooltip'+data.id+'">'+phone+'</a>';
     }
 }, {
     field: 'city_id',
     title: 'City',
     sortable: false,
     width: 'auto',
+    className: 'tooltip_wrap',
     template: function (data) {
+
         let city_id = data.city_id;
         let city = '<span class="text text-danger">Empty</span>';
         if (city_id != '') {
             city = city_id;
         }
-        return '<a href="javascript:void(0);" onclick="editInline(`' + data.id + '`)" class="lead_city" id="lead-'+data.id+'">'+city+'</a>';
+
+        return '<a href="javascript:void(0);" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`)" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
     }
 }, {
     field: 'region_id',
@@ -50,6 +53,15 @@ var table_columns = [{
     title: 'Lead Status',
     sortable: false,
     width: 'auto',
+    template: function (data) {
+
+        let status_url = route('admin.leads.showleadstatus',{id: data.lead_id});
+        let status_update_url = route('admin.leads.update',{id: data.lead_id});
+
+        $("#modal_change_status_form").attr('action', status_update_url);
+
+        return '<a href="javascript:void(0);" data-toggle="modal" data-target="#modal_change_status">'+data.lead_status_id+'</a>';
+    }
 }, {
     field: 'service_id',
     title: 'Service',
@@ -98,7 +110,7 @@ function actions(data) {
         let sms_log_url = route('admin.packages.sms_logs', { id: id });
         let log_url = route('admin.packages.log', { id: id, type: 'web' });
 
-        if (permissions.create && permissions.log && permissions.sms_log && permissions.edit) {
+        if (permissions.create && permissions.edit) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -401,17 +413,16 @@ function applyFilters(datatable) {
 
         let filters = {
             delete: '',
-            id: $("#search_id").val(),
-            patient_id: $("#search_patient_id").val(),
-            patient_name: $("#search_patient_id").text(),
-            package_id: $("#search_plan_id").text(),
-            location_id: $("#search_location_id").val(),
+            patient_id: $("#search_id").val(),
+            name: $("#search_full_name").val(),
+            phone: $("#search_phone").val(),
+            city_id: $("#search_city_id").val(),
+            region_id: $("#search_region_id").val(),
             service_id: $("#search_service_id").val(),
-            invoice_status_id: $("#search_invoice_status_id").val(),
-            appointment_type_id: $("#search_appointment_type_id").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
-            status: $("#search_status").val(),
+            created_by: $("#search_created_by").val(),
+            date_from: $("#search_created_from").val(),
+            date_to: $("#search_created_to").val(),
+            lead_status_id: $("#search_status_id").val(),
             filter: 'filter',
         }
 
@@ -426,16 +437,16 @@ function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
         let filters = {
             delete: '',
-            id: '',
             patient_id: '',
-            package_id: '',
-            location_id: '',
+            name: '',
+            phone: '',
+            city_id: '',
+            region_id: '',
             service_id: '',
-            invoice_status_id: '',
-            appointment_type_id: '',
-            created_from: '',
-            created_to: '',
-            status: '',
+            created_by: '',
+            date_from: '',
+            date_to: '',
+            lead_status_id: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -447,49 +458,66 @@ function setFilters(filter_values, active_filters) {
 
     try {
 
-        let locations = filter_values.locations;
-        let packages = filter_values.package;
-        let patients = filter_values.patient;
-        let status = filter_values.status;
+        let cities = filter_values.cities;
+        let regions = filter_values.regions;
+        let lead_statuses = filter_values.lead_statuses;
+        let services = filter_values.Services;
+        let users = filter_values.users;
 
-        let location_options = '<option value="">All</option>';
-        let package_options = '<option value="">All</option>';
+        let city_options = '<option value="">All</option>';
+        let region_options = '<option value="">All</option>';
         let status_options = '<option value="">All</option>';
+        let service_options = '<option value="">All</option>';
+        let user_options = '<option value="">All</option>';
 
-        if (locations) {
-            Object.entries(locations).forEach(function(value) {
-                location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+        if (cities) {
+            Object.entries(cities).forEach(function(city) {
+                city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
             });
         }
 
-        if (packages) {
-            Object.entries(packages).forEach(function(value) {
-                package_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+        if (regions) {
+            Object.entries(regions).forEach(function(region) {
+                region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
             });
         }
 
-        if (status) {
-            Object.entries(status).forEach(function(value) {
-                status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+        if (lead_statuses) {
+            Object.entries(lead_statuses).forEach(function(status) {
+                status_options += '<option value="' + status[0] + '">' + status[1] + '</option>';
             });
         }
 
-        $("#search_plan_id").html(package_options);
-        $("#search_location_id").html(location_options);
-        $("#search_status").html(status_options);
+        if (services) {
+            Object.entries(services).forEach(function(service) {
 
-        $("#search_id").val(active_filters.id);
-
-        if (active_filters.patient_name !== 'undefined' && active_filters.patient_name != 'undefined') {
-            $("#search_patient_id").html('<option value="' + active_filters.patient_id + '">' + active_filters.patient_name + '</option>');
-            $("#search_patient_id").val(active_filters.patient_id);
+                service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            });
         }
 
-        $("#search_plan_id").val(active_filters.package_id);
-        $("#search_location_id").val(active_filters.location_id);
-        $("#search_status").val(active_filters.status);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        if (users) {
+            Object.entries(users).forEach(function(user) {
+
+                user_options += '<option value="' + user[0] + '">' + user[1] + '</option>';
+            });
+        }
+
+        $("#search_city_id").html(city_options);
+        $("#search_region_id").html(region_options);
+        $("#search_status_id").html(status_options);
+        $("#search_service_id").html(service_options);
+        $("#search_created_by").html(user_options);
+
+        $("#search_id").val(active_filters.patient_id);
+        $("#search_full_name").val(active_filters.name);
+        $("#search_phone").val(active_filters.phone);
+        $("#search_city_id").val(active_filters.city_id);
+        $("#search_region_id").val(active_filters.region_id);
+        $("#search_status_id").val(active_filters.lead_status_id);
+        $("#search_service_id").val(active_filters.service_id);
+        $("#search_created_from").val(active_filters.date_from);
+        $("#search_created_to").val(active_filters.date_to);
+        $("#search_created_by").val(active_filters.created_by);
 
         hideShowAdvanceFilters(active_filters);
 
@@ -500,9 +528,12 @@ function setFilters(filter_values, active_filters) {
 
 function hideShowAdvanceFilters(active_filters) {
 
-    if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '') ||
-        (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '') ||
-        (typeof active_filters.status !== 'undefined' && active_filters.status != '')
+    if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
+        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
+        || (typeof active_filters.lead_status_id !== 'undefined' && active_filters.lead_status_id != '')
+        || (typeof active_filters.region_id !== 'undefined' && active_filters.region_id != '')
+        || (typeof active_filters.service_id !== 'undefined' && active_filters.service_id != '')
+        || (typeof active_filters.created_by !== 'undefined' && active_filters.created_by != '')
     ) {
 
         $(".advance-filters").show();
@@ -524,8 +555,94 @@ function newPatient() {
     });
 }
 
-function editInline($lead_id) {
+function editInline($lead_id, city_id) {
 
-    $("#lead-" + $lead_id).append('');
+    let cities = filter_values.cities;
+    let city_options = '<option value="">Select City</option>';
+
+    Object.entries(cities).forEach( function (city) {
+        city_options += '<option value="'+city[0]+'">'+city[1]+'</option>';
+    });
+
+    $(".city-editable-" + $lead_id).remove();
+
+    let editable = '<div class="city_editable custom_tooltip form-group city-editable-'+$lead_id+'"> ' +
+        '<div class="row">' +
+        '<div class="city-popup">' +
+        '<span class="city-title">Change City</span> ' +
+        '<select class="form-control city-select"> ' +
+            city_options +
+        '</select> ' +
+        '<div class="float-right city-edit-btn"> ' +
+        '<button type="button" class="btn btn-sm btn-success spinner-button" onclick="saveCity('+$lead_id+');"><i class="fa fa-check"></i></button> ' +
+        '<button type="button" class="btn btn-sm btn-danger" onclick="closeEditable('+$lead_id+')"><i class="fa fa-times"></i></button> ' +
+        '</div>' +
+        '<div class="arrow"></div>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+
+    $("#lead-" + $lead_id).parents('.datatable-row').css("margin-top", "130px");
+    $("#lead-" + $lead_id).parents('td').append(editable);
+
+    $(".city-editable-" + $lead_id).find(".city-select").val(city_id);
 
 }
+
+
+function saveCity(lead_id) {
+
+    spinner();
+    let city_id = $(".city-editable-" + lead_id).find('.city-select').val();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.leads.save_city'),
+        type: "PUT",
+        data: {value: city_id, pk: lead_id},
+        cache: false,
+        success: function(response) {
+            if (response.status) {
+                let city = response.data.city;
+                toastr.success(response.message);
+                $("#lead-" + lead_id).text(city);
+                $("#lead-" + lead_id).animate({backgroundColor: "#dd0000"}, 'slow').fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500);
+
+            } else {
+                toastr.error(response.message);
+            }
+            hideSpinnerRestForm();
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            hideSpinnerRestForm();
+        }
+    });
+}
+
+function closeEditable($lead_id) {
+    $(".city-editable-" + $lead_id).remove();
+    $(".datatable-row").css("margin-top", 0);
+}
+
+$(function () {
+    $(document).mouseup(function(e) {
+        var container = $(".city_editable");
+
+        if (!container.is(e.target) && container.has(e.target).length === 0) {
+            container.remove();
+            $(".datatable-row").css("margin-top", 0);
+        }
+    });
+
+    $("#lead-1").mouseover(
+        function() {
+            $(this).animate({backgroundColor: "#fff"}, 'slow');
+        }, function() {
+            $(this).animate({backgroundColor:"#000"},'slow');
+        });
+})
+
+

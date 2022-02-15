@@ -437,6 +437,10 @@ function showSpinner() {
     $(".spinner-button").addClass("spinner spinner-white spinner-right mr-3").prop('disabled', true);
 }
 
+function spinner() {
+    $(".spinner-button").addClass("spinner spinner-white spinner-center").prop('disabled', true);
+}
+
 function hideSpinnerRestForm(form = null) {
     $(".spinner-button").removeClass("spinner spinner-white spinner-right mr-3").prop('disabled', false);
    if (form) {

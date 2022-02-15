@@ -432,13 +432,16 @@ class LeadsController extends Controller
                     }
                     $records["data"][$index] = array(
                         'id' => $lead->id,
+                        'lead_id' => $lead->lead_id,
                         'PatientId' => GeneralFunctions::patientSearchStringAdd($lead->PatientId),
                         'name' => $lead->name,
+                        'active' => $lead->active,
+                        'cityId' => $lead->city->id,
                         'phone' =>  GeneralFunctions::prepareNumber4Call($lead->patient->phone),
-                        'city_id' => view('admin.leads.city', compact('lead'))->render(),
+                        'city_id' => $lead->city->name ?? '', //view('admin.leads.city', compact('lead'))->render(),
                         'region_id' => (array_key_exists($lead->region_id, $Regions)) ? $Regions[$lead->region_id]->name : 'N/A',
-                        'lead_status_id' => view('admin.leads.lead_status', compact('lead', 'lead_status_data'))->render(),
-                        'service_id' => view('admin.leads.service', compact('lead'))->render(),
+                        'lead_status_id' => $lead_status_data->name ?? '',
+                        'service_id' => $lead->service->name ?? '',
                         'created_at' => Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A'),
                         'created_by' => array_key_exists($lead->lead_created_by, $Users) ? $Users[$lead->lead_created_by]->name : 'N/A',
                         //'actions' => view('admin.leads.actions', compact('lead', 'default_converted_lead_status_id'))->render(),
@@ -1480,23 +1483,26 @@ class LeadsController extends Controller
     public function saveCity(Request $request)
     {
         if (!Gate::allows('leads_manage')) {
-            return response()->json(array('status' => 0));
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         } else {
-            $id = $request->get('pk');;
+            $id = $request->get('pk');
             $city_id = $request->get('value');
 
             // Check if Lead found or not
-            $citie = Cities::findOrFail($city_id);
+            $citie = Cities::find($city_id);
             $lead = Leads::find($id);
+
             if (!$lead || !$citie) {
-                return response()->json(array('status' => 0));
-            } else {
-                $lead->update([
-                    'city_id' => $city_id,
-                    'region_id' => $citie->region_id
-                ]);
-                return response()->json(array('status' => 1));
+                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
             }
+
+            $lead->update([
+                'city_id' => $city_id,
+                'region_id' => $citie->region_id
+            ]);
+            return ApiHelper::apiResponse($this->success, 'City updated successfully.', true, [
+                'city' => $citie->name ?? ''
+            ]);
         }
     }
 
