@@ -24,7 +24,7 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Full Name:</label>
-            <select class="form-control filter-field" id="search_full_name"></select>
+            <input class="form-control filter-field" id="search_full_name" placeholder="enter name">
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
@@ -70,9 +70,9 @@
             </div>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-3 mb-lg-0 mt-6">
             <label>Created By:</label>
-            <select class="form-control filter-field select2" id="search_status">
+            <select class="form-control filter-field select2" id="search_created_by">
             </select>
         </div>
 

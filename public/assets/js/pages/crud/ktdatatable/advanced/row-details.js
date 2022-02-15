@@ -30,6 +30,7 @@ var KTDatatable = function() {
                         map: function (data) { /*to get response, we can remove this */
                             /* get permissions array for actions */
                             permissions = data.permissions;
+                            filter_values = data.filter_values;
 
                             if (typeof setFilters === 'function') {
                                 setFilters(data.filter_values, data.active_filters);
