@@ -30,15 +30,28 @@
                 <div class="form-group">
                     <div class="row">
 
+                        <input type="hidden" id="lead_id">
+
                         <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
-                            <select id="add_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Status </label>
+                            <select id="update_status_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
                         </div>
 
+                        <div class="fv-row col-md-12 mt-5 d-none">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Status </label>
+                            <select id="update_child_status_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-12 mt-5 d-none">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Comment </label>
+                            <textarea id="lead_status_comment1_id" name="" placeholder="Type your comment.." class="form-control" rows="5"></textarea>
+                        </div>
+
                         <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
-                            <textarea class="form-control" rows="5"></textarea>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Comment </label>
+                            <textarea id="lead_status_comment2_id" name="comment2" placeholder="Type your comment.." class="form-control" rows="5"></textarea>
                         </div>
 
                     </div>
@@ -50,7 +63,7 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button">
+                <button type="button" onclick="updateLeadStatus();" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>

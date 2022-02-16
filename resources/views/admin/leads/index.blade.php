@@ -86,11 +86,31 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_view_lead" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered mediam-modal" id="leads_view_lead">
+
+            @include('admin.leads.view')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_convert_lead" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered mediam-modal" id="convert_lead">
+
+            @include('admin.leads.convert')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
     <div class="modal fade" id="modal_add_leads" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered big-modal" id="leads_add">
 
-            {{--@include('admin.leads.create')--}}
+            @include('admin.leads.create')
 
         </div>
         <!--end::Modal dialog-->
@@ -100,7 +120,7 @@
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered big-modal" id="packages_edit">
 
-            {{--@include('admin.leads.edit')--}}
+            @include('admin.leads.edit')
 
         </div>
         <!--end::Modal dialog-->
@@ -110,7 +130,7 @@
         <script src="{{asset('assets/js/jquery.inputmask.bundle.min.js')}}"></script>
         <script src="{{asset('assets/js/jquery.copy-to-clipboard.js')}}"></script>
 
-        {{--<script src="{{asset('assets/js/pages/crud/forms/validation/leads/leads.js')}}"></script>--}}
+        <script src="{{asset('assets/js/pages/crud/forms/validation/leads/leads.js')}}"></script>
     @endpush
 
     @push('datatable-js')

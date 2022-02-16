@@ -32,6 +32,7 @@ use Auth;
 use File;
 //Excel Library
 use App\Helpers\GeneralFunctions;
+use mysql_xdevapi\Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Config;
 use App\Helpers\NodesTree;
@@ -465,6 +466,7 @@ class LeadsController extends Controller
                 'active' => Gate::allows('leads_active'),
                 'inactive' => Gate::allows('leads_inactive'),
                 'create' => Gate::allows('leads_create'),
+                'convert' => Gate::allows('leads_convert'),
             ];
 
             return ApiHelper::apiDataTable($records);
@@ -512,7 +514,6 @@ class LeadsController extends Controller
             'users' => $users,
             'lead_statuses' => $lead_statuses,
             'leadServices' => $leadServices,
-            'filters' => $filters
         ];
 
         if (isset($filters['created_from'])) {
@@ -646,6 +647,7 @@ class LeadsController extends Controller
         /*belongs to edit for blocking some input */
         $edit_status = 0;
         /*end*/
+        $leadServices = null;
         return view('admin.leads.createTo', compact('Services', 'cities', 'lead_sources', 'lead_statuses', 'lead', 'leadServices', 'employees', 'edit_status', 'towns'));
     }
 
@@ -853,16 +855,20 @@ class LeadsController extends Controller
      * Show Lead detail.
      *
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function detail($id)
     {
         if (!Gate::allows('leads_manage')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        $lead = Leads::findOrFail($id);
 
-        return view('admin.leads.detailTo', compact('lead'));
+        $lead = Leads::with( 'lead_comments.user', 'patient', 'towns', 'city', 'lead_source', 'lead_status', 'service')->find($id);
+        $lead->phone = GeneralFunctions::prepareNumber4Call($lead->patient->phone);
+        $lead->gender = Config::get('constants.gender_array')[$lead->patient->gender];
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'lead' => $lead
+        ]);
     }
 
     /**
@@ -892,54 +898,64 @@ class LeadsController extends Controller
      * Show the form for editing Lead.
      *
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         if (!Gate::allows('leads_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $lead = Leads::getData($id);
 
         if ($lead == null) {
 
-            return view('error');
-
-        } else {
-
-            $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
-            $cities->prepend('Select a City', '');
-
-            $towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
-            $towns->prepend('Select a Town', '');
-
-            $lead_sources = LeadSources::getActiveSorted();
-            $lead_sources->prepend('Select a Lead Source', '');
-
-            $lead_statuses = LeadStatuses::getLeadStatuses();
-            $lead_statuses->prepend('Select a Lead Status', '');
-
-            $Services = Services::where([
-                ['slug', '=', 'custom'],
-                ['parent_id', '=', '0'],
-                ['active', '=', '1']
-            ])->get()->pluck('name', 'id');
-            $Services->prepend('Select Service', '');
-
-            $employees = User::getAllActiveRecords(Auth::User()->account_id);
-            if ($employees) {
-                $employees = $employees->pluck('full_name', 'id');
-                $employees->prepend('Select a Referrer', '');
-            } else {
-                $employees = array();
-            }
+            return ApiHelper::apiResponse($this->success, 'Resource not found', false);
 
         }
+
+        $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
+        $cities->prepend('Select a City', '');
+
+        $towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
+        $towns->prepend('Select a Town', '');
+
+        $lead_sources = LeadSources::getActiveSorted();
+        $lead_sources->prepend('Select a Lead Source', '');
+
+        $lead_statuses = LeadStatuses::getLeadStatuses();
+        $lead_statuses->prepend('Select a Lead Status', '');
+
+        $Services = Services::where([
+            ['slug', '=', 'custom'],
+            ['parent_id', '=', '0'],
+            ['active', '=', '1']
+        ])->get()->pluck('name', 'id');
+        $Services->prepend('Select Service', '');
+
+        $employees = User::getAllActiveRecords(Auth::User()->account_id);
+        if ($employees) {
+            $employees = $employees->pluck('full_name', 'id');
+            $employees->prepend('Select a Referrer', '');
+        } else {
+            $employees = array();
+        }
+
         /*belongs to edit for blocking some input */
         $edit_status = 1;
         /*end*/
-        return view('admin.leads.editTo', compact('Services', 'lead', 'cities', 'lead_sources', 'lead_statuses', 'employees', 'edit_status','towns'));
+
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'Services' => $Services,
+            'lead' =>$lead,
+            'cities' => $cities,
+            'lead_sources' => $lead_sources,
+            'lead_statuses' => $lead_statuses,
+            'employees' => $employees,
+            'edit_status' => $edit_status,
+            'towns' => $towns,
+            'gender' => config('constants.gender_array')
+        ]);
     }
 
     /**
@@ -1156,39 +1172,46 @@ class LeadsController extends Controller
     public function showLeadStatuses(Request $request)
     {
         if (!Gate::allows('leads_lead_status')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
-        $lead_statuses_Pdata = LeadStatuses::getLeadStatuses();
+        try {
 
-        $lead_statuses_Pdata->prepend('Select a Lead Status', '');
+            $lead_statuses_Pdata = LeadStatuses::getLeadStatuses();
 
-        $lead = Leads::findOrFail($request->get('id'));
+            $lead = Leads::find($request->get('id'));
 
-        $lead_status = LeadStatuses::where('id', '=', $lead->lead_status_id)->first();
+            $lead_status = LeadStatuses::where('id', '=', $lead->lead_status_id)->first();
 
-        $lead_status_comment = LeadComments::where('lead_id', '=', $lead->id)->get();
+            $lead_status_comment = LeadComments::where('lead_id', '=', $lead->id)->get();
 
-        if ($lead_status->parent_id == 0) {
+            if ($lead_status->parent_id == 0) {
 
-            $lead_status_parent = DB::table('lead_statuses')->where('id', '=', $lead->lead_status_id)->first();
-            $lead_status_chalid = 'null';
+                $lead_status_parent = DB::table('lead_statuses')->where('id', '=', $lead->lead_status_id)->first();
+                $lead_status_chalid = 'null';
 
-        } else {
+            } else {
 
-            $lead_status_chalid = DB::table('lead_statuses')->where('id', '=', $lead->lead_status_id)->first();
-            $lead_status_parent = DB::table('lead_statuses')->where('id', '=', $lead_status_chalid->parent_id)->first();
+                $lead_status_chalid = DB::table('lead_statuses')->where('id', '=', $lead->lead_status_id)->first();
+                $lead_status_parent = DB::table('lead_statuses')->where('id', '=', $lead_status_chalid->parent_id)->first();
+            }
+            $lead_statuses_Cdata = DB::table('lead_statuses')->where('parent_id', '=', $lead_status_parent->id)->get();
+
+            if (count($lead_statuses_Cdata) < 1) {
+                $lead_statuses_Cdata = 'nothing';
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Record Found', true, [
+                'lead' => $lead,
+                'lead_statuses_Pdata' => $lead_statuses_Pdata,
+                'lead_statuses_Cdata' => $lead_statuses_Cdata,
+                'lead_status_parent' => $lead_status_parent,
+                'lead_status_chalid' => $lead_status_chalid,
+                'lead_status_comment' => $lead_status_comment
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-        $lead_statuses_Cdata = DB::table('lead_statuses')->where('parent_id', '=', $lead_status_parent->id)->get();
-
-        if (count($lead_statuses_Cdata) < 1) {
-            $lead_statuses_Cdata = 'nothing';
-        }
-        //dd($lead_status_parent);
-        //dd($lead_status_chalid);
-        //dd($lead_statuses_Cdata);
-        //dd($lead_statuses_Pdata);
-        return view('admin.leads.lead_status_popup', compact('lead', 'lead_statuses_Pdata', 'lead_statuses_Cdata', 'lead_status_parent', 'lead_status_chalid', 'lead_status_comment'));
     }
 
     /**
@@ -1229,44 +1252,50 @@ class LeadsController extends Controller
      * Update Lead Status
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function storeLeadStatuses(Request $request)
     {
-        $data = $request->all();
-        $lead = Leads::findOrFail($request->get('id'));
-        //Always save child id because our code mange it for parent id
-        if (Input::get('lead_status_chalid_id') != null) {
-            DB::table('leads')
-                ->where('id', $lead->id)
-                ->update([
-                    'lead_status_id' => $data['lead_status_chalid_id'],
-                    'converted_by' => Auth::User()->id
-                ]);
-        } else {
-            DB::table('leads')
-                ->where('id', $lead->id)
-                ->update([
-                    'lead_status_id' => $data['lead_status_parent_id'],
-                    'converted_by' => Auth::User()->id
-                ]);
-        }
-        //End
-        $data['created_by'] = Auth::User()->id;
-        $data['lead_id'] = $lead->id;
-        //Check the comment belong to which values
-        if (Input::get('comment1') == null) {
-            $data['comment'] = $request->comment2;
-        }
-        if (Input::get('comment2') == null) {
-            $data['comment'] = $request->comment1;
-        }
-        if (Input::get('comment2') == null && Input::get('comment1') == null) {
-            return response()->json(['status' => 1]);
-        }
-        $lead = LeadComments::create($data);
+        try {
 
-        return response()->json(['status' => 1]);
+            $data = $request->all();
+            $lead = Leads::find($request->get('id'));
+            //Always save child id because our code mange it for parent id
+            if ($request->get('lead_status_chalid_id') != null) {
+                DB::table('leads')
+                    ->where('id', $lead->id)
+                    ->update([
+                        'lead_status_id' => $data['lead_status_chalid_id'],
+                        'converted_by' => Auth::User()->id
+                    ]);
+            } else {
+                DB::table('leads')
+                    ->where('id', $lead->id)
+                    ->update([
+                        'lead_status_id' => $data['lead_status_parent_id'],
+                        'converted_by' => Auth::User()->id
+                    ]);
+            }
+            //End
+            $data['created_by'] = Auth::User()->id;
+            $data['lead_id'] = $lead->id;
+            //Check the comment belong to which values
+            if ($request->get('comment1') == null) {
+                $data['comment'] = $request->comment2;
+            }
+            if ($request->get('comment2') == null) {
+                $data['comment'] = $request->comment1;
+            }
+            if ($request->get('comment2') == null && $request->get('comment1') == null) {
+                return ApiHelper::apiResponse($this->success, 'Status updated successfully!');
+            }
+
+            LeadComments::create($data);
+
+            return ApiHelper::apiResponse($this->success, 'Status updated successfully!');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
     /**
@@ -2559,40 +2588,51 @@ class LeadsController extends Controller
     {
 
         if (!Gate::allows('appointments_manage') || !Gate::allows('leads_convert')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
-        $lead = Leads::getData($id);
-        $user_info = User::where(['id' => $lead->patient_id, 'active' => 1, 'account_id' => Auth::User()->account_id])->first();
+        try {
 
-        if ($lead == null) {
-            return view('error');
+            $lead = Leads::getData($id);
+            $user_info = User::where(['id' => $lead->patient_id, 'active' => 1, 'account_id' => Auth::User()->account_id])->first();
+
+            if ($lead == null) {
+                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            }
+
+            $employees = User::getAllActiveRecords(Auth::User()->account_id);
+            if ($employees) {
+                $employees = $employees->pluck('full_name', 'id');
+            } else {
+                $employees = array();
+            }
+
+            $services[''] = 'Select a Service';
+
+            $cities = Cities::getActiveFeaturedOnly(ACL::getUserCities(), Auth::User()->account_id)->get();
+            if ($cities) {
+                $cities = $cities->pluck('full_name', 'id');
+            }
+
+            $lead_sources = LeadSources::getActiveSorted();
+
+            $services = Services::getGroupsActiveOnly()->pluck('name', 'id');
+
+            $setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
+
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+                'services' => $services,
+                'lead' => $lead,
+                'employees' => $employees,
+                'cities' => $cities,
+                'lead_sources' => $lead_sources,
+                'user_info' => $user_info,
+                'setting' => $setting,
+                'consultancy_types' =>  Config::get("constants.consultancy_type_array"),
+            ]);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-
-        $employees = User::getAllActiveRecords(Auth::User()->account_id);
-        if ($employees) {
-            $employees = $employees->pluck('full_name', 'id');
-            $employees->prepend('Select a Referrer', '');
-        } else {
-            $employees = array();
-        }
-
-        $services[''] = 'Select a Service';
-
-        $cities = Cities::getActiveFeaturedOnly(ACL::getUserCities(), Auth::User()->account_id)->get();
-        if ($cities) {
-            $cities = $cities->pluck('full_name', 'id');
-        }
-        $cities->prepend('Select a City', '');
-
-        $lead_sources = LeadSources::getActiveSorted();
-        $lead_sources->prepend('Select a Lead Source', '');
-
-        $services = Services::getGroupsActiveOnly()->pluck('name', 'id');
-        $services->prepend('Select a Service', '');
-
-        $setting = Settings::where('slug','=','sys-virtual-consultancy')->first();
-
-        return view('admin.leads.convert.convert', compact('services', 'lead', 'employees', 'cities', 'lead_sources', 'services', 'user_info','setting'));
     }
 }

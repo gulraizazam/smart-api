@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\User;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Config;
@@ -81,7 +81,7 @@ class Leads extends BaseModal
      */
     public function user()
     {
-        return $this->belongsTo('App\User', 'created_by')->withTrashed();
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     /**
@@ -170,7 +170,7 @@ class Leads extends BaseModal
      */
     static public function createRecord($data, $parent_data, $status)
     {
-        
+
         if ($status == "Appointment") {
             $data['service_id'] = $data['base_service_id'];
             $record = Leads::updateOrCreate(array(
@@ -215,7 +215,7 @@ class Leads extends BaseModal
      */
     static public function updateRecord($id, $data, $parent_data, $status = false)
     {
-        
+
         if ($status == "Appointment") {
             $old_data = (Leads::find($id))->toArray();
         } else {

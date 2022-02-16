@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\DoctorsController;
+use App\Http\Controllers\Admin\LeadsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\LogsController;
@@ -317,10 +319,10 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
      // Custom User Form Feedbacks Routes
      Route::post('custom_form_feedbacks/datatable', [CustomFormFeedbacksController::class, 'datatable'])->name('custom_form_feedbacks.datatable');
      Route::post('custom_form_feedbacks/status', [CustomFormFeedbacksController::class, 'status'])->name('custom_form_feedbacks.status');
-     
-     
+
+
      Route::get('custom_form_feedbacks/{id}/preview', [CustomFormFeedbacksController::class, 'filled_preview'])->name("custom_form_feedbacks.filled_preview");
-    
+
      Route::get('custom_form_feedbacks/{id}/export_pdf', [CustomFormFeedbacksController::class, 'exportPdf'])->name("custom_form_feedbacks.export_pdf");
      Route::post('custom_form_feedbacks/{form_id}/submit_form', [CustomFormFeedbacksController::class, 'submit_form'])->name('custom_form_feedbacks.submit_form');
      Route::post('custom_form_feedbacks/{feedback_id}/update_field/{feedback_field_id}', [CustomFormFeedbacksController::class, 'update_field'])->name('custom_form_feedbacks.update_field');
@@ -342,7 +344,21 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
      Route::get('custom_forms_medical', [CustomFormsController::class, 'create_medical'])->name('custom_forms.create_medical');
      Route::get('custom_forms_measurement', [CustomFormsController::class, 'create_measurement'])->name('custom_forms.create_measurement');
 
+    Route::post('leads/junk_datatable', [LeadsController::class, 'junkDatatable'])->name('leads.junk_datatable');
 
+    Route::get('leads/showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('leads.showleadstatus');
+    Route::put('leads/storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('leads.storeleadstatus');
+    Route::get('leads/detail/{id}', [LeadsController::class, 'detail'])->name('leads.detail');
+    Route::resource('leads', LeadsController::class);
+    Route::post('leads/datatable', [LeadsController::class, 'datatable'])->name('leads.datatable');
+    // Convert Lead
+    Route::get('leads/convert/{id}', [LeadsController::class, 'convert'])->name('leads.convert');
+    Route::get('lead_Create_popup',[LeadsController::class, 'make_pop'])->name('leads.create_popup');
+
+    /*Appointment routes*/
+    Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
+    Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
+    Route::resource('appointments', AppointmentsController::class);
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Helpers\NodesTree;
-use App\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -148,7 +147,7 @@ class Appointments extends Model
      */
     public function doctor()
     {
-        return $this->belongsTo('App\User', 'doctor_id')->withTrashed();
+        return $this->belongsTo(User::class, 'doctor_id')->withTrashed();
     }
 
     /**
@@ -188,7 +187,7 @@ class Appointments extends Model
      */
     public function patient()
     {
-        return $this->belongsTo('App\User', 'patient_id')->withTrashed();
+        return $this->belongsTo(User::class, 'patient_id')->withTrashed();
     }
 
     /**
@@ -196,7 +195,7 @@ class Appointments extends Model
      */
     public function user()
     {
-        return $this->belongsTo('App\User', 'created_by')->withTrashed();
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     /*
@@ -205,7 +204,7 @@ class Appointments extends Model
 
     public function user_converted_by()
     {
-        return $this->belongsTo('App\User', 'converted_by')->withTrashed();
+        return $this->belongsTo(User::class, 'converted_by')->withTrashed();
     }
 
     /*
@@ -214,7 +213,7 @@ class Appointments extends Model
 
     public function user_updated_by()
     {
-        return $this->belongsTo('App\User', 'updated_by')->withTrashed();
+        return $this->belongsTo(User::class, 'updated_by')->withTrashed();
     }
 
     /*
@@ -516,21 +515,21 @@ class Appointments extends Model
 
         static::created(function ($item) {
 
-            Event::fire('appointment.created', $item);
+            Event::dispatch('appointment.created', $item);
 
         });
 
 
         static::updating(function ($item) {
 
-            Event::fire('appointment.updating', $item);
+            Event::dispatch('appointment.updating', $item);
 
         });
 
 
         static::deleting(function ($item) {
 
-            Event::fire('appointment.deleting', $item);
+            Event::dispatch('appointment.deleting', $item);
 
         });
 

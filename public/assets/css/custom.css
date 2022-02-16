@@ -381,5 +381,39 @@ div > input {
     margin-left: -135px;
     margin-top: -150px;
 }
+.mt-comments .mt-comment .mt-comment-img {
+    width: 40px;
+    position: absolute;
+}
+.mt-comments {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+.mt-comments .mt-comment .mt-comment-body {
+    padding-left: 20px;
+    position: relative;
+    overflow: hidden;
+}
+.mt-comment .mt-comment-body .mt-comment-info:before {
+    content: " ";
+    display: table;
+}
+.mt-comments .mt-comment .mt-comment-body .mt-comment-info .mt-comment-author {
+    display: inline-block;
 
-
+    margin: 0 0 10px;
+    color: #060606;
+    font-weight: 600;
+}
+.mt-comments .mt-comment .mt-comment-body .mt-comment-info .mt-comment-date {
+    display: inline-block;
+    float: right;
+    margin: 0;
+    color: #BABABA;
+}
+.mt-comments .mt-comment .mt-comment-body .mt-comment-text {
+    color: #999;
+}
+.mt-comment-info, .mt-comment-text {
+    margin-left: 50px;
+}
