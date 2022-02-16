@@ -227,59 +227,49 @@ use App\Http\Controllers\Admin\LeadsController;
 
         // Leads
         Route::get('leadstatus_popup_checks', [LeadsController::class, 'LeadStatusespopcheck'])->name('leads.leadstatus_popup_checks');
-        
+
         Route::get('leadstatuschild_popup_checks', [LeadsController::class, 'LeadStatusChildpopcheck'])->name('leads.leadstatuschild_popup_checks');
 
         Route::post('leads/loadlead', [LeadsController::class, 'loadLeadData'])->name('leads.load_lead');
-        
+
         Route::get('leads/junk', [LeadsController::class, 'junk'])->name('leads.junk');
-       
-        Route::post('leads/junk_datatable', [LeadsController::class, 'junkDatatable'])->name('leads.junk_datatable');
-      
-        Route::get('leads/showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('leads.showleadstatus');
-       
-        Route::put('leads/storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('leads.storeleadstatus');
-       
+
+
         Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
-        
+
         Route::post('leads/status', [LeadsController::class, 'status'])->name('leads.status');
-        
-        Route::get('leads/detail/{id}', [LeadsController::class, 'detail'])->name('leads.detail');
-        
+
+
         Route::get('LeadCommentStore',[LeadsController::class, 'LeadStoreComment'])->name('leads.storecomment');
-        
+
         Route::get('LeadEditDetail',[LeadsController::class, 'LeadEditDetailAjax'])->name('leads.LeadEditDetail');
-        // Convert Lead
-        Route::get('leads/convert/{id}', [LeadsController::class, 'convert'])->name('leads.convert');
+
         //Lead Import
         Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
-        
+
         Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
-        
-        Route::post('leads/datatable', [LeadsController::class, 'datatable'])->name('leads.datatable');
-       
+
+
         Route::resource('leads', LeadsController::class);
-       
+
         Route::post('leads/comment_store', [LeadsController:: class, 'comment_store'])->name('leads.comment_store');
         // Load and Save Lead Statuses
         Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
-        
+
         Route::put('leads_save_status', [LeadsController::class, 'saveLeadStatus'])->name('leads.save_status');
         // Load and Save Treatments
         Route::get('leads_treatments', [LeadsController::class, 'loadTreatments'])->name('leads.treatments');
-       
+
         Route::put('leads_save_treatment', [LeadsController::class, 'saveTreatment'])->name('leads.save_treatment');
         // Load and Save Lead Sources
-    
+
         Route::get('leads_lead_sources', [LeadsController::class, 'loadLeadSources'])->name('leads.lead_sources');
-       
+
         Route::put('leads_save_source', [LeadsController::class, 'saveLeadSource'])->name('leads.save_source');
         // Load and Save Cities
         Route::get('leads_cities', [LeadsController::class, 'loadCities'])->name('leads.cities');
-        
+
         Route::put('leads_save_city', [LeadsController::class, 'saveCity'])->name('leads.save_city');
-        
-        Route::get('lead_Create_popup',[LeadsController::class, 'make_pop'])->name('leads.create_popup');
 
 
     });

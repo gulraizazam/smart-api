@@ -578,3 +578,7 @@ function noRecordFoundTable(colspan) {
 function phoneField($this) {
    return $this.value = $this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 }
+
+function formatDate(date, format = 'ddd MMM, mm yyyy HH:mm A') {
+    return moment(date).format(format);
+}
