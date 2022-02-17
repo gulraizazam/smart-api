@@ -46,6 +46,34 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
+                            @if(Gate::allows('leads_import'))
+                                <a href="javascript:void(0);" data-toggle="modal" data-target="#modal_import_leads" class="btn btn-primary pull-right margin-r-5">
+                                    <i class="fa fa-upload"></i>
+                                    <span class="hidden-xs"> Import </span>
+                                </a>
+                            @endif
+                            &nbsp;&nbsp;
+                            @if(Gate::allows('leads_export'))
+                                <div class="btn-group">
+                                    <a class="btn  btn-primary" href="javascript:void(0);" data-toggle="dropdown">
+                                        <i class="fa fa-download"></i>
+                                        <span class="hidden-xs"> Export </span>
+                                        <i class="fa fa-angle-down"></i>
+                                    </a>
+                                    <ul class="dropdown-menu pull-right export_leads" id="datatable_ajax_tools">
+                                        <li>
+                                            <a href="{{route('admin.leads.export.pdf', ['type' => request('type')])}}" data-action="0" class="tool-action"><i class="la la-file-pdf"></i> PDF</a>
+                                        </li>
+                                        <li>
+                                            <a href="{{route('admin.leads.export.excel')}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i> Excel</a>
+                                        </li>
+                                        <li>
+                                            <a href="{{route('admin.leads.export.excel', ['type' => 'csv'])}}" data-action="2" class="tool-action"><i class="la la-file-csv"></i> CSV</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            @endif
+                            &nbsp;&nbsp;
                             @if(Gate::allows('leads_create'))
                                 <a href="javascript:void(0);" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
                                     <i class="la la-plus"></i>
@@ -118,9 +146,19 @@
 
     <div class="modal fade" id="modal_edit_leads" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="packages_edit">
+        <div class="modal-dialog modal-dialog-centered big-modal" id="edit_leads">
 
             @include('admin.leads.edit')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_import_leads" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="import_leads">
+
+            @include('admin.leads.import')
 
         </div>
         <!--end::Modal dialog-->
@@ -134,6 +172,9 @@
     @endpush
 
     @push('datatable-js')
+        <script>
+            let lead_type = '{{request('type')}}';
+        </script>
         <script src="{{asset('assets/js/pages/leads/leads.js')}}"></script>
     @endpush
 

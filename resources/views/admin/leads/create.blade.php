@@ -44,14 +44,14 @@
 
                         <div class="fv-row col-md-12 mt-10">
                             <label class="custom_checkbox">
-                                <input id="new_patient" onclick="newPatient();" type="checkbox">
+                                <input class="new_patient" onclick="newPatient();" type="checkbox">
                                 <strong></strong>
                                <span class="ml-5"> New Patient ?</span>
                             </label>
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">
-                            <h2 id="msg_new_patient" class="text-center text text-danger" style="display: none;">You are going to create new patient</h2>
+                            <h2 class="text-center text text-danger msg_new_patient " style="display: none;">You are going to create new patient</h2>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">

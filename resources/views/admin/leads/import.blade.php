@@ -1,65 +1,84 @@
-@extends('layouts.app')
-
-@section('title')
-    <!-- BEGIN PAGE TITLE-->
-    <h1 class="page-title">@lang('global.leads.title')</h1>
-    <!-- END PAGE TITLE-->
-@endsection
-
-@section('content')
-    <div class="portlet light bordered">
-        <div class="portlet-title">
-            <div class="caption font-green-sharp">
-                <i class="icon-plus font-green-sharp"></i>
-                <span class="caption-subject bold uppercase"> @lang('global.leads.import')</span>
-            </div>
-            <div class="actions">
-                <a href="{{ route('admin.leads.index') }}" class="btn dark pull-right">@lang('global.app_back')</a>
-            </div>
+<!--begin::Modal content-->
+<div class="modal-content">
+    <!--begin::Modal header-->
+    <div class="modal-header" id="kt_modal_password_header">
+        <!--begin::Modal title-->
+        <h2 class="fw-bolder">Import Lead</h2>
+        <!--end::Modal title-->
+        <!--begin::Close-->
+        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
+            <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
+            <span class="svg-icon svg-icon-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
+                    <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
+                </svg>
+            </span>
+            <!--end::Svg Icon-->
         </div>
-        <div class="portlet-body form">
-            <div class="form-group">
-                {!! Form::open(['method' => 'POST', 'enctype' => 'multipart/form-data', 'id' => 'form-validation', 'route' => ['admin.leads.upload']]) !!}
-                    <div class="form-body">
-                        <!-- Starts Form Validation Messages -->
-                        @include('partials.messages')
-                        <!-- Ends Form Validation Messages -->
+        <!--end::Close-->
+    </div>
+    <!--end::Modal header-->
+    <!--begin::Modal body-->
+    <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+        <!--begin::Form-->
+        <form id="modal_import_leads_form" method="post" action="{{route('admin.leads.upload')}}" enctype="multipart/form-data">
+            <!--begin::Scroll-->
+            @csrf
 
-                        <div class="form-group">
-                            {!! Form::label('leads_file', 'File*', ['class' => 'control-label']) !!}
-                            {!! Form::file('leads_file', old('leads_file'), ['class' => 'form-control', 'placeholder' => '', 'required' => '']) !!}
-                            <p class="help-block">To download sample file <a href="{{ url('SampleLeads.xlsx') }}" target="_blank">click here</a> .</p>
-                            @if($errors->has('leads_file'))
-                                <p class="help-block">
-                                    {{ $errors->first('leads_file') }}
-                                </p>
-                            @endif
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+
+                <div class="form-group">
+                    <div class="row">
+
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">File <span class="text text-danger">*</span></label>
+                            <input type="file" id="file" name="leads_file" class="form-control">
+                            <p class="help-block">To download sample file <a href="{{ asset('assets/files/SampleLeads.xlsx') }}" target="_blank">click here</a> .</p>
+
                         </div>
-                        <div class="form-group">
+
+
+                        <div class="fv-row col-md-12 mt-5">
                             <div class="mt-checkbox-inline">
-                                <label class="mt-checkbox mt-checkbox-outline"> Update existing records
+
+
+                                <label class="custom_checkbox mt-5">
                                     <input type="checkbox" value="1" id="update_records" name="update_records">
-                                    <span></span>
+                                    <strong></strong>
+                                    <span class="ml-5">Update existing records</span>
                                 </label>
-                                <label class="mt-checkbox mt-checkbox-outline mt-checkbox-disabled"> Skip Lead Statuses
+
+                                <label class="custom_checkbox mt-5">
                                     <input type="checkbox" disabled value="1" id="skip_lead_statuses" name="skip_lead_statuses">
-                                    <span></span>
+                                    <strong></strong>
+                                    <span class="ml-5">Skip Lead Statuses</span>
                                 </label>
+
+
                             </div>
                         </div>
-                    </div>
-                    <div class="form-actions">
-                        {!! Form::submit('Upload', ['class' => 'btn btn-success']) !!}
-                    </div>
-                {!! Form::close() !!}
-            </div>
-        </div>
-    </div>
-@stop
 
-@section('javascript')
-    <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url('js/admin/leads/import.js') }}" type="text/javascript"></script>
-@endsection
+                    </div>
+                </div>
+
+            </div>
+            <!--end::Scroll-->
+            <!--begin::Actions-->
+            <hr>
+            <div class="text-center">
+                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <button type="button" onclick="importLead();" class="btn btn-primary spinner-button">
+                    <span class="indicator-label">Submit</span>
+                </button>
+            </div>
+            <!--end::Actions-->
+        </form>
+        <!--end::Form-->
+    </div>
+    <!--end::Modal body-->
+</div>
+<!--end::Modal content-->
+
+
 
