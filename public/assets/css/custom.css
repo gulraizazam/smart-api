@@ -417,3 +417,39 @@ div > input {
 .mt-comment-info, .mt-comment-text {
     margin-left: 50px;
 }
+.export_leads {
+
+    box-shadow: 5px 5px rgb(102 102 102 / 10%);
+    left: 0;
+    min-width: 175px;
+    position: absolute;
+    z-index: 1000;
+    display: none;
+    float: left;
+    list-style: none;
+    text-shadow: none;
+
+    background-color: #fff;
+    margin: 10px 0 0;
+    border: 1px solid #eee;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    padding: 10px 0px 0px 5px;
+    font-size: 14px;
+    border: 1px solid lightgray;
+}
+.export_leads>li>a {
+    padding: 8px 16px;
+    color: #6f6f6f;
+    text-decoration: none;
+    display: block;
+    clear: both;
+    font-weight: 300;
+    line-height: 18px;
+    white-space: nowrap;
+}
+.export_leads>li>a:hover {
+    text-decoration: none;
+    color: #262626;
+    background-color: #e1e5ec;
+}
+

@@ -6,8 +6,9 @@
     "license": "MIT",
     "require": {
         "php": "^7.3|^8.0",
-        "barryvdh/laravel-dompdf": "^0.9.0",
+        "barryvdh/laravel-dompdf": "^1.0",
         "doctrine/dbal": "^3.2",
+        "elasticsearch/elasticsearch": "^7.0",
         "fideloper/proxy": "^4.4.1",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
@@ -18,7 +19,6 @@
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.4",
         "laravelcollective/html": "^6.2",
-        "elasticsearch/elasticsearch": "^7.0",
         "maatwebsite/excel": "^3.1",
         "rap2hpoutre/laravel-log-viewer": "^2.0",
         "spatie/laravel-backup": "^7.7",

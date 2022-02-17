@@ -138,6 +138,17 @@
                                 </li>
                             @endcan
 
+                                @can('leads_manage')
+                                    <li class="menu-item {{activeMenu('admin.leads.index')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.leads.index', ['type' => 'junk'])}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Junk Leads</span>
+                                        </a>
+                                    </li>
+                                @endcan
+
 
                             </ul>
                         </div>
@@ -179,48 +190,48 @@
                         Gate::allows('pabao_records_manage') ||
                         Gate::allows('machineType_manage') ||
                         Gate::allows('towns_manage')
-                    
+
                     )
 
                     <li class="menu-item menu-item-submenu {{openMenu([
-                        'admin.settings.index', 
-                        'admin.user_operator_settings.index', 
-                        'admin.payment_modes.index', 
-                        'admin.payment_modes.sort', 
-                        'admin.regions.index', 
+                        'admin.settings.index',
+                        'admin.user_operator_settings.index',
+                        'admin.payment_modes.index',
+                        'admin.payment_modes.sort',
+                        'admin.regions.index',
                         'admin.regions.sort',
-                        'admin.cities.index', 
-                        'admin.cities.sort', 
-                        'admin.lead_sources.index', 
-                        'admin.lead_sources.sort', 
-                        'admin.towns.index', 
-                        'admin.lead_statuses.index', 
-                        'admin.lead_statuses.sort', 
+                        'admin.cities.index',
+                        'admin.cities.sort',
+                        'admin.lead_sources.index',
+                        'admin.lead_sources.sort',
+                        'admin.towns.index',
+                        'admin.lead_statuses.index',
+                        'admin.lead_statuses.sort',
                         'admin.appointment_statuses.index',
                         'admin.locations.index',
-                        'admin.services.index', 
-                        'admin.machine_types.index', 
-                        'admin.resources.index', 
-                        'admin.logs.index', 
-                        'admin.refunds.index', 
-                        'admin.sms_templates.index', 
-                        'admin.discounts.index', 
-                        'admin.centre_targets.index', 
-                        'admin.doctors.index', 
-                        'admin.bundles.index', 
+                        'admin.services.index',
+                        'admin.machine_types.index',
+                        'admin.resources.index',
+                        'admin.logs.index',
+                        'admin.refunds.index',
+                        'admin.sms_templates.index',
+                        'admin.discounts.index',
+                        'admin.centre_targets.index',
+                        'admin.doctors.index',
+                        'admin.bundles.index',
                         'admin.packagesadvances.index',
                         'admin.resourcerotas.index',
                         'admin.resourcerotas.calender-view',
                         'admin.invoices.index',
-                        'admin.packages.index', 
+                        'admin.packages.index',
                         'admin.packages.log',
-                        'admin.nonplansrefunds.index', 
-                        'admin.custom_form_feedbacks.index', 
-                        'admin.custom_form_feedbacks.edit', 
-                        'admin.custom_form_feedbacks.filled_preview', 
-                        'admin.custom_forms.index', 
-                        'admin.custom_forms.edit', 
-                        'admin.custom_form_feedbacks.preview_form', 
+                        'admin.nonplansrefunds.index',
+                        'admin.custom_form_feedbacks.index',
+                        'admin.custom_form_feedbacks.edit',
+                        'admin.custom_form_feedbacks.filled_preview',
+                        'admin.custom_forms.index',
+                        'admin.custom_forms.edit',
+                        'admin.custom_form_feedbacks.preview_form',
                         'admin.custom_form_feedbacks.fill_form',
                         ])}}" aria-haspopup="true" data-menu-toggle="hover">
 

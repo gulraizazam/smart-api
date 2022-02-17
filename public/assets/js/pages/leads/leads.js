@@ -1,4 +1,7 @@
 var table_url = route('admin.leads.datatable');
+if (typeof lead_type !== 'undefined' && lead_type != '') {
+    table_url = route('admin.leads.datatable', {type: lead_type});
+}
 
 var table_columns = [{
     field: 'id',
@@ -215,7 +218,7 @@ function actions(data) {
 
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, '+id+');" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
                     </a>\
@@ -252,7 +255,8 @@ function actions(data) {
 
 function createLead(url) {
 
-    $('#msg_new_patient').hide();
+    $('.msg_new_patient').hide();
+    $('.new_patient').prop("checked", false);
 
     $.ajax({
         headers: {
@@ -568,10 +572,12 @@ function commentData(user_name, created_at, comment) {
     return comment_html;
 }
 
-function editRow(url) {
+function editRow(url, id) {
 
+    $('.new_patient').prop("checked", false);
+    $('.msg_new_patient').hide();
     $("#modal_edit_leads").modal("show");
-    $(".").attr("action", route('admin.leads.update'));
+    $("#modal_edit_leads_form").attr("action", route('admin.leads.update', {id: id}));
 
     $.ajax({
         headers: {
@@ -820,13 +826,13 @@ function hideShowAdvanceFilters(active_filters) {
 
 function newPatient() {
 
-    $('#new_patient').change(function () {
+    $('.new_patient').change(function () {
         if ($(this).is(":checked")) {
-            $('#new_patient').val('1');
-            $('#msg_new_patient').show();
+            $('.new_patient').val('1');
+            $('.msg_new_patient').show();
         } else {
-            $('#new_patient').val('0');
-            $('#msg_new_patient').hide();
+            $('.new_patient').val('0');
+            $('.msg_new_patient').hide();
         }
     });
 }
@@ -1035,3 +1041,17 @@ let loadDoctors = function (locationId) {
 
 }
 
+ function importLead() {
+
+     let form_id = 'modal_import_leads_form';
+     let form = document.getElementById(form_id);
+
+     submitFileForm($(form).attr('action'), $(form).attr('method'), form_id, function (response) {
+         if (response.status) {
+             toastr.success(response.message);
+             //closePopup(modal_id);
+         } else {
+             toastr.error(response.message);
+         }
+     });
+}

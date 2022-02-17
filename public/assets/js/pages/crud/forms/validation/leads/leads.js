@@ -153,7 +153,7 @@ var AddValidation = function () {
     };
 }();
 
-var Editalidation = function () {
+var EditValidation = function () {
     // Private functions
     var AddValidation = function () {
         let modal_id = 'modal_edit_leads_form';
