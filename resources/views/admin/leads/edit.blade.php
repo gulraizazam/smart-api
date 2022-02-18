@@ -26,22 +26,28 @@
             <!--begin::Scroll-->
             @method('put')
 
+            <input type="hidden" class="form_type" value="edit_">
+
+            <input type="hidden" name="patient_id" id="edit_patient_id" value="">
+            <input type="hidden" name="id" id="edit_lead_id" value="">
+            <input type="hidden" name="old_phone" id="edit_old_phone" value="">
+
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
-                            <select id="edit_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
-                            </select>
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
+                            {{--<input oninput="phoneField(this);" type="text" id="edit_phone" name="phone" class="form-control">--}}
+
+                            <input type="text" oninput="phoneField(this);" id="edit_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
+                            <div class="suggesstion-box">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
-                            <select disabled readonly id="edit_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="patient_id">
-                            </select>
-                        </div>
 
                         <div class="fv-row col-md-12 mt-10">
                             <label class="custom_checkbox">
@@ -56,33 +62,14 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
-                           <input oninput="phoneField(this);" type="text" id="edit_phone" name="phone" class="form-control">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
+                            <select id="edit_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                            </select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Full Name <span class="text text-danger">*</span></label>
                             <input type="text" id="edit_full_name" name="name" class="form-control">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">CNIC </label>
-                            <input type="text" id="edit_cnic" name="cnic" class="form-control cnic-mask">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Email </label>
-                            <input type="text" id="edit_email" name="email" class="form-control">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Date of Birth </label>
-                            <input type="text" id="edit_dob" name="dob" class="form-control custom-datepicker">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Address </label>
-                            <input type="text" id="edit_address" name="address" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
@@ -94,12 +81,6 @@
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">City</label>
                             <select id="edit_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Town</label>
-                            <select id="edit_town_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="town_id">
                             </select>
                         </div>
 

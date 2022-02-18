@@ -290,7 +290,7 @@ function setLeadData(response) {
         let leadServices = response.data.leadServices;
         let lead_sources = response.data.lead_sources;
         let lead_statuses = response.data.lead_statuses;
-        let towns = response.data.towns;
+        let lead = response.data.lead;
 
         let service_options = '<option value="">Select Service</option>';
         let city_options = '<option value="">Select a City</option>';
@@ -336,19 +336,13 @@ function setLeadData(response) {
             });
         }
 
-        if (towns) {
-            Object.entries(towns).forEach(function (town) {
-                town_options += '<option value="' + town[0] + '">' + town[1] + '</option>';
-            });
-        }
-
         $("#add_service_id").html(service_options);
         $("#add_city_id").html(city_options);
         $("#add_referred_by_id").html(employee_options);
         $("#add_gender_id").html(gender_options);
         $("#add_lead_source_id").html(lead_sources_options);
         $("#add_lead_status_id").html(lead_statuses_options);
-        $("#add_town_id").html(town_options);
+
 
     } catch (error) {
         showException(error);
@@ -608,7 +602,6 @@ function setEditData(response) {
         let gender = response.data.gender;
         let lead_sources = response.data.lead_sources;
         let lead_statuses = response.data.lead_statuses;
-        let towns = response.data.towns;
         let lead = response.data.lead;
 
         let service_options = '<option value="">Select Service</option>';
@@ -617,7 +610,6 @@ function setEditData(response) {
         let gender_options = '<option value="">Select a Gender</option>';
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
         let lead_statuses_options = '<option value="">Select a Lead Status</option>';
-        let town_options = '<option value="">Select a Town</option>';
 
         if (Services) {
             Object.entries(Services).forEach(function(service) {
@@ -655,19 +647,12 @@ function setEditData(response) {
             });
         }
 
-        if (towns) {
-            Object.entries(towns).forEach(function (town) {
-                town_options += '<option value="' + town[0] + '">' + town[1] + '</option>';
-            });
-        }
-
         $("#edit_service_id").html(service_options);
         $("#edit_city_id").html(city_options);
         $("#edit_referred_by_id").html(employee_options);
         $("#edit_gender_id").html(gender_options);
         $("#edit_lead_source_id").html(lead_sources_options);
         $("#edit_lead_status_id").html(lead_statuses_options);
-        $("#edit_town_id").html(town_options);
 
         $("#edit_service_id").val(lead.service_id);
         $("#edit_city_id").val(lead.city_id);
@@ -675,13 +660,11 @@ function setEditData(response) {
         $("#edit_gender_id").val(lead.patient.gender);
         $("#edit_lead_source_id").val(lead.lead_source_id);
         $("#edit_lead_status_id").val(lead.lead_status_id);
-        $("#edit_town_id").val(lead.town_id);
         $("#edit_phone").val(lead.patient.phone);
         $("#edit_full_name").val(lead.patient.name);
-        $("#edit_cnic").val(lead.patient.cnic);
-        $("#edit_email").val(lead.patient.email);
-        $("#edit_dob").val(lead.patient.dob);
-        $("#edit_address").val(lead.patient.address);
+
+        $("#edit_patient_id").val(lead.patient.id);
+        $("#edit_lead_id").val(lead.id);
 
     } catch (error) {
         showException(error);

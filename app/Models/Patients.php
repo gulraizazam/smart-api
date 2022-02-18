@@ -1,7 +1,7 @@
 <?php
-	
+
 	namespace App\Models;
-	
+
 	use App\Helpers\Filters;
 	use App\Helpers\GeneralFunctions;
 	use Illuminate\Database\Eloquent\Model;
@@ -11,22 +11,22 @@
 	use PHPUnit\Util\Filter;
 	use Config;
 	use DB;
-	
-	
+
+
 	class Patients extends BaseModal
 	{
 		use SoftDeletes;
-		
+
 		protected $fillable = ['name', 'email', 'password', 'remember_token', 'phone', 'main_account', 'gender', 'cnic', 'dob', 'address', 'referred_by', 'active', 'user_type_id', 'resource_type_id', 'account_id'];
-		
+
 		protected static $_fillable = ['name', 'email', 'phone', 'main_account', 'gender', 'cnic', 'dob', 'address', 'referred_by', 'user_type_id'];
-		
+
 		static protected $USER_TYPE = 3;
-		
+
 		protected $table = 'users';
-		
+
 		protected static $_table = 'users';
-		
+
 		/**
 		 * Get the Leads for Patient.
 		 */
@@ -54,9 +54,9 @@
 		static public function getPatientAjax($name, $account_id)
 		{
 			$name=GeneralFunctions::patientSearch($name);
-			
+
 			$phone_numeric = GeneralFunctions::clearnString($name);
-			
+
 			if (is_numeric($phone_numeric)) {
 				$phone = GeneralFunctions::cleanNumber($name);
 				return self::where([
@@ -74,7 +74,7 @@
 				])->select(DB::raw('CONCAT("C-",id) as phone'),'name', 'id')->get();
 			}
 		}
-		
+
 		/*
 		 * Ajax base result of patient according to id or name
 		 * */
@@ -96,7 +96,26 @@
 				])->select('name', 'id', 'phone')->get();
 			}
 		}
-		
+
+		static public function getPatientPhoneAjax($phone, $account_id)
+		{
+			if (is_numeric($phone)) {
+				return self::where([
+					['user_type_id', '=', '3'],
+					['active', '=', '1'],
+					['account_id', '=', $account_id],
+					['phone', 'LIKE', "%{$phone}%"]
+				])->select('name', 'id', 'phone')->get();
+			} else {
+				return self::where([
+					['user_type_id', '=', '3'],
+					['active', '=', '1'],
+					['account_id', '=', $account_id],
+					['phone', 'LIKE', "%{$phone}%"]
+				])->select('name', 'id', 'phone')->get();
+			}
+		}
+
 		/**
 		 * Get the User that owns the Patient.
 		 */
@@ -104,14 +123,14 @@
 		{
 			return $this->belongsTo('App\User', 'created_by');
 		}
-		
+
 		/**
 		 * Get the User that owns the Patient.
 		 */
 		static public function getByPhone($phone, $account_id = false, $patient_id = false)
 		{
 			$where = array();
-			
+
 			$where[] = array(
 				'phone',
 				'=',
@@ -132,10 +151,10 @@
 //        if ($account_id) {
 //            $where[] = array('account_id' => $account_id);
 //        }
-			
+
 			return self::where($where)->first();
 		}
-		
+
 		/**
 		 * Create Record
 		 *
@@ -159,7 +178,7 @@
 			return $record;
 		}
 		}
-		
+
 		/**
 		 * update Record
 		 *
@@ -171,7 +190,7 @@
 		{
 			if ($appointmentData) {
 				if ($appointmentData['patient_id'] != 0) {
-					
+
 					$old_data = (Patients::find($appointmentData['patient_id']))->toArray();
 				}
 				if(isset($appointmentData['patient_id_1'])){
@@ -205,7 +224,7 @@
 				return $record;
 			}
 		}
-		
+
 		/**
 		 * Get active and sorted data only.
 		 */
@@ -220,7 +239,7 @@
 			}
 			return $query->OrderBy('name', 'asc')->get();
 		}
-		
+
 		/**
 		 * Get Total Records
 		 *
@@ -231,16 +250,16 @@
 		 */
 		static public function getTotalRecords(Request $request, $account_id = false, $apply_filter, $filename)
 		{
-			
+
 			$where = self::filters_patients($request, $account_id, $apply_filter, $filename);
-			
+
 			if (count($where)) {
 				return self::where($where)->count();
 			} else {
 				return self::count();
 			}
 		}
-		
+
 		/**
 		 * Get Records
 		 *
@@ -253,25 +272,25 @@
 		 */
 		static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter, $filename)
 		{
-			
+
 			$where = self::filters_patients($request, $account_id, $apply_filter, $filename);
-			
+
 			$orderBy = 'created_at';
 			$order = 'desc';
-			
+
 			if ($request->get('order')[0]['dir']) {
 				$orderColumn = $request->get('order')[0]['column'];
 				$orderBy = $request->get('columns')[$orderColumn]['data'];
 				$order = $request->get('order')[0]['dir'];
 			}
-			
+
 			if (count($where)) {
 				return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 			} else {
 				return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 			}
 		}
-		
+
 		/**
 		 * Delete Record
 		 *
@@ -281,31 +300,31 @@
 		 */
 		static public function DeleteRecord($id)
 		{
-			
+
 			$patient = self::getData($id);
-			
+
 			if (!$patient) {
 				flash('Resource not found.')->error()->important();
 				return redirect()->route('admin.patients.index');
 			}
-			
+
 			// Check if child records exists or not, If exist then disallow to delete it.
 			if (self::isChildExists($id, Auth::User()->account_id)) {
 				flash('Lead or Appointment exists, unable to delete resource')->error()->important();
 				return redirect()->route('admin.patients.index');
 			}
-			
+
 			$record = $patient->delete();
-			
+
 			//log request for delete for audit trail
-			
+
 			AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-			
+
 			flash('Record has been deleted successfully.')->success()->important();
-			
+
 			return $record;
 		}
-		
+
 		/**
 		 * inactive Record
 		 *
@@ -316,21 +335,21 @@
 		static public function InactiveRecord($id)
 		{
 			$patient = self::getData($id);
-			
+
 			if (!$patient) {
 				flash('Resource not found.')->error()->important();
 				return redirect()->route('admin.patients.index');
 			}
-			
+
 			$record = $patient->update(['active' => 0]);
-			
+
 			flash('Record has been inactivated successfully.')->success()->important();
-			
+
 			AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-			
+
 			return $record;
 		}
-		
+
 		/**
 		 * active Record
 		 *
@@ -340,24 +359,24 @@
 		 */
 		static public function activeRecord($id)
 		{
-			
+
 			$patient = self::getData($id);
-			
+
 			if (!$patient) {
 				flash('Resource not found.')->error()->important();
 				return redirect()->route('admin.patients.index');
 			}
-			
+
 			$record = $patient->update(['active' => 1]);
-			
+
 			flash('Record has been activated successfully.')->success()->important();
-			
+
 			AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-			
+
 			return $record;
-			
+
 		}
-		
+
 		/**
 		 * Check if child records exist
 		 *
@@ -382,17 +401,17 @@
 			}
 			return false;
 		}
-		
+
 		static public function filters_patients($request, $account_id, $apply_filter, $filename)
 		{
 			$where = array();
-			
+
 			$where[] = array(
 				'user_type_id',
 				'=',
 				self::$USER_TYPE
 			);
-			
+
 			if ($account_id) {
 				$where[] = array(
 					'account_id',
@@ -413,7 +432,7 @@
 					}
 				}
 			}
-			
+
 			if ($request->get('id') && $request->get('id') != '') {
 				$where[] = array(
 					'id',
@@ -434,7 +453,7 @@
 					}
 				}
 			}
-			
+
 			if ($request->get('name') && $request->get('name') != '') {
 				$where[] = array(
 					'name',
@@ -455,7 +474,7 @@
 					}
 				}
 			}
-			
+
 			if ($request->get('email') && $request->get('email') != '') {
 				$where[] = array(
 					'email',
@@ -476,7 +495,7 @@
 					}
 				}
 			}
-			
+
 			if ($request->get('gender') && $request->get('gender') != '') {
 				$where[] = array(
 					'gender',
@@ -497,7 +516,7 @@
 					}
 				}
 			}
-			
+
 			if ($request->get('phone') && $request->get('phone') != '') {
 				$where[] = array(
 					'phone',
@@ -520,7 +539,7 @@
 					}
 				}
 			}
-			
+
 			if ($request->get('created_from') && $request->get('created_from') != '') {
 				$where[] = array(
 					'created_at',
@@ -541,7 +560,7 @@
 					}
 				}
 			}
-			
+
 			if ($request->get('created_to') != '') {
 				$where[] = array(
 					'created_at',
@@ -562,7 +581,7 @@
 					}
 				}
 			}
-			
+
 			if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
 				$where[] = array(
 					'active',
@@ -585,9 +604,9 @@
 					}
 				}
 			}
-			
+
 			return $where;
 		}
-		
-		
+
+
 	}

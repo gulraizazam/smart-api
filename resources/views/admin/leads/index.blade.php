@@ -136,7 +136,7 @@
 
     <div class="modal fade" id="modal_add_leads" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="leads_add">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="leads_add">
 
             @include('admin.leads.create')
 
@@ -146,7 +146,7 @@
 
     <div class="modal fade" id="modal_edit_leads" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="edit_leads">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="edit_leads">
 
             @include('admin.leads.edit')
 
@@ -169,6 +169,7 @@
         <script src="{{asset('assets/js/jquery.copy-to-clipboard.js')}}"></script>
 
         <script src="{{asset('assets/js/pages/crud/forms/validation/leads/leads.js')}}"></script>
+        <script src="{{asset('assets/js/search-phone.js')}}"></script>
     @endpush
 
     @push('datatable-js')

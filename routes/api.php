@@ -257,6 +257,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     //Invoice Management route end
 
     Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
+    Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
 
     /*packages*/
     Route::post('plans/planDatatable/{id}', [PackagesController::class, 'planDatatable'])->name('packages.planDatatable');

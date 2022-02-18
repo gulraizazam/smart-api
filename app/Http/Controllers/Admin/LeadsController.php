@@ -554,7 +554,7 @@ class LeadsController extends Controller
 
         $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
 
-        $towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
+       // $towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
 
         $lead_sources = LeadSources::getActiveSorted();
 
@@ -601,7 +601,7 @@ class LeadsController extends Controller
             'leadServices' => $leadServices,
             'employees' => $employees,
             'edit_status' => $edit_status,
-            'towns' => $towns,
+            //'towns' => $towns,
             'gender' => config('constants.gender_array')
         ]);
     }
@@ -928,7 +928,7 @@ class LeadsController extends Controller
 
         $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
 
-        $towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
+        //$towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
 
         $lead_sources = LeadSources::getActiveSorted();
 
@@ -959,7 +959,7 @@ class LeadsController extends Controller
             'lead_statuses' => $lead_statuses,
             'employees' => $employees,
             'edit_status' => $edit_status,
-            'towns' => $towns,
+            //'towns' => $towns,
             'gender' => config('constants.gender_array')
         ]);
     }
@@ -2694,10 +2694,7 @@ class LeadsController extends Controller
 
     public function exportDocs() {
 
-        $ex = 'xlsx';
-        if (request('type')) {
-            $ex = 'csv';
-        }
+        $ex = request('type') ? 'csv' : 'xlsx';
 
         return Excel::download(new ExportLead, 'leads.'.$ex);
     }
