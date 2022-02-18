@@ -844,6 +844,15 @@ class UsersController extends Controller
         ]);
     }
 
+    public function phoneSearch(Request $request)
+    {
+        $patients = Patients::getPatientPhoneAjax($request->search, Auth::User()->account_id);
+
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'patients' => $patients
+        ]);
+    }
+
     /*
     * Function get the variable to search in database to get the patient
     *

@@ -20,27 +20,38 @@
     </div>
     <!--end::Modal header-->
     <!--begin::Modal body-->
-    <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+    <div class="modal-body scroll-y ">
         <!--begin::Form-->
         <form id="modal_add_leads_form" method="post" action="{{route('admin.leads.store')}}">
-            <!--begin::Scroll-->
+
+
+            <input type="hidden" class="form_type" value="add_">
+
+            <input type="hidden" name="patient_id" id="add_patient_id" value="">
+            <input type="hidden" name="id" id="add_lead_id" value="">
+            <input type="hidden" name="old_phone" id="add_old_phone" value="">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
-                            <select id="add_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
-                            </select>
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
+
+                            <input type="text" oninput="phoneField(this);" id="add_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
+                            <div class="suggesstion-box">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
+
+                        {{--<div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
                             <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="patient_id">
                             </select>
-                        </div>
+                        </div>--}}
 
                         <div class="fv-row col-md-12 mt-10">
                             <label class="custom_checkbox">
@@ -49,39 +60,19 @@
                                <span class="ml-5"> New Patient ?</span>
                             </label>
                         </div>
-
                         <div class="fv-row col-md-12 mt-5">
                             <h2 class="text-center text text-danger msg_new_patient " style="display: none;">You are going to create new patient</h2>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
-                           <input oninput="phoneField(this);" type="text" id="add_phone" name="phone" class="form-control">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
+                            <select id="add_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                            </select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Full Name <span class="text text-danger">*</span></label>
                             <input type="text" id="add_full_name" name="name" class="form-control">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">CNIC </label>
-                            <input type="text" id="add_cnic" name="cnic" class="form-control cnic-mask">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Email </label>
-                            <input type="text" id="add_email" name="email" class="form-control">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Date of Birth </label>
-                            <input type="text" id="add_dob" name="dob" class="form-control custom-datepicker">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Address </label>
-                            <input type="text" id="add_address" name="address" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
@@ -96,11 +87,6 @@
                             </select>
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Town</label>
-                            <select id="add_town_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="town_id">
-                            </select>
-                        </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>
