@@ -275,19 +275,12 @@
 
 			$where = self::filters_patients($request, $account_id, $apply_filter, $filename);
 
-			$orderBy = 'created_at';
-			$order = 'desc';
-
-			if ($request->get('order')[0]['dir']) {
-				$orderColumn = $request->get('order')[0]['column'];
-				$orderBy = $request->get('columns')[$orderColumn]['data'];
-				$order = $request->get('order')[0]['dir'];
-			}
+            list($orderBy, $order) = getSortBy($request);
 
 			if (count($where)) {
-				return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+				return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
 			} else {
-				return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+				return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
 			}
 		}
 
@@ -304,25 +297,30 @@
 			$patient = self::getData($id);
 
 			if (!$patient) {
-				flash('Resource not found.')->error()->important();
-				return redirect()->route('admin.patients.index');
+				return [
+				  'status' => false,
+				  'message' => 'Resource not found.',
+                ];
 			}
 
 			// Check if child records exists or not, If exist then disallow to delete it.
 			if (self::isChildExists($id, Auth::User()->account_id)) {
-				flash('Lead or Appointment exists, unable to delete resource')->error()->important();
-				return redirect()->route('admin.patients.index');
+                return [
+                    'status' => false,
+                    'message' => 'Lead or Appointment exists, unable to delete resource',
+                ];
 			}
 
-			$record = $patient->delete();
+			$patient->delete();
 
 			//log request for delete for audit trail
 
 			AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-			flash('Record has been deleted successfully.')->success()->important();
-
-			return $record;
+            return [
+                'status' => true,
+                'message' => 'Record has been deleted successfully.',
+            ];
 		}
 
 		/**
@@ -337,17 +335,20 @@
 			$patient = self::getData($id);
 
 			if (!$patient) {
-				flash('Resource not found.')->error()->important();
-				return redirect()->route('admin.patients.index');
+				return [
+				    'status' => false,
+				    'message' => 'Resource not found.',
+                ];
 			}
 
-			$record = $patient->update(['active' => 0]);
-
-			flash('Record has been inactivated successfully.')->success()->important();
+			$patient->update(['active' => 0]);
 
 			AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
 
-			return $record;
+            return [
+                'status' => true,
+                'message' => 'Record has been inactivated successfully.',
+            ];
 		}
 
 		/**
@@ -363,17 +364,20 @@
 			$patient = self::getData($id);
 
 			if (!$patient) {
-				flash('Resource not found.')->error()->important();
-				return redirect()->route('admin.patients.index');
+				return [
+				    'status' => false,
+				    'message' => 'Resource not found.',
+                ];
 			}
 
-			$record = $patient->update(['active' => 1]);
-
-			flash('Record has been activated successfully.')->success()->important();
+			$patient->update(['active' => 1]);
 
 			AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 
-			return $record;
+            return [
+                'status' => true,
+                'message' => 'Record has been activated successfully.',
+            ];
 
 		}
 
@@ -404,9 +408,11 @@
 
 		static public function filters_patients($request, $account_id, $apply_filter, $filename)
 		{
-			$where = array();
 
-			$where[] = array(
+            $where = array();
+            $filters = getFilters($request->all());
+
+            $where[] = array(
 				'user_type_id',
 				'=',
 				self::$USER_TYPE
@@ -433,34 +439,34 @@
 				}
 			}
 
-			if ($request->get('id') && $request->get('id') != '') {
+			if (hasFilter($filters, 'patient_id')) {
 				$where[] = array(
 					'id',
 					'like',
-					'%' . GeneralFunctions::patientSearch($request->get('id')) . '%'
+					'%' . GeneralFunctions::patientSearch($filters['patient_id']) . '%'
 				);
-				Filters::put(Auth::user()->id, $filename, 'id', $request->get('id'));
+				Filters::put(Auth::user()->id, $filename, 'patient_id', $filters['patient_id']);
 			} else {
 				if ($apply_filter) {
-					Filters::forget(Auth::user()->id, $filename, 'id');
+					Filters::forget(Auth::user()->id, $filename, 'patient_id');
 				} else {
-					if (Filters::get(Auth::user()->id, $filename, 'id')) {
+					if (Filters::get(Auth::user()->id, $filename, 'patient_id')) {
 						$where[] = array(
 							'id',
 							'like',
-							'%' . Filters::get(Auth::user()->id, $filename, 'id') . '%'
+							'%' . Filters::get(Auth::user()->id, $filename, 'patient_id') . '%'
 						);
 					}
 				}
 			}
 
-			if ($request->get('name') && $request->get('name') != '') {
+            if (hasFilter($filters, 'name')) {
 				$where[] = array(
 					'name',
 					'like',
-					'%' . $request->get('name') . '%'
+					'%' . $filters['name'] . '%'
 				);
-				Filters::put(Auth::user()->id, $filename, 'name', $request->get('name'));
+				Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::user()->id, $filename, 'name');
@@ -475,13 +481,13 @@
 				}
 			}
 
-			if ($request->get('email') && $request->get('email') != '') {
+            if (hasFilter($filters, 'email')) {
 				$where[] = array(
 					'email',
 					'like',
-					'%' . $request->get('email') . '%'
+					'%' . $filters['email'] . '%'
 				);
-				Filters::put(Auth::user()->id, $filename, 'email', $request->get('email'));
+				Filters::put(Auth::user()->id, $filename, 'email', $filters['email']);
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::user()->id, $filename, 'email');
@@ -496,13 +502,13 @@
 				}
 			}
 
-			if ($request->get('gender') && $request->get('gender') != '') {
+            if (hasFilter($filters, 'gender')) {
 				$where[] = array(
 					'gender',
 					'like',
-					'%' . $request->get('gender') . '%'
+					'%' . $filters['gender'] . '%'
 				);
-				Filters::put(Auth::user()->id, $filename, 'gender', $request->get('gender'));
+				Filters::put(Auth::user()->id, $filename, 'gender', $filters['gender']);
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::user()->id, $filename, 'gender');
@@ -517,13 +523,13 @@
 				}
 			}
 
-			if ($request->get('phone') && $request->get('phone') != '') {
+            if (hasFilter($filters, 'phone')) {
 				$where[] = array(
 					'phone',
 					'like',
-					'%' . GeneralFunctions::cleanNumber($request->get('phone')) . '%'
+					'%' . GeneralFunctions::cleanNumber($filters['phone']) . '%'
 				);
-				Filters::put(Auth::user()->id, $filename, 'phone', $request->get('phone'));
+				Filters::put(Auth::user()->id, $filename, 'phone', $filters['phone']);
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::user()->id, $filename, 'phone');
@@ -540,13 +546,13 @@
 				}
 			}
 
-			if ($request->get('created_from') && $request->get('created_from') != '') {
+            if (hasFilter($filters, 'created_from')) {
 				$where[] = array(
 					'created_at',
 					'>=',
-					$request->get('created_from') . ' 00:00:00'
+                        $filters['created_from'] . ' 00:00:00'
 				);
-				Filters::put(Auth::User()->id, $filename, 'created_from', $request->get('created_from') . ' 00:00:00');
+				Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::User()->id, $filename, 'created_from');
@@ -561,13 +567,13 @@
 				}
 			}
 
-			if ($request->get('created_to') != '') {
+            if (hasFilter($filters, 'created_to')) {
 				$where[] = array(
 					'created_at',
 					'<=',
-					$request->get('created_to') . ' 23:59:59'
+                    $filters['created_to'] . ' 23:59:59'
 				);
-				Filters::put(Auth::User()->id, $filename, 'created_to', $request->get('created_to') . ' 23:59:59');
+				Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::User()->id, $filename, 'created_to');
@@ -582,13 +588,13 @@
 				}
 			}
 
-			if ( $request->get('status') && $request->get('status') != null || $request->get('status') == 0 && $request->get('status') != null ){
+            if (hasFilter($filters, 'status')) {
 				$where[] = array(
 					'active',
 					'=',
-					$request->get('status')
+                    $filters['status']
 				);
-				Filters::put(Auth::user()->id, $filename, 'status', $request->get('status'));
+				Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
 			} else {
 				if ( $apply_filter ){
 					Filters::forget( Auth::user()->id, $filename, 'status');

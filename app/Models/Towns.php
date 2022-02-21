@@ -247,26 +247,31 @@ class Towns extends BaseModal
 
         if (!$town) {
 
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.towns.index');
+            return [
+                'status' => false,
+                'message' => 'Resource not found.',
+            ];
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Towns::isChildExists($id, Auth::User()->account_id)) {
 
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.towns.index');
+            return [
+                'status' => false,
+                'message' => 'Child records exist, unable to delete resource',
+            ];
         }
 
-        $record = $town->delete();
+        $town->delete();
 
         //log request for delete for audit trail
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return [
+            'status' => true,
+            'message' => 'Record has been deleted successfully.',
+        ];
 
     }
     /**

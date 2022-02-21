@@ -274,7 +274,7 @@ class TownController extends Controller
      * Remove the specified resource from storage.
      *
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
@@ -282,9 +282,9 @@ class TownController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        Towns::DeleteRecord($id);
+        $response = Towns::DeleteRecord($id);
 
-        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+        return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
     }
 
     /**

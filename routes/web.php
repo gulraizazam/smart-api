@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\LeadsController;
+use App\Http\Controllers\Admin\PatientsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -272,6 +273,36 @@ use App\Http\Controllers\Admin\LeadsController;
         Route::put('leads_save_city', [LeadsController::class, 'saveCity'])->name('leads.save_city');
         Route::get('leads/export/pdf', [LeadsController::class, 'exportPdf'])->name('leads.export.pdf');
         Route::get('leads/export/excel', [LeadsController::class, 'exportDocs'])->name('leads.export.excel');
+
+        Route::get('patients/{id}/preview', [PatientsController::class, 'preview'])->name("patients.preview");
+
+        Route::get('patients/{id}/leads', [PatientsController::class, 'leads'])->name("patients.leads");
+
+        Route::post('patients/{id}/leads-datatable', [PatientsController::class, 'leadsDatatable'])->name('patients.leadsDatatable');
+
+        Route::get('patients/{id}/appointments', [PatientsController::class, 'appointments'])->name("patients.appointments");
+
+        Route::post('patients/{id}/appointments-datatable', [PatientsController::class, 'appointmentsDatatable'])->name('patients.appointmentsDatatable');
+
+        Route::get('patients/{id}/image', [PatientsController::class, 'imageindex'])->name("patients.imageurl");
+
+        Route::post('patients/image',[PatientsController::class, 'imagestore'])->name("patients.storeimage");
+
+        Route::get('patients/{id}/document', [PatientsController::class, 'documentindex'])->name("patients.document");
+
+        Route::get('patients/createdocument/{id}', [PatientsController::class, 'documentCreate'])->name("patients.createdocument");
+
+        Route::post('patients/storedocument', [PatientsController::class, 'documentstore'])->name("patients.storedocument");
+
+        Route::post('patients/documentdatatable/{id}', [PatientsController::class, 'documentdatatable'])->name('patients.documentdatatable');
+
+        Route::get('patients/edit/{id}', [PatientsController::class, 'documentedit'])->name('patients.documentedit');
+
+        Route::post('patients/updatedocuments/{id}', [PatientsController::class, 'documentupdate'])->name('patients.updatedocuments');
+
+        Route::post('patients/deletedocuments/{id}',[PatientsController::class, 'documentdelete'])->name('patients.documentsdestroy');
+
+        Route::resource('patients', PatientsController::class);
 
 
     });

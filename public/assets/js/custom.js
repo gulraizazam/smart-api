@@ -582,3 +582,25 @@ function phoneField($this) {
 function formatDate(date, format = 'ddd MMM, mm yyyy HH:mm A') {
     return moment(date).format(format);
 }
+
+function getGender(gender_id) {
+
+    try {
+
+        if (typeof filter_values.gender !== 'undefined' && typeof filter_values.gender !== 'undefined') {
+            return Object(filter_values.gender)[gender_id];
+        }
+
+        return gender_id == 1 ? 'Male' : 'Female';
+
+    } catch (e) {
+       return gender_id == 1 ? 'Male' : 'Female';
+    }
+
+
+}
+
+function makePatientId(id) {
+
+    return "C-" + id;
+}
