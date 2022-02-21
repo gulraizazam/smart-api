@@ -17,7 +17,7 @@ class BaseModal extends Model
      */
     static public function getData($id) {
 
-        return self::with('patient')->where([
+        return self::where([
             ['id','=',$id],
             ['account_id','=',Auth::user()->account_id]
         ])->first();

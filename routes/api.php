@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\CustomFormsController;
+use App\Http\Controllers\Admin\PatientsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -360,6 +361,13 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
     Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
     Route::resource('appointments', AppointmentsController::class);
+
+    // Patients routes start
+    Route::post('patients/datatable', [PatientsController::class, 'datatable'])->name('patients.datatable');
+
+    Route::post('patients/status', [PatientsController::class, 'status'])->name('patients.status');
+
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

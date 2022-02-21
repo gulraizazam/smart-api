@@ -111,11 +111,58 @@
                         </li>
                     @endif
 
+
+                    <!--Patient menu-->
+
+                    @if(Gate::allows('patients_manage'))
+
+                        <li class="menu-item menu-item-submenu {{openMenu(['admin.patients.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                            <span class="svg-icon menu-icon">
+                            <i class="fas fa-briefcase"></i>
+                            </span>
+                                <span class="menu-text">Patients</span>
+                                <i class="menu-arrow"></i>
+                            </a>
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    @can('patients_manage')
+                                        <li class="menu-item {{activeMenu('admin.patients.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.patients.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Patients</span>
+                                            </a>
+                                        </li>
+                                    @endcan
+
+                                    @can('leads_manage')
+                                        <li class="menu-item {{activeMenu('admin.leads.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.leads.index', ['type' => 'junk'])}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Junk Leads</span>
+                                            </a>
+                                        </li>
+                                    @endcan
+
+
+                                </ul>
+                            </div>
+
+                        </li>
+
+                    @endif
+
                     <!-- Leads menu -->
 
                     @if(Gate::allows('leads_manage'))
 
-                    <li class="menu-item menu-item-submenu {{openMenu(['admin.leads.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                        <li class="menu-item menu-item-submenu {{openMenu(['admin.leads.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
@@ -155,7 +202,7 @@
 
                     </li>
 
-                        @endif
+                    @endif
 
 
                     <!-- End leads menu -->
