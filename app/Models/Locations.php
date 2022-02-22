@@ -817,7 +817,6 @@ class Locations extends BaseModal
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-           // $file->move('centre_logo', $file->getClientOriginalName());
             $fileName = time().'-'.$file->getClientOriginalName();
             $file->storeAs('public/centre_logo', $fileName);
             $ext = $file->getClientOriginalExtension();

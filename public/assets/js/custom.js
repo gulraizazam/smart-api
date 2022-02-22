@@ -441,13 +441,15 @@ function spinner() {
     $(".spinner-button").addClass("spinner spinner-white spinner-center").prop('disabled', true);
 }
 
-function hideSpinnerRestForm(form = null) {
+function hideSpinnerRestForm(form = null, imageReset = false) {
     $(".spinner-button").removeClass("spinner spinner-white spinner-right mr-3").prop('disabled', false);
    if (form) {
        form.reset();
    }
-    $(".image-input-wrapper").css('background-image', "url()");
-    $(".image-input-wrapper").parent(".image-input").find("span").removeClass("btn-shadow");
+   if (!imageReset) {
+       $(".image-input-wrapper").css('background-image', "url()");
+       $(".image-input-wrapper").parent(".image-input").find("span").removeClass("btn-shadow");
+   }
     $("#complimentary").addClass("d-none");
 }
 
@@ -495,7 +497,7 @@ function submitForm(action, method, data, callback, form = '') {
     });
 }
 
-function submitFileForm(action, method, form_id, callback) {
+function submitFileForm(action, method, form_id, callback, no_reset = false) {
 
     showSpinner();
 
@@ -519,12 +521,18 @@ function submitFileForm(action, method, form_id, callback) {
         processData: false,
         cache: false,
         success: function (response) {
-            if (response.status == true) {
+            if (response.status) {
                 callback({
                     'status': response.status,
                     'message': response.message,
+                    'data': response?.data ?? null,
                 });
-                hideSpinnerRestForm(form);
+
+                if (no_reset) {
+                    hideSpinnerRestForm(null, true);
+                } else {
+                    hideSpinnerRestForm(form);
+                }
             } else {
                 callback({
                     'status': response.status,

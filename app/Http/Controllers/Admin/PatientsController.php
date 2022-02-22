@@ -18,7 +18,7 @@ use App\Models\LeadStatuses;
 use App\Models\Locations;
 use App\Models\Patients;
 use App\Models\Services;
-use App\User;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -123,6 +123,7 @@ class PatientsController extends Controller
             'delete' => Gate::allows('patients_destroy'),
             'active' => Gate::allows('patients_active'),
             'inactive' => Gate::allows('patients_inactive'),
+            'manage' => Gate::allows('patients_manage'),
         ];
 
         return response()->json($records);
@@ -169,21 +170,18 @@ class PatientsController extends Controller
      * Store a newly created Lead_source in storage.
      *
      * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         if (!Gate::allows('patients_manage')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         $data = $request->all();
@@ -218,18 +216,10 @@ class PatientsController extends Controller
         }
 
         if ($patient) {
-            flash('Record has been created successfully.')->success()->important();
-
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been created successfully.',
-            ));
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         }
+
+        return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
     }
 
     /**
@@ -240,7 +230,7 @@ class PatientsController extends Controller
      */
     protected function verifyFields(Request $request)
     {
-        return $validator = Validator::make($request->all(), [
+        return Validator::make($request->all(), [
             'email' => 'sometimes|nullable|email',
             'name' => 'required',
             'phone' => 'required',
@@ -253,21 +243,24 @@ class PatientsController extends Controller
      * Show the form for editing Lead_source.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         if (!Gate::allows('patients_manage')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $patient = Patients::getData($id);
 
         if (!$patient) {
-            return view('error', compact('lead_statuse'));
+            return ApiHelper::apiResponse($this->success, 'Patient not found.', false);
         }
 
-        return view('admin.patients.edit', compact('patient'));
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'patient' => $patient,
+            'gender' => config('constants.gender_array')
+        ]);
     }
 
     /**
@@ -275,21 +268,18 @@ class PatientsController extends Controller
      *
      * @param  \Illuminate\Http\Request $request
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         if (!Gate::allows('patients_manage')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
@@ -307,18 +297,11 @@ class PatientsController extends Controller
 
             Appointments::where('patient_id', '=', $id)->update(['name' => $data['name']]);
 
-            flash('Record has been updated successfully.')->success()->important();
+            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
 
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been updated successfully.',
-            ));
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
         }
+
+        return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
     }
 
     /**
@@ -371,15 +354,28 @@ class PatientsController extends Controller
             return abort(401);
         }
 
+        return view('admin.patients.card.preview');
+
+    }
+
+    public function getPatient($id) {
+
         $patient = Patients::getData($id);
-        if($patient){
-            return view('admin.patients.card.preview', compact('patient'));
-        } else {
-            return view('error_full');
+
+        if ($patient) {
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'patient' => $patient,
+                'permissions' => [
+                    'edit' => Gate::allows('patients_edit'),
+                    'delete' => Gate::allows('patients_destroy'),
+                    'active' => Gate::allows('patients_active'),
+                    'inactive' => Gate::allows('patients_inactive'),
+                    'manage' => Gate::allows('patients_manage'),
+                ],
+            ]);
         }
 
-
-
+        return ApiHelper::apiResponse($this->success, 'Record found', false);
     }
 
     /**
@@ -1188,36 +1184,38 @@ class PatientsController extends Controller
     /**
      * store the image of patient.
      *
-     * @return view
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function imagestore(Request $request){
+    public function imagestore(Request $request) {
 
         if (!Gate::allows('patients_manage') && !Gate::allows('users_manage')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $patient = Patients::getData($request->patient_id);
 
         if (!$patient) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
         if($request->file('file'))
         {
-            $file=$request->file('file');
-            //dd($file);
-            $file->move('patient_image',$file->getClientOriginalName());
-            $ext=$file->getClientOriginalExtension();
+            $file = $request->file('file');
+
+            $ext = $file->getClientOriginalExtension();
             if($ext=='jpg' || $ext=='jpeg' || $ext=='png' || $ext=='gif')
             {
-                DB::table('users')->where('id', $patient->id)->update(['image_src' => $file->getClientOriginalName()]);
-                flash('Picture save successfully.')->success()->important();
-                return redirect()->route('admin.patients.preview', ['id' => $patient->id]);
+                $fileName = time().'-'.str_replace(' ', '-', $file->getClientOriginalName());
+                $file->storeAs('public/patient_image', $fileName);
+
+                DB::table('users')->where('id', $patient->id)->update(['image_src' => $fileName]);
+                return ApiHelper::apiResponse($this->success, 'Picture save successfully.', true, [
+                    'image' => asset('storage/patient_image/'.$fileName)
+                ]);
             }
             else{
-                flash('JPG , JPEG, PNG, GIF Only Allow.')->warning()->important();
-                return redirect()->route('admin.patients.preview', ['id' => $patient->id]);
+                return ApiHelper::apiResponse($this->success, 'JPG , JPEG, PNG, GIF Only Allow.', false);
             }
         } else {
-            return redirect()->route('admin.patients.preview', ['id' => $patient->id]);
+            return ApiHelper::apiResponse($this->success, 'Please provide the valid image.', false);
         }
 
 

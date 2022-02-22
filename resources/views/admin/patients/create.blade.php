@@ -31,12 +31,12 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span> </label>
-                            <input type="text" name="'name" id="add_name" class="form-control">
+                            <input type="text" name="name" id="add_name" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
-                            <input oninput="phoneField(this);" type="number" name="'phone" id="add_phone" class="form-control">
+                            <input oninput="phoneField(this);" type="number" name="phone" id="add_phone" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
