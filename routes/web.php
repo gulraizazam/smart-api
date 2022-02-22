@@ -286,7 +286,6 @@ use App\Http\Controllers\Admin\PatientsController;
 
         Route::get('patients/{id}/image', [PatientsController::class, 'imageindex'])->name("patients.imageurl");
 
-        Route::post('patients/image',[PatientsController::class, 'imagestore'])->name("patients.storeimage");
 
         Route::get('patients/{id}/document', [PatientsController::class, 'documentindex'])->name("patients.document");
 

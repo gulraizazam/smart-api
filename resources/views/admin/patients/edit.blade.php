@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit Lead</h2>
+        <h2 class="fw-bolder">Edit Patient</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -20,85 +20,35 @@
     </div>
     <!--end::Modal header-->
     <!--begin::Modal body-->
-    <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+    <div class="modal-body scroll-y ">
         <!--begin::Form-->
-        <form id="modal_edit_leads_form" method="post">
-            <!--begin::Scroll-->
+        <form id="modal_edit_patients_form" method="post" action="">
+
             @method('put')
 
-            <input type="hidden" class="form_type" value="edit_">
-
-            <input type="hidden" name="patient_id" id="edit_patient_id" value="">
-            <input type="hidden" name="id" id="edit_lead_id" value="">
-            <input type="hidden" name="old_phone" id="edit_old_phone" value="">
-
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_patients_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
-                            {{--<input oninput="phoneField(this);" type="text" id="edit_phone" name="phone" class="form-control">--}}
-
-                            <input type="text" oninput="phoneField(this);" id="edit_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
-                            <div class="suggesstion-box">
-                                <ul class="suggestion-list"></ul>
-                            </div>
-
-                        </div>
-
-
-                        <div class="fv-row col-md-12 mt-10">
-                            <label class="custom_checkbox">
-                                <input class="new_patient" onclick="newPatient();" type="checkbox">
-                                <strong></strong>
-                               <span class="ml-5"> New Patient ?</span>
-                            </label>
-                        </div>
-
-                        <div class="fv-row col-md-12 mt-5">
-                            <h2 class="text-center text text-danger msg_new_patient" style="display: none;">You are going to create new patient</h2>
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span> </label>
+                            <input type="text" name="name" id="edit_name" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
-                            <select id="edit_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
-                            </select>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
+                            <input oninput="phoneField(this);" type="number" name="phone" id="edit_phone" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Full Name <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_full_name" name="name" class="form-control">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Email </label>
+                            <input type="email" id="edit_email" name="email" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
                             <select id="edit_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">City</label>
-                            <select id="edit_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>
-                            <select id="edit_lead_source_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source_id">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Status</label>
-                            <select id="edit_lead_status_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_status_id">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Referred By</label>
-                            <select id="edit_referred_by_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="referred_by">
                             </select>
                         </div>
 

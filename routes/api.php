@@ -366,7 +366,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('patients/datatable', [PatientsController::class, 'datatable'])->name('patients.datatable');
 
     Route::post('patients/status', [PatientsController::class, 'status'])->name('patients.status');
-
+    Route::get('patients/getPatient/{id}', [PatientsController::class, 'getPatient'])->name('patients.getPatient');
+    Route::post('patients/image',[PatientsController::class, 'imagestore'])->name("patients.storeimage");
 
 });
 

@@ -474,3 +474,13 @@ div > input {
     cursor: pointer;
 }
 
+.card-toolbar >.active {
+    border-bottom: 4px solid #35a1d4 !important;
+    position: relative  !important;
+}
+.navi .navi-item .navi-link .navi-icon i {
+    color: #323270;
+}
+.image-input .image-input-wrapper {
+    background-size: cover !important;
+}

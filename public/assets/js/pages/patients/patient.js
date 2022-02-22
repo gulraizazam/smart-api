@@ -76,9 +76,9 @@ function actions(data) {
 
     let id = data.id;
 
-    let csrf = $('meta[name="csrf-token"]').attr('content');
     let url = route('admin.patients.edit', {id: id});
     let delete_url = route('admin.patients.destroy', {id: id});
+    let view_url = route('admin.patients.preview', {id: id});
 
     if (permissions.edit && permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -92,7 +92,7 @@ function actions(data) {
                         </li>';
         if (permissions.edit) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+url+'`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="editRow(`'+url+'`, `'+id+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
@@ -104,7 +104,16 @@ function actions(data) {
                             <span class="navi-icon"><i class="la la-trash"></i></span>\
                             <span class="navi-text">Delete</span>\
                             </a>\
-                         </li>';
+                        </li>';
+        }
+
+        if (permissions.manage) {
+            actions += '<li class="navi-item">\
+                            <a href="'+view_url+'" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-eye"></i></span>\
+                            <span class="navi-text">View</span>\
+                            </a>\
+                        </li>';
         }
 
         actions += '</ul>\
@@ -116,7 +125,11 @@ function actions(data) {
     return '';
 }
 
-function editRow(url) {
+function editRow(url, id) {
+
+    $("#modal_edit_patients").modal("show");
+    $("#modal_edit_patients_form").attr("action", route('admin.patients.update', {id: id}));
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -125,13 +138,12 @@ function editRow(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#modal_edit_regions").modal("show");
             setEditData(response);
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-            reInitValidation(TownValidation);
+            reInitValidation(EditValidation);
         }
     });
 
@@ -139,11 +151,20 @@ function editRow(url) {
 }
 
 function setEditData(response) {
-    let region = response.data;
-    let action = route('admin.regions.update', {id: region.id});
-    $("#modal_edit_regions_form").attr("action", action);
 
-    $("#edit_regions_name").val(region.name);
+    let genders = response.data.gender;
+    let patient = response.data.patient;
+    let gender_option = '<option value="">All</option>';
+
+    Object.entries(genders).forEach(function (gender) {
+        gender_option += '<option value="'+gender[0]+'">'+gender[1]+'</option>';
+    });
+
+    $("#edit_gender_id").html(gender_option);
+    $("#edit_name").val(patient.name);
+    $("#edit_email").val(patient.email);
+    $("#edit_phone").val(patient.phone);
+    $("#edit_gender_id").val(patient.gender);
 
 }
 
@@ -163,7 +184,7 @@ function createPatient(url) {
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-            //reInitValidation();
+            reInitValidation(AddValidation);
         }
     });
 

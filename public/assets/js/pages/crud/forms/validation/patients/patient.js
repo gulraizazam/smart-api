@@ -1,7 +1,7 @@
 
 var AddValidation = function () {
     // Private functions
-    var AddValidation = function () {
+    var AddPatientValidation = function () {
         let modal_id = 'modal_add_patients_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
@@ -22,7 +22,7 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    gender_id: {
+                    gender: {
                         validators: {
                             notEmpty: {
                                 message: 'The gender field is required'
@@ -60,7 +60,7 @@ var AddValidation = function () {
     return {
         // public functions
         init: function() {
-            AddValidation();
+            AddPatientValidation();
         }
     };
 }();
@@ -68,16 +68,16 @@ var AddValidation = function () {
 var EditValidation = function () {
     // Private functions
     var Validation = function () {
-        let modal_id = 'modal_edit_leads_form';
+        let modal_id = 'modal_edit_patients_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    service_id: {
+                    name: {
                         validators: {
                             notEmpty: {
-                                message: 'The service field is required'
+                                message: 'The name field is required'
                             }
                         }
                     },
@@ -85,21 +85,6 @@ var EditValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
-                            }
-                        }
-                    },
-
-                    city_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The city field is required'
-                            }
-                        }
-                    },
-                    name: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The name field is required'
                             }
                         }
                     },
