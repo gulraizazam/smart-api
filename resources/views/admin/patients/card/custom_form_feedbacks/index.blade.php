@@ -8,6 +8,17 @@
     <!--end: Datatable-->
 </div>
 
-@push('datatable-js')
-    <script src="{{asset('assets/js/pages/patients/appointments.js')}}"></script>
+<div class="modal fade" id="modal_add_custom_form" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered form-popup" id="custom_form">
+
+        @include('admin.patients.card.custom_form_feedbacks.AddNewForms')
+
+    </div>
+    <!--end::Modal dialog-->
+</div>
+
+
+@push('js')
+    <script src="{{asset('assets/js/pages/patients/create-custom-form.js')}}"></script>
 @endpush

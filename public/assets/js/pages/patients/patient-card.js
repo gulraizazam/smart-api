@@ -44,14 +44,19 @@ function setPatientData(response) {
         $("#inactive-icon").removeClass("d-none");
     }
 
-    let image = asset_url+'storage/patient_image/'+patient.image_src;
+    if (patient.image_src) {
 
-    $("#profile_patient_avatar").css('background-image', "url("+image+")");
-    $(".patient_profile_image").css('background-image', "url("+image+")");
+        let image = asset_url+'storage/patient_image/'+patient.image_src;
+
+        $("#profile_patient_avatar").css('background-image', "url("+image+")");
+        $(".patient_profile_image").css('background-image', "url("+image+")");
+    }
 
 }
 
 function changeProfilePage($this, page_id) {
+
+    $("#page_name").text($this.text());
 
     $(".change-tab").removeClass("active");
     $this.addClass("active");
@@ -61,10 +66,44 @@ function changeProfilePage($this, page_id) {
     $("#" + page_id).removeClass("d-none");
     $(".profile-buttons").addClass("d-none");
 
+    $(".toolbar-" + page_id).removeClass("d-none");
+
     if (page_id == 'personal_info') {
         $(".personal-info").addClass("active");
+        $(".persnl_info").addClass("active");
         $(".profile-buttons").removeClass("d-none");
+        $(".submit-btn").addClass("d-none");
     }
+
+    if (page_id == 'change_profile_picture') {
+        $this.addClass("active");
+        $(".persnl_info").removeClass("active");
+        $(".personal-info").addClass("active");
+        $(".profile-buttons").removeClass("d-none");
+        $(".submit-btn").addClass("d-none");
+    }
+
+    loadDataTable(page_id);
+
+}
+
+function loadDataTable(page_id) {
+
+    /*load script on change tab and then init datatable*/
+    $.getScript(asset_url + "assets/js/pages/patients/"+ page_id + '.js');
+
+    setTimeout(function () {
+
+        if (typeof table_url !== 'undefined') {
+
+            if (typeof datatable === 'undefined') {
+                KTDatatable.init();
+            } else {
+                datatable.search({ datatable_reload: 'reload' }, 'search');
+            }
+        }
+    },500);
+
 }
 
 function savePatientImage() {

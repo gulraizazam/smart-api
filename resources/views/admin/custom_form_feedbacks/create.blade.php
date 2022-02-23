@@ -45,7 +45,7 @@
                                 <i class="la la-arrow-left"></i>
                                 Back
                             </a>
-                           
+
                             <!--end::Button-->
                         </div>
                         <!--end::Button-->
@@ -55,13 +55,13 @@
                     <div class="card-body">
                         <form id="cf_form">
                             <div class="form-group">
-                        
+
                                 <div class="row mt-15">
-                                    
+
                                     <div class="col-md-12">
                                         @include('admin.custom_form_feedbacks.edit_fields.select_patient')
                                     </div>
-                                
+
                                 </div>
 
                                 <div class="form-group form-md-line-input cf_main_title">
@@ -70,7 +70,7 @@
                                 </div>
                             </div>
                             <input id="form_id" name="form_id" type="hidden" value="{{$custom_form->id}}"/>
-                    
+
 
                             <div class="form-group form-md-line-input cf_main_title mt-10">
                                 <div class="form-group form-md-line-input cf_input_question">
@@ -89,7 +89,7 @@
                                 @if($field->field_type ==1)
                                 <div class="col-md-12">
                                     @include("admin.custom_form_feedbacks.fields.text_field", ['field_id'=>$field->id, 'title'=>$content["title"],"index"=>$loop->index])
-                                </div>    
+                                </div>
                                 @elseif($field->field_type ==2)
                                 <div class="col-md-12">
                                     @include("admin.custom_form_feedbacks.fields.paragraph_field", ['field_id'=>$field->id, 'title'=>$content["title"],"index"=>$loop->index])
@@ -97,26 +97,26 @@
                                 @elseif($field->field_type ==3)
                                 <div class="col-md-12">
                                     @include("admin.custom_form_feedbacks.fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"],"index"=>$loop->index])
-                                </div>    
+                                </div>
                                 @elseif($field->field_type ==4 && is_array($content))
                                 <div class="col-md-12">
                                     @include("admin.custom_form_feedbacks.fields.multi_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"],"index"=>$loop->index])
-                                </div>    
+                                </div>
                                 @elseif($field->field_type ==5 && is_array($content))
                                 <div class="col-md-12">
                                     @include("admin.custom_form_feedbacks.fields.option_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"],"index"=>$loop->index])
-                                </div>    
+                                </div>
                                 @elseif($field->field_type ==6 && is_array($content))
                                 <div class="col-md-12">
                                     @include("admin.custom_form_feedbacks.fields.title_description_field", ["field_id"=>$field->id, 'title'=>$content["title"]])
-                                </div>    
+                                </div>
                                 @elseif($field->field_type ==7 && is_array($content))
                                 <div class="col-md-12">
                                     @include("admin.custom_form_feedbacks.fields.table_input_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"],"rows"=>$content["rows"],"index"=>$loop->index])
-                                </div>    
+                                </div>
                                 @endif
                             @endforeach
-                        @endif 
+                        @endif
                     </div>
 
                             <div class="margin-top-10">
@@ -145,20 +145,20 @@
 @push('js')
 
     <script src="{{asset('assets/js/jquery.validate.min.js')}}"></script>
-    
-    
+
+
     <script type="text/javascript">
 
         $(function () {
 
 
              $("#cf_form").validate();
-        
+
             $("#cf_form").submit(function(e){
-                
+
                  if($(".patient_id").val() == null || $(".patient_id").val() == '') {
 
-                   
+
                     $(".patient_id").parent('.form-group').append('<label id="reference_id-error" class="error" for="reference_id">This field is required.</label>');
                     $(".patient_id").focus();
                     return false;
@@ -166,7 +166,7 @@
 
                 if($("#cf_form").valid()) {
                     e.preventDefault();
-                    
+
                     data = {};
                     fields = document.querySelectorAll("#cf_field_list> .cf_field_item");
                     data['reference_id'] = document.querySelector("select[name='{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_NAME}}']").value;
@@ -243,7 +243,7 @@
                     }
 
                     fill_form(data, (response) => {
-                        toastr.error("Form Submitted Successfully");
+                        toastr.success("Form Submitted Successfully");
                         window.location.href = '{{route('admin.custom_forms.index')}}';
 
                     });

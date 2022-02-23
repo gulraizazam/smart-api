@@ -73,7 +73,7 @@ class CustomFormFeedbacksController extends Controller
         $records = array();
         $records["data"] = array();
 
-        
+
         if (hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $CustomFormFeedbacks = CustomFormFeedbacks::getBulkData($ids);
@@ -151,7 +151,7 @@ class CustomFormFeedbacksController extends Controller
         }
 
         $forms = CustomForms::getAllForms(Auth::User()->account_id)->toArray();
-       
+
         if (!$forms) {
             flash('No Form Available to fill, please try again later.')->error()->important();
             return redirect()->route('admin.custom_form_feedbacks.index');
@@ -176,7 +176,7 @@ class CustomFormFeedbacksController extends Controller
         if (!Gate::allows('custom_form_feedbacks_manage') && !Gate::allows('patients_customform_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        try { 
+        try {
 
             $data = $request->all();
 
@@ -283,7 +283,7 @@ class CustomFormFeedbacksController extends Controller
             return view('error');
         }
         $patient_name = User::where('id', '=', $custom_form_feedback->reference_id)->first();
-        
+
         return ApiHelper::makeResponse([
             'custom_form' => $custom_form_feedback,
              'patient_name' => $patient_name
@@ -428,7 +428,7 @@ class CustomFormFeedbacksController extends Controller
         if (!Gate::allows('custom_form_feedbacks_edit') && !Gate::allows('patients_customform_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        try { 
+        try {
 
             if (CustomFormFeedbacks::updateRecord($id, $request, Auth::User()->account_id, Auth::id())) {
 
@@ -437,10 +437,10 @@ class CustomFormFeedbacksController extends Controller
             }
 
             return ApiHelper::apiResponse($this->success, 'Invalid request.', false);
-        
+
         } catch(\Exception $e) {
             ApiHelper::apiException($e);
-        }    
+        }
 
     }
 

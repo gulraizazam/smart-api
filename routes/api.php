@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\PatientsController;
+use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 
 /*
 |--------------------------------------------------------------------------
@@ -368,6 +369,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('patients/status', [PatientsController::class, 'status'])->name('patients.status');
     Route::get('patients/getPatient/{id}', [PatientsController::class, 'getPatient'])->name('patients.getPatient');
     Route::post('patients/image',[PatientsController::class, 'imagestore'])->name("patients.storeimage");
+    Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
+    Route::get('customformfeedbackspatient/addnewform/{id}',[PatientCustomFormController::class, 'AddNewForm'])->name('customformfeedbackspatient.addnew');
 
 });
 
