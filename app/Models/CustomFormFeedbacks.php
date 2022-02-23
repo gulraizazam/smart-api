@@ -61,22 +61,22 @@ class CustomFormFeedbacks extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false, $id = false, $filename)
     {
-        $where = Self::custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename);
+        $where = self::custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename);
 
 
         if ($request->has('sort')) {
 
             list($orderBy, $order) = getSortBy($request);
 
-            Filters::put(Auth::User()->id, 'custom_form_feedbacks', 'order_by', $orderBy);
-            Filters::put(Auth::User()->id, 'custom_form_feedbacks', 'order', $order);
+            Filters::put(Auth::User()->id, $filename, 'order_by', $orderBy);
+            Filters::put(Auth::User()->id, $filename, 'order', $order);
         } else {
             if(
-                Filters::get(Auth::User()->id, 'custom_form_feedbacks', 'order_by')
-                && Filters::get(Auth::User()->id, 'custom_form_feedbacks', 'order')
+                Filters::get(Auth::User()->id, $filename, 'order_by')
+                && Filters::get(Auth::User()->id, $filename, 'order')
             ) {
-                $orderBy = Filters::get(Auth::User()->id, 'custom_form_feedbacks', 'order_by');
-                $order = Filters::get(Auth::User()->id, 'custom_form_feedbacks', 'order');
+                $orderBy = Filters::get(Auth::User()->id, $filename, 'order_by');
+                $order = Filters::get(Auth::User()->id, $filename, 'order');
 
                 if ($orderBy == 'created_at') {
                     $orderBy = 'custom_form_feedbacks.created_at';
@@ -88,11 +88,11 @@ class CustomFormFeedbacks extends BaseModal
                     $orderBy = 'custom_form_feedbacks.created_at';
                 }
 
-                Filters::put(Auth::User()->id, 'custom_form_feedbacks', 'order_by', $orderBy);
-                Filters::put(Auth::User()->id, 'custom_form_feedbacks', 'order', $order);
+                Filters::put(Auth::User()->id, $filename, 'order_by', $orderBy);
+                Filters::put(Auth::User()->id, $filename, 'order', $order);
             }
         }
-        
+
         if (count($where)) {
             return self::join('users', 'users.id', '=', 'custom_form_feedbacks.reference_id')->select('*', 'custom_form_feedbacks.id as internal_id','custom_form_feedbacks.created_at as created_at_form')
                 ->where($where)
@@ -116,12 +116,12 @@ class CustomFormFeedbacks extends BaseModal
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function custom_form_feedbacks_filters($request, $account_id, $apply_filter,$id, $filename )
+    static public function custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename )
     {
         $where = array();
 
         $filters = getFilters($request->all());
-       
+
         if($id != false){
             $where[] = array(
                 'users.id',
@@ -142,7 +142,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        
+
         if ($account_id) {
             $where[] = array(
                 'users.account_id',
@@ -164,7 +164,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        
+
         if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'custom_form_feedbacks.form_name',
@@ -185,7 +185,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        
+
         if (hasFilter($filters, 'id')) {
             $where[] = array(
                 'users.id',
@@ -206,7 +206,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        
+
         if (hasFilter($filters, 'patient_name')) {
             $where[] = array(
                 'users.name',
@@ -247,7 +247,7 @@ class CustomFormFeedbacks extends BaseModal
                 }
             }
         }
-        
+
         if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'custom_form_feedbacks.created_at',

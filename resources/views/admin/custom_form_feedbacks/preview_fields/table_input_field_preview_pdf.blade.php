@@ -61,7 +61,7 @@
 </style>
 <div id="cs_field_{{$field_id}}" class="form-group form-group_tab form-md-line-input cf_card cf_field_item update-answer-fields">
     <h3 class="cf-question-headings" style="padding-bottom:22px;">{{$title}}</h3>
-   
+
     <table class="wrap-row-table">
             <thead>
                 <tr>
@@ -71,14 +71,14 @@
                 </tr>
             </thead>
             <tbody>
-            @if ($rows)
+            @if (isset($rows))
                 @foreach($rows as $row)
                     <tr>
                         @foreach($row["cols"] as $col)
-                            <td>{{$col["answer"]}}</td> 
+                            <td>{{$col["answer"]}}</td>
                         @endforeach
                     </tr>
-                
+
                 @endforeach
             @endif
             </tbody>

@@ -13,8 +13,8 @@
 
             #kt_header,
             #kt_header_mobile_topbar_toggle,
-            #kt_subheader, 
-            .card-header, 
+            #kt_subheader,
+            .card-header,
             .footer,
             .topbar {
                 display: none !important;
@@ -58,7 +58,7 @@
 
                             <a href="{{route('admin.custom_form_feedbacks.index')}}" class="btn btn-sm btn-dark ">
                                 <i class="las la-arrow-left"></i>
-                                Back 
+                                Back
                             </a>
                             &nbsp;&nbsp;&nbsp;
 
@@ -75,31 +75,31 @@
                                     Print
                                 </a>
                             @endif
-                            
+
 
                             <!--end::Button-->
                         </div>
                     </div>
 
                     <div class="card-body">
-                      
+
                     <div class="form-group">
-                        
+
                     <div class="row">
-                       
+
                         <div class="col-md-6">
                             <img class="w-50" src="{{asset('assets/media/logos/logo_final.png')}}">
                             <div class="mt-15">
-                                <h1>Patient Detail</h3>
+                                <h1>Patient Detail</h1>
                                <p> <strong>Patient Name: </strong> {{$custom_form->patient?$custom_form->patient->name : "Null"}}</p>
                                <p> <strong>Patient Name: </strong> {{$custom_form->patient?' C-'.$custom_form->patient->id : ""}}</p>
                                <p>  <strong>Email: </strong> {{$custom_form->patient?$custom_form->patient->email : ""}}</p>
                             </div>
                         </div>
-                       
+
                         <div class="col-md-6">
                             <h2 id="custom_form_id">#{{ $thisId }} / {{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $custom_form->created_at)->format('Y-M-d') }}</h2>
-                            <h1 class="mt-30">Company Detail</h3>
+                            <h1 class="mt-30">Company Detail</h1>
                             <p> <strong>Company Name: </strong> {{ Auth::user()->account->name }}</p>
                             <p> <strong>Contact: </strong> {{ Auth::user()->account->contact }}</p>
                             <p>  <strong>Email: </strong> {{ Auth::user()->account->email }}</p>
@@ -116,9 +116,9 @@
 
                     <div class="row mt-15">
                         @foreach($custom_form->form_fields as $field)
-                        
+
                             <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
-                        
+
 
                             @if($field->field_type ==1)
                             <div class="col-md-6">

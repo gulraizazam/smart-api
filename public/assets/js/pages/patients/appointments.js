@@ -8,7 +8,6 @@ var table_columns = [
         width: 'auto',
         title: renderCheckbox(),
         template: function (data) {
-            let id = data.id;
             return childCheckbox(data);
         }
     },

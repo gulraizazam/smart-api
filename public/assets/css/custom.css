@@ -484,3 +484,6 @@ div > input {
 .image-input .image-input-wrapper {
     background-size: cover !important;
 }
+.patient_custom_form {
+    padding-top: 0 !important;
+}

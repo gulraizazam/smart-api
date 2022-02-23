@@ -53,12 +53,18 @@
                             <!--begin::Header-->
                             <div class="card-header py-3">
                                 <div class="card-title align-items-start flex-column">
-                                    <h3 class="card-label font-weight-bolder text-dark">Patient</h3>
+                                    <h3 class="card-label font-weight-bolder text-dark" id="page_name">Profile</h3>
                                 </div>
 
                                 <div class="card-toolbar profile-buttons">
-                                    <button type="reset" class="btn btn-sm btn-default mr-2 change-tab personal-info active" onclick="changeProfilePage($(this), 'personal_info');">Personal Info</button>
-                                    <button type="reset" class="btn btn-sm btn-default change-tab" onclick="changeProfilePage($(this), 'change_profile_picture');">Change Profile Picture</button>
+                                    <button type="button" class="btn btn-sm btn-default mr-2 change-tab persnl_info active" onclick="changeProfilePage($(this), 'personal_info');">Personal Info</button>
+                                    <button type="button" class="btn btn-sm btn-default change-tab" onclick="changeProfilePage($(this), 'change_profile_picture');">Change Profile Picture</button>
+                                </div>
+
+                                <div class="card-toolbar submit-btn toolbar-custom-form d-none">
+                                    <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="addCustomForm('{{ route('admin.customformfeedbackspatient.addnew', request('id')) }}');" data-toggle="modal" data-target="#modal_add_custom_form">
+                                        Add New
+                                    </button>
                                 </div>
 
                             </div>
@@ -103,8 +109,12 @@
                                     @include('admin.patients.card.profile.profile-picture')
                                 </div>
 
-                                <div id="custom_form_feedback" class="content-section d-none">
+                                <div id="custom-form" class="content-section d-none">
                                     @include('admin.patients.card.custom_form_feedbacks.index')
+                                </div>
+
+                                <div id="medical-form" class="content-section d-none">
+                                    @include('admin.patients.card.medical.index')
                                 </div>
 
                             </div>

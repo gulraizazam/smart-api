@@ -208,10 +208,8 @@ use App\Http\Controllers\Admin\PatientsController;
         Route::get('custom_form_feedbacks/{form_id}/preview_form', [CustomFormFeedbacksController::class, 'preview_form'])->name("custom_form_feedbacks.preview_form");
 
         /*Route start for patient Pre define Custome Forms*/
-        Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
         Route::get('customformfeedbackspatient/editcustomform/{id}',[PatientCustomFormController::class, 'edit'])->name('customformfeedbackspatient.edit');
         Route::get('customformfeedbackspatient/previewcustomform/{id}',[PatientCustomFormController::class, 'filled_preview'])->name('customformfeedbackspatient.previewform');
-        Route::get('customformfeedbackspatient/addnewform/{id}',[PatientCustomFormController::class, 'AddNewForm'])->name('customformfeedbackspatient.addnew');
         Route::get('customformfeedbackspatient/fill_form/{id}/{patient_id}',[PatientCustomFormController::class, 'fill_form'])->name('customformfeedbackspatient.fill_form');
         Route::get('customformfeedbackspatient/{id}',[PatientCustomFormController::class, 'index'])->name('customformfeedbackspatient.index');
         Route::get('customformfeedbackspatient/{id}/print', [CustomFormFeedbacksController::class, 'filledPrint'])->name("patient_custom_form_feedbacks.filled_print");
