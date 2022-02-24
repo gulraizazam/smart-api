@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\MachineTypeController;
+use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -371,6 +372,11 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('patients/image',[PatientsController::class, 'imagestore'])->name("patients.storeimage");
     Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
     Route::get('customformfeedbackspatient/addnewform/{id}',[PatientCustomFormController::class, 'AddNewForm'])->name('customformfeedbackspatient.addnew');
+
+
+    /*Route start for patient medical history Forms*/
+    Route::post('medicalhistoryform/datatable/&{id}', [MedicalHistoryController::class, 'datatable'])->name('medicalhistoryform.datatable');
+
 
 });
 

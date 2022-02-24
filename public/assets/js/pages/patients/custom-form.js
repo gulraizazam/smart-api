@@ -10,6 +10,7 @@ var table_columns = [
         field: 'name',
         title: 'Patient Name',
         width: 'auto',
+        sortable: false,
     },{
         field: 'created_at',
         title: 'Created At',
@@ -97,7 +98,7 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $('#reset-filters').on('click', function() {
+    $(".page-custom-form").find('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
             name: '',
@@ -106,6 +107,7 @@ function resetAllFilters(datatable) {
             created_to: '',
             filter: 'filter_cancel',
         }
+
         datatable.search(filters, 'search');
     });
 

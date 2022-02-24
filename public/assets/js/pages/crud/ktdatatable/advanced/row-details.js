@@ -13,6 +13,7 @@ let permissions = [];
 let active_filters = [];
 let filter_values = [];
 var datatable;
+var patientDatatable = [];
 
 var KTDatatable = function() {
 
@@ -124,10 +125,126 @@ var KTDatatable = function() {
 	};
 }();
 
+
+/*this is for patient card*/
+
+var KTPatientDatatable = function() {
+
+    var patientTable = function(table_class) {
+
+        patientDatatable[table_class] = $(table_class).KTDatatable({
+            data: {
+                type: 'remote',
+                source: {
+                    read: {
+                        url:  typeof table_url !== 'undefined' ? table_url : '',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        map: function (data) { /*to get response, we can remove this */
+                            /* get permissions array for actions */
+                            permissions = data.permissions;
+                            filter_values = data.filter_values;
+
+                            if (typeof setFilters === 'function') {
+                                setFilters(data.filter_values, data.active_filters);
+                            }
+
+
+                            if (typeof data.status !== 'undefined') {
+                                deleteSuccessAndReset(data, datatable);
+                            }
+                            var response = data;
+                            if (typeof response.data !== 'undefined') {
+                                response = response.data;
+                            }
+
+                            return response;
+                        },
+                    },
+                },
+                pageSize: perPage,
+                saveState: false,
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true,
+            },
+
+            layout: {
+                scroll: false,
+                // height: 550,
+                footer: false,
+                /*spinner: {
+                    message: "Loading wait.."
+                }*/
+            },
+
+            /*rows: {
+                autoHide: false,
+            },*/
+
+            // column sorting
+            fixedColumns: true,
+            sortable: true,
+
+            pagination: paginate,
+
+            // columns definition
+            columns: typeof table_columns !== 'undefined' ? table_columns : [],
+
+        });
+
+        patientDatatable[table_class].on('datatable-on-ajax-fail',function (event,error){
+            toastr.error(error.responseJSON.message);
+        });
+
+        $('#delete-table-rows').on('click', function() {
+            deleteConfirm(patientDatatable[table_class]);
+        });
+
+        $('#reset-search').on('click', function() {
+            let filters =  {
+                filter: 'filter_cancel',
+            }
+            patientDatatable[table_class].search(filters, 'search');
+        });
+
+        $('#apply-search').on('click', function() {
+            let filters =  {
+                filter: 'filter',
+                search: $("#datatable_search_query").val().toLowerCase(),
+            }
+            patientDatatable[table_class].search(filters, 'search');
+        });
+
+        /*reset all table filters*/
+        if(typeof resetAllFilters === "function") {
+            resetAllFilters(patientDatatable[table_class]);
+        }
+
+        /*apply table filters*/
+        if(typeof applyFilters === "function") {
+            applyFilters(patientDatatable[table_class]);
+        }
+
+        $('#kt_datatable_search_status, #kt_datatable_search_type').selectpicker();
+    };
+
+    return {
+        // public functions
+        init: function(table_class = '#kt_datatable') {
+            patientTable(table_class);
+        },
+    };
+}();
+
+/*end for patient card*/
+
 jQuery(document).ready(function() {
 
     if (typeof table_url !== 'undefined') {
         KTDatatable.init();
+        KTPatientDatatable.init();
     }
 
     /*To get selected row ids for deletion*/

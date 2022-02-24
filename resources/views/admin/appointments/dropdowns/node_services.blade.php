@@ -1,0 +1,1 @@
+{!! Form::select('service_id', $services, null, ['id' => 'service_id', 'class' => 'form-control select2 required']) !!}

@@ -35,6 +35,7 @@ use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as Patient
 use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\LeadsController;
 use App\Http\Controllers\Admin\PatientsController;
+use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 
     /*
     |--------------------------------------------------------------------------
@@ -301,5 +302,12 @@ use App\Http\Controllers\Admin\PatientsController;
 
         Route::resource('patients', PatientsController::class);
 
+
+        /*Route start for patient medical history Forms*/
+        Route::get('medicalhistoryform/editcustomform/{id}',[MedicalHistoryController::class, 'edit'])->name('medicalhistoryform.edit');
+
+        Route::get('medicalhistoryform/previewcustomform/{id}',[MedicalHistoryController::class, 'filled_preview'])->name('medicalhistoryform.previewform');
+
+        Route::get('medicalhistoryform/{id}',[MedicalHistoryController::class, 'index'])->name('medicalhistoryform.index');
 
     });

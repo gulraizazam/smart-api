@@ -2,10 +2,14 @@
 
     use App\Helpers\Filters;
 
-    function getSortBy($request, $orderBy = 'name', $order = 'asc') {
+    function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) {
         if ($request->has('sort')) {
             $orderBy = $request->get('sort')['field'];
             $order = $request->get('sort')['sort'];
+        }
+
+        if ($prefix && $orderBy === 'created_at') { /*to append prefix */
+            $orderBy = $prefix.'.'.$orderBy;
         }
 
         return [$orderBy, $order];

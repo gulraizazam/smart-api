@@ -1,5 +1,5 @@
 
-var table_url = route('admin.customformfeedbackspatient.datatable', {id: patient_id});
+var table_url = route('admin.medicalhistoryform.datatable', {id: patient_id});
 
 var table_columns = [
     {
@@ -7,15 +7,16 @@ var table_columns = [
         title: 'Name',
         width: 'auto',
     },{
-        field: 'name',
+        field: 'patient.name',
         title: 'Patient Name',
         width: 'auto',
+        sortable: false,
     },{
         field: 'created_at',
         title: 'Created At',
         width: 'auto',
         template: function (data) {
-            return formatDate(data.created_at)
+            return formatDate(data.date)
         }
     },{
         field: 'actions',
@@ -32,12 +33,12 @@ var table_columns = [
 
 function actions(data) {
 
-    if (typeof data.internal_id !== 'undefined') {
+    if (typeof data.id !== 'undefined') {
 
-        let id = data.internal_id;
+        let id = data.id;
 
-        let edit_url = route('admin.customformfeedbackspatient.edit', {id: id});
-        let preview_url = route('admin.customformfeedbackspatient.previewform', {id: id});
+        let edit_url = route('admin.medicalhistoryform.edit', {id: id});
+        let preview_url = route('admin.medicalhistoryform.previewform', {id: id});
 
         if (permissions.edit && permissions.manage) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -97,7 +98,7 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $('#reset-filters').on('click', function() {
+    $(".page-medical-form").find('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
             name: '',

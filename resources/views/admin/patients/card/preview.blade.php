@@ -117,6 +117,10 @@
                                     @include('admin.patients.card.medical.index')
                                 </div>
 
+                                <div id="measurement-form" class="content-section d-none">
+                                    @include('admin.patients.card.measurement.index')
+                                </div>
+
                             </div>
 
                             <!--end::Form-->
