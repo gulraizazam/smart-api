@@ -25,31 +25,33 @@ function getPatient() {
 
 function setPatientData(response) {
 
-    let patient = response.data.patient;
+    if (response?.data?.patient) {
+        let patient = response.data.patient;
 
-    $("#profile_patient_name").text(patient.name);
-    $("#profile_patient_id").text(makePatientId(patient.id));
-    $("#patient_id").text(makePatientId(patient.id));
-    $("#patient_name").text(patient.name);
-    $("#patient_email").text(patient.email);
-    $("#patient_phone").text(patient.phone);
-    $("#patient_gender").text(getGender(patient.gender));
+        $("#profile_patient_name").text(patient.name);
+        $("#profile_patient_id").text(makePatientId(patient.id));
+        $("#patient_id").text(makePatientId(patient.id));
+        $("#patient_name").text(patient.name);
+        $("#patient_email").text(patient.email);
+        $("#patient_phone").text(patient.phone);
+        $("#patient_gender").text(getGender(patient.gender));
 
-    $(".statuses").addClass("d-none");
-    if (patient.active == 1) {
-        $("#profile-active").removeClass("d-none");
-        $("#active-icon").removeClass("d-none");
-    } else {
-        $("#profile-inactive").removeClass("d-none");
-        $("#inactive-icon").removeClass("d-none");
-    }
+        $(".statuses").addClass("d-none");
+        if (patient.active == 1) {
+            $("#profile-active").removeClass("d-none");
+            $("#active-icon").removeClass("d-none");
+        } else {
+            $("#profile-inactive").removeClass("d-none");
+            $("#inactive-icon").removeClass("d-none");
+        }
 
-    if (patient.image_src) {
+        if (patient.image_src) {
 
-        let image = asset_url+'storage/patient_image/'+patient.image_src;
+            let image = asset_url + 'storage/patient_image/' + patient.image_src;
 
-        $("#profile_patient_avatar").css('background-image', "url("+image+")");
-        $(".patient_profile_image").css('background-image', "url("+image+")");
+            $("#profile_patient_avatar").css('background-image', "url(" + image + ")");
+            $(".patient_profile_image").css('background-image', "url(" + image + ")");
+        }
     }
 
 }
@@ -60,6 +62,8 @@ function changeProfilePage($this, page_id) {
 
     $(".change-tab").removeClass("active");
     $this.addClass("active");
+    $(".submit-btn").addClass("d-none");
+    $(".toolbar-" + page_id).removeClass("d-none");
 
     $(".content-section").addClass("d-none");
 
@@ -93,13 +97,14 @@ function loadDataTable(page_id) {
     $.getScript(asset_url + "assets/js/pages/patients/"+ page_id + '.js');
 
     setTimeout(function () {
+        let className = "." + page_id;
+        let  datatableExist = $("#" + page_id).find(className).html();
+        if (typeof table_url !== 'undefined' && typeof datatableExist !== 'undefined') {
 
-        if (typeof table_url !== 'undefined') {
-
-            if (typeof datatable === 'undefined') {
-                KTDatatable.init();
+            if (datatableExist.length === 0) {
+                KTPatientDatatable.init("." + page_id);
             } else {
-                datatable.search({ datatable_reload: 'reload' }, 'search');
+                patientDatatable[className].search({ datatable_reload: 'reload' }, 'search');
             }
         }
     },500);

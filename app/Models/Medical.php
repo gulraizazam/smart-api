@@ -3,12 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\User;
 use Illuminate\Http\Request;
-use DB;
-use Session;
-use App\Models\AuditTrails;
-use Auth;
 
 
 class Medical extends Model
@@ -27,6 +22,11 @@ class Medical extends Model
     public function appointment()
     {
         return $this->belongsTo('App\Models\Appointments');
+    }
+
+    public function patient()
+    {
+        return $this->belongsTo(User::class, 'patient_id');
     }
     /*
      * Create Record with log file
@@ -98,7 +98,7 @@ class Medical extends Model
                 );
             }
         }
-        
+
         if ($request->get('user_id')) {
             $where[] = array(
                 'user_id',
@@ -143,6 +143,8 @@ class Medical extends Model
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false,$flag = 0)
     {
+        $filters = getFilters($request->all());
+
         $where = array();
 
         if($flag == 1){
@@ -162,44 +164,38 @@ class Medical extends Model
                 );
             }
         }
-        if ($request->get('user_id')) {
+        if (hasFilter($filters, 'user_id')) {
             $where[] = array(
                 'user_id',
                 '=',
-                $request->get('user_id')
+                $filters['user_id']
             );
         }
-        if ($request->get('name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'form_name',
                 'like',
-                '%'.$request->get('name').'%'
+                '%'.$filters['name'].'%'
             );
         }
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'medicals.created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
         }
-        if ($request->get('created_to') && $request->get('created_to') != '') {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'medicals.created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
         }
-        $orderBy = 'medicals.created_at';
-        $order = 'desc';
 
-        if ($request->get('order')[0]['dir']) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            $order = $request->get('order')[0]['dir'];
-        }
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'medicals');
 
-        return self::join('custom_form_feedbacks','medicals.custom_form_feedback_id','=','custom_form_feedbacks.id')
+        return self::with('patient')->join('custom_form_feedbacks','medicals.custom_form_feedback_id','=','custom_form_feedbacks.id')
             ->where($where)->select('custom_form_feedbacks.form_name','medicals.*')->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
     }
 

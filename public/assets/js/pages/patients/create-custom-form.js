@@ -14,7 +14,6 @@ function addCustomForm(url) {
         },
         error: function(xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-            reInitValidation(Validation);
         }
     });
 

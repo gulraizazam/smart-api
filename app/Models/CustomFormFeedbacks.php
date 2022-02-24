@@ -66,7 +66,7 @@ class CustomFormFeedbacks extends BaseModal
 
         if ($request->has('sort')) {
 
-            list($orderBy, $order) = getSortBy($request);
+            list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
 
             Filters::put(Auth::User()->id, $filename, 'order_by', $orderBy);
             Filters::put(Auth::User()->id, $filename, 'order', $order);

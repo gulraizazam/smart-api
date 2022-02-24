@@ -8,11 +8,6 @@
         </div>
 
         <div class="col-lg-4 mb-lg-0 mb-6">
-            <label>Patient Name:</label>
-            <input class="form-control filter-field" id="search_patient_name">
-        </div>
-
-        <div class="col-lg-4 mb-lg-0 mb-6">
             <label>Create at:</label>
             <div class="input-daterange input-group to-from-datepicker" >
                 <input type="text" id="search_created_from" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5">
@@ -25,13 +20,10 @@
             </div>
         </div>
 
-    </div>
-
-    <div class="row">
-        <div class="col-md-10">
-
+        <div class="col-md-4 mt-8">
             @include('admin.partials.filter-buttons')
 
         </div>
+
     </div>
 </div>

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Admin\Patients;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
+use App\Models\Measurement;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +23,19 @@ use App\Helpers\NodesTree;
 
 class MedicalHistoryController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -39,61 +54,78 @@ class MedicalHistoryController extends Controller
      * Display a listing of Lead_statuse.
      *
      * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      * @throws \Throwable
      */
-    public function datatable(Request $request,$id){
+    public function datatable(Request $request, $id){
+
+        $filename = 'patient_custom_form_feedbacks';
+        $filters = getFilters($request->all());
+
+        $apply_filter = checkFilters($filters, $filename);
 
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $appointmentmeasurements = Measurement::getBulkData_formeasurement($request->get('id'));
+        if (hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
+            $appointmentmeasurements = Measurement::getBulkData_formeasurement($ids);
             if($appointmentmeasurements) {
                 foreach($appointmentmeasurements as $appointmentmeasurement) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if(!Measurement::isChildExists($appointmentmeasurement->id, Auth::User()->account_id)) {
+                    if(!Measurement::isChildExists($appointmentmeasurement->id, Auth::user()->account_id)) {
                         $appointmentmeasurement->delete();
                     }
                 }
             }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true; // pass custom message(useful for getting status of group actions)
+            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
         }
 
         // Get Total Records
         $iTotalRecords = Medical::getTotalRecords($request, Auth::User()->account_id,$id,1);
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'medicals');
+
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
 
         $appointmentmedicals = Medical::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id,$id,1);
 
-        if($appointmentmedicals) {
-            foreach($appointmentmedicals as $appointmentmedicals) {
-                $user = User::find($appointmentmedicals->user_id);
-                $patient = User::find($appointmentmedicals->patient_id);
-                $records["data"][] = array(
-                    'form_name' => $appointmentmedicals->form_name,
-                    'patient_name' => $patient->name,
-                    'created_at' => Carbon::parse($appointmentmedicals->created_at)->format('F j,Y h:i A'),
-                    'actions' => view('admin.patients.card.medical.actions', compact('appointmentmedicals'))->render(),
-                );
-            }
-        }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+        $records = $this->getFilters($records);
 
-        return response()->json($records);
+        if($appointmentmedicals->count()) {
+            $records["data"] = $appointmentmedicals;
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+        }
+
+        $records["permissions"] = [
+            'edit' => Gate::allows('appointments_medical_edit'),
+            'manage' => Gate::allows('appointments_medical_form_manage'),
+        ];
+
+        return ApiHelper::apiDataTable($records);
+    }
+
+    private function getFilters($records) {
+
+        $records['active_filters'] = Filters::all(Auth::User()->id, 'patient_custom_form_feedbacks');
+        return $records;
     }
 
     /**
      * Show the form for editing Permission.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
@@ -102,7 +134,7 @@ class MedicalHistoryController extends Controller
         }
 
         $medicalinformation = Medical::find($id);
-        
+
 
         $custom_form_feedback = CustomFormFeedbacks::getAllFields($medicalinformation->custom_form_feedback_id);
         $patient_id = $custom_form_feedback->reference_id;
@@ -113,21 +145,26 @@ class MedicalHistoryController extends Controller
 
         $users = Patients::getActiveOnly()->toArray();
 
-        return view('admin.patients.card.medical.edit', ['custom_form' => $custom_form_feedback,'users'=>$users,'patient_id'=>$patient_id,'medicalinformation' => $medicalinformation]);
+        return ApiHelper::makeResponse([
+            'custom_form' => $custom_form_feedback,
+            'users'=>$users,
+            'patient_id'=>$patient_id,
+            'medicalinformation' => $medicalinformation
+        ], 'admin.patients.card.medical.edit');
     }
 
     /**
      * Show the form for editing Permission.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
     public function filled_preview($id)
     {
         if (!Gate::allows('appointments_medical_form_manage') && !Gate::allows('patients_customform_manage')) {
             return abort(401);
         }
-        $medicalinformation = Medical::with('appointment.location')->findorFail($id);
+        $medicalinformation = Medical::with('patient', 'appointment.location')->findorFail($id);
 
         $custom_form_feedback = CustomFormFeedbacks::getAllFields($medicalinformation->custom_form_feedback_id);
 
@@ -141,14 +178,22 @@ class MedicalHistoryController extends Controller
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
 
         $Services = $parentGroups->nodeList;
 
         $leadServices = $medicalinformation->service_id;
-        return view('admin.patients.card.medical.filled_preview', ['custom_form' => $custom_form_feedback,'patient_id'=>$patient_id,'medicalinformation'=>$medicalinformation,
-        'users' => $users,'Services' => $Services,'leadServices'=>$leadServices, 'thisId' => $id]);
+
+        return ApiHelper::makeResponse([
+            'custom_form' => $custom_form_feedback,
+            'patient_id'=>$patient_id,
+            'medicalinformation'=>$medicalinformation,
+            'users' => $users,
+            'Services' => $Services,
+            'leadServices'=>$leadServices,
+            'thisId' => $id
+        ], 'admin.patients.card.medical.filled_preview');
     }
 
 

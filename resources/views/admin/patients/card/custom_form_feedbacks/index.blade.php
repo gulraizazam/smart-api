@@ -1,10 +1,10 @@
-<div class="card-body">
+<div class="card-body page-custom-form">
     <!--begin::Search Form-->
 @include('admin.patients.card.custom_form_feedbacks.filters')
 <!--end::Search Form-->
 
     <!--begin: Datatable-->
-    <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
+    <div class="datatable datatable-bordered datatable-head-custom custom-form"></div>
     <!--end: Datatable-->
 </div>
 

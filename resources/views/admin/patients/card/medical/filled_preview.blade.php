@@ -1,305 +1,169 @@
-@extends('layouts.app-rs')
-<style type="text/css">
-    .cf_label {
-        width: 100%;
-    }
-
-    .cf_input_question {
-        font-size: 18px !important;
-        color: #000 !important;
-    }
-
-    .cf_input_option {
-        padding-top: 10px !important;
-    }
-
-    .cf_card {
-        padding-bottom: 0px;
-    }
-
-    .cf_input_option .md-checkbox label > .box {
-        width: 15px;
-        height: 15px;
-    }
-
-    .rs .md-checkbox label > .box {
-        top: 10px;
-    }
-
-    .rs .form-group.form-md-line-input .form-control {
-        border-bottom: 0;
-        font-size: 16px;
-        display: inline-block;
-    }
-
-    .cf_input_option label {
-        width: 90%;
-    }
-
-    .cf_main_title {
-        padding-bottom: 30px;
-    }
-
-    .cf_form_internal_title {
-        background: purple;
-        font-weight: bold;
-        font-size: 18px;
-        color: #fff;
-    }
-
-    .cf-question-headings {
-        color: #000;
-        font-weight: 500;
-    }
-
-    .cf_form_internal_title {
-        background: #35a1d4;
-        font-weight: bold;
-        font-size: 18px;
-        color: #fff;
-        display: inline-block;
-        padding: 10px;
-        position: relative;
-    }
-
-    h3.cf_form_internal_title:after {
-        content: "";
-        width: 0;
-        height: 0;
-        border-left: 3px solid transparent;
-        border-right: 20px solid transparent;
-        border-top: 39px solid #35a1d4;
-        position: absolute;
-        right: -20px;
-        top: 0px;
-    }
-
-    .cf-input-border {
-        border-bottom: 1px solid #ddd !important;
-    }
-    .page-break {
-        page-break-after: always;
-    }
-    .portlet.light.bordered {
-        margin-bottom: 0;
-    }
-    .order-date {
-        font-size: 36px;
-    }
-    .portlet  .md-checkbox input[type="checkbox"]:disabled:checked ~ label > .check, .portlet  .md-checkbox input[type="checkbox"]:disabled ~ label, .md-checkbox input[type="checkbox"]:disabled ~ label > .box,
-    .portlet  .md-checkbox input[type="checkbox"][disabled]:checked ~ label > .check, .portlet  .md-checkbox input[type="checkbox"][disabled] ~ label, .md-checkbox input[type="checkbox"][disabled] ~ label > .box,
-    .portlet .md-radio input[type="radio"]:disabled:checked ~ label > .check, .portlet .md-radio input[type="radio"]:disabled ~ label, .portlet .md-radio input[type="radio"]:disabled ~ label > .box,
-    .portlet .md-radio input[type="radio"][disabled]:checked ~ label > .check, .portlet .md-radio input[type="radio"][disabled] ~ label, .portlet .md-radio input[type="radio"][disabled] ~ label > .box,
-    .portlet .md-checkbox input[type="checkbox"]:disabled:checked ~ label > .check, .portlet .md-checkbox input[type="checkbox"]:disabled ~ label, .portlet .md-checkbox input[type="checkbox"]:disabled ~ label > .box,
-    .portlet .md-checkbox input[type="checkbox"][disabled]:checked ~ label > .check, .portlet .md-checkbox input[type="checkbox"][disabled] ~ label, .portlet .md-checkbox input[type="checkbox"][disabled] ~ label > .box{
-        opacity: 1;
-    }
-    .form-data-table .data-split-wrap td {
-        width: 50%;
-    }
-
-    table{
-        /*page-break-inside: avoid;*/
-        border-collapse: collapse;
-        border-spacing: 0;
-    }
-    .row-wrap{
-        /*display: -webkit-box;*/
-        /*display: -ms-flexbox;*/
-        /*display: flex;*/
-        /*-ms-flex-wrap: wrap;*/
-        /*flex-wrap: wrap;*/
-        display: table;
-        table-layout: fixed;
-        width: 100%;
-    }
-
-    .row-wrap:nth-child(2n) {
-        background: #eee;
-    }
-
-    .row-wrap.row-head {
-        background-color: #364150;
-        color: #fff;
-        font-size: 14px;
-        font-weight: 600;
-    }
-    .row-head p{
-        margin-bottom: 0;
-    }
-
-    .row-wrap .col {
-        /*flex-grow: 1;*/
-        /*-ms-flex-preferred-size: 0;*/
-        /*flex-basis: 0;*/
-        /*-webkit-box-flex: 1;*/
-        /*-ms-flex-positive: 1;*/
-        /*max-width: 100%;*/
-        display: table-cell;
-        padding: 10px 10px;
-    }
-
-    .cf_input_option .md-radio, .cf_input_option .md-checkbox {
-        position: relative;
-        display: inline-block;
-        padding: 0 10px;
-        width: 33%;
-    }
-
-
-
-    @media print {
-
-        html, body { height: auto; }
-        .row-wrap.row-head {
-            background-color: #364150 !important;
-            -webkit-print-color-adjust: exact;
-        }
-        .md-radio label > .check {
-            background-color: #35a1d4;
-        }
-        .md-radio label > .check::before {
-            content: '\f111';
-            color: #35a1d4 !important;
-            font-size: 14px;
-            line-height: 9px;
-            margin-left: -1px;
-            font-family: FontAwesome;
-        }
-    }
-
-</style>
-@section('title')
-    <!-- BEGIN PAGE TITLE-->
-    <h1 class="page-title">@lang('global.medical_history.title')</h1>
-    <!-- END PAGE TITLE-->
-@endsection
+@extends('admin.layouts.master')
 
 @section('content')
-    <div class="portlet light bordered">
-    <div class="portlet-title">
-            <div class="caption font-green-sharp">
-                <i class="fa fa-eye font-green-sharp"></i>
-                <span class="caption-subject bold uppercase"> @lang('global.app_preview')</span>
-            </div>
-            <div class="actions">
-                <a style="margin: 5px;" href="{{ route('admin.medicalhistoryform.index',[$medicalinformation->patient_id]) }}"
-                   class="btn dark pull-right">@lang('global.app_back')
-                </a>
-                @if(Gate::allows('appointments_medical_form_manage'))
-                    <a target="_blank" style="margin: 5px;" href="{{ route('admin.appointmentsmedical.custom_form_feedbacks.filled_print',$thisId) }}"
-                       class="btn dark pull-right">@lang('global.app_print')
-                    </a>
-                @endif
-                @if(Gate::allows('appointments_medical_form_manage'))
-                    <a style="margin: 5px;" href="{{ route('admin.appointmentsmedical.custom_form_feedbacks.export_pdf',$thisId) }}"
-                       class="btn dark pull-right">@lang('global.app_make_pdf')
-                    </a>
-                @endif
-            </div>
-        </div>
-        <div class="portlet-body rs">
-            <!-- custom form -->
-            <div id="cf_form">
-                <div class="portlet-body rs">
-                    <!-- custom form -->
-                    <input id="feedback_id" name="feedback_id" type="hidden" value="{{$custom_form->id}}"/>
-                    <div id="cf_form">
-                        <table class="form-data-table">
-                            <tbody>
-                            <tr class="data-split-wrap">
-                                <td>
-                                    {{--<img src="{{ asset('centre_logo/logo_final.png') }}" height="80">--}}
-                                    <img src="{{ url('centre_logo/'.$medicalinformation->appointment->location->image_src) }}" height="130">
-                                </td>
-                                <td>
-                                    <p class="order-date text-right">#{{ $thisId }} / {{-- date('M d, Y') --}}{{-- $medicalinformation->date --}} {{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $medicalinformation->date.' 00:00:00')->format('Y-M-d') }}</p>
-                                </td>
-                            </tr>
-                            <tr class="data-split-wrap">
-                                <td>
-                                    <div class="patient_info">
-                                        <label><h1 class="sbold margin-top-15">Patient Detail</h1></label>
-                                        <p><strong>Patient Name:</strong> {{$custom_form->patient?$custom_form->patient->name : "Null"}}</p>
-                                        <p><strong>Patient ID:</strong> {{$custom_form->patient?' C-'.$custom_form->patient->id : ""}} </p>
-                                        <p><strong>Email:</strong> {{$custom_form->patient?$custom_form->patient->email : ""}}</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="caompay-info pull-right">
-                                         <label><h1 class="sbold margin-top-15">Company Detail</h1></label>
-                                        <p><strong>Company Name:</strong> {{ Auth::user()->account->name }}</p>
-                                        <p><strong>Contact:</strong> {{ Auth::user()->account->contact }} </p>
-                                        <p><strong>Email:</strong> {{ Auth::user()->account->email }} </p>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="2">
-                                    <div class="form-info text-center">
-                                        <h1 class="sbold margin-top-15">{{$custom_form->form_name}}</h1>
-                                        <p>{{$custom_form->form_description}}</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            @foreach($custom_form->form_fields as $field)
-                                <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
 
-                                @if($field->field_type ==1)
-                                    <tr>
-                                        <td colspan="2">
-                                            @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ['field_id'=>$field->id, 'title'=>$content["title"],"value" => $field->field_value])
-                                        </td>
-                                    </tr>
-                                @elseif($field->field_type ==2)
-                                    <tr>
-                                        <td colspan="2">
-                                            @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ['field_id'=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])
-                                        </td>
-                                    </tr>
-                                @elseif($field->field_type ==3)
-                                    <tr class="data-split-wrap">
-                                            <td colspan="2">@include("admin.custom_form_feedbacks.preview_fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
-                                    </tr>
-                                @elseif($field->field_type ==4 && is_array($content))
-                                    <tr class="data-split-wrap">
+    @push('css')
+        <style>
+            @media print {
+                input[type=checkbox], input[type=radio] {
+                    z-index: 99 !important;
+                    opacity: 1 !important;
+                }
 
-                                            <td colspan="2">@include("admin.custom_form_feedbacks.preview_fields.multi_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
-                                    </tr>
-                                @elseif($field->field_type ==5 && is_array($content))
-                                    <tr>
-                                        <td colspan="2">@include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
-                                    </tr>
-                                @elseif($field->field_type ==6 && is_array($content))
-                                    <tr>
-                                        <td colspan="2">@include("admin.custom_form_feedbacks.preview_fields.title_description_field", ["field_id"=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])</td>
-                                    </tr>
 
-                                @elseif($field->field_type ==7 && is_array($content))
-                            </tbody>
-                        </table>
-                        @include("admin.custom_form_feedbacks.preview_fields.table_input_field_preview", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
-                        <table>
-                            <tbody>
+                #kt_header,
+                #kt_header_mobile_topbar_toggle,
+                #kt_subheader,
+                .card-header,
+                .footer,
+                .topbar {
+                    display: none !important;
+                }
+            }
+        </style>
+    @endpush
+
+    <!--begin::Content-->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+
+    @include('admin.partials.breadcrumb', ['module' => 'Custom Form Feedbacks', 'title' => 'Custom Form Feedbacks'])
+
+    <!--begin::Entry-->
+        <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+
+                <!--begin::Card-->
+                <div class="card card-custom">
+                    <div class="card-header py-3">
+                        <div class="card-title">
+                            <span class="card-icon">
+                                <span class="svg-icon svg-icon-md svg-icon-primary">
+                                    <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
+                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                            <rect x="0" y="0" width="24" height="24" />
+                                            <rect fill="#000000" opacity="0.3" x="12" y="4" width="3" height="13" rx="1.5" />
+                                            <rect fill="#000000" opacity="0.3" x="7" y="9" width="3" height="8" rx="1.5" />
+                                            <path d="M5,19 L20,19 C20.5522847,19 21,19.4477153 21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 C4.55228475,3 5,3.44771525 5,4 L5,19 Z" fill="#000000" fill-rule="nonzero" />
+                                            <rect fill="#000000" opacity="0.3" x="17" y="11" width="3" height="6" rx="1.5" />
+                                        </g>
+                                    </svg>
+                                    <!--end::Svg Icon-->
+                                </span>
+                            </span>
+                            <h3 class="card-label">Custom Form Feedbacks</h3>
+                        </div>
+                        <div class="card-toolbar">
+
+                            <a href="{{route('admin.patients.preview', $medicalinformation->patient_id)}}" class="btn btn-sm btn-dark">
+                                <i class="las la-arrow-left"></i>
+                                Back
+                            </a>
+                            &nbsp;&nbsp;&nbsp;
+
+                            @if(Gate::allows('custom_form_feedbacks_manage') && Gate::allows('patients_customform_manage'))
+                                <a href="{{ route('admin.patient_custom_form_feedbacks.export_pdf',$thisId) }}" class="btn btn-sm btn-primary">
+                                    <i class="las la-file-pdf"></i>
+                                    PDF
+                                </a>
                             @endif
-                            @endforeach
-                            </tbody>
-                        </table>
+                            &nbsp;&nbsp;&nbsp;
+                            @if(Gate::allows('custom_form_feedbacks_manage') && Gate::allows('patients_customform_manage'))
+                                <a href="javascript:print();" class="btn btn-sm btn-primary">
+                                    <i class="las la-print"></i>
+                                    Print
+                                </a>
+                        @endif
+
+
+                        <!--end::Button-->
+                        </div>
                     </div>
 
+                    <div class="card-body">
+
+                        <div class="form-group">
+
+                            <div class="row">
+
+                                <div class="col-md-6">
+                                    <img class="w-50" src="{{asset('assets/media/logos/logo_final.png')}}">
+                                    <div class="mt-15">
+                                        <h1>Patient Detail</h1>
+                                        <p> <strong>Patient Name: </strong> {{$medicalinformation->patient?$medicalinformation->patient->name : "Null"}}</p>
+                                        <p> <strong>Patient ID: </strong> {{$medicalinformation->patient?' C-'.$medicalinformation->patient->id : ""}}</p>
+                                        <p>  <strong>Email: </strong> {{$medicalinformation->patient?$medicalinformation->patient->email : ""}}</p>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <h2 id="custom_form_id">#{{ $thisId }} / {{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $custom_form->created_at)->format('Y-M-d') }}</h2>
+                                    <h1 class="mt-30">Company Detail</h1>
+                                    <p> <strong>Company Name: </strong> {{ Auth::user()->account->name }}</p>
+                                    <p> <strong>Contact: </strong> {{ Auth::user()->account->contact }}</p>
+                                    <p>  <strong>Email: </strong> {{ Auth::user()->account->email }}</p>
+                                </div>
+
+
+                                <div class="col-md-8 text-center mt-10">
+                                    <h1 >{{$custom_form->form_name ?? ''}}</h1>
+                                    <p>{{$custom_form->form_description ?? ''}}</p>
+                                </div>
+
+                            </div>
+
+
+                            <div class="row mt-15">
+                                @foreach($custom_form->form_fields as $field)
+
+                                    <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
+
+
+                                    @if($field->field_type ==1)
+                                        <div class="col-md-6">
+                                            @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ['field_id'=>$field->id, 'title'=>$content["title"],"value" => $field->field_value])
+                                        </div>
+                                    @elseif($field->field_type ==2)
+                                        <div class="col-md-6">
+                                            @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ['field_id'=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])
+                                        </div>
+                                    @elseif($field->field_type ==3)
+                                        <div class="col-md-6">
+                                            @include("admin.custom_form_feedbacks.preview_fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                                        </div>
+                                    @elseif($field->field_type ==4 && is_array($content))
+                                        <div class="col-md-6">
+                                            @include("admin.custom_form_feedbacks.preview_fields.multi_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                                        </div>
+                                    @elseif($field->field_type ==5 && is_array($content))
+                                        <div class="col-md-6">
+                                            @include("admin.custom_form_feedbacks.preview_fields.text_field_preview", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                                        </div>
+                                    @elseif($field->field_type ==6 && is_array($content))
+                                        <div class="col-md-6">
+                                            @include("admin.custom_form_feedbacks.preview_fields.title_description_field", ["field_id"=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])</td>
+                                        </div>
+
+                                    @elseif($field->field_type ==7 && is_array($content))
+                                    @endif
+                                @endforeach
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
                 </div>
-
+                <!--end::Card-->
             </div>
-
+            <!--end::Container-->
         </div>
-        @stop
+        <!--end::Entry-->
+    </div>
+    <!--end::Content-->
 
-        @section('javascript')
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('js/admin/custom_form_feedbacks/fields.js') }}" type="text/javascript"></script>
 
 @endsection
-

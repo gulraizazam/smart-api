@@ -83,7 +83,7 @@ class CustomFormFeedbacksController extends Controller
         $iTotalRecords = CustomFormFeedbacks::getTotalRecords($request, Auth::User()->account_id, $apply_filter, $id, $filename);
 
 
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
 
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 

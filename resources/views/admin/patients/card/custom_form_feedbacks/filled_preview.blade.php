@@ -92,7 +92,7 @@
                                     <div class="mt-15">
                                         <h1>Patient Detail</h1>
                                         <p> <strong>Patient Name: </strong> {{$custom_form->patient?$custom_form->patient->name : "Null"}}</p>
-                                        <p> <strong>Patient Name: </strong> {{$custom_form->patient?' C-'.$custom_form->patient->id : ""}}</p>
+                                        <p> <strong>Patient ID: </strong> {{$custom_form->patient?' C-'.$custom_form->patient->id : ""}}</p>
                                         <p>  <strong>Email: </strong> {{$custom_form->patient?$custom_form->patient->email : ""}}</p>
                                     </div>
                                 </div>
