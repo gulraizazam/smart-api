@@ -199,7 +199,7 @@ class RolesController extends Controller
             'reportsPermissionsMapping' => $reportsPermissionsMapping,
             'AllowedPermissions' =>  $AllowedPermissions
         ], 'admin.roles.create');
-        
+
     }
 
     /**
@@ -499,9 +499,9 @@ class RolesController extends Controller
             'AllowedPermissions' => $AllowedPermissions,
             'dashboardPermissionsMapping' => $dashboardPermissionsMapping,
             'DashboardPermissions' => $DashboardPermissions,
-            'Permissions' => $Permissions, 
+            'Permissions' => $Permissions,
             'permissionsMapping' => $permissionsMapping,
-            "reportsPermissionsMapping" => $reportsPermissionsMapping, 
+            "reportsPermissionsMapping" => $reportsPermissionsMapping,
             'ReportsPermissions' => $ReportsPermissions
         ], 'admin.roles.edit');
 

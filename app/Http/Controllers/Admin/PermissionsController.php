@@ -144,11 +144,11 @@ class PermissionsController extends Controller
                 $permissions[$permission->id] = $permission->title . ' (' . $permission->name . ')';
             }
         }
-        
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'permissions' => $permissions
         ]);
-        
+
     }
 
     /**
@@ -277,7 +277,7 @@ class PermissionsController extends Controller
         $permission->delete();
 
         return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
-    
+
     }
 
 }

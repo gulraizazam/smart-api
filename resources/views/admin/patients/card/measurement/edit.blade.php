@@ -124,7 +124,6 @@
                     $(".update_patient_data").bind("change", function () {
 
                         patient_id = $("select[name=reference_id]").val();
-                        console.log("new id: "  + patient_id);
                         if(parseInt(patient_id) > 0 ){
                             update_feedback({'reference_id':patient_id}, (res)=>{
 

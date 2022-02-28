@@ -721,7 +721,7 @@
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
                                 <ul class="menu-subnav">
-                                    <li class="menu-item {{activeMenu('admin.custom_form_feedbacks.index')}}" aria-haspopup="true">
+                                    <li class="menu-item {{activeMenu('admin.custom_form_feedbacks.index')}} {{activeMenu('admin.custom_form_feedbacks.filled_preview')}}" aria-haspopup="true">
                                         <a href="{{route('admin.custom_form_feedbacks.index')}}" class="menu-link">
                                             <i class="menu-bullet menu-bullet-dot">
                                                 <span></span>
