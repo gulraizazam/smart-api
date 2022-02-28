@@ -8,13 +8,11 @@
     <meta content="Red Signal" name="author"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <!--begin::Fonts-->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
     <!--end::Fonts-->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!--begin::Global Theme Styles(used by all pages)-->
     <link href="{{asset('assets/plugins/global/plugins.bundle.css')}}" rel="stylesheet" type="text/css" />
-    <link href="{{asset('assets/plugins/custom/prismjs/prismjs.bundle.css')}}" rel="stylesheet" type="text/css" />
     <link href="{{asset('assets/css/style.bundle.css')}}" rel="stylesheet" type="text/css" />
     <!--end::Global Theme Styles-->
     <!--begin::Layout Themes(used by all pages)-->
@@ -23,7 +21,6 @@
     <link href="{{asset('assets/css/themes/layout/brand/dark.css')}}" rel="stylesheet" type="text/css" />
     <link href="{{asset('assets/css/themes/layout/aside/dark.css')}}" rel="stylesheet" type="text/css" />
     <!--end::Layout Themes-->
-    <link href="{{asset('assets/css/custom.css')}}" rel="stylesheet" type="text/css" />
     <link rel="shortcut icon" href="{{asset('favicon.ico')}}" />
 
     @stack('css')
@@ -37,16 +34,10 @@
     <!--begin::Page-->
     <div class="d-flex flex-row flex-column-fluid page">
 
-
-
 <!--begin::Wrapper-->
     <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
 
-      
-
         @yield('content')
-
-
 
     </div>
 
@@ -61,11 +52,6 @@
 <script src="{{asset('assets/plugins/custom/prismjs/prismjs.bundle.js')}}"></script>
 <script src="{{asset('assets/js/scripts.bundle.js')}}"></script>
 <!--end::Global Theme Bundle-->
-<script src="{{asset('assets/js/pages/features/custom/spinners.js')}}"></script>
-
-<script src="{{asset('assets/js/pages/widgets.js')}}"></script>
-
-
 
 </body>
 <!--end::Body-->

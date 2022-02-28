@@ -56,14 +56,14 @@
                         </div>
                         <div class="card-toolbar">
 
-                            <a href="{{route('admin.patients.preview', $medicalinformation->patient_id)}}" class="btn btn-sm btn-dark">
+                            <a href="{{route('admin.patients.preview', $measurementinformation->patient_id)}}" class="btn btn-sm btn-dark">
                                 <i class="las la-arrow-left"></i>
                                 Back
                             </a>
                             &nbsp;&nbsp;&nbsp;
 
                             @if(Gate::allows('custom_form_feedbacks_manage') && Gate::allows('patients_customform_manage'))
-                                <a href="{{ route('admin.patient_custom_form_feedbacks.export_pdf',$thisId) }}" class="btn btn-sm btn-primary">
+                                <a href="{{ route('admin.appointment_measurement_custom_form_feedbacks.export_pdf',$thisId) }}" class="btn btn-sm btn-primary">
                                     <i class="las la-file-pdf"></i>
                                     PDF
                                 </a>
@@ -91,9 +91,9 @@
                                     <img class="w-50" src="{{asset('assets/media/logos/logo_final.png')}}">
                                     <div class="mt-15">
                                         <h1>Patient Detail</h1>
-                                        <p> <strong>Patient Name: </strong> {{$medicalinformation->patient?$medicalinformation->patient->name : "Null"}}</p>
-                                        <p> <strong>Patient ID: </strong> {{$medicalinformation->patient?' C-'.$medicalinformation->patient->id : ""}}</p>
-                                        <p>  <strong>Email: </strong> {{$medicalinformation->patient?$medicalinformation->patient->email : ""}}</p>
+                                        <p> <strong>Patient Name: </strong> {{$measurementinformation->patient?$measurementinformation->patient->name : "Null"}}</p>
+                                        <p> <strong>Patient ID: </strong> {{$measurementinformation->patient?' C-'.$measurementinformation->patient->id : ""}}</p>
+                                        <p>  <strong>Email: </strong> {{$measurementinformation->patient?$measurementinformation->patient->email : ""}}</p>
                                     </div>
                                 </div>
 

@@ -75,12 +75,12 @@ class CustomFormFeedbacksController extends Controller
                     }
                 }
             }
-            $records["status"] = "OK"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true; // pass custom message(useful for getting status of group actions)
             $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
         }
 
         // Get Total Records
-        $iTotalRecords = CustomFormFeedbacks::getTotalRecords($request, Auth::User()->account_id, $apply_filter, $id, $filename);
+        $iTotalRecords = CustomFormFeedbacks::getTotalRecords($request, Auth::user()->account_id, $apply_filter, $id, $filename);
 
 
         list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
@@ -88,7 +88,7 @@ class CustomFormFeedbacksController extends Controller
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
 
-        $CustomFormFeedbacks = CustomFormFeedbacks::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, $id, $filename);
+        $CustomFormFeedbacks = CustomFormFeedbacks::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $apply_filter, $id, $filename);
 
         $records = $this->getFilters($records, $filename);
 

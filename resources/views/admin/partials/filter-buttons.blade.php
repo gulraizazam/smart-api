@@ -1,4 +1,4 @@
-<div class="input-icon mb-1">
+<div class="input-icon mb-1" style="width: 215px;">
     <button class="btn btn-primary btn-primary--icon" id="apply-filters">
         <i class="la la-search"></i>
         Search

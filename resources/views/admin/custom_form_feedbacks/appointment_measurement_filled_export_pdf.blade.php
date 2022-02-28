@@ -1,10 +1,10 @@
-@extends('layouts.app-rs-pdf')
+@extends('admin.layouts.master-pdf')
 <style type="text/css">
     @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
     .cf_label {
         width: 100%;
     }
-    
+
     .clearfix:before,
     .clearfix:after {
         content: " "; /* 1 */
@@ -22,7 +22,7 @@
     .clearfix {
         *zoom: 1;
     }
-        
+
     .cf_input_question {
         font-size: 18px !important;
         color: #000 !important;
@@ -43,8 +43,8 @@
     .cf_input_option .md-radio, .cf_input_option .md-checkbox {
         position: relative;
         padding: 0 10px;
-        width:48%; 
-        display:inline-block; 
+        width:48%;
+        display:inline-block;
         /* float:left; */
     }
     .cf_input_option .md-checkbox label > .box {
@@ -245,10 +245,10 @@
         padding-top:40px;
     }
     .form-data-table{
-        page-break-after: avoid;   
+        page-break-after: avoid;
     }
     #cs_field_27{
-        page-break-before:avoid;   
+        page-break-before:avoid;
     }
     .cf_input_option .md-checkbox label{
         padding-left:10px !important;
@@ -259,15 +259,15 @@
     }
     #cf_form, .portlet-body, .portlet, .form-data-table{
         width:100%;
-        
+
     }
-    
+
     @media print {
         h1,h2,h3,h4,h5,h6,p{
             font-family: "Open Sans", sans-serif !important;
-        }   
+        }
         .form-data-table{
-            page-break-after: avoid;   
+            page-break-after: avoid;
         }
         html, body { height: auto;
             background:#fff !important;
@@ -343,8 +343,8 @@
                     <tbody>
                     <tr class="data-split-wrap">
                         <td>
-                            {{--<img src="{{ asset('centre_logo/logo_final.png') }}" height="80">--}}
-                            <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(url('centre_logo/'.$measurementinformation->appointment->location->image_src)))}}" height="80">
+                            <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(public_path('assets/media/logos/logo_final.png')))}}" height="80">
+{{--                            <img src="{{asset('assets/media/logos/logo_final.png')}}" height="80">--}}
                         </td>
                         <td>
                             <p class="order-date text-right">#{{ $thisId }} / {{ date('M d, Y') }}</p>
@@ -396,11 +396,11 @@
                             </tr>
                         @elseif($field->field_type ==3)
                             <tr>
-                                    <td colspan="2">@include("admin.custom_form_feedbacks.preview_fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                                <td colspan="2">@include("admin.custom_form_feedbacks.preview_fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
                             </tr>
                         @elseif($field->field_type ==4 && is_array($content))
                             <tr>
-                                    <td colspan="2">@include("admin.custom_form_feedbacks.preview_fields.multi_select_field_pdf", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
+                                <td colspan="2">@include("admin.custom_form_feedbacks.preview_fields.multi_select_field_pdf", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])</td>
                             </tr>
                         @elseif($field->field_type ==5 && is_array($content))
                             <tr>
@@ -431,13 +431,3 @@
 
         </div>
         @stop
-
-        @section('javascript')
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('js/admin/custom_form_feedbacks/fields.js') }}" type="text/javascript"></script>
-
-@endsection
-

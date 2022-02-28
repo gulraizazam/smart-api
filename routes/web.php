@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
@@ -209,6 +210,8 @@ use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
         Route::resource('custom_form_feedbacks', CustomFormFeedbacksController::class);
         Route::get('custom_form_feedbacks/{form_id}/preview_form', [CustomFormFeedbacksController::class, 'preview_form'])->name("custom_form_feedbacks.preview_form");
 
+        Route::get('custom_form_feedbacks/{id}/preview', [CustomFormFeedbacksController::class, 'filled_preview'])->name("custom_form_feedbacks.filled_preview");
+
         /*Route start for patient Pre define Custome Forms*/
         Route::get('customformfeedbackspatient/editcustomform/{id}',[PatientCustomFormController::class, 'edit'])->name('customformfeedbackspatient.edit');
         Route::get('customformfeedbackspatient/previewcustomform/{id}',[PatientCustomFormController::class, 'filled_preview'])->name('customformfeedbackspatient.previewform');
@@ -320,6 +323,8 @@ use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
         Route::get('measurementhistoryform/{id}',[MeasurementHistoryController::class, 'index'])->name('measurementhistoryform.index');
 
         Route::post('measurementhistoryform/{custom_form_id}', [MeasurementHistoryController::class, 'update_measurement_field'])->name('measurementhistoryform.update');
+
+        Route::get('appointmentsmeasurement/{id}/export_pdf', [AppointmentMeasurementController::class, 'exportPdf'])->name("appointment_measurement_custom_form_feedbacks.export_pdf");
 
 
     });
