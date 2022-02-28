@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\MachineTypeController;
+use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
@@ -304,10 +305,21 @@ use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 
 
         /*Route start for patient medical history Forms*/
-        Route::get('medicalhistoryform/editcustomform/{id}',[MedicalHistoryController::class, 'edit'])->name('medicalhistoryform.edit');
+        Route::get('medicalhistoryform/editcustomform/{id}', [MedicalHistoryController::class, 'edit'])->name('medicalhistoryform.edit');
 
         Route::get('medicalhistoryform/previewcustomform/{id}',[MedicalHistoryController::class, 'filled_preview'])->name('medicalhistoryform.previewform');
 
         Route::get('medicalhistoryform/{id}',[MedicalHistoryController::class, 'index'])->name('medicalhistoryform.index');
+
+
+        /*Route start for patient measurement history Forms*/
+        Route::get('measurementhistoryform/editcustomform/{id}',[MeasurementHistoryController::class, 'edit'])->name('measurementhistoryform.edit');
+
+        Route::get('measurementhistoryform/previewcustomform/{id}',[MeasurementHistoryController::class, 'filled_preview'])->name('measurementhistoryform.previewform');
+
+        Route::get('measurementhistoryform/{id}',[MeasurementHistoryController::class, 'index'])->name('measurementhistoryform.index');
+
+        Route::post('measurementhistoryform/{custom_form_id}', [MeasurementHistoryController::class, 'update_measurement_field'])->name('measurementhistoryform.update');
+
 
     });

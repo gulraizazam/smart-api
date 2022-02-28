@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\MachineTypeController;
+use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
@@ -376,6 +377,9 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     /*Route start for patient medical history Forms*/
     Route::post('medicalhistoryform/datatable/&{id}', [MedicalHistoryController::class, 'datatable'])->name('medicalhistoryform.datatable');
+
+    /*Route start for patient measurement history Forms*/
+    Route::post('measurementhistoryform/datatable/&{id}', [MeasurementHistoryController::class, 'datatable'])->name('measurementhistoryform.datatable');
 
 
 });
