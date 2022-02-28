@@ -19,7 +19,7 @@
 <div class="form-group form-md-line-input cf_card">
     <h3 class="cf-question-headings">Date</h3>
     <div class="form-group form-md-line-input cf_input_option"/>
-    <label class="w-100">
+    <label class="w-100 custom-datepicker">
         <input type="text" name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_DATE}}" id="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_DATE}}" value="@if($medicalinformation->date == null){{Carbon\Carbon::parse(\Carbon\Carbon::now())->format('Y-m-d')}}@else{{$medicalinformation->date}}@endif" class="form-control date_to_rota_edit update_measurement_data">
     </label>
 </div>

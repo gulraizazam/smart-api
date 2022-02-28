@@ -2,25 +2,35 @@
 
 namespace App\Http\Controllers\Admin\Patients;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Input;
-use App\Models\CustomFormFeedbackDetails;
 use App\Models\CustomFormFeedbacks;
-use App\Models\CustomForms;
 use App\Models\Measurement;
 use App\Models\Patients;
-use App\User;
+use App\Models\User;
 use Carbon\Carbon;
 use Spatie\Browsershot\Browsershot;
 use App\Helpers\NodesTree;
 
 class MeasurementHistoryController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -31,24 +41,29 @@ class MeasurementHistoryController extends Controller
         if (!Gate::allows('appointments_measurement_manage')) {
             return abort(401);
         }
-        $filters = Filters::all(Auth::User()->id, 'patient_custom_form_feedbacks');
-        $patient = User::finduser($id);
-        return view('admin.patients.card.measurement.index',compact('patient','filters'));
+
+        return view('admin.patients.card.measurement.index');
     }
     /**
      * Display a listing of Lead_statuse.
      *
      * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      * @throws \Throwable
      */
     public function datatable(Request $request,$id){
 
+        $filename = 'patient_custom_form_feedbacks';
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $appointmentmeasurements = Measurement::getBulkData_formeasurement($request->get('id'));
+        $filters = getFilters($request->all());
+
+        $apply_filter = checkFilters($filters, $filename);
+
+        if (hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
+            $appointmentmeasurements = Measurement::getBulkData_formeasurement($ids);
             if($appointmentmeasurements) {
                 foreach($appointmentmeasurements as $appointmentmeasurement) {
                     // Check if child records exists or not, If exist then disallow to delete it.
@@ -57,22 +72,26 @@ class MeasurementHistoryController extends Controller
                     }
                 }
             }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true; // pass custom message(useful for getting status of group actions)
+            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
         }
 
         // Get Total Records
-        $iTotalRecords = Measurement::getTotalRecords($request, Auth::User()->account_id,$id,1);
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        $iTotalRecords = Measurement::getTotalRecords($request, Auth::user()->account_id,$id,1);
+
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
+
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
 
         $appointmentmeasurements = Measurement::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id,$id,1);
 
-        if($appointmentmeasurements) {
-            foreach($appointmentmeasurements as $appointmentmeasurements) {
-                $user = User::find($appointmentmeasurements->user_id);
+        $records = $this->getFiltersData($records, $filename);
+
+        if($appointmentmeasurements->count()) {
+            $records["data"] = $appointmentmeasurements;
+
+            /*foreach($appointmentmeasurements as $appointmentmeasurements) {
                 $patient = User::find($appointmentmeasurements->patient_id);
                 $records["data"][] = array(
                     'form_name' => $appointmentmeasurements->form_name,
@@ -80,20 +99,43 @@ class MeasurementHistoryController extends Controller
                     'created_at' => Carbon::parse($appointmentmeasurements->created_at)->format('F j,Y h:i A'),
                     'actions' => view('admin.patients.card.measurement.actions', compact('appointmentmeasurements'))->render(),
                 );
-            }
-        }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+            }*/
 
-        return response()->json($records);
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+        }
+
+        $records["permissions"] = [
+            'edit' => Gate::allows('appointments_measurement_edit'),
+            'manage' => Gate::allows('appointments_measurement_manage'),
+        ];
+
+        return ApiHelper::apiDataTable($records);
     }
 
+    private function getFiltersData($records, $filename) {
+
+        $records['filter_values'] = [
+            'name' => Filters::get(Auth::user()->id,$filename, 'name'),
+            'created_from' => Filters::get(Auth::user()->id, $filename, 'created_from') ? Carbon::parse(Filters::get(Auth::user()->id, $filename, 'created_from'))->format('Y-m-d') : '',
+            'created_to' => Filters::get(Auth::user()->id, $filename, 'created_to') ? Carbon::parse(Filters::get(Auth::user()->id, $filename, 'created_to'))->format('Y-m-d') : '',
+        ];
+
+        $records['active_filters'] = Filters::all(Auth::User()->id, $filename);
+
+        return $records;
+    }
     /**
      * Show the form for editing Permission.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
@@ -122,7 +164,15 @@ class MeasurementHistoryController extends Controller
 
         $leadServices = $measurementinformation->service_id;
 
-        return view('admin.patients.card.measurement.edit', ['custom_form' => $custom_form_feedback,'users'=>$users,'patient_id'=>$patient_id,'measurementinformation' => $measurementinformation,'Services'=>$Services,'leadServices'=>$leadServices]);
+        return ApiHelper::makeResponse([
+            'custom_form' => $custom_form_feedback,
+            'users'=>$users,
+            'patient_id'=>$patient_id,
+            'measurementinformation' => $measurementinformation,
+            'Services'=>$Services,
+            'leadServices'=>$leadServices
+        ], 'admin.patients.card.measurement.edit');
+
     }
 
     /**
@@ -151,7 +201,7 @@ class MeasurementHistoryController extends Controller
      * Show the form for editing Permission.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
     public function filled_preview($id)
     {
@@ -178,8 +228,17 @@ class MeasurementHistoryController extends Controller
         $Services = $parentGroups->nodeList;
 
         $leadServices = $measurementinformation->service_id;
-        return view('admin.patients.card.measurement.filled_preview', ['custom_form' => $custom_form_feedback,'patient_id'=>$patient_id,'measurementinformation'=>$measurementinformation,
-        'users' => $users,'Services' => $Services,'leadServices'=>$leadServices, 'thisId' => $id]);
+
+        return ApiHelper::makeResponse([
+            'custom_form' => $custom_form_feedback,
+            'patient_id'=> $patient_id,
+            'measurementinformation'=> $measurementinformation,
+            'users' => $users,
+            'Services' => $Services,
+            'leadServices'=>$leadServices,
+            'thisId' => $id
+        ], 'admin.patients.card.measurement.filled_preview');
+
     }
 
 

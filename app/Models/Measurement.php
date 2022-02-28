@@ -3,12 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\User;
 use Illuminate\Http\Request;
-use DB;
-use Session;
-use App\Models\AuditTrails;
-use Auth;
 
 
 class Measurement extends Model
@@ -27,7 +22,7 @@ class Measurement extends Model
      */
     public function user()
     {
-        return $this->belongsTo('App\User')->withTrashed();
+        return $this->belongsTo(User::class)->withTrashed();
     }
     /**
      * Get the service that owns the measurement.
@@ -172,6 +167,8 @@ class Measurement extends Model
     {
         $where = array();
 
+        $filters = getFilters($request->all());
+
         if($flag == 1){
             if($id != false){
                 $where[] = array(
@@ -189,51 +186,45 @@ class Measurement extends Model
                 );
             }
         }
-        if ($request->get('user_id')) {
+        if (hasFilter($filters, 'user_id')) {
             $where[] = array(
                 'user_id',
                 '=',
-                $request->get('user_id')
+                $filters['user_id']
             );
         }
-        if ($request->get('type')) {
+        if (hasFilter($filters, 'type')) {
             $where[] = array(
                 'type',
                 '=',
-                $request->get('type')
+                $filters['type']
             );
         }
-        if ($request->get('name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'form_name',
                 'like',
-                '%'.$request->get('name').'%'
+                '%'. $filters['name'].'%'
             );
         }
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'measurements.created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
         }
-        if ($request->get('created_to') && $request->get('created_to') != '') {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'measurements.created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
         }
-        $orderBy = 'measurements.created_at';
-        $order = 'desc';
 
-        if ($request->get('order')[0]['dir']) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            $order = $request->get('order')[0]['dir'];
-        }
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'measurements');
 
-        return self::join('custom_form_feedbacks','measurements.custom_form_feedback_id','=','custom_form_feedbacks.id')
+        return self::with('patient')->join('custom_form_feedbacks','measurements.custom_form_feedback_id','=','custom_form_feedbacks.id')
             ->where($where)->select('custom_form_feedbacks.form_name','measurements.*')->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
     }
 
@@ -271,6 +262,10 @@ class Measurement extends Model
 //        }
 
         return false;
+    }
+
+    public function patient(){
+        return $this->hasOne(\App\Models\User::class,'id','patient_id');
     }
 
 

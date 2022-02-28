@@ -8,16 +8,11 @@ use App\Models\Measurement;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Input;
-use App\Models\CustomFormFeedbackDetails;
 use App\Models\CustomFormFeedbacks;
-use App\Models\CustomForms;
 use App\Models\Medical;
 use App\Models\Patients;
-use App\User;
-use Carbon\Carbon;
+use App\Models\User;
 use Spatie\Browsershot\Browsershot;
 use App\Helpers\NodesTree;
 
