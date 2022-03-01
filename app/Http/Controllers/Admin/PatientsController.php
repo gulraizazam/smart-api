@@ -350,6 +350,7 @@ class PatientsController extends Controller
      */
     public function preview($id)
     {
+
         if (!Gate::allows('patients_manage')) {
             return abort(401);
         }
@@ -1254,38 +1255,37 @@ class PatientsController extends Controller
     /**
      * store document to upload document.
      * @param id
-     * @return view
+     * @return \Illuminate\Http\JsonResponse
      */
     public function documentstore(Request $request){
+
         if (!Gate::allows('patients_document_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $validator = $this->verifyDocumentFields($request);
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         $patient = Patients::getData($request->patient_id);
 
         if (!$patient) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->success, 'Resource not found', false);
         }
-        $file=$request->file('upload_file');
-        $file->move('patient_document',$file->getClientOriginalName());
-        $ext=$file->getClientOriginalExtension();
+
+        $file = $request->file('file');
+        $ext = $file->getClientOriginalExtension();
         if($ext=='jpg' || $ext=='jpeg' || $ext=='png' || $ext=='pdf' ||$ext=='docx' ||$ext=='xlsx')
         {
-            $document = Documents::CreateRecord($file,$request,$patient->id);
+            $fileName = time().'-'.str_replace(' ', '-', $file->getClientOriginalName());
+            $file->storeAs('public/patient_image', $fileName);
 
-            flash('Record has been created successfully.')->success()->important();
-            return redirect()->route('admin.patients.document', ['id' => $patient->id]);
+            $path = 'patient_image/'. $fileName;
+            Documents::CreateRecord($request, $path, $patient->id);
+
+            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         }
-        else{
-            flash('File format not supported.')->warning()->important();
-            return redirect()->route('admin.patients.document', ['id' => $patient->id]);
-        }
+
+        return ApiHelper::apiResponse($this->success, 'File format not supported.', false);
     }
 
     /**
@@ -1298,7 +1298,7 @@ class PatientsController extends Controller
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'upload_file' => 'required'
+            'file' => 'required'
         ]);
     }
 
@@ -1310,15 +1310,10 @@ class PatientsController extends Controller
     public function documentdatatable($id, Request $request){
 
         $filename = 'patient_documents';
-        $apply_filter = false;
-        if($request->get('action')) {
-            $action = $request->get('action');
-            if(isset($action[0]) && $action[0] == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, $filename);
-            } else if($action == 'filter') {
-                $apply_filter = true;
-            }
-        }
+
+        $filters = getFilters($request->all());
+
+        $apply_filter = checkFilters($filters, $filename);
 
         if (!Gate::allows('users_manage')) {
             return abort(401);
@@ -1327,27 +1322,47 @@ class PatientsController extends Controller
         $records["data"] = array();
         // Get Total Records
         $iTotalRecords = Documents::getTotalRecords($request, Auth::User()->account_id,$id, $apply_filter, $filename);
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
 
-        $documents = Documents::getRecords($id,$request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, $filename);
+        list($orderBy, $order) = getSortBy($request);
 
-        if($documents) {
-            foreach($documents as $document) {
-                $records["data"][] = array(
-                    'name' => $document->name,
-                    'created_at' => Carbon::parse($document->created_at)->format('F j,Y h:i A'),
-                    'actions' => view('admin.patients.card.documents.actions', compact('document'))->render(),
-                );
-            }
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+        $documents = Documents::getRecords($id,$request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $apply_filter, $filename);
+
+        $records = $this->getFilters($records, $filename);
+
+        if($documents->count()) {
+            $records['data'] = $documents;
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
         }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+
+        $records["permissions"] = [
+            'edit' => Gate::allows('patients_document_edit'),
+            'delete' => Gate::allows('patients_document_destroy'),
+            'manage' => Gate::allows('patients_document_manage'),
+        ];
 
         return response()->json($records);
+    }
+
+    private function getFilters($records, $filename) {
+
+        $records['active_filters'] = Filters::all(Auth::user()->id, $filename);
+
+        $records["filter_values"] = [
+            'form_types' => '',
+            'status' => config('constants.status')
+        ];
+
+        return $records;
     }
 
     /*
@@ -1376,24 +1391,19 @@ class PatientsController extends Controller
     public function documentupdate(Request $request,$id){
 
         if (!Gate::allows('patients_document_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $validator = $this->verifyupdatedcoumentFields($request);
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
-        if($document = Documents::updateRecord($id, $request, Auth::User()->account_id)) {
+        if($document = Documents::updateRecord($id, $request, Auth::user()->account_id)) {
 
-            flash('Record has been updated successfully.')->success()->important();
-            return redirect()->route('admin.patients.document', ['id' => $document->user_id]);
+            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
 
-        } else {
-            flash('Something went wrong.')->warning()->important();
-            return redirect()->route('admin.patients.document', ['id' => $document->user_id]);
         }
+
+        return ApiHelper::apiResponse($this->success, 'Something went wrong.', false);
     }
 
     /**
@@ -1419,13 +1429,12 @@ class PatientsController extends Controller
     public function documentdelete($id){
 
         if (! Gate::allows('patients_document_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        $document = Documents::find($id);
 
         Documents::DeleteRecord($id);
 
-        return redirect()->route('admin.patients.document', ['id' => $document->user_id]);
+        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
     }
 
 }

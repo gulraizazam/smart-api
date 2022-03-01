@@ -79,14 +79,13 @@ function actions(data) {
 
 function applyFilters(datatable) {
 
-    $('#apply-filters').on('click', function() {
+    $('#measurement-search').on('click', function() {
 
         let filters =  {
             delete: '',
-            name: $("#search_name").val(),
-            patient_name: $("#search_patient_name").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            name: $("#measurement_search_name").val(),
+            created_from: $("#measurement_search_created_from").val(),
+            created_to: $("#measurement_search_created_to").val(),
             filter: 'filter',
         }
 
@@ -98,7 +97,7 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $(".page-medical-form").find('#reset-filters').on('click', function() {
+    $(".page-measurement-form").find('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
             name: '',

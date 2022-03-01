@@ -79,14 +79,13 @@ function actions(data) {
 
 function applyFilters(datatable) {
 
-    $('#apply-filters').on('click', function() {
+    $('#medical-search').on('click', function() {
 
         let filters =  {
             delete: '',
-            name: $("#search_name").val(),
-            patient_name: $("#search_patient_name").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            name: $("#medical_search_name").val(),
+            created_from: $("#medical_search_created_from").val(),
+            created_to: $("#medical_search_created_to").val(),
             filter: 'filter',
         }
 
@@ -102,7 +101,6 @@ function resetAllFilters(datatable) {
         let filters =  {
             delete: '',
             name: '',
-            patient_name: '',
             created_from: '',
             created_to: '',
             filter: 'filter_cancel',

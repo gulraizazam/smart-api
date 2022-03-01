@@ -379,6 +379,56 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Route start for patient measurement history Forms*/
     Route::post('measurementhistoryform/datatable/&{id}', [MeasurementHistoryController::class, 'datatable'])->name('measurementhistoryform.datatable');
 
+    Route::post('patients/documentdatatable/{id}', [PatientsController::class, 'documentdatatable'])->name('patients.documentdatatable');
+
+    Route::get('patients/createdocument/{id}', [PatientsController::class, 'documentCreate'])->name("patients.createdocument");
+
+    Route::post('patients/storedocument', [PatientsController::class, 'documentstore'])->name("patients.storedocument");
+
+    Route::delete('patients/deletedocuments/{id}',[PatientsController::class, 'documentdelete'])->name('patients.documentsdestroy');
+
+    Route::post('patients/updatedocuments/{id}', [PatientsController::class, 'documentupdate'])->name('patients.updatedocuments');
+
+
+    /*Route start for patient pakcage*/
+    Route::post('plans/datatable/{id}', [PackagesController::class, 'datatable'])->name('plans.datatable');
+
+    Route::get('plans/getserviceinfo',[PackagesController::class, 'getserviceinfo'])->name('plans.getserviceinfo');
+
+    Route::get('plans/getdiscountinfo',[PackagesController::class, 'getdiscountinfo'])->name('plans.getdiscountinfo');
+
+    Route::get('plans/savepackagesservice',[PackagesController::class, 'savepackages_service'])->name('plans.savepackages_service');
+
+    Route::get('plans/savepackages',[PackagesController::class, 'savepackages'])->name('plans.savepackages');
+
+    Route::get('plans/getdiscountinfo_custom',[PackagesController::class, 'getdiscountinfocustom'])->name('plans.getdiscountinfo_custom');
+
+    Route::get('plans/getgrandtotal',[PackagesController::class, 'getgrandtotal'])->name('plans.getgrandtotal');
+
+    Route::post('plans/deletepackagesservice',[PackagesController::class, 'deletepackagesservice'])->name('plans.deletepackages_service');
+
+    Route::get('plans/updatepackages',[PackagesController::class, 'updatepackages'])->name('plans.updatepackages');
+
+    Route::get('plans/getgrandtotal_update',[PackagesController::class, 'getgrandtotal_update'])->name('plans.getgrandtotal_update');
+
+    Route::post('plans/status', [PackagesController::class, 'status'])->name('plans.status');
+
+    Route::post('plans/destroy/{id}',[PackagesController::class, 'destroy'])->name('plans.destroy');
+
+    Route::get('plans/display/{id}',[PackagesController::class, 'display'])->name('plans.display');
+
+    Route::get('plans/edit/{id}',[PackagesController::class, 'edit'])->name('plans.edit');
+
+    Route::get('plans/{id}',[PackagesController::class, 'index'])->name('plans.index');
+
+    Route::get('plans/{id}/createplan',[PackagesController::class, 'create'])->name('plans.createplan');
+
+    Route::get('plans/log/{id}/{patient_id}/{type}', [PackagesController::class, 'planlog'])->name('plans.log');
+
+    Route::get('plans/edit_cash/{id}/{package_id}',[PackagesController::class, 'editpackageadvancescashindex'])->name('plans.edit_cash');
+
+    /*Route end for patient package*/
+
 
 });
 

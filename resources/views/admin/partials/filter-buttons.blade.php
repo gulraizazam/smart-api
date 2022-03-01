@@ -1,5 +1,11 @@
+@php
+    $search_id = 'apply-filters';
+    if (isset($customId)) {
+         $search_id = $customId;
+    }
+@endphp
 <div class="input-icon mb-1" style="width: 215px;">
-    <button class="btn btn-primary btn-primary--icon" id="apply-filters">
+    <button class="btn btn-primary btn-primary--icon" id="{{$search_id}}">
         <i class="la la-search"></i>
         Search
     </button>

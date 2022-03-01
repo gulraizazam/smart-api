@@ -84,7 +84,6 @@ function applyFilters(datatable) {
         let filters =  {
             delete: '',
             name: $("#search_name").val(),
-            patient_name: $("#search_patient_name").val(),
             created_from: $("#search_created_from").val(),
             created_to: $("#search_created_to").val(),
             filter: 'filter',

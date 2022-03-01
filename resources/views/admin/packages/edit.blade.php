@@ -67,21 +67,21 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Centers <span class="text text-danger">*</span></label>
-                            <select onchange="getServices();" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                            <select onchange="getServices();" id="edit_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
                                 <option value="">Select Centre</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-3 mt-5 select2-search">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                            <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id select2" name="patient_id">
+                            <select id="edit_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id select2" name="patient_id">
                                 <option value="">Select Patient</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
-                            <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
+                            <select id="edit_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
                                 <option value="">Select Appointment</option>
                             </select>
                         </div>
@@ -90,7 +90,7 @@
                             <div class="checkbox-inline mt-12">
                                 <span>Is Exclusive </span> &nbsp;
                                 <label for="is_exclusive" class="checkbox checkbox-rounded">
-                                    <input id="is_exclusive" type="checkbox" checked="checked" name="is_exclusive">
+                                    <input id="edit_is_exclusive" type="checkbox" checked="checked" name="is_exclusive">
                                     <span></span>
                                 </label>
                             </div>
@@ -104,33 +104,33 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
-                            <select id="add_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                            <select id="edit_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
                                 <option value="">Select Service</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discounts</label>
-                            <select id="add_discount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
+                            <select id="edit_discount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
                                 <option value="">Select Discount</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
-                            <select id="add_discount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
+                            <select id="edit_discount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
                                 <option value="">Select Discount Type</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type </label>
-                            <input type="number" name="discount_type" class="form-control" id="add_discount_type">
+                            <input type="number" name="discount_type" class="form-control" id="edit_discount_type">
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
-                            <input type="number" name="price" class="form-control" id="add_price">
+                            <input type="number" name="price" class="form-control" id="edit_price">
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
@@ -148,7 +148,7 @@
                 <hr>
 
                 <div class="table-responsive add_center_target_table">
-                    <table id="add_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
+                    <table id="edit_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
 
                         <thead>
                         <tr>
@@ -173,25 +173,25 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
-                            <input type="number" id="add_package_total" class="form-control" name="package_total_1">
+                            <input type="number" id="edit_package_total" class="form-control" name="package_total_1">
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
-                            <select id="add_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                            <select id="edit_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
                                 <option value="">Select Payment Mode</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="number" min="0" id="add_cash_amount" class="form-control" value="0" name="cash_amount">
+                            <input type="number" min="0" id="edit_cash_amount" class="form-control" value="0" name="cash_amount">
                         </div>
 
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
-                            <input type="number" min="0" name="total_price" value="0" class="form-control" id="add_total_price">
+                            <input type="number" min="0" name="total_price" value="0" class="form-control" id="edit_total_price">
                         </div>
 
                     </div>

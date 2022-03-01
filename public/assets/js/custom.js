@@ -218,11 +218,12 @@ function deleteSuccessAndReset(data, datatable) {
    }
 }
 
-function deleteRow(route, method = "DELETE") {
-    deleteConfirm(null, route, method);
+function deleteRow(route, method = "DELETE", tableClass = null) {
+    deleteConfirm(null, route, method, tableClass);
 }
 
-function deleteConfirm(datatable = null, route = null, method) {
+function deleteConfirm(datatable = null, route = null, method, tableClass = null) {
+
     swal.fire({
         title: 'Are you sure you want to delete?',
         type: 'danger',
@@ -240,6 +241,9 @@ function deleteConfirm(datatable = null, route = null, method) {
                     delete: row_ids.join(','),
                 }
                 datatable.search(filters, 'search');
+            }
+            if (tableClass) {
+                patientDatatable[tableClass].search({ datatable_reload: 'reload' }, 'search');
             }
             if (route) {
                 sendDeleteRequest(route, method)
