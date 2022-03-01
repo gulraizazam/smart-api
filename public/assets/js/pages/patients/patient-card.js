@@ -93,8 +93,10 @@ function changeProfilePage($this, page_id) {
 
 function loadDataTable(page_id) {
 
+    let url = asset_url + "assets/js/pages/patients/"+ page_id + '.js';
+
     /*load script on change tab and then init datatable*/
-    $.getScript(asset_url + "assets/js/pages/patients/"+ page_id + '.js');
+    $.getScript(url);
 
     setTimeout(function () {
         let className = "." + page_id;

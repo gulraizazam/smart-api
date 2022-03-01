@@ -27,10 +27,10 @@ class Documents extends BaseModal
      *
      * @return record
      */
-    static public function CreateRecord($file,$request,$id){
+    static public function CreateRecord($request, $path, $id){
 
-        $data['name'] = $request->name;
-        $data['url'] = $file->getClientOriginalName();
+        $data['name'] = $request->name ?? '';
+        $data['url'] = $path;
         $data['user_id'] = $id;
 
         $record = self::create($data);
@@ -124,24 +124,20 @@ class Documents extends BaseModal
     static public function getRecords($id,$request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false, $filename )
     {
         $where = self::filters_documents( $request, $account_id, $id, $apply_filter, $filename );
-        $orderBy = 'created_at';
-        $order = 'desc';
 
-        if ($request->get('order')[0]['dir']) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            $order = $request->get('order')[0]['dir'];
-        }
+        list($orderBy, $order) = getSortBy($request);
+
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+            return self::with('patient')->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+            return self::with('patient')->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
         }
     }
 
     static public function filters_documents( $request, $account_id, $id, $apply_filter, $filename )
     {
         $where = array();
+        $filters = getFilters($request->all());
 
         if ($id != false )
         {
@@ -165,13 +161,13 @@ class Documents extends BaseModal
             }
         }
 
-        if ($request->get('name') && $request->get('name') != '') {
+        if (hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
+                '%' . $filters['name'] . '%'
             );
-            Filters::put(Auth::user()->id, $filename, 'name', $request->get('name'));
+            Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id, $filename , 'name');
@@ -186,13 +182,13 @@ class Documents extends BaseModal
             }
         }
 
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
-            Filters::put(Auth::user()->id, $filename, 'created_from', $request->get('created_from') . '00:00:00');
+            Filters::put(Auth::user()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id, $filename, 'created_from');
@@ -207,13 +203,13 @@ class Documents extends BaseModal
             }
         }
 
-        if ($request->get('created_to') && $request->get('created_to') != '') {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
-            Filters::put(Auth::user()->id , $filename, 'created_to', $request->get('created_to') . '23:59:59');
+            Filters::put(Auth::user()->id , $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
         } else {
             if ($apply_filter){
                 Filters::forget(Auth::user()->id, $filename , 'created_to');
@@ -229,5 +225,10 @@ class Documents extends BaseModal
         }
 
         return $where ;
+    }
+
+    public function patient()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

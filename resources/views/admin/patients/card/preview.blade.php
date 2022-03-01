@@ -67,6 +67,12 @@
                                     </button>
                                 </div>
 
+                                <div class="card-toolbar submit-btn toolbar-document-form d-none">
+                                    <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="addDocumentForm('{{ request('id') }}');" data-toggle="modal" data-target="#modal_add_document_form">
+                                        Add New
+                                    </button>
+                                </div>
+
                             </div>
 
                             <!--end::Header-->
@@ -101,25 +107,31 @@
                                 </div>
                                 <!--end::Alert-->
 
-                               <div id="personal_info" class="content-section">
-                                  @include('admin.patients.card.profile.personal-info')
-                               </div>
+
+                                <div id="personal_info" class="content-section">
+                                    @include('admin.patients.card.profile.personal-info')
+                                </div>
 
                                 <div id="change_profile_picture" class="content-section d-none">
-                                    @include('admin.patients.card.profile.profile-picture')
+                                    @include('admin.patients.card.profile.profile-picture', ['customId' => 'profile-picture-search'])
                                 </div>
 
                                 <div id="custom-form" class="content-section d-none">
-                                    @include('admin.patients.card.custom_form_feedbacks.index')
+                                    @include('admin.patients.card.custom_form_feedbacks.index', ['customId' => 'custom-form-search'])
                                 </div>
 
                                 <div id="medical-form" class="content-section d-none">
-                                    @include('admin.patients.card.medical.index')
+                                    @include('admin.patients.card.medical.index', ['customId' => 'medical-search'])
                                 </div>
 
                                 <div id="measurement-form" class="content-section d-none">
-                                    @include('admin.patients.card.measurement.index')
+                                    @include('admin.patients.card.measurement.index', ['customId' => 'measurement-search'])
                                 </div>
+
+                                <div id="document-form" class="content-section d-none">
+                                    @include('admin.patients.card.documents.index', ['customId' => 'document-search'])
+                                </div>
+
 
                             </div>
 

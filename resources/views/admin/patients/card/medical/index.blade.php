@@ -4,7 +4,7 @@
 <!--end::Search Form-->
 
     <!--begin: Datatable-->
-    <div class="datatable datatable-bordered datatable-head-custom medical-form"></div>
+    <div class="datatable datatable-bordered datatable-head-custom document-form"></div>
     <!--end: Datatable-->
 </div>
 

@@ -56,7 +56,7 @@
 
     @can("patients_document_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'document');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'document-form');" class="change-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                     <i class="la la-file-archive-o"></i>
                 </span>

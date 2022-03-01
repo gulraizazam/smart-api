@@ -292,17 +292,7 @@ use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 
         Route::get('patients/{id}/document', [PatientsController::class, 'documentindex'])->name("patients.document");
 
-        Route::get('patients/createdocument/{id}', [PatientsController::class, 'documentCreate'])->name("patients.createdocument");
-
-        Route::post('patients/storedocument', [PatientsController::class, 'documentstore'])->name("patients.storedocument");
-
-        Route::post('patients/documentdatatable/{id}', [PatientsController::class, 'documentdatatable'])->name('patients.documentdatatable');
-
         Route::get('patients/edit/{id}', [PatientsController::class, 'documentedit'])->name('patients.documentedit');
-
-        Route::post('patients/updatedocuments/{id}', [PatientsController::class, 'documentupdate'])->name('patients.updatedocuments');
-
-        Route::post('patients/deletedocuments/{id}',[PatientsController::class, 'documentdelete'])->name('patients.documentsdestroy');
 
         Route::resource('patients', PatientsController::class);
 
