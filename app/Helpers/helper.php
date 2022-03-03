@@ -79,3 +79,7 @@
         }
         return '';
     }
+
+    function getPatientName($id) {
+       return \App\Models\Patients::find($id)?->name ?? '';
+    }

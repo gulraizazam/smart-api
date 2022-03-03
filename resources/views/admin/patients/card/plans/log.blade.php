@@ -1,195 +1,88 @@
-@extends('admin.patients.card.patient_layout')
-@inject('Auth', 'Auth')
-@inject('filters', 'App\Helpers\Filters')
-@section('patient_stylesheets')
-    <!-- BEGIN PAGE LEVEL PLUGINS -->
-    <link href="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css'}}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{{ url('metronic/assets/global/plugins/select2/css/select2-bootstrap.min.css') }}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{{ url('metronic/assets/global/plugins/datatables/datatables.min.css') }}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{{ url('metronic/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.css') }}"
-          rel="stylesheet" type="text/css"/>
-    <link href="{{ url('metronic/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker3.min.css') }}"
-          rel="stylesheet" type="text/css"/>
-    <link href="{{ url('metronic/assets/pages/css/invoice.min.css') }}" rel="stylesheet" type="text/css"/>
-@endsection
+@extends('admin.layouts.master')
 
-@section('patient_content')
-    <div class="portlet-title tabbable-line">
-        <div class="caption caption-md">
-            <i class="icon-globe theme-font hide"></i>
-            <span class="caption-subject font-blue-madison bold uppercase">@lang('global.invoices.title')</span>
-        </div>
-    </div>
-    <div class="portlet-body">
-        <div class="table-container">
-        </div>
-    </div>
-    <div class="portlet-body">
-        <div class="portlet light bordered">
-            <div class="portlet-title">
+@section('content')
 
-                <div class="caption">
-                    <span class="caption-subject font-green-sharp bold uppercase">Package id {{$id}}</span>
+    <!--begin::Content-->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+
+    @include('admin.partials.breadcrumb', ['module' => 'Plans List', 'title' => 'Plans'])
+
+    <!--begin::Entry-->
+        <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+
+                <!--begin::Card-->
+                <div class="card card-custom">
+                    <div class="card-header py-3">
+                        <div class="card-title">
+                            <span class="card-icon">
+                                <span class="svg-icon svg-icon-md svg-icon-primary">
+                                    <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
+                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                            <rect x="0" y="0" width="24" height="24" />
+                                            <rect fill="#000000" opacity="0.3" x="12" y="4" width="3" height="13" rx="1.5" />
+                                            <rect fill="#000000" opacity="0.3" x="7" y="9" width="3" height="8" rx="1.5" />
+                                            <path d="M5,19 L20,19 C20.5522847,19 21,19.4477153 21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 C4.55228475,3 5,3.44771525 5,4 L5,19 Z" fill="#000000" fill-rule="nonzero" />
+                                            <rect fill="#000000" opacity="0.3" x="17" y="11" width="3" height="6" rx="1.5" />
+                                        </g>
+                                    </svg>
+                                    <!--end::Svg Icon-->
+                                </span>
+                            </span>
+                            <h3 class="card-label">PLAN ID {{request('id')}}</h3>
+                        </div>
+
+                        <div class="card-toolbar">
+                            @php
+                               $patient_id =  request('patient_id');
+
+                                if (isset($patient_id) && $patient_id != '') {
+                                    $route = route('admin.patients.preview', $patient_id);
+                                } else {
+                                    $route = route('admin.packages.index');
+                                }
+                            @endphp
+                            <a href="{{ $route }}" class="btn btn-sm dark btn-dark" >
+                                <i class="la la-arrow-alt-circle-left"></i>
+                                Back
+                            </a> &nbsp;&nbsp;
+                            @if (Gate::allows('plans_log_excel'))
+                                <a href="{{ route('admin.packages.log', [ request('id'), 'excel']) }}" class="btn btn-sm btn-primary">
+                                    <i class="la la-file-export"></i>
+                                    Excel
+                                </a>
+                            @endif
+
+                        <!--end::Button-->
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!--begin: Datatable-->
+                        <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
+                        <!--end: Datatable-->
+
+                    </div>
                 </div>
-
-                <div class="actions">
-                    @if (Gate::allows('patients_plan_log_excel'))
-                        <a href="{{ route('admin.plans.log',[$id,$patient->id, 'excel']) }}" class="btn green">Excel</a>
-                        <span style="padding-right: 5px;"></span>
-                    @endif
-                    <a href="{{ route('admin.plans.index',[$patient->id]) }}" class="btn dark pull-right">@lang('global.app_back')</a>
-
-                </div>
-
+                <!--end::Card-->
             </div>
-            <div class="portlet-body">
-                <input type="hidden" id="patient_id" value="{{ $patient->id }}"/>
-                <div class="portlet-body table-wrapper" style="overflow: auto;">
-                    @if(count($finance_log))
-                        @php $f_count = 1; @endphp
-                        <table id="table" class="table">
-                            <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Cash Flow</th>
-                                <th>Cash Amount</th>
-                                <th>Refund</th>
-                                <th>Adjustment</th>
-                                <th>Tax</th>
-                                <th>Cancel</th>
-                                <th>Delete</th>
-                                <th>Refund Note</th>
-                                <th>Payment Mode</th>
-                                <th>Appointment Type</th>
-                                <th>Location</th>
-                                <th>Created By</th>
-                                <th>Updated_by</th>
-                                <th>Plan</th>
-                                <th>Invoice Id</th>
-                                <th>Created At Shown</th>
-                                <th>Updated At Shown</th>
-                                <th>Created At</th>
-                                <th>Updated At</th>
-                                <th>Deleted At</th>
-                                <th>Detail</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            @foreach($finance_log as $log)
-                                @if( (isset($log['package_id']) && $log['package_id'] == $id) || !isset($log['package_id']))
-                                    <tr>
-                                        <td>{{$f_count++}}</td>
-                                        <td>{{isset($log['cash_flow'])?$log['cash_flow']:'-'}}</td>
-                                        <td>{{isset($log['cash_amount'])?$log['cash_amount']:'-'}}</td>
-                                        <td>{{isset($log['is_refund'])?$log['is_refund']:'-'}}</td>
-                                        <td>{{isset($log['is_adjustment'])?$log['is_adjustment']:'-'}}</td>
-                                        <td>{{isset($log['is_tax'])?$log['is_tax']:'-'}}</td>
-                                        <td>{{isset($log['is_cancel'])?$log['is_cancel']:'-'}}</td>
-                                        @if($log['action'] == 'Delete')
-                                            <td>{{'Yes'}}</td>
-                                        @else
-                                            <td>{{'-'}}</td>
-                                        @endif
-                                        <td>{{isset($log['refund_note'])?$log['refund_note']:'-'}}</td>
-                                        <td>{{isset($log['payment_mode_id'])?$log['payment_mode_id']:'-'}}</td>
-                                        <td>{{isset($log['appointment_type_id'])?$log['appointment_type_id']:'-'}}</td>
-                                        <td>{{isset($log['location_id'])?$log['location_id']:'-'}}</td>
-                                        <td>{{isset($log['created_by'])?$log['created_by']:'-'}}</td>
-                                        @if(isset($log['cash_flow']))
-                                            <td>{{isset($log['updated_by'])?$log['updated_by']:'-'}}</td>
-                                        @else
-                                            <td>{{$log['user_id']}}</td>
-                                        @endif
-                                        <td>{{isset($log['package_id'])?$log['package_id']:'-'}}</td>
-                                        <td>{{isset($log['invoice_id'])?$log['invoice_id']:'-'}}</td>
-                                        <td>{{isset($log['created_at'])?$log['created_at'] == $log['created_at_orignal']?'-':$log['created_at']:'-'}}</td>
-                                        <td>{{isset($log['updated_at'])?$log['updated_at'] == $log['updated_at_orignal']?'-':$log['updated_at']:'-'}}</td>
-                                        @if($log['action'] == 'Delete')
-                                            <td>{{'-'}}</td>
-                                            <td>{{'-'}}</td>
-                                        @else
-                                            <td>{{isset($log['created_at_orignal'])?\Carbon\Carbon::parse($log['created_at_orignal'])->format('F j,Y h:i A'):'-'}}</td>
-                                            <td>{{isset($log['updated_at_orignal'])?\Carbon\Carbon::parse($log['updated_at_orignal'])->format('F j,Y h:i A'):'-'}}</td>
-                                        @endif
-                                        <td>{{ isset($log['deleted_at']) ? \Carbon\Carbon::parse($log['deleted_at'])->format('F j, Y h:i A') : '-' }}</td>
-                                        @if(isset($log['detail_log']) && count($log['detail_log']))
-                                            <td align="center"><a href="javascript:void(0);"
-                                                                  onclick="toggle({{$log['id']}})"
-                                                                  class="btn-xs dark"><i
-                                                            class="fa fa-eye fa-lg"></i></a></td>
-                                        @else
-                                            <td align="center"><span class=" btn-xs dark"><i
-                                                            class="fa fa-eye-slash fa-lg"></i></span></td>
-                                        @endif
-                                    </tr>
-                                    @if(isset($log['detail_log']) && count($log['detail_log']))
-                                        <tr id="child-{{ $log['id'] }}" style="display:none;">
-                                            <td width="100%" colspan="21" class="table-wrapper-child">
-                                                <table id="table" class="table" style="border:1px solid #364150;">
-                                                    <thead>
-                                                    <tr>
-                                                        <th>#</th>
-                                                        <th>Field Name</th>
-                                                        <th>Before</th>
-                                                        <th>After</th>
-                                                    </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                    <?php $count = 1;?>
-                                                    @foreach($log['detail_log'] as $detail)
-                                                        <tr>
-                                                            <td>{{$count++}}</td>
-                                                            <td>{{isset($detail['field_name'])?$detail['field_name']:'-'}}</td>
-                                                            <td>{{isset($detail['field_before'])?$detail['field_before']:'-'}}</td>
-                                                            <td>{{isset($detail['field_after'])?$detail['field_after']:'-'}}</td>
-                                                        </tr>
-                                                    @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                @endif
-                            @endforeach
-                            </tbody>
-                        </table>
-                    @else
-                        <tr>
-                            <td colspan="4">No Finance log found.</td>
-                        </tr>
-                    @endif
-                </div>
-            </div>
+            <!--end::Container-->
         </div>
+        <!--end::Entry-->
     </div>
-    <!-- End: Demo Datatable 1 -->
-@stop
+    <!--end::Content-->
 
-@section('javascript')
-    <script>
-        function toggle(id) {
-            $("#child-" + id).slideToggle(300);
-        }
-    </script>
-    <script src="{{ url('metronic/assets/global/plugins/datatables/datatables.min.js') }}"
-            type="text/javascript"></script>
-    <script src="{{ url('metronic/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.js') }}"
-            type="text/javascript"></script>
-    <script src="{{ url('metronic/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"
-            type="text/javascript"></script>
-    <!-- END PAGE LEVEL PLUGINS -->
-    <!-- BEGIN PAGE LEVEL SCRIPTS -->
-    <script src="{{ url('metronic/assets/global/plugins/select2/js/select2.full.min.js') }}"
-            type="text/javascript"></script>
-    <script src="{{ url('metronic/assets/global/scripts/datatable.js') }}" type="text/javascript"></script>
-    <!-- END PAGE LEVEL SCRIPTS -->
-    <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}"
-            type="text/javascript"></script>
-    <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}"
-            type="text/javascript"></script>
-    <script src="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js'}}"
-            type="text/javascript"></script>
+    @push('datatable-js')
+        <script>
+            var plane_id = "{{request('id')}}";
+        </script>
+        <script src="{{asset('assets/js/pages/admin_settings/plan-log.js')}}"></script>
+    @endpush
+
+
+
 @endsection

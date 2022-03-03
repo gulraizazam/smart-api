@@ -109,7 +109,7 @@ class PlanAppointmentCalculation
                 $resource = Resources::where('external_id', '=', $key)->first();
 
                 $doctor_rota = ResourceHasRota::join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_days.resource_has_rota_id')
-                    ->where('resource_has_rota.resource_id', '=', $resource->id)
+                    ->where('resource_has_rota.resource_id', '=', $resource?->id)
                     ->where('resource_has_rota.is_consultancy', '=', '1')
                     ->where('resource_has_rota.location_id', '=', $location_id)
                     ->where('resource_has_rota.active', '=', '1')

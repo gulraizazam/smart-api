@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Patients;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\Financelog;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
@@ -10,18 +11,18 @@ use App\Models\AuditTrails;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
-use DB;
-use Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Packages;
 use App\Models\PackageBundles;
 use App\Models\PackageAdvances;
 use App\Models\Discounts;
 use App\Models\Services;
-use App\User;
-use Config;
+use App\Models\User;
+use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 use App\Models\PaymentModes;
 use App\Models\PackageService;
@@ -523,7 +524,7 @@ class PackagesController extends Controller
 
         $paymentmodes = PaymentModes::where('type','=','application')->pluck('name','id');
         $paymentmodes->prepend('Select Payment Mode','');
-        
+
         $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();
         $range = explode(':', $customdiscountrange->data);
 
@@ -781,7 +782,11 @@ class PackagesController extends Controller
         }
 
         if ( $type === 'web'){
-            return view('admin.patients.card.plans.log', compact('finance_log', 'id','patient'));
+            return ApiHelper::makeResponse([
+                'finance_log' => $finance_log,
+                'id' => $id,
+                'patient' => $patient
+            ], 'admin.patients.card.plans.log');
         }
         return $this->packagelogexcel( $id, $finance_log );
     }

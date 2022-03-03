@@ -38,6 +38,7 @@ use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\LeadsController;
 use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
+use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageController;
 
     /*
     |--------------------------------------------------------------------------
@@ -279,6 +280,8 @@ use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 
         Route::get('patients/{id}/preview', [PatientsController::class, 'preview'])->name("patients.preview");
 
+        Route::get('plans/log/{id}/{patient_id}/{type}', [PatientPackageController::class, 'planlog'])->name('plans.log');
+
         Route::get('patients/{id}/leads', [PatientsController::class, 'leads'])->name("patients.leads");
 
         Route::post('patients/{id}/leads-datatable', [PatientsController::class, 'leadsDatatable'])->name('patients.leadsDatatable');
@@ -315,6 +318,17 @@ use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
         Route::post('measurementhistoryform/{custom_form_id}', [MeasurementHistoryController::class, 'update_measurement_field'])->name('measurementhistoryform.update');
 
         Route::get('appointmentsmeasurement/{id}/export_pdf', [AppointmentMeasurementController::class, 'exportPdf'])->name("appointment_measurement_custom_form_feedbacks.export_pdf");
+
+
+        /*Route start for patient Package advances*/
+
+        Route::get('finances/savepackagesadvances',[PackageAdvancesController::class, 'savepackagesadvances'])->name('finances.savepackagesadvances');
+
+        Route::get('finances/getpackagesinfo',[PackageAdvancesController::class, 'getpackagesinfo'])->name('finances.getpackagesinfo');
+
+        Route::get('finances/{id}',[PackageAdvancesController::class, 'index'])->name('finances.index');
+
+        /*Route end for patient package advances */
 
 
     });

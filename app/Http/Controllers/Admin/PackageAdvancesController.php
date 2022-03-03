@@ -10,15 +10,28 @@ use App\Models\Packages;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
-use App\User;
-use Config;
+use App\Models\User;
+use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 use App\Models\PaymentModes;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 
 class PackageAdvancesController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -59,19 +72,21 @@ class PackageAdvancesController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create()
     {
         if (!Gate::allows('finances_create')) {
 
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
         $paymentmodes->prepend('Select Payment Mode', '');
 
-        return view('admin.packagesadvances.create', compact('leads', 'paymentmodes'));
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'paymentmodes' => $paymentmodes
+        ]);
     }
 
     /*
@@ -82,11 +97,10 @@ class PackageAdvancesController extends Controller
     {
 
         $packageinfo = Packages::where('patient_id', '=', $request->id)->get();
-        $myarray = ['packageinfo' => $packageinfo];
-        return response()->json(array(
-            'status' => true,
-            'myarray' => $myarray
-        ));
+
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'packageinfo' => $packageinfo
+        ]);
 
     }
 
@@ -108,16 +122,14 @@ class PackageAdvancesController extends Controller
 
         if ($cash_amount_sum <= $package_info->total_price) {
             $cash_amount_sum = number_format($cash_amount_sum);
-            return response()->json(array(
-                'status' => true,
+
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'cash_amount_sum' => $cash_amount_sum,
                 'total_price' => $total_price
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            ]);
         }
+
+        return ApiHelper::apiResponse($this->success, 'Record not found', false);
 
     }
 
