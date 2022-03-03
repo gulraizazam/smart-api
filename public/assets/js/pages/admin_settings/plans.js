@@ -308,9 +308,12 @@ function createPlan(url) {
 
 }
 
-function setPlanData(response) {    
+function setPlanData(response) {
 
     let locations = response.data.locations
+    let discounts = response.data.discounts;
+    let discount_types = response.data.discount_type;
+
     let location_options = '<option value="">Select Centre</option>';
 
     if (locations) {
@@ -318,12 +321,32 @@ function setPlanData(response) {
             location_options += '<option value="'+location[0]+'">'+location[1]+'</option>';
         });
     }
-    
+
     $("#add_location_id").html(location_options);
+
+    let discount_options = '<option value="">Select Discount</option>';
+
+    if (discounts) {
+        Object.values(discounts).forEach( function(discount) {
+            discount_options += '<option value="'+discount.id+'">'+discount.name+'</option>';
+        });
+    }
+
+    $("#add_discount_id").html(discount_options);
+
+    let discount_type_options = '<option value="">Select Discount Type</option>';
+
+    if (discount_types) {
+        Object.entries(discount_types).forEach( function(discount_type) {
+            console.log(discount_type)
+            discount_type_options += '<option value="'+discount_type[0]+'">'+discount_type[1]+'</option>';
+        });
+    }
+
+    $("#add_discount_type").html(discount_type_options);
 
 
 }
-
 
 function getServices() {
 
@@ -438,7 +461,7 @@ function setAppointments(response) {
 }
 
 function editRow(url) {
-   
+
    $("#modal_edit_plan").modal("show");
     $.ajax({
         headers: {
@@ -480,12 +503,12 @@ function setEditData(response) {
 
         let history_options = noRecordFoundTable(4);
 
-        if (packageadvances.length) { 
-        
+        if (packageadvances.length) {
+
             history_options = noRecordFoundTable(4);
             Object.values(packageadvances).forEach(function (packageadvance) {
-               
-                if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) { 
+
+                if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
                     history_options += '<tr>';
                         history_options += '<td>'+packageadvance.paymentmode.name+'</td>';
                         history_options += '<td>'+packageadvance.cash_flow+'</td>';
@@ -506,15 +529,15 @@ function setEditData(response) {
                 service_options += '<td><a href="javascript:void(0);" onclick="toggle('+packagebundle.id+')">'+packagebundle.bundle.name+'</a></td>';
                 service_options += '<td>'+packagebundle.service_price.toFixed(2)+'</td>';
                 service_options += '<td>';
-                        if(packagebundle.discount_id == null) { 
+                        if(packagebundle.discount_id == null) {
                             service_options += '-';
                         } else if(packagebundle.discount_name) {
                             service_options += packagebundle.discount_name;
-                        } else { 
+                        } else {
                             service_options += packagebundle.discount.name;
                         }
                         service_options += '</td>';
-                    
+
                         service_options += '<td>';
                         if (packagebundle.discount_type == null) {
                             service_options +=  '-';
@@ -524,7 +547,7 @@ function setEditData(response) {
                         service_options += '</td>';
 
                     service_options += '<td>';
-                    
+
                     if (packagebundle.discount_price == null) {
                         service_options += '0.00';
                     } else {
@@ -538,11 +561,11 @@ function setEditData(response) {
                     service_options +=  '<td>'+packagebundle.tax_including_price+'</td>';
 
                     service_options += '</tr>';
-                
-                
+
+
                     Object.values(packageservices).forEach(function (packageservice) {
-                    
-                        if(packageservice.package_bundle_id == packagebundle.id ) { 
+
+                        if(packageservice.package_bundle_id == packagebundle.id ) {
                             if (packageservice.is_consumed == '0') {
                                 let consume = 'NO';
                             } else {
@@ -558,7 +581,7 @@ function setEditData(response) {
                             service_options += '<td colspan="4">Is Consumed : '+consume+'</td>';
                             service_options += '</tr>';
                         }
-            
+
                     });
             });
         }
@@ -572,7 +595,7 @@ function setEditData(response) {
         $(".package_total_price").text(package.total_price);
         $("#user_name").text(package?.user?.name)
         $("#location_name").text(package?.location?.name)
-        
+
 
     } catch (error) {
         showException(error);
@@ -666,12 +689,12 @@ function displayData(response) {
 
         let history_options = noRecordFoundTable(4);
 
-        if (packageadvances.length) { 
-        
+        if (packageadvances.length) {
+
              history_options = noRecordFoundTable(4);
             Object.values(packageadvances).forEach(function (packageadvance) {
-               
-                if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) { 
+
+                if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
                     history_options += '<tr>';
                     history_options += '<td>'+packageadvance.paymentmode.name+'</td>';
                     history_options += '<td>'+packageadvance.cash_flow+'</td>';
@@ -692,15 +715,15 @@ function displayData(response) {
                 service_options += '<td><a href="javascript:void(0);" onclick="toggle('+packagebundle.id+')">'+packagebundle.bundle.name+'</a></td>';
                 service_options += '<td>'+packagebundle.service_price.toFixed(2)+'</td>';
                 service_options += '<td>';
-                        if(packagebundle.discount_id == null) { 
+                        if(packagebundle.discount_id == null) {
                             service_options += '-';
                         } else if(packagebundle.discount_name) {
                             service_options += packagebundle.discount_name;
-                        } else { 
+                        } else {
                             service_options += packagebundle.discount.name;
                         }
                         service_options += '</td>';
-                    
+
                         service_options += '<td>';
                         if (packagebundle.discount_type == null) {
                             service_options +=  '-';
@@ -710,7 +733,7 @@ function displayData(response) {
                         service_options += '</td>';
 
                     service_options += '<td>';
-                    
+
                     if (packagebundle.discount_price == null) {
                         service_options += '0.00';
                     } else {
@@ -724,11 +747,11 @@ function displayData(response) {
                     service_options +=  '<td>'+packagebundle.tax_including_price+'</td>';
 
                     service_options += '</tr>';
-                
-                
+
+
                     Object.values(packageservices).forEach(function (packageservice) {
-                    
-                        if(packageservice.package_bundle_id == packagebundle.id ) { 
+
+                        if(packageservice.package_bundle_id == packagebundle.id ) {
                             if (packageservice.is_consumed == '0') {
                                 let consume = 'NO';
                             } else {
@@ -744,7 +767,7 @@ function displayData(response) {
                             service_options += '<td colspan="4">Is Consumed : '+consume+'</td>';
                             service_options += '</tr>';
                         }
-            
+
                     });
             });
         }
@@ -758,7 +781,7 @@ function displayData(response) {
         $(".package_total_price").text(package.total_price);
         $("#user_name").text(package.user.name)
         $("#location_name").text(package.location.name)
-        
+
 
     } catch (error) {
         showException(error);

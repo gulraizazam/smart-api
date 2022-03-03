@@ -67,7 +67,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Centers <span class="text text-danger">*</span></label>
-                            <select onchange="getServices();" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                            <select onchange="getServices('add');" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
                                 <option value="">Select Centre</option>
                             </select>
                         </div>
@@ -124,8 +124,8 @@
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type </label>
-                            <input type="number" name="discount_type" class="form-control" id="add_discount_type">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
+                            <input type="number" name="discount_value" class="form-control" id="add_discount_value">
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">

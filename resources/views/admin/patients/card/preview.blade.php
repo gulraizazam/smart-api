@@ -73,6 +73,18 @@
                                     </button>
                                 </div>
 
+                                <div class="card-toolbar submit-btn toolbar-plan-form d-none">
+                                    <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createPlan('{{request('id')}}');" data-toggle="modal" data-target="#modal_add_plan_form">
+                                        Add New
+                                    </button>
+                                </div>
+
+                                <div class="card-toolbar submit-btn toolbar-finance-form d-none">
+                                    <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createFinance('{{request('id')}}');" data-toggle="modal" data-target="#modal_add_finance_form">
+                                        Add New
+                                    </button>
+                                </div>
+
                             </div>
 
                             <!--end::Header-->
@@ -130,6 +142,14 @@
 
                                 <div id="document-form" class="content-section d-none">
                                     @include('admin.patients.card.documents.index', ['customId' => 'document-search'])
+                                </div>
+
+                                <div id="plan-form" class="content-section d-none">
+                                    @include('admin.patients.card.plans.index', ['customId' => 'plan-search'])
+                                </div>
+
+                                <div id="finance-form" class="content-section d-none">
+                                    @include('admin.patients.card.packagesadvances.index', ['customId' => 'finance-search'])
                                 </div>
 
 

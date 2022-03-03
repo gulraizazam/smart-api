@@ -362,7 +362,7 @@ class LocationsWidget
         $doctors = DoctorHasLocations::where(['location_id' => Locations::where(array(
             'slug' => 'region',
             'region_id' => $location->region_id
-        ))->select('id')->first()->id])->select('user_id')->get();
+        ))->select('id')->first()?->id])->select('user_id')->get();
 
         if ($doctors->count()) {
             foreach ($doctors as $doctor) {

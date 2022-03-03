@@ -104,7 +104,9 @@ class PackagesController extends Controller
             'locations' => $locations,
             'random_id' => $random_id,
             'paymentmodes' => $paymentmodes,
-            'range' => $range
+            'range' => $range,
+            'discount_type' => config('constants.amount_types'),
+            'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
         ]);
     }
 
@@ -794,7 +796,7 @@ class PackagesController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request, $id = false)
     {
         $filename = 'packages';
 
@@ -828,12 +830,12 @@ class PackagesController extends Controller
         }
 
         // Get Total Records
-        $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, false, $apply_filter, $filename);
+        $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
 
         list($orderBy, $order) = getSortBy($request);
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
-        $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, false, $apply_filter, $filename);
+        $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
 
         $records = $this->getFiltersData($records);
         if ($packages) {
@@ -902,6 +904,19 @@ class PackagesController extends Controller
             'log' => Gate::allows('plans_log'),
             'sms_log' => Gate::allows('plans_sms_log'),
         ];
+
+        if ($id) {
+            $records["permissions"] = [
+                'edit' => Gate::allows('patients_plan_edit'),
+                'manage' => Gate::allows('patients_plan_manage'),
+                'delete' => Gate::allows('patients_plan_destroy'),
+                'active' => Gate::allows('patients_plan_active'),
+                'inactive' => Gate::allows('patients_plan_inactive'),
+                'create' => Gate::allows('patients_plan_create'),
+                'log' => Gate::allows('patients_plan_log'),
+                'sms_log' => Gate::allows('patients_plan_sms_log'),
+            ];
+        }
 
         return ApiHelper::apiDataTable($records);
     }
@@ -1003,7 +1018,7 @@ class PackagesController extends Controller
      * Show the form for editing the specified resource.
      *
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
@@ -1011,7 +1026,7 @@ class PackagesController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        try { 
+        try {
 
             $package = Packages::with('user', 'location')->find($id);
 
@@ -1085,24 +1100,26 @@ class PackagesController extends Controller
 
             $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
 
-            
+
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'package' => $package, 
-                'locations' => $locations, 
+                'package' => $package,
+                'locations' => $locations,
                 'packagebundles' => $packagebundles,
-                'packageservices' => $packageservices, 
+                'packageservices' => $packageservices,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
                 'grand_total' => $grand_total,
-                'range' => $range, 
+                'range' => $range,
                 'locationhasservice' => $locationhasservice,
-                'total_price' => $total_price, 
-                'end_previous_date' => $end_previous_date, 
-                'appointmentArray' => $appointmentArray
+                'total_price' => $total_price,
+                'end_previous_date' => $end_previous_date,
+                'appointmentArray' => $appointmentArray,
+                'discount_type' => config('constants.amount_types'),
+                'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
             ]);
 
     } catch(\Exception $e) {
-    
+
         return ApiHelper::apiException($e);
     }
 }
@@ -1320,7 +1337,7 @@ class PackagesController extends Controller
 
             $packageAdvancesCollection = [];
             foreach ($packageadvances as $packageadvance) {
-                if ($packageadvance->cash_flow == 'out' && $packageadvance->is_tax == 0) { 
+                if ($packageadvance->cash_flow == 'out' && $packageadvance->is_tax == 0) {
                 if (!is_null($packageadvance->refund_note)) {
                     $packageadvance->package_refund_price = number_format(PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id, $packageadvance->id));
                 } else {

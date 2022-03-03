@@ -1,6 +1,22 @@
 jQuery(document).ready(function () {
     getPatient();
+
+    var result = get_query();
+
+    if (typeof result.tab !== 'undefined') {
+        $("." + result.tab+ '-tab').click();
+    }
 });
+
+function get_query(){
+    var url = document.location.href;
+    var qs = url.substring(url.indexOf('?') + 1).split('&');
+    for(var i = 0, result = {}; i < qs.length; i++){
+        qs[i] = qs[i].split('=');
+        result[qs[i][0]] = decodeURIComponent(qs[i][1]);
+    }
+    return result;
+}
 
 
 function getPatient() {
@@ -87,20 +103,29 @@ function changeProfilePage($this, page_id) {
         $(".submit-btn").addClass("d-none");
     }
 
+    setQueryStringParameter('tab', page_id);
+
     loadDataTable(page_id);
 
 }
 
+function setQueryStringParameter(name, value) {
+    const params = new URLSearchParams(window.location.search);
+    params.set(name, value);
+    window.history.replaceState({}, "", decodeURIComponent(`${window.location.pathname}?${params}`));
+}
+
 function loadDataTable(page_id) {
 
-    let url = asset_url + "assets/js/pages/patients/"+ page_id + '.js';
-
     /*load script on change tab and then init datatable*/
+    let url = asset_url + "assets/js/pages/patients/" + page_id + ".js";
     $.getScript(url);
 
     setTimeout(function () {
+
         let className = "." + page_id;
         let  datatableExist = $("#" + page_id).find(className).html();
+
         if (typeof table_url !== 'undefined' && typeof datatableExist !== 'undefined') {
 
             if (datatableExist.length === 0) {

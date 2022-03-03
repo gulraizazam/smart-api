@@ -23,7 +23,7 @@
 
     @can("patients_customform_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'custom-form');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'custom-form');" class="change-tab custom-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                     <i class="la la-file-text-o"></i>
                 </span>
@@ -34,7 +34,7 @@
 
     @can("appointments_medical_form_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'medical-form');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'medical-form');" class="change-tab medical-form-tab navi-link py-4">
             <span class="navi-icon mr-2">
                <i class="la la-medkit"></i>
             </span>
@@ -45,7 +45,7 @@
 
     @can("appointments_measurement_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'measurement-form');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'measurement-form');" class="change-tab measurement-form-tab navi-link py-4">
             <span class="navi-icon mr-2">
                  <i class="la la-stethoscope"></i>
             </span>
@@ -56,7 +56,7 @@
 
     @can("patients_document_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'document-form');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'document-form');" class="change-tab document-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                     <i class="la la-file-archive-o"></i>
                 </span>
@@ -67,7 +67,7 @@
 
     @can("patients_plan_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'plan');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'plan-form');" class="change-tab plan-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                      <i class="la la-paper-plane-o"></i>
                 </span>
@@ -78,7 +78,7 @@
 
     @can("patients_finance_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'finances');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'finance-form');" class="change-tab finance-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                      <i class="la la-money"></i>
                 </span>
@@ -89,7 +89,7 @@
 
     @can("patients_invoice_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0);"  onclick="changeProfilePage($(this), 'invoices');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0);"  onclick="changeProfilePage($(this), 'invoice-form');" class="change-tab invoice-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                      <i class="la la-file-invoice"></i>
                 </span>

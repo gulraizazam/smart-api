@@ -1,155 +1,126 @@
-<div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-    <h4 class="modal-title">@lang('global.app_display')</h4>
-</div>
-<div class="modal-body">
-    <div class="portlet-body form">
-        <div class="form-group">
-            <div class="form-body">
+<!--begin::Modal content-->
+<div class="modal-content">
+    <!--begin::Modal header-->
+    <div class="modal-header" id="kt_modal_password_header">
+        <!--begin::Modal title-->
+        <h2 class="fw-bolder rota-title">Display</h2>
+        <!--end::Modal title-->
+        <!--begin::Close-->
+        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
+            <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
+            <span class="svg-icon svg-icon-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
+                    <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
+                </svg>
+            </span>
+            <!--end::Svg Icon-->
+        </div>
+        <!--end::Close-->
+    </div>
+    <!--end::Modal header-->
+    <!--begin::Modal body-->
+    <div class="modal-body scroll-y mx-5 mx-xl-15">
+
+        <!--begin::Form-->
+        <div class="d-flex flex-column scroll-y me-n7 pe-7 mt-10" id="kt_modal_plans_scroll">
+
+            <div class="form-group">
+
                 <div class="row">
                     <div class="form-group col-md-4">
-                        {!! Form::label('parent_id', 'Patient', ['class' => 'control-label']) !!}
-                        <span style="font-size:18px;display: block;"><strong>{{$package->user->name}}</strong></span>
-                        <input type="hidden" id="parent_id" name="parent_id" value="{{$package->patient_id}}">
+                        <label style="font-size: 14px;">Patient</label>
+                        <strong style="font-size:18px;display: block;" id="user_name"></strong>
                     </div>
                     <div class="form-group col-md-4">
-                        {!! Form::label('location_id', 'Location', ['class' => 'control-label']) !!}
-                        <span style="font-size:18px;display: block;"><strong>{{$package->location->name}}</strong></span>
+                        <label style="font-size: 14px;">Patient</label>
+                        <strong style="font-size:18px;display: block;" id="location_name"></strong>
                     </div>
                 </div>
-                {{--Table for display information of services with discount package--}}
-                <div class="table-responsive">
-                    <table id="table" class="table table-striped table-bordered table-advance table-hover">
-                        {{ csrf_field() }}
-                        <thead>
-                        <tr>
-                            <th>Service Name</th>
-                            <th>Service Price</th>
-                            <th>Discount Name</th>
-                            <th>Discount Type</th>
-                            <th>Discount Price</th>
-                            <th>Subtotal</th>
-                            <th>Tax %</th>
-                            <th>Tax Price</th>
-                            <th>Total</th>
-                        </tr>
-                        </thead>
-                        @if($packagebundles)
-                            @foreach($packagebundles as $packagebundles)
-                                <tr>
-                                    <td><a href="javascript:void(0);"
-                                           onclick="toggle({{$packagebundles->id}})"><?php echo $packagebundles->bundle->name; ?></a>
-                                    </td>
-                                    <td>{{number_format($packagebundles->service_price)}}</td>
-                                    <td>
-                                        @if($packagebundles->discount_id == null)
-                                            {{'-'}}
-                                        @elseif($packagebundles->discount_name)
-                                            {{$packagebundles->discount_name}}
-                                        @else
-                                            {{$packagebundles->discount->name}}
-                                        @endif
-                                    </td>
-                                    <td><?php if ($packagebundles->discount_type == null) {
-                                            echo '-';
-                                        } else {
-                                            echo $packagebundles->discount_type;
-                                        } ?>
-                                    </td>
-                                    <td><?php if ($packagebundles->discount_price == null) {
-                                            echo '0.00';
-                                        } else {
-                                            echo $packagebundles->discount_price;
-                                        } ?>
-                                    </td>
-                                    <td>{{$packagebundles->tax_exclusive_net_amount}}</td>
-                                    <td>{{$packagebundles->tax_percenatage}}</td>
-                                    <td>{{$packagebundles->tax_price}}</td>
-                                    <td>{{$packagebundles->tax_including_price}}</td>
+            </div>
 
-                                </tr>
-                                @foreach ($packageservices as $packageservice)
-                                    @if($packageservice->package_bundle_id == $packagebundles->id )
-                                        <?php if ($packageservice->is_consumed == '0') {
-                                            $consume = 'NO';
-                                        } else {
-                                            $consume = 'YES';
-                                        }?>
-                                        <tr class="{{$packagebundles->id}}" style="display: none">
-                                            <td></td>
-                                            <td><?php echo $packageservice->service->name; ?></td>
-                                            <td>Amount : {{$packageservice->tax_exclusive_price}}</td>
-                                            <td>Tax % : {{$packageservice->tax_percenatage}}</td>
-                                            <td>Tax Amt. : {{$packageservice->tax_including_price}}</td>
-                                            <td colspan="4">Is Consumed : {{$consume}}</td>
-                                        </tr>
-                                    @endif
-                                @endforeach
-                            @endforeach
-                        @endif
-                    </table>
+            <div class="form-group">
+
+                <div class="row">
+                    <div class="table-responsive">
+                        <table id="plans_service" class="table table-bordered table-advance">
+
+                            <thead>
+                            <tr>
+                                <th>Service Name</th>
+                                <th>Service Price</th>
+                                <th>Discount Name</th>
+                                <th>Discount Type</th>
+                                <th>Discount Price</th>
+                                <th>Subtotal</th>
+                                <th>Tax %</th>
+                                <th>Tax Price</th>
+                                <th>Total</th>
+                            </tr>
+                            </thead>
+
+                            <tbody class="display_plans"></tbody>
+
+                        </table>
+                    </div>
                 </div>
-                {{--End--}}
-                {{--Grand total show here--}}
+
                 <div class="row">
                     <div class="col-md-10 col-xs-8"></div>
                     <div class="col-md-2 col-xs-4 invoice-block">
                         <ul class="list-unstyled amounts">
                             <li>
-                                <strong>Total:</strong> <?php echo number_format($package->total_price);?>/-
+                                <strong style="font-weight: bold;">Total:</strong> <span class="package_total_price"></span>/-
                             </li>
                         </ul>
                     </div>
                 </div>
-                {{--End--}}
-                {{--History of patient package advances service--}}
-                <h3 style="margin-top: 0;">History</h3>
-                <div class="table-responsive">
-                    <table id="table" class="table table-striped table-bordered table-advance table-hover">
-                        {{ csrf_field() }}
-                        <thead>
-                        <tr>
-                            <th>Payment Mode</th>
-                            <th>Cash Flow</th>
-                            <th>Cash Amount</th>
-                            <th>Created At</th>
-                        </tr>
-                        </thead>
-                        @if($packageadvances)
-                            @foreach($packageadvances as $packageadvances)
-                                @if($packageadvances->cash_amount != '0')
-                                    <tr>
-                                    @if($packageadvances->is_tax == 1 && $packageadvances->cash_flow == 'out')
-                                        <td>Tax</td>
-                                    @else
-                                        <td><?php echo $packageadvances->paymentmode->name; ?></td>
-                                    @endif
-                                        <td><?php echo $packageadvances->cash_flow; ?></td>
-                                        <td><?php echo number_format($packageadvances->cash_amount) ?></td>
-                                        <td><?php echo \Carbon\Carbon::parse($packageadvances->created_at)->format('F j,Y h:i A'); ?></td>
-                                    </tr>
-                                @endif
-                            @endforeach
-                        @endif
-                    </table>
-                </div>
-                {{--End--}}
-            </div>
-        </div>
-    </div>
-    <div style="text-align: right">
-        <a class="btn btn-lg blue hidden-print margin-bottom-5" target="_blank"
-           href="{{ route('admin.packages.package_pdf',[$package->id]) }}">@lang('global.app_pdf')
-            <i class="fa fa-print"></i>
-        </a>
-    </div>
-</div>
-<script>
-    function toggle(id) {
-        $("." + id).toggle();
-    }
-</script>
 
+                <div class="row">
+                    <div class="table-responsive">
+                        <h4>History</h4>
+                        <table id="plan_history" class="table table-bordered table-advance">
+
+                            <thead>
+                            <tr>
+                                <th>Payment Mode</th>
+                                <th>Cash Flow</th>
+                                <th>Cash Amount</th>
+                                <th>Created At</th>
+                            </tr>
+                            </thead>
+
+                            <tbody class="plan_history">
+                            <tr>
+                                <td id="payment_mode"></td>
+                                <td id="cash_flow"></td>
+                                <td id="cash_amount"></td>
+                                <td id="Created At"></td>
+                            </tr>
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row float-right">
+                    <div class="col-md-12 col-sm-12 col-xs-12 mt-10">
+                        <a class="patient_print btn btn-lg btn-primary blue hidden-print margin-bottom-5" target="_blank"
+                           href="">Print
+                            <i class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+
+            </div>
+
+        </div>
+        <!--end::Scroll-->
+    </div>
+    <!--end::Modal body-->
+</div>
+<!--end::Modal content-->
 
 
 

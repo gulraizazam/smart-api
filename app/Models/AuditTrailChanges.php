@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\User;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 class AuditTrailChanges extends Model
@@ -53,11 +53,11 @@ class AuditTrailChanges extends Model
     }
     public function users_before()
     {
-        return $this->belongsTo('App\User', 'field_before');
+        return $this->belongsTo(User::class, 'field_before');
     }
     public function users_after()
     {
-        return $this->belongsTo('App\User', 'field_after');
+        return $this->belongsTo(User::class, 'field_after');
     }
     public function services_before()
     {

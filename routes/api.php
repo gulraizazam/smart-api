@@ -391,7 +391,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
 
     /*Route start for patient pakcage*/
-    Route::post('plans/datatable/{id}', [PackagesController::class, 'datatable'])->name('plans.datatable');
+    Route::post('plans/datatable/{id?}', [PackagesController::class, 'datatable'])->name('plans.datatable');
 
     Route::get('plans/getserviceinfo',[PackagesController::class, 'getserviceinfo'])->name('plans.getserviceinfo');
 
@@ -423,12 +423,15 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('plans/{id}/createplan',[PackagesController::class, 'create'])->name('plans.createplan');
 
-    Route::get('plans/log/{id}/{patient_id}/{type}', [PackagesController::class, 'planlog'])->name('plans.log');
-
     Route::get('plans/edit_cash/{id}/{package_id}',[PackagesController::class, 'editpackageadvancescashindex'])->name('plans.edit_cash');
 
     /*Route end for patient package*/
 
+    Route::post('finances/datatable/&{id}', [PackageAdvancesController::class, 'datatable'])->name('finances.datatable');
+
+    Route::get('finances/{id}/create',[PackageAdvancesController::class, 'create'])->name('finances.create');
+
+    Route::get('finances/getpackages',[PackageAdvancesController::class, 'getpackages'])->name('finances.getpackages');
 
 });
 
