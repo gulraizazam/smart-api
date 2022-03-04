@@ -11,6 +11,9 @@
             </thead>
             <tbody>
             <tr>
+                @php
+                   list($total_cash_in, $total_cash_out, $balance) = getPatientInfo();
+                @endphp
                 <td><?php echo number_format($total_cash_in ?? 0); ?></td>
                 <td><?php echo number_format($total_cash_out ?? 0); ?></td>
                 <td><?php echo number_format($balance ?? 0); ?></td>

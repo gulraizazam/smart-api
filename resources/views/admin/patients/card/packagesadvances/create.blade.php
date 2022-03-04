@@ -31,7 +31,7 @@
             <button class="close" data-close="alert"></button>
             Plan successfully created
         </div>
-        <div id="inputfieldMessage" class="alert alert-danger display-hide" style="display: none;">
+        <div id="inputFieldMessage" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
             Kindly enter required fields or you enter wrong value.
         </div>
@@ -56,9 +56,13 @@
             Your discount limit exceeded.
         </div>
 
+
+
         <!--begin::Form-->
-        <form id="modal_add_plan_form" method="post" action="{{route('admin.packages.store')}}">
+        <form id="add-finance-form" method="post" onsubmit="return false;">
             <!--begin::Scroll-->
+
+            <input type="hidden" value="{{request('id')}}" name="patient_id_1" id="patient_id_1" class="form-control">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -102,7 +106,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input id="add_cash_amount" type="number" name="cash_amount" class="form-control">
+                            <input id="add_finance_cash_amount" type="number" name="cash_amount" class="form-control">
                         </div>
 
                     </div>
@@ -114,7 +118,7 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button">
+                <button type="button" id="AddAmount_1" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>

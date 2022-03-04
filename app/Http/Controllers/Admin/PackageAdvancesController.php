@@ -174,6 +174,7 @@ class PackageAdvancesController extends Controller
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'in']
         ])->sum('cash_amount');
+
         $cash_amount_check = $cash_amount + $request->cash_amount;
         $total_price = filter_var($request->total_price, FILTER_SANITIZE_NUMBER_INT);
 
@@ -183,28 +184,29 @@ class PackageAdvancesController extends Controller
             $data['cash_amount'] = $request->cash_amount;
             $data['patient_id'] = $request->patient_id;
             $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::User()->account_id;
-            $data['created_by'] = Auth::User()->id;
-            $data['updated_by'] = Auth::User()->id;
+            $data['account_id'] = Auth::user()->account_id;
+            $data['created_by'] = Auth::user()->id;
+            $data['updated_by'] = Auth::user()->id;
             $data['package_id'] = $request->package_id;
 
             $package_advances = PackageAdvances::createRecord_onlyadvances($data);
 
-            return response()->json(array(
-                'status' => true,
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            if ($package_advances) {
+                return ApiHelper::apiResponse($this->success, 'Record saved successfully.');
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Failed to save the record.', false);
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'Cash amount should be less then or equal to total amount.', false);
     }
 
     /**
      * Display a User As package advances  in datatables.
      *
      * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
@@ -216,8 +218,9 @@ class PackageAdvancesController extends Controller
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $packagesadvances = PackageAdvances::getBulkData($request->get('id'));
+        if (hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
+            $packagesadvances = PackageAdvances::getBulkData($ids);
             if ($packagesadvances) {
                 foreach ($packagesadvances as $packageadvances) {
                     // Check if child records exists or not, If exist then disallow to delete it.
@@ -226,21 +229,20 @@ class PackageAdvancesController extends Controller
                     }
                 }
             }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true; // pass custom message(useful for getting status of group actions)
+            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
         }
 
+       $patient_id = $this->getPatientId();
         // Get Total Records
-        $iTotalRecords = PackageAdvances::getTotalRecords( $request, Auth::User()->account_id, false , $apply_filter,$jason_var );
+        $iTotalRecords = PackageAdvances::getTotalRecords( $request, Auth::user()->account_id, $patient_id , $apply_filter,$jason_var );
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        list($orderBy, $order) = getSortBy($request);
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
-        $packagesadvances = PackageAdvances::getRecords( $request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, false, $apply_filter,$jason_var );
+        $packagesadvances = PackageAdvances::getRecords( $request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $patient_id, $apply_filter,$jason_var );
 
-        $records = $this->getFilterData($records);
+        $records = $this->getFilterData($records, $jason_var);
 
         if ($packagesadvances) {
             $balance = 0;
@@ -305,17 +307,34 @@ class PackageAdvancesController extends Controller
                     $iTotalRecords--;
                 }
             }
-        }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
 
-        return response()->json($records);
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+        }
+
+        return ApiHelper::apiDataTable($records);
     }
 
-    private function getFilterData($records) {
+    private function getPatientId() {
 
-        $filters = Filters::all(Auth::User()->id, 'packageAdvances');
+        $patient_id = false;
+        $id = request('id');
+        if (isset($id) && $id != '') {
+            $patient_id = $id;
+        }
+
+        return $patient_id;
+    }
+
+    private function getFilterData($records, $filename) {
+
+        $filters = Filters::all(Auth::User()->id, $filename);
 
         if($user_id = Filters::get(Auth::User()->id, 'packageAdvances', 'patient_id')) {
             $patient = User::where(array(
@@ -328,6 +347,12 @@ class PackageAdvancesController extends Controller
             $patient = [];
         }
 
+        if (isset($filters['created_from'])) {
+            $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
+        }
+        if (isset($filters['created_to'])) {
+            $filters['created_to'] = date('Y-m-d', strtotime($filters['created_to']));
+        }
 
         $records['active_filters'] = $filters;
 

@@ -433,6 +433,9 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('finances/getpackages',[PackageAdvancesController::class, 'getpackages'])->name('finances.getpackages');
 
+    Route::post('finances/savepackagesadvances',[PackageAdvancesController::class, 'savepackagesadvances'])->name('finances.savepackagesadvances');
+
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
