@@ -191,7 +191,6 @@ class PackageAdvancesController extends Controller
      */
     public function datatable(Request $request, $id)
     {
-
         $filname = 'patient_packageAdvances';
         $apply_filter = false;
         if($request->get('action')) {

@@ -322,8 +322,6 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
 
         /*Route start for patient Package advances*/
 
-        Route::get('finances/savepackagesadvances',[PackageAdvancesController::class, 'savepackagesadvances'])->name('finances.savepackagesadvances');
-
         Route::get('finances/getpackagesinfo',[PackageAdvancesController::class, 'getpackagesinfo'])->name('finances.getpackagesinfo');
 
         Route::get('finances/{id}',[PackageAdvancesController::class, 'index'])->name('finances.index');

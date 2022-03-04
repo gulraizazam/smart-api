@@ -1,8 +1,9 @@
 <?php
 
     use App\Helpers\Filters;
+use App\Models\PackageAdvances;
 
-    function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) {
+function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) {
         if ($request->has('sort')) {
             $orderBy = $request->get('sort')['field'];
             $order = $request->get('sort')['sort'];
@@ -82,4 +83,22 @@
 
     function getPatientName($id) {
        return \App\Models\Patients::find($id)?->name ?? '';
+    }
+
+    function getPatientInfo() {
+
+
+        $total_cash_in = PackageAdvances::where('cash_flow', '=', 'in')
+            ->where('patient_id', request('id'))
+            ->sum('cash_amount');
+        $total_cash_out = PackageAdvances::where('cash_flow', '=', 'out')
+            ->where('patient_id', request('id'))
+            ->sum('cash_amount');
+
+        $balance = $total_cash_in - $total_cash_out;
+        return [
+            $total_cash_in,
+            $total_cash_out,
+            $balance
+        ];
     }

@@ -4,12 +4,9 @@
 
 	use App\Helpers\Filters;
     use App\Helpers\GeneralFunctions;
-    use App\Models\AuditTrails;
-	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Http\Request;
-	use Auth;
+	use Illuminate\Support\Facades\Auth;
 	use Illuminate\Database\Eloquent\SoftDeletes;
-	use PHPUnit\Util\Filter;
 	use Carbon\Carbon;
 
 	class PackageAdvances extends BaseModal
@@ -52,7 +49,7 @@
 		* */
 		public function user()
 		{
-			return $this->belongsTo('App\User', 'patient_id')->withTrashed();
+			return $this->belongsTo(User::class, 'patient_id')->withTrashed();
 		}
 
 		/*

@@ -426,7 +426,7 @@ function setEditData(response) {
 
 function applyFilters(datatable) {
 
-    $('#medical-search').on('click', function() {
+    $('#finance-search').on('click', function() {
 
         let filters =  {
             delete: '',
@@ -443,7 +443,7 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $(".page-medical-form").find('#reset-filters').on('click', function() {
+    $(".page-finance-form").find('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
             created_from: '',
@@ -465,3 +465,53 @@ function setFilters(filter_values, active_filters) {
         showException(error);
     }
 }
+
+
+$(document).ready(function () {
+
+    /*function for final package advances information save*/
+    $(document).on("click", "#AddAmount_1", function () {
+
+        $('#inputFieldMessage').hide();
+
+        var patient_id = $('#patient_id_1').val();
+        var package_id = $('#add_package_id').val();
+        var total_price = $('#add_finance_total_price').val();
+        var cash_total_amount = $('#add_finance_cash_receive').val();
+        var payment_mode_id = $('#add_payment_mode').val();
+        var cash_amount = $('#add_finance_cash_amount').val();
+
+        if (patient_id && package_id && payment_mode_id && payment_mode_id && cash_amount) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'post',
+                url: route('admin.finances.savepackagesadvances'),
+                data: {
+                    'patient_id': patient_id,
+                    'package_id': package_id,
+                    'total_price': total_price,
+                    'cash_total_amount': cash_total_amount,
+                    'payment_mode_id': payment_mode_id,
+                    'cash_amount': cash_amount,
+                },
+                success: function (response) {
+
+                    if (response.status) {
+                        toastr.success(response.message);
+                        $("#modal_add_finance_form").modal("hide");
+                        patientDatatable['.finance-form'].search({ datatable_reload: 'reload' }, 'search');
+                        $("#add-finance-form")[0].reset();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                }
+            });
+        } else {
+            $('#inputFieldMessage').show();
+        }
+    });
+    /*End*/
+
+});
