@@ -396,7 +396,7 @@ function setEditData(response) {
 
         let service_options = noRecordFoundTable(9);
 
-        if(packagebundles.lengths) {
+        if(packagebundles.length) {
             service_options = noRecordFoundTable(9);
             Object.values(packagebundles).forEach(function (packagebundle) {
                 service_options += '<tr>';
@@ -631,7 +631,7 @@ function displayData(response) {
 
         let service_options = noRecordFoundTable(9);
 
-        if(packagebundles.lengths) {
+        if(packagebundles.length) {
             service_options = noRecordFoundTable(9);
             Object.values(packagebundles).forEach(function (packagebundle) {
                 service_options += '<tr>';

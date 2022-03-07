@@ -76,7 +76,7 @@ class InvoicesController extends Controller
     /*
      * Show the invoice data in datatable
      * */
-    public function datatable(Request $request)
+    public function datatable(Request $request, $id = false)
     {
 
         try {
@@ -139,6 +139,7 @@ class InvoicesController extends Controller
                         'price' => number_format($invoice->total_price),
                         'created_at' => Carbon::parse($invoice->created_at)->format('F j,Y h:i A'),
                         'cancel' => $cancel,
+                        'invoice' => $invoice,
                     );
                 }
 
@@ -158,6 +159,15 @@ class InvoicesController extends Controller
                 'log' => Gate::allows('invoices_log'),
                 'sms_log' => Gate::allows('invoices_sms_log'),
             ];
+
+            if ($id) {
+                $records["permissions"] = [
+                    'manage' => Gate::allows('patients_invoice_manage'),
+                    'cancel' => Gate::allows('patients_invoice_cancel'),
+                    'log' => Gate::allows('patients_invoice_log'),
+                    'sms_log' => Gate::allows('patients_invoice_sms_log'),
+                ];
+            }
 
             return response()->json($records);
         } catch (\Exception $e) {
@@ -463,7 +473,7 @@ class InvoicesController extends Controller
             }
         }
 
-        if ($type==='web'){
+        if ($type === 'web'){
             return view('admin.invoices.log', compact('finance_log', 'id'));
         }
         return $this->invoicelogexcel( $id, $finance_log );

@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\RefundsController;
+use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
@@ -435,6 +436,16 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::post('finances/savepackagesadvances',[PackageAdvancesController::class, 'savepackagesadvances'])->name('finances.savepackagesadvances');
 
+    Route::post('invoicepatient/datatable/&{id}', [InvoicesController::class, 'datatable'])->name('invoicepatient.datatable');
+
+    Route::get('invoicepatient/displayInvoice/{id}', [InvoicesController::class, 'displayInvoice'])->name('invoicepatient.displayInvoice');
+
+    Route::post('invoicepatient/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoicepatient.cancel');
+
+    Route::post('refundpatient/datatable/&{id}', [RefundsController::class, 'datatable'])->name('refundpatient.datatable');
+    Route::get('refundpatient/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refundpatient.refund_create');
+
+    Route::post('nonplansrefundspatient/datatable/{id}', [PatientRefundController::class, 'nonplansdatatable'])->name('nonplansrefundpatient.datatable');
 
 });
 

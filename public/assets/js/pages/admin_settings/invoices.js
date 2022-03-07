@@ -267,7 +267,7 @@ function setInvoiceData(response) {
 
         let subtotal = 0;
         if(Invoiceinfo.is_exclusive == '0') {
-            if(Invoiceinfo.discount_price == null && $bundle.type == 'single') {
+            if(Invoiceinfo.discount_price == null ) {
                 subtotal = parseFloat(Invoiceinfo.service_price)-parseFloat(Invoiceinfo.tax_price);
             } else {
                 subtotal = Invoiceinfo.tax_exclusive_serviceprice;

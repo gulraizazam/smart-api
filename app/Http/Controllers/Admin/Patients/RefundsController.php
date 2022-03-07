@@ -344,16 +344,15 @@ class RefundsController extends Controller
 
         $iTotalRecords = $data['iTotalRecords'];
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        list($orderBy, $order) = getSortBy($request);
+
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $nonplansrefunds = $data['nonplansrefunds'];
 
         if ($nonplansrefunds) {
-            foreach ($nonplansrefunds as $nonplansrefunds) {
-                $appointmentinformation = Appointments::where('id', '=', $nonplansrefunds['appointment_id'])->first();
+            foreach ($nonplansrefunds as $nonplansrefund) {
+                $appointmentinformation = Appointments::where('id', '=', $nonplansrefund['appointment_id'])->first();
                 $records["data"][] = array(
                     'name' => $appointmentinformation->name,
                     'doctor' => $appointmentinformation->doctor->name,
@@ -362,13 +361,18 @@ class RefundsController extends Controller
                     'location' => $appointmentinformation->location->name,
                     'service' => $appointmentinformation->service->name,
                     'type' => $appointmentinformation->appointment_type->name,
-                    'actions' => view('admin.patients.card.nonplansrefunds.actions', compact('nonplansrefunds'))->render(),
                 );
             }
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
         }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
 
         return response()->json($records);
     }
