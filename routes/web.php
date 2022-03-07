@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\RefundsController;
+use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
@@ -327,6 +328,32 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
         Route::get('finances/{id}',[PackageAdvancesController::class, 'index'])->name('finances.index');
 
         /*Route end for patient package advances */
+
+        /*Route start for patient invoices*/
+
+        Route::get('invoicepatient/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoicepatient.invoice_pdf');
+
+        Route::get('invoicepatient/log/{id}/{patient_id}/{type}', [InvoicesController::class, 'invoicelog'])->name('invoicepatient.invoice_log');
+
+        Route::get('invoicepatient/{id}',[InvoicesController::class, 'index'])->name('invoicepatient.index');
+        /*Route end for patient invoices*/
+
+        /*Route start for Patient refunds*/
+
+        Route::post('refundpatient/store', [RefundsController::class, 'store'])->name('refundpatient.store');
+
+        Route::get('refundpatient/detail/{id}', [RefundsController::class, 'detail'])->name('refundpatient.detail');
+
+        Route::get('refundpatient/{id}',[RefundsController::class, 'index'])->name('refundpatient.index');
+
+        Route::get('refundpatient/{id}/create',[RefundsController::class, 'create'])->name('refundpatient.create');
+        /*Route end for patient refunds*/
+
+
+        /*Route start for patient non plans refunds*/
+        Route::get('nonplansrefundspatient/{id}', [PatientRefundController::class, 'nonplansrefundsindex'])->name('nonplansrefundpatient.index');
+        Route::post('nonplansrefundspatient/store', [PatientRefundController::class, 'nonplansrefundsstore'])->name('nonplansrefundpatient.store');
+        /*Route end for patient non plans refunds*/
 
 
     });

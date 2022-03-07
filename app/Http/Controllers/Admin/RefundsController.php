@@ -57,7 +57,7 @@ class RefundsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request, $id = false)
     {
         try {
 
@@ -71,13 +71,13 @@ class RefundsController extends Controller
             $records["data"] = array();
 
             // Get Total Records
-            $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, false, $apply_filter, $filename);
+            $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
 
 
             list($orderBy, $order) = getSortBy($request);
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
-            $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, false, $apply_filter, $filename);
+            $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
 
             $records = $this->getFiltersData($records, $filename);
 
@@ -127,6 +127,13 @@ class RefundsController extends Controller
                 'inactive' => Gate::allows('refunds_inactive'),
                 'refund' => Gate::allows('refunds_refund'),
             ];
+
+            $patient_id = request('patient_id');
+            if (isset($patient_id)) {
+                $records["permissions"] = [
+                    'refund' => Gate::allows('patients_refund_refund'),
+                ];
+            }
 
             return ApiHelper::apiDataTable($records);
 
@@ -302,37 +309,25 @@ class RefundsController extends Controller
      * Store a newly created Permission in storage.
      *
      * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         if (! Gate::allows('refunds_refund')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         if(Refunds::createRecord($request, Auth::User()->account_id)) {
-
-            flash('Record has been created successfully.')->success()->important();
-
-            return response()->json(array(
-                'status' => 1,
-                'message' => 'Record has been created successfully.',
-            ));
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'message' => 'Something went wrong, please try again later.',
-            ));
+            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         }
+
+        return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
     }
 
     /*
@@ -402,11 +397,11 @@ class RefundsController extends Controller
      * Display a listing of non plans Refunds.
      *
      * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function nonplansdatatable(Request $request)
     {
-        try { 
+        try {
 
         $filename = 'nonplansrefunds';
 
@@ -558,7 +553,7 @@ class RefundsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
 
         }
-        
+
         return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
     }
 }

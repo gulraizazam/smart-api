@@ -100,7 +100,7 @@
 
     @can("patients_refund_manage")
     <div class="navi-item mb-2">
-        <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'plan-refunds');" class="change-tab navi-link py-4">
+        <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'refund-form');" class="change-tab refund-form-tab navi-link py-4">
             <span class="navi-icon mr-2">
                  <i class="la la-eject"></i>
             </span>
@@ -111,7 +111,7 @@
 
     @can("patients_refund_manage")
         <div class="navi-item mb-2">
-            <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'no-plan-refunds');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'no-plan-refund-form');" class="change-tab no-plan-refund-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                      <i class="la la-eject"></i>
                 </span>

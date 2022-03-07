@@ -37,7 +37,15 @@
                         <div class="card-toolbar">
 
                             @if (Gate::allows('invoices_log_excel'))
-                                <a href="{{ route('admin.invoices.invoice_log', [ $id, 'excel']) }}" class="btn btn-primary">
+                                @php
+                                    $patient_id = request('patient_id');
+                                    if (isset($patient_id)) {
+                                        $route = route('admin.invoices.invoice_log', [ $id, $patient_id, 'excel']);
+                                    } else {
+                                        $route = route('admin.invoices.invoice_log', [ $id, 'excel']);
+                                    }
+                                @endphp
+                                <a href="{{ $route }}" class="btn btn-primary">
                                     <i class="la la-file-export"></i>
                                     Excel
                                 </a>

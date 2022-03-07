@@ -152,6 +152,18 @@
                                     @include('admin.patients.card.packagesadvances.index', ['customId' => 'finance-search'])
                                 </div>
 
+                                <div id="invoice-form" class="content-section d-none">
+                                    @include('admin.patients.card.invoices.index', ['customId' => 'invoice-search'])
+                                </div>
+
+                                <div id="refund-form" class="content-section d-none">
+                                    @include('admin.patients.card.refunds.index', ['customId' => 'refund-search'])
+                                </div>
+
+                                <div id="no-plan-refund-form" class="content-section d-none">
+                                    @include('admin.patients.card.nonplansrefunds.index', ['customId' => 'no-plan-refund-search'])
+                                </div>
+
 
                             </div>
 

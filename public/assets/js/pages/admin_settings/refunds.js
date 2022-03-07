@@ -2,19 +2,11 @@
 var table_url = route('admin.refunds.datatable');
 
 var table_columns = [
-    /*{
-        field: 'id',
-        sortable: false,
-        width: 'auto',
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    },*/ {
+    {
         field: 'name',
         title: 'Name',
         sortable: false,
-        width: 300,
+        width: 50,
     },{
         field: 'patient_id',
         title: 'Patient',

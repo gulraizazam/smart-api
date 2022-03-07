@@ -119,6 +119,7 @@ function loadDataTable(page_id) {
 
     /*load script on change tab and then init datatable*/
     let url = asset_url + "assets/js/pages/patients/" + page_id + ".js";
+
     $.getScript(url);
 
     setTimeout(function () {
@@ -134,7 +135,7 @@ function loadDataTable(page_id) {
                 patientDatatable[className].search({ datatable_reload: 'reload' }, 'search');
             }
         }
-    },500);
+    },1000);
 
 }
 
