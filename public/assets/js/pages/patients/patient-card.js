@@ -74,10 +74,11 @@ function setPatientData(response) {
 
 function changeProfilePage($this, page_id) {
 
+    let loadScript = true;
     $("#page_name").text($this.text());
 
-    $(".change-tab").removeClass("active");
-    $this.addClass("active");
+    $(".change-tab").parent('.horizontal-nav-bar-li').removeClass("nav-bar-active");
+    $this.addClass("nav-bar-active");
     $(".submit-btn").addClass("d-none");
     $(".toolbar-" + page_id).removeClass("d-none");
 
@@ -93,19 +94,21 @@ function changeProfilePage($this, page_id) {
         $(".persnl_info").addClass("active");
         $(".profile-buttons").removeClass("d-none");
         $(".submit-btn").addClass("d-none");
+        loadScript = false;
     }
 
     if (page_id == 'change_profile_picture') {
-        $this.addClass("active");
+        $this.addClass("nav-bar-active");
         $(".persnl_info").removeClass("active");
         $(".personal-info").addClass("active");
         $(".profile-buttons").removeClass("d-none");
         $(".submit-btn").addClass("d-none");
+        loadScript = false;
     }
 
     setQueryStringParameter('tab', page_id);
 
-    loadDataTable(page_id);
+    loadDataTable(page_id, loadScript);
 
 }
 
@@ -115,27 +118,29 @@ function setQueryStringParameter(name, value) {
     window.history.replaceState({}, "", decodeURIComponent(`${window.location.pathname}?${params}`));
 }
 
-function loadDataTable(page_id) {
+function loadDataTable(page_id, loadScript = true) {
 
-    /*load script on change tab and then init datatable*/
-    let url = asset_url + "assets/js/pages/patients/" + page_id + ".js";
+    if (loadScript) {
+        /*load script on change tab and then init datatable*/
+        let url = asset_url + "assets/js/pages/patients/" + page_id + ".js";
 
-    $.getScript(url);
+        $.getScript(url);
 
-    setTimeout(function () {
+        setTimeout(function () {
 
-        let className = "." + page_id;
-        let  datatableExist = $("#" + page_id).find(className).html();
+            let className = "." + page_id;
+            let datatableExist = $("#" + page_id).find(className).html();
 
-        if (typeof table_url !== 'undefined' && typeof datatableExist !== 'undefined') {
+            if (typeof table_url !== 'undefined' && typeof datatableExist !== 'undefined') {
 
-            if (datatableExist.length === 0) {
-                KTPatientDatatable.init("." + page_id);
-            } else {
-                patientDatatable[className].search({ datatable_reload: 'reload' }, 'search');
+                if (datatableExist.length === 0) {
+                    KTPatientDatatable.init("." + page_id);
+                } else {
+                    patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
+                }
             }
-        }
-    },1000);
+        }, 1000);
+    }
 
 }
 

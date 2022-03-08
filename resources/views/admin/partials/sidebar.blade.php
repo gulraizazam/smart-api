@@ -116,7 +116,7 @@
 
                     @if(Gate::allows('patients_manage'))
 
-                        <li class="menu-item menu-item-submenu {{openMenu(['admin.patients.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                        <li class="menu-item menu-item-submenu {{openMenu(['admin.patients.index', 'admin.patients.preview'])}}" aria-haspopup="true" data-menu-toggle="hover">
 
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
@@ -129,7 +129,7 @@
                                 <i class="menu-arrow"></i>
                                 <ul class="menu-subnav">
                                     @can('patients_manage')
-                                        <li class="menu-item {{activeMenu('admin.patients.index')}}" aria-haspopup="true">
+                                        <li class="menu-item {{activeMenu('admin.patients.index')}} {{activeMenu('admin.patients.preview')}}" aria-haspopup="true">
                                             <a href="{{route('admin.patients.index')}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>

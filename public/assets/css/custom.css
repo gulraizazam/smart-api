@@ -487,3 +487,76 @@ div > input {
 .patient_custom_form {
     padding-top: 0 !important;
 }
+.horizontal-nav-bar{
+    display: flex;
+}
+.horizontal-nav-bar-li{
+    display: inline-block;
+    margin-left: 5px;
+    width: calc(11% - 21px);
+    border: 1px solid lightgray;
+    text-align: center;
+    justify-content: center;
+}
+.horizontal-nav-bar-li a {
+    float: left;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 5px;
+    height: 100%;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    display: block;
+    width: 100%;
+}
+.horizontal-nav-bar-li:hover a{
+    color: #fff;
+}
+.horizontal-nav-bar-li a {
+    color: #3F4254;
+   /* padding: 30px 30px 30px 20px;*/
+}
+.horizontal-nav-bar-li p{
+    margin-bottom: 0;
+    font-size: 8px;
+    padding: 0px 10px;
+}
+.menu-card {
+    padding: 1.25rem !important;
+}
+
+.horizontal-nav-bar-li a:hover {
+    background-color: #1e1e2d;
+    color: #fff;
+}
+
+.nav-bar-active{
+    background-color: #1e1e2d;
+    color: #fff !important;
+}
+.fa_icon i{
+    font-size: 23px;
+}
+
+@media screen and (min-width: 1350px) {
+    .horizontal-nav-bar-li p{
+        font-size: 12px;
+    }
+}
+@media screen and (max-width: 992px) {
+    .horizontal-nav-bar {
+        display: block;
+    }
+    .horizontal-nav-bar-li{
+        width: 100px;
+        height: 100px
+    }
+    .horizontal-nav-bar-li a {
+        height: 100%;
+        display: flex;
+        width: 100%;
+    }
+
+}
