@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Patients;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Models\PackageAdvances;
 use Illuminate\Http\Request;
@@ -332,7 +333,7 @@ class RefundsController extends Controller
      * Display a listing of Refunds for non plans in patient card.
      *
      * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function nonplansdatatable(Request $request, $id)
     {
@@ -374,7 +375,7 @@ class RefundsController extends Controller
             ];
         }
 
-        return response()->json($records);
+        return ApiHelper::apiDataTable($records);
     }
 
     /**

@@ -12,7 +12,7 @@
 
     @can('patients_appointment_manage')
         <div class="navi-item mb-2">
-            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'appointments');" class="change-tab navi-link py-4">
+            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'appointment-form');" class="change-tab appointment-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                     <i class="la la-clock"></i>
                 </span>

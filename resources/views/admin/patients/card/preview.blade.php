@@ -128,6 +128,10 @@
                                     @include('admin.patients.card.profile.profile-picture', ['customId' => 'profile-picture-search'])
                                 </div>
 
+                                <div id="appointment-form" class="content-section d-none">
+                                    @include('admin.patients.card.appointments.index', ['customId' => 'appointment-form-search'])
+                                </div>
+
                                 <div id="custom-form" class="content-section d-none">
                                     @include('admin.patients.card.custom_form_feedbacks.index', ['customId' => 'custom-form-search'])
                                 </div>

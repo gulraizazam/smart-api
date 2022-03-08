@@ -194,7 +194,7 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
         Route::get('resourcerotas/calender/view/{id}', [ResourceRotasController::class, 'viewCalender'])->name('resourcerotas.calender-view');
 
         //Invoice Management route start
-        Route::get('invoices/log/{id}/{type}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
+        Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
         Route::resource('invoices', InvoicesController::class)->only('index');
         //Invoice Management route end
 
@@ -289,8 +289,6 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
 
         Route::get('patients/{id}/appointments', [PatientsController::class, 'appointments'])->name("patients.appointments");
 
-        Route::post('patients/{id}/appointments-datatable', [PatientsController::class, 'appointmentsDatatable'])->name('patients.appointmentsDatatable');
-
         Route::get('patients/{id}/image', [PatientsController::class, 'imageindex'])->name("patients.imageurl");
 
 
@@ -333,7 +331,7 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
 
         Route::get('invoicepatient/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoicepatient.invoice_pdf');
 
-        Route::get('invoicepatient/log/{id}/{patient_id}/{type}', [InvoicesController::class, 'invoicelog'])->name('invoicepatient.invoice_log');
+        Route::get('invoicepatient/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoicepatient.invoice_log');
 
         Route::get('invoicepatient/{id}',[InvoicesController::class, 'index'])->name('invoicepatient.index');
         /*Route end for patient invoices*/

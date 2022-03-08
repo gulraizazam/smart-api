@@ -351,7 +351,7 @@ class Refunds extends Model
 
         foreach ($nonplansrefundspatient as $patient) {
             $appointment_info = Appointments::find($patient->appointment_id);
-            if ($appointment_info && in_array($appointment_info->location->id, ACL::getUserCentres())) {
+            if ($appointment_info && isset($appointment_info->location) && in_array($appointment_info->location->id, ACL::getUserCentres())) {
                 $singlepatient_cash_in = self::where([
                     ['patient_id', '=', $patient->patient_id],
                     ['appointment_id', '=', $patient->appointment_id],

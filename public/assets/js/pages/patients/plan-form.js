@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'patient_id',
         title: 'Patient ID',
-        width: 'auto',
+        width: 50,
     },{
         field: 'package_id',
         title: 'Name',

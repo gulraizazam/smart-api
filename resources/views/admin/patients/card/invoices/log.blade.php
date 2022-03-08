@@ -35,7 +35,7 @@
                 </div>
                 <div class="actions">
                     @if (Gate::allows('patients_invoice_log_excel'))
-                        <a href="{{ route('admin.invoices.invoice_log', [$id, $patient, 'excel']) }}" class="btn green">Excel</a>
+                        <a href="{{ route('admin.invoices.invoice_log', [$id, 'excel', $patient]) }}" class="btn green">Excel</a>
                     @endif
                     <span style="padding-right: 5px;"></span>
                     <a href="{{ route('admin.invoicepatient.index',[$patient->id]) }}" class="btn dark pull-right">@lang('global.app_back')</a>

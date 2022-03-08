@@ -40,7 +40,7 @@
                                 @php
                                     $patient_id = request('patient_id');
                                     if (isset($patient_id)) {
-                                        $route = route('admin.invoices.invoice_log', [ $id, $patient_id, 'excel']);
+                                        $route = route('admin.invoices.invoice_log', [ $id, 'excel', $patient_id]);
                                     } else {
                                         $route = route('admin.invoices.invoice_log', [ $id, 'excel']);
                                     }
