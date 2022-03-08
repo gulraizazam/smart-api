@@ -21,7 +21,7 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_refund_refunds_form" method="post" action="{{route('admin.refundpatient.store')}}">
+        <form id="modal_no_plan_refund_refunds_form" method="post" action="{{route('admin.nonplansrefundpatient.store')}}">
             <!--begin::Scroll-->
             @csrf
 

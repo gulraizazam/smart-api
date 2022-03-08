@@ -365,6 +365,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('appointments', AppointmentsController::class);
 
     // Patients routes start
+    Route::post('patients/{id}/appointments-datatable', [PatientsController::class, 'appointmentsDatatable'])->name('patients.appointmentsDatatable');
+
     Route::post('patients/datatable', [PatientsController::class, 'datatable'])->name('patients.datatable');
 
     Route::post('patients/status', [PatientsController::class, 'status'])->name('patients.status');

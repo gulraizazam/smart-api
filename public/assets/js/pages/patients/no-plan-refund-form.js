@@ -113,7 +113,7 @@ function refundPlan(url) {
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
 
-            reInitValidation(RefundValidation);
+            reInitValidation(NoPlanRefundValidation);
         }
     });
 
@@ -159,80 +159,10 @@ function refundData(response) {
 
 /*Actions*/
 
-function applyFilters(datatable) {
-
-    $('#refund-search').on('click', function() {
-
-        let filters =  {
-            delete: '',
-            plan_id: $("#search_refund_plan_id").val(),
-            location_id: $("#search_refund_location_id").val(),
-            created_from: $("#search_refund_created_from").val(),
-            created_to: $("#search_refund_created_to").val(),
-            filter: 'filter',
-        }
-
-        datatable.search(filters, 'search');
-
-    });
-
-}
-
-function resetAllFilters(datatable) {
-
-    $(".page-refund-form").find('#reset-filters').on('click', function() {
-        let filters =  {
-            delete: '',
-            plan_id: '',
-            location_id: '',
-            created_from: '',
-            created_to: '',
-            filter: 'filter_cancel',
-        }
-        datatable.search(filters, 'search');
-    });
-
-}
-
-function setFilters(filter_values, active_filters) {
-
-    try {
-        let locations = filter_values.locations;
-        let packages = filter_values.package;
-
-        let package_options = '<option value="">Select Plan</option>';
-
-        if (packages) {
-            Object.entries(packages).forEach(function (package) {
-                package_options += '<option value="'+package[0]+'">'+package[1]+'</option>';
-            });
-        }
-
-        let location_options = '<option value="">Select Location</option>';
-
-        if (locations) {
-            Object.entries(locations).forEach(function (location) {
-                location_options += '<option value="'+location[0]+'">'+location[1]+'</option>';
-            });
-        }
-
-        $("#search_refund_plan_id").html(package_options);
-        $("#search_refund_location_id").html(location_options);
-        $("#search_refund_location_id").val(active_filters.location_id);
-        $("#search_refund_plan_id").val(active_filters.plan_id);
-        $("#search_refund_created_from").val(active_filters.created_from);
-        $("#search_refund_created_to").val(active_filters.created_to);
-
-    } catch (error) {
-        showException(error);
-    }
-}
-
-
-var RefundValidation = function () {
+var NoPlanRefundValidation = function () {
     // Private functions
     var validation = function () {
-        let modal_id = 'modal_refund_refunds_form';
+        let modal_id = 'modal_no_plan_refund_refunds_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
@@ -287,5 +217,5 @@ var RefundValidation = function () {
 }();
 
 jQuery(document).ready(function() {
-    RefundValidation.init();
+    NoPlanRefundValidation.init();
 });

@@ -6,7 +6,7 @@ var table_columns = [
         field: 'name',
         title: 'Patient Name',
         sortable: false,
-        width: 80,
+        width: 40,
     },{
         field: 'phone',
         title: 'Phone',
@@ -69,7 +69,7 @@ function actions(data) {
 
         let cancel_url = route('admin.invoicepatient.cancel', {id: id});
         let display_url = route('admin.invoicepatient.displayInvoice', {id: id});
-        let log_url = route('admin.invoicepatient.invoice_log', {id: id, patient_id: patient_id, type: 'web' });
+        let log_url = route('admin.invoicepatient.invoice_log', {id: id, type: 'web', patient_id: patient_id });
         let sms_log_url = route('admin.invoices.sms_logs', {id: id});
 
         if (permissions.manage && permissions.cancel && permissions.log && permissions.sms_log) {

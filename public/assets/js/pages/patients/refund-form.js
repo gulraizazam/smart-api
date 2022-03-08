@@ -6,7 +6,7 @@ var table_columns = [
         field: 'name',
         title: 'Patient',
         sortable: false,
-        width: 80,
+        width: 40,
     },{
         field: 'phone',
         title: 'Phone',

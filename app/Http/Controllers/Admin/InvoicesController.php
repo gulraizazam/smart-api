@@ -425,7 +425,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice
      */
-    public function invoicelog($id , $type)
+    public function invoicelog($id , $type, $patient_id = null)
     {
         if (!Gate::allows('invoices_log')) {
             return abort(401);

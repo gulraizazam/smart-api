@@ -15,7 +15,7 @@
 @endif
 @if(Gate::allows('patients_invoice_log'))
     <a class="btn btn-xs btn-success"
-       href="{{ route('admin.invoicepatient.invoice_log',[$invoice->id,$invoice->patient_id, 'web']) }}">@lang('global.app_log')</a>
+       href="{{ route('admin.invoicepatient.invoice_log',[$invoice->id, 'web', $invoice->patient_id]) }}">@lang('global.app_log')</a>
 @endif
 @if(Gate::allows('patients_invoice_sms_log'))
     <a href="{{ route('admin.invoices.sms_logs',[$invoice->id])  }}" class="btn btn-xs btn-success"
