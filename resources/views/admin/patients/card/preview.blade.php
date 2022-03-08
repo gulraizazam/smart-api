@@ -4,7 +4,7 @@
 
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-        <!--begin::Subheader-->
+            <!--begin::Subheader-->
         @include('admin.partials.breadcrumb', ['module' => 'Patients', 'title' => 'Patients'])
 
     <!--end::Subheader-->
@@ -12,8 +12,12 @@
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
             <div class="container">
+
+                @include('admin.patients.card.nav')
+
                 <!--begin::Profile Change Password-->
                 <div class="d-flex flex-row">
+
                     <!--begin::Aside-->
                     <div class="flex-row-auto offcanvas-mobile w-250px w-xxl-350px" id="kt_profile_aside">
                         <!--begin::Profile Card-->
@@ -36,7 +40,7 @@
                                 <!--end::User-->
 
                                 <!--begin::Nav bar-->
-                                    @include('admin.patients.card.nav')
+{{--                                    @include('admin.patients.card.nav')--}}
                                 <!--end::Nav bar-->
 
                             </div>
