@@ -194,7 +194,7 @@ function setFilters(filter_values, active_filters) {
         else{
             service_value='\t&nbsp; \t&nbsp; \t&nbsp;'+value[1].name;
         }
-        services_options += '<option value="' + (index==0 ? '': value[1].id) + '">' + service_value + '</option>';
+        services_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
     });
 
     $("#search_status").html(status_options);

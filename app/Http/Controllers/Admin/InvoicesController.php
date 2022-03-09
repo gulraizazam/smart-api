@@ -403,7 +403,7 @@ class InvoicesController extends Controller
 
             $setting_info = Settings::where('slug','=','sys-consultancy-invoice-medical-operator')->first();
 
-            if($setting_info->data == 1){
+            if($setting_info->data = 1){
                 $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);

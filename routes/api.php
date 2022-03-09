@@ -252,8 +252,6 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('invoices/displayInvoice/{id}', [InvoicesController::class, 'displayInvoice'])->name('invoices.displayInvoice');
     Route::post('invoices/invoiceDatatable/{id}', [InvoicesController::class, 'invoiceDatatable'])->name('invoices.invoiceDatatable');
 
-    Route::get('invoices/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
-
     Route::get('invoices/sms_logs/{id}', [InvoicesController::class, 'showSMSLogs'])->name('invoices.sms_logs');
 
     Route::post('invoices/send_logged_sms', [InvoicesController::class, 'sendLogSMS']);
@@ -353,7 +351,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('leads/showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('leads.showleadstatus');
     Route::put('leads/storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('leads.storeleadstatus');
     Route::get('leads/detail/{id}', [LeadsController::class, 'detail'])->name('leads.detail');
-    Route::resource('leads', LeadsController::class);
+    Route::resource('leads', LeadsController::class)->except('index');
     Route::post('leads/datatable', [LeadsController::class, 'datatable'])->name('leads.datatable');
     // Convert Lead
     Route::get('leads/convert/{id}', [LeadsController::class, 'convert'])->name('leads.convert');
@@ -448,6 +446,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('refundpatient/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refundpatient.refund_create');
 
     Route::post('nonplansrefundspatient/datatable/{id}', [PatientRefundController::class, 'nonplansdatatable'])->name('nonplansrefundpatient.datatable');
+    Route::get('nonplansrefundspatient/refund_create/{id}', [PatientRefundController::class, 'nonplansrefundscreate'])->name('nonplansrefundpatient.refund_create');
+
 
 });
 

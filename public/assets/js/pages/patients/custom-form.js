@@ -79,7 +79,7 @@ function actions(data) {
 
 function applyFilters(datatable) {
 
-    $('#apply-filters').on('click', function() {
+    $('#custom-form-search').on('click', function() {
 
         let filters =  {
             delete: '',

@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\LeadsController;
 use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageController;
+use App\Http\Controllers\Admin\AppointmentsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -197,6 +198,7 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
         Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
         Route::resource('invoices', InvoicesController::class)->only('index');
         //Invoice Management route end
+        Route::get('invoices/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
 
         // Package route start
         Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');
@@ -256,7 +258,7 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
         Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
 
 
-        Route::resource('leads', LeadsController::class);
+        Route::resource('leads', LeadsController::class)->only('index');
 
         Route::post('leads/comment_store', [LeadsController:: class, 'comment_store'])->name('leads.comment_store');
         // Load and Save Lead Statuses
@@ -353,5 +355,40 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
         Route::post('nonplansrefundspatient/store', [PatientRefundController::class, 'nonplansrefundsstore'])->name('nonplansrefundpatient.store');
         /*Route end for patient non plans refunds*/
 
+
+        /*Appointment routes*/
+        Route::post('appointments/load-child-appointment-statuses', [AppointmentsController::class, 'loadAppointmentStatuses'])->name('appointments.load_child_appointment_statuses');
+
+        Route::post('appointments/load-child-appointment-status-data', [AppointmentsController::class, 'loadAppointmentStatusData'])->name('appointments.load_child_appointment_status_data');
+
+        Route::get('appointments/sms_logs/{id}', [AppointmentsController::class, 'showSMSLogs'])->name('appointments.sms_logs');
+
+        Route::put('appointments/send_logged_sms', [AppointmentsController::class, 'sendLogSMS'])->name('appointments.resend_sms');
+
+        Route::get('appointments/doctors', [AppointmentsController::class, 'loadDoctors'])->name('appointments.doctors');
+
+        Route::put('appointments/save_doctor', [AppointmentsController::class, 'saveDoctor'])->name('appointments.save_doctor');
+
+        Route::get('appointments/showappointmentstatus', [AppointmentsController::class, 'showAppointmentStatuses'])->name('appointments.showappointmentstatus');
+
+        Route::put('appointments/storeappointmentstatus', [AppointmentsController::class, 'storeAppointmentStatuses'])->name('appointments.storeappointmentstatus');
+
+        Route::get('appointments/detail/{id}', [AppointmentsController::class, 'detail'])->name('appointments.detail');
+
+        Route::post('appointments/status', [AppointmentsController::class, 'status'])->name('appointments.status');
+
+        Route::post('appointments/loadlead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
+
+        Route::post('appointments/datatable', [AppointmentsController::class, 'datatable'])->name('appointments.datatable');
+
+        Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
+
+        Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
+
+        Route::get("appointments/center_machines/{location_id}", [AppointmentsController::class, 'center_machines'])->name("appointments.center_machines");
+
+        Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
+
+        Route::resource('appointments', AppointmentsController::class);
 
     });

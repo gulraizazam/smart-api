@@ -128,12 +128,11 @@ function editRow( url) {
         success: function (response) {
             makeEditPopup(response);
             reInitSelect2("#kt_select2_8", "Select an Parent Group");
-            reInitValidation(KTPermissionValidation);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
 
-            reInitValidation(KTPermissionValidation);
+            reInitValidation(EditPermissionValidation);
         }
     });
 

@@ -225,15 +225,22 @@ class PatientsController extends Controller
     /**
      * Validate form fields
      *
-     * @param  \Illuminate\Http\Request $request
+     * @param \Illuminate\Http\Request $request
+     * @param null $id
      * @return Validator $validator;
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request, $id = null)
     {
-        return Validator::make($request->all(), [
+        /**
+         * To validate phone number with unique
+         */
+        $data = $request->all();
+        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+
+        return Validator::make($data, [
             'email' => 'sometimes|nullable|email',
             'name' => 'required',
-            'phone' => 'required',
+            'phone' => 'required|unique:users,phone,' . $id,
             'gender' => 'required',
         ]);
     }
@@ -276,7 +283,7 @@ class PatientsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        $validator = $this->verifyFields($request);
+        $validator = $this->verifyFields($request, $id);
 
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);

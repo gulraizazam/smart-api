@@ -55,7 +55,7 @@ var table_columns = [
 
 function applyFilters(datatable) {
 
-    $('#apply-filters').on('click', function() {
+    $('#appointment-form-search').on('click', function() {
 
         let filters =  {
             delete: '',

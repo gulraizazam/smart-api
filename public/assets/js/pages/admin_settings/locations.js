@@ -168,7 +168,11 @@ function setEditData(response) {
     $("#edit_tax_percentage").val(location.tax_percentage);
     $("#edit_ntn").val(location.ntn);
     $("#edit_stn").val(location.stn);
-    let image = asset_url +'storage/centre_logo/'+ location.image_src;
+
+    let image = asset_url +'assets/media/logos/logo.svg';
+    if (location.image_src != '') {
+        image = asset_url +'storage/centre_logo/'+ location.image_src;
+    }
     $("#edit-image").css('background-image', "url(" + image + ")");
     $("#edit_location_cities").val(location.city_id).change();
     $("#edit_location_services").val(service_location).change();
@@ -310,6 +314,10 @@ function setCreateData(response) {
     let service_options = makeServiceOptions(response);
 
     $("#add_location_services").html(service_options);
+
+    let image = asset_url +'assets/media/logos/logo.svg';
+
+    $("#add_center_image").css('background-image', "url(" + image + ")");
 }
 
 function makeServiceOptions(response) {
