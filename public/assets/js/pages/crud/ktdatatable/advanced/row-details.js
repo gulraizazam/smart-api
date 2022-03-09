@@ -28,7 +28,7 @@ var KTDatatable = function() {
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        map: function (data) { /*to get response, we can remove this */
+                        map: function (data) { /*to get response*/
                             /* get permissions array for actions */
                             permissions = data.permissions;
                             filter_values = data.filter_values;
@@ -127,7 +127,6 @@ var KTDatatable = function() {
 
 
 /*this is for patient card*/
-
 var KTPatientDatatable = function() {
 
     var patientTable = function(table_class) {
@@ -141,7 +140,7 @@ var KTPatientDatatable = function() {
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        map: function (data) { /*to get response, we can remove this */
+                        map: function (data) { /*to get response*/
                             /* get permissions array for actions */
                             permissions = data.permissions;
                             filter_values = data.filter_values;

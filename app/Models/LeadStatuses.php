@@ -380,14 +380,13 @@ class LeadStatuses extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if ($data['parent_id'] == '') {
+        if (!isset($data['parent_id'])) {
             $data['parent_id'] = 0;
         }
 
         if (!isset($data['is_comment'])) {
             $data['is_comment'] = 0;
         }
-
 
         $record = self::where([
             'id' => $id,

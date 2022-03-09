@@ -395,17 +395,13 @@ class AppointmentStatuses extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if ($data['parent_id'] == '') {
+        if (!isset($data['parent_id'])) {
             $data['parent_id'] = 0;
-//            $data['is_comment'] = 0;
             if (!isset($data['allow_message'])) {
                 $data['allow_message'] = 0;
             }
         } else {
             $data['allow_message'] = 0;
-//            if (!isset($data['is_comment'])) {
-//                $data['is_comment'] = 0;
-//            }
         }
 
         $record = self::where([

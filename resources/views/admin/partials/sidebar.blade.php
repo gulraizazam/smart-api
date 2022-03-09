@@ -5,7 +5,7 @@
         <div class="brand flex-column-auto" id="kt_brand">
             <!--begin::Logo-->
             <a href="{{route('admin.home')}}" class="brand-logo">
-                <img style="width: 150px;" alt="Logo" src="{{asset('assets/media/logos/logo_final.png')}}" />
+                <img style="width: 150px;" alt="Logo" src="{{asset('assets/media/logos/logo.png')}}" />
             </a>
             <!--end::Logo-->
             <!--begin::Toggle-->
@@ -49,7 +49,7 @@
                     </li>
 
                     @if(Gate::allows('permissions_manage') || Gate::allows('roles_manage') || Gate::allows('users_manage') || Gate::allows('user_types_manage'))
-                        <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.users.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                        <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.roles.edit', 'admin.users.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <span class="svg-icon menu-icon">
                                     <i class="font-icon fa fa-users"></i>
@@ -74,7 +74,7 @@
                                     @endcan
 
                                     @can('roles_manage')
-                                        <li class="menu-item {{activeMenu('admin.roles.index')}}" aria-haspopup="true">
+                                        <li class="menu-item {{activeMenu('admin.roles.index')}} {{activeMenu('admin.roles.edit')}}" aria-haspopup="true">
                                             <a href="{{route('admin.roles.index')}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>

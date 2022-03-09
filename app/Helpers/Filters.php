@@ -58,7 +58,15 @@ class Filters
     public static function all($userId, $file) {
         self::_init($userId, $file);
 
-        return self::$valuestore->all();
+        $values =  self::$valuestore->all();
+
+        /**
+         * after getting value we are now deleting these as per discussion,
+         * so that filters do not conflict
+         */
+        self::flush($userId, $file);
+
+        return $values;
     }
 
     /**
@@ -126,7 +134,15 @@ class Filters
     public static function get($userId, $file, $key) {
         self::_init($userId, $file);
 
-        return self::$valuestore->get($key);
+        $value =  self::$valuestore->get($key);
+
+        /**
+         * after getting value we are now deleting these as per discussion,
+         * so that filters do not conflict
+         */
+        self::forget($userId, $file, $key);
+
+        return $value;
     }
 
     public static function randId($userId) {
@@ -178,9 +194,9 @@ class Filters
         try {
 
             $dir = storage_path(self::$base_path. DIRECTORY_SEPARATOR . self::getRandId(auth()->id()));
-            
+
             return self::deleteDirectory($dir);
-           
+
         } catch (\Exception $e) {
             return false;
         }
@@ -190,24 +206,24 @@ class Filters
         if (!file_exists($dir)) {
             return true;
         }
-    
+
         if (!is_dir($dir)) {
             return unlink($dir);
         }
-    
+
         foreach (scandir($dir) as $item) {
             if ($item == '.' || $item == '..') {
                 continue;
             }
-    
+
             if (!self::deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
                 return false;
             }
-    
+
         }
-    
+
         return rmdir($dir);
     }
-    
+
 
 }

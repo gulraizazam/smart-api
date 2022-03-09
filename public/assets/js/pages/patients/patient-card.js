@@ -6,6 +6,8 @@ jQuery(document).ready(function () {
     if (typeof result.tab !== 'undefined') {
         $("." + result.tab+ '-tab').click();
     }
+
+    activeFirstTab(result.tab);
 });
 
 function get_query(){
@@ -16,6 +18,13 @@ function get_query(){
         result[qs[i][0]] = decodeURIComponent(qs[i][1]);
     }
     return result;
+}
+
+function activeFirstTab(tab) {
+
+    if (typeof tab === 'undefined' || tab === 'personal_info') {
+        $(".personal-info").addClass("nav-bar-active");
+    }
 }
 
 
@@ -77,7 +86,7 @@ function changeProfilePage($this, page_id) {
     let loadScript = true;
     $("#page_name").text($this.text());
 
-    $(".change-tab").parent('.horizontal-nav-bar-li').removeClass("nav-bar-active");
+    $(".change-tab").removeClass("nav-bar-active");
     $this.addClass("nav-bar-active");
     $(".submit-btn").addClass("d-none");
     $(".toolbar-" + page_id).removeClass("d-none");
@@ -90,6 +99,9 @@ function changeProfilePage($this, page_id) {
     $(".toolbar-" + page_id).removeClass("d-none");
 
     if (page_id == 'personal_info') {
+        $(".personal-info").addClass("nav-bar-active");
+        $(".change_profile_pic").removeClass("active");
+        $(".persnl_info").removeClass("nav-bar-active");
         $(".personal-info").addClass("active");
         $(".persnl_info").addClass("active");
         $(".profile-buttons").removeClass("d-none");
@@ -98,7 +110,9 @@ function changeProfilePage($this, page_id) {
     }
 
     if (page_id == 'change_profile_picture') {
-        $this.addClass("nav-bar-active");
+        $(".personal-info").addClass("nav-bar-active");
+        $(".change_profile_pic").removeClass("nav-bar-active");
+        $(".change_profile_pic").addClass("active");
         $(".persnl_info").removeClass("active");
         $(".personal-info").addClass("active");
         $(".profile-buttons").removeClass("d-none");

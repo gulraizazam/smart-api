@@ -25,6 +25,19 @@ use App\Helpers\ACL;
 
 class RefundsController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -381,13 +394,13 @@ class RefundsController extends Controller
     /**
      * Show the form for create refund for non plans refunds.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function nonplansrefundscreate($packageadvance_id)
     {
 
         if (!Gate::allows('patients_refund_refund')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $package_advance_information = PackageAdvances::find($packageadvance_id);
 
@@ -441,7 +454,16 @@ class RefundsController extends Controller
 
         }
 
-        return view('admin.patients.card.nonplansrefunds.create_refund', compact('patient_id', 'refundable_amount', 'is_adjustment_amount', 'documentationcharges', 'package_advance_id', 'document','date_backend'));
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'patient_id' => $patient_id,
+            'refundable_amount' => $refundable_amount,
+            'is_adjustment_amount' => $is_adjustment_amount,
+            'documentationcharges' => $documentationcharges,
+            'package_advance_id' => $package_advance_id,
+            'document' => $document,
+            'date_backend' => $date_backend
+        ]);
+
 
     }
 

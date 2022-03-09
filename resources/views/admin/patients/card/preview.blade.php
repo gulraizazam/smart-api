@@ -62,7 +62,7 @@
 
                                 <div class="card-toolbar profile-buttons">
                                     <button type="button" class="btn btn-sm btn-default mr-2 change-tab persnl_info active" onclick="changeProfilePage($(this), 'personal_info');">Personal Info</button>
-                                    <button type="button" class="btn btn-sm btn-default change-tab" onclick="changeProfilePage($(this), 'change_profile_picture');">Change Profile Picture</button>
+                                    <button type="button" class="btn btn-sm btn-default change-tab change_profile_pic" onclick="changeProfilePage($(this), 'change_profile_picture');">Change Profile Picture</button>
                                 </div>
 
                                 <div class="card-toolbar submit-btn toolbar-custom-form d-none">

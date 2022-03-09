@@ -31,7 +31,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Centre Targets</h3>
+                            <h3 class="card-label">Finance</h3>
                         </div>
 
                         <div class="card-toolbar">

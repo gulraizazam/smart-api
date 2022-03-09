@@ -109,6 +109,18 @@ class Leads extends BaseModal
     }
 
     /**
+     * @param $id
+     * @return \Illuminate\Database\Eloquent\Builder|Model|object|null
+     */
+    static public function getData($id) {
+
+        return self::with('patient')->where([
+            ['id','=',$id],
+            ['account_id','=',Auth::user()->account_id]
+        ])->first();
+    }
+
+    /**
      * Prepare SMS Contnet for Delivery
      *
      * @param: int $lead_id

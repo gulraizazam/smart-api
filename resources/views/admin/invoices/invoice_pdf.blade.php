@@ -160,7 +160,7 @@
     <!-- <table style="display:none;">
         <tr style="padding-left: 50%"> -->
             @if($invoicestatus->slug == 'cancelled')
-                <img src="{{ url('metronic/assets/pages/media/invoice/cancld.png') }}" style="width: 20%;text-align: center;padding-left:43% display:none;" class="img-responsive" alt=""/>
+                {{--<img src="{{ url('metronic/assets/pages/media/invoice/cancld.png') }}" style="width: 20%;text-align: center;padding-left:43% display:none;" class="img-responsive" alt=""/>--}}
             @endif
         <!-- </tr>
     </table> -->

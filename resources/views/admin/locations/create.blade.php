@@ -88,7 +88,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Select Logo</label>
                             <div class="col-lg-9 col-xl-6">
                                 <div class="image-input image-input-outline" id="kt_image_1">
-                                    <div class="image-input-wrapper" style="background-image: url(assets/media/users/100_1.jpg)"></div>
+                                    <div class="image-input-wrapper" id="add_center_image"></div>
                                     <label class="btn btn-xs btn-icon btn-circle btn-white btn-hover-text-primary btn-shadow" data-action="change" data-toggle="tooltip" title="" data-original-title="Change avatar">
                                         <i class="fa fa-pen icon-sm text-muted"></i>
                                         <input id="file" type="file" name="file" accept=".png, .jpg, .jpeg" />

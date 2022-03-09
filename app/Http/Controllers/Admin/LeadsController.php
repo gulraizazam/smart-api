@@ -741,10 +741,18 @@ class LeadsController extends Controller
             /*
              * Check if laad already exists or not
              */
+
+            $lead = $this->existingLead($request);
+
             if ($request->new_patient == '1') {
                 $data['created_by'] = Auth::User()->id;
                 $data['updated_by'] = Auth::User()->id;
-                $lead = Leads::createRecord($data, $patient, $status = "Lead");
+                if ($lead) {
+                    $data['lead_status_id'] = 1;
+                    $lead->update($data);
+                } else {
+                    $lead = Leads::createRecord($data, $patient, $status = "Lead");
+                }
             } else {
                 $logLevelLead = Leads::where(array(
                     'patient_id' => $patient->id,
@@ -760,7 +768,12 @@ class LeadsController extends Controller
                 } else {
                     $data['created_by'] = Auth::User()->id;
                     $data['updated_by'] = Auth::User()->id;
-                    $lead = Leads::createRecord($data, $patient, $status = "Lead");
+                    if ($lead) {
+                        $data['lead_status_id'] = 1;
+                        $lead->update($data);
+                    } else {
+                        $lead = Leads::createRecord($data, $patient, $status = "Lead");
+                    }
                 }
             }
 
@@ -771,6 +784,17 @@ class LeadsController extends Controller
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
+    }
+
+    private function existingLead(Request $request) {
+
+        $phone = GeneralFunctions::cleanNumber($request->phone);
+
+        $patient_ids = Patients::where('phone', $phone)->pluck('id');
+
+        return Leads::where('lead_status_id', 3)
+            ->whereIn('patient_id', $patient_ids->toArray() ?? [])
+            ->first(['id', 'lead_status_id', 'patient_id']);
     }
 
     /**

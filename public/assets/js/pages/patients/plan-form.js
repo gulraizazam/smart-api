@@ -715,13 +715,15 @@ function displayData(response) {
 
 function applyFilters(datatable) {
 
-    $('#medical-search').on('click', function() {
+    $('#plan-search').on('click', function() {
 
         let filters =  {
             delete: '',
-            name: $("#medical_search_name").val(),
-            created_from: $("#medical_search_created_from").val(),
-            created_to: $("#medical_search_created_to").val(),
+            location_id: $("#search_plan_location_id").val(),
+            status_id: $("#search_status").val(),
+            plan_id: $("#search_plan_id").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
             filter: 'filter',
         }
 
@@ -733,7 +735,8 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $(".page-medical-form").find('#reset-filters').on('click', function() {
+    $(".page-plan-form").find('#reset-filters').on('click', function() {
+        alert("dasdsa")
         let filters =  {
             delete: '',
             name: '',
@@ -750,10 +753,30 @@ function setFilters(filter_values, active_filters) {
 
     try {
 
-        $("#search_name").val(active_filters.name);
-        $("#search_patient_name").val(active_filters.patient_name);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        let locations = filter_values.locations;
+        let statuses = filter_values.status;
+
+        let location_options = '<option value="">All</option>';
+
+        if (locations) {
+            Object.entries(locations).forEach(function (location) {
+                location_options += '<option value="'+location[0]+'">'+location[1]+'</option>';
+            });
+        }
+
+        let status_options = '<option value="">All</option>';
+
+        if (statuses) {
+            Object.entries(statuses).forEach(function (status) {
+                status_options += '<option value="'+status[0]+'">'+status[1]+'</option>';
+            });
+        }
+
+        let plan_options = '<option value="">All</option>';
+
+        $("#search_plan_location_id").html(location_options);
+        $("#search_status").html(status_options);
+        $("#search_plan_id").html(plan_options);
 
     } catch (error) {
         showException(error);
