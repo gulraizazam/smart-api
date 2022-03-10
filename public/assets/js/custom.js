@@ -616,3 +616,7 @@ function makePatientId(id) {
 
     return "C-" + id;
 }
+
+function phoneClip(data) {
+    return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="'+data.phone+'" data-original-title="Click to Copy" aria-describedby="tooltip'+data.id+'">'+data.phone+'</a>';
+}

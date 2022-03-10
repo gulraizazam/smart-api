@@ -122,7 +122,7 @@ class Appointments extends Model
      */
     public function appointment_status()
     {
-        return $this->belongsTo('App\Models\AppointmentStatuses')->withTrashed();
+        return $this->belongsTo(AppointmentStatuses::class)->withTrashed();
     }
 
     /*

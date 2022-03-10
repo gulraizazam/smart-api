@@ -197,8 +197,9 @@ function resetAllFilters(datatable) {
 function setFilters(filter_values, active_filters) {
 
     try {
-        let locations = filter_values.locations;
-        let packages = filter_values.package;
+
+        let locations = filter_values?.locations;
+        let packages = filter_values?.package;
 
         let package_options = '<option value="">Select Plan</option>';
 
@@ -218,10 +219,10 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_refund_plan_id").html(package_options);
         $("#search_refund_location_id").html(location_options);
-        $("#search_refund_location_id").val(active_filters.location_id);
-        $("#search_refund_plan_id").val(active_filters.plan_id);
-        $("#search_refund_created_from").val(active_filters.created_from);
-        $("#search_refund_created_to").val(active_filters.created_to);
+        $("#search_refund_location_id").val(active_filters?.location_id);
+        $("#search_refund_plan_id").val(active_filters?.plan_id);
+        $("#search_refund_created_from").val(active_filters?.created_from);
+        $("#search_refund_created_to").val(active_filters?.created_to);
 
     } catch (error) {
         showException(error);
