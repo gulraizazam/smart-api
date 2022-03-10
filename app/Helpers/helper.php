@@ -4,6 +4,7 @@
 use App\Models\PackageAdvances;
 
 function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) {
+
         if ($request->has('sort')) {
             $orderBy = $request->get('sort')['field'];
             $order = $request->get('sort')['sort'];

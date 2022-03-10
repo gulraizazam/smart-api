@@ -27,8 +27,7 @@ var table_columns = [{
     sortable: false,
     width: 'auto',
     template: function (data) {
-        let phone = data.phone;
-        return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="'+phone+'" data-original-title="Click to Copy" aria-describedby="tooltip'+data.id+'">'+phone+'</a>';
+        return phoneClip(data);
     }
 }, {
     field: 'city_id',

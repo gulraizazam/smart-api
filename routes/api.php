@@ -449,6 +449,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('nonplansrefundspatient/refund_create/{id}', [PatientRefundController::class, 'nonplansrefundscreate'])->name('nonplansrefundpatient.refund_create');
 
 
+    /*Appointment routes*/
+    Route::post('appointments/datatable', [AppointmentsController::class, 'datatable'])->name('appointments.datatable');
+    Route::get('appointments/show/status', [AppointmentsController::class, 'showAppointmentStatuses'])->name('appointments.showappointmentstatus');
+    Route::post('appointments/load-child-appointment-statuses', [AppointmentsController::class, 'loadAppointmentStatuses'])->name('appointments.load_child_appointment_statuses');
+    Route::put('appointments/store/appointmentstatus', [AppointmentsController::class, 'storeAppointmentStatuses'])->name('appointments.storeappointmentstatus');
+    Route::post('appointments/load-child-appointment/status-data', [AppointmentsController::class, 'loadAppointmentStatusData'])->name('appointments.load_child_appointment_status_data');
+    /*Appointment routes*/
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

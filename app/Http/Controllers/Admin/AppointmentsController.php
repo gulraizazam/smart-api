@@ -45,16 +45,16 @@
 	use App\Models\Towns;
 	use App\Models\UserHasLocations;
 	use App\Models\UserOperatorSettings;
-	use App\User;
-	use Auth;
+	use App\Models\User;
+	use Illuminate\Support\Facades\Auth;
 	use Carbon\Carbon;
-	use Config;
-	use DB;
+	use Illuminate\Support\Facades\Config;
+	use Illuminate\Support\Facades\DB;
 	use Illuminate\Http\Request;
 	use Illuminate\Support\Facades\Gate;
 	use PhpOffice\PhpSpreadsheet\Spreadsheet;
 	use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-	use Validator;
+	use Illuminate\Support\Facades\Validator;
 	use App\Models\Packages;
 	use App\Models\PackageService;
 	use App\Helpers\Widgets\AppointmentCheckesWidget;
@@ -65,7 +65,7 @@
 	use Spatie\Valuestore\Valuestore;
 	use App\Helpers\Widgets\DiscountWidget;
 	use App\Helpers\NodesTree;
-	use Excel;
+	use Maatwebsite\Excel\Facades\Excel;
 	use Barryvdh\DomPDF\Facade as PDF;
 	use App;
 	use App\Helpers\JazzSMSAPI;
@@ -97,52 +97,10 @@
 		public function index()
 		{
 			if (!Gate::allows('appointments_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return abort(404);
 			}
 
-			$filters = Filters::all(Auth::User()->id, 'appointments');
-
-			$regions = Regions::getActiveSorted(ACL::getUserRegions());
-			$regions->prepend('Select a Region', '');
-
-			$cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
-			$cities->prepend('All', '');
-
-			$doctors = Doctors::getActiveOnly(ACL::getUserCentres());
-			$doctors->prepend('All', '');
-
-			$locations = Locations::getActiveSorted(ACL::getUserCentres());
-			$locations->prepend('All', '');
-
-			$services = Services::get()->pluck('name', 'id');
-			$services->prepend('All', '');
-
-			$appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
-			if ($appointment_statuses) {
-				$appointment_statuses = $appointment_statuses->pluck('name', 'id');
-			}
-			$appointment_statuses->prepend('All', '');
-
-			if (Gate::allows('appointments_consultancy')) {
-				$appointment_types = AppointmentTypes::where('slug', '=', 'consultancy')->get()->pluck('name', 'id');
-				$appointment_types->prepend('All', '');
-			}
-			if (Gate::allows('appointments_services')) {
-				$appointment_types = AppointmentTypes::where('slug', '=', 'treatment')->get()->pluck('name', 'id');
-				$appointment_types->prepend('All', '');
-			}
-			if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
-				$appointment_types = AppointmentTypes::get()->pluck('name', 'id');
-				$appointment_types->prepend('All', '');
-			}
-			if (!Gate::allows('appointments_consultancy') && !Gate::allows('appointments_services')) {
-				$appointment_types = array();
-			}
-
-			$users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
-			$users->prepend('All', '');
-
-			return view('admin.appointments.index', compact('cities', 'regions', 'users', 'doctors', 'locations', 'services', 'appointment_statuses', 'appointment_types', 'filters'));
+			return view('admin.appointments.index');
 		}
 
 		/**
@@ -775,420 +733,197 @@
 			/*
          * Reset form filter is applied
          */
-			$apply_filter = false;
-			if ($request->get('action')) {
-				$action = $request->get('action');
-				if (isset($action[0]) && $action[0] == 'filter_cancel') {
-					Filters::flush(Auth::User()->id, 'appointments');
-				} else if ($action == 'filter') {
-					$apply_filter = true;
-				}
-			}
+            $filename = 'appointments';
 
-			if ($request->get('order')) {
-				$orderColumn = $request->get('order')[0]['column'];
-				$orderBy = $request->get('columns')[$orderColumn]['data'];
-				if ($orderBy == 'created_at') {
-					$orderBy = 'appointments.created_at';
-				}
-				$order = $request->get('order')[0]['dir'];
+            $filters = getFilters($request->all());
+
+            if ($request->has('sort')) {
+
+                list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC', 'appointments');
 
 				Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
 				Filters::put(Auth::User()->id, 'appointments', 'order', $order);
 			} else {
-				if (
-					Filters::get(Auth::User()->id, 'appointments', 'order_by')
-					&& Filters::get(Auth::User()->id, 'appointments', 'order')
-				) {
-					$orderBy = Filters::get(Auth::User()->id, 'appointments', 'order_by');
-					$order = Filters::get(Auth::User()->id, 'appointments', 'order');
 
-					if ($orderBy == 'created_at') {
-						$orderBy = 'appointments.created_at';
-					}
-				} else {
-					$orderBy = 'created_at';
-					$order = 'desc';
-					if ($orderBy == 'created_at') {
-						$orderBy = 'appointments.created_at';
-					}
+                $orderBy = 'created_at';
+                $order = 'desc';
+                if ($orderBy == 'created_at') {
+                    $orderBy = 'appointments.created_at';
 
-					Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
-					Filters::put(Auth::User()->id, 'appointments', 'order', $order);
+                Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
+                Filters::put(Auth::User()->id, 'appointments', 'order', $order);
 				}
 			}
 
-			if ($request->get('patient_id') && $request->get('patient_id') != '') {
+            if (hasFilter($filters, 'patient_id')) {
 				$where[] = array(
 					'users.id',
 					'=',
-					GeneralFunctions::patientSearch($request->get('patient_id'))
+					GeneralFunctions::patientSearch($filters['patient_id'])
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'patient_id', GeneralFunctions::patientSearch($request->get('patient_id')));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'patient_id');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'patient_id')) {
-						$where[] = array(
-							'users.id',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'patient_id')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['patient_id']));
 			}
 
-			if ($request->get('phone') && $request->get('phone') != '') {
+            if (hasFilter($filters, 'phone')) {
 				$where[] = array(
 					'users.phone',
 					'like',
-					'%' . GeneralFunctions::cleanNumber($request->get('phone')) . '%'
+					'%' . GeneralFunctions::cleanNumber($filters['phone']) . '%'
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'phone', $request->get('phone'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'phone');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'phone')) {
-						$where[] = array(
-							'users.phone',
-							'like',
-							'%' . GeneralFunctions::cleanNumber(
-								Filters::get(Auth::User()->id, 'appointments', 'phone')
-							) . '%'
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'phone', $filters['phone']);
 			}
 
-			if ($request->get('date_from') && $request->get('date_from') != '') {
+            if (hasFilter($filters, 'date_from')) {
 				$where[] = array(
 					'appointments.scheduled_date',
 					'>=',
-					$request->get('date_from') . ' 00:00:00'
+                    $filters['date_from'] . ' 00:00:00'
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'date_from', $request->get('date_from') . ' 00:00:00');
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'date_from');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'date_from')) {
-						$where[] = array(
-							'appointments.scheduled_date',
-							'>=',
-							Filters::get(Auth::User()->id, 'appointments', 'date_from')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'date_from', $filters['date_from'] . ' 00:00:00');
 			}
 
-			if ($request->get('date_to') && $request->get('date_to') != '') {
+            if (hasFilter($filters, 'date_to')) {
 				$where[] = array(
 					'appointments.scheduled_date',
 					'<=',
-					$request->get('date_to') . ' 23:59:59'
+                    $filters['date_to'] . ' 23:59:59'
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'date_to', $request->get('date_to') . ' 23:59:59');
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'date_to');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'date_to')) {
-						$where[] = array(
-							'appointments.scheduled_date',
-							'<=',
-							Filters::get(Auth::User()->id, 'appointments', 'date_to')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'date_to', $filters['date_to'] . ' 23:59:59');
 			}
 
-			if ($request->get('doctor_id') && $request->get('doctor_id') != '') {
+            if (hasFilter($filters, 'doctor_id')) {
 				$where[] = array(
 					'doctor_id',
 					'=',
-					$request->get('doctor_id')
+                    $filters['doctor_id']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'doctor_id', $request->get('doctor_id'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'doctor_id');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'doctor_id')) {
-						$where[] = array(
-							'doctor_id',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'doctor_id')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'doctor_id', $filters['doctor_id']);
 			}
 
-			if ($request->get('region_id') && $request->get('region_id') != '') {
+            if (hasFilter($filters, 'region_id')) {
 				$where[] = array(
 					'region_id',
 					'=',
-					$request->get('region_id')
+                    $filters['region_id']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'region_id', $request->get('region_id'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'region_id');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'region_id')) {
-						$where[] = array(
-							'region_id',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'region_id')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'region_id', $filters['region_id']);
 			}
 
-			if ($request->get('city_id') && $request->get('city_id') != '') {
+            if (hasFilter($filters, 'city_id')) {
 				$where[] = array(
 					'city_id',
 					'=',
-					$request->get('city_id')
+                    $filters['city_id']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'city_id', $request->get('city_id'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'city_id');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'city_id')) {
-						$where[] = array(
-							'city_id',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'city_id')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
 			}
 
 
-			if ($request->get('location_id') && $request->get('location_id') != '') {
+            if (hasFilter($filters, 'location_id')) {
 				$where[] = array(
 					'location_id',
 					'=',
-					$request->get('location_id')
+                    $filters['location_id']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'location_id', $request->get('location_id'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'location_id');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'location_id')) {
-						$where[] = array(
-							'location_id',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'location_id')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
 			}
 
-			if ($request->get('service_id') && $request->get('service_id') != '') {
+            if (hasFilter($filters, 'service_id')) {
 				$where[] = array(
 					'service_id',
 					'=',
-					$request->get('service_id')
+                    $filters['service_id']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'service_id', $request->get('service_id'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'service_id');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'service_id')) {
-						$where[] = array(
-							'service_id',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'service_id')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'service_id', $filters['service_id']);
 			}
 
-			if ($request->get('created_by') && $request->get('created_by') != '') {
+            if (hasFilter($filters, 'created_by')) {
 				$where[] = array(
 					'appointments.created_by',
 					'=',
-					$request->get('created_by')
+                    $filters['created_by']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'created_by', $request->get('created_by'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'created_by');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'created_by')) {
-						$where[] = array(
-							'appointments.created_by',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'created_by')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'created_by', $filters['created_by']);
 			}
-			if ($request->get('converted_by') && $request->get('converted_by') != '') {
+
+            if (hasFilter($filters, 'converted_by')) {
 				$where[] = array(
 					'appointments.converted_by',
 					'=',
-					$request->get('converted_by')
+                    $filters['converted_by']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'converted_by', $request->get('converted_by'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'converted_by');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'converted_by')) {
-						$where[] = array(
-							'appointments.converted_by',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'converted_by')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, 'appointments', 'converted_by', $filters['converted_by']);
 			}
-			if ($request->get('updated_by') && $request->get('updated_by') != '') {
+
+            if (hasFilter($filters, 'updated_by')) {
 				$where[] = array(
 					'appointments.updated_by',
 					'=',
-					$request->get('updated_by')
+                    $filters['updated_by']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'updated_by', $request->get('updated_by'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'updated_by');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'updated_by')) {
-						$where[] = array(
-							'appointments.updated_by',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'updated_by')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'updated_by', $filters['updated_by']);
 			}
 
-			if ($request->get('appointment_status_id') && $request->get('appointment_status_id') != '') {
+            if (hasFilter($filters, 'appointment_status_id')) {
 				$where[] = array(
 					'appointments.base_appointment_status_id',
 					'=',
-					$request->get('appointment_status_id')
+                    $filters['appointment_status_id']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'appointment_status_id', $request->get('appointment_status_id'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'appointment_status_id');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'appointment_status_id')) {
-						$where[] = array(
-							'appointments.base_appointment_status_id',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'appointment_status_id')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'appointment_status_id', $filters['appointment_status_id']);
 			}
 
-			if ($request->get('appointment_type_id') && $request->get('appointment_type_id') != '') {
+            if (hasFilter($filters, 'appointment_type_id')) {
 				$where[] = array(
 					'appointments.appointment_type_id',
 					'=',
-					$request->get('appointment_type_id')
+                    $filters['appointment_type_id']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'appointment_type_id', $request->get('appointment_type_id'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'appointment_type_id');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'appointment_type_id')) {
-						$where[] = array(
-							'appointments.appointment_type_id',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'appointment_type_id')
-						);
-					}
-				}
+				Filters::put(Auth::user()->id, $filename, 'appointment_type_id', $filters['appointment_type_id']);
 			}
-			if ($request->get('consultancy_type') && $request->get('consultancy_type') != '') {
+
+            if (hasFilter($filters, 'consultancy_type')) {
 				$where[] = array(
 					'appointments.consultancy_type',
 					'=',
-					$request->get('consultancy_type')
+                    $filters['consultancy_type']
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'consultancy_type', $request->get('consultancy_type'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'consultancy_type');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'consultancy_type')) {
-						$where[] = array(
-							'appointments.consultancy_type',
-							'=',
-							Filters::get(Auth::User()->id, 'appointments', 'consultancy_type')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
 			}
-			if ($request->get('created_from') && $request->get('created_from') != '') {
+
+            if (hasFilter($filters, 'created_from')) {
 				$where[] = array(
 					'appointments.created_at',
 					'>=',
-					$request->get('created_from') . ' 00:00:00'
+                    $filters['created_from'] . ' 00:00:00'
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'created_from', $request->get('created_from'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'created_from');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'created_from')) {
-						$where[] = array(
-							'appointments.created_at',
-							'>=',
-							Filters::get(Auth::User()->id, 'appointments', 'created_from')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
 			}
 
-			if ($request->get('created_to') && $request->get('created_to') != '') {
+            if (hasFilter($filters, 'created_to')) {
 				$where[] = array(
 					'appointments.created_at',
 					'<=',
-					$request->get('created_to') . ' 23:59:59'
+                    $filters['created_to'] . ' 23:59:59'
 				);
 
-				Filters::put(Auth::User()->id, 'appointments', 'created_to', $request->get('created_to'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'created_to');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'created_to')) {
-						$where[] = array(
-							'appointments.created_at',
-							'<=',
-							Filters::get(Auth::User()->id, 'appointments', 'created_to')
-						);
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
 			}
 
 			$consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
@@ -1233,64 +968,42 @@
 				$countQuery->where($where);
 			}
 
-			if ($request->get('name') && $request->get('name') != '') {
-				$countQuery->where(function ($query) use ($request) {
+            if (hasFilter($filters, 'name')) {
+				$countQuery->where(function ($query) use ($filters) {
 					$query->where(
 						'users.name',
 						'like',
-						'%' . $request->get('name') . '%'
+						'%' . $filters['name'] . '%'
 					);
 					$query->orWhere(
 						'appointments.name',
 						'like',
-						'%' . $request->get('name') . '%'
+						'%' . $filters['name'] . '%'
 					);
 				});
 
-				Filters::put(Auth::User()->id, 'appointments', 'name', $request->get('name'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'name');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'name')) {
-						$filter_name = Filters::get(Auth::User()->id, 'appointments', 'name');
-						$countQuery->where(function ($query) use ($filter_name) {
-							$query->where(
-								'users.name',
-								'like',
-								'%' . $filter_name . '%'
-							);
-							$query->orWhere(
-								'appointments.name',
-								'like',
-								'%' . $filter_name . '%'
-							);
-						});
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
 			}
 
-			if ($request->get('name') && $request->get('name') != '') {
+            if (hasFilter($filters, 'name')) {
 				$countQuery->where(function ($query) {
-					global $request;
+					global $filters;
 					$query->where(
 						'users.name',
 						'like',
-						'%' . $request->get('name') . '%'
+						'%' . $filters['name'] . '%'
 					);
 					$query->orWhere(
 						'appointments.name',
 						'like',
-						'%' . $request->get('name') . '%'
+						'%' . $filters['name'] . '%'
 					);
 				});
 			}
-			$iTotalRecords = $countQuery->count();
 
-			$iDisplayLength = intval($request->get('length'));
-			$iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-			$iDisplayStart = intval($request->get('start'));
-			$sEcho = intval($request->get('draw'));
+            $iTotalRecords = $countQuery->count();
+
+            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
 			$records = array();
 			$records["data"] = array();
@@ -1333,57 +1046,37 @@
 				$resultQuery->where($where);
 			}
 
-			if ($request->get('name') && $request->get('name') != '') {
+            if (hasFilter($filters, 'name')) {
 				$resultQuery->where(function ($query) {
-					global $request;
+					global $filters;
 					$query->where(
 						'users.name',
 						'like',
-						'%' . $request->get('name') . '%'
+						'%' . $filters['name'] . '%'
 					);
 					$query->orWhere(
 						'appointments.name',
 						'like',
-						'%' . $request->get('name') . '%'
+						'%' . $filters['name'] . '%'
 					);
 				});
 			}
 
-			if ($request->get('name') && $request->get('name') != '') {
-				$resultQuery->where(function ($query) use ($request) {
+            if (hasFilter($filters, 'name')) {
+				$resultQuery->where(function ($query) use ($filters) {
 					$query->where(
 						'users.name',
 						'like',
-						'%' . $request->get('name') . '%'
+						'%' . $filters['name'] . '%'
 					);
 					$query->orWhere(
 						'appointments.name',
 						'like',
-						'%' . $request->get('name') . '%'
+						'%' . $filters['name'] . '%'
 					);
 				});
 
-				Filters::put(Auth::User()->id, 'appointments', 'name', $request->get('name'));
-			} else {
-				if ($apply_filter) {
-					Filters::forget(Auth::User()->id, 'appointments', 'name');
-				} else {
-					if (Filters::get(Auth::User()->id, 'appointments', 'name')) {
-						$filter_name = Filters::get(Auth::User()->id, 'appointments', 'name');
-						$resultQuery->where(function ($query) use ($filter_name) {
-							$query->where(
-								'users.name',
-								'like',
-								'%' . $filter_name . '%'
-							);
-							$query->orWhere(
-								'appointments.name',
-								'like',
-								'%' . $filter_name . '%'
-							);
-						});
-					}
-				}
+				Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
 			}
 
 			if ($orderBy == 'name') { /* Need to append appropriate table name to order by, it was missing before*/
@@ -1397,6 +1090,8 @@
 				->get();
 
 			$invoicearray = array();
+
+            $records = $this->getFiltersData($records, $filename);
 
 			if ($Appointments) {
 				$Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
@@ -1428,9 +1123,10 @@
 						$consultancy_type = '';
 					}
 					$records["data"][$index] = array(
+						'id' => $appointment->app_id,
 						'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
 						'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
-						'phone' => '<a href="javascript:void(0)" class="clipboard" data-toggle="tooltip" title="Click to Copy" data-clipboard-text="' . GeneralFunctions::prepareNumber4Call($appointment->phone) . '">' . GeneralFunctions::prepareNumber4Call($appointment->phone) . '</a>',
+						'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
 						'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
 						'doctor_id' => $appointment->doctor->name ?? 'N/A',
 						'region_id' => (array_key_exists($appointment->region_id, $Regions)) ? $Regions[$appointment->region_id]->name : 'N/A',
@@ -1443,14 +1139,14 @@
 						'created_by' => array_key_exists($appointment->app_created_by, $Users) ? $Users[$appointment->app_created_by]->name : 'N/A',
 						'converted_by' => array_key_exists($appointment->converted_by, $Users) ? $Users[$appointment->converted_by]->name : 'N/A',
 						'updated_by' => array_key_exists($appointment->app_updated_by, $Users) ? $Users[$appointment->app_updated_by]->name : 'N/A',
-						'actions' => view('admin.appointments.actions', compact('appointment', 'invoice', 'invoiceid', 'unscheduled_appointment_status', 'cancelled_appointment_status'))->render(),
+						//'actions' => view('admin.appointments.actions', compact('appointment', 'invoice', 'invoiceid', 'unscheduled_appointment_status', 'cancelled_appointment_status'))->render(),
 					);
 
 					if (Gate::allows('appointments_appointment_status')) {
 						if ($unscheduled_appointment_status && ($appointment->appointment_status_id == $unscheduled_appointment_status->id)) {
 							$records["data"][$index]['appointment_status_id'] = ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : '');
 						} else {
-							$records["data"][$index]['appointment_status_id'] = '<a id="appointment' . $appointment->app_id . '" href="' . route('admin.appointments.showappointmentstatus', ['id' => $appointment->app_id]) . '" data-target="#ajax" data-toggle="modal">' . ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : '') . '</a>';
+                            $records["data"][$index]['appointment_status_id'] = ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : '');
 						}
 					} else {
 						$records["data"][$index]['appointment_status_id'] = ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : '');
@@ -1458,23 +1154,96 @@
 
 					$index++;
 				}
+
+                $records["meta"] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
 			}
 
-			if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-				$Appointments = Appointments::whereIn('id', $request->get('id'));
+            if (hasFilter($filters, 'delete')) {
+                $ids = explode(',', $filters['delete']);
+				$Appointments = Appointments::whereIn('id', $ids);
 				if ($Appointments) {
 					$Appointments->delete();
 				}
-				$records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-				$records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+				$records["status"] = true; // pass custom message(useful for getting status of group actions)
+				$records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
 			}
 
-			$records["draw"] = $sEcho;
-			$records["recordsTotal"] = $iTotalRecords;
-			$records["recordsFiltered"] = $iTotalRecords;
+            $records["permissions"] = [
+                'edit' => Gate::allows('appointments_edit'),
+                'delete' => Gate::allows('appointments_destroy'),
+                'active' => Gate::allows('appointments_active'),
+                'inactive' => Gate::allows('appointments_inactive'),
+                'create' => Gate::allows('appointments_create'),
+                'log' => Gate::allows('appointments_log'),
+                'sms_log' => Gate::allows('appointments_sms_log'),
+                'appointment_status' => Gate::allows('appointments_appointment_status'),
+            ];
 
-			return response()->json($records);
+			return ApiHelper::apiDataTable($records);
 		}
+
+        /**
+         * @param $records
+         * @param $filename
+         * @return mixed
+         */
+        private function getFiltersData($records, $filename) {
+
+            $filters = Filters::all(Auth::User()->id, 'appointments');
+
+            $regions = Regions::getActiveSorted(ACL::getUserRegions());
+
+            $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
+
+            $doctors = Doctors::getActiveOnly(ACL::getUserCentres());
+
+            $locations = Locations::getActiveSorted(ACL::getUserCentres());
+
+            $services = Services::get()->pluck('name', 'id');
+
+            $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
+            if ($appointment_statuses) {
+                $appointment_statuses = $appointment_statuses->pluck('name', 'id');
+            }
+
+            if (Gate::allows('appointments_consultancy')) {
+                $appointment_types = AppointmentTypes::where('slug', '=', 'consultancy')->get()->pluck('name', 'id');
+            }
+            if (Gate::allows('appointments_services')) {
+                $appointment_types = AppointmentTypes::where('slug', '=', 'treatment')->get()->pluck('name', 'id');
+            }
+            if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
+                $appointment_types = AppointmentTypes::get()->pluck('name', 'id');
+            }
+            if (!Gate::allows('appointments_consultancy') && !Gate::allows('appointments_services')) {
+                $appointment_types = array();
+            }
+
+            $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+
+            $records['active_filters'] = Filters::all(Auth::User()->id, $filename);
+
+            $records['filter_values'] = [
+                'cities' => $cities,
+                'regions' => $regions,
+                'users' => $users,
+                'doctors' => $doctors,
+                'locations' => $locations,
+                'services' => $services,
+                'appointment_statuses' => $appointment_statuses,
+                'appointment_types' => $appointment_types,
+                'filters' => $filters
+            ];
+
+            return $records;
+        }
 
 		/**
 		 * Show the form for creating new Appointment.
@@ -2753,10 +2522,11 @@
 		 */
 		public function showAppointmentStatuses(Request $request)
 		{
-			$appointment = Appointments::findOrFail($request->get('id'));
+
+			$appointment = Appointments::find($request->id);
 
 			if (!$appointment) {
-				return view('error');
+				return ApiHelper::apiResponse($this->success, 'No record found', false);
 			}
 
 			$base_appointments = AppointmentStatuses::where(['account_id' => 1])->select("id", "parent_id", "is_comment")->get()->keyBy('id');
@@ -2770,30 +2540,38 @@
 			} else {
 				$base_appointment_statuses = AppointmentStatuses::getBaseActiveSorted(Auth::User()->account_id);
 			}
-			$base_appointment_statuses->prepend('Select a Status', '');
 
 			if ($appointment->appointment_status->parent_id != 0) {
 				$appointment_statuses = AppointmentStatuses::getActiveSorted($appointment->appointment_status->parent_id, Auth::User()->account_id);
-				$appointment_statuses->prepend('Select a Child Status', '');
 			} else {
-				$appointment_statuses[''] = 'Select a Child Status';
+				$appointment_statuses[''] = '';
 			}
 
-			return view('admin.appointments.appointment_status', compact('appointment', 'base_appointment_statuses', 'appointment_statuses', 'base_appointments'));
+			return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'appointment' => $appointment,
+                'base_appointment_statuses' => $base_appointment_statuses,
+                'appointment_statuses' => $appointment_statuses,
+                'base_appointments' => $base_appointments,
+                'appointment_status_not_show' => config('constants.appointment_status_not_show'),
+                'cancellation_reason_other_reason' => config('constants.cancellation_reason_other_reason'),
+            ]);
 		}
 
 		/**
 		 * Update Appointment Status
 		 *
 		 * @param \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest $request
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function storeAppointmentStatuses(Request $request)
 		{
 			$data = $request->all();
 
 			$invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-			$appointment = Appointments::findOrFail($request->get('id'));
+			$appointment = Appointments::find($request->get('id'));
+			if (!$appointment) {
+                return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
+            }
 
 			$appointment_type = AppointmentTypes::where('slug', '=', 'consultancy')->first();
 			$appointment_type_2 = AppointmentTypes::where('slug', '=', 'treatment')->first();
@@ -2807,12 +2585,12 @@
 
 			if ($data['base_appointment_status_id'] == Config::get('constants.appointment_status_arrived')) {
 				if (count($invoiceexit) == 0) {
-					return response()->json(['status' => 0]);
+				    return ApiHelper::apiResponse($this->success, 'Kindly pay invoice first!', false);
 				}
 			}
 			if ($data['base_appointment_status_id'] != Config::get('constants.appointment_status_arrived')) {
 				if (count($invoiceexit) == 1) {
-					return response()->json(['status' => 2]);
+                    return ApiHelper::apiResponse($this->success, 'Invoice paid, you not able to change status!', false);
 				}
 			}
 
@@ -2865,6 +2643,7 @@
 					}
 				}
 			}
+
 			$appointment->update($data);
 
 			if ($appointment_type->id == $appointment->appointment_type_id) {
@@ -2903,7 +2682,8 @@
 				])
 			);
 
-			return response()->json(['status' => 1, 'base_appointment_status_name' => $appointment_status_name->name]);
+            return ApiHelper::apiResponse($this->success, 'Status has been change successfully!');
+			//return response()->json(['status' => 1, 'base_appointment_status_name' => $appointment_status_name->name]);
 		}
 
 		/**
@@ -3511,27 +3291,25 @@
 		{
 			if ($request->get("appointment_status_id")) {
 				$appointment_statuses = AppointmentStatuses::getActiveSorted($request->get("appointment_status_id"), Auth::User()->account_id);
-				$appointment_statuses->prepend('Select a Child Status', '');
 
 				$appointment_status = AppointmentStatuses::find($request->get("appointment_status_id"));
 				if ($appointment_status) {
 					$appointment_status = $appointment_status->toArray();
 				}
 
-				return response()->json(array(
-					'status' => 1,
-					'dropdown' => view('admin.appointments.dropdowns.appointment_statuses', compact('appointment_statuses'))->render(),
-					'count' => count($appointment_statuses),
-					'appointment_status' => $appointment_status,
-				));
-			} else {
-				return response()->json(array(
-					'status' => 0,
-					'dropdown' => null,
-					'count' => 0,
-					'appointment_status' => null,
-				));
+				return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'dropdown' => count($appointment_statuses) > 0 ? $appointment_statuses : null,
+                    'count' => count($appointment_statuses),
+                    'appointment_status' => $appointment_status,
+                ]);
+
 			}
+
+            return ApiHelper::apiResponse($this->success, 'Record found', false, [
+                'dropdown' => null,
+                'count' => 0,
+                'appointment_status' => null,
+            ]);
 		}
 
 		/*
@@ -3555,18 +3333,17 @@
 					$base_appointment_status = $base_appointment_status->toArray();
 				}
 
-				return response()->json(array(
-					'status' => 1,
-					'appointment_status' => $appointment_status,
-					'base_appointment_status' => $base_appointment_status,
-				));
-			} else {
-				return response()->json(array(
-					'status' => 0,
-					'appointment_status' => null,
-					'base_appointment_status' => null,
-				));
+				return ApiHelper::apiResponse($this->success, 'Record Found', true, [
+                    'appointment_status' => count($appointment_status) > 0 ? $appointment_status : null,
+                    'base_appointment_status' => count($base_appointment_status) > 0 ? $base_appointment_status : null,
+                ]);
+
 			}
+
+            return ApiHelper::apiResponse($this->success, 'Record Found', false, [
+                'appointment_status' => null,
+                'base_appointment_status' => null,
+            ]);
 		}
 
 		/*

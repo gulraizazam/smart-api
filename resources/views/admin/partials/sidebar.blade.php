@@ -47,6 +47,9 @@
                             <span class="menu-text">Dashboard</span>
                         </a>
                     </li>
+                    @can('permissions_manage')
+                        <h2>dfsdfsdfsdf</h2>
+                    @endcan
 
                     @if(Gate::allows('permissions_manage') || Gate::allows('roles_manage') || Gate::allows('users_manage') || Gate::allows('user_types_manage'))
                         <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.roles.edit', 'admin.users.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
@@ -192,8 +195,43 @@
 
                     @endif
 
-
                     <!-- End leads menu -->
+
+                    <!-- Appointment menu -->
+
+                    @if(Gate::allows('appointments_manage'))
+
+                        <li class="menu-item menu-item-submenu {{openMenu(['admin.appointments.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                            <span class="svg-icon menu-icon fa_icon">
+                                <i class="la la-clock-o"></i>
+                            </span>
+                                <span class="menu-text">Appointments</span>
+                                <i class="menu-arrow"></i>
+                            </a>
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    @can('appointments_manage')
+                                        <li class="menu-item {{activeMenu('admin.appointments.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.appointments.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Appointments</span>
+                                            </a>
+                                        </li>
+                                    @endcan
+
+                                </ul>
+                            </div>
+
+                        </li>
+
+                    @endif
+
+                <!-- End Appointment menu -->
 
                     @if(
                         Gate::allows('settings_manage') ||
