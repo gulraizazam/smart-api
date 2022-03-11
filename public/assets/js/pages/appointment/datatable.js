@@ -1,4 +1,3 @@
-
 var table_url = route('admin.appointments.datatable');
 
 var table_columns = [
@@ -16,9 +15,6 @@ var table_columns = [
         title: 'ID',
         width: 80,
         sortable: false,
-        template: function (data) {
-            return makePatientId(data.id);
-        }
     },{
         field: 'name',
         title: 'Patient',
@@ -63,9 +59,16 @@ var table_columns = [
         title: 'Status',
         width: 'auto',
         template: function (data) {
-            
-            if (permissions.appointment_status) {
-                return '<a href="javascript:void(0);" onclick="editStatus('+data.id+');">'+data.appointment_status_id+'</a>';
+
+            let unscheduled_appointment_status = data.unscheduled_appointment_status;
+            let appointment_status = data.appointment_status;
+
+            if (permissions.status) {
+                if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
+                    return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
+                } else {
+                    return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + '</a>';
+                }
             } else {
                 return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
             }
@@ -328,45 +331,222 @@ function actions(data) {
 
     let id = data.id;
 
-    let url = route('admin.appointments.edit', {id: id});
-    let delete_url = route('admin.appointments.destroy', {id: id});
-    let view_url = '';
+    let edit_url = route('admin.appointments.edit', {id: id});
+    let edit_service_url = route('admin.appointments.edit_service', {id: id});
+    let detail_url = route('admin.appointments.detail', {id: id});
+    let sms_logs_url = route('admin.appointments.sms_logs', {id: id});
+    let consultancy_url = route('admin.appointments.create', {
+        id: id,
+        city_id: data.city_id,
+        location_id: data.location_id,
+        doctor_id: data.doctor_id,
+    });
 
-    if (permissions.edit && permissions.delete) {
+    let treatment_url = route('admin.appointments.manage_services', {
+        id: id,
+        city_id: data.city_id,
+        location_id: data.location_id,
+        doctor_id: data.doctor_id,
+        machine_id: data.machine_id,
+    });
+    let invoice_url = route('admin.appointments.invoicecreate', {id: id});
+    let invoice_created_url = route('admin.appointments.invoice-create-consultancy', {id: id});
+    let invoice_display_url = route('admin.appointments.InvoiceDisplay', {id: data.invoice_id});
+    let image_url = route('admin.appointmentsimage.imageindex', {id: id});
+    let measurements_url = route('admin.appointmentsmeasurement.measurements', {id: id});
+    let medicals_url = route('admin.appointmentsmedical.medicals', {id: id});
+    let plan_url = route('admin.appointmentplans.create', {id: id});
+    let delete_url = route('admin.appointments.destroy', {id: id});
+    let patient_url = route('admin.patients.preview', {id: data.Patient_ID});
+    let viewlog_url = route('admin.appointments.viewlog', {id: id, type: 'web'});
+
+    if (
+        permissions.edit
+        || permissions.delete
+        || permissions.consultancy
+        || permissions.log
+        || permissions.status
+        || permissions.treatment
+        || permissions.invoice
+        || permissions.invoice_display
+        || permissions.image_manage
+        || permissions.measurement_manage
+        || permissions.medical_form_manage
+        || permissions.plans_create
+        || permissions.patient_card
+    ) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
             </a>\
-            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
+            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="overflow-y: scroll; height: 200px">\
                 <ul class="navi flex-column navi-hover py-2">\
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-        if (permissions.edit) {
+        if (permissions.detail) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+url+'`, `'+id+'`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="editRow(`'+detail_url+'`, `'+id+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Detail</span>\
+                        </a>\
+                    </li>';
+        }
+        if (permissions.edit) {
+            if(data.appointment_type==1) {
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
+            } else if(data.appointment_type==2) {
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Edit</span>\
+                        </a>\
+                    </li>';
+            }
         }
-        if (permissions.delete) {
+
+        actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-sms"></i></span>\
+                            <span class="navi-text">Sms Log</span>\
+                        </a>\
+                    </li>';
+
+        if(data.cancelled_appointment_status && (data.cancelled_appointment_status?.id != data.appointment_status_id))
+        {
+            if(data.appointment_type==1) {
+                if (permissions.consultancy) {
+                    actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + consultancy_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
+                            <span class="navi-text">Consultancy</span>\
+                        </a>\
+                    </li>';
+                }
+            }
+
+            if(data.appointment_type==2) {
+                if (permissions.treatment) {
+                    actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + treatment_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-medkit"></i></span>\
+                            <span class="navi-text">Treatment</span>\
+                        </a>\
+                    </li>';
+                }
+            }
+        }
+
+        if (permissions.invoice) {
+            if(!data.invoice) {
+                if (data.appointment_type == 2) {
+                    actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + invoice_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-file-invoice"></i></span>\
+                            <span class="navi-text">Create Invoice</span>\
+                        </a>\
+                    </li>';
+            }
+
+                if(data.appointment_type == 1) {
+                    actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + invoice_created_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
+                            <span class="navi-text">Create Invoice</span>\
+                        </a>\
+                    </li>';
+                }
+            }
+
+        }
+
+        if (permissions.invoice_display) {
+            if(data.invoice) {
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                            <span class="navi-text">View Invoice</span>\
+                        </a>\
+                    </li>';
+            }
+        }
+
+        if(data.appointment_type==2) {
+            if (permissions.image_manage) {
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + image_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-image"></i></span>\
+                            <span class="navi-text">Images</span>\
+                        </a>\
+                    </li>';
+            }
+
+            if (permissions.measurement_manage) {
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + measurements_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-ruler-horizontal"></i></span>\
+                            <span class="navi-text">Measurements</span>\
+                        </a>\
+                    </li>';
+            }
+        }
+
+        if(data.appointment_type==1) {
+            if (permissions.medical_form_manage) {
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + medicals_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-plus-square"></i></span>\
+                            <span class="navi-text">Medical</span>\
+                        </a>\
+                    </li>';
+            }
+        }
+
+        if (permissions.plans_create) {
             actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`'+plan_url+'`, `'+id+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-paper-plane"></i></span>\
+                            <span class="navi-text">Create Plan</span>\
+                        </a>\
+                    </li>';
+        }
+
+        if (permissions.patient_card) {
+            actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`'+patient_url+'`, `'+id+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-user"></i></span>\
+                            <span class="navi-text">Patient</span>\
+                        </a>\
+                    </li>';
+        }
+
+        if (permissions.log) {
+            actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`'+viewlog_url+'`, `'+id+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-history"></i></span>\
+                            <span class="navi-text">Log</span>\
+                        </a>\
+                    </li>';
+        }
+
+        if (permissions.delete) {
+            /*if (
+                (data?.unscheduled_appointment_status?.id == data?.appointment_status_id) &&
+                (!data?.scheduled_date && !data?.scheduled_time)
+            ) {*/
+                actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-trash"></i></span>\
                             <span class="navi-text">Delete</span>\
                             </a>\
                         </li>';
-        }
-
-        if (permissions.manage) {
-            actions += '<li class="navi-item">\
-                            <a href="'+view_url+'" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-eye"></i></span>\
-                            <span class="navi-text">View</span>\
-                            </a>\
-                        </li>';
-        }
+            }
+        //}
 
         actions += '</ul>\
             </div>\
@@ -420,40 +600,58 @@ function setEditData(response) {
 
 }
 
+function viewSmsLogs($route) {
 
-function createPatient(url) {
+    $("#modal_sms_log").modal("show");
 
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: url,
+        url: $route,
         type: "GET",
         cache: false,
         success: function (response) {
-            setPatientData(response);
+
+            setSmsLogs(response);
+
+            reInitSelect2(".select2", "");
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-            reInitValidation(AddValidation);
         }
     });
 
+}
+
+function setSmsLogs(response) {
+
+    try {
+
+        let SMSLogs = response.data.SMSLogs;
+        let rows = noRecordFoundTable(6);
+        //if (SMSLogs.length) {
+        if (SMSLogs) {
+
+            Object.values(SMSLogs).forEach(function (value, index) {
+                rows = '<tr>';
+                rows += '<td>'+value.to+'</td>';
+                rows += '<td>'+value.text+'</td>';
+                rows += '<td>'+value.log_type+'</td>';
+                rows += '<td>'+formatDate(value.created_at)+'</td>';
+                rows += '</tr>';
+            });
+        }
+
+        $("#appoint_sms_log_rows").html(rows);
+
+    } catch (error) {
+        showException(error);
+    }
 
 }
 
-function setPatientData(response) {
-
-    let genders = response.data.gender;
-    let gender_option = '<option value="">All</option>';
-
-    Object.entries(genders).forEach(function (gender) {
-        gender_option += '<option value="'+gender[0]+'">'+gender[1]+'</option>';
-    });
-    $("#add_gender_id").html(gender_option);
-
-}
 
 function applyFilters(datatable) {
 
@@ -461,14 +659,24 @@ function applyFilters(datatable) {
 
         let filters =  {
             delete: '',
-            patient_id: $("#search_patient_id").val(),
-            name: $("#search_name").val(),
-            email: $("#search_email").val(),
-            phone: $("#search_phone").val(),
-            gender: $("#search_gender").val(),
+            patient_id: $("#appoint_search_id").val(),
+            name: $("#appoint_search_patient").val(),
+            phone: $("#appoint_search_phone").val(),
+            date_from: $("#appoint_search_start").val(),
+            date_to: $("#appoint_search_end").val(),
+            appointment_type_id: $("#appoint_search_type").val(),
+            service_id: $("#appoint_search_service").val(),
+            region_id: $("#appoint_search_region").val(),
+            city_id: $("#appoint_search_city").val(),
+            location_id: $("#appoint_search_centre").val(),
+            doctor_id: $("#appoint_search_doctor").val(),
+            appointment_status_id: $("#appoint_search_status").val(),
+            consultancy_type: $("#appoint_search_consultancy_type").val(),
             created_from: $("#search_created_from").val(),
             created_to: $("#search_created_to").val(),
-            status: $("#search_status").val(),
+            created_by: $("#appoint_search_created_by").val(),
+            converted_by: $("#appoint_search_updated_by").val(),
+            updated_by: $("#appoint_search_rescheduled_by").val(),
             filter: 'filter',
         }
         datatable.search(filters, 'search');
@@ -483,12 +691,22 @@ function resetAllFilters(datatable) {
             delete: '',
             patient_id: '',
             name: '',
-            email: '',
             phone: '',
-            gender: '',
+            date_from: '',
+            date_to: '',
+            appointment_type_id: '',
+            service_id: '',
+            region_id: '',
+            city_id: '',
+            location_id: '',
+            doctor_id: '',
+            appointment_status_id: '',
+            consultancy_type: '',
             created_from: '',
             created_to: '',
-            status: '',
+            created_by: '',
+            converted_by: '',
+            updated_by: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -498,51 +716,99 @@ function resetAllFilters(datatable) {
 
 function setFilters(filter_values, active_filters) {
 
-    return false;
     try {
 
-        let status = filter_values.status;
-        let genders = filter_values.gender;
+        let appointment_statuses = filter_values.appointment_statuses;
+        let appointment_types = filter_values.appointment_types;
+        let cities = filter_values.cities;
+        let doctors = filter_values.doctors;
+        let locations = filter_values.locations;
+        let regions = filter_values.regions;
+        let services = filter_values.services;
+        let users = filter_values.users;
+        let consultancy_types = filter_values.consultancy_types;
 
-        let status_options = '<option value="">All</option>';
-        let gender_options = '<option value="">All</option>';
-
-        Object.entries(genders).forEach(function (gender, index) {
-            gender_options += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
+        let appoint_status_options = '<option value="">All</option>';
+        Object.entries(appointment_statuses).forEach(function (status, index) {
+            appoint_status_options += '<option value="' + status[0] + '">' + status[1] + '</option>';
         });
 
-        Object.entries(status).forEach(function (value, index) {
-            status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+        let appoint_type_options = '<option value="">All</option>';
+        Object.entries(appointment_types).forEach(function (appointment_type, index) {
+            appoint_type_options += '<option value="' + appointment_type[0] + '">' + appointment_type[1] + '</option>';
         });
 
-        $("#search_status").html(status_options);
-        $("#search_gender").html(gender_options);
+        let city_options = '<option value="">All</option>';
+        Object.entries(cities).forEach(function (city, index) {
+            city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
+        });
 
-        $("#search_name").val(active_filters.name);
-        $("#search_status").val(active_filters.status);
-        $("#search_gender").val(active_filters.gender);
-        $("#search_phone").val(active_filters.phone);
-        $("#search_email").val(active_filters.email);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        let doctor_options = '<option value="">All</option>';
+        Object.entries(doctors).forEach(function (doctor, index) {
+            doctor_options += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
+        });
 
-        hideShowAdvanceFilters(active_filters);
+        let location_options = '<option value="">All</option>';
+        Object.entries(locations).forEach(function (location, index) {
+            location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+        });
+
+        let region_options = '<option value="">All</option>';
+        Object.entries(regions).forEach(function (region, index) {
+            region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
+        });
+
+        let service_options = '<option value="">All</option>';
+        Object.entries(services).forEach(function (service, index) {
+            service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+        });
+
+        let user_options = '<option value="">All</option>';
+        Object.entries(users).forEach(function (user, index) {
+            user_options += '<option value="' + user[0] + '">' + user[1] + '</option>';
+        });
+
+        let consultancy_type_options = '<option value="">All</option>';
+        Object.entries(consultancy_types).forEach(function (consultancy_type, index) {
+            consultancy_type_options += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
+        });
+
+        $("#appoint_search_created_by").html(user_options);
+        $("#appoint_search_updated_by").html(user_options);
+        $("#appoint_search_rescheduled_by").html(user_options);
+        $("#appoint_search_type").html(appoint_type_options);
+        $("#appoint_search_status").html(appoint_status_options);
+        $("#appoint_search_doctor").html(doctor_options);
+        $("#appoint_search_centre").html(location_options);
+        $("#appoint_search_city").html(city_options);
+        $("#appoint_search_region").html(region_options);
+        $("#appoint_search_service").html(service_options);
+        $("#appoint_search_consultancy_type").html(consultancy_type_options);
+
+        $("#appoint_search_created_by").val(active_filters.created_by);
+        $("#appoint_search_updated_by").val(active_filters.converted_by);
+        $("#appoint_search_rescheduled_by").val(active_filters.updated_by);
+        $("#appoint_search_type").val(active_filters.appointment_type_id);
+        $("#appoint_search_status").val(active_filters.appointment_status);
+        $("#appoint_search_doctor").val(active_filters.doctor_id);
+        $("#appoint_search_centre").val(active_filters.location_id);
+        $("#appoint_search_city").val(active_filters.city_id);
+        $("#appoint_search_region").val(active_filters.region_id);
+        $("#appoint_search_service").val(active_filters.service_id);
+        $("#appoint_search_consultancy_type").val(active_filters.consultancy_type);
+
     } catch (error) {
         showException(error);
     }
 }
 
-function hideShowAdvanceFilters(active_filters) {
 
-    if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
-        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
-        || (typeof active_filters.status !== 'undefined' && active_filters.status != '')
-        || (typeof active_filters.gender !== 'undefined' && active_filters.gender != '')
-    ) {
+function resetCustomFilters() {
 
-        $(".advance-filters").show();
-        $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
-    }
+    $(".filter-field").val('');
+    addUsers();
+    $('.select2').val(null).trigger('change');
 
+   /* $(".advance-filters").slideUp();
+    $(".advance-arrow").addsClass("fa-caret-right").removeClass("fa-caret-down")*/
 }
-

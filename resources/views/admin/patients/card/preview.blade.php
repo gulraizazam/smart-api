@@ -188,7 +188,7 @@
     </div>
     <!--end::Content-->
 
-    @push('js')
+    @push('datatable-js')
         <script>
             let patient_id = "{{request('id')}}";
         </script>

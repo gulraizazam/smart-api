@@ -985,22 +985,6 @@
 				Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
 			}
 
-            if (hasFilter($filters, 'name')) {
-				$countQuery->where(function ($query) {
-					global $filters;
-					$query->where(
-						'users.name',
-						'like',
-						'%' . $filters['name'] . '%'
-					);
-					$query->orWhere(
-						'appointments.name',
-						'like',
-						'%' . $filters['name'] . '%'
-					);
-				});
-			}
-
             $iTotalRecords = $countQuery->count();
 
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
@@ -1047,22 +1031,6 @@
 			}
 
             if (hasFilter($filters, 'name')) {
-				$resultQuery->where(function ($query) {
-					global $filters;
-					$query->where(
-						'users.name',
-						'like',
-						'%' . $filters['name'] . '%'
-					);
-					$query->orWhere(
-						'appointments.name',
-						'like',
-						'%' . $filters['name'] . '%'
-					);
-				});
-			}
-
-            if (hasFilter($filters, 'name')) {
 				$resultQuery->where(function ($query) use ($filters) {
 					$query->where(
 						'users.name',
@@ -1100,8 +1068,8 @@
 				$invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
 				// Default Un-scheduled Appointment Status
-				$unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id);
-				$cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly(Auth::User()->account_id);
+				$unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id, ['id']);
+                $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly(Auth::User()->account_id);
 
 				$index = 0;
 				$invoiceid = 0;
@@ -1134,23 +1102,19 @@
 						'location_id' => $appointment->location_id ? $appointment->location->name : 'N/A',
 						'service_id' => $appointment->service->name ?? 'N/A',
 						'appointment_type_id' => $appointment->appointment_type->name,
+						'appointment_type' => $appointment->appointment_type->id,
 						'consultancy_type' => $consultancy_type,
 						'created_at' => Carbon::parse($appointment->app_created_at)->format('F j,Y h:i A'),
 						'created_by' => array_key_exists($appointment->app_created_by, $Users) ? $Users[$appointment->app_created_by]->name : 'N/A',
 						'converted_by' => array_key_exists($appointment->converted_by, $Users) ? $Users[$appointment->converted_by]->name : 'N/A',
 						'updated_by' => array_key_exists($appointment->app_updated_by, $Users) ? $Users[$appointment->app_updated_by]->name : 'N/A',
-						//'actions' => view('admin.appointments.actions', compact('appointment', 'invoice', 'invoiceid', 'unscheduled_appointment_status', 'cancelled_appointment_status'))->render(),
+                        'unscheduled_appointment_status' => $unscheduled_appointment_status,
+                        'cancelled_appointment_status' => $cancelled_appointment_status,
+                        'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
+                        'appointment_status' => $appointment->appointment_status_id,
+                        'invoice_id' => $invoiceid,
+                        'invoice' => $invoice,
 					);
-
-					if (Gate::allows('appointments_appointment_status')) {
-						if ($unscheduled_appointment_status && ($appointment->appointment_status_id == $unscheduled_appointment_status->id)) {
-							$records["data"][$index]['appointment_status_id'] = ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : '');
-						} else {
-                            $records["data"][$index]['appointment_status_id'] = ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : '');
-						}
-					} else {
-						$records["data"][$index]['appointment_status_id'] = ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : '');
-					}
 
 					$index++;
 				}
@@ -1177,13 +1141,21 @@
 
             $records["permissions"] = [
                 'edit' => Gate::allows('appointments_edit'),
+                'consultancy' => Gate::allows('appointments_consultancy'),
+                'treatment' => Gate::allows('appointments_services'),
                 'delete' => Gate::allows('appointments_destroy'),
                 'active' => Gate::allows('appointments_active'),
                 'inactive' => Gate::allows('appointments_inactive'),
                 'create' => Gate::allows('appointments_create'),
                 'log' => Gate::allows('appointments_log'),
-                'sms_log' => Gate::allows('appointments_sms_log'),
-                'appointment_status' => Gate::allows('appointments_appointment_status'),
+                'status' => Gate::allows('appointments_appointment_status'),
+                'invoice' => Gate::allows('appointments_invoice'),
+                'invoice_display' => Gate::allows('appointments_invoice_display'),
+                'image_manage' => Gate::allows('appointments_image_manage'),
+                'measurement_manage' => Gate::allows('appointments_measurement_manage'),
+                'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
+                'plans_create' => Gate::allows('appointments_plans_create'),
+                'patient_card' => Gate::allows('appointments_patient_card'),
             ];
 
 			return ApiHelper::apiDataTable($records);
@@ -1195,8 +1167,6 @@
          * @return mixed
          */
         private function getFiltersData($records, $filename) {
-
-            $filters = Filters::all(Auth::User()->id, 'appointments');
 
             $regions = Regions::getActiveSorted(ACL::getUserRegions());
 
@@ -1239,7 +1209,7 @@
                 'services' => $services,
                 'appointment_statuses' => $appointment_statuses,
                 'appointment_types' => $appointment_types,
-                'filters' => $filters
+                'consultancy_types' => config('constants.consultancy_type_array'),
             ];
 
             return $records;
@@ -2690,13 +2660,15 @@
 		 * Load Appointment SMS History.
 		 *
 		 * @param int $id
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function showSMSLogs($id)
 		{
 			$SMSLogs = SMSLogs::whereAppointmentId($id)->orderBy('created_at', 'desc')->get();
 
-			return view('admin.appointments.sms_logs', compact('SMSLogs'));
+			return ApiHelper::apiResponse($this->success, 'Record found', true, [
+			    'SMSLogs' => $SMSLogs
+            ]);
 		}
 
 		/**
