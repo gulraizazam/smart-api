@@ -79,9 +79,9 @@ class AppointmentStatuses extends BaseModal
     /**
      * Get Un-Scheduled Status
      */
-    static public function getUnScheduledStatusOnly($account_id)
+    static public function getUnScheduledStatusOnly($account_id, $columns = ['*'])
     {
-        return self::where(['is_unscheduled' => '1', 'account_id' => $account_id])->first();
+        return self::where(['is_unscheduled' => '1', 'account_id' => $account_id])->first($columns);
     }
 
     /**

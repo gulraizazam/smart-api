@@ -457,6 +457,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointments/load-child-appointment/status-data', [AppointmentsController::class, 'loadAppointmentStatusData'])->name('appointments.load_child_appointment_status_data');
     /*Appointment routes*/
 
+    Route::get('appointments/sms_logs/{id}', [AppointmentsController::class, 'showSMSLogs'])->name('appointments.sms_logs');
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

@@ -241,8 +241,12 @@ var KTPatientDatatable = function() {
 
 jQuery(document).ready(function() {
 
-    if (typeof table_url !== 'undefined') {
+    if (typeof table_url !== 'undefined'
+        && typeof patient_id === 'undefined') { /*this is for overall datatable*/
         KTDatatable.init();
+    }
+
+    if (typeof patient_id !== 'undefined') { /*this is for patient card*/
         KTPatientDatatable.init();
     }
 

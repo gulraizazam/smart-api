@@ -47,9 +47,6 @@
                             <span class="menu-text">Dashboard</span>
                         </a>
                     </li>
-                    @can('permissions_manage')
-                        <h2>dfsdfsdfsdf</h2>
-                    @endcan
 
                     @if(Gate::allows('permissions_manage') || Gate::allows('roles_manage') || Gate::allows('users_manage') || Gate::allows('user_types_manage'))
                         <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.roles.edit', 'admin.users.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
