@@ -150,9 +150,9 @@
 
                     @if(Gate::allows('leads_manage'))
 
-                        <li class="menu-item menu-item-submenu {{openMenu(['admin.leads.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                    <li class="menu-item menu-item-submenu {{openMenu(['admin.leads.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
 
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon">
                             <i class="fas fa-briefcase"></i>
                             </span>
@@ -777,6 +777,53 @@
                     </li>
 
                     @endif
+
+
+                     <!-- Inventory menu -->
+
+                     @if(Gate::allows('inventory_manage'))
+
+                        <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
+
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                            <span class="svg-icon menu-icon fa_icon">
+                                <i class="la la-clock-o"></i>
+                            </span>
+                                <span class="menu-text">Inventory</span>
+                                <i class="menu-arrow"></i>
+                            </a>
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    @can('brand_manage')
+                                        <li class="menu-item {{activeMenu('admin.appointments.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.appointments.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Brand</span>
+                                            </a>
+                                        </li>
+                                    @endcan
+                                    @can('product_manage')
+                                        <li class="menu-item {{activeMenu('admin.appointments.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.appointments.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Product</span>
+                                            </a>
+                                        </li>
+                                    @endcan
+
+                                </ul>
+                            </div>
+
+                        </li>
+
+                    @endif
+
+                    <!-- End Inventory menu -->
 
                 </ul>
                 <!--end::Menu Nav-->
