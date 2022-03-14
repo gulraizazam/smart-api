@@ -64,9 +64,9 @@ class CreateAdmin extends Command
     {
 
         /*run required seeders before create admin*/
-        $this->account->run();
+       /* $this->account->run();
         $this->user_type->run();
-        $this->resource_type->run();
+        $this->resource_type->run();*/
         /*seeders*/
 
         $details = $this->getDetails();
