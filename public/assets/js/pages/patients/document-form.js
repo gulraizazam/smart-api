@@ -1,5 +1,5 @@
 
-var table_url = route('admin.patients.documentdatatable', {id: patient_id});
+var table_url = route('admin.patients.documentdatatable', {id: patientCardID});
 
 var table_columns = [
     {
@@ -94,7 +94,7 @@ function editRow(url, name) {
     $("#modal_edit_document_form").modal("show");
     $("#modal_edit_documents_form").attr("action", url);
 
-    $("#edit_patient_id").val(patient_id);
+    $("#edit_patient_id").val(patientCardID);
     $("#edit_document_name").val(name);
 
 }
@@ -146,8 +146,8 @@ function setFilters(filter_values, active_filters) {
     }
 }
 
-function addDocumentForm(patient_id) {
-    $("#patientId").val(patient_id);
+function addDocumentForm(patientCardID) {
+    $("#patientId").val(patientCardID);
 }
 
 /*For validation*/

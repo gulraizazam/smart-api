@@ -94,7 +94,9 @@ class AppointmentsElastic
         );
 
         try {
-            self::$elastic_client->delete($data);
+            if (self::$elastic_client) {
+                self::$elastic_client->delete($data);
+            }
             return true;
         } catch (\Exception $e) {
             return false;

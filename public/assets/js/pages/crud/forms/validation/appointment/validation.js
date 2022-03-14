@@ -1,4 +1,5 @@
 var statusValidate = {};
+
 var UpdateStatusValidation = function () {
 
     var statusValidation = function () {
@@ -48,19 +49,54 @@ var UpdateStatusValidation = function () {
     };
 }();
 
-var EditValidation = function () {
+var EditAppointmentValidation = function () {
     // Private functions
     var Validation = function () {
-        let modal_id = 'modal_edit_patients_form';
+        let modal_id = 'modal_edit_appointment_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    name: {
+                    consultancy_type: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
+                                message: 'The consultancy type field is required'
+                            }
+                        }
+                    },
+                    city_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The city field is required'
+                            }
+                        }
+                    },
+                    location_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The location field is required'
+                            }
+                        }
+                    },
+                    doctor_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The doctor field is required'
+                            }
+                        }
+                    },
+                    scheduled_date: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The scheduled date field is required'
+                            }
+                        }
+                    },
+                    scheduled_time: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The scheduled time field is required'
                             }
                         }
                     },
@@ -71,6 +107,13 @@ var EditValidation = function () {
                             }
                         }
                     },
+                    name: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The name field is required'
+                            }
+                        }
+                    },
                     gender: {
                         validators: {
                             notEmpty: {
@@ -78,6 +121,7 @@ var EditValidation = function () {
                             }
                         }
                     },
+
                 },
 
                 plugins: {
@@ -116,5 +160,5 @@ var EditValidation = function () {
 
 jQuery(document).ready(function() {
     UpdateStatusValidation.init();
-    //EditValidation.init();
+    EditAppointmentValidation.init();
 });

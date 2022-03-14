@@ -459,6 +459,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('appointments/sms_logs/{id}', [AppointmentsController::class, 'showSMSLogs'])->name('appointments.sms_logs');
 
+    Route::put('appointments/send/logged_sms', [AppointmentsController::class, 'sendLogSMS'])->name('appointments.resend_sms');
+
+    Route::resource('appointments', AppointmentsController::class)->except('index');
+
+
+    Route::post('appointments/load-doctor-rota', [AppointmentsController::class, 'loadRotaByDoctor'])->name('appointments.load_doctor_rota');
+
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

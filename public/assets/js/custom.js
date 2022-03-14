@@ -617,6 +617,33 @@ function makePatientId(id) {
     return "C-" + id;
 }
 
+function makeArray(object) {
+
+    let array = [];
+
+   Object.entries(object).forEach(function (value) {
+       array[value[0]] = value[1];
+   });
+
+  return array
+
+}
+
 function phoneClip(data) {
     return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="'+data.phone+'" data-original-title="Click to Copy" aria-describedby="tooltip'+data.id+'">'+data.phone+'</a>';
+}
+
+function makePhoneNumber(phoneNo, permission, type = 0) {
+
+    if (!permission) {
+        return '***********';
+    } else {
+        if (phoneNo[0] == '3' && phoneNo.length == 10 && type == 0) {
+            return '+92' . phoneNo;
+        } else if (phoneNo[0] == '3' && phoneNo.length == 10 && type == 1) {
+            return '0' . phoneNo;
+        } else {
+            return phoneNo;
+        }
+    }
 }
