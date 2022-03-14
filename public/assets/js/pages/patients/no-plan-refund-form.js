@@ -1,5 +1,5 @@
 
-var table_url = route('admin.nonplansrefundpatient.datatable', {id: patient_id});
+var table_url = route('admin.nonplansrefundpatient.datatable', {id: patientCardID});
 
 var table_columns = [
     {

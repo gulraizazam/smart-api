@@ -151,7 +151,7 @@ var KTPatientDatatable = function() {
 
 
                             if (typeof data.status !== 'undefined') {
-                                deleteSuccessAndReset(data, datatable);
+                                deleteSuccessAndReset(data, patientDatatable[table_class]);
                             }
                             var response = data;
                             if (typeof response.data !== 'undefined') {
@@ -242,11 +242,11 @@ var KTPatientDatatable = function() {
 jQuery(document).ready(function() {
 
     if (typeof table_url !== 'undefined'
-        && typeof patient_id === 'undefined') { /*this is for overall datatable*/
+        && typeof patientCardID === 'undefined') { /*this is for overall datatable*/
         KTDatatable.init();
     }
 
-    if (typeof patient_id !== 'undefined') { /*this is for patient card*/
+    if (typeof patientCardID !== 'undefined') { /*this is for patient card*/
         KTPatientDatatable.init();
     }
 

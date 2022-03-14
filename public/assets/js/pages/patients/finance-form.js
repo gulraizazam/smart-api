@@ -1,5 +1,5 @@
 
-var table_url = route('admin.finances.datatable', {id: patient_id});
+var table_url = route('admin.finances.datatable', {id: patientCardID});
 
 var table_columns = [
     {
@@ -59,7 +59,7 @@ function actions(data) {
         let edit_url = route('admin.plans.edit', {id: id});
         let delete_url = route('admin.plans.destroy', {id: id});
         let display_url = route('admin.plans.display', {id: id});
-        let log_url = route('admin.plans.log', {id: id, patient_id: patient_id, type: 'web'});
+        let log_url = route('admin.plans.log', {id: id, patient_id: patientCardID, type: 'web'});
         let sms_log_url = route('admin.packages.sms_logs', {id: id});
 
         if (permissions.create && permissions.log && permissions.sms_log && permissions.edit) {
