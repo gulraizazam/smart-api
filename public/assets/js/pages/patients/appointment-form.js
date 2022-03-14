@@ -1,5 +1,5 @@
 
-var table_url = route('admin.patients.appointmentsDatatable', {id: patient_id});
+var table_url = route('admin.patients.appointmentsDatatable', {id: patientCardID});
 
 var table_columns = [
     {

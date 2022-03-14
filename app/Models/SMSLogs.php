@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\GeneralFunctions;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -22,5 +23,9 @@ class SMSLogs extends Model
     public function appointments()
     {
         return $this->belongsTo('App\Models\Appointments', 'appointment_id');
+    }
+
+    public function getToAttribute($value) {
+        return GeneralFunctions::prepareNumber4Call(GeneralFunctions::cleanNumber($value));
     }
 }

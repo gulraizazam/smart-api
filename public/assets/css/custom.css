@@ -572,3 +572,9 @@ div > input {
 #toast-container > div {
     opacity: 1 !important;
 }
+.full_text {
+    cursor: default;
+    pointer-events: none;
+    text-decoration: none;
+    color: grey;
+}

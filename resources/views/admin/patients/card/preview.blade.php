@@ -190,7 +190,7 @@
 
     @push('datatable-js')
         <script>
-            let patient_id = "{{request('id')}}";
+            let patientCardID = "{{request('id')}}";
         </script>
         <script src="{{asset('assets/js/pages/patients/patient-card.js')}}"></script>
         <script src="{{asset('assets/js/profile.js')}}"></script>

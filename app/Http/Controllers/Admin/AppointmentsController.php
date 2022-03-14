@@ -2,7 +2,8 @@
 
 	namespace App\Http\Controllers\Admin;
 
-	use App\HelperModule\ApiHelper;
+	use App\Exports\ExportAppointment;
+    use App\HelperModule\ApiHelper;
     use App\Helpers\ACL;
 	use App\Helpers\Elastic\AppointmentsElastic;
 	use App\Helpers\Filters;
@@ -2016,19 +2017,22 @@
 		 * Show the form for editing Appointment.
 		 *
 		 * @param int $id
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function edit($id)
 		{
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
 			$locationsids = array();
 			$doctorids = array();
 			$reverse_process = false;
 
-			$appointment = Appointments::findOrFail($id);
+			$appointment = Appointments::with('lead.patient')->with('patient')->find($id);
+			if (!$appointment) {
+                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            }
 			$resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
 
 
@@ -2036,7 +2040,6 @@
 			if ($cities) {
 				$cities = $cities->pluck('full_name', 'id');
 			}
-			$cities->prepend('Select a City', '');
 
 			if ($appointment->service_id) {
 				$services = Services::where(['id' => $appointment->service_id])->get()->pluck('name', 'id');
@@ -2044,7 +2047,6 @@
 			} else {
 				$services = Services::get()->pluck('name', 'id');
 			}
-			$services->prepend('Select a Service', '');
 
 			$locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::User()->account_id);
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
@@ -2059,7 +2061,6 @@
 			if ($locations) {
 				$locations = $locations->pluck("name", "id");
 			}
-			$locations->prepend('Select a Centre', '');
 
 			$doctors = $doctors_no_final = Doctors::getActiveOnly($appointment->location_id, Auth::User()->account_id);
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
@@ -2084,16 +2085,24 @@
 				}
 			}
 
-
-			$doctors->prepend('Select a Doctor', '');
-
-			//dd(Carbon::parse($resourceHadRotaDay->end_time)->subMinutes($appointment->service->duration_in_minutes)->format('h:ia'));
-
 			$back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
 
 			$setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
 
-			return view('admin.appointments.consultancy.consultancy_edit', compact('appointment', 'cities', 'services', 'locations', 'doctors', 'resourceHadRotaDay', 'back_date_config', 'setting'));
+			return ApiHelper::apiResponse($this->success, 'Record Found', true, [
+                'appointment' => $appointment,
+                'cities' => $cities,
+                'services' => $services,
+                'locations' => $locations,
+                'doctors' => $doctors,
+                'resourceHadRotaDay' => $resourceHadRotaDay,
+                'back_date_config' => $back_date_config,
+                'setting' => $setting,
+                'consultancy_type' => config('constants.consultancy_type_array'),
+                'genders' => config('constants.gender_array')
+            ]);
+
+			//return view('admin.appointments.consultancy.consultancy_edit', compact());
 		}
 
 		/**
@@ -2201,35 +2210,31 @@
 		 *
 		 * @param \Illuminate\Http\Request $request
 		 * @param int $id
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function update(Request $request, $id)
 		{
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
 			$validator = $this->verifyUpdateFields($request);
 
 			if ($validator->fails()) {
-				return response()->json(array(
-					'status' => 0,
-					'message' => $validator->messages()->all(),
-					'id' => 0,
-				));
+                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
 			}
 
 			$back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
 
 			if (strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
-				return response()->json(array(
-					'status' => 0,
-					'message' => array('Scheduled date is older than today. Please select today or future date.'),
-					'id' => 0,
-				));
+                return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
 			}
 
-			$appointment = Appointments::findOrFail($id);
+			$appointment = Appointments::find($id);
+			if (! $appointment) {
+                return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
+            }
+
 			$value_of_sending_message = $appointment->send_message;
 			$city_info = Cities::find($request->city_id);
 			if($request->input('phone') == '***********'){
@@ -2324,9 +2329,15 @@
 			}else if($appointmentDat['appointment_status_id'] == 3){
 				$appointmentData['lead_status_id'] = 1;
 			}
-			$lead = Leads::findOrFail($appointmentData['lead_id']);
+			$lead = Leads::find($appointmentData['lead_id']);
+			if (! $lead) {
+                return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+            }
 			$lead->update($appointmentData);
-			$patient = Patients::findOrFail($lead->patient_id);
+			$patient = Patients::find($lead->patient_id);
+			if (! $patient) {
+                return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+            }
 			$patientData = $appointmentData;
 
 			/* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in
@@ -2354,35 +2365,29 @@
 				])
 			);
 
-			$message = 'Record has been updated successfully.';
-			flash('Record has been updated successfully.')->success()->important();
-
-			return response()->json(array(
-				'status' => 1,
-				'message' => $message,
-			));
+            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
 		}
 
 		/**
 		 * Remove Appointment from storage.
 		 *
 		 * @param int $id
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function destroy($id)
 		{
 			if (!Gate::allows('appointments_destroy')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
-			Appointments::DeleteRecord($id, Auth::User()->account_id);
+			$response = Appointments::DeleteRecord($id, Auth::User()->account_id);
 
 			/**
 			 * Work need on destory
 			 */
 			AppointmentsElastic::deleteObject($id);
 
-			return redirect()->route('admin.appointments.index');
+            return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
 		}
 
 		/**
@@ -2667,7 +2672,8 @@
 			$SMSLogs = SMSLogs::whereAppointmentId($id)->orderBy('created_at', 'desc')->get();
 
 			return ApiHelper::apiResponse($this->success, 'Record found', true, [
-			    'SMSLogs' => $SMSLogs
+			    'SMSLogs' => $SMSLogs,
+                'sms_statuses' => config('constants.sms_array'),
             ]);
 		}
 
@@ -2675,27 +2681,31 @@
 		 * Re-send Appointment SMS
 		 *
 		 * @param \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest $request
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function sendLogSMS(Request $request)
 		{
 			$data = $request->all();
 
-			$SMSLog = SMSLogs::findOrFail($request->get('id'));
+			$SMSLog = SMSLogs::find($request->get('id'));
+			if (!$SMSLog) {
+			    return ApiHelper::apiResponse($this->success, 'Resource not found', false);
+            }
 
 			if ($SMSLog) {
 				$response = $this->resendSMS($SMSLog->id, $SMSLog->to, $SMSLog->text, $SMSLog->appointment_id);
 
 				if ($response['status']) {
-					return response()->json(['status' => 1]);
+                    return ApiHelper::apiResponse($this->success, 'SMS sent successfully.');
 				}
 			}
 
-			return response()->json(['status' => 0]);
+            return ApiHelper::apiResponse($this->success, 'Failed to send SMS.', false);
 		}
 
 		private function resendSMS($smsId, $patient_phone, $preparedText, $appointmentId)
 		{
+
 			$appointment = Appointments::find($appointmentId);
 
 			$setting = Settings::whereSlug('sys-current-sms-operator')->first();
@@ -2907,15 +2917,15 @@
 				$request->get("appointment_id") &&
 				$request->get("scheduled_date") &&
 				$request->get("resourceRotaDayID")
-
 			) {
 
-				$appointment = Appointments::findOrFail($request->get("appointment_id"));
+				$appointment = Appointments::find($request->get("appointment_id"));
 
 				if ($request->get("resourceRotaDayID") != $appointment->resource_has_rota_day_id) {
-					/*
-                 * Data is changed, avoid to provide rota
-                 */
+				    /*
+                    * Data is changed, avoid to provide rota
+                    */
+
 					return response()->json(array(
 						'status' => 0,
 						'resource_has_rota_day' => null,
@@ -5458,4 +5468,9 @@
 			}
 //return response()->json($records);
 		}
+
+
+		public function export() {
+            return Excel::download(new ExportAppointment, 'appointments.xlsx');
+        }
 	}
