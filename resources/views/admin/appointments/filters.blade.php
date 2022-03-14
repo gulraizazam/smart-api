@@ -21,9 +21,10 @@
             <input type="text" class="form-control filter-field " id="appoint_search_id">
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6" id="patient_id">
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Patient:</label>
-            <select class="form-control filter-field patient_id" id="appoint_search_patient"></select>
+            {{--<select class="form-control filter-field patient_id" id="appoint_search_patient"></select>--}}
+            <input type="text" class="form-control filter-field" id="appoint_search_patient">
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6">
@@ -45,8 +46,8 @@
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Consultancy Type:</label>
-            <select class="form-control filter-field select2" id="appoint_search_consultancy_type"></select>
+            <label>Type:</label>
+            <select class="form-control filter-field select2" id="appoint_search_type"></select>
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6">
@@ -56,6 +57,7 @@
 
     </div>
 
+    <hr class="advance-filters" style="display: none;">
     <div class="row mb-8 advance-filters" style="display: none;">
 
         <div class="col-lg-3 mb-lg-0 mb-6">
@@ -78,14 +80,14 @@
             <select class="form-control filter-field select2" id="appoint_search_doctor"></select>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Status:</label>
             <select class="form-control filter-field select2" id="appoint_search_status"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
-            <label>Type:</label>
-            <select class="form-control filter-field select2" id="appoint_search_type"></select>
+            <label>Consultancy Type:</label>
+            <select class="form-control filter-field select2" id="appoint_search_consultancy_type"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
@@ -124,7 +126,7 @@
     <div class="row">
         <div class="col-md-10">
 
-            @include('admin.partials.filter-buttons')
+            @include('admin.partials.filter-buttons', ['custom_reset', $custom_reset])
 
         </div>
     </div>

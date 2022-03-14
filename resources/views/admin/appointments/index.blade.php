@@ -12,6 +12,8 @@
             <!--begin::Container-->
             <div class="container">
 
+                @include('admin.appointments.partials.menu')
+
                 <!--begin::Card-->
                 <div class="card card-custom">
                     <div class="card-header py-3">
@@ -60,7 +62,7 @@
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                        @include('admin.appointments.filters')
+                        @include('admin.appointments.filters', ['custom_reset' => 'custom_reset'])
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -76,15 +78,9 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_change_appointment_status" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="appointment_status_change">
+    {{--All forms popups--}}
+    @include('admin.appointments.forms.modals')
 
-            @include('admin.appointments.change-status')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
 
     @push('js')
 

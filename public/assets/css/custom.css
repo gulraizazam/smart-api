@@ -499,6 +499,15 @@ div > input {
     justify-content: center;
     border-radius: 5px;
 }
+.appointment-menu > .horizontal-nav-bar-li{
+    display: inline-block;
+    margin-left: 5px;
+    width: calc(34% - 21px);
+    border: 1px solid lightgray;
+    text-align: center;
+    justify-content: center;
+    border-radius: 5px;
+}
 .horizontal-nav-bar-li a {
     float: left;
     font-size: 16px;
@@ -559,4 +568,7 @@ div > input {
         width: 100%;
     }
 
+}
+#toast-container > div {
+    opacity: 1 !important;
 }

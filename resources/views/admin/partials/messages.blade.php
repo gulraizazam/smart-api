@@ -1,6 +1,25 @@
+
 @if(isset($toastr))
     <script>
-    @if(session()->has('success'))
+
+        toastr.options = {
+            "closeButton": true,
+            "newestOnTop": false,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "showDuration": "300",
+            "hideDuration": "2000",
+            "timeOut": "6000",
+            "extendedTimeOut": "6000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
+
+        @if(session()->has('success'))
         toastr.success("{{session('success')}}");
     @endif
     @if(session()->has('error'))
