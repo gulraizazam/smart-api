@@ -547,26 +547,30 @@ class Appointments extends Model
         $appointment = self::where(['id' => $id, 'account_id' => $account_id])->first();
 
         if (!$appointment) {
-
-            flash('Appointment not found.')->error()->important();
-            return redirect()->route('admin.appointments.index');
+            return [
+                'status' => false,
+                'message' => 'Appointment not found.',
+            ];
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (self::isChildExists($id, $account_id)) {
-            flash('Child records exist, unable to delete appointment')->error()->important();
-            return redirect()->route('admin.appointments.index');
+            return [
+                'status' => false,
+                'message' => 'Child records exist, unable to delete appointment',
+            ];
         }
 
 
-        $record = $appointment->delete();
+        $appointment->delete();
 
         //log request for delete for audit trail
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return [
+            'status' => true,
+            'message' => 'Record has been deleted successfully.',
+        ];
     }
 
     /**
@@ -589,5 +593,14 @@ class Appointments extends Model
         }
 
         return false;
+    }
+
+    /**
+     * change scheduled_date format
+     * @param $time
+     * @return string
+     */
+    public function getScheduledTimeAttribute($time, $format = 'h:i A') { //h:ia
+       return Carbon::parse($time)->format($format);
     }
 }

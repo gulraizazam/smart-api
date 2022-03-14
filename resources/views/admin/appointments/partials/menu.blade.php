@@ -6,7 +6,7 @@
 
             <li class="horizontal-nav-bar-li">
 
-                <a href="javascript:void(0);" class="change-tab personal-info navi-link py-4 active">
+                <a href="{{route('admin.appointments.export')}}" class="change-tab personal-info navi-link py-4 active">
                      <span class="text-muted mb-2 fa_icon">
                     <i class="la la-file-export"></i>
                     </span>

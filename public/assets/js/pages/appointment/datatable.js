@@ -1,7 +1,7 @@
 var table_url = route('admin.appointments.datatable');
 
 var table_columns = [
-    {
+    /*{
         field: 'id',
         sortable: false,
         width: 80,
@@ -9,11 +9,11 @@ var table_columns = [
         template: function (data) {
             return childCheckbox(data);
         }
-    },
+    },*/
     {
         field: 'Patient_ID',
         title: 'ID',
-        width: 80,
+        width: 'auto',
         sortable: false,
     },{
         field: 'name',
@@ -22,7 +22,7 @@ var table_columns = [
     },{
         field: 'phone',
         title: 'Phone',
-        width: 80,
+        width: 'auto',
         template: function (data) {
             return phoneClip(data);
         }
@@ -518,7 +518,7 @@ function actions(data) {
 
         if (permissions.patient_card) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+patient_url+'`, `'+id+'`);" class="navi-link">\
+                        <a target="_blank" href="'+patient_url+'" class="navi-link">\
                             <span class="navi-icon"><i class="la la-user"></i></span>\
                             <span class="navi-text">Patient</span>\
                         </a>\
@@ -559,8 +559,8 @@ function actions(data) {
 
 function editRow(url, id) {
 
-    $("#modal_edit_patients").modal("show");
-    $("#modal_edit_patients_form").attr("action", route('admin.patients.update', {id: id}));
+    $("#modal_edit_appointment").modal("show");
+    $("#modal_edit_appointment_form").attr("action", route('admin.appointments.update', {id: id}));
 
     $.ajax({
         headers: {
@@ -583,22 +583,228 @@ function editRow(url, id) {
 }
 
 function setEditData(response) {
+    console.log(datatable)
 
-    let genders = response.data.gender;
-    let patient = response.data.patient;
-    let gender_option = '<option value="">All</option>';
+    try {
 
-    Object.entries(genders).forEach(function (gender) {
-        gender_option += '<option value="'+gender[0]+'">'+gender[1]+'</option>';
-    });
+        let appointment = response.data.appointment;
+        let back_date_config = response.data.back_date_config;
+        let cities = response.data.cities;
+        let consultancy_types = response.data.consultancy_type;
+        let doctors = response.data.doctors;
+        let locations = response.data.locations;
+        let resourceHadRotaDay = response.data.resourceHadRotaDay;
+        let services = response.data.services;
+        let setting = response.data.setting;
+        let genders = response.data.genders;
 
-    $("#edit_gender_id").html(gender_option);
-    $("#edit_name").val(patient.name);
-    $("#edit_email").val(patient.email);
-    $("#edit_phone").val(patient.phone);
-    $("#edit_gender_id").val(patient.gender);
+        let type_option = '<option value="">All</option>';
+        Object.entries(consultancy_types).forEach(function (consultancy_type) {
+            type_option += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
+        });
+
+        let service_option = '<option value="">All</option>';
+        Object.entries(services).forEach(function (service) {
+            service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+        });
+
+        let city_option = '<option value="">All</option>';
+        Object.entries(cities).forEach(function (city) {
+            city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
+        });
+
+        let location_option = '<option value="">All</option>';
+        Object.entries(locations).forEach(function (location) {
+            location_option  += '<option value="' + location[0] + '">' + location[1] + '</option>';
+        });
+
+        let doctor_option = '<option value="">All</option>';
+        Object.entries(doctors).forEach(function (doctor) {
+            doctor_option  += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
+        });
+
+        let gender_option = '<option value="">All</option>';
+        Object.entries(genders).forEach(function (gender) {
+            gender_option  += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
+        });
+
+        $("#edit_consultancy_type").html(type_option).val(appointment.consultancy_type);
+        $("#edit_treatment").html(service_option).val(appointment.service_id);
+        $("#edit_city").html(city_option).val(appointment.city_id);
+        $("#edit_location").html(location_option).val(appointment.location_id);
+        $("#edit_doctor").html(doctor_option).val(appointment.doctor_id);
+        $("#edit_gender_id").html(gender_option).val(appointment.patient.gender);
+
+        $("#edit_scheduled_date").val(appointment.scheduled_date);
+        $("#scheduled_date_old").val(appointment.scheduled_date);
+        $("#edit_scheduled_time").val(appointment.scheduled_time);
+        $("#scheduled_time_old").val(appointment.scheduled_time);
+        $("#edit_patient_name").val(appointment.patient.name);
+        $("#edit_patient_phone").val(appointment.patient.phone);
+        $("#back-date").val(back_date_config.data);
+        $("#old_phone").val(appointment?.lead?.patient?.phone);
+        $("#lead_id").val(appointment?.lead_id);
+        $("#appointment_id").val(appointment?.id);
+        $("#resourceRotaDayID").val(resourceHadRotaDay?.id);
+        $("#start_time").val(resourceHadRotaDay?.start_time);
+        $("#end_time").val(resourceHadRotaDay?.end_time);
+
+
+    } catch (error) {
+       showException(error);
+    }
 
 }
+
+let loadLocations = function (cityId) {
+    if(cityId != '') {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_locations'),
+            type: 'POST',
+            data: {
+                city_id: cityId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Location</option>';
+
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+
+                    $('#edit_location').html(dropdown_options);
+                    $('.select2').select2({ width: '100%' });
+                    resetDoctors();
+                } else {
+                    resetDropdowns();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDropdowns();
+            }
+        });
+    } else {
+        resetDropdowns();
+    }
+}
+
+let loadDoctors = function (locationId) {
+
+    if (locationId != '' && locationId != null) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_doctors'),
+            type: 'POST',
+            data: {
+                location_id: locationId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Doctor</option>';
+
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+
+                    $('#edit_doctor').html(dropdown_options);
+
+                    $('.select2').select2({ width: '100%' });
+                } else {
+                    resetDoctors();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDoctors();
+            }
+        });
+    } else {
+        resetDoctors();
+    }
+
+}
+
+var loadScheduledTime = '<input id="edit_scheduled_time" readonly="true" name="scheduled_time" class="form-control" type="text" class="required" placeholder="Schedule Time">';
+
+let doctorListener = function (doctorId) {
+
+    var scheduled_date = $('#edit_scheduled_date').val();
+
+    if (
+        (doctorId != '' && doctorId != null) &&
+        (scheduled_date != '' && scheduled_date != null)
+    ) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_doctor_rota'),
+            type: 'POST',
+            data: {
+                location_id: $('#edit_location').val(),
+                doctor_id: doctorId,
+                scheduled_date: scheduled_date,
+                appointment_id: $('#appointment_id').val(),
+                resourceRotaDayID: $('#resourceRotaDayID').val(),
+                form: 'EditFormValidation',
+                idPrefix: 'consultancty_'
+            },
+            cache: false,
+            success: function(response) {
+
+                if(response.status) {
+                    if(
+                        (response.resource_has_rota_day.start_time != '' && response.resource_has_rota_day.start_time != null) &&
+                        (response.resource_has_rota_day.end_time != '' && response.resource_has_rota_day.end_time != null)
+                    ) {
+                        resetScheduledTime();
+                        if(response.resource_has_rota_day.start_off){
+                            $('#edit_scheduled_time').val(response.selected);
+                            loadScheduledTime(response.resource_has_rota_day.start_time, response.resource_has_rota_day.end_time,response.resource_has_rota_day.start_off,response.resource_has_rota_day.end_off);
+                        } else {
+                            $('#edit_scheduled_time').val(response.selected);
+                            loadScheduledTime(response.resource_has_rota_day.start_time, response.resource_has_rota_day.end_time,false,false);
+                        }
+
+
+                    } else {
+                        $('#rotaError').show();
+                        resetScheduledTime();
+                    }
+                } else {
+                    resetScheduledTime();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetScheduledTime();
+            }
+        });
+    } else {
+        resetScheduledTime();
+    }
+}
+
+
+var resetScheduledTime = function () {
+   // $('#edit_scheduled_time').html(loadScheduledTime);
+}
+
+let resetDoctors = function () {
+    var doctorDropdown = '<select id="doctor_id" class="form-control select2 required" name="doctor_id"><option value="" selected="selected">Select a Doctor</option></select>';
+    $('#convert_doctor_id').html(doctorDropdown);
+    $('.select2').select2({ width: '100%' });
+}
+
 
 function viewSmsLogs($route) {
 
@@ -630,17 +836,47 @@ function setSmsLogs(response) {
     try {
 
         let SMSLogs = response.data.SMSLogs;
+        let sms_statuses = response.data.sms_statuses;
+
+        let statuses =  makeArray(sms_statuses);
+
         let rows = noRecordFoundTable(6);
-        //if (SMSLogs.length) {
+
         if (SMSLogs) {
 
-            Object.values(SMSLogs).forEach(function (value, index) {
-                rows = '<tr>';
-                rows += '<td>'+value.to+'</td>';
-                rows += '<td>'+value.text+'</td>';
-                rows += '<td>'+value.log_type+'</td>';
-                rows += '<td>'+formatDate(value.created_at)+'</td>';
+            Object.values(SMSLogs).forEach(function (smsLog, index) {
+
+                if(smsLog.invoice_id === null) {
+                    rows = '<tr>';
+                    rows += '<td>' + smsLog.to + '</td>';
+                    rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
+                    rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
+                    rows += '<span class="full_text" style="display: none; text-underline: none;">' + smsLog.text + '</span>';
+                        '</a></td>';
+
+                if(smsLog.status) {
+                    rows += '<td id="smsRow{'+smsLog.id+'">Yes</td>';
+                } else {
+                    rows += '<td><span class="text-center" id="spanRow'+smsLog.id+'">No</span>\
+                    <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+');" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
+                    '<i class="la la-send-o"></i></a></td>';
+                }
+
+                if(smsLog.is_refund == "Yes") {
+                    rows += '<td>smsLog.is_refund</td>';
+                } else {
+                    rows += '<td></td>';
+                }
+
+                if (typeof statuses[smsLog.log_type] !== 'undefined') {
+                    rows += '<td>'+statuses[smsLog.log_type]+'</td>';
+                } else {
+                    rows += '<td>N/A</td>';
+                }
+
+                rows += '<td>' + formatDate(smsLog.created_at) + '</td>';
                 rows += '</tr>';
+                }
             });
         }
 
@@ -650,6 +886,38 @@ function setSmsLogs(response) {
         showException(error);
     }
 
+}
+
+function toggleText($this) {
+    $this.find(".full_text").toggle();
+    $this.find(".short_text").toggle();
+}
+
+function resendSMS(smsId) {
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.resend_sms'),
+        type: "PUT",
+        data: {
+            id: smsId
+        },
+        cache: false,
+        success: function (response) {
+            if (response.status) {
+                $('#spanRow' + smsId).text('Yes');
+                $('#clickRow' + smsId).hide();
+                toastr.success(response.message)
+            } else {
+                $('#clickRow' + smsId).show();
+                $('#spanRow' + smsId).text('No');
+                toastr.error(response.message)
+            }
+            hideSpinnerRestForm();
+        }
+    });
 }
 
 

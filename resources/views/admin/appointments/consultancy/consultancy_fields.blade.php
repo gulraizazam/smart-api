@@ -7,7 +7,7 @@
 <input type="hidden" id="old_phone" name="old_phone" value="{{$appointment->lead->patient->phone}}">
 @if($setting->data == '1')
     <div class="row">
-        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 form-group">
+        <div class="col-lg-12 col-mdf-12 col-sm-12 col-xs-12 form-group">
             {!! Form::label('consultancy_type', 'Consultancy Type*', ['class' => 'control-label']) !!}
             {!! Form::select('consultancy_type', array('' => 'Select Consultancy Type') + Config::get("constants.consultancy_type_array"),$appointment->consultancy_type,['id' => 'consultancy_type_select', 'class' => 'form-control ']) !!}
         </div>

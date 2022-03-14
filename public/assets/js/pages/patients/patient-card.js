@@ -34,7 +34,7 @@ function getPatient() {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.patients.getPatient', {id: patient_id}),
+        url: route('admin.patients.getPatient', {id: patientCardID}),
         type: "GET",
         cache: false,
         success: function (response) {
