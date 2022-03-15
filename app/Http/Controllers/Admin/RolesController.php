@@ -651,7 +651,7 @@ class RolesController extends Controller
      *
      * @param  \Illuminate\Http\Request $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -668,11 +668,12 @@ class RolesController extends Controller
         $role = Role::findOrFail($id);
         $role->update($request->except('permission'));
         $permissions = $request->input('permission') ? $request->input('permission') : [];
+
         $role->syncPermissions($permissions);
 
         session()->flash('success', 'Record has been updated successfully.');
 
-        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+        return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
 
 

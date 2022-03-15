@@ -392,7 +392,7 @@ class Appointments extends Model
         }
 
         if ($request->get('start')) {
-            $where[] = ['scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d')];
+         //   $where[] = ['scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d')];
         }
 
         if ($request->get('location_id')) {

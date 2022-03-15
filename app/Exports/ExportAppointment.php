@@ -25,7 +25,7 @@ class ExportAppointment implements FromCollection, WithHeadings, WithMapping, Wi
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })->whereIn('appointments.city_id', ACL::getUserCities())
-            ->whereIn('appointments.location_id', ACL::getUserCentres())->limit(20)->get();
+            ->whereIn('appointments.location_id', ACL::getUserCentres())->limit(50)->get();
     }
 
     public function headings(): array
