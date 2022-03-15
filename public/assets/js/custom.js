@@ -647,3 +647,23 @@ function makePhoneNumber(phoneNo, permission, type = 0) {
         }
     }
 }
+
+function setQueryStringParameter(name, value = null) {
+    const params = new URLSearchParams(window.location.search);
+    if (value) {
+        params.set(name, value);
+    } else {
+        params.delete(name);
+    }
+    window.history.replaceState({}, "", decodeURIComponent(`${window.location.pathname}?${params}`));
+}
+
+function get_query(){
+    var url = document.location.href;
+    var qs = url.substring(url.indexOf('?') + 1).split('&');
+    for(var i = 0, result = {}; i < qs.length; i++){
+        qs[i] = qs[i].split('=');
+        result[qs[i][0]] = decodeURIComponent(qs[i][1]);
+    }
+    return result;
+}

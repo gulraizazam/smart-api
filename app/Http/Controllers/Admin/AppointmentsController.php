@@ -3123,8 +3123,14 @@
 
 						$dutation = explode(':', $appointment->service->duration);
 
-						$data[$appointment->id] = array(
-							'id' => $appointment->id,
+						$data[] = [
+
+						    'title' => 'All Day Event',
+                            'start' => '2022-03'.'-16',
+                            'description' => 'Toto lorem ipsum dolor sit incid idunt ut',
+                            'className' => "fc-event-danger fc-event-solid-warning"
+
+							/*'id' => $appointment->id,
 							'service' => $appointment->service->name,
 							'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
 							'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
@@ -3135,16 +3141,28 @@
 							'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
 							'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
 							'color' => $appointment->service->color,
-							'resourceId' => $appointment->doctor_id,
-						);
+							'resourceId' => $appointment->doctor_id,*/
+						];
+
+						$data[] = [
+                            'title'=> 'ICT Expo 2017 - Product Release',
+                            'start'=> '2022-03-18',
+                            'description'=> 'Lorem ipsum dolor sit tempor inci',
+                            'end'=> '2022-03-19',
+                            'className' => "fc-event-light fc-event-solid-primary"
+                        ];
+
+						$data[] = [
+                            'title'=> 'Meeting',
+                            'start'=> '2022-03-15T14:30:00',
+                            'className'=> "fc-event-warning",
+                            'description'=> 'Lorem ipsum conse ctetur adipi scing'
+                        ];
+
+						break;
 					}
 
-					return response()->json(array(
-						'status' => 1,
-						'events' => $data,
-						'min_time' => $minTime,
-						"rotas" => $doctor_rotas
-					));
+					return response()->json($data);
 				} else {
 					return response()->json(array(
 						'status' => 0,

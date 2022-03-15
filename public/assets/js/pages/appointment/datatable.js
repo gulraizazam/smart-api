@@ -210,6 +210,7 @@ const extraValidate = {
         }
     },
 };
+
 let loadChildStatuses = function (appointmentStatusId) {
 
     statusValidate.addField('reason', extraValidate);
@@ -290,7 +291,7 @@ var resetReason = function () {
 var resetChildStatuses = function () {
     $('.appointment_status_id').hide();
     $('#appointment_status_id').val('');
-    statusValidate.removeField('appointment_status_id', '');
+    //statusValidate.removeField('appointment_status_id', '');
 }
 
 let statusListener = function (appointmentStatusId) {
@@ -656,7 +657,14 @@ function setEditData(response) {
 
 }
 
-let loadLocations = function (cityId) {
+let loadLocations = function (cityId, appointment = null) {
+
+    /*if (appointment) {
+        setQueryStringParameter('city_id');
+        setQueryStringParameter('location_id');
+        setQueryStringParameter('doctor_id');
+    }*/
+
     if(cityId != '') {
         $.ajax({
             headers: {
@@ -678,7 +686,12 @@ let loadLocations = function (cityId) {
                         dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                     });
 
-                    $('#edit_location').html(dropdown_options);
+                    if (appointment && appointment == 'consultancy') {
+                        $('#consultancy_centre_filter').html(dropdown_options);
+                        setQueryStringParameter('city_id', cityId);
+                    } else {
+                        $('#edit_location').html(dropdown_options);
+                    }
                     $('.select2').select2({ width: '100%' });
                     resetDoctors();
                 } else {
@@ -694,9 +707,14 @@ let loadLocations = function (cityId) {
     }
 }
 
-let loadDoctors = function (locationId) {
+let loadDoctors = function (locationId, appointment = null) {
 
     if (locationId != '' && locationId != null) {
+
+        if (appointment) {
+            setQueryStringParameter('location_id');
+        }
+
         $.ajax({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -717,7 +735,12 @@ let loadDoctors = function (locationId) {
                         dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                     });
 
-                    $('#edit_doctor').html(dropdown_options);
+                    if (appointment && appointment == 'consultancy') {
+                        $('#consultancy_doctor_filter').html(dropdown_options);
+                        setQueryStringParameter('location_id', locationId);
+                    } else {
+                        $('#edit_doctor').html(dropdown_options);
+                    }
 
                     $('.select2').select2({ width: '100%' });
                 } else {
@@ -1064,6 +1087,10 @@ function setFilters(filter_values, active_filters) {
         $("#appoint_search_region").val(active_filters.region_id);
         $("#appoint_search_service").val(active_filters.service_id);
         $("#appoint_search_consultancy_type").val(active_filters.consultancy_type);
+
+        /*For Consultancy filter*/
+        $("#consultancy_city_filter").html(city_options);
+        $("#treatment_city_filter").html(city_options);
 
     } catch (error) {
         showException(error);

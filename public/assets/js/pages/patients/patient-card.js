@@ -10,16 +10,6 @@ jQuery(document).ready(function () {
     activeFirstTab(result.tab);
 });
 
-function get_query(){
-    var url = document.location.href;
-    var qs = url.substring(url.indexOf('?') + 1).split('&');
-    for(var i = 0, result = {}; i < qs.length; i++){
-        qs[i] = qs[i].split('=');
-        result[qs[i][0]] = decodeURIComponent(qs[i][1]);
-    }
-    return result;
-}
-
 function activeFirstTab(tab) {
 
     if (typeof tab === 'undefined' || tab === 'personal_info') {
@@ -124,12 +114,6 @@ function changeProfilePage($this, page_id) {
 
     loadDataTable(page_id, loadScript);
 
-}
-
-function setQueryStringParameter(name, value) {
-    const params = new URLSearchParams(window.location.search);
-    params.set(name, value);
-    window.history.replaceState({}, "", decodeURIComponent(`${window.location.pathname}?${params}`));
 }
 
 function loadDataTable(page_id, loadScript = true) {

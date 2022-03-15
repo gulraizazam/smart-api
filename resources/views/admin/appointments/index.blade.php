@@ -2,6 +2,9 @@
 
 @section('content')
 
+    @push('css')
+        <link href="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.css')}}" rel="stylesheet" type="text/css" />
+    @endpush
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
@@ -33,7 +36,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Appointments</h3>
+                            <h3 class="card-label change-label">Appointments</h3>
 
                         </div>
 
@@ -48,19 +51,19 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('appointments_create'))
-                                <a href="javascript:void(0);" onclick="createPatient('{{ route('admin.patients.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_patients">
-                                    <i class="la la-plus"></i>
-                                    Add New
+                            <div class="delete-records export-appointments">
+                                <a href="{{route('admin.appointments.export')}}" class="btn btn-primary font-weight-bolder">
+                                    <i class="la la-file-export"></i> Export
                                 </a>
-                            @endif
+                            </div>
 
                         <!--end::Button-->
                         </div>
 
                     </div>
 
-                    <div class="card-body">
+                    <!--Start Appointment Section-->
+                    <div class="card-body appointment appointment-section">
                         <!--begin::Search Form-->
                         @include('admin.appointments.filters', ['custom_reset' => 'custom_reset'])
                         <!--end::Search Form-->
@@ -69,8 +72,28 @@
                         <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
                         <!--end: Datatable-->
                     </div>
+                    <!--End Appointment Section-->
+
+                    <!--Start Consultancy Section-->
+                    <div class="card-body appointment consultancy-section d-none">
+
+                        @include('admin.appointments.consultancy.filters')
+
+                        <div id="kt_calendar"></div>
+
+                    </div>
+
+                    <!--End Consultancy Section-->
+
+                    <!--Start Treatment Section-->
+                    <div class="card-body appointment treatment-section d-none">
+                        <div class=""><h2>Treatment</h2></div>
+                    </div>
+                    <!--End Treatment Section-->
+
                 </div>
                 <!--end::Card-->
+
             </div>
             <!--end::Container-->
         </div>
@@ -83,6 +106,11 @@
 
 
     @push('js')
+
+        <script src="{{asset('assets/js/pages/appointment/consultancy-calendar.js')}}"></script>
+
+        <script src="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/consultancy-data.js')}}"></script>
 
         <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
 
