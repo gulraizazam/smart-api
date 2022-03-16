@@ -36,6 +36,10 @@ use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
+use App\Http\Controllers\Admin\BrandsController;
+use App\Http\Controllers\Admin\ProductsController;
+use App\Http\Controllers\Admin\OrdersController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -466,6 +470,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::post('appointments/load-doctor-rota', [AppointmentsController::class, 'loadRotaByDoctor'])->name('appointments.load_doctor_rota');
 
+    // Inventory Routes Start
+    Route::post('brands/datatable', [BrandsController::class, 'datatable'])->name('brands.datatable');
+    Route::post('brands', [BrandsController::class, 'store'])->name('brands.store');
+    Route::get('brands/{id}/edit', [BrandsController::class, 'edit'])->name('brands.edit');
+    Route::put('brands/{id}', [BrandsController::class, 'update'])->name('brands.update');
+    Route::delete('brands/{id}', [BrandsController::class, 'destroy'])->name('brands.destroy');
+
+    Route::post('products/datatable', [ProductsController::class, 'datatable'])->name('products.datatable');
 
 });
 
