@@ -6,7 +6,8 @@ var ConsultancyCalendar = function() {
 
     return {
         init: function() {
-
+            var minxTime;
+            var maxTime;
             var todayDate = moment().startOf('day');
             var YM = todayDate.format('YYYY-MM');
             var YESTERDAY = todayDate.clone().subtract(1, 'day').format('YYYY-MM-DD');
@@ -14,6 +15,7 @@ var ConsultancyCalendar = function() {
             var TOMORROW = todayDate.clone().add(1, 'day').format('YYYY-MM-DD');
 
             var calendarEl = document.getElementById('consultancy_calendar');
+
             calendar = new FullCalendar.Calendar(calendarEl, {
                 plugins: [ 'bootstrap', 'interaction', 'dayGrid', 'timeGrid', 'list' ],
                 themeSystem: 'bootstrap',
@@ -30,8 +32,8 @@ var ConsultancyCalendar = function() {
                 slotDuration: '00:05:00',
                 contentHeight: 780,
                 aspectRatio: 3,
-              /*  minTime: "08:00:00",
-                maxTime: "20:00:00",*/
+                //minTime: "09:00:00",
+                //maxTime: "23:00:00",
 
                 nowIndicator: true,
                 now: TODAY,
@@ -69,14 +71,14 @@ var ConsultancyCalendar = function() {
                         },
                         cache: false,
                         success: function(response) {
-                            console.log(response);
                             if (response.status == '1') {
+
                                 if (response.rotas[0].doctor_rotas.length == 0) {
-                                    console.log("hello");
-                                    type = "info";
-                                    message = "Doctor rotas not defined.";
-                                    Utils.notification('info', "Doctor rotas not defined.");
+                                    toastr.error("Doctor rotas not defined.")
                                 }
+
+                                minxTime = response.start_time;
+                                maxTime = response.end_time;
 
                                 var events = [];
                                 //  var currentDate = null;
@@ -187,7 +189,7 @@ var ConsultancyCalendar = function() {
                             callback(events);
                         }
                     });
-                    // $("#calendar").fullCalendar("gotoDate", window.eventData.currentDate);
+
                 },
 
                 eventClick:  function(info, jsEvent, view) {
@@ -214,7 +216,19 @@ var ConsultancyCalendar = function() {
                 }
             });
 
-            calendar.render();
+           setTimeout( function () {
+
+               if (typeof minxTime !== "undefined") {
+                   calendar.setOption('minTime', minxTime);
+               }
+
+               if (typeof maxTime !== "undefined") {
+                   calendar.setOption('maxTime', maxTime);
+               }
+
+            }, 500);
+
+           calendar.render();
         }
     };
 }();

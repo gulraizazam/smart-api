@@ -3109,7 +3109,7 @@
 				$request->get("doctor_id")
 			) {
 				$appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-				$doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"))->toArray();
+				$doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
 				$location_id = $request->get("location_id");
 				$doctor_id = $request->get("doctor_id");
 				$machine_id = $request->get("machine_id");
@@ -3143,7 +3143,9 @@
                         'status' => 1,
                         'events' => $data,
                         'min_time' => $minTime,
-                        "rotas" => $doctor_rotas
+                        "rotas" => $doctor_rotas->toArray(),
+                        'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
+                        'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
                     ));
 				} else {
 					return response()->json(array(
