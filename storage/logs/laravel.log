@@ -5344,3 +5344,15 @@
 #53 /var/www/cutera-upgradation/public/index.php(52): Illuminate\\Foundation\\Http\\Kernel->handle()
 #54 {main}
 "} 
+[2022-03-16 10:56:11] local.ERROR: Trait "Spatie\Permission\Traits\HasRoles" not found {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Trait \"Spatie\\Permission\\Traits\\HasRoles\" not found at /var/www/cutera-upgradation/app/Models/User.php:16)
+[stacktrace]
+#0 {main}
+"} 
+[2022-03-16 10:56:43] local.ERROR: Trait "Spatie\Permission\Traits\HasRoles" not found {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Trait \"Spatie\\Permission\\Traits\\HasRoles\" not found at /var/www/cutera-upgradation/app/Models/User.php:16)
+[stacktrace]
+#0 {main}
+"} 
+[2022-03-16 10:56:55] local.ERROR: Trait "Spatie\Permission\Traits\HasRoles" not found {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Trait \"Spatie\\Permission\\Traits\\HasRoles\" not found at /var/www/cutera-upgradation/app/Models/User.php:16)
+[stacktrace]
+#0 {main}
+"} 
