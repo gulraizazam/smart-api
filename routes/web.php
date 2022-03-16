@@ -45,6 +45,9 @@ use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageController;
 use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\BrandsController;
+use App\Http\Controllers\Admin\ProductsController;
+use App\Http\Controllers\Admin\OrdersController;
 
     /*
     |--------------------------------------------------------------------------
@@ -514,6 +517,17 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
         Route::get('appointments/export', [AppointmentsController::class, 'export'])->name('appointments.export');
 
+         /*Inventory Routes*/
+
+        Route::get('brands',[BrandsController::class,'index'])->name('brands.index');
+
+        Route::get('products',[ProductsController::class,'index'])->name('products.index');
+
+        Route::get('orders',[OrdersController::class,'index'])->name('orders.index');
+
+        Route::get('stocks',[StocksController::class,'index'])->name('stocks.index');
+
+        Route::get('order/refunds',[OrdersController::class,'refund'])->name('order.refunds.index');
 
 
     });

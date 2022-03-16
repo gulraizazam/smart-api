@@ -781,7 +781,7 @@
 
                      <!-- Inventory menu -->
 
-                     @if(Gate::allows('inventory_manage'))
+                     
 
                         <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
 
@@ -795,33 +795,58 @@
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
                                 <ul class="menu-subnav">
-                                    @can('brand_manage')
-                                        <li class="menu-item {{activeMenu('admin.appointments.index')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.appointments.index')}}" class="menu-link">
+                                   
+                                        <li class="menu-item {{activeMenu('admin.brands.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.brands.index')}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
                                                 </i>
                                                 <span class="menu-text">Brand</span>
                                             </a>
                                         </li>
-                                    @endcan
-                                    @can('product_manage')
-                                        <li class="menu-item {{activeMenu('admin.appointments.index')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.appointments.index')}}" class="menu-link">
+                                   
+                                        <li class="menu-item {{activeMenu('admin.products.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.products.index')}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
                                                 </i>
                                                 <span class="menu-text">Product</span>
                                             </a>
                                         </li>
-                                    @endcan
+                                        <li class="menu-item {{activeMenu('admin.orders.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.orders.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Order</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="menu-item {{activeMenu('admin.stocks.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.stocks.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Stock</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="menu-item {{activeMenu('admin.order.refunds.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.order.refunds.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Refund</span>
+                                            </a>
+                                        </li>
+                                    
 
                                 </ul>
                             </div>
 
                         </li>
 
-                    @endif
+                   
 
                     <!-- End Inventory menu -->
 
