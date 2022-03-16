@@ -35,8 +35,8 @@
                                 <!--end::Avatar-->
                                 <!--begin::Username-->
                                 <div class="d-flex flex-column">
-                                    <div class="fw-bolder d-flex align-items-center fs-5">Super Admin</div>
-                                    <a href="#" class="fw-bold text-muted text-hover-primary fs-7">admin@admin.com</a>
+                                    <div class="fw-bolder d-flex align-items-center fs-5">{{auth()->check() ? auth()->user()->name : ''}}</div>
+                                    <a href="#" class="fw-bold text-muted text-hover-primary fs-7">{{auth()->check() ? auth()->user()->email : ''}}</a>
                                 </div>
                                 <!--end::Username-->
                             </div>

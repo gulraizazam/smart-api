@@ -3145,18 +3145,26 @@
 						];
 
 						$data[] = [
-                            'title'=> 'ICT Expo 2017 - Product Release',
-                            'start'=> '2022-03-18',
-                            'description'=> 'Lorem ipsum dolor sit tempor inci',
-                            'end'=> '2022-03-19',
-                            'className' => "fc-event-light fc-event-solid-primary"
-                        ];
-
-						$data[] = [
                             'title'=> 'Meeting',
                             'start'=> '2022-03-15T14:30:00',
                             'className'=> "fc-event-warning",
                             'description'=> 'Lorem ipsum conse ctetur adipi scing'
+                        ];
+
+						$data[] = [
+                            'id' => '1',
+                            'title' => "Name : K  Service: Skin  Created By: Ahsan", // use the element's text as the event title
+                            'description' => "Name : Kashif Service:  Skin Treatment Created By: Ahsan",
+                            'duration' => 15, // use the element's text as the event title
+                            'editable'=> true, // use the element's text as the event title,
+                            'color'=> "#000000", // use the element's text as the event title
+                            'resourceId'=> '324',
+                            'start'=> '2022-03-17T14:30:00',
+                            'end'=> '2022-03-17T19:30:00',
+                            'durationEditable'=> true,
+                            'eventDurationEditable'=> true,
+                            'overlap'=> true,
+                            'constraint'=> 'availableForMeeting', // defined below
                         ];
 
 						break;

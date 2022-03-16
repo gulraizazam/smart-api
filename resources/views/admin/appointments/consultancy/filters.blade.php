@@ -4,12 +4,12 @@
 
         <div class="col-lg-4 mb-lg-0 mb-6">
             <label>City:</label>
-            <select onchange="loadLocations($(this).val(), 'consultancy')" class="form-control select2" id="consultancy_city_filter"></select>
+            <select onchange="loadLocations($(this).val(), 'consultancy');" class="form-control select2" id="consultancy_city_filter"></select>
         </div>
 
         <div class="col-lg-4 mb-lg-0 mb-6">
             <label>Centre:</label>
-            <select onchange="loadDoctors($(this).val(), 'consultancy');" class="form-control select2" id="consultancy_centre_filter"></select>
+            <select onchange="loadDoctors($(this).val(), 'consultancy');" class="form-control select2" id="consultancy_location_filter"></select>
         </div>
 
         <div class="col-lg-4 mb-lg-0 mb-6">
