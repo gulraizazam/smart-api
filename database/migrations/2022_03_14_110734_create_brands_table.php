@@ -15,9 +15,11 @@ class CreateBrandsTable extends Migration
     {
         Schema::create('brands', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('account_id');
             $table->string('name');
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
+            $table->foreign('account_id')->references('id')->on('accounts');
         });
     }
 
