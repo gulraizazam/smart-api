@@ -5,14 +5,15 @@ var calendar;
 var ConsultancyCalendar = function() {
 
     return {
-        init: function() {
+        init: function(events) {
+
             var todayDate = moment().startOf('day');
             var YM = todayDate.format('YYYY-MM');
             var YESTERDAY = todayDate.clone().subtract(1, 'day').format('YYYY-MM-DD');
             var TODAY = todayDate.format('YYYY-MM-DD');
             var TOMORROW = todayDate.clone().add(1, 'day').format('YYYY-MM-DD');
 
-            var calendarEl = document.getElementById('kt_calendar');
+            var calendarEl = document.getElementById('consultancy_calendar');
             calendar = new FullCalendar.Calendar(calendarEl, {
                 plugins: [ 'bootstrap', 'interaction', 'dayGrid', 'timeGrid', 'list' ],
                 themeSystem: 'bootstrap',
@@ -44,109 +45,143 @@ var ConsultancyCalendar = function() {
                 editable: true,
                 eventLimit: true,
                 navLinks: true,
-                /*events: [
-                    {
-                        title: 'All Day Event',
-                        start: YM + '-01',
-                        description: 'Toto lorem ipsum dolor sit incid idunt ut',
-                        className: "fc-event-danger fc-event-solid-warning"
-                    },
-                    {
-                        title: 'Reporting',
-                        start: YM + '-14T13:30:00',
-                        description: 'Lorem ipsum dolor incid idunt ut labore',
-                        end: YM + '-14',
-                        className: "fc-event-success"
-                    },
-                    {
-                        title: 'Company Trip',
-                        start: YM + '-02',
-                        description: 'Lorem ipsum dolor sit tempor incid',
-                        end: YM + '-03',
-                        className: "fc-event-primary"
-                    },
-                    {
-                        title: 'ICT Expo 2017 - Product Release',
-                        start: YM + '-03',
-                        description: 'Lorem ipsum dolor sit tempor inci',
-                        end: YM + '-05',
-                        className: "fc-event-light fc-event-solid-primary"
-                    },
-                    {
-                        title: 'Dinner',
-                        start: YM + '-12',
-                        description: 'Lorem ipsum dolor sit amet, conse ctetur',
-                        end: YM + '-10'
-                    },
-                    {
-                        id: 999,
-                        title: 'Repeating Event',
-                        start: YM + '-09T16:00:00',
-                        description: 'Lorem ipsum dolor sit ncididunt ut labore',
-                        className: "fc-event-danger"
-                    },
-                    {
-                        id: 1000,
-                        title: 'Repeating Event',
-                        description: 'Lorem ipsum dolor sit amet, labore',
-                        start: YM + '-16T16:00:00'
-                    },
-                    {
-                        title: 'Conference',
-                        start: YESTERDAY,
-                        end: TOMORROW,
-                        description: 'Lorem ipsum dolor eius mod tempor labore',
-                        className: "fc-event-primary"
-                    },
-                    {
-                        title: 'Meeting',
-                        start: TODAY + 'T10:30:00',
-                        end: TODAY + 'T12:30:00',
-                        description: 'Lorem ipsum dolor eiu idunt ut labore'
-                    },
-                    {
-                        title: 'Lunch',
-                        start: TODAY + 'T12:00:00',
-                        className: "fc-event-info",
-                        description: 'Lorem ipsum dolor sit amet, ut labore'
-                    },
-                    {
-                        title: 'Meeting',
-                        start: TODAY + 'T14:30:00',
-                        className: "fc-event-warning",
-                        description: 'Lorem ipsum conse ctetur adipi scing'
-                    },
-                    {
-                        title: 'Happy Hour',
-                        start: TODAY + 'T17:30:00',
-                        className: "fc-event-info",
-                        description: 'Lorem ipsum dolor sit amet, conse ctetur'
-                    },
-                    {
-                        title: 'Dinner',
-                        start: TOMORROW + 'T05:00:00',
-                        className: "fc-event-solid-danger fc-event-light",
-                        description: 'Lorem ipsum dolor sit ctetur adipi scing'
-                    },
-                    {
-                        title: 'Birthday Party',
-                        start: TOMORROW + 'T07:00:00',
-                        className: "fc-event-primary",
-                        description: 'Lorem ipsum dolor sit amet, scing'
-                    },
-                    {
-                        title: 'Click for Google',
-                        url: 'http://google.com/',
-                        start: YM + '-28',
-                        className: "fc-event-solid-info fc-event-light",
-                        description: 'Lorem ipsum dolor sit amet, labore'
-                    }
-                ],*/
-                events: route('admin.appointments.load_scheduled_appointments', {
-                    city_id : $("#consultancy_city_filter").val(),
-                    doctor_id : $("#consultancy_doctor_filter").val(),
-                    location_id : $("#consultancy_centre_filter").val(),
-                }),
+               // events: events,
+                events: function(event) {
+
+                    $.ajax({
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        url: route('admin.appointments.load_scheduled_appointments'),
+                        type: 'GET',
+                        data: {
+                            city_id: $('#consultancy_city_filter').val(),
+                            location_id: $('#consultancy_location_filter').val(),
+                            doctor_id: $('#consultancy_doctor_filter').val(),
+                            start: formatDate(event.start, 'YYYY-MM-DDTHH:mm:ss'),
+                            end: formatDate(event.end, 'YYYY-MM-DDTHH:mm:ss'),
+                        },
+                        cache: false,
+                        success: function(response) {
+                            console.log(response);
+                            if (response.status == '1') {
+                                if (response.rotas[0].doctor_rotas.length == 0) {
+                                    console.log("hello");
+                                    type = "info";
+                                    message = "Doctor rotas not defined.";
+                                    Utils.notification('info', "Doctor rotas not defined.");
+                                }
+
+                                var events = [];
+                                //  var currentDate = null;
+                                $.each(response.events, function(id, appointmentObj) {
+                                    if (appointmentObj.id == window.eventData.id && window.eventData.firstTime == true) {
+                                        events.push({
+                                            id: appointmentObj.id,
+                                            title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
+                                            description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
+                                            duration: appointmentObj.duration, // use the element's text as the event title
+                                            editable: appointmentObj.editable, // use the element's text as the event title,
+                                            color: "#000000", // use the element's text as the event title
+                                            resourceId: appointmentObj.resourceId,
+                                            start: appointmentObj.start,
+                                            end: appointmentObj.end,
+                                            durationEditable: false,
+                                            eventDurationEditable: false,
+                                            overlap: true,
+                                            constraint: 'availableForMeeting', // defined below
+                                        });
+                                        var date = moment(appointmentObj.start, "YYYY-MM-DD");
+                                       // $("#calendar").fullCalendar('gotoDate', date);
+                                        window.eventData.firstTime = false;
+                                    } else if (appointmentObj.id == window.eventData.id && window.eventData.firstTime == false) {
+                                        events.push({
+                                            id: appointmentObj.id,
+                                            title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
+                                            description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
+                                            duration: appointmentObj.duration, // use the element's text as the event title
+                                            editable: appointmentObj.editable, // use the element's text as the event title,
+                                            color: "#000000", // use the element's text as the event title
+                                            resourceId: appointmentObj.resourceId,
+                                            start: appointmentObj.start,
+                                            end: appointmentObj.end,
+                                            durationEditable: false,
+                                            eventDurationEditable: false,
+                                            overlap: true,
+                                            constraint: 'availableForMeeting', // defined below
+                                        });
+                                    } else {
+
+                                        events.push({
+                                            id: appointmentObj.id,
+                                            title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
+                                            description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
+                                            duration: appointmentObj.duration, // use the element's text as the event title
+                                            editable: appointmentObj.editable, // use the element's text as the event title,
+                                            color: appointmentObj.color, // use the element's text as the event title
+                                            resourceId: appointmentObj.resourceId,
+                                            start: appointmentObj.start,
+                                            end: appointmentObj.end,
+                                            durationEditable: false,
+                                            eventDurationEditable: false,
+                                            overlap: true,
+                                            constraint: 'availableForMeeting', // defined below
+                                        });
+
+                                        if (window.eventData.createdId == appointmentObj.id) {
+                                            console.log("moving to that date " + window.eventData.createdId + " dand date : " + appointmentObj.start);
+                                            var date = moment(appointmentObj.start, "YYYY-MM-DD");
+                                         //   $("#calendar").fullCalendar('gotoDate', date);
+                                            window.eventData.createdId = null;
+                                        }
+                                    }
+                                });
+
+                                $.each(response.rotas[0].doctor_rotas, function(id, rota) {
+                                    if (rota.active == '1') {
+                                        /**
+                                         * Case 1: All times are added
+                                         */
+                                        if (rota.start_time && rota.start_off) {
+                                            events.push({
+                                                id: 'availableForMeeting',
+                                                start: $.fullCalendar.moment(rota.date + " " + rota.start_time, 'YYYY-MM-DD HH:mm a').stripZone().format(),
+                                                end: $.fullCalendar.moment(rota.date + " " + rota.start_off, 'YYYY-MM-DD HH:mm a').stripZone().format(),
+                                                resourceId: $('#doctor_id').val(),
+                                                rendering: 'background'
+                                            });
+                                            events.push({
+                                                id: 'availableForMeeting',
+                                                start: $.fullCalendar.moment(rota.date + " " + rota.end_off, 'YYYY-MM-DD HH:mm a').stripZone().format(),
+                                                end: $.fullCalendar.moment(rota.date + " " + rota.end_time, 'YYYY-MM-DD HH:mm a').stripZone().format(),
+                                                resourceId: $('#doctor_id').val(),
+                                                rendering: 'background'
+                                            });
+                                        } else if (rota.start_time && !rota.start_off) {
+                                            events.push({
+                                                id: 'availableForMeeting',
+                                                start: $.fullCalendar.moment(rota.date + " " + rota.start_time, 'YYYY-MM-DD HH:mm a').stripZone().format(),
+                                                end: $.fullCalendar.moment(rota.date + " " + rota.end_time, 'YYYY-MM-DD HH:mm a').stripZone().format(),
+                                                resourceId: $('#doctor_id').val(),
+                                                rendering: 'background'
+                                            });
+                                        }
+                                    }
+                                });
+
+                                callback(events);
+                            } else {
+                                var events = [];
+                                callback(events);
+                            }
+                        },
+                        error: function(xhr, ajaxOptions, thrownError) {
+                            var events = [];
+                            callback(events);
+                        }
+                    });
+                    // $("#calendar").fullCalendar("gotoDate", window.eventData.currentDate);
+                },
 
                 eventClick:  function(info, jsEvent, view) {
                     clickEvent(info, jsEvent, view)

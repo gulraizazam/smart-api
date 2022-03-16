@@ -79,7 +79,7 @@
 
                         @include('admin.appointments.consultancy.filters')
 
-                        <div id="kt_calendar"></div>
+                        <div id="consultancy_calendar"></div>
 
                     </div>
 
