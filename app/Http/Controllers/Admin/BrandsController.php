@@ -29,12 +29,10 @@ class BrandsController extends Controller
      */
     public function index()
     {
-        $filters = Filters::all(Auth::User()->id, 'brands');
-
-        return view('admin.brands.index', compact('filters'));
+        return view('admin.brands.index');
     }
 
-        /**
+    /**
      * Display a listing of brands
      *
      * @param Request $request
@@ -49,9 +47,21 @@ class BrandsController extends Controller
             
             if(isset($request->input('query')['search'])){
                 $apply_filter = $request->input('query')['search'];
+                if (isset($apply_filter['delete'])) {
+                    $ids = explode(',', $apply_filter['delete']);
+                    $brands = Brand::getBulkData($ids);
+                    if ($brands) {
+                        foreach ($brands as $brand) {
+                            $brand->delete();
+                        }
+                    }
+                    $records['status'] = true;
+                    $records['message'] = 'Records has been deleted successfully!';
+                }
             }else{
                 $apply_filter = false;
             }
+            
             // Get Total Records
             $iTotalRecords = Brand::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
             list($orderBy, $order) = getSortBy($request);
