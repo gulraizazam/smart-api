@@ -5,7 +5,7 @@ var calendar;
 var ConsultancyCalendar = function() {
 
     return {
-        init: function(events) {
+        init: function() {
 
             var todayDate = moment().startOf('day');
             var YM = todayDate.format('YYYY-MM');
@@ -27,8 +27,11 @@ var ConsultancyCalendar = function() {
                 },
 
                 height: 800,
+                slotDuration: '00:05:00',
                 contentHeight: 780,
                 aspectRatio: 3,
+              /*  minTime: "08:00:00",
+                maxTime: "20:00:00",*/
 
                 nowIndicator: true,
                 now: TODAY,
@@ -45,8 +48,11 @@ var ConsultancyCalendar = function() {
                 editable: true,
                 eventLimit: true,
                 navLinks: true,
-               // events: events,
-                events: function(event) {
+                droppable: true,
+                setEventId: function(eventId) {
+                    window.eventData.createdId = eventId;
+                },
+                events: function(event, callback) {
 
                     $.ajax({
                         headers: {
@@ -138,6 +144,7 @@ var ConsultancyCalendar = function() {
                                 });
 
                                 $.each(response.rotas[0].doctor_rotas, function(id, rota) {
+
                                     if (rota.active == '1') {
                                         /**
                                          * Case 1: All times are added
@@ -145,24 +152,24 @@ var ConsultancyCalendar = function() {
                                         if (rota.start_time && rota.start_off) {
                                             events.push({
                                                 id: 'availableForMeeting',
-                                                start: $.fullCalendar.moment(rota.date + " " + rota.start_time, 'YYYY-MM-DD HH:mm a').stripZone().format(),
-                                                end: $.fullCalendar.moment(rota.date + " " + rota.start_off, 'YYYY-MM-DD HH:mm a').stripZone().format(),
-                                                resourceId: $('#doctor_id').val(),
+                                                start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                                end: formatDate(rota.date + " " + rota.start_off, 'YYYY-MM-DDTHH:mm:ss'),
+                                                resourceId: $('#consultancy_doctor_filter').val(),
                                                 rendering: 'background'
                                             });
                                             events.push({
                                                 id: 'availableForMeeting',
-                                                start: $.fullCalendar.moment(rota.date + " " + rota.end_off, 'YYYY-MM-DD HH:mm a').stripZone().format(),
-                                                end: $.fullCalendar.moment(rota.date + " " + rota.end_time, 'YYYY-MM-DD HH:mm a').stripZone().format(),
-                                                resourceId: $('#doctor_id').val(),
+                                                start: formatDate(rota.date + " " + rota.end_off, 'YYYY-MM-DDTHH:mm:ss'),
+                                                end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                                resourceId: $('#consultancy_doctor_filter').val(),
                                                 rendering: 'background'
                                             });
                                         } else if (rota.start_time && !rota.start_off) {
                                             events.push({
                                                 id: 'availableForMeeting',
-                                                start: $.fullCalendar.moment(rota.date + " " + rota.start_time, 'YYYY-MM-DD HH:mm a').stripZone().format(),
-                                                end: $.fullCalendar.moment(rota.date + " " + rota.end_time, 'YYYY-MM-DD HH:mm a').stripZone().format(),
-                                                resourceId: $('#doctor_id').val(),
+                                                start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                                end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                                resourceId: $('#consultancy_doctor_filter').val(),
                                                 rendering: 'background'
                                             });
                                         }
@@ -190,6 +197,8 @@ var ConsultancyCalendar = function() {
                 eventRender: function(info) {
 
                     var element = $(info.el);
+                    let title = element.find('.fc-title');
+                    title.html(title.text());
 
                     if (info.event.extendedProps && info.event.extendedProps.description) {
                         if (element.hasClass('fc-day-grid-event')) {

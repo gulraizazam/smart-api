@@ -255,99 +255,15 @@ function reInitConsultancyCalendar() {
         && $("#consultancy_doctor_filter").val() !== ""
         && typeof result.tab !== 'undefined' && result.tab == 'consultancy') {
 
-        events = [
-            {
-                title: 'All Day Event',
-                start: '2022-03-01',
-                description: 'Toto lorem ipsum dolor sit incid idunt ut',
-                className: "fc-event-danger fc-event-solid-warning"
-            },
-            {
-                title: 'Reporting',
-                start: '2022-03-14T13:30:00',
-                description: 'Lorem ipsum dolor incid idunt ut labore',
-                end: '2022-03-14',
-                className: "fc-event-success"
-            },
-            {
-                title: 'Company Trip',
-                start: '2022-03-18',
-                description: 'Lorem ipsum dolor sit tempor incid',
-                end: '2022-03-03',
-                className: "fc-event-primary"
-            },
-            {
-                title: 'ICT Expo 2017 - Product Release',
-                start: '2022-03-15',
-                description: 'Lorem ipsum dolor sit tempor inci',
-                end: '2022-03-05',
-                className: "fc-event-light fc-event-solid-primary"
-            },
-            {
-                title: 'Dinner',
-                start: '2022-03-16',
-                description: 'Lorem ipsum dolor sit amet, conse ctetur',
-                end: '2022-03-10'
-            },
-            {
-                id: 999,
-                title: 'Repeating Event',
-                start: '2022-03-17T16:00:00',
-                description: 'Lorem ipsum dolor sit ncididunt ut labore',
-                className: "fc-event-danger"
-            },
-            {
-                id: 1000,
-                title: 'Repeating Event',
-                description: 'Lorem ipsum dolor sit amet, labore',
-                start: '2020-03-16T16:00:00'
-            },
-            {
-                title: 'Conference',
-                start: '2020-03-16T16:00:00',
-                end: '2020-03-16T16:00:00',
-                description: 'Lorem ipsum dolor eius mod tempor labore',
-                className: "fc-event-primary"
-            },
-            {
-                title: 'Meeting',
-                start: '2020-03-16T16:00:00',
-                end: '2020-03-16T16:00:00',
-                description: 'Lorem ipsum dolor eiu idunt ut labore'
-            },
-            {
-                title: 'Lunch',
-                start:  '2022-03T12:00:00',
-                className: "fc-event-info",
-                description: 'Lorem ipsum dolor sit amet, ut labore'
-            },
-            {
-                title: 'Meeting',
-                start: '2020-03-16T16:00:00',
-                className: "fc-event-warning",
-                description: 'Lorem ipsum conse ctetur adipi scing'
-            },
-            {
-                title: 'Happy Hour',
-                start: '2020-03-16T16:00:00',
-                className: "fc-event-info",
-                description: 'Lorem ipsum dolor sit amet, conse ctetur'
-            },
-            {
-                title: 'Dinner',
-                start: '2020-03-16T16:00:00',
-                className: "fc-event-solid-danger fc-event-light",
-                description: 'Lorem ipsum dolor sit ctetur adipi scing'
-            },
-            {
-                title: 'Birthday Party',
-                start: '2020-03-16T16:00:00',
-                className: "fc-event-primary",
-                description: 'Lorem ipsum dolor sit amet, scing'
-            }
-        ];
 
-        ConsultancyCalendar.init(events);
+        window.eventData = {}
+        window.eventData.city_id = $("#consultancy_city_filter").val()
+        window.eventData.location_id = $("#consultancy_location_filter").val()
+        window.eventData.doctor_id = $("#consultancy_doctor_filter").val();
+        window.eventData.id = null;
+        window.eventData.firstTime = true;
+
+        ConsultancyCalendar.init();
     }
 }
 

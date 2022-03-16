@@ -3123,54 +3123,28 @@
 
 						$dutation = explode(':', $appointment->service->duration);
 
-						$data[] = [
-
-						    'title' => 'All Day Event',
-                            'start' => '2022-03'.'-16',
-                            'description' => 'Toto lorem ipsum dolor sit incid idunt ut',
-                            'className' => "fc-event-danger fc-event-solid-warning"
-
-							/*'id' => $appointment->id,
-							'service' => $appointment->service->name,
-							'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
-							'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-							'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
-							'duration' => $appointment->service->duration,
-							'editable' => true,
-							'overlap' => false,
-							'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-							'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-							'color' => $appointment->service->color,
-							'resourceId' => $appointment->doctor_id,*/
-						];
-
-						$data[] = [
-                            'title'=> 'Meeting',
-                            'start'=> '2022-03-15T14:30:00',
-                            'className'=> "fc-event-warning",
-                            'description'=> 'Lorem ipsum conse ctetur adipi scing'
-                        ];
-
-						$data[] = [
-                            'id' => '1',
-                            'title' => "Name : K  Service: Skin  Created By: Ahsan", // use the element's text as the event title
-                            'description' => "Name : Kashif Service:  Skin Treatment Created By: Ahsan",
-                            'duration' => 15, // use the element's text as the event title
-                            'editable'=> true, // use the element's text as the event title,
-                            'color'=> "#000000", // use the element's text as the event title
-                            'resourceId'=> '324',
-                            'start'=> '2022-03-17T14:30:00',
-                            'end'=> '2022-03-17T19:30:00',
-                            'durationEditable'=> true,
-                            'eventDurationEditable'=> true,
-                            'overlap'=> true,
-                            'constraint'=> 'availableForMeeting', // defined below
-                        ];
-
-						break;
+                        $data[$appointment->id] = array(
+                            'id' => $appointment->id,
+                            'service' => $appointment->service->name,
+                            'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                            'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
+                            'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                            'duration' => $appointment->service->duration,
+                            'editable' => true,
+                            'overlap' => false,
+                            'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
+                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
+                            'color' => $appointment->service->color,
+                            'resourceId' => $appointment->doctor_id,
+                        );
 					}
 
-					return response()->json($data);
+                    return response()->json(array(
+                        'status' => 1,
+                        'events' => $data,
+                        'min_time' => $minTime,
+                        "rotas" => $doctor_rotas
+                    ));
 				} else {
 					return response()->json(array(
 						'status' => 0,
