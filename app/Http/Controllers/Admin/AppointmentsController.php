@@ -1882,7 +1882,7 @@
 		public function createConsultingAppointment(Request $request)
 		{
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 			if (
 				$request->get("city_id") &&
@@ -1974,7 +1974,27 @@
 
 			$setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
 
-			return view('admin.appointments.consultancy.create', compact('lead_sources', 'services', 'doctors', 'city_id', 'location_id', 'doctor_id', 'lead', 'employees', 'appointment_checkes', 'towns', 'setting'));
+			if ($appointment_checkes['status']) {
+
+                return ApiHelper::apiResponse($this->success, 'Data Found.', true, [
+                    'lead_sources' => $lead_sources,
+                    'services' => $services,
+                    'doctors' => $doctors,
+                    'city_id' => $city_id,
+                    'location_id' => $location_id,
+                    'doctor_id' => $doctor_id,
+                    'lead' => $lead,
+                    'employees' => $employees,
+                    'appointment_checkes' => $appointment_checkes,
+                    'towns' => $towns,
+                    'setting' => $setting,
+                    'consultancy_types' => Config::get("constants.consultancy_type_array")
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
+
+            //return view('admin.appointments.consultancy.create', compact());
 
 		}
 
@@ -1990,12 +2010,12 @@
 		 * Show details.
 		 *
 		 * @param int $id
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function detail($id)
 		{
 			if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 			$invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
 			$invoice = Invoices::where([
@@ -2009,8 +2029,37 @@
 				$invoiceid = null;
 			}
 
-			$appointment = Appointments::findOrFail($id);
-			return view('admin.appointments.detailTo', compact('appointment', 'invoice', 'invoiceid'));
+			$appointment = Appointments::with(
+			    'patient',
+                'doctor', 'city',
+                'location',
+                'appointment_status',
+                'service',
+                'appointment_comments.user'
+            )
+                ->find($id);
+
+			if (! $appointment) {
+                return ApiHelper::apiResponse($this->success, 'Appointment not found.', false);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Data found.',  true, [
+                'appointment' => $appointment,
+                'invoice' => $invoice,
+                'invoiceid' => $invoiceid,
+                'permissions' => [
+                    'edit' => Gate::allows('appointments_edit'),
+                    'invoice' => Gate::allows('appointments_invoice'),
+                    'invoice_display' => Gate::allows('appointments_invoice_display'),
+                    'image_manage' => Gate::allows('appointments_image_manage'),
+                    'measurement_manage' => Gate::allows('appointments_measurement_manage'),
+                    'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
+                    'plans_create' => Gate::allows('appointments_plans_create'),
+                    'patient_card' => Gate::allows('appointments_patient_card'),
+                    'log' => Gate::allows('appointments_log'),
+                    'contact' => Gate::allows('contact')
+                ]
+            ]);
 		}
 
 		/**

@@ -9,7 +9,7 @@
 </div>
 
 {{--Edit appoitment--}}
-<div class="modal fade" id="modal_edit_appointment" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modal_edit_appointment" tabindex="-1" aria-hidden="true" style="z-index: 9999">
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered form-popup" id="appointment_edit">
 
@@ -18,12 +18,30 @@
     </div>
 </div>
 
+<div class="modal fade" id="modal_create_consultancy" tabindex="-1" aria-hidden="true" style="z-index: 9999">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered form-popup" id="consultancy_edit">
 
-<div class="modal fade" id="modal_sms_log" tabindex="-1" aria-hidden="true">
+        @include('admin.appointments.forms.create')
+
+    </div>
+</div>
+
+
+<div class="modal fade" id="modal_sms_log" tabindex="-1" aria-hidden="true" style="z-index: 9999">
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_status_change">
 
         @include('admin.appointments.forms.sms-log')
+
+    </div>
+</div>
+
+<div class="modal fade" id="modal_consultancy_detail" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_consultancy_detail">
+
+        @include('admin.appointments.forms.consultancy-detail')
 
     </div>
 </div>
