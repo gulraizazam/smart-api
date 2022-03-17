@@ -6,6 +6,7 @@ var ConsultancyCalendar = function() {
 
     return {
         init: function() {
+
             var minxTime;
             var maxTime;
             var todayDate = moment().startOf('day');
@@ -14,7 +15,19 @@ var ConsultancyCalendar = function() {
             var TODAY = todayDate.format('YYYY-MM-DD');
             var TOMORROW = todayDate.clone().add(1, 'day').format('YYYY-MM-DD');
 
+
             var calendarEl = document.getElementById('consultancy_calendar');
+
+            var Draggable = FullCalendarInteraction.Draggable;
+
+            new Draggable(calendarEl, {
+                itemSelector: '.fc-event',
+                eventData: function(eventEl) {
+                    return {
+                        title: eventEl.innerText
+                    };
+                }
+            });
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 plugins: [ 'bootstrap', 'interaction', 'dayGrid', 'timeGrid', 'list' ],
@@ -32,8 +45,8 @@ var ConsultancyCalendar = function() {
                 slotDuration: '00:05:00',
                 contentHeight: 780,
                 aspectRatio: 3,
-                //minTime: "09:00:00",
-                //maxTime: "23:00:00",
+                minTime: "09:00:00",
+                maxTime: "23:00:00",
 
                 nowIndicator: true,
                 now: TODAY,
@@ -50,10 +63,8 @@ var ConsultancyCalendar = function() {
                 editable: true,
                 eventLimit: true,
                 navLinks: true,
+                disableDragging: false,
                 droppable: true,
-                setEventId: function(eventId) {
-                    window.eventData.createdId = eventId;
-                },
                 events: function(event, callback) {
 
                     $.ajax({
@@ -90,7 +101,7 @@ var ConsultancyCalendar = function() {
                                             description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
                                             duration: appointmentObj.duration, // use the element's text as the event title
                                             editable: appointmentObj.editable, // use the element's text as the event title,
-                                            color: "#000000", // use the element's text as the event title
+                                            backgroundColor: "#000000", // use the element's text as the event title
                                             resourceId: appointmentObj.resourceId,
                                             start: appointmentObj.start,
                                             end: appointmentObj.end,
@@ -109,7 +120,7 @@ var ConsultancyCalendar = function() {
                                             description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
                                             duration: appointmentObj.duration, // use the element's text as the event title
                                             editable: appointmentObj.editable, // use the element's text as the event title,
-                                            color: "#000000", // use the element's text as the event title
+                                            backgroundColor: "#000000", // use the element's text as the event title
                                             resourceId: appointmentObj.resourceId,
                                             start: appointmentObj.start,
                                             end: appointmentObj.end,
@@ -191,9 +202,29 @@ var ConsultancyCalendar = function() {
                     });
 
                 },
+                drop: function(info) {
+                    ConsultancyCalendar.checkAndUpdateAppointment(info, function(response) {
+                        if (response.status == 0) {
+                            toastr.error(response.message)
+                        }
+                    });
+
+                },
+                eventDrop: function(event, delta, revertFunc, jsEvent, ui, view) {
+
+                   /* ConsultancyCalendar.checkAndUpdateAppointment(event, function(response) {
+                        if (response.status == 0) {
+                            Utils.notification('error', response.message);
+                            revertFunc();
+                        }
+                    });*/
+                },
 
                 eventClick:  function(info, jsEvent, view) {
                     clickEvent(info, jsEvent, view)
+                },
+                dateClick: function(info, jsEvent, view, resource) {
+                    ConsultancyCalendar.createConsultancy(info);
                 },
 
                 eventRender: function(info) {
@@ -226,46 +257,329 @@ var ConsultancyCalendar = function() {
                    calendar.setOption('maxTime', maxTime);
                }
 
-            }, 500);
+            }, 1500);
 
            calendar.render();
-        }
+        },
+
+        loadEvents: function(callback) {
+
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.appointments.load_nonscheduled_appointments'),
+                type: 'GET',
+                data: {
+                    city_id: $('#city_id').val(),
+                    location_id: $('#location_id').val(),
+                    doctor_id: $('#doctor_id').val(),
+                },
+                cache: false,
+                success: function(response) {
+                    if (response.status == '1') {
+                        callback({
+                            'status': true,
+                            'events': response.events,
+                        })
+                    } else {
+                        callback({
+                            'status': false,
+                            'events': null,
+                        })
+                    }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    callback({
+                        'status': false,
+                        'events': null,
+                    })
+                }
+            });
+        },
+
+        checkAndUpdateAppointment: function(info, callback) {
+
+            let event = info;
+            //let eventApi = info.event._def;
+            console.log(event)
+
+            /*$.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.appointments.check_and_save_appointment'),
+                type: 'POST',
+                data: {
+                    id: event.id,
+                    start: event.start.format(),
+                    end: event.end.format(),
+                    doctor_id: $("#consultancy_doctor_filter").val(),
+                    location_id: $("#consultancy_location_filter").val()
+                },
+                cache: false,
+                success: function(response) {
+                    if (response.status == '1') {
+                        callback(response)
+                    } else {
+                        callback(response)
+                    }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    callback({
+                        'status': false,
+                    })
+                }
+            });*/
+        },
+
+        setEventId: function(eventId) {
+            window.eventData.createdId = eventId;
+        },
+
+        createConsultancy: function (info) {
+
+            let start = formatDate(info.date, 'YYYY-MM-DDTHH:mm:ss');
+            let create_url = route('admin.appointments.consulting.create', {
+                appointment_type: 'consulting',
+                city_id: $("#consultancy_city_filter").val(),
+                doctor_id: $("#consultancy_doctor_filter").val(),
+                location_id: $("#consultancy_location_filter").val(),
+                start: start
+            });
+
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: create_url,
+                type: 'GET',
+                cache: false,
+                success: function(response) {
+                    if (response.status) {
+                       setCreateConsultancy(response, start);
+                    } else {
+                        toastr.error(response.message)
+                    }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    callback({
+                        'status': false,
+                        'events': null,
+                    })
+                }
+            });
+
+        },
+
     };
 }();
 
-jQuery(document).ready(function() {
-    //ConsultancyCalendar.init();
-});
 
 function clickEvent(info, jsEvent, view) {
 
     let event = info.event.extendedProps;
     let eventApi = info.event._def;
-    $('#resource_days_id').val(eventApi.publicId);
-    $('#resource_days_date').val(info.event.start.toISOString().split('T')[0]);
-    $('#resource_days_start_time').val(event.start_time);
-    $('#resource_days_end_time').val(event.end_time);
+    let id = eventApi.publicId;
 
-    $('#resource_days_start_time_break').val(event.start_off);
-    $('#resource_days_end_time_break').val(event.end_off);
+    if (id !== 'availableForMeeting') {
 
-    if($('#resource_days_start_time').val())
-    {
-        $('#dayOperation :input').removeAttr('disabled');
-        $("#dayElement").prop( "checked", false );
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.detail', [id]),
+            type: 'Get',
+            cache: false,
+            success: function (response) {
+                if (response.status) {
+                    setDetailData(response);
+                } else {
+                    //
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                toastr.error("Unabled to process the request.")
+            }
+        });
+
     }
-    else{
-        $("#estado_cat").prop( "checked", true );
-        $('#dayOperation :input').attr('disabled', true);
-        $("#dayElement").prop( "checked", true );
+
+}
+
+
+function setDetailData(response) {
+
+
+    let appointment = response.data.appointment;
+    let permissions = response.data.permissions;
+    let invoice = response.data.invoice;
+    let invoiceid = response.data.invoiceid;
+    let patient = appointment.patient;
+    let doctor = appointment.doctor;
+    let city = appointment.city;
+    let location = appointment.location;
+    let appointment_status = appointment.appointment_status;
+    let service = appointment.service;
+
+    detailActions(appointment, invoice, invoiceid, permissions);
+
+    $("#modal_consultancy_detail").modal("show");
+
+    $("#comment_appointment_id").val(appointment?.id ?? 0);
+    $("#patient_name").text(patient?.name ?? 'N/A');
+    $("#patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1) );
+    $("#patient_email").text(patient?.email ?? 'N/A');
+    $("#patient_gender").text(getGender(patient?.gender ));
+    $("#patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
+    $("#doctor_name").text(doctor?.name ?? 'N/A');
+    $("#city_name").text(city?.name ?? 'N/A');
+    $("#center_name").text(location?.name ?? 'N/A');
+    $("#appointment_status").text(appointment?.name ?? 'N/A');
+    $("#service_consultancy_name").text(service?.name ?? 'N/A');
+
+    setComments(appointment);
+}
+
+function detailActions(appointment, invoice, invoiceid, permissions) {
+
+    let query = get_query();
+    let id = appointment.id;
+
+    let edit_url = route('admin.appointments.edit', {id: appointment.id});
+    let edit_service_url = route('admin.appointments.edit_service', {id: appointment.id});
+    let detail_url = route('admin.appointments.detail', {id: appointment.id});
+    let sms_logs_url = route('admin.appointments.sms_logs', {id: appointment.id});
+    let patient_url = route('admin.patients.preview', {id: appointment.id});
+
+    let  buttons = '<td colspan="4" style="text-align: right;">';
+
+    if (permissions.edit) {
+        if(appointment.appointment_type_id==1) {
+            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
+            <i class="la la-edit"></i>\
+            </a>';
+        } else {
+            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`);" >\
+            <i class="la la-edit"></i>\
+            </a>';
+        }
     }
 
-    isLeave($("#dayElement"));
+    buttons += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-sm btn-info mr-2" >\
+        <i class="la la-sms" data-toggle="tooltip" title="SMS Logs"></i>\
+        </a>';
+    if (permissions.invoice) {
+        if(invoice) {
+            buttons += '<a class="btn btn-sm btn-info mr-2" href="http://cutera.test/admin/appointments/displayInvoice/10670" >\
+            <i class="la la-file-pdf-o" title="Invoice Display"></i>\
+            </a>';
+        }
+    }
 
-    if(event.checked == 1){
-        $('#backdateenvent').hide();
-        $('#ajax_resourcerotas_calenderedit').modal('show');
-    } else {
-        $('#backdateenvent').show();
+        buttons += '<a class="btn btn-sm btn-info mr-2" href="http://cutera.test/admin/appointmentsmedical/medicalindex/18745" target="_blank">\
+        <i class="la la-medkit" title="Medical History Form"></i>\
+        </a>\
+        <a class="btn btn-sm btn-info mr-2" href="http://cutera.test/admin/appointmentplans/18745" data-target="#ajax_packages" data-toggle="modal">\
+        <i class="la la-clipboard" title="Create Plan"></i>\
+        </a>';
+    if(permissions.patient_card) {
+        buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="'+patient_url+'">\
+        <i class="la la-users" title="Patient Card"></i>\
+        </a>';
+    }
+
+    buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="http://cutera.test/admin/appointments/viewlog/18745/web">\
+        <i class="la la-history" title="Log">\
+        </i>\
+        </a>\
+        </td>';
+
+    $(".detail-actions").html(buttons);
+
+}
+
+function setComments(appointment) {
+
+    let appointment_comments = appointment.appointment_comments;
+    let comment_html = '';
+    if (appointment_comments.length) {
+        Object.values(appointment_comments).forEach(function (comment) {
+            comment_html += commentData(comment?.user?.name, comment?.created_at, comment?.comment);
+        });
+    }
+    $("#commentsection").html(comment_html);
+}
+
+function commentData(user_name, created_at, comment) {
+
+    let comment_html = '';
+
+    comment_html = '<div class="tab-content" id="itemComment">' +
+        ' <div class="tab-pane active" id="portlet_comments_1"> ' +
+        '<div class="mt-comments"> ' +
+        '<div class="mt-comment">' +
+        ' <div class="mt-comment-img" id="imgContainer"> ' +
+        '<img src="'+asset_url+'assets/media/avatar.jpg" alt="Avatar"> ' +
+        '</div><div class="mt-comment-body"> ' +
+        '<div class="mt-comment-info"> ' +
+        '<span class="mt-comment-author" id="creat_by">';
+    comment_html += user_name ?? 'N/A';
+    comment_html += '</span> <span class="mt-comment-date" id="datetime">';
+    comment_html += formatDate(created_at, 'ddd MMM, mm yyyy HH:mm A');
+    comment_html += '</span> </div>' +
+        '<div class="mt-comment-text" id="message">';
+    comment_html += comment ?? 'N/A';
+    comment_html += '</div><div class="mt-comment-details"> </div>' +
+        '</div></div></div></div></div>';
+
+    return comment_html;
+}
+
+function setCreateConsultancy(response, start) {
+
+    try {
+
+        $("#modal_create_consultancy").modal("show");
+
+        let city_id = response.data.city_id;
+        let doctor_id = response.data.doctor_id;
+        let location_id = response.data.location_id;
+        let doctors = response.data.doctors;
+        let employees = response.data.employees;
+        let lead = response.data.lead;
+        let lead_sources = response.data.lead_sources;
+        let services = response.data.services;
+        let setting = response.data.setting;
+        let towns = response.data.towns;
+
+        let consultancy_types = response.data.consultancy_types;
+
+        /*Hidden fields*/
+        $("#consultancy_lead_id").val(lead?.id);
+        $("#consultancy_patient_id").val(lead?.patient_id);
+        $("#consultancy_city_id").val(city_id);
+        $("#consultancy_location_id").val(location_id);
+        $("#consultancy_doctor_id").val(doctor_id);
+        $("#consultancy_start").val(start);
+        $("#consultancy_resource_id").val();
+        $("#consultancy_appointment_type").val();
+        $("#consultancy_cnic").val();
+        $("#consultancy_email").val();
+        $("#consultancy_dob").val();
+        $("#consultancy_address").val();
+        $("#consultancy_town_id").val();
+
+        let type_options = '<option value="">Select Consultancy Type</option>';
+        if (consultancy_types) {
+            Object.entries(consultancy_types).forEach(function (consultancy_type) {
+                type_options += '<option value="'+consultancy_type[0]+'">'+consultancy_type[1]+'</option>';
+            });
+        }
+        $("#create_consultancy_type").html(type_options);
+
+    } catch (e) {
+        showException(e);
     }
 }
+

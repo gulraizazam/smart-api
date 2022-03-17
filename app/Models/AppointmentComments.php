@@ -28,6 +28,6 @@ class AppointmentComments extends Model
      */
     public function user()
     {
-        return $this->belongsTo('App\User', 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

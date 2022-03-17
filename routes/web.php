@@ -366,13 +366,9 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::put('appointments/save_doctor', [AppointmentsController::class, 'saveDoctor'])->name('appointments.save_doctor');
 
-        Route::get('appointments/detail/{id}', [AppointmentsController::class, 'detail'])->name('appointments.detail');
-
         Route::post('appointments/status', [AppointmentsController::class, 'status'])->name('appointments.status');
 
         Route::post('appointments/loadlead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
-
-        Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
 
         Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
 

@@ -584,7 +584,6 @@ function editRow(url, id) {
 }
 
 function setEditData(response) {
-    console.log(datatable)
 
     try {
 

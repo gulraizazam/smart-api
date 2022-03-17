@@ -468,6 +468,10 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('appointments/load/scheduled-appointments', [AppointmentsController::class, 'getScheduledAppointments'])->name('appointments.load_scheduled_appointments');
 
+    Route::get('appointments/detail/{id}', [AppointmentsController::class, 'detail'])->name('appointments.detail');
+
+    Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
