@@ -861,6 +861,8 @@ class UsersController extends Controller
     {
         $patient = Patients::find($request->patient_id);
 
-        return response()->json($patient);
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'patient' => $patient
+        ]);
     }
 }

@@ -120,65 +120,7 @@ $(document).ready(function () {
 
     });
 
-
-    $(".patient_id").select2({
-        width: '100%',
-        placeholder: 'Select Patient',
-        ajax: {
-            url: route('admin.users.getpatient.id'),
-            dataType: 'json',
-            delay: 250,
-            data: function (params) {
-                return {
-                    q: params.term, // search term
-                    page: params.page
-                };
-            },
-            processResults: function (response, params) {
-
-                try {
-                    let data = response.data.patients;
-
-                    params.page = params.page || 1;
-                    return {
-                        results: $.map(data, function (item) {
-
-                            return {
-                                text: item.name + ' - ' + item.id,
-                                id: item.id
-                            }
-                        }),
-                    };
-
-                } catch (error) {
-                    showException(error);
-                }
-            },
-            cache: true
-        },
-        escapeMarkup: function (markup) {
-            return markup;
-        },
-        minimumInputLength: 3,
-        templateResult: formatRepo,
-        templateSelection: formatRepoSelection
-    });
-
-    function formatRepo(item) {
-        if (item.loading) {
-            return item.text;
-        }
-        markup = item.text;
-        return markup;
-    }
-
-    function formatRepoSelection(item) {
-        if (item.id) {
-            return item.text + " <button onclick='addUsers()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></button>";
-        } else {
-            return 'Select Patient';
-        }
-    }
+    patientSearch();
 
     /*input mask*/
     $(".cnic-mask").inputmask("99999-9999999-9", {
@@ -193,10 +135,15 @@ $(document).ready(function () {
         toastr.info("phone is copied to clipboard.")
     });
 
+    $("body").click(function () {
+        $(".modal_consultancy_popup").hide();
+    });
+
 });
 
 function addUsers() {
     $('.patient_id').val(null).trigger('change');
+    $('.patient_search_id').val(null).trigger('change');
 }
 
 // not working
@@ -669,4 +616,74 @@ function get_query(){
         result[qs[i][0]] = decodeURIComponent(qs[i][1]);
     }
     return result;
+}
+
+function patientSearch(search_id = 'patient_id') {
+
+    $("." + search_id).select2({
+        width: '100%',
+        placeholder: 'Select Patient',
+        ajax: {
+            url: route('admin.users.getpatient.id'),
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term, // search term
+                    page: params.page
+                };
+            },
+            processResults: function (response, params) {
+
+                try {
+                    let data = response.data.patients;
+
+                    params.page = params.page || 1;
+                    return {
+                        results: $.map(data, function (item) {
+
+                            return {
+                                text: item.name + ' - ' + item.id,
+                                id: item.id
+                            }
+                        }),
+                    };
+
+                } catch (error) {
+                    showException(error);
+                }
+            },
+            cache: true
+        },
+        escapeMarkup: function (markup) {
+            return markup;
+        },
+        minimumInputLength: 3,
+        templateResult: formatRepo,
+        templateSelection: formatRepoSelection
+    });
+
+}
+
+function formatRepo(item) {
+    if (item.loading) {
+        return item.text;
+    }
+    markup = item.text;
+    return markup;
+}
+
+function formatRepoSelection(item) {
+    if (item.id) {
+        return item.text + " <span onclick='addUsers()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></span>";
+    } else {
+        return 'Select Patient';
+    }
+}
+
+function reInitCalendar(start) {
+    if (typeof calendar !== "undefined") { /*if already initiate then destroy first*/
+        calendar.destroy();
+        ConsultancyCalendar.init(start);
+    }
 }

@@ -79,7 +79,7 @@
 
                         @include('admin.appointments.consultancy.filters')
 
-                        <div id="consultancy_calendar"></div>
+                        <div id="consultancy_calendar" style="position: relative"></div>
 
                     </div>
 
@@ -102,7 +102,7 @@
     <!--end::Content-->
 
     {{--All forms popups--}}
-    @include('admin.appointments.forms.modals')
+    @include('admin.appointments.consultancy-forms.modals')
 
 
     @push('js')

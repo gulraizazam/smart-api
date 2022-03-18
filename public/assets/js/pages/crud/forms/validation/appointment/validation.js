@@ -158,7 +158,82 @@ var EditAppointmentValidation = function () {
     };
 }();
 
+var CreateConsultancytValidation = function () {
+    // Private functions
+    var Validation = function () {
+        let modal_id = 'modal_create_consultancy_form';
+        let form = document.getElementById(modal_id);
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    consultancy_type: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The consultancy type field is required'
+                            }
+                        }
+                    },
+                    service_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The city field is required'
+                            }
+                        }
+                    },
+                    phone: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The location field is required'
+                            }
+                        }
+                    },
+                    name: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The name field is required'
+                            }
+                        }
+                    }
+
+                },
+
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                }
+            }
+        );
+        validate.on('core.form.invalid', function (e) {
+            select2Validation();
+        });
+        validate.on('core.form.valid', function(event) {
+            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+
+                if (response.status) {
+                    toastr.success(response.message);
+                    closePopup(modal_id);
+                    reInitCalendar(start_date);
+                } else {
+                    toastr.error(response.message);
+                }
+            }, null);
+        });
+    }
+
+    return {
+        // public functions
+        init: function() {
+            Validation();
+        }
+    };
+}();
+
 jQuery(document).ready(function() {
     UpdateStatusValidation.init();
     EditAppointmentValidation.init();
+    CreateConsultancytValidation.init();
 });

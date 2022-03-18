@@ -1,19 +1,21 @@
 "use strict";
 
 var calendar;
+var start_date;
 
 var ConsultancyCalendar = function() {
 
     return {
-        init: function() {
+        init: function(start) {
 
             var minxTime;
             var maxTime;
             var todayDate = moment().startOf('day');
-            var YM = todayDate.format('YYYY-MM');
-            var YESTERDAY = todayDate.clone().subtract(1, 'day').format('YYYY-MM-DD');
             var TODAY = todayDate.format('YYYY-MM-DD');
-            var TOMORROW = todayDate.clone().add(1, 'day').format('YYYY-MM-DD');
+
+            if (typeof start !== "undefined") {
+                TODAY = formatDate(start, 'YYYY-MM-DD');
+            }
 
 
             var calendarEl = document.getElementById('consultancy_calendar');
@@ -67,6 +69,9 @@ var ConsultancyCalendar = function() {
                 droppable: true,
                 events: function(event, callback) {
 
+
+                    start_date = event.start;
+
                     $.ajax({
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -98,7 +103,7 @@ var ConsultancyCalendar = function() {
                                         events.push({
                                             id: appointmentObj.id,
                                             title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
-                                            description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
+                                            //description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
                                             duration: appointmentObj.duration, // use the element's text as the event title
                                             editable: appointmentObj.editable, // use the element's text as the event title,
                                             backgroundColor: "#000000", // use the element's text as the event title
@@ -117,7 +122,7 @@ var ConsultancyCalendar = function() {
                                         events.push({
                                             id: appointmentObj.id,
                                             title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
-                                            description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
+                                           // description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
                                             duration: appointmentObj.duration, // use the element's text as the event title
                                             editable: appointmentObj.editable, // use the element's text as the event title,
                                             backgroundColor: "#000000", // use the element's text as the event title
@@ -134,7 +139,7 @@ var ConsultancyCalendar = function() {
                                         events.push({
                                             id: appointmentObj.id,
                                             title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
-                                            description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
+                                            //description: "<p>Name : " + appointmentObj.patient + " </p><p> Service: " + appointmentObj.service + " </p><p> Created By: " + appointmentObj.created_by + "</p>",
                                             duration: appointmentObj.duration, // use the element's text as the event title
                                             editable: appointmentObj.editable, // use the element's text as the event title,
                                             color: appointmentObj.color, // use the element's text as the event title
@@ -226,7 +231,9 @@ var ConsultancyCalendar = function() {
                 dateClick: function(info, jsEvent, view, resource) {
                     ConsultancyCalendar.createConsultancy(info);
                 },
-
+                eventMouseEnter: function(e) {
+                    hoverPopup(e);
+                },
                 eventRender: function(info) {
 
                     var element = $(info.el);
@@ -339,12 +346,14 @@ var ConsultancyCalendar = function() {
 
         createConsultancy: function (info) {
 
+            let result = get_query();
+
             let start = formatDate(info.date, 'YYYY-MM-DDTHH:mm:ss');
             let create_url = route('admin.appointments.consulting.create', {
                 appointment_type: 'consulting',
-                city_id: $("#consultancy_city_filter").val(),
-                doctor_id: $("#consultancy_doctor_filter").val(),
-                location_id: $("#consultancy_location_filter").val(),
+                city_id: result.city_id,
+                doctor_id: result.doctor_id,
+                location_id: result.location_id,
                 start: start
             });
 
@@ -410,35 +419,39 @@ function clickEvent(info, jsEvent, view) {
 
 function setDetailData(response) {
 
+    try {
 
-    let appointment = response.data.appointment;
-    let permissions = response.data.permissions;
-    let invoice = response.data.invoice;
-    let invoiceid = response.data.invoiceid;
-    let patient = appointment.patient;
-    let doctor = appointment.doctor;
-    let city = appointment.city;
-    let location = appointment.location;
-    let appointment_status = appointment.appointment_status;
-    let service = appointment.service;
+        let appointment = response.data.appointment;
+        let permissions = response.data.permissions;
+        let invoice = response.data.invoice;
+        let invoiceid = response.data.invoiceid;
+        let patient = appointment.patient;
+        let doctor = appointment.doctor;
+        let city = appointment.city;
+        let location = appointment.location;
+        let appointment_status = appointment.appointment_status;
+        let service = appointment.service;
 
-    detailActions(appointment, invoice, invoiceid, permissions);
+        detailActions(appointment, invoice, invoiceid, permissions);
 
-    $("#modal_consultancy_detail").modal("show");
+        $("#modal_consultancy_detail").modal("show");
 
-    $("#comment_appointment_id").val(appointment?.id ?? 0);
-    $("#patient_name").text(patient?.name ?? 'N/A');
-    $("#patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1) );
-    $("#patient_email").text(patient?.email ?? 'N/A');
-    $("#patient_gender").text(getGender(patient?.gender ));
-    $("#patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
-    $("#doctor_name").text(doctor?.name ?? 'N/A');
-    $("#city_name").text(city?.name ?? 'N/A');
-    $("#center_name").text(location?.name ?? 'N/A');
-    $("#appointment_status").text(appointment?.name ?? 'N/A');
-    $("#service_consultancy_name").text(service?.name ?? 'N/A');
+        $("#comment_appointment_id").val(appointment?.id ?? 0);
+        $("#patient_name").text(patient?.name ?? 'N/A');
+        $("#patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
+        $("#patient_email").text(patient?.email ?? 'N/A');
+        $("#patient_gender").text(getGender(patient?.gender));
+        $("#patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
+        $("#doctor_name").text(doctor?.name ?? 'N/A');
+        $("#city_name").text(city?.name ?? 'N/A');
+        $("#center_name").text(location?.name ?? 'N/A');
+        $("#appointment_status").text(appointment_status?.name ?? 'N/A');
+        $("#service_consultancy_name").text(service?.name ?? 'N/A');
 
-    setComments(appointment);
+        setComments(appointment);
+    } catch (e) {
+        showException(e);
+    }
 }
 
 function detailActions(appointment, invoice, invoiceid, permissions) {
@@ -539,28 +552,34 @@ function commentData(user_name, created_at, comment) {
 function setCreateConsultancy(response, start) {
 
     try {
+        patientSearch('patient_search_id');
 
         $("#modal_create_consultancy").modal("show");
+        $("#modal_create_consultancy_form")[0].reset();
+        $('.patient_search_id').val(null).trigger('change');
+        $('.new_patient_text').hide();
 
         let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
         let location_id = response.data.location_id;
-        let doctors = response.data.doctors;
+       // let doctors = response.data.doctors;
         let employees = response.data.employees;
         let lead = response.data.lead;
         let lead_sources = response.data.lead_sources;
         let services = response.data.services;
         let setting = response.data.setting;
-        let towns = response.data.towns;
+       // let towns = response.data.towns;
+        let genders = response.data.genders;
 
         let consultancy_types = response.data.consultancy_types;
 
         /*Hidden fields*/
         $("#consultancy_lead_id").val(lead?.id);
-        $("#consultancy_patient_id").val(lead?.patient_id);
+        $("#consultancy_patient_id").val(lead?.patient_id ? lead?.patient_id : '0');
         $("#consultancy_city_id").val(city_id);
         $("#consultancy_location_id").val(location_id);
         $("#consultancy_doctor_id").val(doctor_id);
+        $("#consultancy_resource_id").val(doctor_id);
         $("#consultancy_start").val(start);
         $("#consultancy_resource_id").val();
         $("#consultancy_appointment_type").val();
@@ -576,10 +595,76 @@ function setCreateConsultancy(response, start) {
                 type_options += '<option value="'+consultancy_type[0]+'">'+consultancy_type[1]+'</option>';
             });
         }
-        $("#create_consultancy_type").html(type_options);
+
+        let service_options = '<option value="">Select a Service</option>';
+        if (services) {
+            Object.entries(services).forEach(function (service) {
+                service_options += '<option value="'+service[0]+'">'+service[1]+'</option>';
+            });
+        }
+
+        let gender_options = '<option value="">Select a Gender</option>';
+        if (genders) {
+            Object.entries(genders).forEach(function (gender) {
+                gender_options += '<option value="'+gender[0]+'">'+gender[1]+'</option>';
+            });
+        }
+
+        let source_options = '<option value="">Select a Gender</option>';
+        if (lead_sources) {
+            Object.entries(lead_sources).forEach(function (source) {
+                source_options += '<option value="'+source[0]+'">'+source[1]+'</option>';
+            });
+        }
+
+        let employee_options = '<option value="">Select a Referrer</option>';
+        if (employees) {
+            Object.entries(employees).forEach(function (employee) {
+                employee_options += '<option value="'+employee[0]+'">'+employee[1]+'</option>';
+            });
+        }
+
+        $("#create_consultancy_types").html(type_options);
+
+        $("#create_consultancy_service").html(service_options);
+        $("#create_consultancy_gender").html(gender_options);
+        $("#create_consultancy_lead").html(source_options);
+        $("#create_consultancy_referred_by").html(employee_options);
+
+
+        if(setting?.data == '1') {
+            $(".consult-type").show();
+            $(".consultancy-service").removeClass("col-md-12").addClass("col-md-6");
+        } else {
+            $(".consultancy-service").removeClass("col-md-6").addClass("col-md-12");
+            $(".consult-type").hide();
+        }
 
     } catch (e) {
         showException(e);
     }
 }
 
+function hoverPopup(info) {
+
+    let id = info.event.id;
+    let eventApi = info.event._def;
+    let props = info.event.extendedProps;
+
+    if (id !== 'availableForMeeting') {
+
+       let left = event.pageX - $('#consultancy_calendar').offset().left + 320;
+       let top = event.pageY - $('#consultancy_calendar').offset().top + 500;
+
+        $(".modal_consultancy_popup").css({top: top,left: left}).show();
+
+        let time = $(info.el).find(".fc-time").data('full');
+
+        $(".full-time").html(time);
+        $(".event-name").html(eventApi.title);
+
+    } else {
+        $(".modal_consultancy_popup").hide();
+    }
+
+}

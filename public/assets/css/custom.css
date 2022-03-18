@@ -578,3 +578,75 @@ div > input {
     text-decoration: none;
     color: grey;
 }
+.popover_popup {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1070;
+    display: block;
+    max-width: 276px;
+    font-family: var(--bs-font-sans-serif);
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    text-align: start;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-break: normal;
+    word-spacing: normal;
+    white-space: normal;
+    line-break: auto;
+    font-size: 1rem;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #fff;
+    border-radius: 0.475rem;
+    box-shadow: 0 0 50px 0 rgb(82 63 105 / 15%);
+}
+
+.popover-header {
+    padding: 1rem 1.25rem;
+    margin-bottom: 0;
+    font-size: 1rem;
+    color: #3f4254;
+    background-color: #fff;
+    border-bottom: 1px solid #fff;
+    border-top-left-radius: calc(0.475rem - 1px);
+    border-top-right-radius: calc(0.475rem - 1px);
+}
+.popover .popover-dismiss+.popover-header {
+    padding-right: 2.75rem;
+}
+
+.popover .popover-dismiss {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    height: 1.5rem;
+    width: 1.5rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: transparent;
+    background-image: url(../media/logos/cross.svg);
+    background-size: 45%;
+}
+
+#kt_calendar_event_view_button {
+    margin-left: 20%;
+}
+
+.full-time {
+    text-align: center;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+#modal_edit_appointment{
+    z-index: 1111;
+}
+.select2-dropdown.select2-dropdown--below {
+    z-index: 11111;
+}
