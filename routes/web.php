@@ -108,6 +108,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::post('users/status', [UsersController::class, 'status'])->name('users.status');
 
 
+
         Route::resource('users', UsersController::class);
 
         Route::post('user_types/datatable', [UserTypesController::class, 'datatable'])->name('user_types.datatable');

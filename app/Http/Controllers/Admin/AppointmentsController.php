@@ -1317,7 +1317,6 @@
 			$employees = User::getAllActiveRecords(Auth::User()->account_id);
 			if ($employees) {
 				$employees = $employees->pluck('full_name', 'id');
-				$employees->prepend('Select a Referrer', '');
 			} else {
 				$employees = array();
 			}
@@ -1349,13 +1348,16 @@
 		 * Validate form fields
 		 *
 		 * @param \Illuminate\Http\Request $request
-		 * @return Validator $validator;
+		 * @return \Illuminate\Contracts\Validation\Validator
 		 */
-		protected function verifyFields(Request $request)
+		protected function verifyFields(Request $request, $id = null)
 		{
-			return $validator = Validator::make($request->all(), [
+            $data = $request->all();
+            $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+
+			return $validator = Validator::make($data, [
 				'name' => 'required',
-				'phone' => 'required',
+                'phone' => 'required|unique:users,phone,' . $id,
 
 //            'scheduled_date' => 'required',
 //            'scheduled_time' => 'required',
@@ -1396,7 +1398,7 @@
 			if (!Gate::allows('appointments_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
-			$validator = $this->verifyFields($request);
+			$validator = $this->verifyFields($request, $request->patient_id);
 
 			if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
@@ -1579,6 +1581,7 @@
 			$appointmentData['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
 			$appointmentData['updated_by'] = Auth::User()->id;
 
+			//dd($appointmentData);
 			$appointment = Appointments::create($appointmentData);
 
 			/* Now We need to update name of all appointments that already in appointment table against patient
@@ -1829,7 +1832,6 @@
 			$employees = User::getAllActiveRecords(Auth::User()->account_id);
 			if ($employees) {
 				$employees = $employees->pluck('full_name', 'id');
-				$employees->prepend('Select a Referrer', 0);
 			} else {
 				$employees = array();
 			}
@@ -1949,7 +1951,6 @@
 			$employees = User::getAllActiveRecords(Auth::User()->account_id);
 			if ($employees) {
 				$employees = $employees->pluck('full_name', 'id');
-				$employees->prepend('Select a Referrer', 0);
 			} else {
 				$employees = array();
 			}
@@ -1958,19 +1959,16 @@
 			$serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->get("location_id"), $request->get("doctor_id"), Auth::User()->account_id);
 			if (count($serviceIds)) {
 				$services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
-				$services->prepend('Select a Service', '');
 			} else {
-				$services[''] = 'Select a Service';
+				$services[''] = '';
 			}
 
 			$lead_sources = LeadSources::getActiveSorted();
-			$lead_sources->prepend('Select a Lead Source', '');
 
 			// Get location based doctors
-			$doctors = Doctors::getLocationDoctors();
+			//$doctors = Doctors::getLocationDoctors();
 
-			$towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
-			$towns->prepend('Select a Town', '');
+			//$towns = Towns::getActiveTowns();
 
 			$setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
 
@@ -1979,16 +1977,17 @@
                 return ApiHelper::apiResponse($this->success, 'Data Found.', true, [
                     'lead_sources' => $lead_sources,
                     'services' => $services,
-                    'doctors' => $doctors,
+                   // 'doctors' => $doctors,
                     'city_id' => $city_id,
                     'location_id' => $location_id,
                     'doctor_id' => $doctor_id,
                     'lead' => $lead,
                     'employees' => $employees,
                     'appointment_checkes' => $appointment_checkes,
-                    'towns' => $towns,
+                   // 'towns' => $towns,
                     'setting' => $setting,
-                    'consultancy_types' => Config::get("constants.consultancy_type_array")
+                    'consultancy_types' => Config::get("constants.consultancy_type_array"),
+                    'genders' => Config::get("constants.gender_array")
                 ]);
             }
 
@@ -2101,7 +2100,7 @@
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
 			foreach ($locations as $location) {
 				$location_serivce = AppointmentEditWidget::loadlocationservice_edit($location->id, Auth::User()->account_id, $reverse_process);
-				if (in_array($serviceid->id, $location_serivce)) {
+				if (isset($serviceid) && in_array($serviceid->id, $location_serivce)) {
 					$locationsids[] = $location->id;
 				}
 			}
@@ -2115,7 +2114,7 @@
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
 			foreach ($doctors as $key => $doctor) {
 				$doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $appointment->location_id, Auth::User()->account_id, $reverse_process);
-				if (in_array($serviceid->id, $doctor_serivce)) {
+				if (isset($serviceid) && in_array($serviceid->id, $doctor_serivce)) {
 					$doctorids[] = $key;
 				}
 			}
@@ -4088,7 +4087,6 @@
 			$employees = User::getAllActiveRecords(Auth::User()->account_id);
 			if ($employees) {
 				$employees = $employees->pluck('full_name', 'id');
-				$employees->prepend('Select a Referrer', '');
 			} else {
 				$employees = array();
 			}

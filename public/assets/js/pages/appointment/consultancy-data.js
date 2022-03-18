@@ -53,6 +53,10 @@ function toggleSection($this, $class) {
     setQueryStringParameter('location_id');
     setQueryStringParameter('doctor_id');
 
+    $("#consultancy_city_filter").val('').trigger("change")
+    $("#consultancy_location_filter").val('').trigger("change")
+    $("#consultancy_doctor_filter").val('').trigger("change")
+
     if ($class == 'appointment') {
         $(".export-appointments").show();
         reInitTable();
@@ -73,12 +77,6 @@ function toggleSection($this, $class) {
 
 
 let loadLocations = function (cityId, appointment = null) {
-
-    /*if (appointment) {
-        setQueryStringParameter('city_id');
-        setQueryStringParameter('location_id');
-        setQueryStringParameter('doctor_id');
-    }*/
 
     if(cityId != '') {
         $.ajax({
@@ -131,9 +129,9 @@ let loadDoctors = function (locationId, appointment = null) {
 
     if (locationId != '' && locationId != null) {
 
-        if (appointment) {
+        /*if (appointment) {
             setQueryStringParameter('location_id');
-        }
+        }*/
 
         $.ajax({
             headers: {
@@ -289,4 +287,33 @@ function reInitConsultancyCalendar() {
 
         ConsultancyCalendar.init();
     }
+}
+
+function getPatientDetail($this) {
+
+    $.ajax({
+        type: 'get',
+        url: route('admin.users.get_patient_number'),
+        data: {
+            'patient_id': $this.val()
+        },
+        success: function (resposne) {
+            if (resposne.status) {
+                let patient = resposne.data.patient;
+                $('#create_consultancy_phone').val(patient?.phone);
+                $('#create_patient_name').val(patient?.name);
+                $('#create_consultancy_gender').val(patient?.gender).change();
+            }
+
+        },
+    });
+
+    $("#consultancy_patient_id").val($this.val() != '' ? $this.val() : '0');
+}
+
+function newPatient() {
+    $(".new_patient_text").toggle();
+    $("#create_consultancy_phone").val('').prop('readonly', false);
+    $("#create_patient_name").val('').prop('readonly', false);
+    $("#create_consultancy_gender").val('').change();
 }

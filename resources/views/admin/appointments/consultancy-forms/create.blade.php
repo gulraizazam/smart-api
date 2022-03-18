@@ -22,12 +22,10 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y ">
         <!--begin::Form-->
-        <form id="modal_edit_appointment_form" method="post" action="{{route('admin.appointments.store')}}">
-
-            @method('put')
+        <form id="modal_create_consultancy_form" method="post" action="{{route('admin.appointments.store')}}">
 
             <input type="hidden" id="consultancy_lead_id" name="lead_id">
-            <input type="hidden" id="consultancy_patient_id" name="patient_id">
+            <input type="hidden" id="consultancy_patient_id" name="patient_id" value="0">
             <input type="hidden" id="consultancy_city_id" name="city_id">
             <input type="hidden" id="consultancy_location_id" name="location_id">
             <input type="hidden" id="consultancy_doctor_id" name="doctor_id">
@@ -46,55 +44,62 @@
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-12 mt-5">
+                        <div class="fv-row col-md-6 mt-5 consult-type">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Consultancy Type <span class="text text-danger">*</span> </label>
-                            <select id="create_consultancy_type" class="form-control select2" name="consultancy_type"></select>
+                            <select id="create_consultancy_types" class="form-control select2" name="consultancy_type"></select>
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5 consultancy-service">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Consultancy <span class="text text-danger">*</span> </label>
+                            <select id="create_consultancy_service" class="form-control select2" name="service_id"></select>
+                        </div>
+
+                        <div class="fv-row col-md-12 mt-5" id="patient_id">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
+                            <select id="create_patient_search" onchange="getPatientDetail($(this))" class="form-control patient_search_id" name="patient_id"></select>
+                        </div>
+
+                        <div class="fv-row col-md-12 new_patient_text mt-10" style="display: none;">
+                            <h3 style="color: red; text-align: center;">You are going to create new patient</h3>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Treatment <span class="text text-danger">*</span> </label>
-                            <select disabled readonly="" id="edit_treatment" class="form-control select2" name="treatment_id"></select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span> </label>
-                            <select id="edit_city" onchange="loadLocations($(this).val());" class="form-control select2" name="city_id"></select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span> </label>
-                            <select id="edit_location" onchange="loadDoctors($(this).val());" class="form-control select2" name="location_id"></select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Doctor <span class="text text-danger">*</span> </label>
-                            <select id="edit_doctor" onchange="doctorListener($(this).val());" class="form-control select2" name="doctor_id"></select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Scheduled Date <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_scheduled_date" name="scheduled_date" class="form-control custom-datepicker">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Scheduled Time <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_scheduled_time" name="scheduled_time" class="form-control scheduled_time">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Phone <span class="text text-danger">*</span> </label>
-                            <input oninput="phoneField(this);" type="text" name="phone" id="edit_patient_phone" class="form-control">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
+                            <input readonly id="create_consultancy_phone" class="form-control" name="phone">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input type="text" name="name" id="edit_patient_name" class="form-control">
+                            <input readonly id="create_patient_name" class="form-control" name="name">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
-                            <select id="edit_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender </label>
+                            <select id="create_consultancy_gender" class="form-control select2" name="gender"></select>
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source <span class="text text-danger">*</span></label>
+                            <select id="create_consultancy_lead" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source">
                             </select>
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Referred By</label>
+                            <select id="create_consultancy_referred_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="referred_by">
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+
+                            <span class="switch switch-icon mt-10">
+                                <label>
+                                    <input onclick="newPatient($(this))" id="new_patient" type="checkbox" value="1" name="new_patient">
+                                    <span></span>
+                                </label>
+                                <span>&nbsp; I would like to</span><strong>&nbsp; Create New Patient</strong>
+                            </span>
+
                         </div>
 
                     </div>

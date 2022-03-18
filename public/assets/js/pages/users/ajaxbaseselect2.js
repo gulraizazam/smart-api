@@ -45,7 +45,7 @@ $(document).ready(function () {
 
     function formatRepoSelection(item) {
         if (item.id) {
-            return item.text + " <button onclick='addUsers()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></button>";
+            return item.text + " <span type='button' onclick='addUsers()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></span>";
         } else {
             return 'Select Patient';
         }
