@@ -79,15 +79,42 @@
 
                         @include('admin.appointments.consultancy.filters')
 
-                        <div id="consultancy_calendar" style="position: relative"></div>
+                        <div id="consultancy_calendar" style="position: relative">
+
+                            {{--loader befor get celendar events--}}
+                            <div class="appointment-loader-base" style="display: none;">
+                                <div class="blockui"> <span>Please wait...</span>
+                                    <span>
+                                        <div class="spinner spinner-primary"></div>
+                                    </span>
+                                </div>
+                            </div>
+                            {{--end loader--}}
+
+                        </div>
 
                     </div>
-
                     <!--End Consultancy Section-->
 
                     <!--Start Treatment Section-->
                     <div class="card-body appointment treatment-section d-none">
-                        <div class=""><h2>Treatment</h2></div>
+
+                        @include('admin.appointments.services.filters')
+
+                        <div id="treatment_calendar" style="position: relative">
+
+                            {{--loader befor get celendar events--}}
+                            <div class="appointment-loader-base" style="display: none;">
+                                <div class="blockui"> <span>Please wait...</span>
+                                    <span>
+                                        <div class="spinner spinner-primary"></div>
+                                    </span>
+                                </div>
+                            </div>
+                            {{--end loader--}}
+
+                        </div>
+
                     </div>
                     <!--End Treatment Section-->
 
@@ -108,9 +135,11 @@
     @push('js')
 
         <script src="{{asset('assets/js/pages/appointment/consultancy-calendar.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js')}}"></script>
 
         <script src="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/consultancy-data.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-data.js')}}"></script>
 
         <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
 

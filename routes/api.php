@@ -473,6 +473,11 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
 
+    Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
+
+    Route::get("appointments/center_machines/{location_id}", [AppointmentsController::class, 'center_machines'])->name("appointments.center_machines");
+
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

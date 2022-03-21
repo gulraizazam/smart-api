@@ -650,3 +650,15 @@ div > input {
 .select2-dropdown.select2-dropdown--below {
     z-index: 11111;
 }
+.appointment-loader-base {
+    position: absolute;
+    z-index: 99;
+    padding-left: 45%;
+    padding-top: 30%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: lightgray;
+    opacity: 0.8;
+}

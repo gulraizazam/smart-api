@@ -142,7 +142,7 @@ var EditAppointmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitCalendar();
                 } else {
                     toastr.error(response.message);
                 }

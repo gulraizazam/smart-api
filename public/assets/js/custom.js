@@ -583,7 +583,7 @@ function phoneClip(data) {
 function makePhoneNumber(phoneNo, permission, type = 0) {
 
 
-    if (!permission) {
+    if (!permission && typeof phoneNo !== "undefined") {
         return '***********';
     } else {
         if (phoneNo[0] == '3' && phoneNo.length == 10 && type == 0) {
@@ -595,7 +595,7 @@ function makePhoneNumber(phoneNo, permission, type = 0) {
         }
     }
 
-    return phoneNo
+    return phoneNo;
 }
 
 function setQueryStringParameter(name, value = null) {

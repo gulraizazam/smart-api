@@ -576,7 +576,6 @@ function editRow(url, id) {
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-            reInitValidation(EditValidation);
         }
     });
 
