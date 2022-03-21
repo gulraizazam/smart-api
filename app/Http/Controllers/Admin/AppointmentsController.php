@@ -53,7 +53,8 @@
 	use Illuminate\Support\Facades\DB;
 	use Illuminate\Http\Request;
 	use Illuminate\Support\Facades\Gate;
-	use PhpOffice\PhpSpreadsheet\Spreadsheet;
+    use Illuminate\Validation\Rule;
+    use PhpOffice\PhpSpreadsheet\Spreadsheet;
 	use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 	use Illuminate\Support\Facades\Validator;
 	use App\Models\Packages;
@@ -1357,14 +1358,11 @@
 
 			return $validator = Validator::make($data, [
 				'name' => 'required',
-                'phone' => 'required|unique:users,phone,' . $id,
-
-//            'scheduled_date' => 'required',
-//            'scheduled_time' => 'required',
-
-				/*            'city_id' => 'required',
-                        'location_id' => 'required',
-                        'doctor_id' => 'required',*/
+                //'phone' => 'required|unique:users',
+                'phone' => [
+                    'required',
+                    Rule::unique('users')->ignore($id),
+                ],
 			]);
 		}
 
@@ -3176,7 +3174,7 @@
                             'service' => $appointment->service->name,
                             'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
                             'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-                            'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                            'phone' => GeneralFunctions::prepareNumber4Call($appointment?->patient?->phone ?? '0300'),
                             'duration' => $appointment->service->duration,
                             'editable' => true,
                             'overlap' => false,
@@ -3255,10 +3253,7 @@
 							['invoice_status_id', '=', $invoicestatus->id]
 						])->get();
 						if (count($invoice) > 0) {
-							return response()->json(array(
-								'status' => 0,
-								"message" => trans("global.appointments.invoice_paid_message")
-							), 200);
+						    return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
 						}
 
 						$record = Appointments::updateRecord($request->get("id"), $data, Auth::User()->account_id);
@@ -3286,29 +3281,17 @@
 								])
 							);
 
-							return response()->json(array(
-								'status' => 1,
-								"message" => "Event Updated Successfully"
-							));
+                            return ApiHelper::apiResponse($this->success, 'Event Updated Successfully');
 						}
-					} else {
-						return response()->json(array(
-							'status' => 0,
-							"message" => "Doctor is not available"
-						), 200);
 					}
-				} else {
-					return response()->json(array(
-						'status' => 0,
-						"message" => "Invalid paramters"
-					), 200);
+
+                    return ApiHelper::apiResponse($this->success, 'Doctor is not available', false);
 				}
-			} else {
-				return response()->json(array(
-					'status' => 0,
-					"message" => $appointment_checkes['message']
-				));
+
+                return ApiHelper::apiResponse($this->success, 'Invalid paramters', false);
 			}
+
+            return ApiHelper::apiResponse($this->success,  $appointment_checkes['message'], false);
 		}
 
 		/*
@@ -4535,9 +4518,9 @@
 				$minTime = Resources::getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end);
 
 				if ($request->has("start") && $request->has("end")) {
-					$doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end"))->toArray();
+					$doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end"));
 				} else {
-					$doctor_rotas = [];
+					$doctor_rotas = collect();
 				}
 				if ($appointments) {
 					$data = array();
@@ -4561,15 +4544,18 @@
 						);
 					}
 					$resource_ids = array();
-					foreach ($resources as $resource) {
+                    $resources = array_filter($resources);
+                    foreach ($resources as $resource) {
 						$resource_ids[] = $resource["id"];
 					}
 					return response()->json(array(
 						'status' => 1,
 						'events' => $data,
-						'rotas' => $doctor_rotas,
+						'rotas' => $doctor_rotas->toArray(),
 						'min_time' => $minTime,
-						'resource_ids' => $resource_ids
+						'resource_ids' => $resource_ids,
+                         'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
+                        'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
 					));
 				} else {
 					return response()->json(array(
@@ -4813,18 +4799,17 @@
 			} else {
 				$machines = Resources::where([["resource_type_id", "=", config("constants.resource_room_type_id")], ["active", "=", '1'], ["location_id", "=", $location_id], ["account_id", "=", Auth::User()->account_id]])->get()->pluck("name", "id");
 			}
-			$machines->prepend('Select a Machine', '');
+
 			if ($machines) {
-				return response()->json(array(
-					'status' => 1,
-					'dropdown' => view('admin.appointments.dropdowns.machines', compact('machines'))->render(),
-				));
-			} else {
-				response()->json(array(
-					'status' => 0,
-					'dropdown' => null,
-				));
+			    return ApiHelper::apiResponse($this->success, 'recourd found', true, [
+                    'dropdown' => $machines,
+                ]);
+
 			}
+
+            return ApiHelper::apiResponse($this->success, 'recourd found', false, [
+                'dropdown' => null,
+            ]);
 		}
 
 		/************************************************************

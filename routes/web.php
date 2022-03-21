@@ -373,8 +373,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
 
-        Route::get("appointments/center_machines/{location_id}", [AppointmentsController::class, 'center_machines'])->name("appointments.center_machines");
-
         Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
         Route::get('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
         Route::resource('appointments', AppointmentsController::class)->only('index');
@@ -503,8 +501,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
 
         Route::get('appointments/load-non-scheduled-appointments', [AppointmentsController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
-
-        Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
 
         Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
         Route::get('appointments/export', [AppointmentsController::class, 'export'])->name('appointments.export');

@@ -3,7 +3,7 @@
 var calendar;
 var start_date;
 
-var ConsultancyCalendar = function() {
+var TreatmentCalendar = function() {
 
     return {
         init: function(start) {
@@ -17,7 +17,7 @@ var ConsultancyCalendar = function() {
                 TODAY = formatDate(start, 'YYYY-MM-DD');
             }
 
-            var calendarEl = document.getElementById('consultancy_calendar');
+            var calendarEl = document.getElementById('treatment_calendar');
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 plugins: [ 'bootstrap', 'interaction', 'dayGrid', 'timeGrid', 'list' ],
@@ -52,28 +52,151 @@ var ConsultancyCalendar = function() {
                 droppable: true,
                 eventLimit: true, // allow "more" link when too many events
                 navLinks: true,
+                groupByResource: true,
+                businessHours: true,
+                refetchResourcesOnNavigate: true,
+                resources: function (callback, start, end, timezone) {
+                    $.ajax({
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        url: route('admin.appointments.get_room_resources_with_specific_date'),
+                        type: 'GET',
+                        data: {
+                            start: start.format("YYYY-MM-DD"),
+                            end: end.format("YYYY-MM-DD"),
+                            location_id: $("#location_id").val(),
+                            machine_id: $("#machine_id").val()
+                        },
+                        cache: false,
+                        success: function (response) {
+                            alert(response.status)
+                            if (response.status) {
+                                var resources = [];
+                                $.each(response.data, function (id, resource) {
+
+                                    if (resource.resource_rota) {
+                                       let businessHoursArray = [];
+                                        if (resource.resource_rota.sunday) {
+                                            let sunday = resource.resource_rota.sunday.split(",");
+                                            let sunday_start = sunday[0];
+                                            let sunday_end = sunday[1];
+                                            businessHoursArray.push({
+                                                start: $.fullCalendar.moment(sunday_start, "HH:mm a").format("HH:mm"),
+                                                end: $.fullCalendar.moment(sunday_end, 'HH:mm a').format("HH:mm"),
+                                                dow: [0]
+                                            });
+                                        }
+
+                                        if (resource.resource_rota.monday) {
+                                            let monday = resource.resource_rota.monday.split(",");
+                                            let monday_start = monday[0];
+                                            let monday_end = monday[1];
+                                            businessHoursArray.push({
+                                                start: $.fullCalendar.moment(monday_start, "HH:mm a").format("HH:mm"),
+                                                end: $.fullCalendar.moment(monday_end, 'HH:mm a').format("HH:mm"),
+                                                dow: [1]
+                                            });
+                                        }
+
+                                        if (resource.resource_rota.tuesday) {
+                                            tuesday = resource.resource_rota.tuesday.split(",");
+                                            tuesday_start = tuesday[0];
+                                            tuesday_end = tuesday[1];
+                                            businessHoursArray.push({
+                                                start: $.fullCalendar.moment(tuesday_start, "HH:mm a").format("HH:mm"),
+                                                end: $.fullCalendar.moment(tuesday_end, 'HH:mm a').format("HH:mm"),
+                                                dow: [2]
+                                            });
+                                        }
+
+                                        if (resource.resource_rota.wednesday) {
+                                            wednesday = resource.resource_rota.wednesday.split(",");
+                                            wednesday_start = wednesday[0];
+                                            wednesday_end = wednesday[1];
+                                            businessHoursArray.push({
+                                                start: $.fullCalendar.moment(wednesday_start, "HH:mm a").format("HH:mm"),
+                                                end: $.fullCalendar.moment(wednesday_end, 'HH:mm a').format("HH:mm"),
+                                                dow: [3]
+                                            });
+                                        }
+
+
+                                        if (resource.resource_rota.thursday) {
+                                            thursday = resource.resource_rota.thursday.split(",");
+                                            thursday_start = thursday[0];
+                                            thursday_end = thursday[1];
+                                            businessHoursArray.push({
+                                                start: $.fullCalendar.moment(thursday_start, "HH:mm a").format("HH:mm"),
+                                                end: $.fullCalendar.moment(thursday_end, 'HH:mm a').format("HH:mm"),
+                                                dow: [4]
+                                            });
+                                        }
+                                        if (resource.resource_rota.friday) {
+                                            friday = resource.resource_rota.friday.split(",");
+                                            friday_start = friday[0];
+                                            friday_end = friday[1];
+                                            businessHoursArray.push({
+                                                start: $.fullCalendar.moment(friday_start, "HH:mm a").format("HH:mm"),
+                                                end: $.fullCalendar.moment(friday_end, 'HH:mm a').format("HH:mm"),
+                                                dow: [5]
+                                            });
+                                        }
+
+                                        if (resource.resource_rota.saturday) {
+                                            saturday = resource.resource_rota.saturday.split(",");
+                                            saturday_start = saturday[0];
+                                            saturday_end = saturday[1];
+                                            businessHoursArray.push({
+                                                start: $.fullCalendar.moment(saturday_start, "HH:mm a").format("HH:mm"),
+                                                end: $.fullCalendar.moment(saturday_end, 'HH:mm a').format("HH:mm"),
+                                                dow: [6]
+                                            });
+                                        }
+                                        resources.push({
+                                            id: resource.id,
+                                            title: resource.name, // use the element's text as the event title
+                                            businessHours: businessHoursArray
+                                        });
+                                    }
+
+                                });
+                                callback(resources);
+                            } else {
+                                var events = [];
+                                callback(events);
+                            }
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            var events = [];
+                            callback(events);
+                        }
+                    });
+                },
                 events: function(event, callback) {
 
                     $('.appointment-loader-base').show();
                     start_date = event.start;
 
-                    if ($('#consultancy_city_filter').val() !== null
-                        && $('#consultancy_location_filter').val() !== null
-                        && $('#consultancy_doctor_filter').val() !== null
+                    if ($('#treatment_city_filter').val() !== null
+                        && $('#treatment_location_filter').val() !== null
+                        && $('#treatment_doctor_filter').val() !== null
+                        && $('#treatment_resource_filter').val() !== null
                     ) {
 
                         $.ajax({
                             headers: {
                                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                             },
-                            url: route('admin.appointments.load_scheduled_appointments'),
+                            url: route('admin.appointments.load_scheduled_service_appointments'),
                             type: 'GET',
                             data: {
-                                city_id: $('#consultancy_city_filter').val(),
-                                location_id: $('#consultancy_location_filter').val(),
-                                doctor_id: $('#consultancy_doctor_filter').val(),
-                                start: formatDate(event.start, 'YYYY-MM-DDTHH:mm:ss'),
-                                end: formatDate(event.end, 'YYYY-MM-DDTHH:mm:ss'),
+                                city_id: $('#treatment_city_filter').val(),
+                                location_id: $('#treatment_location_filter').val(),
+                                doctor_id: $('#treatment_doctor_filter').val(),
+                                machine_id: $('#treatment_resource_filter').val(),
+                                start: formatDate(event.start, 'YYYY-MM-DD'),
+                                end: formatDate(event.end, 'YYYY-MM-DD'),
                             },
                             cache: false,
                             success: async function (response) {
