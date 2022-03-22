@@ -484,6 +484,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
 
     Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
+    // Edit Service
+    Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editService'])->name('appointments.edit_service');
 
 
 });

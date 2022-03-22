@@ -2160,19 +2160,23 @@
 		 * Show the form for editing Appointment.
 		 *
 		 * @param int $id
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function editService($id)
 		{
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
 			$locationsids = array();
 			$doctorids = array();
 			$machineids = array();
 
-			$appointment = Appointments::findOrFail($id);
+			$appointment = Appointments::with('patient', 'doctor')->find($id);
+
+			if (! $appointment) {
+                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            }
 
 			$resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
 			$machineHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id_for_machine);
@@ -2184,7 +2188,6 @@
 			if ($cities) {
 				$cities = $cities->pluck('full_name', 'id');
 			}
-			$cities->prepend('Select a City', '');
 
 			if ($appointment->service_id) {
 				$services = $serviceid = Services::where(['id' => $appointment->service_id])->get()->pluck('name', 'id');
@@ -2192,7 +2195,6 @@
 			} else {
 				$services = Services::get()->pluck('name', 'id');
 			}
-			$services->prepend('Select a Service', '');
 
 			$locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::User()->account_id);
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
@@ -2207,7 +2209,6 @@
 			if ($locations) {
 				$locations = $locations->pluck("name", "id");
 			}
-			$locations->prepend('Select a Centre', '');
 
 			$doctors = $doctors_no_final = Doctors::getActiveOnly($appointment->location_id, Auth::User()->account_id);
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
@@ -2231,14 +2232,14 @@
 					}
 				}
 			}
-			$doctors->prepend('Select a Doctor', '');
 
 			$machines = Resources::where([
 				["resource_type_id", "=", config("constants.resource_room_type_id")],
 				["location_id", "=", $appointment->location_id],
-				["account_id", "=", Auth::User()->account_id]],
+				["account_id", "=", Auth::user()->account_id]],
 				["actvie", "=", 1]
 			)->get();
+
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
 			foreach ($machines as $machine) {
 				$machinetypeid = MachineType::where('id', '=', $machine->machine_type_id)->first();
@@ -2248,12 +2249,27 @@
 				}
 			}
 			$machines = Resources::whereIn('id', $machineids)->get()->pluck('name', 'id');
+
 			/*End*/
-			$machines->prepend('Select a Machine', '');
 
 			$back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
 
-			return view('admin.appointments.services.service_edit', compact('appointment', 'cities', 'services', 'locations', 'doctors', 'machines', 'resourceHadRotaDay', 'machineHadRotaDay', 'biggerTime', 'smallerTime', 'back_date_config'));
+            return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+                'appointment' => $appointment,
+                'cities' => $cities,
+                'services' => $services,
+                'locations' => $locations,
+                'doctors' => $doctors,
+                'machines' => $machines,
+                'resourceHadRotaDay' => $resourceHadRotaDay,
+                'machineHadRotaDay' => $machineHadRotaDay,
+                'biggerTime' => $biggerTime,
+                'smallerTime' => $smallerTime,
+                'back_date_config' => $back_date_config,
+                'genders' => config('constants.gender_array')
+            ]);
+
+            //return view('admin.appointments.services.service_edit', compact('appointment', 'cities', 'services', 'locations', 'doctors', 'machines', 'resourceHadRotaDay', 'machineHadRotaDay', 'biggerTime', 'smallerTime', 'back_date_config'));
 		}
 
 		/**

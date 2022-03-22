@@ -46,6 +46,10 @@
     </div>
 </div>
 
+<div class="popup">
+    @include('admin.appointments.appointment-forms.popup')
+</div>
+
 {{--treatment forms--}}
 
 <div class="modal fade" id="modal_create_treatment" tabindex="-1" aria-hidden="true">
@@ -66,9 +70,14 @@
     </div>
 </div>
 
+<div class="modal fade" id="modal_treatment_edit" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_treatmenty_detail">
+
+        @include('admin.appointments.appointment-forms.treatment.edit')
+
+    </div>
+</div>
+
 {{--end treatment--}}
 
-
-<div class="popup">
-    @include('admin.appointments.appointment-forms.popup')
-</div>

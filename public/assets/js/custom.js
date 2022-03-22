@@ -139,6 +139,12 @@ $(document).ready(function () {
         $(".modal_consultancy_popup").hide();
     });
 
+    $('.default-timepicker').timepicker();
+    $('#edit_scheduled_time').on('click', function() {
+
+        $('.default-timepicker').text($("#edit_scheduled_time").val());
+    });
+
 });
 
 function addUsers() {
@@ -582,16 +588,18 @@ function phoneClip(data) {
 
 function makePhoneNumber(phoneNo, permission, type = 0) {
 
+    if (typeof phoneNo !== "undefined") {
 
-    if (!permission && typeof phoneNo !== "undefined") {
-        return '***********';
-    } else {
-        if (phoneNo[0] == '3' && phoneNo.length == 10 && type == 0) {
-            return '+92' + phoneNo;
-        } else if (phoneNo[0] == '3' && phoneNo.length == 10 && type == 1) {
-            return '0' + phoneNo;
+        if (!permission) {
+            return '***********';
         } else {
-            return phoneNo;
+            if (phoneNo[0] == '3' && phoneNo.length == 10 && type == 0) {
+                return '+92' + phoneNo;
+            } else if (phoneNo[0] == '3' && phoneNo.length == 10 && type == 1) {
+                return '0' + phoneNo;
+            } else {
+                return phoneNo;
+            }
         }
     }
 

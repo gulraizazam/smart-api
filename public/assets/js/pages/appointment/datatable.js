@@ -558,10 +558,15 @@ function actions(data) {
     return '';
 }
 
-function editRow(url, id) {
+function editRow(url, id, $class = 'detail-actions') {
 
-    $("#modal_edit_appointment").modal("show");
-    $("#modal_edit_appointment_form").attr("action", route('admin.appointments.update', {id: id}));
+    if ($class === 'detail-actions') {
+        $("#modal_edit_appointment").modal("show");
+        $("#modal_edit_appointment_form").attr("action", route('admin.appointments.update', {id: id}));
+    } else {
+        $("#modal_treatment_edit").modal("show");
+        $("#modal_edit_treatment_form").attr("action", route('admin.appointments.update', {id: id}));
+    }
 
     $.ajax({
         headers: {
@@ -571,7 +576,11 @@ function editRow(url, id) {
         type: "GET",
         cache: false,
         success: function (response) {
-            setEditData(response);
+            if ($class === 'detail-actions') {
+                setEditData(response);
+            } else {
+                setTreatmentEditData(response);
+            }
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -631,15 +640,15 @@ function setEditData(response) {
         $("#edit_treatment").html(service_option).val(appointment.service_id);
         $("#edit_city").html(city_option).val(appointment.city_id);
         $("#edit_location").html(location_option).val(appointment.location_id);
-        $("#edit_doctor").html(doctor_option).val(appointment.doctor_id);
-        $("#edit_gender_id").html(gender_option).val(appointment.patient.gender);
+        $("#edit_doctor").html(doctor_option).val(appointment?.doctor_id);
+        $("#edit_gender_id").html(gender_option).val(appointment?.patient?.gender);
 
         $("#edit_scheduled_date").val(appointment.scheduled_date);
         $("#scheduled_date_old").val(appointment.scheduled_date);
         $("#edit_scheduled_time").val(appointment.scheduled_time);
         $("#scheduled_time_old").val(appointment.scheduled_time);
-        $("#edit_patient_name").val(appointment.patient.name);
-        $("#edit_patient_phone").val(appointment.patient.phone);
+        $("#edit_patient_name").val(appointment?.patient?.name);
+        $("#edit_patient_phone").val(appointment?.patient?.phone);
         $("#back-date").val(back_date_config.data);
         $("#old_phone").val(appointment?.lead?.patient?.phone);
         $("#lead_id").val(appointment?.lead_id);
@@ -647,6 +656,85 @@ function setEditData(response) {
         $("#resourceRotaDayID").val(resourceHadRotaDay?.id);
         $("#start_time").val(resourceHadRotaDay?.start_time);
         $("#end_time").val(resourceHadRotaDay?.end_time);
+
+
+    } catch (error) {
+       showException(error);
+    }
+
+}
+
+function setTreatmentEditData(response) {
+
+    try {
+
+        let appointment = response.data.appointment;
+        let back_date_config = response.data.back_date_config;
+        let cities = response.data.cities;
+        let doctors = response.data.doctors;
+        let locations = response.data.locations;
+        let machines = response.data.machines;
+        let resourceHadRotaDay = response.data.resourceHadRotaDay;
+        let machineHadRotaDay = response.data.machineHadRotaDay;
+        let services = response.data.services;
+        let setting = response.data.setting;
+        let genders = response.data.genders;
+
+
+        let service_option = '<option value="">All</option>';
+        Object.entries(services).forEach(function (service) {
+            service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+        });
+
+        let city_option = '<option value="">All</option>';
+        Object.entries(cities).forEach(function (city) {
+            city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
+        });
+
+        let location_option = '<option value="">All</option>';
+        Object.entries(locations).forEach(function (location) {
+            location_option  += '<option value="' + location[0] + '">' + location[1] + '</option>';
+        });
+
+        let doctor_option = '<option value="">All</option>';
+        Object.entries(doctors).forEach(function (doctor) {
+            doctor_option  += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
+        });
+
+        let gender_option = '<option value="">All</option>';
+        Object.entries(genders).forEach(function (gender) {
+            gender_option  += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
+        });
+
+        let machine_option = '<option value="">All</option>';
+        Object.entries(machines).forEach(function (machine) {
+            machine_option  += '<option value="' + machine[0] + '">' + machine[1] + '</option>';
+        });
+
+        $("#edit_treatment_service_id").html(service_option).val(appointment.service_id);
+        $("#edit_treatment_machine_id").html(machine_option).val(appointment.resource_id);
+        $("#edit_treatment_city_id").html(city_option).val(appointment.city_id);
+        $("#edit_treatment_location_id").html(location_option).val(appointment.location_id);
+        $("#edit_treatment_doctor_id").html(doctor_option).val(appointment?.doctor_id);
+        $("#edit_treatment_patient_gender").html(gender_option).val(appointment?.patient?.gender);
+
+        $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
+        $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
+
+        $("#edit_treatment_scheduled_time").val(appointment.scheduled_time);
+        $("#scheduled_treatment_time_old").val(appointment.scheduled_time);
+
+        $("#edit_treatment_patient_name").val(appointment?.patient?.name);
+        $("#edit_treatment_patient_phone").val(appointment?.patient?.phone);
+
+        $("#treatment_back_date").val(back_date_config.data);
+        $("#treatment_old_phone").val(appointment?.lead?.patient?.phone);
+        $("#treatment_lead_id").val(appointment?.lead_id);
+        $("#treatment_appointment_id").val(appointment?.id);
+        $("#treatment_resourceRotaDayID").val(resourceHadRotaDay?.id);
+        $("#treatment_machineRotaDayID").val(machineHadRotaDay?.id);
+        $("#treatment_start_time").val(resourceHadRotaDay?.start_time);
+        $("#treatment_end_time").val(resourceHadRotaDay?.end_time);
 
 
     } catch (error) {

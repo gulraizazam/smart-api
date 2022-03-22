@@ -479,9 +479,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
 
 
-        // Edit Service
-        Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editService'])->name('appointments.edit_service');
-        // Appointment Comments
+       // Appointment Comments
         Route::get('appointments/comment-save',[AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
         //Appointment Route end for images
 
