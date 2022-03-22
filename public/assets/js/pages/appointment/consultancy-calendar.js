@@ -411,7 +411,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
             <i class="la la-edit"></i>\
             </a>';
         } else {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`);" >\
+            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `'+$class+'`);" >\
             <i class="la la-edit"></i>\
             </a>';
         }
