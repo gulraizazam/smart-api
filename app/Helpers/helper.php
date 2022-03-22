@@ -75,8 +75,15 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
         return '';
     }
 
-    function activeMenu($route, $class = 'menu-item-active') {
-        if (request()->route()->getName() == $route) {
+    function activeMenu($route, $class = 'menu-item-active', $queryString = null) {
+
+        if ($queryString && request('tab') != null && request('tab') != '') {
+
+            if (request()->route()->getName() == $route && request('tab') == $queryString) {
+
+                return $class;
+            }
+        } else if (request()->route()->getName() == $route) {
             return $class;
         }
         return '';

@@ -134,7 +134,6 @@ var ConsultancyCalendar = function() {
 
            calendar.render();
         },
-
         async loadEvents(response, callback) {
 
             if (response.status) {
@@ -282,11 +281,9 @@ var ConsultancyCalendar = function() {
                 }
             });
         },
-
         setEventId: function(eventId) {
             window.eventData.createdId = eventId;
         },
-
         createConsultancy: function (info) {
 
             let result = get_query();
@@ -327,7 +324,6 @@ var ConsultancyCalendar = function() {
     };
 }();
 
-
 function clickEvent(info, jsEvent, view) {
 
     let event = info.event.extendedProps;
@@ -347,7 +343,7 @@ function clickEvent(info, jsEvent, view) {
                 if (response.status) {
                     setDetailData(response);
                 } else {
-                    //
+                    toastr.success(response.message)
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -358,7 +354,6 @@ function clickEvent(info, jsEvent, view) {
     }
 
 }
-
 
 function setDetailData(response) {
 
@@ -397,7 +392,7 @@ function setDetailData(response) {
     }
 }
 
-function detailActions(appointment, invoice, invoiceid, permissions) {
+function detailActions(appointment, invoice, invoiceid, permissions, $class = 'detail-actions') {
 
     let query = get_query();
     let id = appointment.id;
@@ -451,7 +446,7 @@ function detailActions(appointment, invoice, invoiceid, permissions) {
         </a>\
         </td>';
 
-    $(".detail-actions").html(buttons);
+    $("." + $class).html(buttons);
 
 }
 
@@ -495,7 +490,7 @@ function commentData(user_name, created_at, comment) {
 function setCreateConsultancy(response, start) {
 
     try {
-        patientSearch('patient_search_id');
+        patientSearch('patient_search_id')
 
         $("#modal_create_consultancy").modal("show");
         $("#modal_create_consultancy_form")[0].reset();

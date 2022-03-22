@@ -476,6 +476,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
 
     Route::get("appointments/center_machines/{location_id}", [AppointmentsController::class, 'center_machines'])->name("appointments.center_machines");
+    Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
+
+    Route::post('appointments/load-node-services', [AppointmentsController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
+    Route::post('appointments/store-service', [AppointmentsController::class, 'storeService'])->name('appointments.store_service');
+
+    Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
+
+    Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
 
 
 });

@@ -129,7 +129,7 @@
     <!--end::Content-->
 
     {{--All forms popups--}}
-    @include('admin.appointments.consultancy-forms.modals')
+    @include('admin.appointments.appointment-forms.modals')
 
 
     @push('js')

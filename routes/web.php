@@ -371,8 +371,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::post('appointments/loadlead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
-        Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
-
         Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
         Route::get('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
         Route::resource('appointments', AppointmentsController::class)->only('index');
@@ -380,17 +378,10 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         /*service routes*/
 
-        Route::post('appointments/load-node-services', [AppointmentsController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
-
         Route::get('appointments/manage-services', [AppointmentsController::class, 'createService'])->name('appointments.manage_services');
-
-        Route::post('appointments/store-service', [AppointmentsController::class, 'storeService'])->name('appointments.store_service');
 
         Route::get('appointments/load-non-scheduled-service-appointments', [AppointmentsController::class, 'getNonScheduledServiceAppointments'])->name('appointments.load_nonscheduled_service_appointments');
 
-        Route::get('appointments/load-scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
-
-        Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
 
         Route::get('appointments/get_room_resources', [AppointmentsController::class, 'getRoomResources'])->name('appointments.get_room_resources');
 

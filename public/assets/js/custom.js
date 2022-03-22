@@ -681,9 +681,9 @@ function formatRepoSelection(item) {
     }
 }
 
-function reInitCalendar(start) {
-    if (typeof calendar !== "undefined") { /*if already initiate then destroy first*/
-        calendar.destroy();
-        ConsultancyCalendar.init(start);
+function reInitCalendar(start, calendarInit, calendarInstance) {
+    if (typeof calendarInit !== "undefined") { /*if already initiate then destroy first*/
+        calendarInit.destroy();
+        calendarInstance.init(start);
     }
 }
