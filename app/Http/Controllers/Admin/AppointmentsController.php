@@ -1759,7 +1759,7 @@
 		public function createTreatmentAppointment(Request $request)
 		{
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
 			}
 			if (
 				$request->get("city_id") &&
@@ -1775,7 +1775,7 @@
 				$location_id = 0;
 				$doctor_id = 0;
 
-				return response()->json(array("message" => "Invalid request"), 400);
+                return ApiHelper::apiResponse($this->success, 'Invalid request.', false);
 			}
 
 			if ($request->start) {
@@ -1845,25 +1845,30 @@
 
 			if (count($serviceIds)) {
 				$services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
-				$services->prepend('Select a Service', '');
 			} else {
-				$services[''] = 'Select a Service';
+				$services[''] = '';
 			}
 
-
-//        $services = Services::where("end_node", '=', 0)->get()->pluck('name', 'id');
-//        $services->prepend('Select a Service', '');
-
 			$lead_sources = LeadSources::getActiveSorted();
-			$lead_sources->prepend('Select a Lead Source', '');
 
 			// Get location based doctors
 			$doctors = Doctors::getLocationDoctors();
 
-			$towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
-			$towns->prepend('Select a Town', '');
+			$towns = Towns::getActiveTowns();
 
-			return view('admin.appointments.services.create', compact('lead_sources', 'services', 'doctors', 'city_id', 'location_id', 'doctor_id', 'lead', 'employees', 'appointment_checkes', 'towns'));
+            return ApiHelper::apiResponse($this->success, $appointment_checkes['message'] ?? 'Record found', $appointment_checkes['status'], [
+                'lead_sources' => $lead_sources,
+                'services' => $services,
+                'doctors' => $doctors,
+                'city_id' => $city_id,
+                'location_id' => $location_id,
+                'doctor_id' => $doctor_id,
+                'lead' => $lead,
+                'employees' => $employees,
+                'appointment_checkes' => $appointment_checkes,
+                'towns' => $towns,
+                'genders' => Config::get("constants.gender_array")
+            ]);
 		}
 
 		/*
@@ -4123,23 +4128,19 @@
 		 * Store a newly created Appointment in storage.
 		 *
 		 * @param \Illuminate\Http\Request $request
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function storeService(Request $request)
 		{
 			$messages = array();
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
-			$validator = $this->verifyServiceFields($request);
+			$validator = $this->verifyServiceFields($request, $request->patient_id);
 
 			if ($validator->fails()) {
-				return response()->json(array(
-					'status' => 0,
-					'message' => $validator->messages()->all(),
-					'id' => 0,
-				));
+                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
 			}
 			// Store form data in a variable
 			$appointmentData = $request->all();
@@ -4165,7 +4166,7 @@
 				}
 
 			} else {
-				$messages[] = "Appointment types is not set";
+			    return ApiHelper::apiResponse($this->success, "Appointment types is not set", false);
 			}
 
 			// Set Appointment Status
@@ -4217,7 +4218,7 @@
                         $appointmentData['resource_id'] = $request->get("resource_id");
                     }
                 } else {
-                    $messages[] = "Doctor is not available and Appointment is not scheduled";
+                    return ApiHelper::apiResponse($this->success, "Doctor or machine is not available and Appointment is not scheduled.", false);
                 }
             }
 
@@ -4408,13 +4409,10 @@
 				])
 			);
 
-
-			return response()->json(array(
-				'status' => 1,
-				'message' => $message,
-				"log" => $messages,
-				'id' => $appointment->id,
-			));
+            return ApiHelper::apiResponse($this->success, $message, true, [
+                "log" => $messages,
+                'id' => $appointment->id,
+            ]);
 
 //        return redirect()->route('admin.appointments.index');
 		}
@@ -4423,16 +4421,19 @@
 		 * Validate form fields
 		 *
 		 * @param \Illuminate\Http\Request $request
-		 * @return Validator $validator;
+		 * @return \Illuminate\Contracts\Validation\Validator
 		 */
-		protected function verifyServiceFields(Request $request)
+		protected function verifyServiceFields(Request $request, $id = null)
 		{
-			return $validator = Validator::make($request->all(), [
-				'name' => 'required',
-				'phone' => 'required',
+            $data = $request->all();
+            $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
 
-//            'scheduled_date' => 'required',
-//            'scheduled_time' => 'required',
+			return Validator::make($data, [
+				'name' => 'required',
+                'phone' => [
+                    'required',
+                    Rule::unique('users')->ignore($id),
+                ],
 
 				'city_id' => 'required',
 				'location_id' => 'required',
@@ -4630,10 +4631,7 @@
 								['invoice_status_id', '=', $invoicestatus->id]
 							])->get();
 							if (count($invoice) > 0) {
-								return response()->json(array(
-									'status' => 0,
-									"message" => trans("global.appointments.invoice_paid_message")
-								), 200);
+							    return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
 							}
 							$record = Appointments::updateServiceRecord($request->get("id"), $data, Auth::User()->account_id);
 							if ($record) {
@@ -4657,66 +4655,46 @@
 									])
 								);
 
-								return response()->json(array(
-									'status' => 1,
-									"message" => "Event Updated Successfully"
-								));
+                                return ApiHelper::apiResponse($this->success, 'Event Updated Successfully.');
 							}
-						} else {
-							$response = response()->json(array(
-								'status' => 0,
-								"message" => "Doctor is Available But Machine is not available",
-								'data' => array("doctor" => $doctor_check_availability, "room" => null)
-							));
 						}
-					} else {
+
+                        return ApiHelper::apiResponse($this->success, 'Doctor is Available But Machine is not available.', false);
+
+
+                    } else {
 						if ($room_check_availability) {
-							$response = response()->json(array(
-								'status' => 0,
-								"message" => "Machine is Available. But Doctor is not",
-								'data' => array("room" => $room_check_availability, "doctor" => null)
-							));
-						} else {
-							$response = response()->json(array(
-								'status' => 0,
-								"message" => "Neither Doctor nor Machine available",
-								'data' => array("room" => null, "doctor" => null)
-							));
+
+                            return ApiHelper::apiResponse($this->success, 'Machine is Available. But Doctor is not.', false);
+
 						}
 
-
-					}
-
-				} else {
-					$response = response()->json(array(
-						'status' => 0,
-						"message" => "Requested paramter not provided"
-					));
+                        return ApiHelper::apiResponse($this->success, 'Neither Doctor nor Machine available.', false);
+                    }
 				}
-			} else {
-				$response = response()->json(array(
-					'status' => 0,
-					"message" => $appointment_checkes['message']
-				));
+
+                return ApiHelper::apiResponse($this->success, 'Requested parameter not provided.', false);
 			}
-			return $response;
+
+            return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
 		}
 
+        /**
+         * @param Request $request
+         * @return \Illuminate\Http\JsonResponse
+         */
 		public function loadEndServiceByBaseService(Request $request)
 		{
 
 			if ($request->get("service_id")) {
 				$services = Appointments::getNodeServices($request->get('service_id'), Auth::User()->account_id, true, true);
-				return response()->json(array(
-					'status' => 1,
-					'dropdown' => view('admin.appointments.dropdowns.node_services', compact('services'))->render(),
-				));
-			} else {
-				return response()->json(array(
-					'status' => 0,
-					'dropdown' => null,
-				));
+
+				return ApiHelper::apiResponse($this->success, 'Record found', true, [
+				    'services' => $services
+                ]);
+
 			}
+            return ApiHelper::apiResponse($this->success, 'Record not found', false);
 		}
 
 		/*

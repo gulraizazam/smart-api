@@ -3,7 +3,7 @@
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered form-popup" id="appointment_status_change">
 
-        @include('admin.appointments.consultancy-forms.change-status')
+        @include('admin.appointments.appointment-forms.change-status')
 
     </div>
 </div>
@@ -13,7 +13,7 @@
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered form-popup" id="appointment_edit">
 
-        @include('admin.appointments.consultancy-forms.edit')
+        @include('admin.appointments.appointment-forms.edit')
 
     </div>
 </div>
@@ -22,7 +22,7 @@
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered form-popup" id="consultancy_edit">
 
-        @include('admin.appointments.consultancy-forms.create')
+        @include('admin.appointments.appointment-forms.create')
 
     </div>
 </div>
@@ -32,7 +32,7 @@
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_status_change">
 
-        @include('admin.appointments.consultancy-forms.sms-log')
+        @include('admin.appointments.appointment-forms.sms-log')
 
     </div>
 </div>
@@ -41,11 +41,34 @@
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_consultancy_detail">
 
-        @include('admin.appointments.consultancy-forms.consultancy-detail')
+        @include('admin.appointments.appointment-forms.consultancy-detail')
 
     </div>
 </div>
 
+{{--treatment forms--}}
+
+<div class="modal fade" id="modal_create_treatment" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered form-popup" id="treatment_edit">
+
+        @include('admin.appointments.appointment-forms.treatment.create')
+
+    </div>
+</div>
+
+<div class="modal fade" id="modal_treatment_detail" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_treatmenty_detail">
+
+        @include('admin.appointments.appointment-forms.treatment.detail')
+
+    </div>
+</div>
+
+{{--end treatment--}}
+
+
 <div class="popup">
-    @include('admin.appointments.consultancy-forms.popup')
+    @include('admin.appointments.appointment-forms.popup')
 </div>
