@@ -1,10 +1,10 @@
-@extends('layouts.app-rs-pdf')
+@extends('admin.layouts.master-pdf')
 <style type="text/css">
     @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
     .cf_label {
         width: 100%;
     }
-    
+
     .clearfix:before,
     .clearfix:after {
         content: " "; /* 1 */
@@ -22,7 +22,7 @@
     .clearfix {
         *zoom: 1;
     }
-        
+
     .cf_input_question {
         font-size: 18px !important;
         color: #000 !important;
@@ -43,8 +43,8 @@
     .cf_input_option .md-radio, .cf_input_option .md-checkbox {
         position: relative;
         padding: 0 10px;
-        width:48%; 
-        display:inline-block; 
+        width:48%;
+        display:inline-block;
         /* float:left; */
     }
     .cf_input_option .md-checkbox label > .box {
@@ -245,10 +245,10 @@
         padding-top:40px;
     }
     .form-data-table{
-        page-break-after: avoid;   
+        page-break-after: avoid;
     }
     #cs_field_27{
-        page-break-before:avoid;   
+        page-break-before:avoid;
     }
     .cf_input_option .md-checkbox label{
         padding-left:10px !important;
@@ -257,13 +257,13 @@
     .data-split-wrap .order-date{
         font-size:28px;
     }
-    
+
     @media print {
         h1,h2,h3,h4,h5,h6,p{
             font-family: "Open Sans", sans-serif !important;
-        }   
+        }
         .form-data-table{
-            page-break-after: avoid;   
+            page-break-after: avoid;
         }
         html, body { height: auto;
             background:#fff !important;
@@ -337,16 +337,16 @@
             <div id="cf_form">
                 <table class="form-data-table">
                     <tbody>
-                    <tr class="data-split-wrap">
+                    <tr class="data-split-wrap"  style="margin-bottom: 30px;">
                         <td>
                             {{--<img src="{{ asset('centre_logo/logo_final.png') }}" height="80">--}}
-                            <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(url('centre_logo/'.$medicalinformation->appointment->location->image_src)))}}" height="80">
+                            <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(asset('assets/media/logos/logo.svg')))}}" height="80">
                         </td>
                         <td>
                             <p class="order-date text-right">#{{ $thisId }} / {{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $medicalinformation->date.' 00:00:00')->format('Y-M-d') }}</p>
                         </td>
                     </tr>
-                    <tr class="data-split-wrap">
+                    <tr class="data-split-wrap" style="margin-top: 30px;">
                         <td>
                             <div class="patient_info">
                                 <label><h1 class="sbold margin-top-15">Patient Detail</h1></label>

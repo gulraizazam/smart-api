@@ -8,7 +8,7 @@ use App\Models\PackageAdvances;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
-use App\User;
+use App\Models\User;
 use Config;
 use Auth;
 use DB;

@@ -1,15 +1,7 @@
 var table_url = route('admin.appointments.datatable');
 
 var table_columns = [
-    /*{
-        field: 'id',
-        sortable: false,
-        width: 80,
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    },*/
+
     {
         field: 'Patient_ID',
         title: 'ID',
@@ -423,7 +415,7 @@ function actions(data) {
             if(data.appointment_type==1) {
                 if (permissions.consultancy) {
                     actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + consultancy_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
                             <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
                             <span class="navi-text">Consultancy</span>\
                         </a>\
@@ -434,7 +426,7 @@ function actions(data) {
             if(data.appointment_type==2) {
                 if (permissions.treatment) {
                     actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + treatment_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
                             <span class="navi-icon"><i class="la la-medkit"></i></span>\
                             <span class="navi-text">Treatment</span>\
                         </a>\
@@ -556,6 +548,53 @@ function actions(data) {
         return actions;
     }
     return '';
+}
+
+function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
+
+    setQueryStringParameter('city_id');
+    setQueryStringParameter('location_id');
+    setQueryStringParameter('doctor_id');
+
+    $("#consultancy_city_filter").val('').trigger("change")
+    $("#consultancy_location_filter").val('').trigger("change")
+    $("#consultancy_doctor_filter").val('').trigger("change")
+
+    if (type == 'appointment') {
+        $(".export-appointments").show();
+        reInitTable();
+    } else {
+        $(".export-appointments").hide();
+    }
+
+    $(".appointment").addClass("d-none");
+    $("." + type + "-section").removeClass("d-none");
+
+    $(".change-tab").removeClass("nav-bar-active");
+    $("." +type+ "-tab").addClass("nav-bar-active");
+
+    setQueryStringParameter('tab', type);
+    setQueryStringParameter('city_id', city_id);
+    setQueryStringParameter('location_id', location_id);
+    setQueryStringParameter('doctor_id', doctor_id);
+
+    $(".change-label").text($("." +type+ "-tab").text());
+
+    if (type === 'treatment') {
+
+        setQueryStringParameter('machine_id', resource_id);
+
+        $("#treatment_city_filter").val(city_id).trigger("change");
+        setTimeout( function () {
+            $("#treatment_city_filter").val(city_id).trigger("change");
+        },800);
+
+
+    }
+
+    if (type === 'consultancy') {
+        $("#consultancy_city_filter").val(city_id).trigger("change");
+    }
 }
 
 function editRow(url, id, $class = 'detail-actions') {
@@ -727,9 +766,8 @@ function setTreatmentEditData(response) {
         $("#edit_treatment_patient_name").val(appointment?.patient?.name);
         $("#edit_treatment_patient_phone").val(appointment?.patient?.phone);
 
-        $("#treatment_back_date").val(back_date_config.data);
         $("#treatment_old_phone").val(appointment?.lead?.patient?.phone);
-        $("#treatment_lead_id").val(appointment?.lead_id);
+        $("#treatment_leadId").val(appointment?.lead_id);
         $("#treatment_appointment_id").val(appointment?.id);
         $("#treatment_resourceRotaDayID").val(resourceHadRotaDay?.id);
         $("#treatment_machineRotaDayID").val(machineHadRotaDay?.id);
@@ -779,40 +817,40 @@ function setSmsLogs(response) {
 
         let rows = noRecordFoundTable(6);
 
-        if (SMSLogs) {
-
+        if (SMSLogs.length) {
+            rows = '';
             Object.values(SMSLogs).forEach(function (smsLog, index) {
 
                 if(smsLog.invoice_id === null) {
-                    rows = '<tr>';
+                    rows += '<tr>';
                     rows += '<td>' + smsLog.to + '</td>';
                     rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
                     rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
                     rows += '<span class="full_text" style="display: none; text-underline: none;">' + smsLog.text + '</span>';
                         '</a></td>';
 
-                if(smsLog.status) {
-                    rows += '<td id="smsRow{'+smsLog.id+'">Yes</td>';
-                } else {
-                    rows += '<td><span class="text-center" id="spanRow'+smsLog.id+'">No</span>\
-                    <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+');" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
-                    '<i class="la la-send-o"></i></a></td>';
-                }
+                    if(smsLog.status) {
+                        rows += '<td id="smsRow{'+smsLog.id+'">Yes</td>';
+                    } else {
+                        rows += '<td><span class="text-center" id="spanRow'+smsLog.id+'">No</span>\
+                        <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+');" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
+                        '<i class="la la-send-o"></i></a></td>';
+                    }
 
-                if(smsLog.is_refund == "Yes") {
-                    rows += '<td>smsLog.is_refund</td>';
-                } else {
-                    rows += '<td></td>';
-                }
+                    if(smsLog.is_refund == "Yes") {
+                        rows += '<td>smsLog.is_refund</td>';
+                    } else {
+                        rows += '<td></td>';
+                    }
 
-                if (typeof statuses[smsLog.log_type] !== 'undefined') {
-                    rows += '<td>'+statuses[smsLog.log_type]+'</td>';
-                } else {
-                    rows += '<td>N/A</td>';
-                }
+                    if (typeof statuses[smsLog.log_type] !== 'undefined') {
+                        rows += '<td>'+statuses[smsLog.log_type]+'</td>';
+                    } else {
+                        rows += '<td>N/A</td>';
+                    }
 
-                rows += '<td>' + formatDate(smsLog.created_at) + '</td>';
-                rows += '</tr>';
+                    rows += '<td>' + formatDate(smsLog.created_at) + '</td>';
+                    rows += '</tr>';
                 }
             });
         }
@@ -822,6 +860,10 @@ function setSmsLogs(response) {
     } catch (error) {
         showException(error);
     }
+
+}
+
+function createInvoice($route) {
 
 }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Jobs\IndexSingleAppointmentJob;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -37,7 +38,7 @@ use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
-use App\User;
+use App\Models\User;
 use Auth;
 use Carbon\Carbon;
 use Config;
@@ -56,13 +57,26 @@ use App\Helpers\Widgets\ConsultancyPriceCalculationWidget;
 
 class ConsultancyInvoiceController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /*
      *Function for display the consultancy invoice detail
      */
     public function invoiceconsultancy($id)
     {
         if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
@@ -132,7 +146,25 @@ class ConsultancyInvoiceController extends Controller
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
         $paymentmodes->prepend('Select Payment Mode', '0');
 
-        return view('admin.appointments.consultancyinvoice.create', compact('price', 'appointment_type', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'paymentmodes', 'location_info', 'tax', 'tax_amt', 'invoice_status', 'discounts', 'cash', 'price_tax'));
+        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+            'price' => $price,
+            'appointment_type' => $appointment_type,
+            'id' => $id,
+            'service' => $service,
+            'balance' => $balance,
+            'settleamount' => $settleamount,
+            'outstanding' => $outstanding,
+            'paymentmodes' => $paymentmodes,
+            'location_info' => $location_info,
+            'tax' => $tax,
+            'tax_amt' => $tax_amt,
+            'invoice_status' => $invoice_status,
+            'discounts' => $discounts,
+            'cash' => $cash,
+            'price_tax' => $price_tax
+        ]);
+
+        //return view('admin.appointments.consultancyinvoice.create', compact('price', 'appointment_type', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'paymentmodes', 'location_info', 'tax', 'tax_amt', 'invoice_status', 'discounts', 'cash', 'price_tax'));
     }
 
     /*

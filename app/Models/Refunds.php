@@ -29,7 +29,7 @@ class Refunds extends Model
      */
     public function user()
     {
-        return $this->belongsTo('App\User', 'patient_id')->withTrashed();
+        return $this->belongsTo(User::class, 'patient_id')->withTrashed();
     }
 
     /**

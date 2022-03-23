@@ -14,7 +14,7 @@ use App\Models\Regions;
 use App\Models\Services;
 use App\Models\Discounts;
 use Carbon\Carbon;
-use App\User;
+use App\Models\User;
 
 class DiscountWidget
 {

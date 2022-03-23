@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
+use App\Http\Controllers\Admin\ConsultancyInvoiceController;
 use App\Http\Controllers\Admin\DoctorsController;
 use App\Http\Controllers\Admin\LeadsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
@@ -486,6 +488,20 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
     // Edit Service
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editService'])->name('appointments.edit_service');
+
+    Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
+
+    Route::get('appointments/invoice-consultancy/{id}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
+
+    Route::get('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
+
+    Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');
+
+    Route::get('appointmentsmedical/medicalcreate/{id}', [AppointmentMedicalController::class, 'create'])->name('appointmentsmedical.create');
+
+    Route::get('appointmentsmedical/fill_form/{id}/{appointment_id}',[AppointmentMedicalController::class, 'fill_form'])->name('appointmentsmedical.fill_form');
+
+    Route::post('appointmentsmedical/{form_id}/{appointment_id}/submit_form', [AppointmentMedicalController::class, 'submit_form'])->name('appointmentsmedical.submit_form');
 
 
 });

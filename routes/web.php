@@ -372,7 +372,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::post('appointments/loadlead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
         Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
-        Route::get('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
+
         Route::resource('appointments', AppointmentsController::class)->only('index');
 
 
@@ -389,7 +389,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
 
         //Appointment Route section for treatment invoice start
-        Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
 
         Route::get('appointments/getplansinformation', [AppointmentsController::class, 'getplansinformation'])->name('appointments.getplansinformation');
 
@@ -404,7 +403,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
 
         /*Appointment route section for consultancy invoice start*/
-        Route::get('appointments/invoice-consultancy/{id}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
 
         Route::get('appointments/getconsultancycalculation', [ConsultancyInvoiceController::class, 'getconsultancycalculation'])->name('appointments.getconsultancycalculation');
 
@@ -456,15 +454,8 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
 
         /*Appointment Route start for medical history form*/
-        Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');
 
         Route::get('appointmentsmedical/medicalindex/{id}', [AppointmentMedicalController::class, 'index'])->name('appointmentsmedical.medicals');
-
-        Route::get('appointmentsmedical/medicalcreate/{id}', [AppointmentMedicalController::class, 'create'])->name('appointmentsmedical.create');
-
-        Route::get('appointmentsmedical/fill_form/{id}/{appointment_id}',[AppointmentMedicalController::class, 'fill_form'])->name('appointmentsmedical.fill_form');
-
-        Route::post('appointmentsmedical/{form_id}/{appointment_id}/submit_form', [AppointmentMedicalController::class, 'submit_form'])->name('appointmentsmedical.submit_form');
 
         Route::get('appointmentsmedical/edit/{id}',[AppointmentMedicalController::class, 'edit'])->name('appointmentsmedical.edit');
 

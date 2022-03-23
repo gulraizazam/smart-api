@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Create</h2>
+        <h2 class="fw-bolder">Edit</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -24,11 +24,12 @@
         <!--begin::Form-->
         <form id="modal_edit_treatment_form" method="post" action="{{route('admin.appointments.store_service')}}">
 
+            @method('put')
+
             <input type="hidden" id="appointment_manager" value="{{Config::get('constants.appointment_type_service_string')}}">
-            <input type="hidden" id="treatment_back_date" name="back-date">
             <input type="hidden" id="treatment_old_phone" name="old_phone">
 
-            <input type="hidden" name="lead_id" id="treatment_lead_id"  >
+            <input type="hidden" name="lead_id" id="treatment_leadId">
             <input type="hidden" id="treatment_appointment_id" >
             <input type="hidden" id="treatment_resourceRotaDayID" >
             <input type="hidden" id="treatment_machineRotaDayID" >
@@ -92,7 +93,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_patient_gender" class="form-control" name="gender">
+                            <select id="edit_treatment_patient_gender" class="form-control select2" name="gender"></select>
                         </div>
 
                     </div>

@@ -394,7 +394,6 @@ function setDetailData(response) {
 
 function detailActions(appointment, invoice, invoiceid, permissions, $class = 'detail-actions') {
 
-    let query = get_query();
     let id = appointment.id;
 
     let edit_url = route('admin.appointments.edit', {id: appointment.id});
@@ -402,49 +401,101 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     let detail_url = route('admin.appointments.detail', {id: appointment.id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: appointment.id});
     let patient_url = route('admin.patients.preview', {id: appointment.id});
+    let service_invoice_url = route('admin.appointments.invoicecreate', {id: appointment.id});
+    let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: appointment.id});
+    let image_url = route('admin.appointmentsimage.imageindex', {id: appointment.id});
+    let measurement_url = route('admin.appointmentsmeasurement.measurements', {id: appointment.id});
+    let medical_url = route('admin.appointmentsmedical.medicals', {id: appointment.id});
+    let plan_create_url = route('admin.appointmentplans.create', {id: appointment.id});
+    let log_url = route('admin.appointments.viewlog', {id: appointment.id, type: 'web'});
 
-    let  buttons = '<td colspan="4" style="text-align: right;">';
+    if (invoiceid) {
+        let invoice_url = route('admin.appointments.InvoiceDisplay', {id: invoiceid});
+    }
+
+    let buttons = '<td colspan="4" style="text-align: right;">';
 
     if (permissions.edit) {
-        if(appointment.appointment_type_id==1) {
+        if (appointment.appointment_type_id == 1) {
             buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
             <i class="la la-edit"></i>\
             </a>';
         } else {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `'+$class+'`);" >\
+            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `' + $class + '`);" >\
             <i class="la la-edit"></i>\
             </a>';
         }
     }
 
-    buttons += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-sm btn-info mr-2" >\
+    buttons += '<a href="javascript:void(0);" onclick="viewSmsLogs(`' + sms_logs_url + '`);" class="btn btn-sm btn-info mr-2" >\
         <i class="la la-sms" data-toggle="tooltip" title="SMS Logs"></i>\
         </a>';
     if (permissions.invoice) {
-        if(invoice) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="http://cutera.test/admin/appointments/displayInvoice/10670" >\
-            <i class="la la-file-pdf-o" title="Invoice Display"></i>\
+        if (!invoice) {
+            if (appointment.appointment_type_id == 2) {
+                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createInvoice(`' + service_invoice_url + '`);">\
+                <i class="la la-file-invoice" title="Generate Invoice"></i>\
+                </a>';
+            }
+
+            if (appointment.appointment_type_id == 1) {
+                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createInvoice(`' + consultancy_invoice_url + '`);" >\
+                <i class="la la-file-invoice" title="Generate Invoice"></i>\
+                </a>';
+            }
+        }
+        if (permissions.invoice_display) {
+            if (invoice) {
+                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="invoiceDisplay(`' + invoice_url + '`);" >\
+                <i class="la la-file-invoice-dollar" title="Invoice Display"></i>\
+                </a>';
+            }
+        }
+    }
+
+    if (appointment.appointment_type_id == 2) {
+        if (permissions.image_manage) {
+            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+image_url+'" target="_blank">\
+        <i class="la la-images" title="Images"></i>\
+        </a>';
+        }
+
+        if (permissions.measurement_manage) {
+            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+measurement_url+'"  target="_blank">\
+        <i class="la la-stethoscope" title="Measurement"></i>\
+        </a>';
+        }
+    }
+
+    if (appointment.appointment_type_id == 1) {
+
+        if(permissions.medical_form_manage) {
+            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+medical_url+'" target="_blank">\
+            <i class="la la-medkit" title="Medical History Form"></i>\
             </a>';
         }
     }
 
-        buttons += '<a class="btn btn-sm btn-info mr-2" href="http://cutera.test/admin/appointmentsmedical/medicalindex/18745" target="_blank">\
-        <i class="la la-medkit" title="Medical History Form"></i>\
-        </a>\
-        <a class="btn btn-sm btn-info mr-2" href="http://cutera.test/admin/appointmentplans/18745" data-target="#ajax_packages" data-toggle="modal">\
-        <i class="la la-clipboard" title="Create Plan"></i>\
-        </a>';
+    if (permissions.plans_create) {
+        buttons += '<a class="btn btn-sm btn-info mr-2" href="" onclick="createPlans(`'+plan_create_url+'`);">\
+            <i class="la la-clipboard" title="Create Plan"></i>\
+            </a>';
+    }
+
     if(permissions.patient_card) {
         buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="'+patient_url+'">\
         <i class="la la-users" title="Patient Card"></i>\
         </a>';
     }
 
-    buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="http://cutera.test/admin/appointments/viewlog/18745/web">\
+    if (permissions.log) {
+        buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="'+log_url+'">\
         <i class="la la-history" title="Log">\
         </i>\
-        </a>\
-        </td>';
+        </a>';
+    }
+
+    buttons += '</td>';
 
     $("." + $class).html(buttons);
 
