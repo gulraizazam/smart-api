@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Models\AuditTrailChanges;
 use App\Models\AuditTrailTables;
 use App\Models\AuditTrailActions;
-use App\User;
+use App\Models\User;
 use Auth;
 use Carbon\Carbon;
 use App\Models\Cities;

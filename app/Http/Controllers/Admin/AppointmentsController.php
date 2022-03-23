@@ -1099,10 +1099,14 @@
 						'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
 						'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
 						'doctor_id' => $appointment->doctor->name ?? 'N/A',
+						'doctorId' => $appointment->doctor->id ?? 0,
 						'region_id' => (array_key_exists($appointment->region_id, $Regions)) ? $Regions[$appointment->region_id]->name : 'N/A',
 						'city_id' => $appointment->city_id ? $appointment->city->name : 'N/A',
+						'cityId' => $appointment->city_id ?? 0,
 						'location_id' => $appointment->location_id ? $appointment->location->name : 'N/A',
+						'locationId' => $appointment->location_id ?? 'N/A',
 						'service_id' => $appointment->service->name ?? 'N/A',
+						'resource_id' => $appointment->resource_id ?? 0,
 						'appointment_type_id' => $appointment->appointment_type->name,
 						'appointment_type' => $appointment->appointment_type->id,
 						'consultancy_type' => $consultancy_type,
@@ -2172,7 +2176,7 @@
 			$doctorids = array();
 			$machineids = array();
 
-			$appointment = Appointments::with('patient', 'doctor')->find($id);
+			$appointment = Appointments::with('patient', 'doctor', 'lead.patient')->find($id);
 
 			if (! $appointment) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);

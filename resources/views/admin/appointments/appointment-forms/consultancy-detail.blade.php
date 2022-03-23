@@ -33,9 +33,7 @@
 
                         <table class="table">
                             <tbody>
-                            <tr class="detail-actions">
-
-                            </tr>
+                            <tr class="detail-actions"></tr>
                             <tr>
                                 <th>Patient Name</th>
                                 <td id="patient_name"></td>

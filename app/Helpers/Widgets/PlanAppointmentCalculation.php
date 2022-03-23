@@ -25,7 +25,7 @@ use App\Models\ResourceHasRotaDays;
 use App\Models\Resources;
 use App\Models\Services;
 use App\Models\Settings;
-use App\User;
+use App\Models\User;
 use Carbon\Carbon;
 use Auth;
 use Illuminate\Foundation\Bus\DispatchesJobs;

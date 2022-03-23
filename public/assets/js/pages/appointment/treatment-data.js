@@ -70,6 +70,7 @@ function loadCalendar() {
         treatment_calendar.destroy();
 
     }
+
     var result = get_query();
 
     if ($("#treatment_city_filter").val() !== ""

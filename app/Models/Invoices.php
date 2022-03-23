@@ -32,7 +32,7 @@ class Invoices extends Model
     /*Get the user data*/
     public function user()
     {
-        return $this->belongsTo('App\User', 'patient_id')->withTrashed();
+        return $this->belongsTo('App\Models\User', 'patient_id')->withTrashed();
     }
 
     /**

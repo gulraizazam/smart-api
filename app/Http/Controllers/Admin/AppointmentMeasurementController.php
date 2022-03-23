@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Gate;
 use App\Models\Patients;
 use App\Helpers\NodesTree;
 use App\Models\CustomFormFeedbacks;
-use App\User;
+use App\Models\User;
 use Carbon\Carbon;
 use Spatie\Browsershot\Browsershot;
 use Barryvdh\DomPDF\Facade as PDF;

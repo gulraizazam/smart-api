@@ -15,7 +15,7 @@ class DoctorHasLocations extends Model
 
     public function user()
     {
-        return $this->belongsTo('App\User', 'user_id')->withTrashed();
+        return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 
     public function location()

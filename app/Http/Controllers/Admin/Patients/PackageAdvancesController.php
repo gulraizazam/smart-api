@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PackageAdvances;
 use App\Models\Packages;
 use Illuminate\Support\Facades\Gate;
-use App\User;
+use App\Models\User;
 use Config;
 use Carbon\Carbon;
 use App\Models\PaymentModes;

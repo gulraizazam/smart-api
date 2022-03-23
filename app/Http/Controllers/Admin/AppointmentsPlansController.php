@@ -14,7 +14,7 @@ use App\Models\PackageBundles;
 use App\Models\PackageAdvances;
 use App\Models\Discounts;
 use App\Models\Services;
-use App\User;
+use App\Models\User;
 use Config;
 use Carbon\Carbon;
 use App\Models\PaymentModes;
