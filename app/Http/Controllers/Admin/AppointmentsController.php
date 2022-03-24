@@ -5241,6 +5241,9 @@
      *
      * params @appointment_id
      * */
+        function logPage($id) {
+            return view('admin.appointments.logs.appointmentlog', compact('id'));
+        }
 
 		public function viewLog($id, $type)
 		{
@@ -5330,7 +5333,20 @@
 			}
 
 			if ($type === 'web') {
-				return view('admin.appointments.logs.appointmentlog', compact('id', 'data', 'appointment'));
+			    $records['data'] = $data;
+
+                $records["meta"] = [
+                    'field' => "action",
+                    'page' => 1,
+                    'pages' => count($data),
+                    'perpage' => 20,
+                    'total' => count($data),
+                    'sort' => "DESC",
+                ];
+
+			    return ApiHelper::apiDataTable($records);
+
+			    //return view('admin.appointments.logs.appointmentlog', compact('id', 'data', 'appointment'));
 			}
 
 			return $this->viewLogInExcel($id, $data);

@@ -351,7 +351,7 @@ function actions(data) {
     let plan_url = route('admin.appointmentplans.create', {id: id});
     let delete_url = route('admin.appointments.destroy', {id: id});
     let patient_url = route('admin.patients.preview', {id: data.Patient_ID});
-    let viewlog_url = route('admin.appointments.viewlog', {id: id, type: 'web'});
+    let viewlog_url = route('admin.appointments.loadPage', {id: id, type: 'web'});
 
     if (
         permissions.edit
@@ -502,7 +502,7 @@ function actions(data) {
 
         if (permissions.plans_create) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+plan_url+'`, `'+id+'`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_url+'`, `'+id+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-paper-plane"></i></span>\
                             <span class="navi-text">Create Plan</span>\
                         </a>\
@@ -520,7 +520,7 @@ function actions(data) {
 
         if (permissions.log) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+viewlog_url+'`, `'+id+'`);" class="navi-link">\
+                        <a href="'+viewlog_url+'" target="_blank" class="navi-link">\
                             <span class="navi-icon"><i class="la la-history"></i></span>\
                             <span class="navi-text">Log</span>\
                         </a>\
@@ -867,6 +867,11 @@ function createInvoice($route) {
 
 }
 
+function invoiceDisplay($route) {
+
+}
+
+
 function toggleText($this) {
     $this.find(".full_text").toggle();
     $this.find(".short_text").toggle();
@@ -1052,7 +1057,6 @@ function setFilters(filter_values, active_filters) {
         showException(error);
     }
 }
-
 
 function resetCustomFilters() {
 

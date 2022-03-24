@@ -81,3 +81,14 @@
 
 {{--end treatment--}}
 
+{{--Create plan--}}
+
+<div class="modal fade" id="modal_appointment_plan" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered very-big-modal" id="appointment_plan">
+
+        @include('admin.appointments.plans.create')
+
+    </div>
+</div>
+

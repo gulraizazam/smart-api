@@ -407,11 +407,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     let measurement_url = route('admin.appointmentsmeasurement.measurements', {id: appointment.id});
     let medical_url = route('admin.appointmentsmedical.medicals', {id: appointment.id});
     let plan_create_url = route('admin.appointmentplans.create', {id: appointment.id});
-    let log_url = route('admin.appointments.viewlog', {id: appointment.id, type: 'web'});
-
-    if (invoiceid) {
-        let invoice_url = route('admin.appointments.InvoiceDisplay', {id: invoiceid});
-    }
+    let log_url = route('admin.appointments.loadPage', {id: appointment.id, type: 'web'});
 
     let buttons = '<td colspan="4" style="text-align: right;">';
 
@@ -446,6 +442,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
         }
         if (permissions.invoice_display) {
             if (invoice) {
+                let invoice_url = route('admin.appointments.InvoiceDisplay', {id: invoiceid});
                 buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="invoiceDisplay(`' + invoice_url + '`);" >\
                 <i class="la la-file-invoice-dollar" title="Invoice Display"></i>\
                 </a>';
@@ -477,7 +474,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     }
 
     if (permissions.plans_create) {
-        buttons += '<a class="btn btn-sm btn-info mr-2" href="" onclick="createPlans(`'+plan_create_url+'`);">\
+        buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_create_url+'`);">\
             <i class="la la-clipboard" title="Create Plan"></i>\
             </a>';
     }

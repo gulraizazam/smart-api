@@ -313,6 +313,9 @@ div > input {
 .big-modal {
     max-width: 1100px;
 }
+.very-big-modal {
+    max-width: 1300px;
+}
 .fc-content > .fc-title {
     color: #fff !important;
 }
@@ -661,4 +664,31 @@ div > input {
     height: 100%;
     background-color: lightgray;
     opacity: 0.8;
+}
+
+.fc-unthemed .fc-toolbar h2{
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+.fc-unthemed .fc-toolbar .fc-button{
+    font-weight: 500;
+    text-transform: capitalize;
+    color: #3F4254 !important;
+}
+.fc-unthemed th.fc-day-header > a{
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #3f4254 !important;
+}
+.fc-unthemed .fc-toolbar .fc-button .fc-icon {
+    font-size: 1.4rem;
+    color: #3F4254 !important;
+}
+
+.fc-button-primary:not(:disabled):active:focus, .fc-button-primary:not(:disabled).fc-button-active:focus{
+    color: white !important;
+}
+.disabled-btn {
+    cursor: not-allowed !important;
+    pointer-events: all !important;
 }

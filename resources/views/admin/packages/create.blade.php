@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Add Package</h2>
+        <h2 class="fw-bolder">Create</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -56,32 +56,33 @@
             Your discount limit exceeded.
         </div>
 
-        <!--begin::Form-->
-        <form id="modal_add_plan_form" method="post" action="{{route('admin.packages.store')}}">
-            <!--begin::Scroll-->
 
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+            <input type="hidden" name="random_id_1" id="random_id_1" class="form-control" >
+            <input type="hidden" name="slug_1" id="slug_1" class="form-control">
+            <input type="hidden" id="client_id" class="form-control">
+            <input type="hidden" name="patient_id_1" id="parent_id_1" class="form-control">
+
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="modal_appointment_plan_section" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Centers <span class="text text-danger">*</span></label>
-                            <select onchange="getServices('add');" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                            <select onchange="getServices('add');" id="add_plan_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id_1">
                                 <option value="">Select Centre</option>
                             </select>
                         </div>
 
-                        <div class="fv-row col-md-3 mt-5 select2-search">
+                        <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                            <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id select2" name="patient_id">
-                                <option value="">Select Patient</option>
+                            <select onchange="getAppointments($(this).val());" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="name">
                             </select>
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
-                            <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
+                            <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id_1">
                                 <option value="">Select Appointment</option>
                             </select>
                         </div>
@@ -90,7 +91,7 @@
                             <div class="checkbox-inline mt-12">
                                 <span>Is Exclusive </span> &nbsp;
                                 <label for="is_exclusive" class="checkbox checkbox-rounded">
-                                    <input id="is_exclusive" type="checkbox" checked="checked" name="is_exclusive">
+                                    <input id="is_exclusive" type="checkbox" value="1" checked="checked" name="is_exclusive">
                                     <span></span>
                                 </label>
                             </div>
@@ -104,38 +105,45 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
-                            <select id="add_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                            <select id="add_service_id" onchange="getServiceDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id_1">
                                 <option value="">Select Service</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discounts</label>
-                            <select id="add_discount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
+                            <select onchange="getDiscountInfo($(this));" id="add_discount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id_1">
                                 <option value="">Select Discount</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
-                            <select id="add_discount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
+                            <select id="add_discount_type" onchange="changeDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type_1">
                                 <option value="">Select Discount Type</option>
+                                <option value="Fixed">Fixed</option>
+                                <option value="Percentage">Percentage</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="number" name="discount_value" class="form-control" id="add_discount_value">
+                            <input type="number" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1">
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
-                            <input type="number" name="price" class="form-control" id="add_price">
+                            <div class="blockui input-spinner" style="display: none; background: transparent; box-shadow: none; position: absolute;margin-top: 28px;margin-left: 15%;">
+                                <span>Please wait...</span>
+                                <span><div class="spinner spinner-primary"></div></span>
+                            </div>
+                            <input type="text" readonly name="net_amount_1" class="form-control" id="net_amount_1">
+
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <div class="text-center mt-10">
-                                <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button">
+                                <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button-add">
                                     <span class="indicator-label">Add</span>
                                 </button>
                             </div>
@@ -148,13 +156,14 @@
                 <hr>
 
                 <div class="table-responsive add_center_target_table">
-                    <table id="add_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
+                    <table id="appointment_detail" class="table table-striped table-bordered table-advance table-hover">
 
                         <thead>
                         <tr>
                             <th>Service Name</th>
-                            <th>Service/Bundle Price</th>
+                            <th>Service Price</th>
                             <th>Discount Name</th>
+                            <th>Discount Type</th>
                             <th>Discount Price</th>
                             <th>Amount</th>
                             <th>Tax %</th>
@@ -163,7 +172,7 @@
                         </tr>
                         </thead>
 
-                        <tbody class="plan_services"><tr class="text-center"><td colspan="8">No record found</td></tr></tbody>
+                        <tbody id="plan_services"></tbody>
 
                     </table>
                 </div>
@@ -173,25 +182,25 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
-                            <input type="number" id="add_package_total" class="form-control" name="package_total_1">
+                            <input type="text" readonly oninput="phoneField(this)" id="package_total_1" class="form-control" value="0" name="package_total_1">
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
-                            <select id="add_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                            <select id="payment_mode_id_1" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
                                 <option value="">Select Payment Mode</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="number" min="0" id="add_cash_amount" class="form-control" value="0" name="cash_amount">
+                            <input type="number" min="0" id="cash_amount_1" class="form-control" placeholder="Enter Amount" value="0" name="cash_amount">
                         </div>
 
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
-                            <input type="number" min="0" name="total_price" value="0" class="form-control" id="add_total_price">
+                            <input type="text" readonly min="0" name="total_price" value="0" class="form-control" id="grand_total_1">
                         </div>
 
                     </div>
@@ -206,13 +215,12 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button">
-                    <span class="indicator-label">Submit</span>
+                <button id="AddPackageFinal" type="submit" class="btn btn-primary spinner-button-save">
+                    <span class="indicator-label">Save</span>
                 </button>
             </div>
             <!--end::Actions-->
-        </form>
-        <!--end::Form-->
+
     </div>
     <!--end::Modal body-->
 </div>

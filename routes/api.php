@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\AppointmentsPlansController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
@@ -295,8 +296,6 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('packages/getservice',[PackagesController::class, 'getservices'])->name('packages.getservice');
 
-    Route::get('packages/getservice_for_discount_zero', [PackagesController::class, 'getservices_for_zero'])->name('packages.getserviceinfo_discount_zero');
-
     Route::get('packages/pdf/{id}', [PackagesController::class, 'package_pdf'])->name('packages.package_pdf');
 
     Route::get('packages/getpackage', [PackagesController::class, 'getpackage'])->name('packages.getpackage');
@@ -493,7 +492,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('appointments/invoice-consultancy/{id}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
 
-    Route::get('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
+    Route::any('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
 
     Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');
 
@@ -503,6 +502,9 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::post('appointmentsmedical/{form_id}/{appointment_id}/submit_form', [AppointmentMedicalController::class, 'submit_form'])->name('appointmentsmedical.submit_form');
 
+    /*Route start for plans in appointment module*/
+    Route::get('appointmentplans/{appointment_id}', [AppointmentsPlansController::class, 'create'])->name('appointmentplans.create');
+    /*Route end for plans in appointment module*/
 
 });
 
