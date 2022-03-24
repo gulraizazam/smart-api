@@ -51,6 +51,7 @@ use Illuminate\Support\Collection;
 use App\Helpers\Financelog;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
 use App\Helpers\GeneralFunctions;
+use PHPUnit\Framework\MockObject\Api;
 
 class PackagesController extends Controller
 {
@@ -135,7 +136,7 @@ class PackagesController extends Controller
     /**
      * get discount information.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getdiscountinfo(Request $request)
     {
@@ -151,10 +152,11 @@ class PackagesController extends Controller
             $discount_data = Discounts::find($discount_id);
 
             if ($discount_data->slug == 'custom') {
-                return response()->json(array(
-                    'status' => true,
+
+                return ApiHelper::apiResponse($this->success, 'custom', true, [
                     'custom_checked' => 1,
-                ));
+                ]);
+
             } else {
                 if ($discount_data->type == Config::get('constants.Fixed')) {
 
@@ -170,25 +172,23 @@ class PackagesController extends Controller
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 }
 
-                return response()->json(array(
-                    'status' => true,
+                return ApiHelper::apiResponse($this->success, 'Record Found', true, [
                     'discount_type' => $discount_type,
                     'discount_price' => $discount_price,
                     'net_amount' => $net_amount,
                     'custom_checked' => 0
-                ));
+                ]);
+
             }
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
         }
+
+        return ApiHelper::apiResponse($this->success, 'No Record Found', false);
     }
 
     /**
      * save packages services information.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function savepackages_service(Request $request)
     {
@@ -206,10 +206,10 @@ class PackagesController extends Controller
                         if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int)$request->is_exclusive)) {
                             $status = false;
                         }
-                    } else {
-                        if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
+                    } else { /*this is commented because we want to add services with different prices*/
+                        /*if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
                             $status = false;
-                        }
+                        }*/
                     }
                 }
             }
@@ -364,12 +364,12 @@ class PackagesController extends Controller
                 'total' => $total
             ];
 
-            return response()->json(array(
-                'status' => true,
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'myarray' => $myarray,
-
-            ));
+            ]);
         }
+
+        return ApiHelper::apiResponse($this->success, 'No Record found', false);
     }
 
 
@@ -426,15 +426,14 @@ class PackagesController extends Controller
             }
         }
         if ($status == true) {
-            return response()->json(array(
-                'status' => true,
+
+            return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
                 'net_amount' => $net_amount
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            ]);
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'Net Amount', false);
 
     }
 
@@ -450,9 +449,9 @@ class PackagesController extends Controller
             ['is_consumed', '=', '1']
         ])->first();
         if ($status) {
-            return response()->json(array(
-                'status' => false,
-            ));
+
+            return ApiHelper::apiResponse($this->success, 'Record not found', false);
+
         } else {
 
             $packageService = PackageBundles::find($request->id);
@@ -472,11 +471,10 @@ class PackagesController extends Controller
                 }
             }
 
-            return response()->json(array(
-                'status' => true,
+            return ApiHelper::apiResponse($this->success, 'Record not found', true, [
                 'total' => $total,
                 'id' => $request->id
-            ));
+            ]);
         }
     }
 
@@ -732,21 +730,19 @@ class PackagesController extends Controller
                 } else {
                     $discounts = $discounts->toArray();
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
-                    return response()->json(array(
-                        'status' => true,
+
+                    return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '1',
                         'net_amount' => $service_data->price
-                    ));
+                    ]);
                 }
             }
-        } else {
-            $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
-            return response()->json(array(
-                'status' => false,
-                'net_amount' => $service_data->price
-            ));
         }
+
+        return ApiHelper::apiResponse($this->success, 'Records found.', false, [
+            'net_amount' => $service_data->price
+        ]);
     }
 
     /**
@@ -761,15 +757,14 @@ class PackagesController extends Controller
 
         $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
         if ($service_data) {
-            return response()->json(array(
-                'status' => true,
+
+            return ApiHelper::apiResponse($this->success, 'Records found', true, [
                 'net_amount' => $service_data->price
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            ]);
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'No record found', false);
     }
 
     /**
@@ -784,10 +779,9 @@ class PackagesController extends Controller
         $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $grand_total = number_format($package_total - $request->cash_amount);
 
-        return response()->json(array(
-            'status' => true,
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'grand_total' => $grand_total
-        ));
+        ]);
     }
 
     /**

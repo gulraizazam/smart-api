@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentMedicalController;
-use App\Http\Controllers\Admin\AppointmentsPlansController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
@@ -447,10 +446,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::get('appointmentsmeasurement/{id}/export_pdf', [AppointmentMeasurementController::class, 'exportPdf'])->name("appointment_measurement_custom_form_feedbacks.export_pdf");
         //Appointment route end for measurement
 
-        /*Route start for plans in appointment module*/
-        Route::get('appointmentplans/{appointment_id}', [AppointmentsPlansController::class, 'create'])->name('appointmentplans.create');
-        /*Route end for plans in appointment module*/
-
 
 
         /*Appointment Route start for medical history form*/
@@ -484,6 +479,10 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
         Route::get('appointments/export', [AppointmentsController::class, 'export'])->name('appointments.export');
+
+        Route::get('packages/getservice_for_discount_zero', [PackagesController::class, 'getservices_for_zero'])->name('packages.getserviceinfo_discount_zero');
+
+        Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
 
 
 

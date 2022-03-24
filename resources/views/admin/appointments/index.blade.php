@@ -142,10 +142,12 @@
         <script src="{{asset('assets/js/pages/appointment/treatment-data.js')}}"></script>
 
         <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/plan/create.js')}}"></script>
 
     @endpush
 
     @push('datatable-js')
+
         <script src="{{asset('assets/js/pages/appointment/datatable.js')}}"></script>
     @endpush
 

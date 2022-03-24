@@ -240,6 +240,9 @@ class PlanAppointmentCalculation
             }
             $leadObj['lead_status_id'] = $default_converted_lead_status_id;
 
+            if (! empty($leadObj) && isset($leadObj['service_id'])) {
+                $leadObj['base_service_id'] = $leadObj['service_id'];
+            }
             $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
         }
 

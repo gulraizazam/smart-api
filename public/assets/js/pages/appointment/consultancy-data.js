@@ -75,8 +75,10 @@ function toggleSection($this, $class) {
     if ($class == 'appointment') {
         $(".export-appointments").show();
         reInitTable();
+        setQueryStringParameter('tab');
     } else {
         $(".export-appointments").hide();
+        setQueryStringParameter('tab', $class);
     }
 
     $(".appointment").addClass("d-none");
@@ -84,8 +86,6 @@ function toggleSection($this, $class) {
 
     $(".change-tab").removeClass("nav-bar-active");
     $this.addClass("nav-bar-active");
-
-    setQueryStringParameter('tab', $class);
 
     $(".change-label").text($this.text())
 }
