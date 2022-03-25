@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\AppointmentsPlansController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\PaymentModesController;
+use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
@@ -54,6 +56,8 @@ use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as Patient
 Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
 
 Route::middleware('auth.common')->name('admin.')->group(function () {
+
+    Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
 
     // Setting Routes
     Route::get('settings/{id}/edit', [SettingsController::class, 'edit'])->name('settings.edit');
@@ -393,6 +397,10 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('patients/updatedocuments/{id}', [PatientsController::class, 'documentupdate'])->name('patients.updatedocuments');
 
 
+    // Appointment Route start for images
+    Route::post('appointmentsimage/datatable/{id}', [AppointmentimageController::class, 'datatable'])->name('appointmentsimage.datatable');
+
+
     /*Route start for patient pakcage*/
     Route::post('plans/datatable/{id?}', [PackagesController::class, 'datatable'])->name('plans.datatable');
 
@@ -490,7 +498,9 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
 
-    Route::get('appointments/invoice-consultancy/{id}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
+    Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
+
+    Route::get('appointments/invoice-consultancy/{id}/{type?}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
 
     Route::any('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
 

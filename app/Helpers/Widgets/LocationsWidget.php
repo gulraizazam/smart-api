@@ -466,16 +466,18 @@ class LocationsWidget
 
     static public function findServiceParents($service_id, $data, $parents = array())
     {
-        if ($data[$service_id]['parent_id'] == '0') {
+        if (isset($data[$service_id]['parent_id']) && $data[$service_id]['parent_id'] == '0') {
             if ($data[$service_id]['end_node'] == '0') {
                 $parents[] = $data[$service_id]['id'];
             }
             return $parents;
         } else {
-            if ($data[$service_id]['end_node'] == '0') {
+            if (isset($data[$service_id]['end_node']) && $data[$service_id]['end_node'] == '0') {
                 $parents[] = $data[$service_id]['id'];
             }
-            return self::findServiceParents($data[$service_id]['parent_id'], $data, $parents);
+            if (isset($data[$service_id]['parent_id'])) {
+                return self::findServiceParents($data[$service_id]['parent_id'], $data, $parents);
+            }
         }
     }
 

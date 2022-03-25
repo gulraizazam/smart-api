@@ -69,7 +69,7 @@
                             </tbody>
                         </table>
 
-                        <form id="treatment_cment" style="margin-top: 35px;">
+                        <form id="treatment_cment" style="margin-top: 35px;max-width: 95%;">
 
                             <h3 class="box-title">Comment</h3>
 

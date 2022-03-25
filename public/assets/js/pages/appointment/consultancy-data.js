@@ -16,7 +16,6 @@ jQuery(document).ready(function() {
         loadDoctors(result.location_id, result.tab);
 
         setTimeout( function () {
-            console.log(result)
             $("#consultancy_city_filter").val(result.city_id).change();
             $("#consultancy_doctor_filter").val(result.doctor_id).change();
         }, 400);
@@ -37,6 +36,7 @@ jQuery(document).ready(function() {
     }
 
     $("#Add_comment").click(function () {
+
         if ($('input[name=comment]').val() !== '') {
             $.ajax({
                 headers: {
@@ -67,6 +67,7 @@ function toggleSection($this, $class) {
     setQueryStringParameter('city_id');
     setQueryStringParameter('location_id');
     setQueryStringParameter('doctor_id');
+    setQueryStringParameter('machine_id');
 
     $("#consultancy_city_filter").val('').trigger("change")
     $("#consultancy_location_filter").val('').trigger("change")
@@ -256,18 +257,18 @@ let doctorListener = function (doctorId) {
 
                     } else {
                         $('#rotaError').show();
-                        resetScheduledTime();
+                       // resetScheduledTime();
                     }
                 } else {
-                    resetScheduledTime();
+                    //resetScheduledTime();
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                resetScheduledTime();
+               // resetScheduledTime();
             }
         });
     } else {
-        resetScheduledTime();
+       // resetScheduledTime();
     }
 }
 

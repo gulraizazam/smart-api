@@ -27,15 +27,7 @@ $(document).ready(function () {
         },
     });
 
-    $('.custom-datepicker').datepicker({
-        todayHighlight: true,
-        orientation: 'bottom',
-        format: 'yyyy-mm-dd',
-        templates: {
-            leftArrow: '<i class="la la-angle-left"></i>',
-            rightArrow: '<i class="la la-angle-right"></i>',
-        },
-    });
+    customDatePicker();
 
     $('.current-datepicker').datepicker({
         todayHighlight: true,
@@ -146,6 +138,19 @@ $(document).ready(function () {
     });
 
 });
+
+function customDatePicker() {
+
+    $('.custom-datepicker').datepicker({
+        todayHighlight: true,
+        orientation: 'bottom',
+        format: 'yyyy-mm-dd',
+        templates: {
+            leftArrow: '<i class="la la-angle-left"></i>',
+            rightArrow: '<i class="la la-angle-right"></i>',
+        },
+    });
+}
 
 function addUsers() {
     $('.patient_id').val(null).trigger('change');
@@ -344,6 +349,10 @@ function select2Validation() {
 
 function closePopup(modal) {
     $("#" + modal).parents(".modal").modal("hide");
+}
+
+function closeAllPopup(modal) {
+    $(modal).parents(".modal").modal("hide");
 }
 
 function reInitTable() {
@@ -617,6 +626,7 @@ function makePhoneNumber(phoneNo, permission, type = 0) {
 }
 
 function setQueryStringParameter(name, value = null) {
+
     const params = new URLSearchParams(window.location.search);
     if (value) {
         params.set(name, value);

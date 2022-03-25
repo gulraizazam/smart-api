@@ -326,10 +326,7 @@ var TreatmentCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    callback({
-                        'status': false,
-                        'events': null,
-                    })
+                    toastr.error("Unabled to process the request");
                 }
             });
 

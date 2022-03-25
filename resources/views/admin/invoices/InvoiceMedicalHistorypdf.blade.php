@@ -116,13 +116,13 @@
     @if($invoicestatus->slug == 'cancelled')
         <table class="">
             <tr style="padding-left: 50%">
-                <img src="{{ url('metronic/assets/pages/media/invoice/cancld.png') }}" style="width: 20%;text-align: center;padding-left:43%" class="img-responsive" alt=""/>
+                <img src="{{ asset('assets/media/cancld.png') }}" style="width: 20%;text-align: center;padding-left:43%" class="img-responsive" alt=""/>
             </tr>
         </table>
     @endif
     <table class="mt-0">
         <tr>
-            <td><img class="logo" src="{{asset('centre_logo/')}}/{{$location_info->image_src}}" class="img-responsive" alt=""/></td>
+            <td><img class="logo" src="{{asset('assets/media/logos/logo.svg')}}" class="img-responsive" alt=""/></td>
             <td><h4 class="date">#{{$Invoiceinfo->id}}
                     / <?php echo \Carbon\Carbon::parse($Invoiceinfo->created_at)->format('F j,Y'); ?></h4></td>
         </tr>

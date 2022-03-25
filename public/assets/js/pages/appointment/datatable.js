@@ -328,22 +328,9 @@ function actions(data) {
     let edit_service_url = route('admin.appointments.edit_service', {id: id});
     let detail_url = route('admin.appointments.detail', {id: id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: id});
-    let consultancy_url = route('admin.appointments.create', {
-        id: id,
-        city_id: data.city_id,
-        location_id: data.location_id,
-        doctor_id: data.doctor_id,
-    });
 
-    let treatment_url = route('admin.appointments.manage_services', {
-        id: id,
-        city_id: data.city_id,
-        location_id: data.location_id,
-        doctor_id: data.doctor_id,
-        machine_id: data.machine_id,
-    });
+    let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: id, type: 'appointment'});
     let invoice_url = route('admin.appointments.invoicecreate', {id: id});
-    let invoice_created_url = route('admin.appointments.invoice-create-consultancy', {id: id});
     let invoice_display_url = route('admin.appointments.InvoiceDisplay', {id: data.invoice_id});
     let image_url = route('admin.appointmentsimage.imageindex', {id: id});
     let measurements_url = route('admin.appointmentsmeasurement.measurements', {id: id});
@@ -377,14 +364,12 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-        if (permissions.detail) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+detail_url+'`, `'+id+'`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                        <a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-eye"></i></span>\
                             <span class="navi-text">Detail</span>\
                         </a>\
                     </li>';
-        }
         if (permissions.edit) {
             if(data.appointment_type==1) {
                 actions += '<li class="navi-item">\
@@ -439,7 +424,7 @@ function actions(data) {
             if(!data.invoice) {
                 if (data.appointment_type == 2) {
                     actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + invoice_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-file-invoice"></i></span>\
                             <span class="navi-text">Create Invoice</span>\
                         </a>\
@@ -448,7 +433,7 @@ function actions(data) {
 
                 if(data.appointment_type == 1) {
                     actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + invoice_created_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                             <span class="navi-text">Create Invoice</span>\
                         </a>\
@@ -461,7 +446,7 @@ function actions(data) {
         if (permissions.invoice_display) {
             if(data.invoice) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                             <span class="navi-text">View Invoice</span>\
                         </a>\
@@ -472,7 +457,7 @@ function actions(data) {
         if(data.appointment_type==2) {
             if (permissions.image_manage) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + image_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="'+image_url+'" target="_blank" class="navi-link">\
                             <span class="navi-icon"><i class="la la-image"></i></span>\
                             <span class="navi-text">Images</span>\
                         </a>\
@@ -596,6 +581,75 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
         $("#consultancy_city_filter").val(city_id).trigger("change");
     }
 }
+
+function viewDetail(url) {
+
+    $("#modal_appointment_detail").modal("show");
+
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setAppointmentDetailData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+
+}
+
+function setAppointmentDetailData(response) {
+
+    try {
+
+        let appointment = response.data.appointment;
+        let permissions = response.data.permissions;
+        let patient = appointment.patient;
+        let doctor = appointment.doctor;
+        let city = appointment.city;
+        let location = appointment.location;
+        let appointment_status = appointment.appointment_status;
+        let service = appointment.service;
+
+        $("#appointment_comment_appointment_id").val(appointment?.id ?? 0);
+        $("#appointment_patient_name").text(patient?.name ?? 'N/A');
+        $("#appointment_patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
+        $("#appointment_patient_email").text(patient?.email ?? 'N/A');
+        $("#appointment_patient_gender").text(getGender(patient?.gender));
+        $("#appointment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
+        $("#appointment_doctor_name").text(doctor?.name ?? 'N/A');
+        $("#appointment_city_name").text(city?.name ?? 'N/A');
+        $("#appointment_center_name").text(location?.name ?? 'N/A');
+        $("#appointment_appointment_status").text(appointment_status?.name ?? 'N/A');
+        $("#appointment_service_consultancy_name").text(service?.name ?? 'N/A');
+
+        setAppointmentComments(appointment);
+    } catch (e) {
+        showException(e);
+    }
+}
+
+function setAppointmentComments(appointment) {
+
+    let appointment_comments = appointment.appointment_comments;
+    let comment_html = '';
+    if (appointment_comments.length) {
+        Object.values(appointment_comments).forEach(function (comment) {
+            comment_html += commentData(comment?.user?.name, comment?.created_at, comment?.comment);
+        });
+    }
+    $("#appointment_commentsection").html(comment_html);
+}
+
+
 
 function editRow(url, id, $class = 'detail-actions') {
 
@@ -863,14 +917,6 @@ function setSmsLogs(response) {
 
 }
 
-function createInvoice($route) {
-
-}
-
-function invoiceDisplay($route) {
-
-}
-
 
 function toggleText($this) {
     $this.find(".full_text").toggle();
@@ -1066,4 +1112,98 @@ function resetCustomFilters() {
 
    /* $(".advance-filters").slideUp();
     $(".advance-arrow").addsClass("fa-caret-right").removeClass("fa-caret-down")*/
+}
+
+jQuery(document).ready(function () {
+
+    $("#Add_appointment_comment").click(function () {
+        if ($('#appointment_comment').val() !== '') {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'get',
+                url: route('admin.appointments.storecomment'),
+                data: {
+                    'comment': $('#appointment_comment').val(),
+                    'appointment_id': $('#appointment_comment_appointment_id').val(),
+                },
+                success: function (data) {
+                    $('#appointment_commentsection').prepend(commentData(data.username, data.appointmentCommentDate, data.appointment.comment));
+                },
+
+            });
+        } else {
+            toastr.error("Please fill out the comment field");
+        }
+        $('#appointment_cment')[0].reset();
+    });
+
+});
+
+
+function createConsultancyInvoice(url) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: 'GET',
+        cache: false,
+        success: function(response) {
+
+            $("#create_consultancy_invoice").html(response)
+
+            $("#modal_create_consultancy_invoice").modal("show");
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            toastr.error("Unable to process the request");
+        }
+    });
+
+}
+
+function createTreatmentInvoice(url) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: 'GET',
+        cache: false,
+        success: function(response) {
+
+            $("#create_treatment_invoice").html(response)
+
+            $("#modal_create_treatment_invoice").modal("show");
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            toastr.error("Unable to process the request");
+        }
+    });
+
+}
+
+function displayInvoice(url) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: 'GET',
+        cache: false,
+        success: function(response) {
+
+            $("#display_invoice").html(response)
+
+            $("#modal_display_invoice").modal("show");
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            toastr.error("Unable to process the request");
+        }
+    });
+
 }

@@ -46,6 +46,28 @@
     </div>
 </div>
 
+
+<div class="modal fade" id="modal_create_consultancy_invoice" tabindex="-1" aria-hidden="true" style="z-index: 9999">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered big-modal" id="create_consultancy_invoice">
+        {{--consultancy invoice create here--}}
+    </div>
+</div>
+
+<div class="modal fade" id="modal_create_treatment_invoice" tabindex="-1" aria-hidden="true" style="z-index: 9999">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered big-modal" id="create_treatment_invoice">
+        {{--treatment invoice create here--}}
+    </div>
+</div>
+
+<div class="modal fade" id="modal_display_invoice" tabindex="-1" aria-hidden="true" style="z-index: 9999">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered big-modal" id="display_invoice">
+        {{--treatment invoice create here--}}
+    </div>
+</div>
+
 <div class="popup">
     @include('admin.appointments.appointment-forms.popup')
 </div>
@@ -63,7 +85,7 @@
 
 <div class="modal fade" id="modal_treatment_detail" tabindex="-1" aria-hidden="true">
     <!--begin::Modal dialog-->
-    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_treatmenty_detail">
+    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_treatment_detail">
 
         @include('admin.appointments.appointment-forms.treatment.detail')
 
@@ -88,6 +110,15 @@
     <div class="modal-dialog modal-dialog-centered very-big-modal" id="appointment_plan">
 
         @include('admin.appointments.plans.create')
+
+    </div>
+</div>
+
+<div class="modal fade" id="modal_appointment_detail" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_detail">
+
+        @include('admin.appointments.appointment-forms.detail')
 
     </div>
 </div>

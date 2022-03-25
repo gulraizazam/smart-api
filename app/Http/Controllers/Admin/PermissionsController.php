@@ -98,6 +98,9 @@ class PermissionsController extends Controller
 
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
+        if ($orderBy === 'parent.name') {
+            $orderBy = 'name';
+        }
         $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 
 
@@ -132,9 +135,9 @@ class PermissionsController extends Controller
      */
     public function create()
     {
-        if (! Gate::allows('permissions_create')) {
+        /*if (! Gate::allows('permissions_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-        }
+        }*/
 
         $permissions = ['' => 'Select a Parent Group', 0 => 'This is Parent Group'];
 
@@ -159,9 +162,9 @@ class PermissionsController extends Controller
      */
     public function store(Request $request)
     {
-        if (! Gate::allows('permissions_create')) {
+       /* if (! Gate::allows('permissions_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-        }
+        }*/
 
         $validator = $this->verifyFields($request);
 

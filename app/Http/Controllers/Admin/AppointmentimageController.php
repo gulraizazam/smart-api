@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Models\Appointments;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -24,6 +25,17 @@ use App\Models\AuditTrails;
 
 class AppointmentimageController extends Controller
 {
+    public $success;
+    public $error;
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -50,12 +62,12 @@ class AppointmentimageController extends Controller
             if ($fileupload) {
                 $file = $fileupload;
                 $ext = $file->getClientOriginalExtension();
-                $photo_url = md5(time() . rand(0001, 9999) . rand(78599, 99999)) . ".$ext";
-                $file->move('appointment_image', $photo_url);
+                $fileName = time().'-'.str_replace(' ', '-', $file->getClientOriginalName());
+                $file->storeAs('public/appointment_image', $fileName);
 
                 if ($ext == 'jpg' || $ext == 'jpeg' || $ext == 'png' || $ext == 'gif') {
                     $data['image_name'] = $file->getClientOriginalName();
-                    $data['image_path'] = $photo_url;
+                    $data['image_path'] = $fileName;
                     $data['type'] = $type;
                     $data['appointment_id'] = $id;
                     $appointment = Appointmentimage::createRecord($data,$id);
@@ -85,11 +97,15 @@ class AppointmentimageController extends Controller
     }
 
     public function datatable(Request $request,$id){
+
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $appointmentimages = Appointmentimage::getBulkData_forimage($request->get('id'));
+        $filters = getFilters($request->all());
+
+        if (hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
+            $appointmentimages = Appointmentimage::getBulkData_forimage($ids);
             if($appointmentimages) {
                 foreach($appointmentimages as $appointmentimages) {
                     // Check if child records exists or not, If exist then disallow to delete it.
@@ -98,34 +114,42 @@ class AppointmentimageController extends Controller
                     }
                 }
             }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true; // pass custom message(useful for getting status of group actions)
+            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
         }
 
         // Get Total Records
         $iTotalRecords = Appointmentimage::getTotalRecords($request, Auth::User()->account_id,$id);
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        list($orderBy, $order) = getSortBy($request);
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $appointmentimages = Appointmentimage::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id,$id);
         if($appointmentimages) {
             foreach($appointmentimages as $appointmentimg) {
                 $records["data"][] = array(
-                    'id' => '<label class="mt-checkbox mt-checkbox-single mt-checkbox-outline"><input name="id[]" type="checkbox" class="checkboxes" value="'.$appointmentimg->id.'"/><span></span></label>',
+                    'id' => $appointmentimg->id,
+                    'image_id' => $appointmentimg->id,
                     'patient_id' => $appointmentimg->appointment->patient_id,
-                    'image' => view('admin.appointments.images.imagedisplay', compact('appointmentimg'))->render(),
+                    'image_path' => $appointmentimg->image_path,
                     'type' => $appointmentimg->type,
                     'created_at' => Carbon::parse($appointmentimg->created_at)->format('F j,Y h:i A'),
-                    'actions' => view('admin.appointments.images.actions', compact('appointmentimg'))->render(),
                 );
             }
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
         }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+
+        $records["permissions"] = [
+            'delete' => Gate::allows('appointments_image_destroy'),
+        ];
 
         return response()->json($records);
     }
@@ -133,14 +157,17 @@ class AppointmentimageController extends Controller
     public function destroy($id){
 
         if (!Gate::allows('appointments_image_destroy')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
-        $appointmentimage = Appointmentimage::find($id);
+        try {
+            $response = Appointmentimage::DeleteRecord($id);
 
-        Appointmentimage::DeleteRecord($id);
+            return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
 
-        return redirect()->route('admin.appointmentsimage.imageindex',[$appointmentimage->appointment_id]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
 
     }
 }
