@@ -91,8 +91,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::get('settings', [SettingsController::class,'index'])->name('settings.index');
 
-        Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
-
         Route::resource('permissions', PermissionsController::class);
 
         Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
@@ -370,8 +368,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::post('appointments/loadlead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
-        Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
-
         Route::resource('appointments', AppointmentsController::class)->only('index');
 
 
@@ -413,9 +409,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::get('appointments/saveconsultancyinvoice',[ConsultancyInvoiceController::class, 'saveinvoice'])->name('appointments.saveconsultancyinvoice');
         /*Appointment route section for consultancy invoice end*/
-
-        // Appointment Route start for images
-        Route::post('appointmentsimage/datatable/{id}', [AppointmentimageController::class, 'datatable'])->name('appointmentsimage.datatable');
 
         Route::get('appointmentsimage/imageindex/{id}', [AppointmentimageController::class, 'index'])->name('appointmentsimage.imageindex');
 

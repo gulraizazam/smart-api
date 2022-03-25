@@ -168,7 +168,7 @@
     <table>
         <tr>
             <td>
-                <img class="logo" src="{{asset('centre_logo/')}}/new_logo.png" class="img-responsive" alt=""/>
+                <img class="img-responsive logo" src="{{asset('assets/media/logos/logo.svg')}}" alt=""/>
                 <p class="logo_caption">{{$location_info->address}}.</p>
                 <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}}  &nbsp; |  &nbsp; Email. {{$account->email}}  &nbsp; | &nbsp;  www.cutera.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
             </td>

@@ -1,4 +1,5 @@
 <a class="btn btn-xs btn-warning" href="{{asset('appointment_image/')}}/{{$appointmentimg->image_path}}" target="_blank">@lang('global.app_view')</a>
+
 @if(Gate::allows('appointments_image_destroy'))
     {!! Form::open(array(
         'style' => 'display: inline-block;',

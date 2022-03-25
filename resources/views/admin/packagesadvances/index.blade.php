@@ -89,7 +89,7 @@
                     <div class="card-body">
                         <!--begin::Search Form-->
                         @include('admin.packagesadvances.filters')
-                    <!--end::Search Form-->
+                        <!--end::Search Form-->
 
                         <!--begin: Datatable-->
                         <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>

@@ -1,9 +1,13 @@
-
+var counter = 0;
 var treatmentDoctorListener = function (doctorId) {
 
     setQueryStringParameter('doctor_id', doctorId);
 
+    $("#treatment_doctor_filter").val(doctorId)
+
     loadCalendar();
+
+    counter = counter+1;
 }
 
 let loadMachine = function(locationId) {
@@ -49,18 +53,19 @@ let loadMachine = function(locationId) {
     });
 }
 
-var counter = 0;
+
 let machineListener = function (machineId) {
+
+    setQueryStringParameter('machine_id', machineId);
 
     if (machineId != '' && machineId != null) {
 
-        if (counter > 1) {
+        if (counter > 0) {
             reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
+            //loadCalendar()
         }
         counter = counter +1;
     }
-
-    setQueryStringParameter('machine_id', machineId);
 
 }
 

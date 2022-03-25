@@ -312,10 +312,7 @@ var ConsultancyCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    callback({
-                        'status': false,
-                        'events': null,
-                    })
+                    toastr.error("Unabled to process the request");
                 }
             });
 
@@ -402,7 +399,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     let sms_logs_url = route('admin.appointments.sms_logs', {id: appointment.id});
     let patient_url = route('admin.patients.preview', {id: appointment.id});
     let service_invoice_url = route('admin.appointments.invoicecreate', {id: appointment.id});
-    let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: appointment.id});
+    let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: appointment.id, type: 'appointment'});
     let image_url = route('admin.appointmentsimage.imageindex', {id: appointment.id});
     let measurement_url = route('admin.appointmentsmeasurement.measurements', {id: appointment.id});
     let medical_url = route('admin.appointmentsmedical.medicals', {id: appointment.id});
@@ -429,13 +426,13 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     if (permissions.invoice) {
         if (!invoice) {
             if (appointment.appointment_type_id == 2) {
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createInvoice(`' + service_invoice_url + '`);">\
+                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + service_invoice_url + '`);">\
                 <i class="la la-file-invoice" title="Generate Invoice"></i>\
                 </a>';
             }
 
             if (appointment.appointment_type_id == 1) {
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createInvoice(`' + consultancy_invoice_url + '`);" >\
+                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" >\
                 <i class="la la-file-invoice" title="Generate Invoice"></i>\
                 </a>';
             }
@@ -443,7 +440,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
         if (permissions.invoice_display) {
             if (invoice) {
                 let invoice_url = route('admin.appointments.InvoiceDisplay', {id: invoiceid});
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="invoiceDisplay(`' + invoice_url + '`);" >\
+                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_url + '`);" >\
                 <i class="la la-file-invoice-dollar" title="Invoice Display"></i>\
                 </a>';
             }
@@ -548,13 +545,11 @@ function setCreateConsultancy(response, start) {
         let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
         let location_id = response.data.location_id;
-       // let doctors = response.data.doctors;
         let employees = response.data.employees;
         let lead = response.data.lead;
         let lead_sources = response.data.lead_sources;
         let services = response.data.services;
         let setting = response.data.setting;
-       // let towns = response.data.towns;
         let genders = response.data.genders;
 
         let consultancy_types = response.data.consultancy_types;

@@ -7,11 +7,17 @@
         <div class="form-group">
             <div class="form-body">
                 <!-- Starts Form Validation Messages -->
-            @include('partials.messages')
-            <!-- Ends Form Validation Messages -->
-                @include('admin.appointments.plans.create_fields')
+                @include('partials.messages')
+                <!-- Ends Form Validation Messages -->
+                @if($invoice_status != true)
+                    @include('admin.appointments.invoice_fields')
+                @else
+                    <h2>Invoice Already Paid</h2>
+                @endif
             </div>
         </div>
     </div>
-    <script src="{{ url('js/admin/appointments/plans/create.js') }}" type="text/javascript"></script>
+    <script src="{{ url('js/admin/invoices/create.js') }}" type="text/javascript"></script>
 </div>
+
+

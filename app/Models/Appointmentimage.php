@@ -87,6 +87,8 @@ class Appointmentimage extends BaseModal
     {
         $where = array();
 
+        $filters = getFilters($request->all());
+
         if($id != false){
             $where[] = array(
                 'appointment_id',
@@ -94,42 +96,37 @@ class Appointmentimage extends BaseModal
                 $id
             );
         }
-        if ($request->get('type')) {
+        if (hasFilter($filters, 'type')) {
             $where[] = array(
                 'type',
                 '=',
-                $request->get('type')
+                $filters['type']
             );
         }
-        if ($request->get('id')) {
+        if (hasFilter($filters, 'id')) {
             $where[] = array(
                 'id',
                 'like',
-                '%' . $request->get('id') . '%'
+                '%' . $filters['id'] . '%'
             );
         }
-        if ($request->get('created_from') && $request->get('created_from') != '') {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = array(
                 'created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
+                $filters['created_from'] . ' 00:00:00'
             );
         }
-        if ($request->get('created_to') && $request->get('created_to') != '') {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = array(
                 'created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
+                $filters['created_to'] . ' 23:59:59'
             );
         }
-        $orderBy = 'created_at';
-        $order = 'desc';
 
-        if ($request->get('order')[0]['dir']) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
-            $order = $request->get('order')[0]['dir'];
-        }
+        list($orderBy, $order) = getSortBy($request, 'id');
+
         if (count($where)) {
             return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
         } else {
@@ -171,16 +168,19 @@ class Appointmentimage extends BaseModal
 
         if (!$appointmentimage) {
 
-            flash('Resource not found.')->error()->important();
-            return redirect()->route('admin.appointmentsimage.imageindex',[$appointmentimage->appointment_id]);
-
+            return [
+                'status' => false,
+                'message' => 'Resource not found.',
+            ];
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Appointmentimage::isChildExists($id, Auth::User()->account_id)) {
 
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.appointmentsimage.imageindex',[$appointmentimage->appointment_id]);
+            return [
+                'status' => false,
+                'message' => 'Child records exist, unable to delete resource.',
+            ];
         }
 
         $record = $appointmentimage->delete();
@@ -189,9 +189,10 @@ class Appointmentimage extends BaseModal
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-        flash('Record has been deleted successfully.')->success()->important();
-
-        return $record;
+        return [
+            'status' => true,
+            'message' => 'Record has been deleted successfully.',
+        ];
 
     }
 

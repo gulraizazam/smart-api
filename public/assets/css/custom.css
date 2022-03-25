@@ -692,3 +692,14 @@ div > input {
     cursor: not-allowed !important;
     pointer-events: all !important;
 }
+#appointment_cment, #cment {
+    max-width: 95% !important;
+}
+.disabled-field {
+    background-color: #F3F6F9 !important;
+}
+.bg-color{
+    background-color: #35a1d4;
+    color: #fff;
+    padding: 10px 15px;
+}

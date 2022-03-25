@@ -3397,7 +3397,7 @@
 		public function invoice($id)
 		{
 			if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
 			$invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
@@ -4871,7 +4871,7 @@
 		public function displayInvoiceAppointment($id)
 		{
 			if (!Gate::allows('appointments_invoice_display')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 			$Invoiceinfo = DB::table('invoices')
 				->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
@@ -4917,7 +4917,7 @@
 			$account = Accounts::find($Invoiceinfo->account_id);
 			$company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
 
-			return view('admin.invoices.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
+			return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
 		}
 
 		/*

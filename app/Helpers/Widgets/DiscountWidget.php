@@ -144,7 +144,7 @@ class DiscountWidget
 
             //      Find Matching Services
             $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
-            $serviceWithParents = array_merge($serviceWithParents, [$service_id]);
+            $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
 
             $servicediscounts = DiscountHasLocations::where([
                 'location_id' => Locations::where(array(
@@ -243,7 +243,7 @@ class DiscountWidget
         }
         //      Find Matching Services
         $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
-        $serviceWithParents = array_merge($serviceWithParents, [$service_id]);
+        $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
 
         $centreservicediscounts = DiscountHasLocations::where([
             'location_id' => $location_id,

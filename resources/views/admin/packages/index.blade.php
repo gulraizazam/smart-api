@@ -118,9 +118,5 @@
     @push('js')
         <script src="{{asset('assets/js/pages/admin_settings/create-plan.js')}}"></script>
     @endpush
-
-    @push('datatable-js')
-        {{--<script src="{{asset('assets/js/pages/admin_settings/plans.js')}}"></script>--}}
-    @endpush
-
+    
 @endsection

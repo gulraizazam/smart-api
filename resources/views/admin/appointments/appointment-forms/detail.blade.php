@@ -33,50 +33,50 @@
 
                         <table class="table">
                             <tbody>
-                            <tr class="treatment-detail-actions"></tr>
+                            <tr class="appointment-detail-actions"></tr>
                             <tr>
                                 <th>Patient Name</th>
-                                <td id="treatment_patient_name"></td>
+                                <td id="appointment_patient_name"></td>
                                 <th>Patient Phone</th>
-                                <td id="treatment_patient_phone"></td>
+                                <td id="appointment_patient_phone"></td>
                             </tr>
                             <tr>
                                 <th>Email</th>
-                                <td id="treatment_patient_email"></td>
+                                <td id="appointment_patient_email"></td>
                                 <th>Gender</th>
-                                <td id="treatment_patient_gender"></td>
+                                <td id="appointment_patient_gender"></td>
                             </tr>
                             <tr>
                                 <th>Appointment Time</th>
-                                <td id="treatment_patient_scheduled_time"></td>
+                                <td id="appointment_patient_scheduled_time"></td>
                                 <th>Doctor</th>
-                                <td id="treatment_doctor_name"></td>
+                                <td id="appointment_doctor_name"></td>
                             </tr>
                             <tr>
                                 <th>City</th>
-                                <td id="treatment_city_name"></td>
+                                <td id="appointment_city_name"></td>
                                 <th>Centre</th>
-                                <td id="treatment_center_name"></td>
+                                <td id="appointment_center_name"></td>
                             </tr>
                             <tr>
                                 <th>Appointment Status</th>
-                                <td id="treatment_appointment_status"></td>
+                                <td id="appointment_appointment_status"></td>
                                 <th>Service/Consultancy</th>
-                                <td id="treatment_service_consultancy_name"></td>
+                                <td id="appointment_service_consultancy_name"></td>
                             </tr>
                             <tr>
                             </tr>
                             </tbody>
                         </table>
 
-                        <form id="treatment_cment" style="margin-top: 35px;max-width: 95%;">
+                        <form id="appointment_cment" style="margin-top: 35px;">
 
                             <h3 class="box-title">Comment</h3>
 
                             <div class="row">
                                 <div class="col-md-11">
                                     <div class="col-md-12">
-                                        <div class="portlet-body" id="treatment_commentsection">
+                                        <div class="portlet-body" id="appointment_commentsection">
                                         </div>
                                     </div>
                                 </div>
@@ -88,11 +88,11 @@
 
                                 <div class="col-md-12">
                                     <label>Comment</label>
-                                    <input type="text" id="treatment_comment" name="comment" class="form-control" required="">
+                                    <input type="text" id="appointment_comment" name="comment" class="form-control" required="">
                                 </div>
-                                <input type="hidden" name="appointment_id" id="treatment_comment_appointment_id" class="form-control" value=""><br>
+                                <input type="hidden" name="appointment_id" id="appointment_comment_appointment_id" class="form-control" value=""><br>
                                 <div class="col-md-12 mt-5">
-                                    <button type="button" name="Add_treatment_comment" id="Add_treatment_comment" class="btn btn-success">Comment</button>
+                                    <button type="button" name="Add_appointment_comment" id="Add_appointment_comment" class="btn btn-success">Comment</button>
                                 </div>
 
                             </div>
