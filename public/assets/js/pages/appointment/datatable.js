@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'Patient_ID',
         title: 'ID',
-        width: 'auto',
+        width: 80,
         sortable: false,
     },{
         field: 'name',
@@ -22,6 +22,9 @@ var table_columns = [
         field: 'scheduled_date',
         title: 'Scheduled',
         width: 'auto',
+        template: function (data) {
+            return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><i class="btn btn-icon btn-light btn-hover-primary btn-sm la la-eye"></i><br> ' + data.scheduled_date + '</a>';
+        }
     },{
         field: 'service_id',
         title: 'Service',
@@ -59,7 +62,7 @@ var table_columns = [
                 if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
                     return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
                 } else {
-                    return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + '</a>';
+                    return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');"><i class="btn btn-icon btn-light btn-hover-primary btn-sm la la-eye"></i> ' + data.appointment_status_id + '</a>';
                 }
             } else {
                 return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
@@ -193,6 +196,34 @@ function setStatusData(response, id) {
     } catch (error) {
         showException(error);
     }
+}
+
+function editSchedule(id) {
+
+    $("#modal_change_appointment_schedule").modal("show");
+    $("#schedule_appointment_id").val(id)
+
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.get_schedule'),
+        type: "GET",
+        data: {id: id},
+        cache: false,
+        success: function(response) {
+            if (response.status) {
+                let appointment = response.data.appointment;
+               $("#schedule_date").val(appointment?.scheduled_date);
+               $("#schedule_time").val(appointment?.scheduled_time);
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
 }
 
 const extraValidate = {
@@ -1213,3 +1244,67 @@ function displayInvoice(url) {
     });
 
 }
+
+/*Schedule validation*/
+var AppointScheduleValidation = function () {
+    // Private functions
+    var Validation = function () {
+        let modal_id = 'modal_update_scheduled_form';
+        let form = document.getElementById(modal_id);
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    scheduled_date: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The schedule date field is required'
+                            }
+                        }
+                    },
+                    scheduled_time: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The schedule time field is required'
+                            }
+                        }
+                    }
+                },
+
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                }
+            }
+        );
+        validate.on('core.form.invalid', function (e) {
+            select2Validation();
+        });
+        validate.on('core.form.valid', function(event) {
+            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+
+                if (response.status) {
+                    toastr.success(response.message);
+                    closePopup(modal_id);
+                   reInitTable();
+                } else {
+                    toastr.error(response.message);
+                }
+            }, null);
+        });
+    }
+
+    return {
+        // public functions
+        init: function() {
+            Validation();
+        }
+    };
+}();
+
+jQuery(document).ready(function() {
+    AppointScheduleValidation.init();
+});

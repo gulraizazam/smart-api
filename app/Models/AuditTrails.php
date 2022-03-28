@@ -236,6 +236,8 @@ class AuditTrails extends BaseModal
         $audit_tail['parent_id'] = $parent_id;
 
         $audit_tail['user_id'] = Auth::User()->id;
+        $audit_tail['created_at'] = date("Y-m-d H:i:s");
+        $audit_tail['updated_at'] = date("Y-m-d H:i:s");
 
         $audit_tailObj = self::create($audit_tail);
 
