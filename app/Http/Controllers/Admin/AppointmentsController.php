@@ -2270,10 +2270,9 @@
                 'biggerTime' => $biggerTime,
                 'smallerTime' => $smallerTime,
                 'back_date_config' => $back_date_config,
-                'genders' => config('constants.gender_array')
+                'genders' => config('constants.gender_array'),
+                'consultancy_type' => config('constants.consultancy_type_array'),
             ]);
-
-            //return view('admin.appointments.services.service_edit', compact('appointment', 'cities', 'services', 'locations', 'doctors', 'machines', 'resourceHadRotaDay', 'machineHadRotaDay', 'biggerTime', 'smallerTime', 'back_date_config'));
 		}
 
 		/**
