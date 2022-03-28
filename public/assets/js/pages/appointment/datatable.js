@@ -573,12 +573,12 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
         $("#treatment_city_filter").val(city_id).trigger("change");
 
         setTimeout( function () {
-            $("#treatment_doctor_filter").val(doctor_id).trigger("change");
-        },300);
-
-        setTimeout( function () {
             $("#treatment_resource_filter").val(resource_id).trigger("change");
         },700);
+
+        setTimeout( function () {
+            $("#treatment_doctor_filter").val(doctor_id).trigger("change");
+        },800);
 
 
     }
