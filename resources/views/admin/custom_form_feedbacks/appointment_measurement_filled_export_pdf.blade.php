@@ -344,7 +344,6 @@
                     <tr class="data-split-wrap">
                         <td>
                             <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(public_path('assets/media/logos/logo_final.png')))}}" height="80">
-{{--                            <img src="{{asset('assets/media/logos/logo_final.png')}}" height="80">--}}
                         </td>
                         <td>
                             <p class="order-date text-right">#{{ $thisId }} / {{ date('M d, Y') }}</p>

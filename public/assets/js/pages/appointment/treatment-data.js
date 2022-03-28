@@ -3,7 +3,7 @@ var treatmentDoctorListener = function (doctorId) {
 
     setQueryStringParameter('doctor_id', doctorId);
 
-    $("#treatment_doctor_filter").val(doctorId)
+    $("#treatment_doctor_filter").val(doctorId);
 
     loadCalendar();
 
@@ -39,7 +39,7 @@ let loadMachine = function(locationId) {
                 $('#treatment_resource_filter').html(dropdown_options);
 
                 if (typeof result.machine_id !== "undefined") {
-                    $("#treatment_resource_filter").val(result.machine_id).change();
+                   // $("#treatment_resource_filter").val(result.machine_id).change();
                 }
 
                 $('.select2').select2({ width: '100%' });
@@ -60,10 +60,7 @@ let machineListener = function (machineId) {
 
     if (machineId != '' && machineId != null) {
 
-        if (counter > 0) {
-            reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
-            //loadCalendar()
-        }
+        loadCalendar();
         counter = counter +1;
     }
 
@@ -91,7 +88,9 @@ function loadCalendar() {
         window.eventData.id = null;
         window.eventData.firstTime = true;
 
-        TreatmentCalendar.init();
+        setTimeout( function () {
+            TreatmentCalendar.init();
+        }, 500);
     }
 }
 

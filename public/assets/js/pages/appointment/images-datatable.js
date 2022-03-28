@@ -40,7 +40,7 @@ function actions(data) {
     let delete_url = route('admin.appointmentsimage.destroy', {id: data.id});
     let image_url = asset_url + 'storage/appointment_image/' + data.image_path;
 
-    if (permissions.delete) {
+
         let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -72,8 +72,7 @@ function actions(data) {
     </div>';
 
         return actions;
-    }
-    return '';
+
 }
 
 function applyFilters(datatable) {

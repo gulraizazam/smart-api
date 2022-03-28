@@ -418,7 +418,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
 
         //Appointment route start for measurement
-        Route::post('appointmentsmeasurement/datatable/{id}', [AppointmentMeasurementController::class, 'datatable'])->name('appointmentsmeasurement.datatable');
 
         Route::get('appointmentsmeasurement/measurementindex/{id}', [AppointmentMeasurementController::class, 'index'])->name('appointmentsmeasurement.measurements');
 
@@ -450,6 +449,8 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::post('appointmentsmedical/{custom_form_id}', [AppointmentMedicalController::class, 'update_medical_field'])->name('appointmentsmedical.update');
 
         Route::get('appointmentsmedical/previewform/{id}',[AppointmentMedicalController::class, 'filled_preview'])->name('appointmentsmedical.previewform');
+
+        Route::get('appointmentsmedical/fill_form/{id}/{appointment_id}',[AppointmentMedicalController::class, 'fill_form'])->name('appointmentsmedical.fill_form');
 
         Route::get('appointmentsmedical/{id}/print', [AppointmentMedicalController::class, 'filledPrint'])->name("appointmentsmedical.custom_form_feedbacks.filled_print");
 

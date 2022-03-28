@@ -395,7 +395,7 @@ function actions(data) {
                         </a>\
                     </li>';
 
-        if(data.cancelled_appointment_status && (data.cancelled_appointment_status?.id != data.appointment_status_id))
+        if(data.cancelled_appointment_status == null && (data.cancelled_appointment_status?.id != data.appointment_status_id))
         {
             if(data.appointment_type==1) {
                 if (permissions.consultancy) {
@@ -466,7 +466,7 @@ function actions(data) {
 
             if (permissions.measurement_manage) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + measurements_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="'+measurements_url+'" target="_blank" class="navi-link">\
                             <span class="navi-icon"><i class="la la-ruler-horizontal"></i></span>\
                             <span class="navi-text">Measurements</span>\
                         </a>\
@@ -477,7 +477,7 @@ function actions(data) {
         if(data.appointment_type==1) {
             if (permissions.medical_form_manage) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + medicals_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="'+medicals_url+'" target="_blank" class="navi-link">\
                             <span class="navi-icon"><i class="la la-plus-square"></i></span>\
                             <span class="navi-text">Medical</span>\
                         </a>\
@@ -537,13 +537,13 @@ function actions(data) {
 
 function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
 
-    setQueryStringParameter('city_id');
+    /*setQueryStringParameter('city_id');
     setQueryStringParameter('location_id');
     setQueryStringParameter('doctor_id');
 
     $("#consultancy_city_filter").val('').trigger("change")
     $("#consultancy_location_filter").val('').trigger("change")
-    $("#consultancy_doctor_filter").val('').trigger("change")
+    $("#consultancy_doctor_filter").val('').trigger("change")*/
 
     if (type == 'appointment') {
         $(".export-appointments").show();
@@ -562,6 +562,7 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
     setQueryStringParameter('city_id', city_id);
     setQueryStringParameter('location_id', location_id);
     setQueryStringParameter('doctor_id', doctor_id);
+    setQueryStringParameter('reload', 'false');
 
     $(".change-label").text($("." +type+ "-tab").text());
 
@@ -570,9 +571,14 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
         setQueryStringParameter('machine_id', resource_id);
 
         $("#treatment_city_filter").val(city_id).trigger("change");
+
         setTimeout( function () {
-            $("#treatment_city_filter").val(city_id).trigger("change");
-        },800);
+            $("#treatment_doctor_filter").val(doctor_id).trigger("change");
+        },300);
+
+        setTimeout( function () {
+            $("#treatment_resource_filter").val(resource_id).trigger("change");
+        },700);
 
 
     }

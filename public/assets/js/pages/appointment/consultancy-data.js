@@ -27,12 +27,24 @@ jQuery(document).ready(function() {
         && typeof result.machine_id !== "undefined"
         && typeof result.tab !== 'undefined' && result.tab == 'treatment') {
 
-        loadDoctors(result.location_id, result.tab);
+        //loadDoctors(result.location_id, result.tab);
+
 
         setTimeout( function () {
             $("#treatment_city_filter").val(result.city_id).change();
+        }, 200);
+        setTimeout( function () {
+            $("#treatment_location_filter").val(result.location_id).change();
+        },500);
+
+        setTimeout( function () {
             $("#treatment_doctor_filter").val(result.doctor_id).change();
-        }, 400);
+        },900);
+
+        setTimeout( function () {
+            $("#treatment_resource_filter").val(result.machine_id).change();
+        },1000);
+
     }
 
     $("#Add_comment").click(function () {
@@ -189,9 +201,10 @@ let loadDoctors = function (locationId, appointment = null) {
                         setQueryStringParameter('location_id', locationId);
 
                         loadMachine(locationId);
+                        loadCalendar();
 
-                        if (typeof result.doctor_id !== "undefined") {
-                            $("#treatment_doctor_filter").val(result.doctor_id).change();
+                        if (typeof result.doctor_id !== "undefined" && typeof result.reload === "undefined") {
+                          //  $("#treatment_doctor_filter").val(result.doctor_id).change();
                         }
                     } else {
                         $('#edit_doctor').html(dropdown_options);
@@ -201,6 +214,7 @@ let loadDoctors = function (locationId, appointment = null) {
                 } else {
                     resetDoctors();
                 }
+                setQueryStringParameter('reload');
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 resetDoctors();

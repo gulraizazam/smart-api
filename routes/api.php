@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AppointmentimageController;
+use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\AppointmentsPlansController;
@@ -400,6 +401,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     // Appointment Route start for images
     Route::post('appointmentsimage/datatable/{id}', [AppointmentimageController::class, 'datatable'])->name('appointmentsimage.datatable');
 
+    Route::post('appointmentsmeasurement/datatable/{id}', [AppointmentMeasurementController::class, 'datatable'])->name('appointmentsmeasurement.datatable');
 
     /*Route start for patient pakcage*/
     Route::post('plans/datatable/{id?}', [PackagesController::class, 'datatable'])->name('plans.datatable');
@@ -507,8 +509,6 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');
 
     Route::get('appointmentsmedical/medicalcreate/{id}', [AppointmentMedicalController::class, 'create'])->name('appointmentsmedical.create');
-
-    Route::get('appointmentsmedical/fill_form/{id}/{appointment_id}',[AppointmentMedicalController::class, 'fill_form'])->name('appointmentsmedical.fill_form');
 
     Route::post('appointmentsmedical/{form_id}/{appointment_id}/submit_form', [AppointmentMedicalController::class, 'submit_form'])->name('appointmentsmedical.submit_form');
 
