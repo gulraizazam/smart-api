@@ -86,7 +86,7 @@
       rel="stylesheet" type="text/css"/>
 @section('title')
     <!-- BEGIN PAGE TITLE-->
-    <h1 class="page-title">@lang('global.app_appointmentmedical')</h1>
+    <h1 class="page-title">@lang('global.app_appointmentmeasurementforms')</h1>
     <!-- END PAGE TITLE-->
 @endsection
 
@@ -98,7 +98,7 @@
                 <span class="caption-subject bold uppercase"> @lang('global.app_edit')</span>
             </div>
             <div class="actions">
-                <a href="{{ route('admin.appointmentsmedical.medicals',[$medicalinformation->appointment_id]) }}"
+                <a href="{{ route('admin.appointmentsmeasurement.measurements',[$measurementinformation->appointment_id]) }}"
                    class="btn dark pull-right">@lang('global.app_back')</a>
             </div>
         </div>
@@ -118,7 +118,7 @@
                         <p>{{$custom_form->form_description}}</p>
                     </div>
                 </div>
-                @include('admin.appointments.medicals.edit_fields.select_patient')
+                @include('admin.appointments.measurements.edit_fields.select_patient')
                 <div id="cf_field_list">
                     @foreach($custom_form->form_fields as $field)
                         <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
@@ -277,20 +277,20 @@
                     priority = $("[name=priority]").val();
                     date = $("[name=date]").val();
                     type = $("[name=type]").val();
-                    medical_id = $("[name=medical_id]").val();
+                    measurement_id = $("[name=measurement_id]").val();
 
                     const data = {
                         priority: $("[name=priority]").val(),
                         date: $("[name=date]").val(),
                         type: $("[name=type]").val(),
-                        medical_id: $("[name=medical_id]").val(),
+                        measurement_id: $("[name=measurement_id]").val(),
                     };
                     console.log(data);
                     $.ajax({
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        url: '{{route('admin.appointmentsmedical.update',['Id'=>$custom_form->id])}}',
+                        url: '{{route('admin.appointmentmeasurement.update',['Id'=>$custom_form->id])}}',
                         type: 'POST',
                         data: data,
                         cache: false,

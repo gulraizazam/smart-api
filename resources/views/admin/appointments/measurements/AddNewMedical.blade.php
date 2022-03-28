@@ -28,7 +28,7 @@
                 <th>Action</th>
             </tr>
             </thead>
-            <tbody id="measurement-forms">
+            <tbody id="medical-forms">
             </tbody>
         </table>
     </div>

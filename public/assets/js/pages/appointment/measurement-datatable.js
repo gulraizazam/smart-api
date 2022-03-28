@@ -1,4 +1,4 @@
-var table_url = route('admin.appointmentsimage.datatable', {id: appointment_id});
+var table_url = route('admin.appointmentsmeasurement.datatable', {id: appointment_id});
 
 var table_columns = [
     {
@@ -11,18 +11,22 @@ var table_columns = [
         }
     },
     {
-        field: 'image_id',
-        title: 'ID',
+        field: 'name',
+        title: 'Name',
         width: 'auto',
     },{
-        field: 'type',
-        title: 'Type',
+        field: 'patient_id',
+        title: 'Patient Name',
         width: 'auto',
-    }, {
+    },{
         field: 'created_at',
         title: 'Created At',
         width: 'auto',
-    }, {
+    },{
+        field: 'created_by',
+        title: 'Created By',
+        width: 'auto',
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -36,9 +40,8 @@ var table_columns = [
 
 function actions(data) {
 
-    console.log(data)
-    let delete_url = route('admin.appointmentsimage.destroy', {id: data.id});
-    let image_url = asset_url + 'storage/appointment_image/' + data.image_path;
+    let edit_url = route('admin.appointmentmeasurement.edit', {id: data.id});
+    let preview_url = route('admin.appointmentmeasurement.previewform', {id: data.id});
 
 
         let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -52,17 +55,17 @@ function actions(data) {
                     </li>';
 
         actions += '<li class="navi-item">\
-                    <a href="'+image_url+'" target="_blank" class="navi-link">\
+                    <a href="'+preview_url+'" target="_blank" class="navi-link">\
                         <span class="navi-icon"><i class="la la-eye"></i></span>\
                         <span class="navi-text">View</span>\
                     </a>\
                 </li>';
 
-        if (permissions.delete) {
+        if (permissions.edit) {
             actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="deleteRow(`'+delete_url+'`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-trash"></i></span>\
-                        <span class="navi-text">Delete</span>\
+                    <a href="'+edit_url+'" target="_blank" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                        <span class="navi-text">Edit</span>\
                     </a>\
                 </li>';
         }
@@ -72,7 +75,6 @@ function actions(data) {
     </div>';
 
         return actions;
-
 }
 
 function applyFilters(datatable) {
@@ -108,3 +110,42 @@ function resetAllFilters(datatable) {
 
 }
 
+function addMeasurementForm($route) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+
+            setMeasurementForms(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+}
+
+function setMeasurementForms(response) {
+
+    let CustomForms = response.data.CustomForms;
+
+    let form_data = noRecordFoundTable(2);
+
+    if (Object.entries(CustomForms).length) {
+        form_data = '';
+        Object.values(CustomForms).forEach( function (form) {
+            form_data += '<tr><td>'+form.name+'</td>';
+            form_data += '<td><a  href="'+route('admin.appointmentmeasurement.fill_form', {id: form.id, appointment_id: appointment_id}) +'" class="btn btn-sm btn-info" >Submit</a></td></tr>';
+        });
+
+    }
+
+
+    $("#measurement-forms").html(form_data);
+}

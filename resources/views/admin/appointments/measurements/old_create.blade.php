@@ -120,7 +120,7 @@
                 <span class="caption-subject bold uppercase"> @lang('global.app_edit')</span>
             </div>
             <div class="actions">
-                <a href="{{ route('admin.appointmentsmedical.medicals',[$appointmentinformation->id]) }}"
+                <a href="{{ route('admin.appointmentsmeasurement.measurements',[$appointmentinformation->id]) }}"
                    class="btn dark pull-right">@lang('global.app_back')</a>
             </div>
         </div>
@@ -139,7 +139,7 @@
                     </div>
                 </div>
 
-                @include('admin.appointments.medicals.fields.select_patient')
+                @include('admin.appointments.measurements.fields.select_patient')
 
                 <div id="cf_field_list">
                     @foreach($custom_form->form_fields as $field)
@@ -164,7 +164,7 @@
                 </div>
                 <div class="margin-top-10">
                     <button class="btn green">Save Changes</button>
-                    <a href="{{ route('admin.appointmentsmedical.medicals',[$appointmentinformation->id]) }}"
+                    <a href="{{ route('admin.appointmentsmeasurement.measurements',[$appointmentinformation->id]) }}"
                        class="btn default">Cancel </a>
                 </div>
             </form>
@@ -198,8 +198,11 @@
 
                             /*Start Here*/
                             data['reference_id'] = document.querySelector("select[name='{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_NAME}}']").value;
+                            data['service_id'] = document.querySelector("select[name='{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_SERVICENAME}}']").value;
+                            data['priority'] = document.querySelector("select[name='{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_PRIORITY}}']").value;
                             data['date'] = $("#{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_DATE}}").val();
                             data['appointment_id'] = $("#{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_APPOINTMENT}}").val();
+                            data['type'] = document.querySelector("select[name='{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_TYPE}}']").value;
 
                             for (let i = 0; i < fields.length; i++) {
                                 field_type = fields[i].querySelector("input#field_type").value;
@@ -271,7 +274,7 @@
 
                             fill_form(data, (response) => {
                                 alert("Form Submitted Successfully");
-                                window.location.href = '{{ route('admin.appointmentsmedical.medicals',[$appointmentinformation->id]) }}';
+                                window.location.href = '{{ route('admin.appointmentsmeasurement.measurements',[$appointmentinformation->id]) }}';
 
                             });
                         } else {
@@ -297,7 +300,7 @@
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        url: route('admin.appointmentsmedical.submit_form',
+                        url: route('admin.appointmentmeasurement.submit_form',
                             {
                                 'form_id': $("input[type=hidden]#form_id").val(),
                                 'appointment_id': $("#appointment_id").val()

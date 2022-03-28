@@ -39,14 +39,12 @@ class AppointmentMeasurementController extends Controller
             ['active','=','1'],
             ['user_type_id','=','3']
         ])->pluck('name', 'id');
-        $patients->prepend('All', '');
 
         $users = User::where([
             ['account_id','=',Auth::User()->account_id],
             ['active','=','1'],
             ['user_type_id','!=','3']
         ])->pluck('name', 'id');
-        $users->prepend('All', '');
 
 
         return view('admin.appointments.measurements.index', compact('appointment','patients','users'));
@@ -158,8 +156,11 @@ class AppointmentMeasurementController extends Controller
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $appointmentmeasurements = Measurement::getBulkData_formeasurement($request->get('id'));
+        $filters = getFilters($request->all());
+
+        if (hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
+            $appointmentmeasurements = Measurement::getBulkData_formeasurement($ids);
             if($appointmentmeasurements) {
                 foreach($appointmentmeasurements as $appointmentmeasurement) {
                     // Check if child records exists or not, If exist then disallow to delete it.
@@ -168,17 +169,15 @@ class AppointmentMeasurementController extends Controller
                     }
                 }
             }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true; // pass custom message(useful for getting status of group actions)
+            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
         }
 
         // Get Total Records
         $iTotalRecords = Measurement::getTotalRecords($request, Auth::User()->account_id,$id);
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        list($orderBy, $order) = getSortBy($request);
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $appointmentmeasurements = Measurement::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id,$id);
 
@@ -187,18 +186,30 @@ class AppointmentMeasurementController extends Controller
                 $user = User::find($appointmentmeasurement->user_id);
                 $patient = User::find($appointmentmeasurement->patient_id);
                 $records["data"][] = array(
+                    'id' => $appointmentmeasurement->id,
                     'name' => $appointmentmeasurement->form_name,
                     'patient_id' => $patient->name,
                     'created_by' => $user->name,
                     'type' => $appointmentmeasurement->type,
                     'created_at' => Carbon::parse($appointmentmeasurement->created_at)->format('F j,Y h:i A'),
-                    'actions' => view('admin.appointments.measurements.actions', compact('appointmentmeasurement'))->render(),
+                   // 'actions' => view('admin.appointments.measurements.actions', compact('appointmentmeasurement'))->render(),
                 );
             }
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+
         }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+
+        $records["permissions"] = [
+            'edit' => Gate::allows('appointments_measurement_edit'),
+        ];
 
         return response()->json($records);
     }
@@ -357,54 +368,12 @@ class AppointmentMeasurementController extends Controller
 
         $leadServices = $measurementinformation->service_id;
 
-        //return view('admin.custom_form_feedbacks.filled_export_pdf', ['custom_form' => $custom_form_feedback, 'thisId' => $id]);
-        $pdfName = 'measurement_form'.'_'.$id.'_'.date('YmdHis') . ".pdf";
-        $custom_form = $custom_form_feedback;
-        $thisId = $id;
         $content = view('admin.custom_form_feedbacks.appointment_measurement_filled_export_pdf', ['custom_form' => $custom_form_feedback,'patient_id'=>$patient_id,'measurementinformation'=>$measurementinformation,
         'users' => $users,'Services' => $Services,'leadServices'=> $leadServices, 'thisId' => $id])->render();
         $pdf = App::make('dompdf.wrapper');
 
-        $pdf->loadHTML($content);
+        $pdf->loadHTML($content)->setOptions(['defaultFont' => 'sans-serif']);;
         $pdf->setPaper('A4', 'landscape');
-        return $pdf->stream('Medical Form Report', 'landscape');
-        //return $file->download($pdfName);
-        /*
-                try {
-                    $options = [
-                        'orientation'   => 'landscape',
-                        'encoding'      => 'UTF-8',
-                        //'header-html'   => $page_header_html,
-                        //'footer-html'   => $page_footer_html
-                        'zoom' => 1,
-                        //'margin-bottom' => '10mm'
-                    ];
-                    $pdf = PDF::loadView('admin.custom_form_feedbacks.filled_export_pdf', ['custom_form' => $custom_form_feedback, 'thisId' => $id])
-                        ->setPaper('A4', 'landscape')
-                        //->setOption('zoom', 1)
-                        //->setOption('margin-top', '40mm')
-                        //->setOption('margin-bottom', '10mm');
-                        ->setOptions($options);
-                    $pdfName = 'custom_form'.'_'.$id.'_'.date('YmdHis') . ".pdf";
-                    return $pdf->download($pdfName);
-                    //return $pdf->inline($pdfName);
-                } catch (Exception $e) {
-                    Log::info($e);
-                    return redirect()->back()->withError(Lang::get('messages.error.general'));
-                }
-        */
-        //$pdf = PDF::loadView('admin.custom_form_feedbacks.filled_export_pdf', ['custom_form' => $custom_form_feedback, 'thisId' => $id]);
-        //$pdf->setPaper('A4', 'landscape');
-        //return $pdf->stream('staffReport', 'landscape');
-        /*
-                $pdfName = 'custom_form'.'_'.$id.'_'.date('YmdHis') . ".pdf";
-                $output_file = public_path("assets/pdf_download/".$pdfName);
-                $pdf = PDF::loadView('admin.custom_form_feedbacks.filled_export_pdf',['custom_form' => $custom_form_feedback, 'thisId' => $id])->setPaper('A4', 'landscape')->save($output_file);
-
-                $headers = array(
-                    'Content-Type: application/pdf',
-                );
-                return response()->download($output_file, $pdfName, $headers);
-        */
+        return $pdf->stream('Measurement Form Report', 'landscape');
     }
 }

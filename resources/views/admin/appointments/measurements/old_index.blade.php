@@ -18,11 +18,21 @@
     <link href="{{ url('metronic/assets/global/plugins/dropzone/dropzone.min.css') }}" rel="stylesheet"
           type="text/css"/>
     <link href="{{ url('metronic/assets/global/plugins/dropzone/basic.min.css') }}" rel="stylesheet" type="text/css"/>
+
+    <style type="text/css">
+        .table-checkable tr > td:first-child, .table-checkable tr > th:first-child {
+            text-align: left;
+            max-width: 50px;
+            min-width: 40px;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+    </style>
 @stop
 
 @section('title')
     <!-- BEGIN PAGE TITLE-->
-    <h1 class="page-title">@lang('global.app_appointmentimages')</h1>
+    <h1 class="page-title">@lang('global.app_appointmentmeasurement')</h1>
     <!-- END PAGE TITLE-->
 @endsection
 
@@ -35,8 +45,12 @@
                 <span class="caption-subject font-dark sbold uppercase">@lang('global.app_list')</span>
             </div>
             <div class="actions">
-                <a href="{{ route('admin.appointments.index') }}"
-                   class="btn btn-success pull-right">@lang('global.app_back')</a>
+                @if(Gate::allows('appointments_measurement_create'))
+                    <a class="btn btn-success btn-to-focus"
+                       href="{{ route('admin.appointmentsmeasurement.create',[$appointment->id]) }}"
+                       data-target="#ajax_measurement_addnew" data-toggle="modal">@lang('global.app_add_new')</a>
+                @endif
+                <a href="{{ route('admin.appointments.index') }}" class="btn btn-success">@lang('global.app_back')</a>
             </div>
         </div>
         <div class="portlet-body">
@@ -70,7 +84,7 @@
                     </tr>
                     <tr>
                         <th>Appointment Status</th>
-                        <td @if($appointment->appointment_status_id != Config::get('constants.appointment_status_not_show')) @endif>@if($appointment->appointment_status_id){{ $appointment->appointment_status->name }}@else{{'N/A'}}@endif</td>
+                        <td @if($appointment->appointment_status_id != Config::get('constants.appointment_status_not_show'))@endif>@if($appointment->appointment_status_id){{ $appointment->appointment_status->name }}@else{{'N/A'}}@endif</td>
                         <th>Service/Consultancy</th>
                         <td>{{$appointment->service->name}}</td>
                     </tr>
@@ -87,81 +101,27 @@
                             <td colspan="3">@if($appointment->reason){{ $appointment->reason }}@else{{ 'N/A' }}@endif</td>
                         </tr>
                     @endif
-                    <tr>
-                        <th>Patient ID</th>
-                        <td>{{ ($appointment->name) ? \App\Helpers\GeneralFunctions::patientSearchStringAdd($appointment->patient_id) : \App\Helpers\GeneralFunctions::patientSearchStringAdd($appointment->patient->id) }}</td>
-                    </tr>
-                    
                     </tbody>
                 </table>
                 {{--End of detail body--}}
-                <br>
-                {{--Start of dropzone body--}}
-                @if(Gate::allows('appointments_image_upload'))
-                    <div class="tabbable tabbable-tabdrop">
-                        <ul class="nav nav-pills">
-                            <li class="active">
-                                <a href="#tab11" data-toggle="tab" id="checkedbefore" onclick="changeUrl(this)">Before
-                                    Appointment</a>
-                            </li>
-                            <li>
-                                <a href="#tab12" data-toggle="tab" id="checkedafter" onclick="changeUrl(this)">After
-                                    Appointment</a>
-                            </li>
-                        </ul>
-                        <div class="tab-content">
-                            <?php $check = null; ?>
-                            <input type="hidden" id="appointment_id" value="{{$appointment->id}}"/>
-                            <div class="tab-pane active" id="tab11">
-                            </div>
-                            <div class="tab-pane" id="tab12">
-                            </div>
-                            <form action="{{ route('admin.appointmentsimage.imagestore_before',[$appointment->id]) }}"
-                                  class="dropzone" id="a-form-element">
-                                <input type="hidden" value="" id="hiddentext" name="type"/>
-                            </form>
-                            <br>
-                            <button class="btn btn-success" id="submit-all-1">Upload</button>
-                        </div>
-                    </div>
-                @endif
-                {{--End of dropzone body--}}
-                <br>
                 {{--Start of datatable body--}}
-                @if(Gate::allows('appointments_image_destroy'))
-                    <div class="table-actions-wrapper">
-                        <span> </span>
-                        <select class="table-group-action-input form-control input-inline input-small input-sm">
-                            <option value="">Select</option>
-                            <option value="Delete">Delete</option>
-                        </select>
-                        <button class="btn btn-sm red table-group-action-submit">
-                            <i class="fa fa-check"></i> Submit
-                        </button>
-                    </div>
-                @endif
                 <table class="table table-striped table-bordered table-hover table-checkable" id="datatable_ajax">
                     <thead>
                     <tr role="row" class="heading">
-                        <th width="3%">
-                            <label class="mt-checkbox mt-checkbox-single mt-checkbox-outline">
-                                <input type="checkbox" class="group-checkable" data-set="#sample_2 .checkboxes"/>
-                                <span></span>
-                            </label>
-                        </th>
-                        <th>@lang('global.appointmentimages.fields.patient_id')</th>
-                        <th>@lang('global.appointmentimages.fields.name')</th>
-                        <th>@lang('global.appointmentimages.fields.type')</th>
-                        <th>@lang('global.appointmentimages.fields.created_at')</th>
-                        <th width="20%">@lang('global.appointmentimages.fields.actions')</th>
+                        <th>@lang('global.appointmentmesurement.fields.name')</th>
+                        <th>@lang('global.appointmentmesurement.fields.patient_name')</th>
+                        <th>@lang('global.appointmentmesurement.fields.created_by')</th>
+                        <th>@lang('global.appointmentmesurement.fields.type')</th>
+                        <th>@lang('global.appointmentmesurement.fields.created_at')</th>
+                        <th width="20%">@lang('global.appointmentmesurement.fields.actions')</th>
                     </tr>
                     <tr role="row" class="filter">
-                        <td></td>
-                        <td>
-                            <input type="text" class="form-control form-filter input-sm" name="id">
-                        </td>
                         <td>
                             <input type="hidden" id="appointment_id" value="{{ $appointment->id }}"/>
+                        </td>
+                        <td></td>
+                        <td>
+                            {!! Form::select('user_id', $users, '', ['class' => 'form-control form-filter input-sm select2',]) !!}
                         </td>
                         <td>
                             {!! Form::select('type', array('' => 'All', 'Before Appointment' => 'Before Appointment', 'After Appointment' => 'After Appointment'), '', ['class' => 'form-control form-filter input-sm select2',]) !!}
@@ -191,25 +151,28 @@
                     </tr>
                     </thead>
                     <tbody>
+
                     </tbody>
                 </table>
+
                 {{--End of Datatable Body--}}
             </div>
         </div>
     </div>
     <!-- End: Demo Datatable 1 -->
+    <!--Add New View model Start-->
+    <div class="modal fade" id="ajax_measurement_addnew" role="basic" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-body">
+                <span> &nbsp;&nbsp;Loading... </span>
+            </div>
+        </div>
+    </div>
+    <!--Add new View model End-->
+
 @stop
 
 @section('javascript')
-    <script>
-        function changeUrl(that) {
-            $('#hiddentext').val($(that).attr("id"));
-        }
-
-        $(document).ready(function () {
-            $("#checkedbefore").trigger("onclick");
-        });
-    </script>
     <!-- BEGIN PAGE LEVEL PLUGINS -->
     <script src="{{ url('metronic/assets/global/plugins/datatables/datatables.min.js') }}"
             type="text/javascript"></script>
@@ -220,7 +183,7 @@
     <!-- END PAGE LEVEL PLUGINS -->
     <!-- BEGIN PAGE LEVEL SCRIPTS -->
     <script src="{{ url('metronic/assets/global/scripts/datatable.js') }}" type="text/javascript"></script>
-    <script src="{{ url('js/admin/appointmentimages/datatable.js') }}" type="text/javascript"></script>
+    <script src="{{ url('js/admin/measurements/datatable.js') }}" type="text/javascript"></script>
     <!-- END PAGE LEVEL SCRIPTS -->
     <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}"
             type="text/javascript"></script>
@@ -230,8 +193,4 @@
             type="text/javascript"></script>
     <script src="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js'}}"
             type="text/javascript"></script>
-    <!--Script of dropzone-->
-    <script src="{{ url('metronic/assets/global/plugins/dropzone/dropzone.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url('metronic/assets/global/scripts/app.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url('js/admin/appointments/form-dropzone.js') }}" type="text/javascript"></script>
 @endsection
