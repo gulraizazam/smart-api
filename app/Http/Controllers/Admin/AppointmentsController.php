@@ -5521,4 +5521,30 @@
 		public function export() {
             return Excel::download(new ExportAppointment, 'appointments.xlsx');
         }
+
+        public function getSchedule(Request $request) {
+
+            $appointment = Appointments::select('id', 'scheduled_date', 'scheduled_time')->find($request->id);
+
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'appointment' => $appointment
+            ]);
+        }
+
+        public function updateSchedule(Request $request) {
+
+            $appointment = Appointments::find($request->appointment_id);
+             if ($appointment) {
+                 $appointment->update([
+                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
+                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
+                     'updated_by' => auth()->id(),
+                 ]);
+
+                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
+             }
+
+            return ApiHelper::apiResponse($this->success, 'Appointment not found!', false);
+
+        }
 	}

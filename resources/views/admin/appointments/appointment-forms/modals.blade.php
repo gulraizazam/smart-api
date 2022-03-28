@@ -8,6 +8,15 @@
     </div>
 </div>
 
+<div class="modal fade" id="modal_change_appointment_schedule" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered form-popup" id="appointment_schedule_change">
+
+        @include('admin.appointments.appointment-forms.schedule')
+
+    </div>
+</div>
+
 {{--Edit appoitment--}}
 <div class="modal fade" id="modal_edit_appointment" tabindex="-1" aria-hidden="true">
     <!--begin::Modal dialog-->
