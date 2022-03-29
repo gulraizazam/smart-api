@@ -540,8 +540,9 @@ function setSmsLogs(response) {
                 }
             });
 
-            $("#sms_log_rows").html(rows);
         }
+        
+        $("#sms_log_rows").html(rows);
 
     } catch (error) {
         showException(error);
