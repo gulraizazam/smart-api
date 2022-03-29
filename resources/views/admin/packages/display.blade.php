@@ -105,8 +105,8 @@
 
                 <div class="row float-right">
                     <div class="col-md-12 col-sm-12 col-xs-12 mt-10">
-                        <a class="btn btn-lg btn-primary blue hidden-print margin-bottom-5" target="_blank"
-                           href="{{ route('admin.invoices.invoice_pdf',1) }}">Print
+                        <a id="package_pdf" class="btn btn-lg btn-primary blue hidden-print margin-bottom-5" target="_blank"
+                           href="">Print
                             <i class="fa fa-print"></i>
                         </a>
                     </div>

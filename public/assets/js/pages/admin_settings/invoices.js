@@ -7,9 +7,9 @@ var table_columns = [
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
-        width: 300,
+        width: 'auto',
     },{
-        field: 'patient',
+        field: 'name',
         title: 'Patient Name',
         sortable: false,
         width: 'auto',
@@ -29,12 +29,12 @@ var table_columns = [
         sortable: false,
         width: 'auto',
     },{
-        field: 'centre',
+        field: 'location',
         title: 'Centre',
         sortable: false,
         width: 'auto',
     },{
-        field: 'appointment_type_id',
+        field: 'service',
         title: 'Consultancy/Service',
         sortable: false,
         width: 'auto',
@@ -44,7 +44,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
     },{
-        field: 'type',
+        field: 'appointment_type_id',
         title: 'Type',
         sortable: false,
         width: 'auto',
@@ -154,8 +154,6 @@ function viewSmsLogs($route) {
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-
-            reInitValidation(EditValidation);
         }
     });
 
@@ -166,14 +164,36 @@ function setSmsLogs(response) {
     try {
 
         let SMSLogs = response.data.SMSLogs;
-        let rows = '<tr><td colspan="4" class="text-center">No SMS log found.</td></tr>';
+        let rows = noRecordFoundTable(5);
         if (SMSLogs.length) {
-            let rows = '<tr>';
-            Object.entries(SMSLogs).forEach(function (value, index) {
-                console.log(value)
-                rows += '<td></td>';
+            let rows = '';
+            Object.entries(SMSLogs).forEach(function (smsLog, index) {
+                if(smsLog.invoice_id === null) {
+                    rows += '<tr>';
+                    rows += '<td>' + smsLog.to + '</td>';
+                    rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
+                    rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
+                    rows += '<span class="full_text" style="display: none; text-underline: none;">' + smsLog.text + '</span>';
+                    '</a></td>';
+
+                    if(smsLog.status) {
+                        rows += '<td id="smsRow{'+smsLog.id+'">Yes</td>';
+                    } else {
+                        rows += '<td><span class="text-center" id="spanRow'+smsLog.id+'">No</span>\
+                        <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+', `'+sent_url+'`, `POST`);" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
+                            '<i class="la la-send-o"></i></a></td>';
+                    }
+
+                    if(smsLog.is_refund == "Yes") {
+                        rows += '<td>smsLog.is_refund</td>';
+                    } else {
+                        rows += '<td></td>';
+                    }
+
+                    rows += '<td>' + formatDate(smsLog.created_at) + '</td>';
+                    rows += '</tr>';
+                }
             });
-            rows += '</tr>';
         }
 
         $("#sms_log_rows").html(rows);
@@ -224,6 +244,8 @@ function setInvoiceData(response) {
         let discount = response.data.discount;
         let tax = response.data.tax;
 
+        $("#invoice-pdf").attr("href", route('admin.invoices.invoice_pdf', Invoiceinfo.invoice_id))
+
         let image = asset_url + 'assets/media/logos/' + location_info.image_src;
 
         $(".invoice-image").attr('src', image);
@@ -255,12 +277,12 @@ function setInvoiceData(response) {
 
         let discount_type = '-';
         if (discount != null) {
-            discount_type = discount.discount_type;
+            discount_type = Invoiceinfo.discount_type;
         }
 
         let discount_price = 0;
         if (discount != null) {
-            discount_price = discount.discount_price;
+            discount_price = Invoiceinfo.discount_price;
         }
 
         let subtotal = 0;
@@ -290,10 +312,10 @@ function setInvoiceData(response) {
 
 }
 
-function getServicePrice(Invoiceinfo, bundle) {
+function getServicePrice(Invoiceinfo) {
 
     let service_price = 0;
-    if (Invoiceinfo.is_exclusive == '0' && typeof bundle !== 'undefined' && bundle.type == 'single') {
+    if (Invoiceinfo.is_exclusive == '0') {
         if (Invoiceinfo.service_price == '0') {
 
             service_price = Invoiceinfo.tax_including_price;
@@ -301,7 +323,7 @@ function getServicePrice(Invoiceinfo, bundle) {
         } else {
             service_price = parseFloat(Invoiceinfo.service_price) - parseFloat(Invoiceinfo.tax_price);
         }
-    } else if (Invoiceinfo.is_exclusive == '0' && typeof bundle !== 'undefined' && bundle.type == 'multiple') {
+    } else if (Invoiceinfo.is_exclusive == '0') {
         if (Invoiceinfo.service_price == '0') {
             service_price = Invoiceinfo.tax_including_price;
         } else {
