@@ -541,7 +541,7 @@ function setSmsLogs(response) {
             });
 
         }
-        
+
         $("#sms_log_rows").html(rows);
 
     } catch (error) {
@@ -580,6 +580,8 @@ function displayData(response) {
         let package = response.data.package;
         let packagebundles = response.data.packagebundles;
         let packageservices = response.data.packageservices;
+
+        $("#package_pdf").attr("href", route('admin.packages.package_pdf',package.id))
 
         let history_options = noRecordFoundTable(4);
 
