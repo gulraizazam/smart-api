@@ -151,8 +151,6 @@ function viewSmsLogs($route) {
 
             setSmsLogs(response);
 
-            reInitSelect2(".select2", "");
-
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);

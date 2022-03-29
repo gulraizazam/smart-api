@@ -305,6 +305,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('packages/getpackage', [PackagesController::class, 'getpackage'])->name('packages.getpackage');
 
+    Route::get('packages/getservice_for_discount_zero', [PackagesController::class, 'getservices_for_zero'])->name('packages.getserviceinfo_discount_zero');
+
     /*Routes for editing the cash in treatment plan*/
     Route::get('packages/edit_cash/{id}/{package_id}',[PackagesController::class, 'editpackageadvancescashindex'])->name('packages.edit_cash');
 
@@ -315,7 +317,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     // Route for Sms log start
     Route::get('packages/sms_logs/{id}', [PackagesController::class, 'showSMSLogs'])->name('packages.sms_logs');
-    Route::post('packages/send_logged_sms', [PackagesController::class, 'sendLogSMS'])->name('packages.resend_sms');
+    Route::post('packages/send/logged_sms', [PackagesController::class, 'sendLogSMS'])->name('packages.resend_sms');
     // End
 
     Route::get('packages/getappointmentinfo',[PackagesController::class, 'getappointmentinfo'])->name('packages.getappointmentinfo');

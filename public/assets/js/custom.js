@@ -114,6 +114,41 @@ $(document).ready(function () {
 
     patientSearch();
 
+    $(".package_id").select2({
+        width: '100%',
+        placeholder: 'Select Plan',
+        ajax: {
+            url: route('admin.packages.getpackage'),
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term, // search term
+                    page: params.page
+                };
+            },
+            processResults: function (data, params) {
+                params.page = params.page || 1;
+
+                return {
+                    results: $.map(data, function (item) {
+                        return {
+                            text: item.name,
+                            id: item.id
+                        }
+                    }),
+                };
+            },
+            cache: true
+        },
+        escapeMarkup: function (markup) {
+            return markup;
+        },
+        minimumInputLength: 1,
+        templateResult: formatRepo,
+        templateSelection: formatRepoSelection
+    });
+
     /*input mask*/
     $(".cnic-mask").inputmask("99999-9999999-9", {
         placeholder: "XXXXX-XXXXXXX-X",
@@ -563,7 +598,7 @@ function phoneField($this) {
    return $this.value = $this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 }
 
-function formatDate(date, format = 'ddd MMM, mm yyyy HH:mm A') {
+function formatDate(date, format = 'ddd MMM, DD yyyy HH:mm A') {
     return moment(date).format(format);
 }
 
@@ -725,4 +760,38 @@ function trashBtn() {
         ' </g> ' +
         '</svg> ' +
         '</span>';
+}
+
+function toggleText($this) {
+    $this.find(".full_text").toggle();
+    $this.find(".short_text").toggle();
+}
+
+function resendSMS(smsId, url, method = 'PUT') {
+
+    showSpinner();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: method,
+        data: {
+            id: smsId
+        },
+        cache: false,
+        success: function (response) {
+            if (response.status) {
+                $('#spanRow' + smsId).text('Yes');
+                $('#clickRow' + smsId).hide();
+                toastr.success(response.message)
+            } else {
+                $('#clickRow' + smsId).show();
+                $('#spanRow' + smsId).text('No');
+                toastr.error(response.message)
+            }
+            hideSpinnerRestForm();
+        }
+    });
 }

@@ -87,7 +87,7 @@
 
     <div class="modal fade" id="modal_display" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="invoices_display">
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="invoices_display">
 
             @include('admin.packages.display')
 
@@ -107,7 +107,7 @@
 
     <div class="modal fade" id="modal_edit_plan" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="packages_edit">
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="packages_edit">
 
             @include('admin.packages.edit')
 
@@ -118,5 +118,5 @@
     @push('js')
         <script src="{{asset('assets/js/pages/admin_settings/create-plan.js')}}"></script>
     @endpush
-    
+
 @endsection

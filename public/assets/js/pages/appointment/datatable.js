@@ -909,6 +909,7 @@ function setSmsLogs(response) {
         let rows = noRecordFoundTable(6);
 
         if (SMSLogs.length) {
+            let sent_url = route('admin.appointments.resend_sms');
             rows = '';
             Object.values(SMSLogs).forEach(function (smsLog, index) {
 
@@ -924,7 +925,7 @@ function setSmsLogs(response) {
                         rows += '<td id="smsRow{'+smsLog.id+'">Yes</td>';
                     } else {
                         rows += '<td><span class="text-center" id="spanRow'+smsLog.id+'">No</span>\
-                        <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+');" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
+                        <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+', `'+sent_url+'`);" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
                         '<i class="la la-send-o"></i></a></td>';
                     }
 
@@ -952,39 +953,6 @@ function setSmsLogs(response) {
         showException(error);
     }
 
-}
-
-
-function toggleText($this) {
-    $this.find(".full_text").toggle();
-    $this.find(".short_text").toggle();
-}
-
-function resendSMS(smsId) {
-    showSpinner();
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.appointments.resend_sms'),
-        type: "PUT",
-        data: {
-            id: smsId
-        },
-        cache: false,
-        success: function (response) {
-            if (response.status) {
-                $('#spanRow' + smsId).text('Yes');
-                $('#clickRow' + smsId).hide();
-                toastr.success(response.message)
-            } else {
-                $('#clickRow' + smsId).show();
-                $('#spanRow' + smsId).text('No');
-                toastr.error(response.message)
-            }
-            hideSpinnerRestForm();
-        }
-    });
 }
 
 
