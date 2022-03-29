@@ -346,8 +346,8 @@ class Packages extends BaseModal
                 '=',
                 $filters['patient_id']
             );
-            Filters::put(Auth::User()->id, $filename, 'patient_id', $filters['patient_id']);
-            Filters::put(Auth::user()->id , $filename, 'patient_name', str_replace('undefined', '', $filters['patient_name'])) ;
+           // Filters::put(Auth::User()->id, $filename, 'patient_id', $filters['patient_id']);
+           // Filters::put(Auth::user()->id , $filename, 'patient_name', str_replace('undefined', '', $filters['patient_name'])) ;
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'patient_id');
