@@ -29,7 +29,7 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Plans:</label>
-            <select class="form-control filter-field select2" id="search_plan_id"></select>
+            <select class="form-control filter-field package_id" id="search_plan_id"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
