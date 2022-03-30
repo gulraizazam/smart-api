@@ -9,12 +9,13 @@ class Permission extends \Spatie\Permission\Models\Permission
 {
     use HasFactory;
 
-    protected $fillable=[
+    protected $fillable = [
         'name',
         'title',
         'main_group',
         'parent_id',
-        'status'
+        'status',
+        'guard_name'
     ];
 
     public function parent() {
