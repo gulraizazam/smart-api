@@ -200,7 +200,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
         Route::resource('invoices', InvoicesController::class)->only('index');
         //Invoice Management route end
-        Route::get('invoices/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
+        Route::get('invoices/pdf/{id}/{download?}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
 
         // Package route start
         Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');

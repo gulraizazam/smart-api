@@ -5,16 +5,16 @@ var table_columns = [
     {
         field: 'Patient_ID',
         title: 'ID',
-        width: 80,
+        width: 60,
         sortable: false,
     },{
         field: 'name',
         title: 'Patient',
-        width: 'auto',
+        width: 100,
     },{
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 100,
         template: function (data) {
             return phoneClip(data);
         }
@@ -23,7 +23,7 @@ var table_columns = [
         title: 'Scheduled',
         width: 'auto',
         template: function (data) {
-            return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><i class="btn btn-icon btn-light btn-hover-primary btn-sm la la-eye"></i><br> ' + data.scheduled_date + '</a>';
+            return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
         }
     },{
         field: 'service_id',
@@ -32,11 +32,30 @@ var table_columns = [
     },{
         field: 'appointment_type_id',
         title: 'Type',
-        width: 'auto',
+        width: 100,
     },{
         field: 'doctor_id',
         title: 'Doctor',
         width: 'auto',
+    },{
+        field: 'appointment_status_id',
+        title: 'Status',
+        width: 100,
+        template: function (data) {
+
+            let unscheduled_appointment_status = data.unscheduled_appointment_status;
+            let appointment_status = data.appointment_status;
+
+            if (permissions.status) {
+                if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
+                    return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
+                } else {
+                    return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+                }
+            } else {
+                return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
+            }
+        }
     },{
         field: 'region_id',
         title: 'Region',
@@ -49,25 +68,6 @@ var table_columns = [
         field: 'location_id',
         title: 'Centre',
         width: 'auto',
-    },{
-        field: 'appointment_status_id',
-        title: 'Status',
-        width: 'auto',
-        template: function (data) {
-
-            let unscheduled_appointment_status = data.unscheduled_appointment_status;
-            let appointment_status = data.appointment_status;
-
-            if (permissions.status) {
-                if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
-                    return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
-                } else {
-                    return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');"><i class="btn btn-icon btn-light btn-hover-primary btn-sm la la-eye"></i> ' + data.appointment_status_id + '</a>';
-                }
-            } else {
-                return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
-            }
-        }
     },{
         field: 'consultancy_type',
         title: 'Consultancy Type',

@@ -3,18 +3,10 @@ var table_url = route('admin.packagesadvances.datatable');
 
 var table_columns = [
     {
-        field: 'id',
-        sortable: false,
-        width: 'auto',
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    }, {
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
-        width: 300,
+        width: 'auto',
     },{
         field: 'patient',
         title: 'Patient',
@@ -26,7 +18,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
     },{
-        field: 'transaction_type',
+        field: 'transtype',
         title: 'Transaction type',
         sortable: false,
         width: 'auto',
@@ -106,3 +98,16 @@ function setFilters(filter_values, active_filters) {
         showException(error);
     }
 }
+
+function resetCustomFilters() {
+
+    $('.patient_search_id').val(null).trigger('change');
+    $(".filter-field").val('');
+    $('.select2').val(null).trigger('change');
+
+}
+
+jQuery(document).ready(function () {
+    /*To get patient on search*/
+    patientSearch('patient_search_id');
+})
