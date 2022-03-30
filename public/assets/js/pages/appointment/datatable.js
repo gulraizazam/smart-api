@@ -236,10 +236,6 @@ const extraValidate = {
 
 let loadChildStatuses = function (appointmentStatusId) {
 
-    statusValidate.addField('reason', extraValidate);
-    statusValidate.addField('appointment_status_id', extraValidate);
-
-
     if(appointmentStatusId != '') {
         resetDropdowns();
         $("input[type=submit]").attr('disabled', true);
