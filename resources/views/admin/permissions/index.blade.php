@@ -37,7 +37,7 @@
                             <!--begin::Dropdown-->
                             @if(Gate::allows('permissions_destroy'))
                                 <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
+                                    <span>Selected Rows: <span class="checkbox-count"></span></span> &nbsp;&nbsp;
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
                                         <i class="fa fa-trash-alt"></i>Delete
                                     </a>
