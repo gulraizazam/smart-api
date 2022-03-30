@@ -26,7 +26,6 @@ var UpdateStatusValidation = function () {
             }
         );
         statusValidate.on('core.form.invalid', function (e) {
-            select2Validation();
         });
         statusValidate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
