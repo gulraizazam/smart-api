@@ -52,7 +52,7 @@
                             @endif
 
                             <div class="delete-records export-appointments">
-                                <a href="{{route('admin.appointments.export')}}" class="btn btn-primary font-weight-bolder">
+                                <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{route('admin.appointments.export', [1000, 0])}}" class="btn btn-primary font-weight-bolder">
                                     <i class="la la-file-export"></i> Export
                                 </a>
                             </div>
@@ -133,6 +133,25 @@
 
 
     @push('js')
+
+        <script>
+
+            var limit = 1000;
+            var offset = 0;
+
+            $(document).ready(function () {
+                $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
+            })
+
+            function changeLimitOffset($this) {
+                limit = limit + 1000;
+                offset = offset + 1000;
+                setTimeout( function () {
+                    $this.attr('href', route('admin.appointments.export', [limit, offset]));
+                },1200);
+            }
+
+        </script>
 
         <script src="{{asset('assets/js/pages/appointment/consultancy-calendar.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js')}}"></script>

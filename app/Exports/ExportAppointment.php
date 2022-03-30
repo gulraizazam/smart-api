@@ -18,6 +18,14 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportAppointment implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
+    private $limit = 1000;
+    private $offset = 0;
+
+    public function __construct($limit = 1000, $offset = 0)
+    {
+        $this->limit = $limit;
+        $this->offset = $offset;
+    }
 
     public function collection()
     {
@@ -25,7 +33,10 @@ class ExportAppointment implements FromCollection, WithHeadings, WithMapping, Wi
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })->whereIn('appointments.city_id', ACL::getUserCities())
-            ->whereIn('appointments.location_id', ACL::getUserCentres())->limit(50)->get();
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->limit($this->limit)->offset($this->offset)
+            ->orderBy('appointments.id', 'DESC')
+            ->get();
     }
 
     public function headings(): array

@@ -5517,8 +5517,10 @@
 		}
 
 
-		public function export() {
-            return Excel::download(new ExportAppointment, 'appointments.xlsx');
+		public function export($limit = 1000, $offset = 0) {
+            ini_set('memory_limit', '1024M');
+            ini_set('max_execution_time', '0'); // for infinite time of execution
+            return Excel::download(new ExportAppointment($limit, $offset), 'appointments.xlsx');
         }
 
         public function getSchedule(Request $request) {
