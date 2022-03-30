@@ -5,12 +5,17 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 80,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
         }
     }, {
+        field: 'patient_id',
+        title: 'Patient ID',
+        sortable: false,
+        width: 'auto',
+    },{
         field: 'form_name',
         title: 'Name',
         sortable: false,

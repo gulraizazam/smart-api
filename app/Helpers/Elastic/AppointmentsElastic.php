@@ -152,7 +152,10 @@ class AppointmentsElastic
 //        exit;
 
         try {
-            return self::$elastic_client->search($params);
+            if (self::$elastic_client) {
+                return self::$elastic_client->search($params);
+            }
+            return false;
         } catch (\Exception $e) {
             return array();
         }

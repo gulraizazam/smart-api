@@ -48,7 +48,7 @@
 
 <div class="modal fade" id="modal_consultancy_detail" tabindex="-1" aria-hidden="true">
     <!--begin::Modal dialog-->
-    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_consultancy_detail">
+    <div class="modal-dialog modal-dialog-centered big-modal" id="appointment_consultancy_detail">
 
         @include('admin.appointments.appointment-forms.consultancy-detail')
 
@@ -94,7 +94,7 @@
 
 <div class="modal fade" id="modal_treatment_detail" tabindex="-1" aria-hidden="true">
     <!--begin::Modal dialog-->
-    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_treatment_detail">
+    <div class="modal-dialog modal-dialog-centered big-modal" id="appointment_treatment_detail">
 
         @include('admin.appointments.appointment-forms.treatment.detail')
 

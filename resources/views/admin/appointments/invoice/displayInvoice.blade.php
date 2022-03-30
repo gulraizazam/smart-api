@@ -196,7 +196,12 @@
                         </ul>
                         <br/>
 
-                        <a class="btn btn-lg btn-primary blue hidden-print margin-bottom-5" target="_blank"
+                        <a class="btn btn-sm btn-primary blue hidden-print margin-bottom-5" target="_blank"
+                           href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id, 'download']) }}">Download
+                            <i class="fa fa-download"></i>
+                        </a>
+
+                        <a class="btn btn-sm btn-primary blue hidden-print margin-bottom-5" target="_blank"
                            href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id]) }}">Print
                             <i class="fa fa-print"></i>
                         </a>
