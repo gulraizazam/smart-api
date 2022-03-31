@@ -210,9 +210,32 @@
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
                                 <ul class="menu-subnav">
+
+                                    @can('appointments_consultancy')
+                                        <li class="menu-item {{activeMenu('admin.appointments.index', 'menu-item-active', 'consultancy')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.appointments.index', ['tab' => 'consultancy'])}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Manage Consultancy</span>
+                                            </a>
+                                        </li>
+                                    @endcan
+
+                                        @can('appointments_services')
+                                            <li class="menu-item {{activeMenu('admin.appointments.index', 'menu-item-active', 'treatment')}}" aria-haspopup="true">
+                                                <a href="{{route('admin.appointments.index', ['tab' => 'treatment'])}}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-dot">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Manage Treatment</span>
+                                                </a>
+                                            </li>
+                                        @endcan
+
                                     @can('appointments_manage')
-                                        <li class="menu-item {{activeMenu('admin.appointments.index')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.appointments.index')}}" class="menu-link">
+                                        <li class="menu-item {{activeMenu('admin.appointments.index', 'menu-item-active', 'appointment')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment'])}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
                                                 </i>

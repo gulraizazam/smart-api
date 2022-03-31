@@ -37,7 +37,7 @@
                             <!--begin::Dropdown-->
                             @if(Gate::allows('permissions_destroy'))
                                 <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
+                                    <span>Selected Rows: <span class="checkbox-count"></span></span> &nbsp;&nbsp;
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
                                         <i class="fa fa-trash-alt"></i>Delete
                                     </a>
@@ -46,11 +46,13 @@
                             <!--end::Dropdown-->
                             <!--begin::Button-->
                             @if(Gate::allows('permissions_create'))
-                                <a href="javascript:void(0);" onclick="createPermission('{{ route('admin.permissions.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_permission">
-                                    <i class="la la-plus"></i>
-                                    Add New
-                                </a>
+
                             @endif
+
+                            <a href="javascript:void(0);" onclick="createPermission('{{ route('admin.permissions.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_permission">
+                                <i class="la la-plus"></i>
+                                Add New
+                            </a>
 
                             <!--end::Button-->
                         </div>

@@ -855,7 +855,7 @@ function editInline($lead_id, city_id) {
 
 function saveCity(lead_id) {
 
-    spinner();
+    showSpinner();
     let city_id = $(".city-editable-" + lead_id).find('.city-select').val();
 
     $.ajax({

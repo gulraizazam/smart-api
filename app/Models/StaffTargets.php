@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\User;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -43,7 +43,7 @@ class StaffTargets extends BaseModal
      */
     public function staff()
     {
-        return $this->belongsTo('App\User', 'staff_id');
+        return $this->belongsTo('App\Models\User', 'staff_id');
     }
 
     /**

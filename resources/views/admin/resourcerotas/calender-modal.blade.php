@@ -67,8 +67,6 @@
                                 <strong>&nbsp;Leave?</strong>
                             </span>
 
-
-
                         </div>
 
                     </div>

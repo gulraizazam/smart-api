@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\User;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Config;
@@ -66,7 +66,7 @@ class PabaoRecords extends BaseModal
      */
     public function user()
     {
-        return $this->belongsTo('App\User', 'created_by')->withTrashed();
+        return $this->belongsTo('App\Models\User', 'created_by')->withTrashed();
     }
 
     /**

@@ -2,6 +2,9 @@
 
 @section('content')
 
+    @push('css')
+        <link href="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.css')}}" rel="stylesheet" type="text/css" />
+    @endpush
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
@@ -33,7 +36,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Appointments</h3>
+                            <h3 class="card-label change-label">Appointments</h3>
 
                         </div>
 
@@ -48,19 +51,19 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('appointments_create'))
-                                <a href="javascript:void(0);" onclick="createPatient('{{ route('admin.patients.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_patients">
-                                    <i class="la la-plus"></i>
-                                    Add New
+                            <div class="delete-records export-appointments">
+                                <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{route('admin.appointments.export', [1000, 0])}}" class="btn btn-primary font-weight-bolder">
+                                    <i class="la la-file-export"></i> Export
                                 </a>
-                            @endif
+                            </div>
 
                         <!--end::Button-->
                         </div>
 
                     </div>
 
-                    <div class="card-body">
+                    <!--Start Appointment Section-->
+                    <div class="card-body appointment appointment-section">
                         <!--begin::Search Form-->
                         @include('admin.appointments.filters', ['custom_reset' => 'custom_reset'])
                         <!--end::Search Form-->
@@ -69,8 +72,55 @@
                         <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
                         <!--end: Datatable-->
                     </div>
+                    <!--End Appointment Section-->
+
+                    <!--Start Consultancy Section-->
+                    <div class="card-body appointment consultancy-section d-none">
+
+                        @include('admin.appointments.consultancy.filters')
+
+                        <div id="consultancy_calendar" style="position: relative">
+
+                            {{--loader befor get celendar events--}}
+                            <div class="appointment-loader-base" style="display: none;">
+                                <div class="blockui"> <span>Please wait...</span>
+                                    <span>
+                                        <div class="spinner spinner-primary"></div>
+                                    </span>
+                                </div>
+                            </div>
+                            {{--end loader--}}
+
+                        </div>
+
+                    </div>
+                    <!--End Consultancy Section-->
+
+                    <!--Start Treatment Section-->
+                    <div class="card-body appointment treatment-section d-none">
+
+                        @include('admin.appointments.services.filters')
+
+                        <div id="treatment_calendar" style="position: relative">
+
+                            {{--loader befor get celendar events--}}
+                            <div class="appointment-loader-base" style="display: none;">
+                                <div class="blockui"> <span>Please wait...</span>
+                                    <span>
+                                        <div class="spinner spinner-primary"></div>
+                                    </span>
+                                </div>
+                            </div>
+                            {{--end loader--}}
+
+                        </div>
+
+                    </div>
+                    <!--End Treatment Section-->
+
                 </div>
                 <!--end::Card-->
+
             </div>
             <!--end::Container-->
         </div>
@@ -79,16 +129,44 @@
     <!--end::Content-->
 
     {{--All forms popups--}}
-    @include('admin.appointments.forms.modals')
+    @include('admin.appointments.appointment-forms.modals')
 
 
     @push('js')
 
+        <script>
+
+            var limit = 1000;
+            var offset = 0;
+
+            $(document).ready(function () {
+                $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
+            })
+
+            function changeLimitOffset($this) {
+                limit = limit + 1000;
+                offset = offset + 1000;
+                setTimeout( function () {
+                    $this.attr('href', route('admin.appointments.export', [limit, offset]));
+                },1200);
+            }
+
+        </script>
+
+        <script src="{{asset('assets/js/pages/appointment/consultancy-calendar.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js')}}"></script>
+
+        <script src="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/consultancy-data.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-data.js')}}"></script>
+
         <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/plan/create.js')}}"></script>
 
     @endpush
 
     @push('datatable-js')
+
         <script src="{{asset('assets/js/pages/appointment/datatable.js')}}"></script>
     @endpush
 

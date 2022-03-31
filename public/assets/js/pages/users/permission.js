@@ -23,6 +23,12 @@ var table_columns = [
         field: 'parent.name',
         title: 'Parent Permission',
         width: 300,
+        template: function (data) {
+            if (data.parent === null) {
+                return '<span class="badge badge-lg badge-success" style="font-size: 12px;">Parent</span>';
+            }
+            return data.parent.name;
+        }
     },  {
         field: 'actions',
         title: 'Actions',

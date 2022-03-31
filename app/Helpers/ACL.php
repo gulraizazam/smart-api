@@ -11,7 +11,7 @@ namespace App\Helpers;
 use App\Models\Cities;
 use App\Models\Locations;
 use App\Models\Regions;
-use App\User;
+use App\Models\User;
 use App\Models\DoctorHasLocations;
 use Auth;
 use Config;

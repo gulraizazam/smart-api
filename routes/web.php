@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentMedicalController;
-use App\Http\Controllers\Admin\AppointmentsPlansController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
@@ -95,8 +94,6 @@ use App\Http\Controllers\Admin\OrdersController;
 
         Route::get('settings', [SettingsController::class,'index'])->name('settings.index');
 
-        Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
-
         Route::resource('permissions', PermissionsController::class);
 
         Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
@@ -109,6 +106,7 @@ use App\Http\Controllers\Admin\OrdersController;
         Route::patch('users/password', [UsersController::class, 'savePassword'])->name('users.save_password');
 
         Route::post('users/status', [UsersController::class, 'status'])->name('users.status');
+
 
 
         Route::resource('users', UsersController::class);
@@ -205,7 +203,7 @@ use App\Http\Controllers\Admin\OrdersController;
         Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
         Route::resource('invoices', InvoicesController::class)->only('index');
         //Invoice Management route end
-        Route::get('invoices/pdf/{id}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
+        Route::get('invoices/pdf/{id}/{download?}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
 
         // Package route start
         Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');
@@ -369,36 +367,19 @@ use App\Http\Controllers\Admin\OrdersController;
 
         Route::put('appointments/save_doctor', [AppointmentsController::class, 'saveDoctor'])->name('appointments.save_doctor');
 
-        Route::get('appointments/detail/{id}', [AppointmentsController::class, 'detail'])->name('appointments.detail');
-
         Route::post('appointments/status', [AppointmentsController::class, 'status'])->name('appointments.status');
 
         Route::post('appointments/loadlead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
-        Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
-
-        Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
-
-        Route::get("appointments/center_machines/{location_id}", [AppointmentsController::class, 'center_machines'])->name("appointments.center_machines");
-
-        Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
-        Route::get('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
         Route::resource('appointments', AppointmentsController::class)->only('index');
 
 
         /*service routes*/
 
-        Route::post('appointments/load-node-services', [AppointmentsController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
-
         Route::get('appointments/manage-services', [AppointmentsController::class, 'createService'])->name('appointments.manage_services');
-
-        Route::post('appointments/store-service', [AppointmentsController::class, 'storeService'])->name('appointments.store_service');
 
         Route::get('appointments/load-non-scheduled-service-appointments', [AppointmentsController::class, 'getNonScheduledServiceAppointments'])->name('appointments.load_nonscheduled_service_appointments');
 
-        Route::get('appointments/load-scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
-
-        Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
 
         Route::get('appointments/get_room_resources', [AppointmentsController::class, 'getRoomResources'])->name('appointments.get_room_resources');
 
@@ -406,7 +387,6 @@ use App\Http\Controllers\Admin\OrdersController;
 
 
         //Appointment Route section for treatment invoice start
-        Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
 
         Route::get('appointments/getplansinformation', [AppointmentsController::class, 'getplansinformation'])->name('appointments.getplansinformation');
 
@@ -421,7 +401,6 @@ use App\Http\Controllers\Admin\OrdersController;
 
 
         /*Appointment route section for consultancy invoice start*/
-        Route::get('appointments/invoice-consultancy/{id}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
 
         Route::get('appointments/getconsultancycalculation', [ConsultancyInvoiceController::class, 'getconsultancycalculation'])->name('appointments.getconsultancycalculation');
 
@@ -434,9 +413,6 @@ use App\Http\Controllers\Admin\OrdersController;
         Route::get('appointments/saveconsultancyinvoice',[ConsultancyInvoiceController::class, 'saveinvoice'])->name('appointments.saveconsultancyinvoice');
         /*Appointment route section for consultancy invoice end*/
 
-        // Appointment Route start for images
-        Route::post('appointmentsimage/datatable/{id}', [AppointmentimageController::class, 'datatable'])->name('appointmentsimage.datatable');
-
         Route::get('appointmentsimage/imageindex/{id}', [AppointmentimageController::class, 'index'])->name('appointmentsimage.imageindex');
 
         Route::post('appointmentsimage/imagestore_before/{id}', [AppointmentimageController::class, 'imagestore_before'])->name('appointmentsimage.imagestore_before');
@@ -445,7 +421,6 @@ use App\Http\Controllers\Admin\OrdersController;
 
 
         //Appointment route start for measurement
-        Route::post('appointmentsmeasurement/datatable/{id}', [AppointmentMeasurementController::class, 'datatable'])->name('appointmentsmeasurement.datatable');
 
         Route::get('appointmentsmeasurement/measurementindex/{id}', [AppointmentMeasurementController::class, 'index'])->name('appointmentsmeasurement.measurements');
 
@@ -466,28 +441,19 @@ use App\Http\Controllers\Admin\OrdersController;
         Route::get('appointmentsmeasurement/{id}/export_pdf', [AppointmentMeasurementController::class, 'exportPdf'])->name("appointment_measurement_custom_form_feedbacks.export_pdf");
         //Appointment route end for measurement
 
-        /*Route start for plans in appointment module*/
-        Route::get('appointmentplans/{appointment_id}', [AppointmentsPlansController::class, 'create'])->name('appointmentplans.create');
-        /*Route end for plans in appointment module*/
-
 
 
         /*Appointment Route start for medical history form*/
-        Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');
 
         Route::get('appointmentsmedical/medicalindex/{id}', [AppointmentMedicalController::class, 'index'])->name('appointmentsmedical.medicals');
-
-        Route::get('appointmentsmedical/medicalcreate/{id}', [AppointmentMedicalController::class, 'create'])->name('appointmentsmedical.create');
-
-        Route::get('appointmentsmedical/fill_form/{id}/{appointment_id}',[AppointmentMedicalController::class, 'fill_form'])->name('appointmentsmedical.fill_form');
-
-        Route::post('appointmentsmedical/{form_id}/{appointment_id}/submit_form', [AppointmentMedicalController::class, 'submit_form'])->name('appointmentsmedical.submit_form');
 
         Route::get('appointmentsmedical/edit/{id}',[AppointmentMedicalController::class, 'edit'])->name('appointmentsmedical.edit');
 
         Route::post('appointmentsmedical/{custom_form_id}', [AppointmentMedicalController::class, 'update_medical_field'])->name('appointmentsmedical.update');
 
         Route::get('appointmentsmedical/previewform/{id}',[AppointmentMedicalController::class, 'filled_preview'])->name('appointmentsmedical.previewform');
+
+        Route::get('appointmentsmedical/fill_form/{id}/{appointment_id}',[AppointmentMedicalController::class, 'fill_form'])->name('appointmentsmedical.fill_form');
 
         Route::get('appointmentsmedical/{id}/print', [AppointmentMedicalController::class, 'filledPrint'])->name("appointmentsmedical.custom_form_feedbacks.filled_print");
 
@@ -496,9 +462,7 @@ use App\Http\Controllers\Admin\OrdersController;
 
 
 
-        // Edit Service
-        Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editService'])->name('appointments.edit_service');
-        // Appointment Comments
+       // Appointment Comments
         Route::get('appointments/comment-save',[AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
         //Appointment Route end for images
 
@@ -510,12 +474,10 @@ use App\Http\Controllers\Admin\OrdersController;
 
         Route::get('appointments/load-non-scheduled-appointments', [AppointmentsController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
 
-        Route::get('appointments/load-scheduled-appointments', [AppointmentsController::class, 'getScheduledAppointments'])->name('appointments.load_scheduled_appointments');
-
-        Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
-
         Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
-        Route::get('appointments/export', [AppointmentsController::class, 'export'])->name('appointments.export');
+        Route::get('appointments/export/{limit}/{offset}', [AppointmentsController::class, 'export'])->name('appointments.export');
+
+        Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
 
          /*Inventory Routes*/
 

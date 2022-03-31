@@ -19,13 +19,12 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Patient ID:</label>
-            <select class="form-control filter-field select2" id="search_id">
-            </select>
+            <input class="form-control filter-field" id="search_id">
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-3 mb-lg-0 mb-6" id="patient_id">
             <label>Patient:</label>
-            <select class="form-control filter-field select2" id="search_patient">
+            <select class="form-control filter-field patient_id" id="search_patient">
             </select>
         </div>
 
@@ -42,7 +41,7 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Plans:</label>
-            <select class="form-control filter-field select2" id="search_plans">
+            <select class="form-control filter-field package_id" id="search_plans">
             </select>
         </div>
 

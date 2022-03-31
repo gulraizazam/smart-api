@@ -20,14 +20,17 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
     function getPaginationElement($request, $iTotalRecords, $defaultPerPage = 20) {
 
         $iDisplayLength = intval($request->pagination['perpage'] ?? $defaultPerPage);
+
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
         $iDisplayStart = intval(isset($request->pagination['page']) ? (($request->pagination['page'] - 1) * $iDisplayLength) : 0);
         $page = intval($request->pagination['page'] ?? 1);
         $pages = intval(ceil($iTotalRecords / $iDisplayLength));
 
-        if ($iDisplayStart >= $iDisplayLength) {
-            $iDisplayStart = $pages;
+        if ($iDisplayLength >= $iTotalRecords) {
+            $iDisplayStart = 0;
         }
+
+
 
         return [
             $iDisplayLength,
@@ -75,8 +78,15 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
         return '';
     }
 
-    function activeMenu($route, $class = 'menu-item-active') {
-        if (request()->route()->getName() == $route) {
+    function activeMenu($route, $class = 'menu-item-active', $queryString = null) {
+
+        if ($queryString && request('tab') != null && request('tab') != '') {
+
+            if (request()->route()->getName() == $route && request('tab') == $queryString) {
+
+                return $class;
+            }
+        } else if (request()->route()->getName() == $route) {
             return $class;
         }
         return '';

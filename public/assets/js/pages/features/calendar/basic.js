@@ -44,7 +44,7 @@ var KTCalendarBasic = function() {
                 editable: true,
                 eventLimit: true, // allow "more" link when too many events
                 navLinks: true,
-                events: calender_url,
+                events: typeof calender_url !== "undefined" ?  calender_url : '',
 
                 eventClick:  function(info, jsEvent, view) {
                     clickEvent(info, jsEvent, view)

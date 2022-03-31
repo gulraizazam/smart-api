@@ -404,7 +404,6 @@ function getAppointments() {
 
     let location = $("#add_location_id").val();
     let patient = $("#add_patient_id").val();
-    console.log(location, patient);
 
     if (location != '' && patient != '') {
 

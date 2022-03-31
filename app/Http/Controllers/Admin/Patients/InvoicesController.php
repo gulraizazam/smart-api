@@ -16,7 +16,7 @@ use App\Models\InvoiceDetails;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Services;
-use App\User;
+use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use DB;
 use Illuminate\Support\Facades\Input;

@@ -25,7 +25,7 @@ use App\Models\ResourceHasRotaDays;
 use App\Models\Resources;
 use App\Models\Services;
 use App\Models\Settings;
-use App\User;
+use App\Models\User;
 use Carbon\Carbon;
 use Auth;
 use Illuminate\Foundation\Bus\DispatchesJobs;
@@ -240,6 +240,9 @@ class PlanAppointmentCalculation
             }
             $leadObj['lead_status_id'] = $default_converted_lead_status_id;
 
+            if (! empty($leadObj) && isset($leadObj['service_id'])) {
+                $leadObj['base_service_id'] = $leadObj['service_id'];
+            }
             $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
         }
 
