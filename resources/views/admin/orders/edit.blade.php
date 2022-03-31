@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_add_user_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Create Order</h2>
+        <h2 class="fw-bolder">Edit Order</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -34,11 +34,11 @@
             Product not exist. Please add first then save
         </div>
         <!--begin::Form-->
-        <form id="modal_add_order_form" method="post" action="{{route('admin.orders.store')}}">
+        <form id="modal_edit_order_form" action="">
+            @method('put')
             <!--begin::Scroll-->
-            <input type="hidden" id="add_unit_price" />
-            <input type="hidden" id="discount_price" />
-            <input type="hidden" id="available_quantity" />
+            <input type="hidden" id="edit_unit_price" />
+            <input type="hidden" id="edit_discount_price" />
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
@@ -46,7 +46,7 @@
 
                         <div class="fv-row col-md-12 mt-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Customer <span class="text text-danger">*</span></label>
-                            <select  id="add_patient_id" class="patient_id form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_id">
+                            <select  id="edit_patient_id" class="patient_id form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_id" disabled>
                                 <option value="">Select Patient</option>
                             </select>
                         </div>
@@ -57,14 +57,14 @@
 
                         <div class="fv-row col-md-6 mt-6 select2-search">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Product <span class="text text-danger">*</span></label>
-                            <select id="add_product_id" class="form-control product_id form-control-solid mb-3 mb-lg-0 select2" name="product_id">
+                            <select id="edit_product_id" class="form-control product_id form-control-solid mb-3 mb-lg-0 select2" name="product_id">
                                 <option value="">Select Product</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Quantity </label>
-                            <input type="number" name="quantity" class="form-control" id="add_quantity">
+                            <input type="number" name="quantity" class="form-control" id="edit_quantity">
                         </div>
 
 
@@ -76,7 +76,7 @@
 
                         <div class="fv-row col-md-6 mt-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount <span class="text text-danger">*</span></label>
-                            <select id="add_disccount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
+                            <select id="edit_disccount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
                                 <option value="">Select Discount</option>
                             </select>
                         </div>
@@ -84,13 +84,13 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
-                            <input type="number" name="price" class="form-control" id="add_price" readonly>
+                            <input type="number" name="price" class="form-control" id="edit_price" readonly>
                         </div>
 
                     </div>
                     <div class="text-center"">
                             <div class="text-center mt-10">
-                                <button type="button" id="add_order" class="btn btn-primary spinner-button">
+                                <button type="button" id="edit_order" class="btn btn-primary spinner-button">
                                     <span class="indicator-label">Add</span>
                                 </button>
                             </div>
@@ -125,8 +125,8 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="button" class="btn btn-primary spinner-button" onclick="saveOrder();">
-                    <span class="indicator-label">Save</span>
+                <button type="button" class="btn btn-primary spinner-button" onclick="updateOrder();">
+                    <span class="indicator-label">Update</span>
                 </button>
             </div>
             <!--end::Actions-->

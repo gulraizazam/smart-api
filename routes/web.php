@@ -525,9 +525,11 @@ use App\Http\Controllers\Admin\OrdersController;
 
         Route::get('orders',[OrdersController::class,'index'])->name('orders.index');
 
-        Route::get('stocks',[StocksController::class,'index'])->name('stocks.index');
+        Route::get('stocks',[OrdersController::class,'refund'])->name('refund.index');
 
         Route::get('order/refunds',[OrdersController::class,'refund'])->name('order.refunds.index');
+
+        Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
 
 
     });

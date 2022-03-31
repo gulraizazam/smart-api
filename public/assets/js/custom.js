@@ -222,14 +222,14 @@ function deleteRow(route, method = "DELETE", tableClass = null) {
     deleteConfirm(null, route, method, tableClass);
 }
 
-function deleteConfirm(datatable = null, route = null, method, tableClass = null) {
+function deleteConfirm(datatable = null, route = null, method = "DELETE", tableClass = null) {
 
     swal.fire({
-        title: 'Are you sure you want to delete?',
+        title: 'Are you sure you want to '+method+'?',
         type: 'danger',
         icon: 'info',
         buttonsStyling: false,
-        confirmButtonText: 'Yes, delete!',
+        confirmButtonText: 'Yes, '+method+'!',
         cancelButtonText: 'No',
         showCancelButton: true,
         cancelButtonClass: 'btn btn-primary font-weight-bold',
@@ -253,6 +253,7 @@ function deleteConfirm(datatable = null, route = null, method, tableClass = null
 }
 
 function sendDeleteRequest(route, method) {
+    method = (method == 'DELETE' ?  method : 'POST');
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -275,10 +276,11 @@ function sendDeleteRequest(route, method) {
     });
 }
 
-function statuses(data, status_url) {
+function statuses(data, status_url,is_column_name_change = false) {
 
     let id = data.id;
-    let active = data.active;
+
+    let active = is_column_name_change == false ? data.active : data.status;
     let status = '';
 
     if (active) {

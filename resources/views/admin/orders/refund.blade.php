@@ -22,7 +22,7 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_plan_form" method="post" action="#">
+        <form id="modal_order_refund_form" method="post" action="#">
             <!--begin::Scroll-->
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
@@ -32,7 +32,7 @@
 
                         <div class="fv-row col-md-12 mt-6 select2-search">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Product <span class="text text-danger">*</span></label>
-                            <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id select2" name="patient_id">
+                            <select id="add_product_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id select2" name="patient_id">
                                 <option value="">Select Product</option>
                             </select>
                         </div>

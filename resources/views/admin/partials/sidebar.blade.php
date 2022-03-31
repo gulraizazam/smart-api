@@ -781,70 +781,63 @@
 
                      <!-- Inventory menu -->
 
-                     
+                     @if(Gate::allows('brand_manage'))
+                        @can('brand_manage')
+                            <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
 
-                        <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
-
-                            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <span class="svg-icon menu-icon fa_icon">
-                                <i class="la la-clock-o"></i>
-                            </span>
-                                <span class="menu-text">Inventory</span>
-                                <i class="menu-arrow"></i>
-                            </a>
-                            <div class="menu-submenu">
-                                <i class="menu-arrow"></i>
-                                <ul class="menu-subnav">
-                                   
-                                        <li class="menu-item {{activeMenu('admin.brands.index')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.brands.index')}}" class="menu-link">
-                                                <i class="menu-bullet menu-bullet-dot">
-                                                    <span></span>
-                                                </i>
-                                                <span class="menu-text">Brand</span>
-                                            </a>
-                                        </li>
-                                   
-                                        <li class="menu-item {{activeMenu('admin.products.index')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.products.index')}}" class="menu-link">
-                                                <i class="menu-bullet menu-bullet-dot">
-                                                    <span></span>
-                                                </i>
-                                                <span class="menu-text">Product</span>
-                                            </a>
-                                        </li>
-                                        <li class="menu-item {{activeMenu('admin.orders.index')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.orders.index')}}" class="menu-link">
-                                                <i class="menu-bullet menu-bullet-dot">
-                                                    <span></span>
-                                                </i>
-                                                <span class="menu-text">Order</span>
-                                            </a>
-                                        </li>
-
-                                        <li class="menu-item {{activeMenu('admin.stocks.index')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.stocks.index')}}" class="menu-link">
-                                                <i class="menu-bullet menu-bullet-dot">
-                                                    <span></span>
-                                                </i>
-                                                <span class="menu-text">Stock</span>
-                                            </a>
-                                        </li>
-
-                                        <li class="menu-item {{activeMenu('admin.order.refunds.index')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.order.refunds.index')}}" class="menu-link">
-                                                <i class="menu-bullet menu-bullet-dot">
-                                                    <span></span>
-                                                </i>
-                                                <span class="menu-text">Refund</span>
-                                            </a>
-                                        </li>
+                                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <span class="svg-icon menu-icon fa_icon">
+                                    <i class="la la-clock-o"></i>
+                                </span>
+                                    <span class="menu-text">Inventory</span>
+                                    <i class="menu-arrow"></i>
+                                </a>
+                                <div class="menu-submenu">
+                                    <i class="menu-arrow"></i>
+                                    <ul class="menu-subnav">
                                     
+                                            <li class="menu-item {{activeMenu('admin.brands.index')}}" aria-haspopup="true">
+                                                <a href="{{route('admin.brands.index')}}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-dot">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Brand</span>
+                                                </a>
+                                            </li>
+                                    
+                                            <li class="menu-item {{activeMenu('admin.products.index')}}" aria-haspopup="true">
+                                                <a href="{{route('admin.products.index')}}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-dot">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Product</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item {{activeMenu('admin.orders.index')}}" aria-haspopup="true">
+                                                <a href="{{route('admin.orders.index')}}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-dot">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Order</span>
+                                                </a>
+                                            </li>
 
-                                </ul>
-                            </div>
+                                            <li class="menu-item {{activeMenu('admin.order.refunds.index')}}" aria-haspopup="true">
+                                                <a href="{{route('admin.order.refunds.index')}}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-dot">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Refund</span>
+                                                </a>
+                                            </li>
+                                        
 
-                        </li>
+                                    </ul>
+                                </div>
+
+                            </li>
+                        @endcan
+                    @endif
 
                    
 
