@@ -158,4 +158,17 @@ class Brand extends BaseModal
     {
         return false;
     }
+
+    /**
+     * Get All Records
+     *
+     * @param (int) $account_id Current Organization's ID
+     *
+     * @return (mixed)
+     */
+    static public function getAllRecordsDictionary($account_id)
+    {
+        return self::where(['account_id' => $account_id])->get()->getDictionary();
+    }
+
 }

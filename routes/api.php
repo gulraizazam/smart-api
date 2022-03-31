@@ -483,10 +483,28 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Product routes*/
     Route::post('products/datatable', [ProductsController::class, 'datatable'])->name('products.datatable');
     Route::post('products', [ProductsController::class, 'store'])->name('products.store');
+    Route::post('products/status', [ProductsController::class, 'status'])->name('products.status');
     Route::get('products/{id}/edit', [ProductsController::class, 'edit'])->name('products.edit');
-    Route::put('products/{id}', [ProductsController::class, 'update'])->name('products.update');
+    Route::get('products/{id}/saleprice', [ProductsController::class, 'editSalePrice'])->name('products.edit-sale-price');
+    Route::post('products/stock-detail/{id}', [ProductsController::class, 'productStockDetail'])->name('products.stock-detail');
+    Route::put('products/{id}/{detail}', [ProductsController::class, 'update'])->name('products.update');
+    Route::post('products/{id}/updatesaleprice', [ProductsController::class, 'updateSalePrice'])->name('products.update-sale-price');
+    Route::post('products/{id}/addstock', [ProductsController::class, 'addStock'])->name('products.add-stock');
     Route::delete('products/{id}', [ProductsController::class, 'destroy'])->name('products.destroy');
     /*Product routes*/
+
+    /*Order routes*/
+    Route::post('orders/datatable', [OrdersController::class, 'datatable'])->name('orders.datatable');
+    Route::post('orders/refund/datatable', [OrdersController::class, 'refunddatatable'])->name('orders.refund.datatable');
+    Route::get('orders/getproducts',[OrdersController::class, 'getProducts'])->name('orders.getproducts');
+    Route::get('orders/getdiscounts',[OrdersController::class, 'getDiscounts'])->name('orders.getdiscounts');
+    Route::get('orders/refund/{id}/detail',[OrdersController::class, 'orderRefundDetail'])->name('orders.refund.detail');
+    Route::post('orders', [OrdersController::class, 'store'])->name('orders.store');
+    Route::post('orders/{id}/cancel', [OrdersController::class, 'cancel'])->name('orders.cancel');
+    Route::post('orders/{id}/refund', [OrdersController::class, 'orderRefund'])->name('orders.refund');
+    Route::delete('orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
+
+    /*Order routes*/
 
 });
 

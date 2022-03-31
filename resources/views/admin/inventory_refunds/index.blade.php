@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Products', 'title' => 'Products'])
+    @include('admin.partials.breadcrumb', ['module' => 'Refund Orders', 'title' => 'Refund Orders'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,31 +31,13 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Products</h3>
-                        </div>
-                        <div class="card-toolbar">
-                            <!--begin::Dropdown-->
-                            
-                                <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
-                                        <i class="fa fa-trash-alt"></i>Delete
-                                    </a>
-                                </div>&nbsp;&nbsp;&nbsp;
-
-
-                                <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_products">
-                                    <i class="la la-plus"></i>
-                                    Add New
-                                </a>&nbsp;&nbsp;&nbsp;
-
-                        <!--end::Button-->
+                            <h3 class="card-label">Refund Orders</h3>
                         </div>
                     </div>
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                    @include('admin.products.filters')
+                    @include('admin.orders.filters')
                     <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -70,56 +52,17 @@
         <!--end::Entry-->
     </div>
     <!--end::Content-->
-
-    <div class="modal fade" id="modal_add_products" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_display_refund_order" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="paymment-mode-create">
+        <div class="modal-dialog modal-dialog-centered form-popup">
 
-            @include('admin.products.create')
+            @include('admin.inventory_refunds.detail')
 
         </div>
         <!--end::Modal dialog-->
     </div>
-
-
-    <div class="modal fade" id="modal_edit_products" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
-
-            @include('admin.products.edit')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-    <div class="modal fade" id="modal_edit_products_sale_price" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
-
-            @include('admin.products.update')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-
-    <div class="modal fade" id="modal_add_product_stock" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
-
-            @include('admin.products.stock')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/admin_settings/products.js')}}"></script>
-    @endpush
-
-    @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/products.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/refund.js')}}"></script>
     @endpush
 
 @endsection

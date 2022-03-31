@@ -35,17 +35,26 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input class="treatment" type="radio" value="Treatment" checked name="discount_type">
+                                    <input class="treatment" type="radio" value="Treatment" checked name="discount_type" onchange="discountType(this,'edit');">
                                     <span></span>
                                     Treatment
                                 </label>
                             </div>
 
-                            <div class="radio-inline tax-radios">
+                            <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input class="consultancy" type="radio" value="Consultancy" name="discount_type">
+                                    <input class="consultancy" type="radio" value="Consultancy" name="discount_type" onchange="discountType(this,'edit');">
                                     <span></span>
                                     Consultancy
+                                </label>
+
+                            </div>
+
+                            <div class="radio-inline tax-radios">
+                                <label class="radio">
+                                    <input type="radio" value="Inventory" name="discount_type" onchange="discountType(this,'edit');">
+                                    <span></span>
+                                    Inventory
                                 </label>
 
                             </div>

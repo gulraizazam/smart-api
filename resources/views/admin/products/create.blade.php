@@ -22,36 +22,40 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_cities_form" method="post" action="{{route('admin.cities.store')}}">
+        <form id="modal_add_products_form" method="post" action="{{route('admin.products.store')}}">
             <!--begin::Scroll-->
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Brand</label>
-                            <select id="add_cities_region" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="region_id">
+                            <select id="add_products_brand" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="brand_id">
 
                             </select>
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input type="text" id="" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Sale Price</label>
-                            <input type="text" id="" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Sale Price<small> (per unit)</small></label>
+                            <input type="number" id="sale_price" name="sale_price" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Purchase Price</label>
-                            <input type="text" id="" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Purchase Price<small> (per unit)</small></label>
+                            <input type="number" id="purchase_price" name="purchase_price" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                     <div class="row">
-                        <div class="fv-row col-md-12">
+                        <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Quantity</label>
-                            <input type="text" id="" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="number" id="quantity" name="quantity" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Total Purchase Price</label>
+                            <input type="text" id="total_purchase_price" name="total_purchase_price" class="form-control form-control-lg form-control-solid mb-2" readonly="readonly">
                         </div>
                     </div>
                 </div>

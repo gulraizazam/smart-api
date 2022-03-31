@@ -65,6 +65,15 @@ var table_columns = [
         }
     }];
 
+function discountType(obj,sel){
+    if(obj.value== 'Inventory'){
+        $("#"+sel+"_amount_type").val('Percentage').trigger('change');
+        $("#"+sel+"_amount_type").attr('disabled',true);        
+    }else{
+        $("#"+sel+"_amount_type").val('').trigger('change'); 
+        $("#"+sel+"_amount_type").attr('disabled',false);
+    }
+}
 
 function actions(data) {
     if (typeof data.id !== 'undefined') {
