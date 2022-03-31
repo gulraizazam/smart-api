@@ -51,6 +51,7 @@ use Illuminate\Support\Collection;
 use App\Helpers\Financelog;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
 use App\Helpers\GeneralFunctions;
+use PHPUnit\Framework\MockObject\Api;
 
 class PackagesController extends Controller
 {
@@ -135,7 +136,7 @@ class PackagesController extends Controller
     /**
      * get discount information.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getdiscountinfo(Request $request)
     {
@@ -151,10 +152,11 @@ class PackagesController extends Controller
             $discount_data = Discounts::find($discount_id);
 
             if ($discount_data->slug == 'custom') {
-                return response()->json(array(
-                    'status' => true,
+
+                return ApiHelper::apiResponse($this->success, 'custom', true, [
                     'custom_checked' => 1,
-                ));
+                ]);
+
             } else {
                 if ($discount_data->type == Config::get('constants.Fixed')) {
 
@@ -170,25 +172,23 @@ class PackagesController extends Controller
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 }
 
-                return response()->json(array(
-                    'status' => true,
+                return ApiHelper::apiResponse($this->success, 'Record Found', true, [
                     'discount_type' => $discount_type,
                     'discount_price' => $discount_price,
                     'net_amount' => $net_amount,
                     'custom_checked' => 0
-                ));
+                ]);
+
             }
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
         }
+
+        return ApiHelper::apiResponse($this->success, 'No Record Found', false);
     }
 
     /**
      * save packages services information.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function savepackages_service(Request $request)
     {
@@ -206,10 +206,10 @@ class PackagesController extends Controller
                         if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int)$request->is_exclusive)) {
                             $status = false;
                         }
-                    } else {
-                        if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
+                    } else { /*this is commented because we want to add services with different prices*/
+                        /*if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
                             $status = false;
-                        }
+                        }*/
                     }
                 }
             }
@@ -364,12 +364,12 @@ class PackagesController extends Controller
                 'total' => $total
             ];
 
-            return response()->json(array(
-                'status' => true,
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'myarray' => $myarray,
-
-            ));
+            ]);
         }
+
+        return ApiHelper::apiResponse($this->success, 'No Record found', false);
     }
 
 
@@ -426,15 +426,14 @@ class PackagesController extends Controller
             }
         }
         if ($status == true) {
-            return response()->json(array(
-                'status' => true,
+
+            return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
                 'net_amount' => $net_amount
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            ]);
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'Net Amount', false);
 
     }
 
@@ -450,9 +449,9 @@ class PackagesController extends Controller
             ['is_consumed', '=', '1']
         ])->first();
         if ($status) {
-            return response()->json(array(
-                'status' => false,
-            ));
+
+            return ApiHelper::apiResponse($this->success, 'Record not found', false);
+
         } else {
 
             $packageService = PackageBundles::find($request->id);
@@ -472,11 +471,10 @@ class PackagesController extends Controller
                 }
             }
 
-            return response()->json(array(
-                'status' => true,
+            return ApiHelper::apiResponse($this->success, 'Record not found', true, [
                 'total' => $total,
                 'id' => $request->id
-            ));
+            ]);
         }
     }
 
@@ -603,7 +601,7 @@ class PackagesController extends Controller
 
         $bundle = Bundles::find($request->bundle_id);
 
-        if ($bundle->type == 'single') {
+        if ($bundle && $bundle->type == 'single') {
 
             $bundleService = BundleHasServices::where(array(
                 'bundle_id' => $bundle->id
@@ -621,7 +619,7 @@ class PackagesController extends Controller
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
 
         } else {
-            if ($bundle->apply_discount == '1') {
+            if ($bundle && $bundle->apply_discount == '1') {
                 $bundleServices = BundleHasServices::where(array(
                     'bundle_id' => $bundle->id
                 ))->get();
@@ -732,21 +730,19 @@ class PackagesController extends Controller
                 } else {
                     $discounts = $discounts->toArray();
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
-                    return response()->json(array(
-                        'status' => true,
+
+                    return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '1',
                         'net_amount' => $service_data->price
-                    ));
+                    ]);
                 }
             }
-        } else {
-            $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
-            return response()->json(array(
-                'status' => false,
-                'net_amount' => $service_data->price
-            ));
         }
+
+        return ApiHelper::apiResponse($this->success, 'Records found.', false, [
+            'net_amount' => isset($service_data) ? $service_data->price : 0
+        ]);
     }
 
     /**
@@ -761,15 +757,14 @@ class PackagesController extends Controller
 
         $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
         if ($service_data) {
-            return response()->json(array(
-                'status' => true,
+
+            return ApiHelper::apiResponse($this->success, 'Records found', true, [
                 'net_amount' => $service_data->price
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            ]);
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'No record found', false);
     }
 
     /**
@@ -784,10 +779,9 @@ class PackagesController extends Controller
         $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $grand_total = number_format($package_total - $request->cash_amount);
 
-        return response()->json(array(
-            'status' => true,
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'grand_total' => $grand_total
-        ));
+        ]);
     }
 
     /**
@@ -938,21 +932,11 @@ class PackagesController extends Controller
             $patient = [];
         }
 
-        if ($package_id = Filters::get(Auth::User()->id, 'packages', 'package_id')) {
-            $package = Packages::where(array(
-                'id' => $package_id
-            ))->first();
-            if ($package) {
-                $package = $package->toArray();
-            }
-        } else {
-            $package = [];
-        }
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
 
         $records['filter_values'] = [
-            'package' => $package,
+            'package' => [],
             'locations' => $locations,
             'patient' => $patient,
             'status' => config('constants.status')
@@ -1033,8 +1017,8 @@ class PackagesController extends Controller
             /*Due to finance editing we calculate that "total" through package bundle otherwise we can use package->total_amount*/
             $total_price = PackageBundles::where('package_id', '=', $id)->sum('tax_including_price');
 
-            $packagebundles = PackageBundles::where('package_id', '=', $package->id)->get();
-            $packageservices = PackageService::where('package_id', '=', $package->id)->get();
+            $packagebundles = PackageBundles::with('bundle')->where('package_id', '=', $package->id)->get();
+            $packageservices = PackageService::with('service')->where('package_id', '=', $package->id)->get();
 
             $packageadvances = PackageAdvances::with('paymentmode')->where([
                 ['package_id', '=', $package->id],
@@ -1119,7 +1103,6 @@ class PackagesController extends Controller
             ]);
 
     } catch(\Exception $e) {
-
         return ApiHelper::apiException($e);
     }
 }
@@ -1151,10 +1134,9 @@ class PackagesController extends Controller
         $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
 
-        return response()->json(array(
-            'status' => true,
+        return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
             'grand_total' => $grand_total
-        ));
+        ]);
     }
 
     /*
@@ -1165,9 +1147,7 @@ class PackagesController extends Controller
     public function updatepackages(Request $request)
     {
         if ($request->grand_total < 0) {
-            return response()->json(array(
-                'status' => false,
-            ));
+            return ApiHelper::apiResponse($this->success, 'Grand total is less than 0', false);
         }
         // Begin Transaction
         DB::beginTransaction();
@@ -1191,9 +1171,7 @@ class PackagesController extends Controller
                     }
                 }
             } else {
-                return response()->json(array(
-                    'status' => false,
-                ));
+                return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
             }
             /*save Package information and also update random id in package service table*/
 
@@ -1213,9 +1191,7 @@ class PackagesController extends Controller
                 // Commit Transaction
                 DB::commit();
 
-                return response()->json(array(
-                    'status' => true,
-                ));
+                return ApiHelper::apiResponse($this->success, 'updated successfully');
             } else {
                 /*Save data in package advances*/
                 $data_packageAdvances['cash_flow'] = 'in';
@@ -1237,17 +1213,13 @@ class PackagesController extends Controller
                 // Commit Transaction
                 DB::commit();
 
-                return response()->json(array(
-                    'status' => true,
-                ));
+                return ApiHelper::apiResponse($this->success, 'updated successfully');
             }
         } catch (\Exception $e) {
             // Rollback Transaction
             DB::rollback();
 
-            return response()->json(array(
-                'status' => false,
-            ));
+            return ApiHelper::apiResponse($this->success, $e->getMessage(). ' - '.$e->getFile(). ' - ' .$e->getLine(), false);
         }
     }
 
@@ -1285,7 +1257,7 @@ class PackagesController extends Controller
 
         $packagebundles = PackageBundles::with('bundle')->where('package_id', '=', $package->id)->get();
 
-        $packageservices = PackageService::where('package_id', '=', $package->id)->get();
+        $packageservices = PackageService::with('service')->where('package_id', '=', $package->id)->get();
 
         $packageadvances = PackageAdvances::with('paymentmode')->where([
             ['package_id', '=', $package->id],
@@ -1840,12 +1812,10 @@ class PackagesController extends Controller
      * Re-send Plan SMS
      *
      * @param \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function sendLogSMS(Request $request)
     {
-
-        $data = $request->all();
 
         $SMSLog = SMSLogs::findOrFail($request->get('id'));
 
@@ -1853,11 +1823,11 @@ class PackagesController extends Controller
             $response = $this->resendSMS($SMSLog->id, $SMSLog->to, $SMSLog->text, $SMSLog->package_id);
 
             if ($response['status']) {
-                return response()->json(['status' => 1]);
+                return ApiHelper::apiResponse($this->success, 'SMS sent successfully.');
             }
         }
 
-        return response()->json(['status' => 0]);
+        return ApiHelper::apiResponse($this->success, 'SMS not sent.', false);
     }
 
     /**

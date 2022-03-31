@@ -3,7 +3,7 @@
 <div class="form-group form-md-line-input cf_card">
     <h3 class="cf-question-headings">Select Patient</h3>
     <div class="form-group form-md-line-input cf_input_option"/>
-    <label>
+    <label class="w-100">
         <select class="form-control cf-input-border select2" name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_NAME}}" required="required"
                 disabled>
             <option value="">Select</option>
@@ -18,7 +18,7 @@
 <div class="form-group form-md-line-input cf_card">
     <h3 class="cf-question-headings">Select Service</h3>
     <div class="form-group form-md-line-input cf_input_option"/>
-    <label>
+    <label class="w-100">
         <select class="form-control select2" id="service_id" name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_SERVICENAME}}" disabled>
             <option value="">Select Service</option>
             @foreach($Services as $id => $Service)
@@ -39,7 +39,7 @@
 <div class="form-group form-md-line-input cf_card">
     <h3 class="cf-question-headings">Priority(default:Low)</h3>
     <div class="form-group form-md-line-input cf_input_option"/>
-    <label>
+    <label class="w-100">
         <select class="form-control cf-input-border select2" name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_PRIORITY}}" required="required">
             <option value="Low priority" selected>Low priority</option>
             <option value="Medium priority">Medium priority</option>
@@ -59,7 +59,7 @@
 <div class="form-group form-md-line-input cf_card">
     <h3 class="cf-question-headings">Type</h3>
     <div class="form-group form-md-line-input cf_input_option"/>
-    <label>
+    <label class="w-100">
         <select class="form-control cf-input-border select2" name="{{\App\Helpers\CustomFormFeedbackHelper::DEFAULT_SELECT_PATIENT_TYPE}}" required="required">
             <option value="Before Appointment">Before Appointment</option>
             <option value="After Appointment">After Appointment</option>

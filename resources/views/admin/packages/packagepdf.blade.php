@@ -157,11 +157,11 @@
 </head>
 <body>
 <div class="invoice-pdf">
-    
+
     <table>
         <tr>
             <td style="float:left">
-                <img class="logo" src="{{asset('centre_logo/')}}/new_logo.png" class="img-responsive" alt=""/>
+                <img style="margin-bottom: 10px;" class="logo" src="{{asset('assets/media/logos/logo.svg')}}" class="img-responsive" alt=""/>
                 <p class="logo_caption">{{$location_info->address}}.</p>
                 <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}} &nbsp;| &nbsp; Email. {{$account_info->email}}  &nbsp; | &nbsp;  www.cutera.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
             </td>
@@ -186,7 +186,7 @@
             <td class="main_heading">{{ucfirst($package->user->name)}}, <strong>C-{{$package->user->id}}</strong></td>
         </tr>
     </table>
-    
+
     <table style="display:none;">
         <tr style="padding-top: 30px;">
             <th>Client</th>
@@ -374,7 +374,7 @@
 {{--    <div class="grand-total" style="float: right; margin-top:20px;">--}}
 {{--        --}}
 {{--    </div>--}}
-    
+
 
     <table style="margin:32 px 0px 0px -8px;" class="static_text">
         <tr>

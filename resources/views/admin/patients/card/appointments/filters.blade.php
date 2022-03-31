@@ -30,13 +30,13 @@
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Scheduled:</label>
             <div class="input-daterange input-group to-from-datepicker" >
-                <input type="text" id="appoint_search_start" class="form-control filter-field datatable-input" name="created_start" placeholder="From">
+                <input type="text" id="appoint_search_start" autocomplete="off" class="form-control filter-field datatable-input" name="created_start" placeholder="From">
                 <div class="input-group-append">
                     <span class="input-group-text">
                         <i class="la la-ellipsis-h"></i>
                     </span>
                 </div>
-                <input type="text" id="appoint_appoint_end" class="form-control filter-field datatable-input" name="created_end" placeholder="To" >
+                <input type="text" id="appoint_appoint_end" autocomplete="off" class="form-control filter-field datatable-input" name="created_end" placeholder="To" >
             </div>
         </div>
 
@@ -83,13 +83,13 @@
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Create At:</label>
             <div class="input-daterange input-group to-from-datepicker" >
-                <input type="text" id="appoint_search_created_from" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5">
+                <input type="text" id="appoint_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5">
                 <div class="input-group-append">
                     <span class="input-group-text">
                         <i class="la la-ellipsis-h"></i>
                     </span>
                 </div>
-                <input type="text" id="appoint_search_created_to" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5">
+                <input type="text" id="appoint_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5">
             </div>
         </div>
 

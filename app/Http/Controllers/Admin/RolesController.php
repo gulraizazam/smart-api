@@ -651,7 +651,7 @@ class RolesController extends Controller
      *
      * @param  \Illuminate\Http\Request $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -659,20 +659,26 @@ class RolesController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
-        $validator = $this->verifyFields($request);
+        try {
 
-        if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            $validator = $this->verifyFields($request);
+
+            if ($validator->fails()) {
+                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            }
+            unset($request['DataTables_Table_0_length']);
+            $role = Role::findOrFail($id);
+            $role->update($request->except('permission'));
+            $permissions = $request->input('permission') ? $request->input('permission') : [];
+
+            $role->syncPermissions($permissions);
+
+            session()->flash('success', 'Record has been updated successfully.');
+
+            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-        unset($request['DataTables_Table_0_length']);
-        $role = Role::findOrFail($id);
-        $role->update($request->except('permission'));
-        $permissions = $request->input('permission') ? $request->input('permission') : [];
-        $role->syncPermissions($permissions);
-
-        session()->flash('success', 'Record has been updated successfully.');
-
-        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
     }
 
 

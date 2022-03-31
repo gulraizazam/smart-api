@@ -20,6 +20,10 @@ class PaymentModes extends BaseModal
 
     protected static $_table = 'payment_modes';
 
+    public function scopeActive($query, $active = 1) {
+        $query->where('active', $active);
+    }
+
     /**
      * Get the package advaances.
      */

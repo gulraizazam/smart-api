@@ -34,7 +34,10 @@
                             <h3 class="card-label">Custom Form Feedbacks</h3>
                         </div>
                         <div class="card-toolbar">
-
+                            <a href="{{ route('admin.custom_form_feedbacks.index') }}" class="btn btn-sm btn-dark" >
+                                <i class="la la-arrow-left"></i>
+                                Back
+                            </a>
 
                             <!--end::Button-->
                         </div>
@@ -42,29 +45,29 @@
 
                     <div class="card-body">
                     <h1 style="color: red;">Form is auto saved. Whenever you change</h1>
-                      
+
                     <div class="form-group">
-                        
+
                     <div class="row">
-                       
+
                         <div class="col-md-6">
-                           
+
                             <div class="mt-15">
-                            
+
                                <p> <h3><strong>Patient Name: </strong> {{$custom_form->patient?$custom_form->patient->name : "Null"}}</h3> </p>
-                              
+
                             </div>
                         </div>
-                       
+
                     </div>
 
                     <div class="row mt-15">
-                        
+
                         <div class="col-md-12">
                             @include('admin.custom_form_feedbacks.edit_fields.select_patient')
-                          
+
                         </div>
-                       
+
                     </div>
 
                     <div class="form-group form-md-line-input cf_main_title mt-20">
@@ -118,7 +121,7 @@
                             </div>
                             @endif
                         @endforeach
-                      @endif  
+                      @endif
                     </div>
 
 
@@ -138,7 +141,7 @@
         @stop
 
         @push('js')
-        
+
             <script type="text/javascript">
 
                 function updatePatient(){
@@ -152,11 +155,11 @@
                                 if (res.status) {
                                     toastr.success(res.message);
                                 } else {
-                                    toastr.error(res.message); 
+                                    toastr.error(res.message);
                                 }
                             },
                                 (xhr, ajaxOptions, thrownError)=>{
-                                    toastr.error("Unable to process the request, please try again."); 
+                                    toastr.error("Unable to process the request, please try again.");
                                 }
                             );
                         }
@@ -164,7 +167,7 @@
                     });
                 }
                 function fieldChangeUpdateBinding() {
-                   
+
                     $(".update-answer-fields").bind("change", function () {
 
                         field_id = this.id.split("cs_field_")[1];
@@ -244,7 +247,7 @@
                             console.log("data : ");
                             console.log(data);
                             update_form_field(field_id, data, (response) => {
-                                
+
                                 if (response.status) {
                                     toastr.success(response.message);
                                 } else {
@@ -260,7 +263,7 @@
                 }
 
                 function update_form_field(field_id, data, success_callback, error_callback) {
-                   
+
                     $.ajax({
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -279,7 +282,7 @@
 
 
                 function update_feedback(data, success_callback, error_callback){
-                   
+
                     $.ajax({
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -298,7 +301,7 @@
                     updatePatient();
                 });
             </script>
-        
+
 
 @endpush
 

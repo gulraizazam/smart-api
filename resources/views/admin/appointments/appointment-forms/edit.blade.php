@@ -29,7 +29,6 @@
             <input type="hidden" id="appointment_manager" value="{{config('constants.appointment_type_consultancy_string')}}">
             <input type="hidden" id="back-date">
             <input type="hidden" id="old_phone" name="old_phone">
-
             <input type="hidden" name="lead_id" id="lead_id">
             <input type="hidden" id="appointment_id">
             <input type="hidden" id="resourceRotaDayID">
@@ -76,7 +75,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Scheduled Time <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_scheduled_time" name="scheduled_time" class="form-control scheduled_time">
+                            <input type="text" id="edit_scheduled_time" name="scheduled_time" class="form-control scheduled_time default-timepicker">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">

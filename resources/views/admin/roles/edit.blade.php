@@ -165,7 +165,7 @@
                         @endif
                         <!--end::Form-->
 
-                            <button type="submit" class="btn btn-primary" >
+                            <button type="submit" class="btn btn-primary spinner-button" >
                                 <span class="indicator-label">Save</span>
                             </button>
                         </div>

@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
+use App\Helpers\Filters;
 use App\Models\Medical;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Measurement;
 use App\Models\Appointments;
 use App\Models\CustomForms;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Patients;
 use App\Helpers\NodesTree;
 use App\Models\CustomFormFeedbacks;
-use App\User;
+use App\Models\User;
 use Carbon\Carbon;
 use Spatie\Browsershot\Browsershot;
 use Barryvdh\DomPDF\Facade as PDF;
@@ -22,6 +24,19 @@ use App;
 
 class AppointmentMedicalController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -40,14 +55,12 @@ class AppointmentMedicalController extends Controller
             ['active','=','1'],
             ['user_type_id','=','3']
         ])->pluck('name', 'id');
-        $patients->prepend('All', '');
 
         $users = User::where([
             ['account_id','=',Auth::User()->account_id],
             ['active','=','1'],
             ['user_type_id','!=','3']
         ])->pluck('name', 'id');
-        $users->prepend('All', '');
 
         return view('admin.appointments.medicals.index', compact('appointment','patients','users'));
     }
@@ -55,12 +68,12 @@ class AppointmentMedicalController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create($id)
     {
         if (!Gate::allows('appointments_medical_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $where = array();
 
@@ -85,7 +98,12 @@ class AppointmentMedicalController extends Controller
             $CustomForms = CustomForms::orderBy('sort_number','asc')->get();
         }
 
-        return view('admin.appointments.medicals.AddNewMedical',compact('CustomForms','id'));
+        return ApiHelper::apiResponse($this->success, 'Records found.', true, [
+            'CustomForms' => $CustomForms,
+            'id' => $id
+        ]);
+
+       // return view('admin.appointments.medicals.AddNewMedical',compact('CustomForms','id'));
     }
 
     /**
@@ -156,8 +174,14 @@ class AppointmentMedicalController extends Controller
         $records = array();
         $records["data"] = array();
 
-        if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
-            $appointmentmeasurements = Measurement::getBulkData_formeasurement($request->get('id'));
+        $filters = getFilters($request->all());
+
+        $records = array();
+        $records["data"] = array();
+
+        if (hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
+            $appointmentmeasurements = Measurement::getBulkData_formeasurement($ids);
             if($appointmentmeasurements) {
                 foreach($appointmentmeasurements as $appointmentmeasurement) {
                     // Check if child records exists or not, If exist then disallow to delete it.
@@ -166,17 +190,15 @@ class AppointmentMedicalController extends Controller
                     }
                 }
             }
-            $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
-            $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records["status"] = true; // pass custom message(useful for getting status of group actions)
+            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
         }
 
         // Get Total Records
         $iTotalRecords = Medical::getTotalRecords($request, Auth::User()->account_id,$id);
 
-        $iDisplayLength = intval($request->get('length'));
-        $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        list($orderBy, $order) = getSortBy($request);
+        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $appointmentmedicals = Medical::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id,$id);
 
@@ -185,17 +207,29 @@ class AppointmentMedicalController extends Controller
                 $user = User::find($appointmentmedicals->user_id);
                 $patient = User::find($appointmentmedicals->patient_id);
                 $records["data"][] = array(
+                    'id' => $appointmentmedicals->id,
                     'name' => $appointmentmedicals->form_name,
                     'patient_id' => $patient->name,
                     'created_by' => $user->name,
                     'created_at' => Carbon::parse($appointmentmedicals->created_at)->format('F j,Y h:i A'),
-                    'actions' => view('admin.appointments.medicals.actions', compact('appointmentmedicals'))->render(),
+                    //'actions' => view('admin.appointments.medicals.actions', compact('appointmentmedicals'))->render(),
                 );
             }
+
+            $records["meta"] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
         }
-        $records["draw"] = $sEcho;
-        $records["recordsTotal"] = $iTotalRecords;
-        $records["recordsFiltered"] = $iTotalRecords;
+
+        $records["permissions"] = [
+            'edit' => Gate::allows('appointments_medical_edit'),
+
+        ];
 
         return response()->json($records);
     }
@@ -352,7 +386,7 @@ class AppointmentMedicalController extends Controller
         $pdfName = 'appointment_medical_custom_form'.'_'.$id.'_'.date('YmdHis') . ".pdf";
         $custom_form = $custom_form_feedback;
         $thisId = $id;
-        
+
         $dompdf = new Dompdf();
         $content = view('admin.custom_form_feedbacks.appointment_medical_filled_export_pdf', ['custom_form' => $custom_form_feedback,'patient_id'=>$patient_id,'medicalinformation'=>$medicalinformation,
         'users' => $users,'Services' => $Services,'leadServices'=>$leadServices, 'thisId' => $id]);

@@ -143,8 +143,8 @@
                         </ul>
                         <br/>
 
-                        <a class="btn btn-lg btn-primary blue hidden-print margin-bottom-5" target="_blank"
-                           href="{{ route('admin.invoices.invoice_pdf',1) }}">Print
+                        <a id="invoice-pdf" class="btn btn-lg btn-primary blue hidden-print margin-bottom-5" target="_blank"
+                           href="">Print
                             <i class="fa fa-print"></i>
                         </a>
                     </div>

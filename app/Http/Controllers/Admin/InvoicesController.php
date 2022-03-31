@@ -350,7 +350,7 @@ class InvoicesController extends Controller
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf($id)
+    public function invoice_pdf($id, $download = null)
     {
         if (!Gate::allows('invoices_manage') && !Gate::allows('appointments_invoice_display')) {
             return abort(401);
@@ -372,8 +372,7 @@ class InvoicesController extends Controller
                 'invoice_details.tax_price',
                 'invoice_details.tax_including_price',
                 'invoice_details.is_exclusive'
-            )
-            ->first();
+            )->first();
 
         $appointment_info = Appointments::where('id','=',$Invoiceinfo->appointment_id)->first();
         $package_service = PackageService::where('package_id','=',$Invoiceinfo->package_id)->where('service_id','=',$Invoiceinfo->service_id)->first();
@@ -407,17 +406,26 @@ class InvoicesController extends Controller
                 $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
+                if ($download) {
+                    return $pdf->download('admin.invoices.InvoiceMedicalHistorypdf.pdf');
+                }
                 return $pdf->stream('admin.invoices.InvoiceMedicalHistorypdf.pdf');
             } else {
                 $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
+                if ($download) {
+                    return $pdf->download('admin.invoices.invoice_pdf.pdf');
+                }
                 return $pdf->stream('admin.invoices.invoice_pdf.pdf');
             }
         } else {
             $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);
+            if ($download) {
+                return $pdf->download('admin.invoices.invoice_pdf.pdf');
+            }
             return $pdf->stream('admin.invoices.invoice_pdf.pdf');
         }
     }

@@ -14,7 +14,7 @@ use App\Models\Regions;
 use App\Models\Services;
 use App\Models\Discounts;
 use Carbon\Carbon;
-use App\User;
+use App\Models\User;
 
 class DiscountWidget
 {
@@ -144,7 +144,7 @@ class DiscountWidget
 
             //      Find Matching Services
             $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
-            $serviceWithParents = array_merge($serviceWithParents, [$service_id]);
+            $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
 
             $servicediscounts = DiscountHasLocations::where([
                 'location_id' => Locations::where(array(
@@ -243,7 +243,7 @@ class DiscountWidget
         }
         //      Find Matching Services
         $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
-        $serviceWithParents = array_merge($serviceWithParents, [$service_id]);
+        $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
 
         $centreservicediscounts = DiscountHasLocations::where([
             'location_id' => $location_id,

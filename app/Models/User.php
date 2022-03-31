@@ -149,7 +149,7 @@ class User extends Authenticatable
 
     public function referredBy()
     {
-        return $this->belongsTo(\App\User::class, 'referred_by')->withTrashed();
+        return $this->belongsTo(User::class, 'referred_by')->withTrashed();
     }
 
     /**

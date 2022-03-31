@@ -24,6 +24,8 @@
                 <div class="col"><p>{{$option["label"]}}</p></div>
                 @endforeach
             </div>
+
+        @if($rows)
             @foreach($rows as $row)
             <div class="row-wrap">
                 @foreach($row["cols"] as $col)
@@ -31,6 +33,7 @@
                 @endforeach
             </div>
             @endforeach
+         @endif
     </div>
     {{--</div>--}}
 </div>

@@ -1,330 +1,309 @@
-@extends('layouts.app-rs')
-<style type="text/css">
-    .cf_label {
-        width: 100%;
-    }
+@extends('admin.layouts.master')
 
-    .cf_input_question {
-        font-size: 18px !important;
-        color: #000 !important;
-    }
-
-    .cf_input_option {
-        padding-top: 10px !important;
-    }
-
-    .cf_card {
-        padding-bottom: 60px;
-    }
-
-    .cf_input_option .md-checkbox label > .box {
-        width: 15px;
-        height: 15px;
-    }
-
-    .rs .md-checkbox label > .box {
-        top: 10px;
-    }
-
-    .rs .form-group.form-md-line-input .form-control {
-        border-bottom: 0;
-        font-size: 16px;
-        display: inline-block;
-    }
-
-    .cf_input_option label {
-        width: 90%;
-    }
-
-    .cf_main_title {
-        padding-bottom: 30px;
-    }
-
-    .cf_form_internal_title {
-        background: purple;
-        font-weight: bold;
-        font-size: 18px;
-        color: #fff;
-    }
-
-    .cf-question-headings {
-        color: #000;
-        font-weight: 500;
-    }
-
-    .cf_form_internal_title {
-        background: #35a1d4;
-        font-weight: bold;
-        font-size: 18px;
-        color: #fff;
-        display: inline-block;
-        padding: 10px;
-        position: relative;
-    }
-
-    h3.cf_form_internal_title:after {
-        content: "";
-        width: 0;
-        height: 0;
-        border-left: 3px solid transparent;
-        border-right: 20px solid transparent;
-        border-top: 39px solid #35a1d4;
-        position: absolute;
-        right: -20px;
-        top: 0px;
-    }
-
-    .cf-input-border {
-        border-bottom: 1px solid #ddd !important;
-    }
-</style>
-<link href="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css'}}" rel="stylesheet"
-      type="text/css"/>
-<link href="{{ url('metronic/assets/global/plugins/select2/css/select2-bootstrap.min.css') }}" rel="stylesheet"
-      type="text/css"/>
-<link href="{{ url('metronic/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker3.min.css') }}"
-      rel="stylesheet" type="text/css"/>
-@section('title')
-    <!-- BEGIN PAGE TITLE-->
-    <h1 class="page-title">@lang('global.app_appointmentmeasurementforms')</h1>
-    <!-- END PAGE TITLE-->
-@endsection
 
 @section('content')
-    <div class="portlet light bordered">
-        <div class="portlet-title">
-            <div class="caption font-green-sharp">
-                <i class="icon-pencil font-green-sharp"></i>
-                <span class="caption-subject bold uppercase"> @lang('global.app_edit')</span>
-            </div>
-            <div class="actions">
-                <a href="{{ route('admin.appointmentsmeasurement.measurements',[$measurementinformation->appointment_id]) }}"
-                   class="btn dark pull-right">@lang('global.app_back')</a>
-            </div>
-        </div>
-        <div class="portlet-body rs">
-            <h1 style="color: red;">Form is auto saved. Whenever you change</h1>
-            <!-- custom form -->
-            <div id="cf_form">
-                <div class="form-group form-md-line-input cf_main_title">
-                    <div class="form-group form-md-line-input cf_input_question">
-                        <h1 class="rs-head">{{$custom_form->form_name}}</h1>
+    <style>
+        .md-checkbox label>.box {
+            border: none !important;
+        }
+    </style>
+    @push('css')
+        <link href="{{asset('assets/css/components.min.css')}}" rel="stylesheet" type="text/css" />
+        <link href="{{asset('assets/css/layout.min.css')}}" rel="stylesheet" type="text/css" />
+    @endpush
+    <!--begin::Content-->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+
+    @include('admin.partials.breadcrumb', ['module' => 'Custom Form Feedbacks', 'title' => 'Custom Form Feedbacks'])
+
+    <!--begin::Entry-->
+        <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+
+                <!--begin::Card-->
+                <div class="card card-custom">
+                    <div class="card-header py-3">
+                        <div class="card-title">
+                            <span class="card-icon">
+                                <span class="svg-icon svg-icon-md svg-icon-primary">
+                                    <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
+                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                            <rect x="0" y="0" width="24" height="24" />
+                                            <rect fill="#000000" opacity="0.3" x="12" y="4" width="3" height="13" rx="1.5" />
+                                            <rect fill="#000000" opacity="0.3" x="7" y="9" width="3" height="8" rx="1.5" />
+                                            <path d="M5,19 L20,19 C20.5522847,19 21,19.4477153 21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 C4.55228475,3 5,3.44771525 5,4 L5,19 Z" fill="#000000" fill-rule="nonzero" />
+                                            <rect fill="#000000" opacity="0.3" x="17" y="11" width="3" height="6" rx="1.5" />
+                                        </g>
+                                    </svg>
+                                    <!--end::Svg Icon-->
+                                </span>
+                            </span>
+                            <h3 class="card-label">Edit</h3>
+                        </div>
+                        <div class="col-md-10">
+                            <a href="{{route('admin.appointmentsmeasurement.measurements',[$measurementinformation->appointment_id]) }}" class="btn btn-sm btn-dark mt-3" style="float: right;"><i class="fa fa-arrow-left"></i>Back</a>
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <h1 style="color: red;">Form is auto saved. Whenever you change</h1>
+
+                        <div class="form-group form-md-line-input cf_main_title">
+                            <div class="form-group form-md-line-input cf_input_question">
+                                <h1 class="rs-head">{{$custom_form->form_name}}</h1>
+                            </div>
+                        </div>
+                        <input id="feedback_id" name="feedback_id" type="hidden" value="{{$custom_form->id}}"/>
+
+                        <div class="form-group form-md-line-input cf_main_title">
+                            <div class="form-group form-md-line-input cf_input_question">
+                                <p>{{$custom_form->form_description}}</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+
+                            <div class="row mt-15">
+
+                                <div class="col-md-12">
+                                    @include('admin.appointments.measurements.edit_fields.select_patient')
+                                </div>
+
+                            </div>
+
+                            <form id="cf_form">
+
+                                <div class="row mt-15">
+
+                                    @if ($custom_form)
+                                        @foreach($custom_form->form_fields as $field)
+                                            <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
+
+                                            @if($field->field_type ==1)
+                                                <div class="col-md-12">
+                                                    @include("admin.custom_form_feedbacks.edit_fields.text_field", ['field_id'=>$field->id, 'title'=>$content["title"],"value" => $field->field_value])
+                                                </div>
+                                            @elseif($field->field_type ==2)
+                                                <div class="col-md-12">
+                                                    @include("admin.custom_form_feedbacks.edit_fields.paragraph_field", ['field_id'=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])
+                                                </div>
+                                            @elseif($field->field_type ==3)
+                                                <div class="col-md-12">
+                                                    @include("admin.custom_form_feedbacks.edit_fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
+                                                </div>
+                                            @elseif($field->field_type ==4 && is_array($content))
+                                                <div class="col-md-12">
+                                                    @include("admin.custom_form_feedbacks.edit_fields.multi_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
+                                                </div>
+                                            @elseif($field->field_type ==7 && is_array($content))
+                                                <div class="col-md-12">
+                                                    @include("admin.custom_form_feedbacks.edit_fields.table_input_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
+                                                </div>
+                                            @elseif($field->field_type ==5 && is_array($content))
+                                                <div class="col-md-12">
+                                                    @include("admin.custom_form_feedbacks.edit_fields.option_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
+                                                </div>
+                                            @elseif($field->field_type ==6 && is_array($content))
+                                                <div class="col-md-12">
+                                                    @include("admin.custom_form_feedbacks.edit_fields.title_description_field", ["field_id"=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    @endif
+                                </div>
+
+                            </form>
+
+                        </div>
+
+
                     </div>
                 </div>
-                <input id="feedback_id" name="feedback_id" type="hidden" value="{{$custom_form->id}}"/>
-
-                <div class="form-group form-md-line-input cf_main_title">
-                    <div class="form-group form-md-line-input cf_input_question">
-                        <p>{{$custom_form->form_description}}</p>
-                    </div>
-                </div>
-                @include('admin.appointments.measurements.edit_fields.select_patient')
-                <div id="cf_field_list">
-                    @foreach($custom_form->form_fields as $field)
-                        <?php $content = \App\Helpers\CustomFormHelper::getContentArray($field->content); ?>
-
-                        @if($field->field_type ==1)
-                            @include("admin.custom_form_feedbacks.edit_fields.text_field", ['field_id'=>$field->id, 'title'=>$content["title"],"value" => $field->field_value])
-                        @elseif($field->field_type ==2)
-                            @include("admin.custom_form_feedbacks.edit_fields.paragraph_field", ['field_id'=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])
-                        @elseif($field->field_type ==3)
-                            @include("admin.custom_form_feedbacks.edit_fields.single_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
-                        @elseif($field->field_type ==4 && is_array($content))
-                            @include("admin.custom_form_feedbacks.edit_fields.multi_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
-                        @elseif($field->field_type ==7 && is_array($content))
-                            @include("admin.custom_form_feedbacks.edit_fields.table_input_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
-                        @elseif($field->field_type ==5 && is_array($content))
-                            @include("admin.custom_form_feedbacks.edit_fields.option_select_field", ["field_id"=>$field->id, 'title'=>$content["title"],"options"=>$content["options"], "value" => $field->field_value])
-                        @elseif($field->field_type ==6 && is_array($content))
-                            @include("admin.custom_form_feedbacks.edit_fields.title_description_field", ["field_id"=>$field->id, 'title'=>$content["title"], "value" => $field->field_value])
-                        @endif
-                    @endforeach
-                </div>
+                <!--end::Card-->
             </div>
+            <!--end::Container-->
         </div>
-        @stop
-        @section('javascript')
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/jquery.validate.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/jquery-validation/js/additional-methods.min.js') }}"
-                    type="text/javascript"></script>
-            <script src="{{ url('js/admin/custom_form_feedbacks/fields.js') }}" type="text/javascript"></script>
+        <!--end::Entry-->
+    </div>
+    <!--end::Content-->
 
-            <script type="text/javascript">
+@stop
 
-                function updatePatientMeasurement() {
-                    $(".update_measurement_data").bind("change", function () {
-                        patient_id = $("select[name=reference_id]").val();
-                        if (parseInt(patient_id) > 0) {
-                            update_feedback((res) => {
-                            }, (xhr, ajaxOptions, thrownError) => {
-                            });
+@push('js')
+    <script src="{{asset('assets/js/jquery.validate.min.js')}}"></script>
+
+    <script type="text/javascript">
+
+        function updatePatientMeasurement() {
+            $(".update_measurement_data").bind("change", function () {
+                patient_id = $("select[name=reference_id]").val();
+                if (parseInt(patient_id) > 0) {
+                    update_feedback((res) => {
+                        if (res.code == '200') {
+                            toastr.success(res.message)
+                        } else {
+                            toastr.error(res.message)
                         }
+                    }, (xhr, ajaxOptions, thrownError) => {
                     });
                 }
+            });
+        }
 
-                function fieldChangeUpdateBinding() {
+        function fieldChangeUpdateBinding() {
 
-                    $(".update-answer-fields").bind("change", function () {
+            $(".update-answer-fields").bind("change", function () {
 
-                        field_id = this.id.split("cs_field_")[1];
+                field_id = this.id.split("cs_field_")[1];
 
-                        if (field_id != "") {
-                            console.log(this.id);
-                            field_type = $(this).find("input#field_type[type=hidden]").val();
+                if (field_id != "") {
+                    console.log(this.id);
+                    field_type = $(this).find("input#field_type[type=hidden]").val();
 
-                            console.log("field_id : " + field_id);
-                            console.log("field_type : " + field_type);
-                            data = {};
-                            if (field_type == 1) {
-                                text_answer = this.querySelector("input[name=answer]").value;
-                                data["field_value"] = text_answer;
-                            } else if (field_type == 2) {
-                                text_answer = this.querySelector("textarea[name=answer]").value;
-                                data["field_value"] = text_answer;
-                            } else if (field_type == 3) {
-                                radio_answer = this.querySelector("input[name=field_option]:checked");
-                                if (radio_answer) {
-                                    radio_answer = radio_answer.value;
-                                } else {
-                                    radio_answer = "null";
-                                }
-                                data["field_value"] = radio_answer;
-                            }
-                            else if (field_type == 4) {
-                                checkbox = this.querySelectorAll("input[name=field_option]:checked")
-                                if (checkbox.length) {
-                                    checkbox_answer = [];
-                                    for (let i = 0; i < checkbox.length; i++) {
-                                        checkbox_answer[i] = checkbox[i].value;
-                                    }
-                                    data["field_value"] = JSON.stringify(checkbox_answer);
-                                } else {
-                                    data["field_value"] = "null";
-                                }
-
-                            }
-                            else if (field_type == 7) {
-
-                                // options = fields[i].querySelectorAll("table thead th")
-                                rows = this.querySelectorAll("table tbody tr");
-                                row_data = [];
-                                for(let i=0; i< rows.length; i++){
-                                    let row = {};
-                                    row.order = i;
-                                    row.cols = [];
-                                    let cols = rows[i].querySelectorAll("input")
-                                    for(let j =0; j < cols.length; j++){
-                                        let cell = {};
-                                        cell.row = cols[j].getAttribute("row");
-                                        cell.col = cols[j].getAttribute("col");
-                                        cell.question = cols[j].getAttribute("question");
-                                        cell.order = j;
-                                        cell.answer = cols[j].value;
-                                        row.cols.push(cell);
-                                    }
-                                    row_data.push(row);
-                                }
-
-                                if (row_data.length > 0) {
-                                    data["field_value"] = JSON.stringify(row_data);
-                                } else {
-                                    data["field_value"] = "";
-                                }
-
-                            }
-                            else if (field_type == 5) {
-                                selected_value = this.querySelector("select[name=field_option]").value;
-                                data["field_value"] = selected_value;
-                            } else {
-
-                                data["field_value"] = "title";
-                            }
-
-
-                            console.log("data : ");
-                            console.log(data);
-                            update_form_field(field_id, data, (response) => {
-                                console.log(response);
-
-                            }, (xhr, ajaxOptions, thrownError) => {
-
-                            });
+                    console.log("field_id : " + field_id);
+                    console.log("field_type : " + field_type);
+                    data = {};
+                    if (field_type == 1) {
+                        text_answer = this.querySelector("input[name=answer]").value;
+                        data["field_value"] = text_answer;
+                    } else if (field_type == 2) {
+                        text_answer = this.querySelector("textarea[name=answer]").value;
+                        data["field_value"] = text_answer;
+                    } else if (field_type == 3) {
+                        radio_answer = this.querySelector("input[name=field_option]:checked");
+                        if (radio_answer) {
+                            radio_answer = radio_answer.value;
+                        } else {
+                            radio_answer = "null";
                         }
-                    });
+                        data["field_value"] = radio_answer;
+                    }
+                    else if (field_type == 4) {
+                        checkbox = this.querySelectorAll("input[name=field_option]:checked")
+                        if (checkbox.length) {
+                            checkbox_answer = [];
+                            for (let i = 0; i < checkbox.length; i++) {
+                                checkbox_answer[i] = checkbox[i].value;
+                            }
+                            data["field_value"] = JSON.stringify(checkbox_answer);
+                        } else {
+                            data["field_value"] = "null";
+                        }
 
-                }
+                    }
+                    else if (field_type == 7) {
 
-                function update_form_field(field_id, data, success_callback, error_callback) {
+                        // options = fields[i].querySelectorAll("table thead th")
+                        rows = this.querySelectorAll("table tbody tr");
+                        row_data = [];
+                        for(let i=0; i< rows.length; i++){
+                            let row = {};
+                            row.order = i;
+                            row.cols = [];
+                            let cols = rows[i].querySelectorAll("input")
+                            for(let j =0; j < cols.length; j++){
+                                let cell = {};
+                                cell.row = cols[j].getAttribute("row");
+                                cell.col = cols[j].getAttribute("col");
+                                cell.question = cols[j].getAttribute("question");
+                                cell.order = j;
+                                cell.answer = cols[j].value;
+                                row.cols.push(cell);
+                            }
+                            row_data.push(row);
+                        }
 
-                    $.ajax({
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        url: route('admin.custom_form_feedbacks.update_field', {
-                            'feedback_id': $("#feedback_id").val(),
-                            'feedback_field_id': field_id
-                        }),
-                        type: 'POST',
-                        data: data,
-                        cache: false,
-                        success: success_callback,
-                        error: error_callback
-                    });
-                }
+                        if (row_data.length > 0) {
+                            data["field_value"] = JSON.stringify(row_data);
+                        } else {
+                            data["field_value"] = "";
+                        }
 
-                function update_feedback(success_callback, error_callback) {
-                    priority = $("[name=priority]").val();
-                    date = $("[name=date]").val();
-                    type = $("[name=type]").val();
-                    measurement_id = $("[name=measurement_id]").val();
+                    }
+                    else if (field_type == 5) {
+                        selected_value = this.querySelector("select[name=field_option]").value;
+                        data["field_value"] = selected_value;
+                    } else {
 
-                    const data = {
-                        priority: $("[name=priority]").val(),
-                        date: $("[name=date]").val(),
-                        type: $("[name=type]").val(),
-                        measurement_id: $("[name=measurement_id]").val(),
-                    };
+                        data["field_value"] = "title";
+                    }
+
+
+                    console.log("data : ");
                     console.log(data);
-                    $.ajax({
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        url: '{{route('admin.appointmentmeasurement.update',['Id'=>$custom_form->id])}}',
-                        type: 'POST',
-                        data: data,
-                        cache: false,
-                        success: success_callback,
-                        error: error_callback
+                    update_form_field(field_id, data, (response) => {
+                        if (response.status) {
+                            toastr.success(response.message)
+                        } else {
+                            toastr.error(response.message)
+                        }
+
+                    }, (xhr, ajaxOptions, thrownError) => {
+
                     });
                 }
+            });
 
-                $(document).ready(function () {
-                    fieldChangeUpdateBinding();
-                    updatePatientMeasurement();
-                    $(".select2").select2({
-                        placeholder: "Select Patient"
-                    });
-                });
+        }
 
-            </script>
-            <script src="{{'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js'}}"
-                    type="text/javascript"></script>
-            <script src="{{ url('metronic/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"
-                    type="text/javascript"></script>
-            <script>
-                $(document).ready(function () {
-                    var date = new Date();
-                    date.setDate(date.getDate());
-                    $('.date_to_rota_edit').datepicker({
-                        format: 'yyyy-mm-dd',
-                        startDate: date
-                    }).on('changeDate', function (ev) {
-                        $(this).datepicker('hide');
-                    })
-                });
+        function update_form_field(field_id, data, success_callback, error_callback) {
 
-            </script>
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.custom_form_feedbacks.update_field', {
+                    'feedback_id': $("#feedback_id").val(),
+                    'feedback_field_id': field_id
+                }),
+                type: 'POST',
+                data: data,
+                cache: false,
+                success: success_callback,
+                error: error_callback
+            });
+        }
 
-@endsection
+        function update_feedback(success_callback, error_callback) {
+            priority = $("[name=priority]").val();
+            date = $("[name=date]").val();
+            type = $("[name=type]").val();
+            measurement_id = $("[name=measurement_id]").val();
+
+            const data = {
+                priority: $("[name=priority]").val(),
+                date: $("[name=date]").val(),
+                type: $("[name=type]").val(),
+                measurement_id: $("[name=measurement_id]").val(),
+            };
+
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: '{{route('admin.appointmentmeasurement.update', $custom_form->id)}}',
+                type: 'POST',
+                data: data,
+                cache: false,
+                success: success_callback,
+                error: error_callback
+            });
+        }
+
+        $(document).ready(function () {
+            fieldChangeUpdateBinding();
+            updatePatientMeasurement();
+            $(".select2").select2({
+                placeholder: "Select Patient"
+            });
+        });
+
+    </script>
+
+
+@endpush
 

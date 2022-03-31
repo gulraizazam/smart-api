@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Models\Appointments;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -14,7 +15,7 @@ use App\Models\PackageBundles;
 use App\Models\PackageAdvances;
 use App\Models\Discounts;
 use App\Models\Services;
-use App\User;
+use App\Models\User;
 use Config;
 use Carbon\Carbon;
 use App\Models\PaymentModes;
@@ -30,32 +31,50 @@ use App\Models\AppointmentTypes;
 
 class AppointmentsPlansController extends Controller
 {
+    public $success;
+
+    public $error;
+
+    public $unauthorized;
+
+    public function __construct()
+    {
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create($id)
     {
         if (!Gate::allows('patients_plan_create')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $appointmentinformation = Appointments::find($id);
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres(),'full_address');
-        $locations->prepend('Select Centers', '');
 
-        $patients = User::find($appointmentinformation->patient_id);
+        $patient = User::find($appointmentinformation->patient_id);
 
         $random_id = md5(time() . rand(0001, 9999) . rand(78599, 99999));
-        $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name','id');
-        $paymentmodes->prepend('Select Payment Mode','');
+        $paymentmodes = PaymentModes::active()->where('type', '=', 'application')->pluck('name','id');
 
 
         $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();
         $range = explode(':', $customdiscountrange->data);
 
-        return view('admin.appointments.plans.create', compact('patients', 'locations', 'random_id', 'paymentmodes', 'range','appointmentinformation'));
+        return ApiHelper::apiResponse($this->success, 'Records found.', true, [
+            'patient' => $patient,
+            'locations' => $locations,
+            'random_id' => $random_id,
+            'paymentmodes' => $paymentmodes,
+            'range' => $range,
+            'appointmentinformation' => $appointmentinformation
+        ]);
     }
 }

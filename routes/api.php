@@ -1,9 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentimageController;
+use App\Http\Controllers\Admin\AppointmentMeasurementController;
+use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\AppointmentsPlansController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\BundlesController;
 use App\Http\Controllers\Admin\CitiesController;
+use App\Http\Controllers\Admin\ConsultancyInvoiceController;
 use App\Http\Controllers\Admin\DoctorsController;
 use App\Http\Controllers\Admin\LeadsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
@@ -13,6 +18,7 @@ use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\PaymentModesController;
+use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
@@ -55,6 +61,8 @@ use App\Http\Controllers\Admin\OrdersController;
 Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
 
 Route::middleware('auth.common')->name('admin.')->group(function () {
+
+    Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
 
     // Setting Routes
     Route::get('settings/{id}/edit', [SettingsController::class, 'edit'])->name('settings.edit');
@@ -265,6 +273,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
     Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
+    Route::get('users/get_patient_number', [UsersController::class, 'getpatientnumber'])->name('users.get_patient_number');
 
     /*packages*/
     Route::post('plans/planDatatable/{id}', [PackagesController::class, 'planDatatable'])->name('packages.planDatatable');
@@ -296,11 +305,11 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::get('packages/getservice',[PackagesController::class, 'getservices'])->name('packages.getservice');
 
-    Route::get('packages/getservice_for_discount_zero', [PackagesController::class, 'getservices_for_zero'])->name('packages.getserviceinfo_discount_zero');
-
     Route::get('packages/pdf/{id}', [PackagesController::class, 'package_pdf'])->name('packages.package_pdf');
 
     Route::get('packages/getpackage', [PackagesController::class, 'getpackage'])->name('packages.getpackage');
+
+    Route::get('packages/getservice_for_discount_zero', [PackagesController::class, 'getservices_for_zero'])->name('packages.getserviceinfo_discount_zero');
 
     /*Routes for editing the cash in treatment plan*/
     Route::get('packages/edit_cash/{id}/{package_id}',[PackagesController::class, 'editpackageadvancescashindex'])->name('packages.edit_cash');
@@ -312,7 +321,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     // Route for Sms log start
     Route::get('packages/sms_logs/{id}', [PackagesController::class, 'showSMSLogs'])->name('packages.sms_logs');
-    Route::post('packages/send_logged_sms', [PackagesController::class, 'sendLogSMS'])->name('packages.resend_sms');
+    Route::post('packages/send/logged_sms', [PackagesController::class, 'sendLogSMS'])->name('packages.resend_sms');
     // End
 
     Route::get('packages/getappointmentinfo',[PackagesController::class, 'getappointmentinfo'])->name('packages.getappointmentinfo');
@@ -364,6 +373,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Appointment routes*/
     Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
     Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
+    Route::post('appointments/update/schedule', [AppointmentsController::class, 'updateSchedule'])->name('appointments.updateSchedule');
+    Route::get('appointments/schedule/get', [AppointmentsController::class, 'getSchedule'])->name('appointments.get_schedule');
     Route::resource('appointments', AppointmentsController::class);
 
     // Patients routes start
@@ -394,6 +405,11 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::post('patients/updatedocuments/{id}', [PatientsController::class, 'documentupdate'])->name('patients.updatedocuments');
 
+
+    // Appointment Route start for images
+    Route::post('appointmentsimage/datatable/{id}', [AppointmentimageController::class, 'datatable'])->name('appointmentsimage.datatable');
+
+    Route::post('appointmentsmeasurement/datatable/{id}', [AppointmentMeasurementController::class, 'datatable'])->name('appointmentsmeasurement.datatable');
 
     /*Route start for patient pakcage*/
     Route::post('plans/datatable/{id?}', [PackagesController::class, 'datatable'])->name('plans.datatable');
@@ -505,6 +521,43 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::delete('orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
 
     /*Order routes*/
+    Route::get('appointments/load/scheduled-appointments', [AppointmentsController::class, 'getScheduledAppointments'])->name('appointments.load_scheduled_appointments');
+
+    Route::get('appointments/detail/{id}', [AppointmentsController::class, 'detail'])->name('appointments.detail');
+
+    Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
+
+    Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
+
+    Route::get("appointments/center_machines/{location_id}", [AppointmentsController::class, 'center_machines'])->name("appointments.center_machines");
+    Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
+
+    Route::post('appointments/load-node-services', [AppointmentsController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
+    Route::post('appointments/store-service', [AppointmentsController::class, 'storeService'])->name('appointments.store_service');
+
+    Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
+
+    Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
+    // Edit Service
+    Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editService'])->name('appointments.edit_service');
+
+    Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
+
+    Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
+
+    Route::get('appointments/invoice-consultancy/{id}/{type?}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
+
+    Route::any('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
+
+    Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');
+
+    Route::get('appointmentsmedical/medicalcreate/{id}', [AppointmentMedicalController::class, 'create'])->name('appointmentsmedical.create');
+
+    Route::post('appointmentsmedical/{form_id}/{appointment_id}/submit_form', [AppointmentMedicalController::class, 'submit_form'])->name('appointmentsmedical.submit_form');
+
+    /*Route start for plans in appointment module*/
+    Route::get('appointmentplans/{appointment_id}', [AppointmentsPlansController::class, 'create'])->name('appointmentplans.create');
+    /*Route end for plans in appointment module*/
 
 });
 

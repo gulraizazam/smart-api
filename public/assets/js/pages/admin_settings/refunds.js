@@ -3,13 +3,13 @@ var table_url = route('admin.refunds.datatable');
 
 var table_columns = [
     {
+        field: 'patient_id',
+        title: 'Patient ID',
+        sortable: false,
+        width: 'auto',
+    },{
         field: 'name',
         title: 'Name',
-        sortable: false,
-        width: 50,
-    },{
-        field: 'patient_id',
-        title: 'Patient',
         sortable: false,
         width: 'auto',
     },{
@@ -18,7 +18,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
     },{
-        field: 'package_ide',
+        field: 'package_id',
         title: 'Plans',
         sortable: false,
         width: 'auto',
@@ -103,10 +103,7 @@ function refund(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-
             refundData(response);
-
-            reInitSelect2(".select2", "");
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -133,7 +130,7 @@ function refundData(response) {
 
         $("#modal_edit_refunds").modal("show");
 
-        $("#modal_edit_refunds_form").attr("action", route('admin.refunds.update', {id: refund.id}));
+        $("#modal_edit_refunds_form").attr("action", route('admin.refunds.store'));
 
 
         if (refund.document) {
@@ -145,7 +142,13 @@ function refundData(response) {
         }
         $("#refund_amount").html(refund.refundable_amount);
         $("#documentationcharges").val(refund.documentationcharges.data);
-        $("#balance").attr('max', refund.refundable_amount);
+        $("#balance").val(refund.refundable_amount);
+        $("#refund_amount").attr('max', refund.refundable_amount);
+
+        $("#package_id").val(refund.id);
+        $("#is_adjustment_amount").val(refund.is_adjustment_amount);
+        $("#return_tax_amount").val(refund.return_tax_amount);
+        $("#date_backend").val(refund.date_backend);
 
     } catch (error) {
         showException(error);
@@ -159,9 +162,10 @@ function applyFilters(datatable) {
 
         let filters =  {
             delete: '',
-            patient_id: $("#search_id").val(),
-            package_id: $("#search_plans").val(),
+            id: $("#search_id").val(),
+            patient_id: $("#search_patient").val(),
             location_id: $("#search_centres").val(),
+            package_id: $("#search_plans").val(),
             created_from: $("#search_created_from").val(),
             created_to: $("#search_created_to").val(),
             filter: 'filter',
@@ -216,15 +220,13 @@ function setFilters(filter_values, active_filters) {
 
 
         $("#search_plans").html(package_options);
-        $("#search_centres").html(location_options);
         $("#search_id").html(patients_options);
 
         $("#search_id").val(active_filters.patient_id);
-        $("#search_plans").val(active_filters.package_id);
         $("#search_created_from").val(active_filters.created_from);
         $("#search_created_to").val(active_filters.created_to);
+        $("#search_centres").html(location_options);
         $("#search_centres").val(active_filters.location_id);
-        //$("#search_phone").val(active_filters.phone);
 
         hideShowAdvanceFilters(active_filters);
 

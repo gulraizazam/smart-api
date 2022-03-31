@@ -261,6 +261,13 @@ jQuery(document).ready(function() {
             $(".table-checkboxes").prop('checked', false);
             $(".delete-records").addClass('d-none');
         }
+
+        if ($(".table-checkboxes:checked").length == $(".table-checkboxes").length) {
+            $(".select-all-checkboxes").prop('checked', true);
+        } else {
+            $(".select-all-checkboxes").prop('checked', true);
+        }
+
         setRowIds($(".table-checkboxes:checked"));
     });
 
@@ -268,10 +275,17 @@ jQuery(document).ready(function() {
         $(".table-checkboxes").each(function () {
             if ($(".table-checkboxes").is(":checked")) {
                 $(".delete-records").removeClass('d-none');
-                $(".checkbox-count").text($(".table-checkboxes:checked").length)
+                $(".checkbox-count").text($(".table-checkboxes:checked").length);
             } else {
                 $(".delete-records").addClass('d-none');
             }
+
+            if ($(".table-checkboxes:checked").length == $(".table-checkboxes").length) {
+                $(".select-all-checkboxes").prop('checked', true);
+            } else {
+                $(".select-all-checkboxes").prop('checked', false);
+            }
+
         });
 
         setRowIds($(".table-checkboxes:checked"));

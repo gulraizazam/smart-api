@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\User;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -29,12 +29,12 @@ class CustomForms extends BaseModal
 
     public function getCreatedAtAttribute($value)
     {
-        return Carbon::parse($value)->format('F j,Y h:i A'); 
+        return Carbon::parse($value)->format('F j,Y h:i A');
     }
 
     public static function activateRecord($id)
     {
-        try { 
+        try {
             $custom_form = self::getData($id);
             $custom_form->update(['active' => 1]);
             AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
@@ -52,7 +52,7 @@ class CustomForms extends BaseModal
 
     public static function inactivateRecord($id)
     {
-        try{ 
+        try{
             $custom_form = CustomForms::getData($id);
             $custom_form->update(['active' => 0]);
             AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
@@ -214,7 +214,7 @@ class CustomForms extends BaseModal
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false,$apply_filter = false)
     {
         $where = self::custom_forms_filters($request, $account_id, $apply_filter);
-       
+
         if ($request->has('sort')) {
 
             list($orderBy, $order) = getSortBy($request);

@@ -53,7 +53,8 @@
 	use Illuminate\Support\Facades\DB;
 	use Illuminate\Http\Request;
 	use Illuminate\Support\Facades\Gate;
-	use PhpOffice\PhpSpreadsheet\Spreadsheet;
+    use Illuminate\Validation\Rule;
+    use PhpOffice\PhpSpreadsheet\Spreadsheet;
 	use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 	use Illuminate\Support\Facades\Validator;
 	use App\Models\Packages;
@@ -1098,10 +1099,14 @@
 						'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
 						'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
 						'doctor_id' => $appointment->doctor->name ?? 'N/A',
+						'doctorId' => $appointment->doctor->id ?? 0,
 						'region_id' => (array_key_exists($appointment->region_id, $Regions)) ? $Regions[$appointment->region_id]->name : 'N/A',
 						'city_id' => $appointment->city_id ? $appointment->city->name : 'N/A',
+						'cityId' => $appointment->city_id ?? 0,
 						'location_id' => $appointment->location_id ? $appointment->location->name : 'N/A',
+						'locationId' => $appointment->location_id ?? 'N/A',
 						'service_id' => $appointment->service->name ?? 'N/A',
+						'resource_id' => $appointment->resource_id ?? 0,
 						'appointment_type_id' => $appointment->appointment_type->name,
 						'appointment_type' => $appointment->appointment_type->id,
 						'consultancy_type' => $consultancy_type,
@@ -1317,7 +1322,6 @@
 			$employees = User::getAllActiveRecords(Auth::User()->account_id);
 			if ($employees) {
 				$employees = $employees->pluck('full_name', 'id');
-				$employees->prepend('Select a Referrer', '');
 			} else {
 				$employees = array();
 			}
@@ -1349,20 +1353,20 @@
 		 * Validate form fields
 		 *
 		 * @param \Illuminate\Http\Request $request
-		 * @return Validator $validator;
+		 * @return \Illuminate\Contracts\Validation\Validator
 		 */
-		protected function verifyFields(Request $request)
+		protected function verifyFields(Request $request, $id = null)
 		{
-			return $validator = Validator::make($request->all(), [
+            $data = $request->all();
+            $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+
+			return $validator = Validator::make($data, [
 				'name' => 'required',
-				'phone' => 'required',
-
-//            'scheduled_date' => 'required',
-//            'scheduled_time' => 'required',
-
-				/*            'city_id' => 'required',
-                        'location_id' => 'required',
-                        'doctor_id' => 'required',*/
+                //'phone' => 'required|unique:users',
+                'phone' => [
+                    'required',
+                    Rule::unique('users')->ignore($id),
+                ],
 			]);
 		}
 
@@ -1396,7 +1400,7 @@
 			if (!Gate::allows('appointments_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
-			$validator = $this->verifyFields($request);
+			$validator = $this->verifyFields($request, $request->patient_id);
 
 			if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
@@ -1579,6 +1583,7 @@
 			$appointmentData['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
 			$appointmentData['updated_by'] = Auth::User()->id;
 
+			//dd($appointmentData);
 			$appointment = Appointments::create($appointmentData);
 
 			/* Now We need to update name of all appointments that already in appointment table against patient
@@ -1758,7 +1763,7 @@
 		public function createTreatmentAppointment(Request $request)
 		{
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
 			}
 			if (
 				$request->get("city_id") &&
@@ -1774,7 +1779,7 @@
 				$location_id = 0;
 				$doctor_id = 0;
 
-				return response()->json(array("message" => "Invalid request"), 400);
+                return ApiHelper::apiResponse($this->success, 'Invalid request.', false);
 			}
 
 			if ($request->start) {
@@ -1829,7 +1834,6 @@
 			$employees = User::getAllActiveRecords(Auth::User()->account_id);
 			if ($employees) {
 				$employees = $employees->pluck('full_name', 'id');
-				$employees->prepend('Select a Referrer', 0);
 			} else {
 				$employees = array();
 			}
@@ -1845,25 +1849,30 @@
 
 			if (count($serviceIds)) {
 				$services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
-				$services->prepend('Select a Service', '');
 			} else {
-				$services[''] = 'Select a Service';
+				$services[''] = '';
 			}
 
-
-//        $services = Services::where("end_node", '=', 0)->get()->pluck('name', 'id');
-//        $services->prepend('Select a Service', '');
-
 			$lead_sources = LeadSources::getActiveSorted();
-			$lead_sources->prepend('Select a Lead Source', '');
 
 			// Get location based doctors
 			$doctors = Doctors::getLocationDoctors();
 
-			$towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
-			$towns->prepend('Select a Town', '');
+			$towns = Towns::getActiveTowns();
 
-			return view('admin.appointments.services.create', compact('lead_sources', 'services', 'doctors', 'city_id', 'location_id', 'doctor_id', 'lead', 'employees', 'appointment_checkes', 'towns'));
+            return ApiHelper::apiResponse($this->success, $appointment_checkes['message'] ?? 'Record found', $appointment_checkes['status'], [
+                'lead_sources' => $lead_sources,
+                'services' => $services,
+                'doctors' => $doctors,
+                'city_id' => $city_id,
+                'location_id' => $location_id,
+                'doctor_id' => $doctor_id,
+                'lead' => $lead,
+                'employees' => $employees,
+                'appointment_checkes' => $appointment_checkes,
+                'towns' => $towns,
+                'genders' => Config::get("constants.gender_array")
+            ]);
 		}
 
 		/*
@@ -1882,7 +1891,7 @@
 		public function createConsultingAppointment(Request $request)
 		{
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 			if (
 				$request->get("city_id") &&
@@ -1949,7 +1958,6 @@
 			$employees = User::getAllActiveRecords(Auth::User()->account_id);
 			if ($employees) {
 				$employees = $employees->pluck('full_name', 'id');
-				$employees->prepend('Select a Referrer', 0);
 			} else {
 				$employees = array();
 			}
@@ -1958,23 +1966,41 @@
 			$serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->get("location_id"), $request->get("doctor_id"), Auth::User()->account_id);
 			if (count($serviceIds)) {
 				$services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
-				$services->prepend('Select a Service', '');
 			} else {
-				$services[''] = 'Select a Service';
+				$services[''] = '';
 			}
 
 			$lead_sources = LeadSources::getActiveSorted();
-			$lead_sources->prepend('Select a Lead Source', '');
 
 			// Get location based doctors
-			$doctors = Doctors::getLocationDoctors();
+			//$doctors = Doctors::getLocationDoctors();
 
-			$towns = Towns::getActiveTowns();//->pluck('fullname', 'id');
-			$towns->prepend('Select a Town', '');
+			//$towns = Towns::getActiveTowns();
 
 			$setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
 
-			return view('admin.appointments.consultancy.create', compact('lead_sources', 'services', 'doctors', 'city_id', 'location_id', 'doctor_id', 'lead', 'employees', 'appointment_checkes', 'towns', 'setting'));
+			if ($appointment_checkes['status']) {
+
+                return ApiHelper::apiResponse($this->success, 'Data Found.', true, [
+                    'lead_sources' => $lead_sources,
+                    'services' => $services,
+                   // 'doctors' => $doctors,
+                    'city_id' => $city_id,
+                    'location_id' => $location_id,
+                    'doctor_id' => $doctor_id,
+                    'lead' => $lead,
+                    'employees' => $employees,
+                    'appointment_checkes' => $appointment_checkes,
+                   // 'towns' => $towns,
+                    'setting' => $setting,
+                    'consultancy_types' => Config::get("constants.consultancy_type_array"),
+                    'genders' => Config::get("constants.gender_array")
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
+
+            //return view('admin.appointments.consultancy.create', compact());
 
 		}
 
@@ -1990,12 +2016,12 @@
 		 * Show details.
 		 *
 		 * @param int $id
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function detail($id)
 		{
 			if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 			$invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
 			$invoice = Invoices::where([
@@ -2009,8 +2035,37 @@
 				$invoiceid = null;
 			}
 
-			$appointment = Appointments::findOrFail($id);
-			return view('admin.appointments.detailTo', compact('appointment', 'invoice', 'invoiceid'));
+			$appointment = Appointments::with(
+			    'patient',
+                'doctor', 'city',
+                'location',
+                'appointment_status',
+                'service',
+                'appointment_comments.user'
+            )
+                ->find($id);
+
+			if (! $appointment) {
+                return ApiHelper::apiResponse($this->success, 'Appointment not found.', false);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Data found.',  true, [
+                'appointment' => $appointment,
+                'invoice' => $invoice,
+                'invoiceid' => $invoiceid,
+                'permissions' => [
+                    'edit' => Gate::allows('appointments_edit'),
+                    'invoice' => Gate::allows('appointments_invoice'),
+                    'invoice_display' => Gate::allows('appointments_invoice_display'),
+                    'image_manage' => Gate::allows('appointments_image_manage'),
+                    'measurement_manage' => Gate::allows('appointments_measurement_manage'),
+                    'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
+                    'plans_create' => Gate::allows('appointments_plans_create'),
+                    'patient_card' => Gate::allows('appointments_patient_card'),
+                    'log' => Gate::allows('appointments_log'),
+                    'contact' => Gate::allows('contact')
+                ]
+            ]);
 		}
 
 		/**
@@ -2052,7 +2107,7 @@
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
 			foreach ($locations as $location) {
 				$location_serivce = AppointmentEditWidget::loadlocationservice_edit($location->id, Auth::User()->account_id, $reverse_process);
-				if (in_array($serviceid->id, $location_serivce)) {
+				if (isset($serviceid) && in_array($serviceid->id, $location_serivce)) {
 					$locationsids[] = $location->id;
 				}
 			}
@@ -2066,7 +2121,7 @@
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
 			foreach ($doctors as $key => $doctor) {
 				$doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $appointment->location_id, Auth::User()->account_id, $reverse_process);
-				if (in_array($serviceid->id, $doctor_serivce)) {
+				if (isset($serviceid) && in_array($serviceid->id, $doctor_serivce)) {
 					$doctorids[] = $key;
 				}
 			}
@@ -2109,19 +2164,23 @@
 		 * Show the form for editing Appointment.
 		 *
 		 * @param int $id
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function editService($id)
 		{
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
 			$locationsids = array();
 			$doctorids = array();
 			$machineids = array();
 
-			$appointment = Appointments::findOrFail($id);
+			$appointment = Appointments::with('patient', 'doctor', 'lead.patient')->find($id);
+
+			if (! $appointment) {
+                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            }
 
 			$resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
 			$machineHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id_for_machine);
@@ -2133,7 +2192,6 @@
 			if ($cities) {
 				$cities = $cities->pluck('full_name', 'id');
 			}
-			$cities->prepend('Select a City', '');
 
 			if ($appointment->service_id) {
 				$services = $serviceid = Services::where(['id' => $appointment->service_id])->get()->pluck('name', 'id');
@@ -2141,7 +2199,6 @@
 			} else {
 				$services = Services::get()->pluck('name', 'id');
 			}
-			$services->prepend('Select a Service', '');
 
 			$locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::User()->account_id);
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
@@ -2156,7 +2213,6 @@
 			if ($locations) {
 				$locations = $locations->pluck("name", "id");
 			}
-			$locations->prepend('Select a Centre', '');
 
 			$doctors = $doctors_no_final = Doctors::getActiveOnly($appointment->location_id, Auth::User()->account_id);
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
@@ -2180,14 +2236,14 @@
 					}
 				}
 			}
-			$doctors->prepend('Select a Doctor', '');
 
 			$machines = Resources::where([
 				["resource_type_id", "=", config("constants.resource_room_type_id")],
 				["location_id", "=", $appointment->location_id],
-				["account_id", "=", Auth::User()->account_id]],
+				["account_id", "=", Auth::user()->account_id]],
 				["actvie", "=", 1]
 			)->get();
+
 			/*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
 			foreach ($machines as $machine) {
 				$machinetypeid = MachineType::where('id', '=', $machine->machine_type_id)->first();
@@ -2197,12 +2253,26 @@
 				}
 			}
 			$machines = Resources::whereIn('id', $machineids)->get()->pluck('name', 'id');
+
 			/*End*/
-			$machines->prepend('Select a Machine', '');
 
 			$back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
 
-			return view('admin.appointments.services.service_edit', compact('appointment', 'cities', 'services', 'locations', 'doctors', 'machines', 'resourceHadRotaDay', 'machineHadRotaDay', 'biggerTime', 'smallerTime', 'back_date_config'));
+            return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+                'appointment' => $appointment,
+                'cities' => $cities,
+                'services' => $services,
+                'locations' => $locations,
+                'doctors' => $doctors,
+                'machines' => $machines,
+                'resourceHadRotaDay' => $resourceHadRotaDay,
+                'machineHadRotaDay' => $machineHadRotaDay,
+                'biggerTime' => $biggerTime,
+                'smallerTime' => $smallerTime,
+                'back_date_config' => $back_date_config,
+                'genders' => config('constants.gender_array'),
+                'consultancy_type' => config('constants.consultancy_type_array'),
+            ]);
 		}
 
 		/**
@@ -3109,7 +3179,7 @@
 				$request->get("doctor_id")
 			) {
 				$appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-				$doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"))->toArray();
+				$doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
 				$location_id = $request->get("location_id");
 				$doctor_id = $request->get("doctor_id");
 				$machine_id = $request->get("machine_id");
@@ -3123,28 +3193,30 @@
 
 						$dutation = explode(':', $appointment->service->duration);
 
-						$data[$appointment->id] = array(
-							'id' => $appointment->id,
-							'service' => $appointment->service->name,
-							'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
-							'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-							'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
-							'duration' => $appointment->service->duration,
-							'editable' => true,
-							'overlap' => false,
-							'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-							'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-							'color' => $appointment->service->color,
-							'resourceId' => $appointment->doctor_id,
-						);
+                        $data[$appointment->id] = array(
+                            'id' => $appointment->id,
+                            'service' => $appointment->service->name,
+                            'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                            'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
+                            'phone' => GeneralFunctions::prepareNumber4Call($appointment?->patient?->phone ?? '0300'),
+                            'duration' => $appointment->service->duration,
+                            'editable' => true,
+                            'overlap' => false,
+                            'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
+                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
+                            'color' => $appointment->service->color,
+                            'resourceId' => $appointment->doctor_id,
+                        );
 					}
 
-					return response()->json(array(
-						'status' => 1,
-						'events' => $data,
-						'min_time' => $minTime,
-						"rotas" => $doctor_rotas
-					));
+                    return response()->json(array(
+                        'status' => 1,
+                        'events' => $data,
+                        'min_time' => $minTime,
+                        "rotas" => $doctor_rotas->toArray(),
+                        'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
+                        'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
+                    ));
 				} else {
 					return response()->json(array(
 						'status' => 0,
@@ -3205,10 +3277,7 @@
 							['invoice_status_id', '=', $invoicestatus->id]
 						])->get();
 						if (count($invoice) > 0) {
-							return response()->json(array(
-								'status' => 0,
-								"message" => trans("global.appointments.invoice_paid_message")
-							), 200);
+						    return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
 						}
 
 						$record = Appointments::updateRecord($request->get("id"), $data, Auth::User()->account_id);
@@ -3236,29 +3305,17 @@
 								])
 							);
 
-							return response()->json(array(
-								'status' => 1,
-								"message" => "Event Updated Successfully"
-							));
+                            return ApiHelper::apiResponse($this->success, 'Event Updated Successfully');
 						}
-					} else {
-						return response()->json(array(
-							'status' => 0,
-							"message" => "Doctor is not available"
-						), 200);
 					}
-				} else {
-					return response()->json(array(
-						'status' => 0,
-						"message" => "Invalid paramters"
-					), 200);
+
+                    return ApiHelper::apiResponse($this->success, 'Doctor is not available', false);
 				}
-			} else {
-				return response()->json(array(
-					'status' => 0,
-					"message" => $appointment_checkes['message']
-				));
+
+                return ApiHelper::apiResponse($this->success, 'Invalid paramters', false);
 			}
+
+            return ApiHelper::apiResponse($this->success,  $appointment_checkes['message'], false);
 		}
 
 		/*
@@ -3339,7 +3396,7 @@
 		public function invoice($id)
 		{
 			if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
 			$invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
@@ -4037,7 +4094,6 @@
 			$employees = User::getAllActiveRecords(Auth::User()->account_id);
 			if ($employees) {
 				$employees = $employees->pluck('full_name', 'id');
-				$employees->prepend('Select a Referrer', '');
 			} else {
 				$employees = array();
 			}
@@ -4091,23 +4147,19 @@
 		 * Store a newly created Appointment in storage.
 		 *
 		 * @param \Illuminate\Http\Request $request
-		 * @return \Illuminate\Http\Response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function storeService(Request $request)
 		{
 			$messages = array();
 			if (!Gate::allows('appointments_manage')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 
-			$validator = $this->verifyServiceFields($request);
+			$validator = $this->verifyServiceFields($request, $request->patient_id);
 
 			if ($validator->fails()) {
-				return response()->json(array(
-					'status' => 0,
-					'message' => $validator->messages()->all(),
-					'id' => 0,
-				));
+                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
 			}
 			// Store form data in a variable
 			$appointmentData = $request->all();
@@ -4133,7 +4185,7 @@
 				}
 
 			} else {
-				$messages[] = "Appointment types is not set";
+			    return ApiHelper::apiResponse($this->success, "Appointment types is not set", false);
 			}
 
 			// Set Appointment Status
@@ -4185,7 +4237,7 @@
                         $appointmentData['resource_id'] = $request->get("resource_id");
                     }
                 } else {
-                    $messages[] = "Doctor is not available and Appointment is not scheduled";
+                    return ApiHelper::apiResponse($this->success, "Doctor or machine is not available and Appointment is not scheduled.", false);
                 }
             }
 
@@ -4376,13 +4428,10 @@
 				])
 			);
 
-
-			return response()->json(array(
-				'status' => 1,
-				'message' => $message,
-				"log" => $messages,
-				'id' => $appointment->id,
-			));
+            return ApiHelper::apiResponse($this->success, $message, true, [
+                "log" => $messages,
+                'id' => $appointment->id,
+            ]);
 
 //        return redirect()->route('admin.appointments.index');
 		}
@@ -4391,16 +4440,19 @@
 		 * Validate form fields
 		 *
 		 * @param \Illuminate\Http\Request $request
-		 * @return Validator $validator;
+		 * @return \Illuminate\Contracts\Validation\Validator
 		 */
-		protected function verifyServiceFields(Request $request)
+		protected function verifyServiceFields(Request $request, $id = null)
 		{
-			return $validator = Validator::make($request->all(), [
-				'name' => 'required',
-				'phone' => 'required',
+            $data = $request->all();
+            $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
 
-//            'scheduled_date' => 'required',
-//            'scheduled_time' => 'required',
+			return Validator::make($data, [
+				'name' => 'required',
+                'phone' => [
+                    'required',
+                    Rule::unique('users')->ignore($id),
+                ],
 
 				'city_id' => 'required',
 				'location_id' => 'required',
@@ -4486,9 +4538,9 @@
 				$minTime = Resources::getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end);
 
 				if ($request->has("start") && $request->has("end")) {
-					$doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end"))->toArray();
+					$doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end"));
 				} else {
-					$doctor_rotas = [];
+					$doctor_rotas = collect();
 				}
 				if ($appointments) {
 					$data = array();
@@ -4512,15 +4564,18 @@
 						);
 					}
 					$resource_ids = array();
-					foreach ($resources as $resource) {
+                    $resources = array_filter($resources);
+                    foreach ($resources as $resource) {
 						$resource_ids[] = $resource["id"];
 					}
 					return response()->json(array(
 						'status' => 1,
 						'events' => $data,
-						'rotas' => $doctor_rotas,
+						'rotas' => $doctor_rotas->toArray(),
 						'min_time' => $minTime,
-						'resource_ids' => $resource_ids
+						'resource_ids' => $resource_ids,
+                         'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
+                        'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
 					));
 				} else {
 					return response()->json(array(
@@ -4595,10 +4650,7 @@
 								['invoice_status_id', '=', $invoicestatus->id]
 							])->get();
 							if (count($invoice) > 0) {
-								return response()->json(array(
-									'status' => 0,
-									"message" => trans("global.appointments.invoice_paid_message")
-								), 200);
+							    return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
 							}
 							$record = Appointments::updateServiceRecord($request->get("id"), $data, Auth::User()->account_id);
 							if ($record) {
@@ -4622,66 +4674,46 @@
 									])
 								);
 
-								return response()->json(array(
-									'status' => 1,
-									"message" => "Event Updated Successfully"
-								));
+                                return ApiHelper::apiResponse($this->success, 'Event Updated Successfully.');
 							}
-						} else {
-							$response = response()->json(array(
-								'status' => 0,
-								"message" => "Doctor is Available But Machine is not available",
-								'data' => array("doctor" => $doctor_check_availability, "room" => null)
-							));
 						}
-					} else {
+
+                        return ApiHelper::apiResponse($this->success, 'Doctor is Available But Machine is not available.', false);
+
+
+                    } else {
 						if ($room_check_availability) {
-							$response = response()->json(array(
-								'status' => 0,
-								"message" => "Machine is Available. But Doctor is not",
-								'data' => array("room" => $room_check_availability, "doctor" => null)
-							));
-						} else {
-							$response = response()->json(array(
-								'status' => 0,
-								"message" => "Neither Doctor nor Machine available",
-								'data' => array("room" => null, "doctor" => null)
-							));
+
+                            return ApiHelper::apiResponse($this->success, 'Machine is Available. But Doctor is not.', false);
+
 						}
 
-
-					}
-
-				} else {
-					$response = response()->json(array(
-						'status' => 0,
-						"message" => "Requested paramter not provided"
-					));
+                        return ApiHelper::apiResponse($this->success, 'Neither Doctor nor Machine available.', false);
+                    }
 				}
-			} else {
-				$response = response()->json(array(
-					'status' => 0,
-					"message" => $appointment_checkes['message']
-				));
+
+                return ApiHelper::apiResponse($this->success, 'Requested parameter not provided.', false);
 			}
-			return $response;
+
+            return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
 		}
 
+        /**
+         * @param Request $request
+         * @return \Illuminate\Http\JsonResponse
+         */
 		public function loadEndServiceByBaseService(Request $request)
 		{
 
 			if ($request->get("service_id")) {
 				$services = Appointments::getNodeServices($request->get('service_id'), Auth::User()->account_id, true, true);
-				return response()->json(array(
-					'status' => 1,
-					'dropdown' => view('admin.appointments.dropdowns.node_services', compact('services'))->render(),
-				));
-			} else {
-				return response()->json(array(
-					'status' => 0,
-					'dropdown' => null,
-				));
+
+				return ApiHelper::apiResponse($this->success, 'Record found', true, [
+				    'services' => $services
+                ]);
+
 			}
+            return ApiHelper::apiResponse($this->success, 'Record not found', false);
 		}
 
 		/*
@@ -4764,18 +4796,17 @@
 			} else {
 				$machines = Resources::where([["resource_type_id", "=", config("constants.resource_room_type_id")], ["active", "=", '1'], ["location_id", "=", $location_id], ["account_id", "=", Auth::User()->account_id]])->get()->pluck("name", "id");
 			}
-			$machines->prepend('Select a Machine', '');
+
 			if ($machines) {
-				return response()->json(array(
-					'status' => 1,
-					'dropdown' => view('admin.appointments.dropdowns.machines', compact('machines'))->render(),
-				));
-			} else {
-				response()->json(array(
-					'status' => 0,
-					'dropdown' => null,
-				));
+			    return ApiHelper::apiResponse($this->success, 'recourd found', true, [
+                    'dropdown' => $machines,
+                ]);
+
 			}
+
+            return ApiHelper::apiResponse($this->success, 'recourd found', false, [
+                'dropdown' => null,
+            ]);
 		}
 
 		/************************************************************
@@ -4839,7 +4870,7 @@
 		public function displayInvoiceAppointment($id)
 		{
 			if (!Gate::allows('appointments_invoice_display')) {
-				return abort(401);
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 			}
 			$Invoiceinfo = DB::table('invoices')
 				->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
@@ -4885,7 +4916,7 @@
 			$account = Accounts::find($Invoiceinfo->account_id);
 			$company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
 
-			return view('admin.invoices.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
+			return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
 		}
 
 		/*
@@ -5209,6 +5240,9 @@
      *
      * params @appointment_id
      * */
+        function logPage($id) {
+            return view('admin.appointments.logs.appointmentlog', compact('id'));
+        }
 
 		public function viewLog($id, $type)
 		{
@@ -5298,7 +5332,20 @@
 			}
 
 			if ($type === 'web') {
-				return view('admin.appointments.logs.appointmentlog', compact('id', 'data', 'appointment'));
+			    $records['data'] = $data;
+
+                $records["meta"] = [
+                    'field' => "action",
+                    'page' => 1,
+                    'pages' => count($data),
+                    'perpage' => 20,
+                    'total' => count($data),
+                    'sort' => "DESC",
+                ];
+
+			    return ApiHelper::apiDataTable($records);
+
+			    //return view('admin.appointments.logs.appointmentlog', compact('id', 'data', 'appointment'));
 			}
 
 			return $this->viewLogInExcel($id, $data);
@@ -5470,7 +5517,37 @@
 		}
 
 
-		public function export() {
-            return Excel::download(new ExportAppointment, 'appointments.xlsx');
+		public function export($limit = 1000, $offset = 0) {
+
+            ini_set('memory_limit', '1024M');
+            ini_set('max_execution_time', '0'); // for infinite time of execution
+
+            return Excel::download(new ExportAppointment($limit, $offset), 'appointments.xlsx');
+        }
+
+        public function getSchedule(Request $request) {
+
+            $appointment = Appointments::select('id', 'scheduled_date', 'scheduled_time')->find($request->id);
+
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'appointment' => $appointment
+            ]);
+        }
+
+        public function updateSchedule(Request $request) {
+
+            $appointment = Appointments::find($request->appointment_id);
+             if ($appointment) {
+                 $appointment->update([
+                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
+                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
+                     'updated_by' => auth()->id(),
+                 ]);
+
+                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
+             }
+
+            return ApiHelper::apiResponse($this->success, 'Appointment not found!', false);
+
         }
 	}
