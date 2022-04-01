@@ -289,7 +289,36 @@ var table_columns = [
             return actions(data);
         }
 }];
+function actions(data) {
+    let id = data.id;
+    let refund_url = route('admin.orders.refund', {id: id});
+    if (permissions.refund) {
+        let actions = '<div class="dropdown dropdown-inline action-dots">\
+            <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+                <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+            </a>\
+            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
+                <ul class="navi flex-column navi-hover py-2">\
+                    <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
+                        Choose an action: \
+                        </li>';
+            if (permissions.refund) {
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="refundOrder(`' + refund_url + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-plus"></i></span>\
+                        <span class="navi-text">Refund Order</span>\
+                        </a>\
+                     </li>';
+            }
 
+        actions += '</ul>\
+            </div>\
+        </div>';
+
+        return actions;
+    }
+    return '';
+}
 function removeProducts() {
     $('.product_id').val(null).trigger('change');
     $("#add_price").val('');
@@ -312,6 +341,16 @@ function displayProducts(orders){
         }
     }
     return productHtml;
+}
+
+function sumProductsQuantity(orders){
+    let quantitySum = '';
+    if(orders != null){
+        for(let order=0; order<orders.length;order++){
+            quantitySum+= orders[order].quantity;
+        }
+    }
+    return quantitySum;
 }
 
 function applyFilters(datatable) {

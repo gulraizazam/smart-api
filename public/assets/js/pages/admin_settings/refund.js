@@ -182,7 +182,13 @@ function displayRefundOrderDetail(data){
    lists = '';
    if(orders.length > 0){
     for (let order = 0; order < orders.length; order++) {
-        lists+='<tr class="text-center" id="tr_'+order+'"><td>'+orders[order].product.name+'</td><td>'+orders[order].discount.name+'</td><td>'+orders[order].quantity+'</td><td>'+orders[order].sale_price_after_discount+'</td></tr>';
+        if(orders[order].discount == null){
+            var discount = '';
+        }else{
+            var discount = orders[order].discount.name;
+        }
+        
+        lists+='<tr class="text-center" id="tr_'+order+'"><td>'+orders[order].product.name+'</td><td>'+discount+'</td><td>'+orders[order].quantity+'</td><td>'+orders[order].sale_price_after_discount+'</td></tr>';
     }
     }else{
         lists+='<tr class="text-center"><td colspan="8">No record found</td></tr>';

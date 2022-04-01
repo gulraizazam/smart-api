@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\OrderDetail;
 use App\HelperModule\ApiHelper;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller\UsersController;
 use App\Models\Stock;
 
@@ -35,6 +36,9 @@ class OrdersController extends Controller
      */
     public function index()
     {
+        if (!Gate::allows('order_manage')) {
+            return abort(401);
+        }
         return view('admin.orders.index');
     }
 
@@ -83,7 +87,10 @@ class OrdersController extends Controller
             //$products = Product::getAllRecordsDictionary(Auth::User()->account_id);
 
             $records["data"] = $orders;
-            $records["permissions"] = [];
+            $records["permissions"] = [
+                'manage' => Gate::allows('product_manage'),
+                'refund' => Gate::allows('refund_manage'),
+            ];
             $records['active_filters'] = $apply_filter;
             $records["meta"] = [
                 'field' => $orderBy,
@@ -105,7 +112,10 @@ class OrdersController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function refund()
-    {
+    {   
+        if (!Gate::allows('refund_manage')) {
+            return abort(401);
+        }
         return view('admin.inventory_refunds.index');
     }
 
@@ -184,6 +194,9 @@ class OrdersController extends Controller
      */
     public function orderRefund($id)
     {
+        if (!Gate::allows('refund_manage')) {
+            return abort(401);
+        }
         $order_refund = Order::refund($id);
         if($order_refund){
             $order_detail_refund = OrderDetail::refund($id,$order_refund->id);
@@ -231,7 +244,9 @@ class OrdersController extends Controller
     public function store(Request $request)
     {
         try {
-            dd($request->all());
+            if (!Gate::allows('order_create')) {
+                return abort(401);
+            }
             $order = Order::createRecord($request, Auth::User()->account_id);
             if ($order) {
                 if(OrderDetail::createRecord($request, Auth::User()->account_id,$order->id)){
@@ -256,9 +271,6 @@ class OrdersController extends Controller
     public function cancel($id)
     {
         try {
-            // if (!Gate::allows('brands_edit')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
            $response = Order::CancelRecord($id);
            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
@@ -275,9 +287,6 @@ class OrdersController extends Controller
     public function destroy($id)
     {
         try {
-            // if (!Gate::allows('brands_destroy')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
             $response = Order::DeleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
@@ -287,6 +296,9 @@ class OrdersController extends Controller
 
     function orderRefundDetail($id){
         try{
+            if (!Gate::allows('refund_manage')) {
+                return abort(401);
+            }
             $records = array();
             $orders = Order::with('patients','orders.product','orders.discount')->find($id);
             $records["data"] = $orders;
