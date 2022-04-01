@@ -1094,6 +1094,7 @@
 					}
 					$records["data"][$index] = array(
 						'id' => $appointment->app_id,
+						'patient_id' => $appointment->patient_id,
 						'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
 						'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
 						'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),

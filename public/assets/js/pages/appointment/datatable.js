@@ -364,7 +364,7 @@ function actions(data) {
     let medicals_url = route('admin.appointmentsmedical.medicals', {id: id});
     let plan_url = route('admin.appointmentplans.create', {id: id});
     let delete_url = route('admin.appointments.destroy', {id: id});
-    let patient_url = route('admin.patients.preview', {id: data.Patient_ID});
+    let patient_url = route('admin.patients.preview', {id: data.patient_id});
     let viewlog_url = route('admin.appointments.loadPage', {id: id, type: 'web'});
 
     if (

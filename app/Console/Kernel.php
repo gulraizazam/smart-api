@@ -57,11 +57,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $timeZone = 'Asia/Karachi';
         /*
           * 2nd message one day before appointment at 8PM
           */
         $schedule->command('appointment:2nd-message-on-appointment-day')
-            ->dailyAt('19:50')->timezone('Asia/Karachi');
+            ->dailyAt('19:50')->timezone($timeZone);
 
         /*
          * 	3rd message 2 hours before appointment
@@ -80,8 +81,7 @@ class Kernel extends ConsoleKernel
          */
         $schedule->command('appointment:deliver-on-appointment-book')
             ->withoutOverlapping()
-            ->everyMinute()
-        ;
+            ->everyMinute();
 
         /*
          * Handle heavy lifting of jobs
@@ -94,13 +94,13 @@ class Kernel extends ConsoleKernel
          * Run daily backup command
          */
         $schedule->command('db:backup')
-            ->dailyAt('23:59')->timezone('Asia/Karachi');
+            ->dailyAt('23:59')->timezone($timeZone);
 
         /*
          * Run old daily backup remover command
          */
         $schedule->command('db:backup-old-remove')
-            ->dailyAt('23:55')->timezone('Asia/Karachi');
+            ->dailyAt('23:55')->timezone($timeZone);
 
 
         /*
@@ -108,27 +108,27 @@ class Kernel extends ConsoleKernel
          */
 
         $schedule->command('discounts:inactive')
-            ->dailyAt('01:00')->timezone('Asia/Karachi');
+            ->dailyAt('01:00')->timezone($timeZone);
 
         /*
          * Inactive all the bundles which has previous day equals to the end date of the bundle
          */
 
         $schedule->command('bundles:inactive')
-            ->dailyAt('01:00')->timezone('Asia/Karachi');
+            ->dailyAt('01:00')->timezone($timeZone);
         /*
          * Take backup of DATABASE and APPLICATION both
          * */
 
         $schedule->command('backup:run')
-            ->dailyAt('01:30')->timezone('Asia/Karachi');
+            ->dailyAt('01:30')->timezone($timeZone);
 
         /*
          * Moving backup from ROLES-PERMISSION MANAGER to BACKUPS
          * */
 
         $schedule->command('move:backup')
-            ->dailyAt('02:30')->timezone('Asia/Karachi');
+            ->dailyAt('02:30')->timezone($timeZone);
     }
 
     /**

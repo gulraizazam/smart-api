@@ -122,7 +122,7 @@
                             <span class="svg-icon menu-icon">
                             <i class="fas fa-briefcase"></i>
                             </span>
-                                <span class="menu-text">Patient Management</span>
+                                <span class="menu-text">Patients Management</span>
                                 <i class="menu-arrow"></i>
                             </a>
                             <div class="menu-submenu">
