@@ -54,7 +54,7 @@ function setPlanData(response) {
     let payment_options = '<option value="">Select Payment Mode</option>';
     if (paymentmodes) {
         Object.entries(paymentmodes).forEach( function(paymentmode) {
-            payment_options += '<option value="'+paymentmode[1]+'">'+paymentmode[1]+'</option>';
+            payment_options += '<option value="'+paymentmode[0]+'">'+paymentmode[1]+'</option>';
         });
     }
 
@@ -508,6 +508,7 @@ function hideMessages() {
     $('#AlreadyExitMessage').hide();
     $('#DiscountRange').hide();
     $('#datanotexist').hide();
+    $('#successMessage').hide();
 }
 
 
