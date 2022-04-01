@@ -99,7 +99,7 @@ function actions(data) {
         let url = route('admin.services.edit', {id: id});
         let delete_url = route('admin.services.destroy', {id: id});
 
-        if (permissions.edit && permissions.delete) {
+        if (permissions.edit || permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -151,8 +151,6 @@ function editRow(url) {
 
             setEditData(response);
 
-            reInitSelect2(".select2", "");
-
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -176,7 +174,7 @@ function setEditData(response) {
         let durations = response.data.durations;
         let tax_treatment_types = response.data.tax_treatment_types;
         let select_tax_treatment_type = response.data.select_tax_treatment_type;
-        let services_options = '<option value="">Parent Service</option>';
+        let services_options = '<option value="0">Parent Service</option>';
         let duration_options = '<option value="">Select a Duration</option>';
         let radios = '';
 

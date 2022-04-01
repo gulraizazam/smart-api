@@ -265,7 +265,7 @@ jQuery(document).ready(function() {
         if ($(".table-checkboxes:checked").length == $(".table-checkboxes").length) {
             $(".select-all-checkboxes").prop('checked', true);
         } else {
-            $(".select-all-checkboxes").prop('checked', true);
+            $(".select-all-checkboxes").prop('checked', false);
         }
 
         setRowIds($(".table-checkboxes:checked"));

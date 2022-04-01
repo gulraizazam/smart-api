@@ -234,6 +234,7 @@ function setFilters(filter_values, active_filters) {
 }
 
 function notParent(val) {
+
     let form = ($(val).parents('form'))[0];
     let value = $(val).val();
     if (value == '' || value == null) {
@@ -264,3 +265,7 @@ $('#add_appointment_statuses_parent_id').change(function () {
 $('#edit_appointment_statuses_parent_id').change(function () {
     notParent(this);
 });
+
+function resetStatusForm() {
+    $('.not-have-parent').show();
+}

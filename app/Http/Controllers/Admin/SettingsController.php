@@ -196,11 +196,14 @@ class SettingsController extends Controller
     public function edit($id)
     {
         try {
-            if (!Gate::allows('settings_edit'))
+            if (!Gate::allows('settings_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+
             $setting = Settings::getData($id);
-            if (!$setting)
+            if (!$setting) {
                 return ApiHelper::apiResponse($this->success, 'No Data Found', false);
+            }
 
             $setting->field_type = 'text';
             switch ($setting->slug) {

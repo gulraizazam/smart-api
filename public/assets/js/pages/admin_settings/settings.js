@@ -159,13 +159,13 @@ function editRow(id, modal) {
                     data = data + '</select>';
                 } else if (response.data.field_type === 'minmax') {
                     data = data + '<div class="row">' +
-                        '<div class="col-md-6"><input placeholder="Min" type="text"  name="min" id="min" value="' + response.data.min + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2"></div>' +
-                        '<div class="col-md-6"><input placeholder="Max" type="text" name="max" id="max" value="' + response.data.max + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2"></div>' +
+                        '<div class="col-md-6"><input oninput="phoneField(this);"  placeholder="Min" type="text"  name="min" id="min" value="' + response.data.min + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2"></div>' +
+                        '<div class="col-md-6"><input oninput="phoneField(this);"  placeholder="Max" type="text" name="max" id="max" value="' + response.data.max + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2"></div>' +
                         '</div>';
                 } else if (response.data.field_type === 'prepost') {
                     data = data + '<div class="row">' +
-                        '<div class="col-md-6"><input placeholder="Pre" type="text" name="pre" value="' + response.data.pre + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2 mr-1"></div>' +
-                        '<div class="col-md-6"><input placeholder="Post" type="text" name="post" value="' + response.data.post + '" id="form_data" required class=" form-control form-control-lg form-control-solid mb-2 ml-1"></div>' +
+                        '<div class="col-md-6"><input oninput="phoneField(this);"  placeholder="Pre" type="text" name="pre" value="' + response.data.pre + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2 mr-1"></div>' +
+                        '<div class="col-md-6"><input oninput="phoneField(this);"  placeholder="Post" type="text" name="post" value="' + response.data.post + '" id="form_data" required class=" form-control form-control-lg form-control-solid mb-2 ml-1"></div>' +
                         '</div>';
                 }
                 $('#modal_settings_form').attr('action', route('admin.settings.update', response.data.id));

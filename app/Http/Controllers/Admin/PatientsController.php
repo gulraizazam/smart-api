@@ -724,7 +724,7 @@ class PatientsController extends Controller
             $where[] = array(
                 'users.phone',
                 'like',
-                '%' . GeneralFunctions::cleanNumber($filters['name']) . '%'
+                '%' . GeneralFunctions::cleanNumber($filters['phone']) . '%'
             );
             Filters::put(Auth::User()->id, $fileName, 'phone', $filters['name']);
         } else {

@@ -556,7 +556,6 @@ class Resources extends BaseModal
 
         $filename = 'resources';
         $filters = getFilters($request->all());
-        $apply_filter = checkFilters($filters, $filename);
 
         if ($account_id) {
             $where[] = array(

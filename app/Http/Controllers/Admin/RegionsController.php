@@ -64,8 +64,9 @@ class RegionsController extends Controller
 
             $records = array();
             $records["data"] = array();
+            $existChild = false;
             list($orderBy, $order) = getSortBy($request);
-            if (count($filters) > 0 && hasFilter($filters, 'delete')) {
+            if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Regions = Regions::getBulkData($ids);
                 if ($Regions) {
@@ -73,11 +74,17 @@ class RegionsController extends Controller
                         // Check if child records exists or not, If exist then disallow to delete it.
                         if (!Regions::isChildExists($city->id, Auth::User()->account_id)) {
                             $city->delete();
+                            $existChild = true;
                         }
                     }
                 }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
+                if (!$existChild) {
+                    $records['status'] = false;
+                    $records['message'] = 'Child records exist, unable to delete resource!';
+                } else {
+                    $records['status'] = true;
+                    $records['message'] = 'Records has been deleted successfully!';
+                }
             }
             // Get Total Records
             $iTotalRecords = Regions::getTotalRecords($request, Auth::User()->account_id, $apply_filter);

@@ -14,12 +14,12 @@ var table_columns = [
         field: 'name',
         title: 'Name',
         sortable: false,
-        width: 300,
+        width: 'auto',
     },{
         field: 'resource_types.name',
         title: 'Resource Type',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'location.name',
         title: 'Centre',

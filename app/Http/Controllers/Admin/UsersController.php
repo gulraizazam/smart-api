@@ -70,7 +70,7 @@ class UsersController extends Controller
         $records = [];
         $records['data'] = [];
 
-        if(count($filters) > 0 &&  hasFilter($filters, 'delete')) {
+        if(hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $Users = User::whereIn('id', $ids);
             if ($Users) {
@@ -105,7 +105,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = [
                 'users.name',
                 'like',
@@ -125,7 +125,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'email')) {
+        if (hasFilter($filters, 'email')) {
             $where[] = [
                 'users.email',
                 'like',
@@ -146,7 +146,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'phone')) {
+        if (hasFilter($filters, 'phone')) {
             $where[] = [
                 'users.phone',
                 'like',
@@ -168,7 +168,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'gender')) {
+        if (hasFilter($filters, 'gender')) {
             $where[] = [
                 'users.gender',
                 '=',
@@ -189,7 +189,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'commission')) {
+        if (hasFilter($filters, 'commission')) {
             $where[] = [
                 'commission',
                 '=',
@@ -209,7 +209,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'location_id')) {
+        if (hasFilter($filters, 'location_id')) {
             $where[] = [
                 'user_has_locations.location_id',
                 '=',
@@ -229,7 +229,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'role_id')) {
+        if (hasFilter($filters, 'role_id')) {
             $where[] = [
                 'role_has_users.role_id',
                 '=',
@@ -249,7 +249,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = [
                 'users.created_at',
                 '>=',
@@ -270,7 +270,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = [
                 'users.created_at',
                 '<=',
@@ -291,7 +291,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
+        if (hasFilter($filters, 'status')) {
             $where[] = [
                 'users.active',
                 '=',
@@ -313,25 +313,25 @@ class UsersController extends Controller
                 }
             }
         }
+
         if (count($where)) {
-            $iTotalRecords = count(DB::table('users')->leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id', 'users.id')
-                ->select('users.id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where([
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
-                ])->get());
+                ])->get(['users.id']));
         } else {
-            $iTotalRecords = count(DB::table('users')->leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id', 'users.id')
-                ->select('users.id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where([
+                    [$where],
                     ['account_id', '=', Auth::User()->account_id],
-                ])->get());
+                ])->get(['users.id']));
         }
 
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
@@ -357,7 +357,7 @@ class UsersController extends Controller
 
         $records = $this->getExtraData($records);
 
-        if ($Users) {
+        if ($Users->count()) {
 
             $index = 0;
             $loc = Locations::select('*')->get()->getDictionary();
@@ -417,10 +417,8 @@ class UsersController extends Controller
 
 
         $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
-        $locations->prepend('All', '');
 
         $roles = Role::get()->pluck('name', 'id');
-        $roles->prepend('All', '');
 
         $filters = Filters::all(Auth::User()->id, 'users');
 

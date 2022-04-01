@@ -90,7 +90,7 @@ function actions(data) {
             actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="detailRow(`' + url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                            <span class="navi-text">Detals</span>\
+                            <span class="navi-text">Detail</span>\
                         </a>\
                     </li>';
         }
@@ -255,8 +255,12 @@ function setFilters(filter_values, active_filters) {
         discount_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
-    Object.entries(taxs).forEach(function (value, index) {
-        tax_options += '<label class="radio"><input name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
+    Object.entries(taxs).forEach(function (value, i, index) {
+        if (i === 0) {
+            tax_options += '<label class="radio"><input checked name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
+        } else {
+            tax_options += '<label class="radio"><input name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
+        }
     });
 
     Object.entries(services).forEach(function (value, index) {

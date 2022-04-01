@@ -149,6 +149,7 @@ function setEditData(response) {
 }
 
 function applyFilters(datatable) {
+
     $('#apply-filters').on('click', function () {
         let filters = {
             delete: '',
@@ -164,6 +165,7 @@ function applyFilters(datatable) {
 }
 
 function resetAllFilters(datatable) {
+
     $('#reset-filters').on('click', function () {
         let filters = {
             delete: '',
@@ -179,14 +181,18 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
+
     let status = filter_values.status;
     let status_options = '<option value="">All</option>';
     let services = filter_values.services;
     let services_options = '';
+
     Object.entries(status).forEach(function (value, index) {
         status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
-    let service_value;
+
+    let service_value = '';
+
     Object.entries(services).forEach(function (value, index) {
         if(value[1].parent_id == 0){
             service_value=value[1].name;
@@ -194,7 +200,11 @@ function setFilters(filter_values, active_filters) {
         else{
             service_value='\t&nbsp; \t&nbsp; \t&nbsp;'+value[1].name;
         }
-        services_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
+        if (service_value == 'All Services') {
+            services_options += '<option value="">' + service_value + '</option>';
+        } else {
+            services_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
+        }
     });
 
     $("#search_status").html(status_options);

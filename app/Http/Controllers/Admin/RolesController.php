@@ -87,7 +87,7 @@ class RolesController extends Controller
 
         list($orderBy, $order) = getSortBy($request);
 
-        if(count($filters) > 0 && hasFilter($filters, 'name')) {
+        if(hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -108,7 +108,7 @@ class RolesController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'commission')) {
+        if (hasFilter($filters, 'commission') && is_numeric($filters['commission'])) {
             $where[] = array(
                 'commission',
                 '=',

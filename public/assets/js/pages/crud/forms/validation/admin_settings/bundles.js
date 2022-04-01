@@ -50,6 +50,14 @@ var AddUserValidation = function () {
             // select2Validation();
         });
         validate.on('core.form.valid', function (event) {
+
+            let ok = checkOfferPrice();
+
+            if (!ok) {
+                toastr.error('Offered price cant be greater than service price.');
+                return false;
+            }
+
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
@@ -74,3 +82,12 @@ var AddUserValidation = function () {
 jQuery(document).ready(function () {
     AddUserValidation.init();
 });
+
+function checkOfferPrice() {
+
+    if (parseFloat($("#bundles_price").val()) <=  parseFloat($("#service_price").val())) {
+        return true;
+    }
+
+    return false;
+}

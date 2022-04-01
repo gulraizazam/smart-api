@@ -207,7 +207,7 @@ function setFilters(filter_values, active_filters) {
         status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
     Object.entries(parents).forEach(function (value, index) {
-        parent_options += '<option value="' + value[1].id + '">' + value[1].name + '</option>';
+        parent_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
     $("#search_status").html(status_options);

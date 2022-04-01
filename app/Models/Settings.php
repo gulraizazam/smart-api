@@ -212,6 +212,7 @@ class Settings extends BaseModal
             return null;
         }
 
+        $data['data'] = (float)$data['data'];
         $record->update($data);
 
         AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);

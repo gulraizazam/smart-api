@@ -100,7 +100,7 @@ class ServicesController extends Controller
                     'field' => $orderBy,
                     'page' => $page,
                     'pages' => $pages,
-                    'perpage' => $iDisplayLength,
+                    'perpage' => 100,
                     'total' => $iTotalRecords,
                     'sort' => $order,
                 ];

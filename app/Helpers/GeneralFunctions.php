@@ -139,10 +139,7 @@ class GeneralFunctions
 
     public static function ServicesTree($request = null, $total = 0)
     {
-
-        $allService = Services::where('parent_id', 0)
-            ->where('slug', 'all')
-            ->first();
+        $where = [];
 
         if ($total > 0) {
             $filename = 'services';
@@ -193,11 +190,18 @@ class GeneralFunctions
             }
         }
 
+        $allService = Services::where('parent_id', 0)
+            ->where('slug', 'all')
+            ->first();
+
+        if (count($where) > 0) {
+            $allService = null;
+        }
 
         $query = Services::with('children')
-            ->where('parent_id', 0)
+            //->where('parent_id', 0)
             ->where('slug', '!=', 'all')
-            ->when(isset($where) && count($where) > 0, fn($q) => $q->where([[$where]]));
+            ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
 
         $services = $query->get();
 
@@ -207,7 +211,7 @@ class GeneralFunctions
             $children = collect($service->children)->flatten();
             unset($service->children);
 
-            if ($key === 0) {
+            if ($key === 0 && $allService) {
                 $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
             }
 
