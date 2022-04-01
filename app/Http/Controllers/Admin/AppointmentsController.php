@@ -2001,8 +2001,6 @@
 
             return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
 
-            //return view('admin.appointments.consultancy.create', compact());
-
 		}
 
 		/*
