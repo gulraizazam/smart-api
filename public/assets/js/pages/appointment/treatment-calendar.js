@@ -301,6 +301,12 @@ var TreatmentCalendar = function() {
         },
         createTreatment: function (info) {
 
+            removeExtraSelect2();
+
+            $("#create_treatment_service").html('');
+            $("#create_treatment_patient_search").html('');
+            $("#modal_create_treatment_form")[0].reset();
+
             let start = formatDate(info.date, 'YYYY-MM-DDTHH:mm:ss');
             let create_url = route('admin.appointments.treatment.create', {
                 city_id : $("#treatment_city_filter").val(),
@@ -436,8 +442,6 @@ function setCreateTreatment(response, start) {
         $("#modal_create_treatment").modal("show");
 
         $("#modal_create_treatment_form")[0].reset();
-      /*  $('.patient_search_id').val(null).trigger('change');
-        $('.new_patient_text').hide();*/
 
         let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
@@ -458,13 +462,12 @@ function setCreateTreatment(response, start) {
         $("#treatment_location_id").val(location_id);
         $("#treatment_doctor_id").val(doctor_id);
         $("#treatment_start").val(start);
-        $("#treatment_resource_id").val();
-        $("#treatment_appointment_type").val();
-        $("#treatment_cnic").val();
+        $("#treatment_resource_id").val($("#treatment_resource_filter").val());
+        /*$("#treatment_cnic").val();
         $("#treatment_email").val();
         $("#treatment_dob").val();
         $("#treatment_address").val();
-        $("#treatment_town_id").val();
+        $("#treatment_town_id").val();*/
 
         let type_options = '<option value="">Select Consultancy Type</option>';
         if (consultancy_types) {

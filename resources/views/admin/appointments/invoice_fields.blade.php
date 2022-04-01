@@ -260,7 +260,7 @@
                 <label><strong>Payment Mode</strong></label>
             </div>
             <div class="col-md-4">
-                {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control select2','id'=>'payment_mode_id']) !!}
+                {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control','id'=>'payment_mode_id']) !!}
             </div>
         </div>
     </div>
