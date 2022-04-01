@@ -72,7 +72,7 @@ function actions(data) {
         let log_url = route('admin.invoicepatient.invoice_log', {id: id, type: 'web', patient_id: patientCardID });
         let sms_log_url = route('admin.invoices.sms_logs', {id: id});
 
-        if (permissions.manage && permissions.cancel && permissions.log && permissions.sms_log) {
+        if (permissions.manage || permissions.cancel || permissions.log || permissions.sms_log) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
