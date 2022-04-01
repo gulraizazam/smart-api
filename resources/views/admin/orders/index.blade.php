@@ -43,11 +43,12 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
 
-
+                                @if(Gate::allows('order_create'))
                                 <a href="javascript:void(0);" class="btn btn-primary" onclick="getDiscounts();" >
                                     <i class="la la-plus"></i>
                                     Create New
                                 </a>
+                                @endif
 
                         <!--end::Button-->
                         </div>

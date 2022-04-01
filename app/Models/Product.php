@@ -204,4 +204,25 @@ class Product extends BaseModal
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
+
+   /**
+    * active Record
+    *
+    * @param id
+    *
+    * @return (mixed)
+    */
+   static function activeRecord($id, $status = 1)
+   {
+       $product = self::getData($id);
+
+       if (!$product) {
+
+          return false;
+       }
+
+       $record = $product->update(['status' => $status]);
+
+       return $record;
+   }
 }

@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Helpers\Filters;
 use Illuminate\Support\Facades\Auth;
 use App\HelperModule\ApiHelper;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 
 class BrandsController extends Controller
@@ -29,6 +30,9 @@ class BrandsController extends Controller
      */
     public function index()
     {
+        if (!Gate::allows('brand_manage')) {
+            return abort(401);
+        }
         return view('admin.brands.index');
     }
 
@@ -70,7 +74,12 @@ class BrandsController extends Controller
             $Brands = Brand::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
             $records["data"] = $Brands;
-            $records["permissions"] = [];
+            $records["permissions"] = [
+                'edit' => Gate::allows('brand_edit'),
+                'manage' => Gate::allows('brand_manage'),
+                'delete' => Gate::allows('brand_destroy'),
+                'create' => Gate::allows('brand_create'),
+            ];
             $records['active_filters'] = $apply_filter;
             $records['filter_values'] = [
                 'status' => config('constants.status')
@@ -98,6 +107,9 @@ class BrandsController extends Controller
     public function store(Request $request)
     {
         try {
+            if (!Gate::allows('brand_create')) {
+                return abort(401);
+            }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
@@ -133,9 +145,9 @@ class BrandsController extends Controller
     public function edit($id)
     {
         try {
-            // if (!Gate::allows('brands_edit')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
+            if (!Gate::allows('brand_edit')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $brand = Brand::getData($id);
             if (!$brand) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
@@ -156,9 +168,9 @@ class BrandsController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            // if (!Gate::allows('brands_edit')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
+            if (!Gate::allows('brand_edit')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
@@ -181,9 +193,9 @@ class BrandsController extends Controller
     public function destroy($id)
     {
         try {
-            // if (!Gate::allows('brands_destroy')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
+            if (!Gate::allows('brand_destroy')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $response = Brand::DeleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {

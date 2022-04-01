@@ -10,6 +10,7 @@ use App\Models\ProductDetail;
 use App\Models\Stock;
 use Illuminate\Support\Facades\Auth;
 use App\HelperModule\ApiHelper;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 
 class ProductsController extends Controller
@@ -33,6 +34,9 @@ class ProductsController extends Controller
      */
     public function index()
     {
+        if (!Gate::allows('product_manage')) {
+            return abort(401);
+        }
         return view('admin.products.index');
     }
 
@@ -88,7 +92,16 @@ class ProductsController extends Controller
             }
 
             $records["data"] = $products;
-            $records["permissions"] = [];
+            $records["permissions"] = [
+                'active' => Gate::allows('product_active'),
+                'edit' => Gate::allows('product_edit'),
+                'manage' => Gate::allows('product_manage'),
+                'delete' => Gate::allows('productdestroy'),
+                'create' => Gate::allows('product_create'),
+                'sale_price' => Gate::allows('product_sale_price'),
+                'add_stock' => Gate::allows('product_add_stock'),
+                'stock_detail' => Gate::allows('product_stock_detail'),
+            ];
             $records['active_filters'] = $apply_filter;
             $all_brands = array();
             foreach ($brands as $brand) {
@@ -121,6 +134,9 @@ class ProductsController extends Controller
     public function store(Request $request)
     {
         try {
+            if (!Gate::allows('product_create')) {
+                return abort(401);
+            }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
@@ -162,9 +178,9 @@ class ProductsController extends Controller
     public function edit($id)
     {
         try {
-            // if (!Gate::allows('brands_edit')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
+            if (!Gate::allows('product_edit')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $product = Product::getData($id);
             $product_detail = ProductDetail::getProductDetailData($product->id);
             $data['product']=$product;
@@ -173,28 +189,6 @@ class ProductsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
             return ApiHelper::apiResponse($this->success, 'Success', true, $data);
-        } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
-
-    /**
-     * Show the form for editing products.
-     *
-     * @param $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function editSalePrice($id)
-    {
-        try {
-            // if (!Gate::allows('brands_edit')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
-            $product = Product::getData($id);
-            if (!$product) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
-            }
-            return ApiHelper::apiResponse($this->success, 'Success', true, $product);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -210,9 +204,9 @@ class ProductsController extends Controller
     public function update(Request $request, $id, $detail)
     {
         try {
-            // if (!Gate::allows('brands_edit')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
+            if (!Gate::allows('product_edit')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
@@ -239,7 +233,7 @@ class ProductsController extends Controller
     public function updateSalePrice(Request $request, $id)
     {
         try {
-            // if (!Gate::allows('brands_edit')) {
+            // if (!Gate::allows('product_sale_price')) {
             //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             // }
             $product = Product::updateRecord($id,$request, Auth::User()->account_id);
@@ -261,9 +255,9 @@ class ProductsController extends Controller
     public function destroy($id)
     {
         try {
-            // if (!Gate::allows('brands_destroy')) {
-            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            // }
+            if (!Gate::allows('product_destroy')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
             $response = Product::DeleteRecord($id);
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
@@ -281,8 +275,8 @@ class ProductsController extends Controller
     public function addStock(Request $request, $id)
     {
         try {
-            //dd($request->all());
-            // if (!Gate::allows('brands_edit')) {
+            
+            // if (!Gate::allows('product_add_stock')) {
             //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             // }
             if(ProductDetail::createRecord($request, Auth::User()->account_id,$id)){
@@ -295,10 +289,16 @@ class ProductsController extends Controller
     }
 
     public function productStock($id){
-        return view('admin.products.stock_detail',compact('id'));;
+        // if (!Gate::allows('product_stock_detail')) {
+        //     return abort(401);
+        // }
+        return view('admin.products.stock_detail',compact('id'));
     }
 
     public function productStockDetail(Request $request,$id){
+        // if (!Gate::allows('product_stock_detail')) {
+        //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        // }
         $iTotalRecords = Stock::getTotalRecords($request, Auth::User()->account_id, $id);
         list($orderBy, $order) = getSortBy($request);
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
@@ -315,5 +315,27 @@ class ProductsController extends Controller
                 ];
 
        return ApiHelper::apiDataTable($records);
+    }
+
+    /**
+     * Inactive Record from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function status(Request $request)
+    {
+        if (!Gate::allows('product_active')) {
+            return abort(401);
+        }
+
+        $response = Product::activeRecord($request->id, $request->status);
+
+        if ($response) {
+            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Product not found.', false);
+
     }
 }

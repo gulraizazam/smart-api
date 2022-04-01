@@ -277,7 +277,7 @@ function statuses(data, status_url,is_column_name_change = false) {
     let status = '';
 
     if (active) {
-        if (permissions.active && permissions.inactive) {
+        if (permissions.active || permissions.inactive) {
             status += '<span class="switch switch-icon">\
             <label>\
                 <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" checked="checked" name="select">\

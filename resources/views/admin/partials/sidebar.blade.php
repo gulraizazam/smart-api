@@ -804,8 +804,8 @@
 
                      <!-- Inventory menu -->
 
-                     @if(Gate::allows('brand_manage'))
-                        @can('brand_manage')
+                     @if(Gate::allows('inventory_manage'))
+                        @can('inventory_manage')
                             <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
 
                                 <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -818,7 +818,7 @@
                                 <div class="menu-submenu">
                                     <i class="menu-arrow"></i>
                                     <ul class="menu-subnav">
-                                    
+                                        @can('brand_manage')
                                             <li class="menu-item {{activeMenu('admin.brands.index')}}" aria-haspopup="true">
                                                 <a href="{{route('admin.brands.index')}}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-dot">
@@ -827,7 +827,8 @@
                                                     <span class="menu-text">Brand</span>
                                                 </a>
                                             </li>
-                                    
+                                        @endcan
+                                        @can('product_manage')
                                             <li class="menu-item {{activeMenu('admin.products.index')}}" aria-haspopup="true">
                                                 <a href="{{route('admin.products.index')}}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-dot">
@@ -836,6 +837,8 @@
                                                     <span class="menu-text">Product</span>
                                                 </a>
                                             </li>
+                                        @endcan
+                                        @can('order_manage')
                                             <li class="menu-item {{activeMenu('admin.orders.index')}}" aria-haspopup="true">
                                                 <a href="{{route('admin.orders.index')}}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-dot">
@@ -844,7 +847,8 @@
                                                     <span class="menu-text">Order</span>
                                                 </a>
                                             </li>
-
+                                        @endcan
+                                        @can('refund_manage')
                                             <li class="menu-item {{activeMenu('admin.order.refunds.index')}}" aria-haspopup="true">
                                                 <a href="{{route('admin.order.refunds.index')}}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-dot">
@@ -853,7 +857,7 @@
                                                     <span class="menu-text">Refund</span>
                                                 </a>
                                             </li>
-                                        
+                                        @endcan
 
                                     </ul>
                                 </div>

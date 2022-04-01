@@ -39,7 +39,7 @@ var table_columns = [
         sortable: false,
         template: function (data) {
             let status_url = route('admin.products.status');
-            return statuses(data, status_url,true);
+            return statusesProduct(data, status_url,true);
         }
     }, {
         field: 'actions',
@@ -55,13 +55,12 @@ var table_columns = [
 
 
 function actions(data) {
-
     let id = data.id;
     let url = route('admin.products.edit', {id: id});
     let delete_url = route('admin.products.destroy', {id: id});
     let edit_sale_price_url = route('admin.products.edit-sale-price', {id: id});
     let stock_url = route('admin.products.stock', {id: id});
-    //if (permissions.edit && permissions.delete) {
+    if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -83,20 +82,21 @@ function actions(data) {
                      <span class="navi-text">Sale Price</span>\
                      </a>\
                   </li>';
-    //    if (permissions.edit) {
+        if (permissions.edit) {
             actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="editRow(`'+url+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
+        }
             actions += '<li class="navi-item">\
                     <a href="'+stock_url+'" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Stock</span>\
                     </a>\
                 </li>';
-    //    }
+        
     //    if (permissions.delete) {
             // actions += '<li class="navi-item">\
             //                 <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
@@ -111,7 +111,7 @@ function actions(data) {
         </div>';
 
         return actions;
-    //}
+    }
     return '';
 }
 
@@ -220,6 +220,43 @@ function setEditSalePriceData(response) {
     let action = route('admin.products.update-sale-price', {id: product.id});
     $("#modal_edit_products_sale_price_form").attr("action", action);
     $("#update_sale_price").val(product.sale_price);
+}
+
+function statusesProduct(data, status_url,is_column_name_change = false) {
+
+    let id = data.id;
+
+    let active = is_column_name_change == false ? data.active : data.status;
+    let status = '';
+
+    if (active) {
+        if (permissions.active) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        } else {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
+
+    } else {
+
+        status += '<span class="switch switch-icon">\
+        <label>\
+            <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" name="select">\
+            <span></span>\
+        </label>\
+        </span>';
+    }
+
+    return status;
 }
 
 function addProductStock(id){
