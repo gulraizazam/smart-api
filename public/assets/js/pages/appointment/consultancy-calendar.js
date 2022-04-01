@@ -397,7 +397,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     let edit_service_url = route('admin.appointments.edit_service', {id: appointment.id});
     let detail_url = route('admin.appointments.detail', {id: appointment.id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: appointment.id});
-    let patient_url = route('admin.patients.preview', {id: appointment.id});
+    let patient_url = route('admin.patients.preview', {id: appointment.patient_id});
     let service_invoice_url = route('admin.appointments.invoicecreate', {id: appointment.id});
     let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: appointment.id, type: 'appointment'});
     let image_url = route('admin.appointmentsimage.imageindex', {id: appointment.id});
@@ -590,7 +590,7 @@ function setCreateConsultancy(response, start) {
             });
         }
 
-        let source_options = '<option value="">Select a Gender</option>';
+        let source_options = '<option value="">Select a Source</option>';
         if (lead_sources) {
             Object.entries(lead_sources).forEach(function (source) {
                 source_options += '<option value="'+source[0]+'">'+source[1]+'</option>';
