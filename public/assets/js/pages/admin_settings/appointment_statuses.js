@@ -88,7 +88,7 @@ function actions(data) {
     let url = route('admin.appointment_statuses.edit', {id: id});
     let delete_url = route('admin.appointment_statuses.destroy', {id: id});
 
-    if (permissions.edit && permissions.delete) {
+    if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
