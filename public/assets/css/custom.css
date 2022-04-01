@@ -703,3 +703,7 @@ div > input {
     color: #fff;
     padding: 10px 15px;
 }
+
+.form-group{
+    display: grid;
+}

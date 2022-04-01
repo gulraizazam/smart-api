@@ -34,7 +34,7 @@ var KTCardDraggable = function () {
                             toastr.success(data.message);
                         }
                     });
-                }, 1)
+                }, 10)
             });
 
         }

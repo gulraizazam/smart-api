@@ -57,6 +57,7 @@ class LogsController extends Controller
 
             $audittrails = AuditTrails::getRecords($iDisplayStart, $iDisplayLength, Auth::User()->account_id);
 
+           // dd($audittrails->toArray());
             $records["data"] = $audittrails;
             $records["meta"] = [
                 'field' => $orderBy,

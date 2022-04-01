@@ -24,12 +24,12 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>FDO:</label>
-            <input type="text" class="form-control filter-field" placeholder="FDO" id="search_fdo_name" />
+            <input type="text" class="form-control filter-field" placeholder="Enter FDO Name" id="search_fdo_name" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>FDO Phone:</label>
-            <input type="text" class="form-control filter-field" placeholder="FDO Phone" id="search_fdo_phone" />
+            <input type="text" class="form-control filter-field" placeholder="Enter FDO Phone" id="search_fdo_phone" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">

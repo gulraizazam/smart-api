@@ -32,6 +32,7 @@ $(document).ready(function () {
     $('.current-datepicker').datepicker({
         todayHighlight: true,
         orientation: 'bottom',
+        startDate: new Date(),
         format: 'yyyy-mm-dd',
         templates: {
             leftArrow: '<i class="la la-angle-left"></i>',

@@ -44,7 +44,7 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
                             @if(Gate::allows('appointment_statuses_create'))
-                                <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_region">
+                                <a href="javascript:void(0);" class="btn btn-primary" onclick="resetStatusForm($(this));" data-toggle="modal" data-target="#modal_add_region">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                     <i class="la la-plus"></i>
                                     Add New

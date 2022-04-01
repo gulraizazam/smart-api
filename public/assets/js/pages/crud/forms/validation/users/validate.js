@@ -86,6 +86,7 @@ var AddUserValidation = function () {
                     closePopup(modal_id);
                     reInitTable();
                 } else {
+                    $("#validate-msg").text(response.message).show();
                     toastr.error(response.message);
                 }
             }, form);

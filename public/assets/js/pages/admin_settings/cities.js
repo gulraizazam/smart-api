@@ -168,7 +168,8 @@ function setFilters(filter_values, active_filters) {
         status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
 
-    let regions_options = '<option value="">Select Region</option>';
+    //let regions_options = '<option value="">Select Region</option>';
+    let regions_options = '<option value="">All</option>';
     Object.entries(regions).forEach(function(value, index) {
         regions_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });

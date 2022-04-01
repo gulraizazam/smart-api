@@ -53,9 +53,15 @@ class Towns extends BaseModal
     {
         $where = self::towns_filters($request, $account_id, $apply_filter);
 
+        list($orderBy, $order) = getSortBy($request);
+
+        if ($orderBy == 'status') {
+            $orderBy = 'active';
+        }
+
         return self::with('city')->when(count($where), fn ($query) =>
             $query->where($where)
-        )->limit($iDisplayLength)->offset($iDisplayStart)->get();
+        )->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
     }
 
     /**

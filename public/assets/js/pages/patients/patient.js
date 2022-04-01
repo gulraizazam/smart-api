@@ -32,12 +32,12 @@ var table_columns = [
     },{
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 90,
         sortable: false,
     },{
         field: 'gender',
         title: 'Gender',
-        width: 'auto',
+        width: 60,
         sortable: false,
         template: function (data) {
             return getGender(data.gender);
@@ -53,7 +53,7 @@ var table_columns = [
     }, {
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 70,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.patients.status');

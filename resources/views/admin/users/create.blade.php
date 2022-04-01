@@ -21,6 +21,11 @@
     <!--end::Modal header-->
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+
+        <div id="validate-msg" class="alert alert-danger"  style="display: none;">
+        </div>
+
+
         <!--begin::Form-->
         <form id="modal_add_user_form" method="post" action="{{route('admin.users.store')}}">
             <!--begin::Scroll-->

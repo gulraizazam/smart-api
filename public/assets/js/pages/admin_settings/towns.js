@@ -20,6 +20,7 @@ var table_columns = [
         field: 'city.name',
         title: 'City',
         width: 'auto',
+        sortable: false,
     }, {
         field: 'status',
         title: 'status',

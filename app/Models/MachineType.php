@@ -92,6 +92,7 @@ class MachineType extends BaseModal
      */
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
+       // dd($request->all());
         $orderBy = 'created_at';
         $order = 'desc';
         return self::with('services')->Filters($request,$account_id,$apply_filter)

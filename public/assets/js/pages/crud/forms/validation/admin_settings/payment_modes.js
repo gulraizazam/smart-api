@@ -44,6 +44,7 @@ var AddUserValidation = function () {
             select2Validation();
         });
         validate.on('core.form.valid', function(event) {
+
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
@@ -137,7 +138,9 @@ jQuery(document).ready(function() {
 });
 
 
-function submitForm(action, method, data, callback) {
+function submitForm(action, method, data, callback, form) {
+
+    showSpinner();
 
     $.ajax({
         headers: {
@@ -159,8 +162,11 @@ function submitForm(action, method, data, callback) {
                     'message': response.message,
                 });
             }
+
+            hideSpinnerRestForm(form);
         },
         error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinnerRestForm(form);
             if (xhr.status == '401') {
                 callback({
                     'status': 0,

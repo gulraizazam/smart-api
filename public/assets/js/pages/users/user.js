@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 80,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -25,15 +25,11 @@ var table_columns = [
     }, {
         field: 'gender',
         title: 'Gender',
-        width: 'auto',
+        width: 60,
     }, {
         field: 'commission',
         title: 'Commission',
-        width: 'auto',
-    },{
-        field: 'commission',
-        title: 'Commission',
-        width: 'auto',
+        width: 60,
     },{
         field: 'locations',
         title: 'centre',
@@ -199,6 +195,8 @@ function changePassword(id) {
 
 function createUsers($route) {
 
+    $("#validate-msg").hide();
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -347,7 +345,7 @@ function setFilters(filter_values, active_filters) {
     let status = filter_values.status;
 
     let location_options = '<option value="">Select</option>';
-    let role_options = '<option value="">Select</option>';
+    let role_options = '<option value="">All</option>';
     let status_options = '<option value="">All</option>';
 
     Object.entries(status).forEach(function(value, index) {
