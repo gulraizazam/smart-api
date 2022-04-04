@@ -347,7 +347,7 @@ div > input {
     border: 2px solid lightgray;
 }
 .city-select {
-    width: 70%;
+    width: 65%;
     margin-top: 15px;
 }
 .city-edit-btn .btn-success {
@@ -358,7 +358,7 @@ div > input {
     width: 35px;
 }
 .city-edit-btn {
-    width: 30%;
+    width: 35%;
     margin-top: -35px;
 }
 .arrow {

@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'patient_id',
         title: 'Patient ID',
-        width: 50,
+        width: 'auto',
     },{
         field: 'package_id',
         title: 'Name',
@@ -733,7 +733,7 @@ function applyFilters(datatable) {
 function resetAllFilters(datatable) {
 
     $(".page-plan-form").find('#reset-filters').on('click', function() {
-        alert("dasdsa")
+
         let filters =  {
             delete: '',
             name: '',
