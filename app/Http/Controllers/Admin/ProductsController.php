@@ -266,6 +266,25 @@ class ProductsController extends Controller
     }
 
      /**
+     * Show the form for editing products.
+     *
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function editSalePrice($id)
+    {
+        try {
+            $product = Product::getData($id);
+            if (!$product) {
+                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+            }
+            return ApiHelper::apiResponse($this->success, 'Success', true, $product);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+     /**
      * Update products in storage.
      *
      * @param Request $request
