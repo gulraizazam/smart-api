@@ -204,7 +204,7 @@
                     $this.attr('href', route('admin.leads.export.excel', [limit, offset]));
 
                     $(".export-excel-limit").text("("+previousLimit+" to "+limit+")")
-                },1200);
+                },1000);
             }
 
             function setPdfLimit($this) {
@@ -219,7 +219,7 @@
                     $this.attr('href', route('admin.leads.export.pdf', [pdf_limit, pdf_offset]));
 
                     $(".export-pdf-limit").text("("+pdf_previousLimit+" to "+pdf_limit+")")
-                },1200);
+                },1000);
             }
         </script>
         <script src="{{asset('assets/js/pages/leads/leads.js')}}"></script>
