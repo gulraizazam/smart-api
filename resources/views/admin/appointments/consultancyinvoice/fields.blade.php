@@ -65,14 +65,14 @@
                 <label class="mt-checkbox">
                     @if($service?->tax_treatment_type_id == Config::get('constants.tax_both') || $service?->tax_treatment_type_id == Config::get('constants.tax_is_exclusive'))
                         <input type="hidden" name="is_exclusive_consultancy" value="0"/>
-                        <label class="custom_checkbox checkbox-all">
-                            <input class="select-all-checkboxes" id="is_exclusive_consultancy" type="checkbox" name="is_exclusive_consultancy" value="1" checked>
+                        <label class="custom_checkbox">
+                            <input id="is_exclusive_consultancy" type="checkbox" name="is_exclusive_consultancy" value="1" checked>
                             <strong></strong>
                         </label>
                     @else
                         <input type="hidden" name="is_exclusive_consultancy" value="0"/>
-                        <label class="custom_checkbox checkbox-all">
-                            <input class="select-all-checkboxes"  id="is_exclusive_consultancy" type="checkbox" name="is_exclusive_consultancy" value="0">
+                        <label class="custom_checkbox">
+                            <input id="is_exclusive_consultancy" type="checkbox" name="is_exclusive_consultancy" value="0">
                             <strong></strong>
                         </label>
 
