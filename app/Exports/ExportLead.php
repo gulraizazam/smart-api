@@ -17,6 +17,14 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
+    private $limit = 1000;
+    private $offset = 0;
+
+    public function __construct($limit = 1000, $offset = 0)
+    {
+        $this->limit = $limit;
+        $this->offset = $offset;
+    }
 
     public function collection()
     {
@@ -40,17 +48,9 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
         }
 
-       return $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
-            ->first([
-                'id',
-                'name',
-                'phone',
-                'city',
-                'region',
-                'lead_status',
-                'service',
-                'lead_created_at',
-            ]);
+       return $resultQuery->limit($this->limit)->offset($this->offset)
+           ->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+            ->get();
     }
 
     public function headings(): array
