@@ -97,7 +97,7 @@ $(document).ready( function () {
     })
     /*save data for both predefined discounts and keyup trigger*/
     $("#add_order").click(function () {
-        if($("#add_quantity").val() > $("#available_quantity").val()){
+        if(parseInt($("#add_quantity").val()) > parseInt($("#available_quantity").val())){
             toastr.error("Product quantity exceeded");
             return false;
         }
@@ -323,14 +323,6 @@ function removeProducts() {
     $('.product_id').val(null).trigger('change');
     $("#add_price").val('');
     $("#add_quantity").val('');
-
-    let quantitySum = 0;
-    if(orders != null){
-        for(let order=0; order<orders.length;order++){
-            quantitySum=quantitySum+orders[order].quantity;
-        }
-    }
-    return quantitySum;
 }
 
 function displayProducts(orders){
