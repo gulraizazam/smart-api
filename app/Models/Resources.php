@@ -184,8 +184,7 @@ class Resources extends BaseModal
             ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
            // ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"]) /*No Actually if start time exist in rota we'll create its treatment*/
             ->first();
-
-        dd($record);
+        
         if ($record) {
             if ($record->start_time) {
                 if ($record->start_off) {
