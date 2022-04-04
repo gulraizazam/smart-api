@@ -2685,7 +2685,7 @@ class LeadsController extends Controller
         }
     }
 
-    public function exportPdf() {
+    public function exportPdf($limit = 1000, $offset = 0) {
 
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
@@ -2694,30 +2694,31 @@ class LeadsController extends Controller
                 $query->orWhereNull('leads.city_id');
             });
 
-        $junk_lead_statuses = LeadStatuses::where(array(
+        $junk_lead_statuses_id = LeadStatuses::where(array(
             'account_id' => Auth::User()->account_id,
             'is_junk' => 1,
-        ))->first();
+        ))->value('id');
 
         if (request()->has('type')) {
 
-            $resultQuery->where('leads.lead_status_id', $junk_lead_statuses->id ?? 0);
+            $resultQuery->where('leads.lead_status_id', $junk_lead_statuses_id ?? 0);
 
         } else {
-            $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
+            $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses_id ?? 0);
         }
 
-        $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+        $leads = $resultQuery->limit($limit)->offset($offset)
+            ->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
             ->get();
 
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'));
         return $pdf->download('leads.pdf');
     }
 
-    public function exportDocs() {
+    public function exportDocs($limit = 1000, $offset = 0) {
 
         $ex = request('type') ? 'csv' : 'xlsx';
 
-        return Excel::download(new ExportLead, 'leads.'.$ex);
+        return Excel::download(new ExportLead($limit, $offset), 'leads.'.$ex);
     }
 }
