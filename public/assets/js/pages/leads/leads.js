@@ -43,7 +43,7 @@ var table_columns = [{
             city = city_id;
         }
 
-        return '<a href="javascript:void(0);" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`)" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
+        return '<a href="javascript:void(0);" data-city_id="'+data.cityId+'" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`, $(this))" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
     }
 }, {
     field: 'region_id',
@@ -174,6 +174,7 @@ function updateLeadStatus() {
                 $("#modal_change_status").modal("hide");
                 toastr.success(response.message);
                 hideSpinnerRestForm($("#modal_change_status_form")[0]);
+                reInitTable();
             } else {
                 toastr.error(response.message);
                 hideSpinnerRestForm();
@@ -819,7 +820,7 @@ function newPatient() {
     });
 }
 
-function editInline($lead_id, city_id) {
+function editInline($lead_id, city_id, $this) {
 
     let cities = filter_values.cities;
     let city_options = '<option value="">Select City</option>';
@@ -851,12 +852,15 @@ function editInline($lead_id, city_id) {
 
     $(".city-editable-" + $lead_id).find(".city-select").val(city_id);
 
+    $(".city-select").val($this.data("city_id"))
+
 }
 
 function saveCity(lead_id) {
 
     showSpinner();
     let city_id = $(".city-editable-" + lead_id).find('.city-select').val();
+    $("#lead-" + lead_id).data("city_id", city_id);
 
     $.ajax({
         headers: {
@@ -872,7 +876,7 @@ function saveCity(lead_id) {
                 toastr.success(response.message);
                 $("#lead-" + lead_id).text(city);
                 $("#lead-" + lead_id).animate({backgroundColor: "#dd0000"}, 'slow').fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500);
-
+                closeEditable(lead_id)
             } else {
                 toastr.error(response.message);
             }
