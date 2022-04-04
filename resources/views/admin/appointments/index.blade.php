@@ -136,7 +136,9 @@
 
         <script>
 
-            var limit = 1000;
+            let appointment_limit = '{{config('constants.export-appointment-limit')}}';
+
+            var limit = '{{config('constants.export-appointment-limit')}}';
             var offset = 0;
 
             $(document).ready(function () {
@@ -144,11 +146,11 @@
             })
 
             function changeLimitOffset($this) {
-                limit = limit + 1000;
-                offset = offset + 1000;
+                limit = parseInt(limit) + parseInt(appointment_limit);
+                offset = parseInt(offset) + parseInt(appointment_limit);
                 setTimeout( function () {
                     $this.attr('href', route('admin.appointments.export', [limit, offset]));
-                },1200);
+                },1000);
             }
 
         </script>

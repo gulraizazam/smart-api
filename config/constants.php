@@ -234,6 +234,7 @@ return [
         'Fixed' => 'Fixed',
         'Percentage' => 'Percentage'
     ],
+    'export-appointment-limit' => 1000,
     'export-lead-excel-limit' => 1000,
     'export-lead-pdf-limit' => 100,
 ];
