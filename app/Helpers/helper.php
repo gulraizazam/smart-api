@@ -30,8 +30,6 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
             $iDisplayStart = 0;
         }
 
-
-
         return [
             $iDisplayLength,
             $iDisplayStart,
