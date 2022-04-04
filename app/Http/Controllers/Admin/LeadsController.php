@@ -447,7 +447,7 @@ class LeadsController extends Controller
                         'PatientId' => GeneralFunctions::patientSearchStringAdd($lead->PatientId),
                         'name' => $lead->name,
                         'active' => $lead->active,
-                        'cityId' => $lead->city->id,
+                        'cityId' => $lead?->city?->id ?? 0,
                         'phone' =>  GeneralFunctions::prepareNumber4Call($lead->patient->phone),
                         'city_id' => $lead->city->name ?? '', //view('admin.leads.city', compact('lead'))->render(),
                         'region_id' => (array_key_exists($lead->region_id, $Regions)) ? $Regions[$lead->region_id]->name : 'N/A',
