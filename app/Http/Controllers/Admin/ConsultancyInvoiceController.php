@@ -148,7 +148,7 @@ class ConsultancyInvoiceController extends Controller
             $cash = null;
         }
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
-        $paymentmodes->prepend('Select Payment Mode', '0');
+        $paymentmodes->prepend('Select', '0');
 
         if (is_null($type)) {
 
@@ -544,8 +544,8 @@ class ConsultancyInvoiceController extends Controller
             ])
         );
 
-        return response()->json(array(
-            'status' => true,
-        ));
+        return ApiHelper::apiResponse($this->success, 'Invoice created successfully', true, [
+            'invoice_id' => $invoice->id
+        ]);
     }
 }

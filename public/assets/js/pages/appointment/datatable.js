@@ -1157,6 +1157,8 @@ function createConsultancyInvoice(url) {
             $("#create_consultancy_invoice").html(response)
 
             $("#modal_create_consultancy_invoice").modal("show");
+            $("#addinvoice").show();
+            customDatePicker();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
@@ -1179,6 +1181,7 @@ function createTreatmentInvoice(url) {
             $("#create_treatment_invoice").html(response)
 
             $("#modal_create_treatment_invoice").modal("show");
+            customDatePicker();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");

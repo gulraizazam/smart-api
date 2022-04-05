@@ -3170,40 +3170,40 @@
      * @return \Illuminate\Http\Response
      */
 
-		public function getScheduledAppointments(Request $request)
-		{
-			if (
-				$request->get("city_id") &&
-				$request->get("location_id") &&
-				$request->get("doctor_id")
-			) {
-				$appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-				$doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
-				$location_id = $request->get("location_id");
-				$doctor_id = $request->get("doctor_id");
-				$machine_id = $request->get("machine_id");
-				$start = $request->get("start");
-				$end = $request->get("end");
-				$minTime = Resources::getMinTimeWithDr($location_id, $doctor_id, $start, $end);
+        public function getScheduledAppointments(Request $request)
+        {
+            if (
+                $request->get("city_id") &&
+                $request->get("location_id") &&
+                $request->get("doctor_id")
+            ) {
+                $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
+                $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
+                $location_id = $request->get("location_id");
+                $doctor_id = $request->get("doctor_id");
+                $machine_id = $request->get("machine_id");
+                $start = $request->get("start");
+                $end = $request->get("end");
+                $minTime = Resources::getMinTimeWithDr($location_id, $doctor_id, $start, $end);
 
-				if ($appointments) {
-					$data = array();
-					foreach ($appointments as $appointment) {
+                if ($appointments) {
+                    $data = array();
+                    foreach ($appointments as $appointment) {
 
-						$dutation = explode(':', $appointment->service->duration);
+                        $dutation = explode(':', $appointment?->service?->duration ?? '');
 
                         $data[$appointment->id] = array(
                             'id' => $appointment->id,
-                            'service' => $appointment->service->name,
+                            'service' => $appointment?->service?->name ?? '',
                             'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
                             'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
                             'phone' => GeneralFunctions::prepareNumber4Call($appointment?->patient?->phone ?? '0300'),
-                            'duration' => $appointment->service->duration,
+                            'duration' => $appointment?->service?->duration ?? '00',
                             'editable' => true,
                             'overlap' => false,
                             'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-                            'color' => $appointment->service->color,
+                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0] ?? 0)->addMinutes($dutation[1] ?? 0)->format('H:i'),
+                            'color' => $appointment?->service?->color ?? '#fff',
                             'resourceId' => $appointment->doctor_id,
                         );
 					}
@@ -3216,19 +3216,19 @@
                         'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
                         'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
                     ));
-				} else {
-					return response()->json(array(
-						'status' => 0,
-						'events' => null,
-					));
-				}
-			} else {
-				return response()->json(array(
-					'status' => 0,
-					'events' => null,
-				));
-			}
-		}
+                } else {
+                    return response()->json(array(
+                        'status' => 0,
+                        'events' => null,
+                    ));
+                }
+            } else {
+                return response()->json(array(
+                    'status' => 0,
+                    'events' => null,
+                ));
+            }
+        }
 
 		/*
      * check and save Consulting appointment
@@ -3504,7 +3504,7 @@
 			}
 
 			$paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
-			$paymentmodes->prepend('Select Payment Mode', '0');
+			$paymentmodes->prepend('Select', '0');
 
 			return view('admin.appointments.invoice_create', compact('price', 'packages', 'appointment_type', 'status', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'invoice_status', 'paymentmodes', 'tax_create', 'amount_create', 'location_id', 'checked_treatment', 'appointmentArray', 'amount_create_is_inclusive'));
 		}
@@ -3977,9 +3977,9 @@
 				])
 			);
 
-			return response()->json(array(
-				'status' => true,
-			));
+			return ApiHelper::apiResponse($this->success, 'Invoice created successfully', true, [
+			    'invoice_id' => $invoice?->id ?? 0
+            ]);
 		}
 
 		/*Save The Invoice
