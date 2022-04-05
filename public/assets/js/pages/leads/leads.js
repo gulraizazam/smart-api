@@ -9,7 +9,7 @@ var table_columns = [{
     width: 'auto',
     title: renderCheckbox(),
     template: function(data) {
-        return childCheckbox(data);
+        return childCheckbox(data, data.lead_id);
     }
 }, {
     field: 'PatientId',
