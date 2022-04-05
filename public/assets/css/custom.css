@@ -712,3 +712,16 @@ div > input {
     max-height: 500px;
     overflow: auto;
 }
+/*.colored-text {
+    color: #006dab;
+}*/
+.switch_custom span{
+    width: 13px !important;
+}
+.custom_field {
+    padding-left: 47px;
+    width: 50%;
+    border: none !important;
+    font-weight: 600;
+    height: 25px;
+}

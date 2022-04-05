@@ -271,9 +271,10 @@ var ConsultancyCalendar = function() {
                 cache: false,
                 success: function(response) {
                     if (response.status) {
-                       toastr.success(response.message)
+                       toastr.success(response.message);
                     } else {
-                        toastr.error(response.message)
+                        toastr.error(response.message);
+                        reInitCalendar(start_date, calendar, ConsultancyCalendar);
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {

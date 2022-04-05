@@ -38,7 +38,7 @@
     {{--That if condition show for consultancey--}}
     <div class="table-responsive">
         <table class="table table-striped table-bordered table-advance table-hover">
-            {{ csrf_field() }}
+
             <thead>
             <tr>
                 <th> Name</th>
@@ -54,185 +54,142 @@
         </table>
     </div>
     {{--End--}}
-    <br>
-    <div class="invice-holder">
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Exclusive</strong></label>
-            </div>
-            <div class="col-md-4">
-                <label class="mt-checkbox">
-                    @if($service?->tax_treatment_type_id == Config::get('constants.tax_both') || $service?->tax_treatment_type_id == Config::get('constants.tax_is_exclusive'))
-                        <input type="hidden" name="is_exclusive_consultancy" value="0"/>
-                        <label class="custom_checkbox">
-                            <input id="is_exclusive_consultancy" type="checkbox" name="is_exclusive_consultancy" value="1" checked>
-                            <strong></strong>
-                        </label>
-                    @else
-                        <input type="hidden" name="is_exclusive_consultancy" value="0"/>
-                        <label class="custom_checkbox">
-                            <input id="is_exclusive_consultancy" type="checkbox" name="is_exclusive_consultancy" value="0">
-                            <strong></strong>
-                        </label>
 
-                    @endif
-                </label>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Amount Type</strong></label>
-            </div>
-            <div class="col-md-4">
-                <select name="amount_type" id="amount_type" class="form-control discount_id">
-                    <option value="0">Default Amount</option>
-                    <option value="1">Custom Amount</option>
-                </select>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Discount</strong></label>
-            </div>
-            <div class="col-md-4">
-                <select name="discount_id" id="discount_id" class="form-control select2 discount_id">
-                    <option value="0">Select Discount</option>
-                    @foreach($discounts as $discount)
-                        <option value="{{$discount['id']}}">{{$discount['name']}}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Discount Type</strong></label>
-            </div>
-            <div class="col-md-4">
-                <select name="discount_type" id="discount_type" class="form-control select2" disabled>
-                    <option value="0">Select Discount Type</option>
-                    <option value="Fixed">Fixed</option>
-                    <option value="Percentage">Percentage</option>
-                </select>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Discount Value</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="number" name="discount_value" id="discount_value" value="0" class="form-control disabled-field" disabled>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Amount</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="amount" id="amount" class="form-control disabled-field" value="{{$price}}" readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Tax Price</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="tax" id="tax" class="form-control disabled-field" value="{{$tax}}" readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Tax Amt.</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="tax_amt" id="tax_amt" class="form-control disabled-field" value="{{$tax_amt}}" readonly>
-            </div>
-        </div>
-        {{--<br>--}}
-        <div class="row" style="display: none;">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Balance Amount</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="balance" id="balance" class="form-control disabled-field" value="{{$balance}}" readonly>
-            </div>
-        </div>
-        <br>
+    <div class="form-group">
 
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Amount Received</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="number" name="cash" id="cash" value="{{$cash}}" class="form-control">
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Settle Amount</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="settle" id="settle" class="form-control disabled-field" value="{{$settleamount}}" readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Outstanding</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="outstand" id="outstand" class="form-control disabled-field" value="{{$outstanding}}"
-                       onchange='outstandingAmount()' readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Date</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
-                       class="form-control disabled-field custom-datepicker" id="created_at" required readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row" id="paymentmode" style="display: none;">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Payment Mode</strong></label>
-            </div>
-            <div class="col-md-4">
-                {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control','id'=>'payment_mode_id']) !!}
-            </div>
-        </div>
-    </div>
+        <div class="row mt-5">
 
-    <div class="row">
-        <hr>
-        <div class="col-md-12" id="addinvoice">
-            <button class="btn btn-success spinner-button" name="savepackageinformation" id="savepackageinformation"
-                style="float: right;margin-top:20px;">Save
-            </button>
+            {{--left section--}}
+            <div class="col-md-8">
+
+                <div class="md-col-10" style="max-width: 79.6666666667%">
+
+                    <label style="margin-left: 15px;"><strong>Amount Type</strong></label>
+                    <select style="margin-left: 15px;" name="amount_type" id="amount_type" class="form-control discount_id">
+                        <option value="0">Default Amount</option>
+                        <option value="1">Custom Amount</option>
+                    </select>
+
+                </div>
+
+                <div class="col-md-10 mt-5">
+                    <label><strong>Discount</strong></label>
+                    <select name="discount_id" id="discount_id" class="form-control discount_id">
+                        <option value="0">Select Discount</option>
+                        @foreach($discounts as $discount)
+                            <option value="{{$discount['id']}}">{{$discount['name']}}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-10 mt-5">
+                    <label><strong>Discount Type</strong></label>
+                    <select name="discount_type" id="discount_type" class="form-control select2" disabled>
+                        <option value="0">Select Discount Type</option>
+                        <option value="Fixed">Fixed</option>
+                        <option value="Percentage">Percentage</option>
+                    </select>
+                </div>
+
+                <div class="col-md-10 mt-5">
+                    <label><strong>Discount Value</strong></label>
+                    <input type="number" name="discount_value" id="discount_value" value="0" class="form-control disabled-field" disabled>
+                </div>
+
+            </div>
+
+            {{--end left section--}}
+
+            <div class="col-md-4">
+                <div class="col-md-10 mt-12">
+                    <!--begin::Option-->
+                    <span class="switch switch-sm switch-icon switch_custom">
+                        <div class="col-md-12" style="padding-left: 0">
+                            <strong>Exclusive</strong>
+                               @if($service?->tax_treatment_type_id == Config::get('constants.tax_both') || $service?->tax_treatment_type_id == Config::get('constants.tax_is_exclusive'))
+                                    <input type="hidden" name="is_exclusive_consultancy" value="0"/>
+                                    <label class="float-right">
+                                        <input id="is_exclusive_consultancy" type="checkbox" name="is_exclusive_consultancy" value="1">
+                                        <span></span>
+                                    </label>
+                               @else
+                                <input type="hidden" name="is_exclusive_consultancy" value="0"/>
+
+                                <label class="float-right">
+                                        <input id="is_exclusive_consultancy" type="checkbox" name="is_exclusive_consultancy" value="0">
+                                        <span></span>
+                                    </label>
+                               @endif
+                            </div>
+                    </span>
+                </div>
+
+                <div class="col-md-10 mt-5">
+                    <strong>Amount</strong>
+                    <strong class="float-right" id="amount">{{$price}}</strong>
+                    <input type="hidden" class="amount" name="amount" value="{{$price}}">
+                </div>
+
+                <div class="col-md-10 mt-5">
+                    <strong>Tax Price</strong>
+                    <strong id="tax" class="float-right" >{{$tax}}</strong>
+                    <input type="hidden" class="tax" name="tax" value="{{$tax}}">
+                </div>
+
+                <div class="col-md-10 mt-5">
+                    <strong>Tax Amt.</strong>
+                    <strong id="tax_amt" class="float-right">{{$tax_amt}}</strong>
+                    <input type="hidden" class="tax_amt" name="tax_amt" value="{{$tax_amt}}">
+                </div>
+
+                <div class="col-md-10 mt-5" style="display: none;">
+                    <strong>Balance Amount</strong>
+                    <strong id="balance" class="float-right">{{$balance}}</strong>
+                    <input type="hidden" class="balance" name="balance" value="{{$balance}}">
+                </div>
+
+                <div class="col-md-10 mt-5">
+                    <strong>Settle Amount</strong>
+                    <strong id="settle" class="float-right">{{$settleamount}}</strong>
+                    <input type="hidden" class="settle" name="settle" value="{{$settleamount}}">
+                </div>
+
+                <div class="col-md-10 mt-5">
+                    <strong>Outstanding</strong>
+                    <strong id="outstand" class="float-right">{{$outstanding}}</strong>
+                    <input type="hidden" class="outstand" name="outstand" value="{{$outstanding}}">
+                </div>
+
+                <div class="col-md-11 mt-5">
+                    <strong class="mt-5">Date</strong>
+                    <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
+                    <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
+                           class="form-control custom-datepicker float-right custom_field" id="created_at" readonly>
+                </div>
+
+                <div class="col-md-10 mt-5 mb-10">
+                    <strong class="mt-5">Pay</strong>
+                    <input style="width: 50%;" type="number" name="cash" id="cash" value="{{$cash}}" class="form-control float-right">
+                </div>
+
+                <div class="col-md-10 mt-5" id="paymentmode" style="display: none;">
+                    <strong>Payment Mode</strong>
+                    {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control float-right','id'=>'payment_mode_id', 'style' => 'width:50%;']) !!}
+
+                </div>
+
+                <br>
+                <div class="col-md-10 mt-5 mb-10">
+                <div id="addinvoice">
+                    <button class="btn btn-primary spinner-button" name="savepackageinformation" id="savepackageinformation"
+                            style="float: right;margin-top:20px;"><i class="la la-paper-plane-o"></i> Save & Print Invoice
+                    </button>
+                </div>
+
+            </div>
+
+            </div>
+
         </div>
     </div>
 
