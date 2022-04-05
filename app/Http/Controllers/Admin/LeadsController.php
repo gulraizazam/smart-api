@@ -101,7 +101,8 @@ class LeadsController extends Controller
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Leads = Leads::whereIn('id', $ids);
-                if ($Leads) {
+               
+                if ($Leads->count()) {
                     $Leads->delete();
                 }
                 $records["status"] = true; // pass custom message(useful for getting status of group actions)

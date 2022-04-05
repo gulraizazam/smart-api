@@ -575,8 +575,12 @@ function renderCheckbox() {
     return '<label class="custom_checkbox checkbox-all"><input class="select-all-checkboxes" type="checkbox"><strong></strong></label>';
 }
 
-function childCheckbox(data) {
-    return '<label class="checkbox checkbox-single checkbox-all"><input value="'+data.id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
+function childCheckbox(data, id = null) {
+    
+    if (id === null) {
+        id = data.id
+    }
+    return '<label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
 }
 
 

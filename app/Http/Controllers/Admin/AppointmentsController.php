@@ -1142,8 +1142,8 @@
 				if ($Appointments) {
 					$Appointments->delete();
 				}
-				$records["status"] = true; // pass custom message(useful for getting status of group actions)
-				$records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+				$records["status"] = true;
+				$records["message"] = "Records has been deleted successfully!";
 			}
 
             $records["permissions"] = [
