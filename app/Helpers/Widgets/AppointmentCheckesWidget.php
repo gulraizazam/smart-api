@@ -75,7 +75,7 @@ class AppointmentCheckesWidget
                         $end_break = Carbon::parse($resource_has_rota_days->end_off)->format('H:i');
                         if(($start_for_break_check >= $start_break) && ($start_for_break_check < $end_break)){
                             $appointment_status = false;
-                            $message = "Doctor rota is not available.";
+                            $message = "Appointment can't be created in break time.";
                             $status = array(
                                 'status' => $appointment_status,
                                 'message' => $message
