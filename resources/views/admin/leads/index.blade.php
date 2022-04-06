@@ -31,7 +31,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Leads</h3>
+                            <h3 class="card-label">{{\Illuminate\Support\Str::title(request('type'))}} Leads</h3>
 
                         </div>
 
