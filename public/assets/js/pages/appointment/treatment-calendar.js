@@ -313,6 +313,7 @@ var TreatmentCalendar = function() {
                 location_id : $("#treatment_location_filter").val(),
                 machine_id : $("#treatment_resource_filter").val(),
                 doctor_id : $("#treatment_doctor_filter").val(),
+                resource_id : $("#treatment_resource_filter").val(),
                 start : start,
                 appointment_type : 'treatment',
             });

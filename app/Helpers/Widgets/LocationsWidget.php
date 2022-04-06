@@ -1002,6 +1002,7 @@ class LocationsWidget
         //      Find All Services
 
         $resoruce_info = Resources::find($resource_id);
+
         $machinetype = MachineType::find($resoruce_info->machine_type_id);
 
         $rootservice = MachineTypeHasServices
