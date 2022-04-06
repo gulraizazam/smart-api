@@ -5,12 +5,12 @@
     color: #3699FF;
 }
 .user-popup {
-
     z-index: 105;
     position: fixed;
     inset: 0px 0px auto auto;
     margin: 0px;
     transform: translate(-30px, 65px);
+    width: auto !important;
 
 }
 

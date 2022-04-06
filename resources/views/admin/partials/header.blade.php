@@ -24,7 +24,7 @@
                     </span>
 
 
-                    <div class="user-popup menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-primary fw-bold py-4 fs-6 w-275px" data-kt-menu="true" style="display:none; z-index: 105; position: fixed; inset: 0px 0px auto auto; margin: 0px; transform: translate(-30px, 65px);" data-popper-placement="bottom-end">
+                    <div class="user-popup menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-primary fw-bold py-4 fs-6" data-kt-menu="true" style="display:none; z-index: 105; position: fixed; inset: 0px 0px auto auto; margin: 0px; transform: translate(-30px, 65px); width: auto !important;" data-popper-placement="bottom-end">
                         <!--begin::Menu item-->
                         <div class="menu-item px-3">
                             <div class="menu-content d-flex align-items-center px-3">
