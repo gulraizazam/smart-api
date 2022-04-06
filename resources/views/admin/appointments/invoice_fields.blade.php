@@ -173,18 +173,18 @@
                 @endif
                 {{--End--}}
 
-                <div class="col-md-10 mt-5">
+                {{--<div class="col-md-10 mt-5">
                     <strong>Amount</strong>
                     <strong class="float-right" id="amount_create">{{$amount_create}}</strong>
-                    <input type="hidden" class="amount_create" name="amount_create" value="{{$amount_create}}">
-                </div>
+                </div>--}}
+                <input type="hidden" class="amount_create" name="amount_create" value="{{$amount_create}}">
 
 
-                <div class="col-md-10 mt-5">
+               {{-- <div class="col-md-10 mt-5">
                     <strong>Tax Price</strong>
                     <strong class="float-right" id="tax_create">{{$tax_create}}</strong>
-                    <input type="hidden" class="tax_create" name="tax_create" value="{{$tax_create}}">
-                </div>
+                </div>--}}
+                <input type="hidden" class="tax_create" name="tax_create" value="{{$tax_create}}">
 
                 <div class="col-md-10 mt-5">
                     <strong>Tax Amt.</strong>
@@ -194,18 +194,22 @@
                 </div>
 
 
-                <div class="col-md-10 mt-5">
-                    <strong>Balance Amount</strong>
-                    <strong class="float-right" id="balance_create">{{$balance}}</strong>
-                    <input type="hidden" class="balance_create" name="balance_create" value="{{$balance}}">
-                </div>
+                @if($balance > 0)
+                    <div class="col-md-10 mt-5">
+                        <strong>Balance Amount</strong>
+                        <strong class="float-right" id="balance_create">{{$balance}}</strong>
+                    </div>
+                @endif
+                <input type="hidden" class="balance_create" name="balance_create" value="{{$balance}}">
 
 
-                <div class="col-md-10 mt-5">
-                    <strong>Settle Amount</strong>
-                    <strong class="float-right" id="settle_create">{{$settleamount}}</strong>
-                    <input type="hidden" class="settle_create" name="settle_create" value="{{$settleamount}}">
-                </div>
+                @if($settleamount > 0)
+                    <div class="col-md-10 mt-5">
+                        <strong>Settle Amount</strong>
+                        <strong class="float-right" id="settle_create">{{$settleamount}}</strong>
+                    </div>
+                @endif
+                <input type="hidden" class="settle_create" name="settle_create" value="{{$settleamount}}">
 
                 <div class="col-md-10 mt-5">
                     <strong>Outstanding</strong>

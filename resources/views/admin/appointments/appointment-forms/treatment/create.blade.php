@@ -56,7 +56,7 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <select id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))" class="form-control patient_search_id" name="patient_id"></select>
+                            <select id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))" class="form-control treatment_patient_search_id" name="patient_id"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
