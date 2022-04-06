@@ -72,6 +72,7 @@
 
                 </div>
 
+                @if($discounts->count() > 0)
                 <div class="col-md-10 mt-5">
                     <label><strong>Discount</strong></label>
                     <select name="discount_id" id="discount_id" class="form-control discount_id">
@@ -81,19 +82,20 @@
                         @endforeach
                     </select>
                 </div>
+                @endif
 
-                <div class="col-md-10 mt-5">
+                <div class="col-md-10 mt-5 discount_type_section" style="display: none;">
                     <label><strong>Discount Type</strong></label>
-                    <select name="discount_type" id="discount_type" class="form-control select2" disabled>
+                    <select name="discount_type" id="discount_type" class="form-control" disabled>
                         <option value="0">Select Discount Type</option>
                         <option value="Fixed">Fixed</option>
                         <option value="Percentage">Percentage</option>
                     </select>
                 </div>
 
-                <div class="col-md-10 mt-5">
+                <div class="col-md-10 mt-5 discount_value_section" style="display: none;">
                     <label><strong>Discount Value</strong></label>
-                    <input type="number" name="discount_value" id="discount_value" value="0" class="form-control disabled-field" disabled>
+                    <input type="number" name="discount_value" id="discount_value" value="0" class="form-control" disabled>
                 </div>
 
             </div>
@@ -124,17 +126,17 @@
                     </span>
                 </div>
 
-                <div class="col-md-10 mt-5">
+                {{--<div class="col-md-10 mt-5">
                     <strong>Amount</strong>
                     <strong class="float-right" id="amount">{{$price}}</strong>
-                    <input type="hidden" class="amount" name="amount" value="{{$price}}">
-                </div>
+                </div>--}}
+                <input type="hidden" class="amount" name="amount" value="{{$price}}">
 
-                <div class="col-md-10 mt-5">
+                {{--<div class="col-md-10 mt-5">
                     <strong>Tax Price</strong>
                     <strong id="tax" class="float-right" >{{$tax}}</strong>
-                    <input type="hidden" class="tax" name="tax" value="{{$tax}}">
-                </div>
+                </div>--}}
+                <input type="hidden" class="tax" name="tax" value="{{$tax}}">
 
                 <div class="col-md-10 mt-5">
                     <strong>Tax Amt.</strong>

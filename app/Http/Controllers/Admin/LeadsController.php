@@ -101,7 +101,7 @@ class LeadsController extends Controller
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Leads = Leads::whereIn('id', $ids);
-               
+
                 if ($Leads->count()) {
                     $Leads->delete();
                 }

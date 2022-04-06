@@ -437,7 +437,7 @@ function setCreateTreatment(response, start) {
 
     try {
 
-        patientSearch('patient_search_id');
+        patientSearch('treatment_patient_search_id');
 
         $("#modal_create_treatment").modal("show");
 

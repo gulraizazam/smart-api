@@ -535,6 +535,9 @@ function commentData(user_name, created_at, comment) {
 function setCreateConsultancy(response, start) {
 
     try {
+
+        $("#create_patient_search").parent("div").find(".selection").remove();
+
         patientSearch('patient_search_id')
 
         $("#modal_create_consultancy").modal("show");

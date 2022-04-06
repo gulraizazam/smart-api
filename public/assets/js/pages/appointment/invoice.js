@@ -59,6 +59,9 @@ $(document).ready(function () {
             },
             success: function (response) {
                 if (response.status) {
+
+                    $(".discount_type_section").show();
+                    $(".discount_value_section").show();
                     $("#discount_type").val(response.discount_type).change();
                     $("#discount_type").prop("disabled", true);
                     $("#discount_value").val(response.discount_price);
@@ -168,7 +171,7 @@ $(document).ready(function () {
         if ($('#amount_type').val() == 1) {
             if ($('#cash').val() == 0) {
                 $('#customfield').show();
-                toastr.error("Cash must be greater than zero.")
+                toastr.warning("Cash must be greater than zero.")
                 status = false;
                 $(this).attr("disabled", false);
                 hideSpinner();
@@ -554,6 +557,8 @@ function keyfunction_custom(type = '') {
                         },
                         success: function (response) {
                             if (response.status) {
+                                $(".discount_type_section").show();
+                                $(".discount_value_section").show();
                                 $("#amount").text(response.price);
                                 $(".amount").val(response.price);
                                 if (type == '') {
@@ -778,4 +783,11 @@ function triggerDate($class) {
         $('.custom_field').datepicker("show");
     });
 
+}
+
+function showHideDiscount($this) {
+
+    if ($this.val() != '') {
+
+    }
 }
