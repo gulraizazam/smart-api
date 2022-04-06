@@ -786,6 +786,8 @@ function setEditData(response) {
         $("#resourceRotaDayID").val(resourceHadRotaDay?.id);
         $("#start_time").val(resourceHadRotaDay?.start_time);
         $("#end_time").val(resourceHadRotaDay?.end_time);
+        $("#consultancy_appointment_type").val(appointment?.appointment_type_id);
+
 
 
     } catch (error) {
@@ -865,6 +867,7 @@ function setTreatmentEditData(response) {
         $("#treatment_start_time").val(resourceHadRotaDay?.start_time);
         $("#treatment_end_time").val(resourceHadRotaDay?.end_time);
 
+        $("#treatment_appointment_type").val(appointment?.appointment_type_id);
 
     } catch (error) {
        showException(error);

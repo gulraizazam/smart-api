@@ -2300,6 +2300,14 @@
 			}
 
 			$appointment = Appointments::find($id);
+
+            $rota = $this->checkRota($appointment, $request);
+
+            if (!$rota['status']) {
+                return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
+            }
+
+
 			if (! $appointment) {
                 return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
             }
@@ -5543,20 +5551,7 @@
                      return ApiHelper::apiResponse($this->success, 'Appoimtment has Invoice or has been canceled!', false);
                  }
 
-                 $object = new \stdClass();
-                 $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
-                 $object->city_id = $appointment->city_id;
-                 $object->doctor_id = $appointment->doctor_id;
-                 $object->location_id = $appointment->location_id;
-                 $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
-
-                 if ($appointment->appointment_type_id == 1 ) {
-                     $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
-
-                 } else {
-                     $object->machine_id = $appointment->resource_id;
-                     $rota = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcalender($object);
-                 }
+                 $rota = $this->checkRota($appointment, $request);
 
                  if ($rota['status']) {
 
@@ -5576,4 +5571,27 @@
             return ApiHelper::apiResponse($this->success, 'Appointment not found!', false);
 
         }
+
+        private function checkRota($appointment, $request) {
+
+            $object = new \stdClass();
+            $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
+            $object->city_id = $appointment->city_id;
+            $object->doctor_id = $appointment->doctor_id;
+            $object->location_id = $appointment->location_id;
+            $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
+
+            if ($appointment->appointment_type_id == 1 ) {
+                $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
+
+            } else {
+                $object->machine_id = $appointment->resource_id;
+                $rota = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcalender($object);
+            }
+
+            return $rota;
+
+        }
+
+
 	}
