@@ -5581,7 +5581,7 @@
             $object->location_id = $appointment->location_id;
             $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
 
-            if ($appointment->appointment_type_id == 1 ) {
+            if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy') ) {
                 $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
 
             } else {

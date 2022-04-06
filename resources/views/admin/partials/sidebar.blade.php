@@ -163,18 +163,18 @@
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
                             @can('leads_manage')
-                                <li class="menu-item {{activeMenu('admin.leads.index')}}" aria-haspopup="true">
+                                <li class="menu-item {{isActive(url('admin/leads'), 'other')}}" aria-haspopup="true">
                                     <a href="{{route('admin.leads.index')}}" class="menu-link">
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
                                         </i>
-                                        <span class="menu-text">Leads</span>
+                                        <span class="menu-text">Leads </span>
                                     </a>
                                 </li>
                             @endcan
 
                                 @can('leads_manage')
-                                    <li class="menu-item {{activeMenu('admin.leads.index')}}" aria-haspopup="true">
+                                    <li class="menu-item {{isActive(url('admin/leads?type=junk'), 'junk')}}" aria-haspopup="true">
                                         <a href="{{route('admin.leads.index', ['type' => 'junk'])}}" class="menu-link">
                                             <i class="menu-bullet menu-bullet-dot">
                                                 <span></span>

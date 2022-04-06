@@ -84,10 +84,27 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
 
                 return $class;
             }
+        } else if ($queryString && request('type') != null && request('type') != '') {
+
+            if (request()->route()->getName() == $route && request('type') == $queryString) {
+
+                return $class;
+            }
         } else if (request()->route()->getName() == $route) {
             return $class;
         }
         return '';
+    }
+
+    function isActive($url, $query = 'junk') {
+
+        if ($query == 'junk' && request()->fullUrl() == $url) {
+            return 'menu-item-active';
+        } else if($query == 'other' && request()->fullUrl() == $url) {
+            return 'menu-item-active';
+        }
+
+        return  '';
     }
 
     function getPatientName($id) {
@@ -95,7 +112,6 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
     }
 
     function getPatientInfo() {
-
 
         $total_cash_in = PackageAdvances::where('cash_flow', '=', 'in')
             ->where('patient_id', request('id'))
