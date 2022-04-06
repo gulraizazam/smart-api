@@ -1590,15 +1590,18 @@ class LeadsController extends Controller
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
      */
+
     public function uploadLeads(FileUploadLeadsRequest $request)
     {
+        if (!Gate::allows('leads_import')) {
+            flash('You are not authorized to access this resource.')->error()->important();
+            return redirect()->route('admin.leads.index');
+        }
+
         try {
 
-            if (!Gate::allows('leads_import')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-
             if ($request->hasfile('leads_file')) {
+
                 $File = $request->file('leads_file');
                 $File->store('public/files');
 
@@ -1608,6 +1611,8 @@ class LeadsController extends Controller
 
                 \File::delete($fullPath);
 
+
+                // Read File and dump data
                 $SheetData = $SpreadSheet->getActiveSheet(0)->toArray(null, true, true, true);
 
                 if (count($SheetData)) {
@@ -2084,11 +2089,12 @@ class LeadsController extends Controller
                             Leads::insert($LeadData);
                         }
                         // Invalid data is provided
-
                         return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($LeadData) . ', Duplicates: ' . count($dupPhones));
+                    } else {
+                        return ApiHelper::apiResponse($this->success, 'Invalid data provided. Pattern should: Full Name, Email, Phone, Gender, City, Lead Source, Lead Status');
                     }
-
-                    return ApiHelper::apiResponse($this->success, 'Invalid data provided. Pattern should: Full Name, Email, Phone, Gender, City, Lead Source, Lead Status', false);
+                } else {
+                    return ApiHelper::apiResponse($this->success, 'No input file specified..');
                 }
 
                 return ApiHelper::apiResponse($this->success, 'No input file specified..', false);
