@@ -4573,8 +4573,8 @@
 						'rotas' => $doctor_rotas->toArray(),
 						'min_time' => $minTime,
 						'resource_ids' => $resource_ids,
-                         'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
-                        'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
+                         'start_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))->format("H:i:s"),
+                        'end_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))->format("H:i:s"),
 					));
 				} else {
 					return response()->json(array(
@@ -5536,14 +5536,41 @@
         public function updateSchedule(Request $request) {
 
             $appointment = Appointments::find($request->appointment_id);
-             if ($appointment) {
-                 $appointment->update([
-                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
-                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
-                     'updated_by' => auth()->id(),
-                 ]);
 
-                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
+             if ($appointment) {
+                 if ($appointment->appointment_status_id == config('constants.appointment_status_arrived')
+                     || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
+                     return ApiHelper::apiResponse($this->success, 'Appoimtment has Invoice or has been canceled!', false);
+                 }
+
+                 $object = new \stdClass();
+                 $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
+                 $object->city_id = $appointment->city_id;
+                 $object->doctor_id = $appointment->doctor_id;
+                 $object->location_id = $appointment->location_id;
+                 $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
+
+                 if ($appointment->appointment_type_id == 1 ) {
+                     $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
+
+                 } else {
+                     $object->machine_id = $appointment->resource_id;
+                     $rota = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcalender($object);
+                 }
+
+                 if ($rota['status']) {
+
+                     $appointment->update([
+                         'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
+                         'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
+                         'updated_by' => auth()->id(),
+                         'appointment_status_id' => config('constants.appointment_status_pending'),
+                     ]);
+
+                     return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
+                 }
+
+                 return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
              }
 
             return ApiHelper::apiResponse($this->success, 'Appointment not found!', false);

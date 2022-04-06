@@ -23,7 +23,11 @@ var table_columns = [
         title: 'Scheduled',
         width: 'auto',
         template: function (data) {
-            return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+           if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
+               return '<span>'+data.scheduled_date+'</span>';
+           } else {
+               return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+           }
         }
     },{
         field: 'service_id',
