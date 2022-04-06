@@ -26,28 +26,16 @@
             <tr>
                 <th>Full Name</th>
                 <td id="full_name"></td>
-                <th>Email</th>
-                <td id="email"></td>
                 <th>Phone</th>
                 <td id="phone"></td>
-            </tr>
-            <tr>
-                <th>DOB</th>
-                <td id="dob"></td>
-                <th>Gender</th>
-                <td id="gender"></td>
-                <th>SMS Status</th>
-                <td id="sms_status"></td>
-            </tr>
-            <tr>
-                <th>Address</th>
-                <td colspan="3" id="address"></td>
                 <th>City</th>
                 <td id="city"></td>
+
             </tr>
+
             <tr>
-                <th>Town</th>
-                <td id="town"></td>
+                <th>Gender</th>
+                <td id="gender"></td>
                 <th>Lead Source</th>
                 <td id="lead_source"></td>
                 <th>Lead Status</th>
