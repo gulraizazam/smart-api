@@ -1041,3 +1041,14 @@ let loadDoctors = function (locationId) {
          }
      });
 }
+
+function skipStatus($this) {
+
+    if ($this.is(":checked")) {
+        $("#skip_lead_statuses").prop("disabled", false);
+        $(".skip_lead_status").css("opacity", 1);
+    } else {
+        $("#skip_lead_statuses").prop("disabled", true);
+        $(".skip_lead_status").css("opacity", 0.7);
+    }
+}
