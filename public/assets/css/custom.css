@@ -732,3 +732,9 @@ div > input {
 .rota-section .row {
     margin-top: 1.5rem !important;
 }
+.dashboard-counter {
+    font-size: 14px;
+    font-weight: 600;
+    /*padding-left: 20px;*/
+    float: right;
+}

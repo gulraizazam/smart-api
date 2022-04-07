@@ -87,6 +87,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::post('update_password',  [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
 
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+        Route::post('/home/datatable', [App\Http\Controllers\HomeController::class, 'datatable'])->name('home.datatable');
 
 
         Route::get('settings', [SettingsController::class,'index'])->name('settings.index');
