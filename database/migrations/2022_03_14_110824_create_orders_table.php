@@ -15,8 +15,12 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('account_id');
             $table->integer('patient_id');
             $table->float('total_price', 8, 2)->nullable();
+            $table->integer('refund_order_id')->nullable();
+            $table->enum('order_type', ['sale', 'refund']);
+            $table->tinyInteger('status')->default(1);
             $table->integer('created_by');
             $table->timestamps();
         });
