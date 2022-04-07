@@ -15,6 +15,7 @@ class CreateProductDetailsTable extends Migration
     {
         Schema::create('product_details', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('account_id');
             $table->foreignId('product_id');
             $table->float('purchase_price', 8, 2);
             $table->float('total_purchase_price', 8, 2);
