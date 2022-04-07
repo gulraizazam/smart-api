@@ -29,7 +29,7 @@ var table_columns = [
     }, {
         field: 'commission',
         title: 'Commission',
-        width: 60,
+        width: 100,
     },{
         field: 'locations',
         title: 'centre',
