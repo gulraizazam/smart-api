@@ -15,7 +15,7 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('account_id');
+            $table->unsignedInteger('account_id');
             $table->integer('patient_id');
             $table->float('total_price', 8, 2)->nullable();
             $table->integer('refund_order_id')->nullable();
