@@ -76,6 +76,9 @@ jQuery(document).ready(function() {
 
 function toggleSection($this, $class) {
 
+    $(".menu-item").removeClass('menu-item-active');
+    $(".manage-" + $class).addClass('menu-item-active');
+
     setQueryStringParameter('city_id');
     setQueryStringParameter('location_id');
     setQueryStringParameter('doctor_id');
@@ -87,8 +90,9 @@ function toggleSection($this, $class) {
 
     if ($class == 'appointment') {
         $(".export-appointments").show();
+        setQueryStringParameter('tab', $class);
         reInitTable();
-        setQueryStringParameter('tab');
+       // setQueryStringParameter('tab');
     } else {
         $(".export-appointments").hide();
         setQueryStringParameter('tab', $class);

@@ -84,12 +84,6 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
 
                 return $class;
             }
-        } else if ($queryString && request('type') != null && request('type') != '') {
-
-            if (request()->route()->getName() == $route && request('type') == $queryString) {
-
-                return $class;
-            }
         } else if (request()->route()->getName() == $route) {
             return $class;
         }
