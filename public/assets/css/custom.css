@@ -725,3 +725,10 @@ div > input {
     font-weight: 600;
     height: 25px;
 }
+.modal-body {
+    padding-top: 0px;
+}
+
+.rota-section .row {
+    margin-top: 1.5rem !important;
+}

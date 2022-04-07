@@ -1,5 +1,5 @@
 <!--begin::Modal content-->
-<div class="modal-content">
+<div class="modal-content rota-section">
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
@@ -333,7 +333,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <a href="" class="btn btn-light me-3 popup-close" >Cancel</a>
                 <button type="submit" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
