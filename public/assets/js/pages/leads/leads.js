@@ -6,7 +6,7 @@ if (typeof lead_type !== 'undefined' && lead_type != '') {
 var table_columns = [{
     field: 'id',
     sortable: false,
-    width: 'auto',
+    width: 60,
     title: renderCheckbox(),
     template: function(data) {
         return childCheckbox(data, data.lead_id);
@@ -15,7 +15,7 @@ var table_columns = [{
     field: 'PatientId',
     title: 'ID',
     sortable: false,
-    width: 'auto',
+    width: 80,
 }, {
     field: 'name',
     title: 'Full Name',
@@ -33,7 +33,7 @@ var table_columns = [{
     field: 'city_id',
     title: 'City',
     sortable: false,
-    width: 'auto',
+    width: 80,
     className: 'tooltip_wrap',
     template: function (data) {
 
@@ -60,6 +60,15 @@ var table_columns = [{
         return '<a href="javascript:void(0);" onclick="editLeadStatus('+data.lead_id+');">'+data.lead_status_id+'</a>';
     }
 }, {
+    field: 'status',
+    title: 'Status',
+    sortable: false,
+    width: 'auto',
+    template: function(data) {
+        let status_url = route('admin.leads.status');
+        return statuses(data, status_url);
+    }
+},{
     field: 'service_id',
     title: 'Service',
     sortable: false,
@@ -74,16 +83,7 @@ var table_columns = [{
     title: 'Created By',
     sortable: false,
     width: 'auto',
-}, {
-    field: 'status',
-    title: 'Status',
-    sortable: false,
-    width: 'auto',
-    template: function(data) {
-        let status_url = route('admin.leads.status');
-        return statuses(data, status_url);
-    }
-}, {
+},  {
     field: 'actions',
     title: 'Actions',
     sortable: false,
