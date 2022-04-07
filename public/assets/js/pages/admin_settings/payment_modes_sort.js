@@ -17,11 +17,19 @@ var KTCardDraggable = function () {
                 }
             });
             swappable.on('drag:stop', () => {
+
                 let page_id_array = new Array();
                 setTimeout(function () {
-                    $('#draggable-zone').children('.element-draggable').each(function () {
+                    $('#draggable-zone').children('.element-draggable').each(function (e) {
                         page_id_array.push($(this).attr("id"));
                     });
+
+                   let result = arraysAreIdentical(sortOrder, page_id_array)
+                   if (result) {
+                       return false;
+                   }
+                    sortOrder = page_id_array;
+
                     $.ajax({
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -41,12 +49,24 @@ var KTCardDraggable = function () {
     };
 }();
 
+function arraysAreIdentical(arr1, arr2) {
+    if (arr1.length !== arr2.length) return false;
+    for (var i = 0, len = arr1.length; i < len; i++){
+        if (arr1[i] != arr2[i]){
+            return false;
+        }
+    }
+    return true;
+}
+
+var sortOrder = [];
 jQuery(document).ready(function () {
     $.ajax({
         url: route('admin.payment_modes.sort_get'),
         method: "get",
         success: function (response) {
             response.data.forEach(function (value, index) {
+                sortOrder.push(value.id)
                 $('#draggable-zone').append(dragAbleField(value.id, value.name));
             });
         }
