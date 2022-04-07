@@ -37,6 +37,7 @@ var ConsultancyCalendar = function() {
                 aspectRatio: 3,
                 minTime: "09:00:00",
                 maxTime: "23:00:00",
+                displayEventTime: true,
 
                 nowIndicator: true,
                 now: TODAY,
