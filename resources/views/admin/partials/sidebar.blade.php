@@ -212,7 +212,7 @@
                                 <ul class="menu-subnav">
 
                                     @can('appointments_consultancy')
-                                        <li class="menu-item {{activeMenu('admin.appointments.index', 'menu-item-active', 'consultancy')}}" aria-haspopup="true">
+                                        <li class="menu-item manage-consultancy {{activeMenu('admin.appointments.index', 'menu-item-active', 'consultancy')}}" aria-haspopup="true">
                                             <a href="{{route('admin.appointments.index', ['tab' => 'consultancy'])}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
@@ -223,7 +223,7 @@
                                     @endcan
 
                                         @can('appointments_services')
-                                            <li class="menu-item {{activeMenu('admin.appointments.index', 'menu-item-active', 'treatment')}}" aria-haspopup="true">
+                                            <li class="menu-item manage-treatment {{activeMenu('admin.appointments.index', 'menu-item-active', 'treatment')}}" aria-haspopup="true">
                                                 <a href="{{route('admin.appointments.index', ['tab' => 'treatment'])}}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-dot">
                                                         <span></span>
@@ -234,7 +234,7 @@
                                         @endcan
 
                                     @can('appointments_manage')
-                                        <li class="menu-item {{activeMenu('admin.appointments.index', 'menu-item-active', 'appointment')}}" aria-haspopup="true">
+                                        <li class="menu-item manage-appointment {{activeMenu('admin.appointments.index', 'menu-item-active', 'appointment')}}" aria-haspopup="true">
                                             <a href="{{route('admin.appointments.index', ['tab' => 'appointment'])}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
