@@ -70,14 +70,16 @@ class SettingsController extends Controller
 
             if ($settings) {
                 foreach ($settings as $setting) {
+
                     switch ($setting->slug) {
                         case 'sys-discounts':
                             $exploded = explode(':', $setting->data);
-                            $setting->data = 'Min: ' . $exploded[0] . '%, Max: ' . $exploded[1] . '%';
+
+                            $setting->data = 'Min: ' . $exploded[0] . '%, Max: ' . isset($exploded[1]) === true ? $exploded[1] : 0 . '%';
                             break;
                         case 'sys-birthdaypromotion':
                             $exploded = explode(':', $setting->data);
-                            $setting->data = 'Pre Days: ' . $exploded[0] . ', Post Days: ' . $exploded[1];
+                            $setting->data = 'Pre Days: ' . $exploded[0] . ', Post Days: ' . isset($exploded[1]) === true ? $exploded[1] : 0;
                             break;
                         case 'sys-list-mode':
                             $setting->data = config('constants.listing_array')[$setting->data];

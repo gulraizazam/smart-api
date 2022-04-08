@@ -24,10 +24,11 @@
                                     <div class="dropdown dropdown-inline">
                                         <form id="dashboard-states" method="get" action="{{route('admin.home')}}">
 
-                                           <select class="form-control" name="date" onchange=" $('#dashboard-states').submit()">
-                                               <option value="{{$today}}"  {{request('date') == $today ? 'selected' : ''}}>Today</option>
-                                               <option value="{{$yesterday}}" {{request('date') == $yesterday ? 'selected' : ''}}>Yesterday</option>
-                                               <option value="{{$two_days}}" {{request('date') == $two_days ? 'selected' : ''}}>2 days ago</option>
+                                           <select class="form-control" name="type" onchange="changeDate();">
+                                               <option value="today"  {{request('type') == 'today' ? 'selected' : ''}}>Today</option>
+                                               <option value="yesterday" {{request('type') == 'yesterday' ? 'selected' : ''}}>Yesterday</option>
+                                               <option value="week" {{request('type') == 'week' ? 'selected' : ''}}>Last 7 Days</option>
+                                               <option value="month" {{request('type') == 'month' ? 'selected' : ''}}>This Month</option>
                                            </select>
 
                                         </form>
@@ -82,7 +83,7 @@
                                                         </svg>
                                                         <!--end::Svg Icon-->
 
-                                                          <span class="dashboard-counter">20</span>
+                                                          <span class="dashboard-counter">{{number_format($revenue)}}</span>
                                                     </span>
                                             <a href="#" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
@@ -93,7 +94,7 @@
 
                                                           <span class="dashboard-counter">{{$done_consultancies}}/{{$all_consultancies}}</span>
                                                     </span>
-                                            <a href="#" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
                                         </div>
                                     </div>
                                     <!--end::Row-->
@@ -104,7 +105,7 @@
                                                        <i class="la la-medkit" style="font-size: 40px;"></i>
                                                          <span class="dashboard-counter">{{$done_treatments}}/{{$all_treatments}}</span>
                                                     </span>
-                                            <a href="#" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
                                         </div>
                                         <div class="col bg-light-success px-6 py-8 rounded-xl">
                                                   <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
@@ -130,7 +131,29 @@
                             <!--end::Body-->
                         </div>
                         <!--end::Mixed Widget 1-->
+
                     </div>
+
+
+                    <div class="modal fade" id="modal_change_appointment_status" tabindex="-1" aria-hidden="true">
+                        <!--begin::Modal dialog-->
+                        <div class="modal-dialog modal-dialog-centered form-popup" id="appointment_status_change">
+
+                            @include('admin.appointments.appointment-forms.change-status')
+
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="modal_change_appointment_schedule" tabindex="-1" aria-hidden="true">
+                        <!--begin::Modal dialog-->
+                        <div class="modal-dialog modal-dialog-centered form-popup" id="appointment_schedule_change">
+
+                            @include('admin.appointments.appointment-forms.schedule')
+
+                        </div>
+                    </div>
+
+
                     <div class="col-lg-6 col-xxl-4">
                         <!--begin::List Widget 9-->
                         <div class="card card-custom card-stretch gutter-b">
@@ -362,7 +385,9 @@
                                         <span class="text-muted font-weight-bold mt-2">Weekly Income</span>
                                     </div>
                                 </div>
-                                <div id="kt_stats_widget_11_chart" class="card-rounded-bottom" data-color="success" style="height: 150px"></div>
+
+                                <div id="kt_docs_google_chart_pie"></div>
+
                             </div>
                             <!--end::Body-->
                         </div>
@@ -392,7 +417,10 @@
                                         <span class="text-muted font-weight-bold mt-2">New Users</span>
                                     </div>
                                 </div>
-                                <div id="kt_stats_widget_12_chart" class="card-rounded-bottom" data-color="primary" style="height: 150px"></div>
+
+{{--                                <div id="kt_stats_widget_12_chart" class="card-rounded-bottom" data-color="primary" style="height: 150px"></div>--}}
+                                <div class="mixed-widget-10-chart" data-kt-color="primary" style="height: 175px"></div>
+
                             </div>
                             <!--end::Body-->
                         </div>
@@ -410,9 +438,9 @@
                                 <div class="card-toolbar">
                                     <div class="dropdown dropdown-inline" data-toggle="tooltip" title="Quick actions" data-placement="left">
                                        <div class="btn-location">
-                                           <button class="btn btn-default" onclick="getArrivalsByDate($(this), '{{$month}}', '{{$currentTime}}', 'month');">This Month</button>
-                                           <button class="btn btn-default" onclick="getArrivalsByDate($(this), '{{$startWeek}}', '{{$currentTime}}', 'week');">This Week</button>
-                                           <button class="btn btn-primary" onclick="getArrivalsByDate($(this), '{{$today}}', '{{$currentTime}}', 'today');">Today</button>
+                                           <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$month}}', '{{$currentTime}}', 'month');">This Month</button>
+                                           <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$startWeek}}', '{{$currentTime}}', 'week');">This Week</button>
+                                           <button class="arrival-btn btn btn-primary" onclick="getArrivalsByDate($(this), '{{$today}}', '{{$currentTime}}', 'today');">Today</button>
                                        </div>
 
 
@@ -2888,7 +2916,38 @@
     <!--end::Content-->
 
     @push('datatable-js')
+        <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
         <script src="{{asset('assets/js/pages/dashboard/datatable.js')}}"></script>
+        <script src="{{asset('assets/js/jsapi.js')}}"></script>
+        <script src="{{asset('assets/js/pie.js')}}"></script>
+
+
+        <script>
+
+            google.load('visualization', '1', {
+                packages: ['corechart', 'bar', 'line']
+            });
+
+            google.setOnLoadCallback(function () {
+                var data = google.visualization.arrayToDataTable([
+                    ['Task', 'Hours per Day'],
+                    ['Work', 11],
+                    ['Eat', 2],
+                    ['Commute', 2],
+                    ['Watch TV', 2],
+                    ['Sleep', 7]
+                ]);
+
+                var options = {
+                    title: 'My Daily Activities',
+                    colors: ['#fe3995', '#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1']
+                };
+
+                var chart = new google.visualization.PieChart(document.getElementById('kt_docs_google_chart_pie'));
+                chart.draw(data, options);
+            });
+
+        </script>
     @endpush
 
 @endsection

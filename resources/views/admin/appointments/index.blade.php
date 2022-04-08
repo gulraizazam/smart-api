@@ -153,6 +153,37 @@
                 },1000);
             }
 
+            var consultancy = true;
+            $(document).ready(function () {
+                setTimeout( function () {
+                  //  if(consultancy) {
+                        setDashboardFilters();
+                    //}
+                    consultancy = false
+                },1500)
+
+            });
+
+            function setDashboardFilters() {
+                let result = get_query();
+
+                if(result?.type != null ) {
+
+                    $("#appoint_search_type").val('{{request('type')}}').change();
+                    $("#appoint_search_start").val('{{request('from')}}');
+                    $("#appoint_appoint_end").val('{{request('to')}}');
+                    $("#appoint_search_centre").val('{{request('center_id')}}').change();
+
+                    datatable.search({
+                        location_id: '{{request('center_id')}}',
+                        appointment_type_id: '{{request('type')}}',
+                        date_from: '{{request('from')}}',
+                        date_to: '{{request('to')}}',
+                        filter: 'filter',
+                    }, 'search');
+                }
+            }
+
         </script>
         <script src="{{asset('assets/js/pages/appointment/invoice.js?v=1')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/consultancy-calendar.js')}}"></script>

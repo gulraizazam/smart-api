@@ -985,6 +985,7 @@ function applyFilters(datatable) {
             updated_by: $("#appoint_search_rescheduled_by").val(),
             filter: 'filter',
         }
+
         datatable.search(filters, 'search');
     });
 
@@ -1118,6 +1119,10 @@ function resetCustomFilters() {
     addUsers();
     $('.select2').val(null).trigger('change');
 
+    setQueryStringParameter('type');
+    setQueryStringParameter('from');
+    setQueryStringParameter('to');
+    setQueryStringParameter('center_id');
    /* $(".advance-filters").slideUp();
     $(".advance-arrow").addsClass("fa-caret-right").removeClass("fa-caret-down")*/
 }
