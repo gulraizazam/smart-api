@@ -38,7 +38,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
-                            <input oninput="phoneField(this);" type="number" name="phone" id="edit_phone" class="form-control">
+                            <input oninput="phoneField(this);" type="text" name="phone" id="edit_phone" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
