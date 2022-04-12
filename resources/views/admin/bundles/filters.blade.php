@@ -21,7 +21,7 @@
         </div>
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Price:</label>
-            <input type="number" class="form-control filter-field" placeholder="Enter Price" id="search_price"/>
+            <input type="text" oninput="phoneField(this);" class="form-control filter-field" placeholder="Enter Price" id="search_price"/>
         </div>
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Total Services:</label>
