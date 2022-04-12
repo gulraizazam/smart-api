@@ -213,7 +213,7 @@ class SettingsController extends Controller
                     $setting->field_type = 'minmax';
                     $exploded = explode(':', $setting->data);
                     $setting->min = $exploded[0];
-                    $setting->max = $exploded[1];
+                    $setting->max = isset($exploded[1]) == true ? $exploded[1] : '0';
                     break;
                 case 'sys-birthdaypromotion':
                     $setting->field_type = 'prepost';
@@ -260,6 +260,7 @@ class SettingsController extends Controller
     public function update(Request $request, $id)
     {
         try {
+
             if (!Gate::allows('settings_edit'))
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
 

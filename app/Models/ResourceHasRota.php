@@ -61,7 +61,7 @@ class ResourceHasRota extends BaseModal
         if ($request->start <= $request->end) {
 
             $data = $request->all();
-            
+
             $resourcetype_id = ResourceTypes::find($request->resource_type_id);
 
             if (!$resourcetype_id) {
