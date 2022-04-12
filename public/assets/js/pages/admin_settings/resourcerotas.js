@@ -184,19 +184,19 @@ $(document).ready(function () {
             $('#tuesdayOperation_1').find("input").prop('disabled', true);
             $('#tuesdayElement_1').prop('checked', true);
 
-            $('.wednesdayOperation_1 :input').prop('disabled', true);
+            $('#wednesdayOperation_1').find("input").prop('disabled', true);
             $('#wednesdayElement_1').prop('checked', true);
 
-            $('.thursdayOperation_1 :input').attr('disabled', true);
+            $('#thursdayOperation_1').find("input").attr('disabled', true);
             $('#thursdayElement_1').prop('checked', true);
 
-            $('.fridayOperation_1 :input').attr('disabled', true);
+            $('#fridayOperation_1').find("input").attr('disabled', true);
             $('#fridayElement_1').prop('checked', true);
 
-            $('.saturdayOperation_1 :input').attr('disabled', true);
+            $('#saturdayOperation_1').find("input").attr('disabled', true);
             $('#saturdayElement_1').prop('checked', true);
 
-            $('.sundayOperation_1 :input').attr('disabled', true);
+            $('#sundayOperation_1').find("input").attr('disabled', true);
             $('#sundayElement_1').prop('checked', true);
 
             $('.check_final_1').hide();
@@ -220,13 +220,13 @@ $(document).ready(function () {
         else {
             $('.check_final_1').show();
             $('#copy_all_1').val('0');
-            $('#mondayOperation_1 :input').attr('disabled', false);
-            $('#tuesdayOperation_1 :input').attr('disabled', false);
-            $('#wednesdayOperation_1 :input').attr('disabled', false);
-            $('#thursdayOperation_1 :input').attr('disabled', false);
-            $('#fridayOperation_1 :input').attr('disabled', false);
-            $('#saturdayOperation_1 :input').attr('disabled', false);
-            $('#sundayOperation_1 :input').attr('disabled', false);
+            $('#mondayOperation_1').find("input").attr('disabled', false);
+            $('#tuesdayOperation_1').find("input").attr('disabled', false);
+            $('#wednesdayOperation_1').find("input").attr('disabled', false);
+            $('#thursdayOperation_1').find("input").attr('disabled', false);
+            $('#fridayOperation_1').find("input").attr('disabled', false);
+            $('#saturdayOperation_1').find("input").attr('disabled', false);
+            $('#sundayOperation_1').find("input").attr('disabled', false);
             $(".ftime_1").timepicker('setTime', new Date());
             $(".ttime_1").timepicker('setTime', new Date());
             $(".f_time_break").timepicker('setTime', null);

@@ -173,6 +173,12 @@ $(document).ready(function () {
         $('.default-timepicker').text($("#edit_scheduled_time").val());
     });
 
+    $("#apply-filters").click( function () {
+        if ($(".select-all-checkboxes").is(":checked")) {
+            $(".select-all-checkboxes").click();
+        }
+    });
+
 });
 
 function customDatePicker() {
@@ -416,6 +422,10 @@ function resetFilters() {
     $(".select2").select2({
         placeholder: 'Select'
     });
+    if ($(".select-all-checkboxes").is(":checked")) {
+
+        $(".select-all-checkboxes").click();
+    }
 }
 
 function advanceFilters() {
@@ -576,7 +586,7 @@ function renderCheckbox() {
 }
 
 function childCheckbox(data, id = null) {
-    
+
     if (id === null) {
         id = data.id
     }
@@ -711,7 +721,7 @@ function patientSearch(search_id = 'patient_id') {
                         results: $.map(data, function (item) {
 
                             return {
-                                text: item.name + ' - ' + item.id,
+                                text: item.name + ' - C-' + item.id,
                                 id: item.id
                             }
                         }),

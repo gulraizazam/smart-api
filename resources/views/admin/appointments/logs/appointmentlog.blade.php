@@ -8,7 +8,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Appointments List', 'title' => 'Patients'])
+    @include('admin.partials.breadcrumb', ['module' => 'Appointments List', 'title' => 'Appointments'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">

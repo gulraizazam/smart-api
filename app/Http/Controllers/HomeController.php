@@ -797,6 +797,10 @@ class HomeController extends Controller
                     $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
                     $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
                     break;
+                default:
+                    $start_date = Carbon::now()->format('Y-m-d');
+                    $end_date = Carbon::now()->format('Y-m-d');
+                    break;
             }
 
 

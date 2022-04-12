@@ -45,12 +45,17 @@ var table_columns = [{
 
         return '<a href="javascript:void(0);" data-city_id="'+data.cityId+'" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`, $(this))" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
     }
-}, {
+},{
+    field: 'service_id',
+    title: 'Service',
+    sortable: false,
+    width: 'auto',
+},/*{
     field: 'region_id',
     title: 'Region',
     sortable: false,
     width: 'auto',
-}, {
+}, */{
     field: 'lead_status_id',
     title: 'Lead Status',
     sortable: false,
@@ -68,11 +73,6 @@ var table_columns = [{
         let status_url = route('admin.leads.status');
         return statuses(data, status_url);
     }
-},{
-    field: 'service_id',
-    title: 'Service',
-    sortable: false,
-    width: 'auto',
 }, {
     field: 'created_at',
     title: 'Created At',
@@ -767,9 +767,15 @@ function setFilters(filter_values, active_filters) {
             });
         }
 
+        if (lead_type == 'junk') {
+            $("#search_status_id").html('<option value="">All</option><option value="'+junk+'">Junk</option>');
+        } else {
+            $("#search_status_id").html(status_options);
+        }
+
+
         $("#search_city_id").html(city_options);
         $("#search_region_id").html(region_options);
-        $("#search_status_id").html(status_options);
         $("#search_service_id").html(service_options);
         $("#search_created_by").html(user_options);
 

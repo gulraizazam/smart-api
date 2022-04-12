@@ -830,6 +830,10 @@ class ResourceRotasController extends Controller
                 return ApiHelper::apiResponse($this->success, 'From or To require, kindly define again.', false);
             }
 
+            if($request->start_off >= $request->end_off){
+                return ApiHelper::apiResponse($this->success, "To break time can't be greater than or equal to from break time.", false);
+            }
+
             if($request->start_off && $request->end_off){
                 if($request->start_off == $request->end_off){
                     return ApiHelper::apiResponse($this->success, 'Time range must be different, kindly define again.', false);

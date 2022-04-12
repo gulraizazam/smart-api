@@ -138,7 +138,7 @@ var table_columns = [
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
-        width: 300,
+        width: 'auto',
     },{
         field: 'name',
         title: 'Patient',
