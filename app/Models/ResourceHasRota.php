@@ -225,7 +225,7 @@ class ResourceHasRota extends BaseModal
 
                 AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $resourcerota);
             }
-
+           // dd($data);
             ResourceHasRotaDays::createRotaDaysRecord($request, $resourcerota, $week, $data);
 
             return array(

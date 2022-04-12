@@ -180,6 +180,7 @@
     @push('datatable-js')
         <script>
             let lead_type = '{{request('type')}}';
+            let junk = '{{config('constants.lead_status_junk')}}';
 
             var limit = '{{config('constants.export-lead-excel-limit')}}';
             var offset = 0;

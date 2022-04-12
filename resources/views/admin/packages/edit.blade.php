@@ -90,7 +90,7 @@
                         <div class="fv-row col-md-3 mt-5">
                             <div class="checkbox-inline mt-12">
                                 <span>Is Exclusive </span> &nbsp;
-                                <label for="is_exclusive" class="checkbox checkbox-rounded">
+                                <label for="edit_is_exclusive" class="checkbox checkbox-rounded">
                                     <input id="edit_is_exclusive" value="1" type="checkbox" checked="checked" name="is_exclusive">
                                     <span></span>
                                 </label>

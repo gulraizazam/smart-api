@@ -47,10 +47,12 @@
             <select class="form-control filter-field select2" id="search_region_id"></select>
         </div>
 
+        @if(request('type') == '')
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Lead Status:</label>
             <select class="form-control filter-field select2" id="search_status_id"></select>
         </div>
+        @endif
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Service:</label>

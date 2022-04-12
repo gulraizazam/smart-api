@@ -67,7 +67,7 @@ function setPlanData(response) {
     $("#client_id").val(patient.id).trigger('change');
     $("#parent_id_1").val(patient.id).trigger('change');
 
-    getAppointments(appointmentinformation.appoitment_id);
+    getAppointments(appointmentinformation);
 
     getServices();
 
@@ -127,7 +127,7 @@ function setServices(response) {
     }
 }
 
-function getAppointments(appoitment_id) {
+function getAppointments(appoitmentInfo) {
 
     hideMessages();
 
@@ -149,13 +149,13 @@ function getAppointments(appoitment_id) {
 
                     let appointments = resposne.data.appointments;
 
-                    let options = '<option value="" >Select Appointment</option>';
+                    let options = '';
 
                     jQuery.each(appointments, function (i, appointment) {
                         options += '<option value="' + appointment.id + '">' + appointment.name + '</option>';
                     });
 
-                    $("#add_appointment_id").html(options).val(appoitment_id);
+                    $("#add_appointment_id").html(options);
 
                 } else {
                     let options = '<option value="" >Select Appointment</option>';
