@@ -374,47 +374,46 @@ class HomeController extends Controller
 
     private function salesByCentre(Request $request, $data)
     {
+        $data['revenue'] = 0;
+        // if (Gate::allows('dashboard_revenue_by_centre') || Gate::allows('dashboard_my_revenue_by_centre')) {
 
-        if (Gate::allows('dashboard_revenue_by_centre') || Gate::allows('dashboard_my_revenue_by_centre')) {
+        $locations = Locations::where([
+            ['account_id', '=', Auth::User()->account_id],
+            ['active', '=', '1']
+        ])->whereIn('id', ACL::getUserCentres())->get();
 
-            $locations = Locations::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
-            ])->whereIn('id', ACL::getUserCentres())->get();
+        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
-            $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-
-            list($start_date, $end_date) = $this->getDates($request);
-
-
-            $todayRecords = \App\Models\Invoices::whereBetween('created_at',  [$start_date, $end_date])
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->where('invoice_status_id', '=', $invoicestatus->id);
-
-            if ($request->get('performance') == '1') {
-                $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
-            }
-
-            $todayRecords = $todayRecords->select('location_id', DB::raw("SUM(invoices.total_price) AS total_price"))
-                ->groupBy('location_id')
-                ->get();
+        list($start_date, $end_date) = $this->getDates($request);
 
 
-            $data['revenue'] = 0;
-            if ($locations) {
-                foreach ($locations as $location) {
-                    if ($todayRecords) {
-                        foreach ($todayRecords as $todayRecord) {
-                            if ($todayRecord->location_id == $location->id) {
-                                $data['revenue'] += $todayRecord->total_price;
-                            }
+        $todayRecords = \App\Models\Invoices::whereBetween('created_at',  [$start_date, $end_date])
+            ->whereIn('location_id', ACL::getUserCentres())
+            ->where('invoice_status_id', '=', $invoicestatus->id);
+
+        if ($request->get('performance') == '1') {
+            $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
+        }
+
+        $todayRecords = $todayRecords->select('location_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+            ->groupBy('location_id')
+            ->get();
+
+        if ($locations) {
+            foreach ($locations as $location) {
+                if ($todayRecords) {
+                    foreach ($todayRecords as $todayRecord) {
+                        if ($todayRecord->location_id == $location->id) {
+                            $data['revenue'] += $todayRecord->total_price;
                         }
                     }
                 }
             }
-
-            return $data;
         }
+
+        //}
+
+        return $data;
     }
 
     public function collectionByCentre(Request $request)
