@@ -44,6 +44,8 @@
             <tr>
                 <th>Treatment</th>
                 <td id="treatment"></td>
+                <th>SMS Status</th>
+                <td id="sms_status"></td>
             </tr>
             </tbody>
         </table>
