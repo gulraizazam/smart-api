@@ -482,7 +482,7 @@ class HomeController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
             'pie' => $data,
-            'total' => $total
+            'total' => $total ?? 0
         ]);
     }
 
