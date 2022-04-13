@@ -72,6 +72,10 @@ jQuery(document).ready(function() {
         $('#cment')[0].reset();
     });
 
+    $("#create_consultancy_service").change( function () {
+        loadLead(patient);
+    });
+
 });
 
 function toggleSection($this, $class) {
@@ -326,6 +330,8 @@ let ConsultancyDoctorListener = function (doctorId) {
     setQueryStringParameter('doctor_id', doctorId);
 }
 
+var patient;
+
 function getPatientDetail($this) {
 
     $.ajax({
@@ -336,16 +342,48 @@ function getPatientDetail($this) {
         },
         success: function (resposne) {
             if (resposne.status) {
-                let patient = resposne.data.patient;
+                patient = resposne.data.patient;
                 $('#create_consultancy_phone').val(patient?.phone);
                 $('#create_patient_name').val(patient?.name);
                 $('#create_consultancy_gender').val(patient?.gender).change();
+                $('#create_consultancy_referred_by').val(patient?.referred_by).change();
+
+                if ($("#create_consultancy_service").val() != '') {
+                    loadLead(patient);
+                }
             }
 
         },
     });
 
     $("#consultancy_patient_id").val($this.val() != '' ? $this.val() : '0');
+}
+
+function loadLead(patient) {
+
+    console.log(patient)
+    if (typeof patient !== "undefined" && patient !== null) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'post',
+            url: route('admin.appointments.load_lead'),
+            data: {
+                'referred_by': patient.referred_by,
+                'service_id': $("#create_consultancy_service").val(),
+                'patient_id': patient.id,
+                'phone': patient.phone,
+            },
+            success: function (resposne) {
+                if (resposne.status) {
+                    let lead_source_id = resposne.data.lead_source_id;
+                    $('#create_consultancy_lead').val(lead_source_id).change();
+                }
+
+            },
+        });
+    }
 }
 
 function newPatient() {

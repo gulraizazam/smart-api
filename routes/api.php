@@ -372,6 +372,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointments/update/schedule', [AppointmentsController::class, 'updateSchedule'])->name('appointments.updateSchedule');
     Route::get('appointments/schedule/get', [AppointmentsController::class, 'getSchedule'])->name('appointments.get_schedule');
     Route::resource('appointments', AppointmentsController::class);
+    Route::post('appointments/load/lead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
     // Patients routes start
     Route::post('patients/{id}/appointments-datatable', [PatientsController::class, 'appointmentsDatatable'])->name('patients.appointmentsDatatable');

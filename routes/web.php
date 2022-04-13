@@ -371,8 +371,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::post('appointments/status', [AppointmentsController::class, 'status'])->name('appointments.status');
 
-        Route::post('appointments/loadlead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
-
         Route::resource('appointments', AppointmentsController::class)->only('index');
 
 
