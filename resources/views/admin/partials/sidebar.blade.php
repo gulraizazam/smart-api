@@ -336,7 +336,8 @@
                             <span class="menu-text">Admin Settings</span>
                             <i class="menu-arrow"></i>
                         </a>
-                        <div class="menu-submenu">
+                        @can('settings_manage')
+                            <div class="menu-submenu">
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
                                 <li class="menu-item {{activeMenu('admin.settings.index')}}" aria-haspopup="true">
@@ -350,6 +351,8 @@
 
                             </ul>
                         </div>
+                        @endcan
+
                         @can('user_operator_settings_manage')
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
@@ -747,7 +750,7 @@
                             </div>
                         @endcan
 
-                        @can('packages_manage')
+                        @can('plans_manage')
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
                                 <ul class="menu-subnav">
