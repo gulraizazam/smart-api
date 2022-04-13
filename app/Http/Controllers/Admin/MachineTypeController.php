@@ -305,12 +305,12 @@ class MachineTypeController extends Controller
     {
         try {
             if ($request->status == 0) {
-                if (!Gate::allows('cities_inactive')) {
+                if (!Gate::allows('machineType_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = MachineType::inactiveRecord($request->id);
             } else {
-                if (!Gate::allows('cities_active')) {
+                if (!Gate::allows('machineType_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = MachineType::activeRecord($request->id);
