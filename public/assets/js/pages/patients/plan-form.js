@@ -3,13 +3,13 @@ var table_url = route('admin.plans.datatable', {id: patientCardID});
 
 var table_columns = [
     {
-        field: 'patient_id',
-        title: 'Patient ID',
-        width: 'auto',
+        field: 'name',
+        title: 'Patient',
+        width: 90,
     },{
         field: 'package_id',
         title: 'Name',
-        width: 'auto',
+        width: 70,
     },{
         field: 'location_id',
         title: 'Centres',
@@ -18,17 +18,17 @@ var table_columns = [
     },{
         field: 'session_count',
         title: 'Session count',
-        width: 'auto',
+        width: 80,
         sortable: false,
     },{
         field: 'total',
         title: 'Total',
-        width: 'auto',
+        width: 80,
         sortable: false,
     },{
         field: 'cash_receive',
         title: 'Cash receive',
-        width: 'auto',
+        width: 80,
         sortable: false,
     },{
         field: 'refund',

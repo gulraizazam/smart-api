@@ -310,11 +310,11 @@ class Packages extends BaseModal
                 Filters::forget(Auth::user()->id,$filename,'patient_id');
             } else {
                 if (Filters::get(Auth::user()->id,$filename,'patient_id')){
-                    $where[] = array(
+                    /*$where[] = array(
                         'patient_id',
                         '=',
                         Filters::get(Auth::user()->id,$filename,'patient_id')
-                    );
+                    );*/
                 }
             }
         }
@@ -353,11 +353,11 @@ class Packages extends BaseModal
                 Filters::forget(Auth::User()->id, $filename, 'patient_id');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'patient_id')) {
-                    $where[] = array(
+                    /*$where[] = array(
                         'patient_id',
                         '=',
                         Filters::get(Auth::User()->id, $filename, 'patient_id')
-                    );
+                    );*/
                 }
             }
         }
@@ -374,11 +374,11 @@ class Packages extends BaseModal
                 Filters::forget(Auth::User()->id, $filename, 'id');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'id')) {
-                    $where[] = array(
+                    /*$where[] = array(
                         'patient_id',
                         '=',
                         Filters::get(Auth::User()->id, $filename, 'id')
-                    );
+                    );*/
                 }
             }
         }
