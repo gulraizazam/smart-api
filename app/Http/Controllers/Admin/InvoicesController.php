@@ -109,12 +109,12 @@ class InvoicesController extends Controller
             list($orderBy, $order) = getSortBy($request);
 
             // Get Total Records
-            $iTotalRecords = Invoices::getTotalRecords($request, Auth::User()->account_id, false, $apply_filter, 'invoices');
+            $iTotalRecords = Invoices::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, 'invoices');
 
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
 
-            $invoice = Invoices::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, false, $apply_filter, 'invoices');
+            $invoice = Invoices::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, 'invoices');
 
             $records = $this->filtersData($records);
 
