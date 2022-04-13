@@ -143,7 +143,7 @@ class Invoices extends Model
     static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false, $apply_filter = false, $filename )
     {
         $where = self::filters_invoices( $request, $account_id , $id , $apply_filter, $filename );
-      
+
         list($orderBy, $order) = getSortBy($request);
 
 

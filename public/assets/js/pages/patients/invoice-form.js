@@ -6,12 +6,12 @@ var table_columns = [
         field: 'name',
         title: 'Patient Name',
         sortable: false,
-        width: 40,
+        width: 80,
     },{
         field: 'phone',
         title: 'Phone',
         sortable: false,
-        width: 'auto',
+        width: 90,
     },{
         field: 'region',
         title: 'Region',
@@ -21,12 +21,12 @@ var table_columns = [
         field: 'city',
         title: 'City',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'location',
         title: 'Centre',
         sortable: false,
-        width: 'auto',
+        width: 200,
     },{
         field: 'service',
         title: 'Consultancy/Service',
