@@ -13,7 +13,7 @@ var table_columns = [
     {
         field: 'name',
         title: 'Name',
-        width: 250,
+        width: 300,
     },
     {
         field: 'price',
@@ -23,7 +23,7 @@ var table_columns = [
     {
         field: 'total_services',
         title: 'Total Services',
-        width: 'auto',
+        width: 100,
     },
 
     {
