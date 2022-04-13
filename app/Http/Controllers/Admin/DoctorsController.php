@@ -64,7 +64,7 @@ class DoctorsController extends Controller
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('lead_sources_manage')) {
+            if (!Gate::allows('doctors_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
 
