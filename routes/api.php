@@ -310,7 +310,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Routes for editing the cash in treatment plan*/
     Route::get('packages/edit_cash/{id}/{package_id}',[PackagesController::class, 'editpackageadvancescashindex'])->name('packages.edit_cash');
 
-    Route::post('packages/delete_cash',[PackagesController::class, 'deletepackageadvancescash'])->name('packages.delete_cash');
+    Route::post('packages/delete/cash',[PackagesController::class, 'deletepackageadvancescash'])->name('packages.delete_cash');
 
     Route::put('packages/edit_cash/store',[PackagesController::class, 'storepackageadvancescash'])->name('packages.edit_cash.store');
     /*End*/

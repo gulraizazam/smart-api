@@ -1475,21 +1475,18 @@ class PackagesController extends Controller
         ])->sum('cash_amount');
         if ($get_package_use_amount <= $get_package_unused_amount_except_edit) {
 
-            $status = true;
             $record = PackageAdvances::deletefinaceRecord($request);
             $cash_receveive_remain = number_format(filter_var($request->cash_receveive_remain, FILTER_SANITIZE_NUMBER_INT) + $packageadvanceinfo->cash_amount);
 
-            return response()->json(array(
-                'status' => $status,
+            return ApiHelper::apiResponse($this->success, 'Record deleted successfully.', true, [
                 'id' => $request->package_advance_id,
                 'cash_receveive_remain' => $cash_receveive_remain
-            ));
+            ]);
 
-        } else {
-            return response()->json(array(
-                'status' => $status = false,
-            ));
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false);
     }
 
     /*
