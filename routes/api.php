@@ -253,7 +253,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('resourcerotas', ResourceRotasController::class)->except('index');
 
     //Invoice Management route start
-    Route::post('invoices/datatable', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
+    Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
 
     Route::post('invoices/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoices.cancel');
 
