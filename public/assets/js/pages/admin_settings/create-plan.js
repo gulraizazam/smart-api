@@ -430,7 +430,7 @@ function setEditData(response) {
 
                 if(packageadvance.cash_amount != '0') {
 
-                    history_options += '<tr>';
+                    history_options += '<tr id="history_cash_row_" '+packageadvance.id+'>';
 
                     if (packageadvance.is_tax == 1 && packageadvance.cash_flow == 'out') {
                         history_options += '<td>Tax</td>';
@@ -450,7 +450,7 @@ function setEditData(response) {
                             history_options += '<a onclick="planeEdit('+packageadvance.id+', '+package.id+');" class="btn btn-sm btn-info" href="javascript:void(0);">Edit</a>&nbsp;';
                         }
                         if(permissions.plans_cash_delete) {
-                            history_options += '<button class="btn btn-sm btn-danger">Delete</button>';
+                            history_options += '<button onclick="deletePlaneHistory(`'+route('admin.packages.delete_cash')+'`, '+packageadvance.id+');" class="btn btn-sm btn-danger">Delete</button>';
                         }
                     }
 
@@ -577,6 +577,53 @@ function setEditData(response) {
     } catch (error) {
         showException(error);
     }
+
+}
+
+function deletePlaneHistory(url, package_advance_id) {
+
+    swal.fire({
+        title: 'Are you sure you want to delete?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function(result) {
+        if (result.value) {
+
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: url,
+                type: "POST",
+                data: {
+                    package_advance_id: package_advance_id,
+                    cash_receveive_remain: $("#edit_grand_total_1").val()
+                },
+                cache: false,
+                success: function (response) {
+                    if (response.status) {
+                        toastr.success(response.message);
+                        let cash_remain = response.data.cash_receveive_remain;
+                        $("#edit_grand_total_1").val(cash_remain);
+                        $("#history_cash_row_" + package_advance_id).remove()
+                    } else {
+                        toastr.error(response.message);
+                    }
+
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+
+        }
+    });
 
 }
 
