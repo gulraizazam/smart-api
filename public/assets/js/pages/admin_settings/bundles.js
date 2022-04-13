@@ -4,7 +4,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 60,
+        width: 40,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
