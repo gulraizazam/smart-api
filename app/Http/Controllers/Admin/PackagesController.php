@@ -897,6 +897,11 @@ class PackagesController extends Controller
             'create' => Gate::allows('plans_create'),
             'log' => Gate::allows('plans_log'),
             'sms_log' => Gate::allows('plans_sms_log'),
+            'plans_cash_edit' => Gate::allows('plans_cash_edit'),
+            'plans_cash_delete' => Gate::allows('plans_cash_delete'),
+            'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
+            'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
+            'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
         ];
 
         if ($id) {
@@ -1399,7 +1404,12 @@ class PackagesController extends Controller
 
         $paymentmodes = PaymentModes::where('type', '=', 'application')->get();
 
-        return view('admin.packages.finance_edit.create', compact('pack_adv_info', 'package_id', 'paymentmodes'));
+        return ApiHelper::apiResponse($this->success, 'data found', true, [
+            'pack_adv_info' => $pack_adv_info,
+            'package_id' => $package_id,
+            'paymentmodes' => $paymentmodes
+        ]);
+      //  return view('admin.packages.finance_edit.create', compact('pack_adv_info', 'package_id', 'paymentmodes'));
     }
 
     /*
@@ -1438,15 +1448,13 @@ class PackagesController extends Controller
         }
 
         if ($record) {
-            return response()->json(array(
-                'status' => true,
+            return ApiHelper::apiResponse($this->success, 'Data Updated successfully.',  true, [
                 'amount_status' => $amount_status
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            ]);
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'Your amount is exceeding.', false );
     }
 
     /*
