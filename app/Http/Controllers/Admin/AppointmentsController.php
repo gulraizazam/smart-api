@@ -2509,7 +2509,7 @@
 		 * Delete all selected Appointment at once.
 		 *
 		 * @param Request $request
-		 * @return  Response $response
+		 * @return \Illuminate\Http\JsonResponse
 		 */
 		public function loadLeadData(Request $request)
 		{
@@ -2564,7 +2564,7 @@
 					$data['gender'] = $patient->gender;
 				}
 			}
-			return response()->json($data);
+			return ApiHelper::apiResponse($this->success, 'data found', true, $data);
 		}
 
 		/**
