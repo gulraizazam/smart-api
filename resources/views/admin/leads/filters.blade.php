@@ -24,7 +24,7 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Full Name:</label>
-            <input class="form-control filter-field" id="search_full_name" placeholder="enter name">
+            <input class="form-control filter-field" id="search_full_name" placeholder="Enter Name">
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
