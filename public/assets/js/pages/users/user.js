@@ -25,7 +25,7 @@ var table_columns = [
     }, {
         field: 'gender',
         title: 'Gender',
-        width: 60,
+        width: 80,
     }, {
         field: 'commission',
         title: 'Commission',
