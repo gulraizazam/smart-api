@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 70,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -19,7 +19,7 @@ var table_columns = [
         field: 'resource_types.name',
         title: 'Resource Type',
         sortable: false,
-        width: 80,
+        width: 'auto',
     },{
         field: 'location.name',
         title: 'Centre',
@@ -44,7 +44,7 @@ var table_columns = [
     }, {
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 70,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.resources.status');
