@@ -736,7 +736,7 @@ function patientSearch(search_id = 'patient_id') {
         escapeMarkup: function (markup) {
             return markup;
         },
-        minimumInputLength: 3,
+        minimumInputLength: 1,
         templateResult: formatRepo,
         templateSelection: formatRepoSelection
     });

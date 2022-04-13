@@ -233,6 +233,7 @@
                         <th>Cash Flow</th>
                         <th>Cash Amount</th>
                         <th>Created At</th>
+                        <th>Action</th>
                     </tr>
                     </thead>
 
@@ -242,6 +243,7 @@
                         <td id="edit_cash_flow"></td>
                         <td id="edit_cash_amount"></td>
                         <td id="edit_Created_at"></td>
+                        <td id="edit_action"></td>
                     </tr>
                     </tbody>
 

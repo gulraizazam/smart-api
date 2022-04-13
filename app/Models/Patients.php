@@ -80,6 +80,9 @@
 		 * */
 		static public function getPatientidAjax($name, $account_id)
 		{
+		    if (stripos($name, 'C-') !== false) {
+                $name = str_replace('C-', '', $name);
+            }
 			if (is_numeric($name)) {
 				return self::where([
 					['user_type_id', '=', '3'],

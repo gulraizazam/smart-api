@@ -1,4 +1,81 @@
+
+var planeEditValidation = function () {
+    // Private functions
+    var planeValidation = function () {
+        let modal_id = 'plane_edit_form';
+        let form = document.getElementById(modal_id);
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    payment_mode_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The payment mode field is required'
+                            }
+                        }
+                    },
+                    cash_amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The cash amount field is required'
+                            }
+                        }
+                    },
+                    created_at: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The date field is required'
+                            }
+                        }
+                    },
+                    consultancy_type_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The consultancy type field is required'
+                            }
+                        }
+                    },
+                },
+
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                }
+            }
+        );
+        validate.on('core.form.invalid', function (e) {
+            select2Validation();
+        });
+        validate.on('core.form.valid', function(event) {
+            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+
+                if (response.status) {
+                    toastr.success(response.message);
+                    closePopup(modal_id);
+                    closePopup('update_plane_form');
+                    reInitTable();
+                } else {
+                    toastr.error(response.message);
+                }
+            }, form);
+        });
+    }
+
+    return {
+        // public functions
+        init: function() {
+            planeValidation();
+        }
+    };
+}();
+
 $(document).ready( function () {
+
+    planeEditValidation.init();
 
     $("#add_patient_id").on("select2:select", function (e) {
         getAppointments();
@@ -351,13 +428,36 @@ function setEditData(response) {
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
 
-                if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                if(packageadvance.cash_amount != '0') {
+
                     history_options += '<tr>';
-                    history_options += '<td>'+packageadvance.paymentmode.name+'</td>';
-                    history_options += '<td>'+packageadvance.cash_flow+'</td>';
-                    history_options += '<td>'+packageadvance.cash_amount+'</td>';
-                    history_options += '<td>'+formatDate(packageadvance.created_at, 'MMM, DD yyyy HH:mm A')+'</td>';
+
+                    if (packageadvance.is_tax == 1 && packageadvance.cash_flow == 'out') {
+                        history_options += '<td>Tax</td>';
+                    } else {
+                        history_options += '<td>'+packageadvance?.paymentmode?.name+'</td>';
+                    }
+
+                    history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    history_options += '<td>' + packageadvance.cash_amount + '</td>';
+                    history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy HH:mm A') + '</td>';
+
+
+                    history_options += '<td>';
+
+                    if (end_previous_date <= packageadvance?.created_at && packageadvance?.cash_flow == 'in') {
+                        if(permissions.plans_cash_edit) {
+                            history_options += '<a onclick="planeEdit('+packageadvance.id+', '+package.id+');" class="btn btn-sm btn-info" href="javascript:void(0);">Edit</a>&nbsp;';
+                        }
+                        if(permissions.plans_cash_delete) {
+                            history_options += '<button class="btn btn-sm btn-danger">Delete</button>';
+                        }
+                    }
+
+                    history_options += '</td>';
+
                     history_options += '<tr>';
+
                 }
             });
         }
@@ -477,6 +577,77 @@ function setEditData(response) {
     } catch (error) {
         showException(error);
     }
+
+}
+
+function planeEdit(id, package_id) {
+
+    $("#plan_edit_cash").modal("show");
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.packages.edit_cash', {id: id, package_id: package_id}),
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setPlaneEditData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+}
+
+function setPlaneEditData(response) {
+
+    let paymentmodes = response.data.paymentmodes;
+    let pack_adv_info = response.data.pack_adv_info;
+    let package_id = response.data.package_id;
+
+    let payment_options = '<option value="">Select Payment Mode</option>';
+
+    if (paymentmodes) {
+        Object.values(paymentmodes).forEach( function(paymentmode) {
+            payment_options += '<option value="'+paymentmode.id+'">'+paymentmode.name+'</option>';
+        });
+    }
+
+    if (permissions.plans_cash_edit_payment_mode) {
+        $("#plane_cash_payment_mode").html(payment_options).val(pack_adv_info.payment_mode_id);
+    } else {
+        $("#plane_cash_payment_mode").remove();
+
+       let input = '<input type="hidden" id="payment_mode_id" name="payment_mode_id" value="'+pack_adv_info?.payment_mode_id+'">';
+       $(".append_payment_mode").append(input);
+    }
+
+    if (permissions.plans_cash_edit_amount) {
+        $("#plane_cash_amount").val(pack_adv_info.cash_amount);
+    } else {
+        $("#plane_cash_amount").remove();
+
+        let input = '<input type="hidden" id="cash_amount" name="cash_amount" value="'+pack_adv_info?.cash_amount+'">';
+        $(".append_cash_amount").append(input);
+    }
+
+    if (permissions.plans_cash_edit_date) {
+        $("#plane_cash_date").val(formatDate(pack_adv_info.created_at, 'YYYY-MM-DD'));
+    } else {
+        $("#plane_cash_date").remove();
+
+        let input = '<input type="hidden" id="created_at" name="created_at" value="'+formatDate(pack_adv_info.created_at, 'YYYY-MM-DD')+'">';
+        $(".append_cash_date").append(input);
+    }
+
+    $("#edit_package_advances_id").val(pack_adv_info.id);
+    $("#edit_package_id").val(package_id);
+
+
+
 
 }
 
