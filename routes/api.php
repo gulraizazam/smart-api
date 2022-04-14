@@ -431,7 +431,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::post('plans/status', [PackagesController::class, 'status'])->name('plans.status');
 
-    Route::post('plans/destroy/{id}',[PackagesController::class, 'destroy'])->name('plans.destroy');
+    Route::any('plans/destroy/{id}',[PackagesController::class, 'destroy'])->name('plans.destroy');
 
     Route::get('plans/display/{id}',[PackagesController::class, 'display'])->name('plans.display');
 

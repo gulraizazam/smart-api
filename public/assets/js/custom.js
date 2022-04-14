@@ -413,8 +413,8 @@ function reInitTable() {
     }, 400);
 }
 
-function getAllFilterValues() {
-
+function reloadTable(table_class) {
+    patientDatatable[table_class].search({ datatable_reload: 'reload' }, 'search');
 }
 
 function resetFilters() {
