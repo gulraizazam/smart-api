@@ -264,10 +264,6 @@ var EditDocumentValidation = function () {
 }();
 
 
-function reloadTable(table_class) {
-    patientDatatable[table_class].search({ datatable_reload: 'reload' }, 'search');
-}
-
 jQuery(document).ready(function() {
     DocumentValidation.init();
     EditDocumentValidation.init();

@@ -219,6 +219,7 @@ class PackagesController extends Controller
             /*First we need to make the data to save in package bundle*/
             $data = $request->all();
             $location_information = Locations::find($request->location_id);
+
             $discount_info = Discounts::find($request->discount_id);
 
             $data['qty'] = '1';
@@ -254,7 +255,7 @@ class PackagesController extends Controller
                 $data['is_exclusive'] = 1;
             } else {
                 $data['tax_including_price'] = $request->net_amount;
-                $data['tax_percenatage'] = $location_information->tax_percentage;
+                $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
                 $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
                 $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
@@ -902,6 +903,8 @@ class PackagesController extends Controller
             'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
             'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
             'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
+            'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
+            'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
         ];
 
         if ($id) {
@@ -914,6 +917,13 @@ class PackagesController extends Controller
                 'create' => Gate::allows('patients_plan_create'),
                 'log' => Gate::allows('patients_plan_log'),
                 'sms_log' => Gate::allows('patients_plan_sms_log'),
+                'plans_cash_edit' => Gate::allows('plans_cash_edit'),
+                'plans_cash_delete' => Gate::allows('plans_cash_delete'),
+                'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
+                'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
+                'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
+                'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
+                'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
             ];
         }
 
