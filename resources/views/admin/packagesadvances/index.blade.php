@@ -34,7 +34,7 @@
                             <h3 class="card-label">Finance</h3>
                         </div>
 
-                        <div class="card-toolbar">
+                        {{--<div class="card-toolbar">
 
                             @if(Gate::allows('finances_create'))
                                 <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_centre_targets">
@@ -51,7 +51,7 @@
                         @endif
 
                         <!--end::Button-->
-                        </div>
+                        </div>--}}
 
                     </div>
 
