@@ -162,6 +162,18 @@
                         <div class="menu-submenu">
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
+
+                                @can('leads_create')
+                                    <li class="menu-item {{isActive(url('admin/leads?create=create'), 'create')}}" aria-haspopup="true">
+                                        <a href="{{route('admin.leads.index', ['create' => 'create'])}}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Create Lead </span>
+                                        </a>
+                                    </li>
+                                @endcan
+
                             @can('leads_manage')
                                 <li class="menu-item {{isActive(url('admin/leads'), 'other')}}" aria-haspopup="true">
                                     <a href="{{route('admin.leads.index')}}" class="menu-link">

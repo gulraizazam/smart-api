@@ -80,7 +80,7 @@
                             @endif
                             &nbsp;&nbsp;
                             @if(Gate::allows('leads_create'))
-                                <a href="javascript:void(0);" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
+                                <a href="javascript:void(0);" id="create_lead" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
@@ -179,6 +179,7 @@
 
     @push('datatable-js')
         <script>
+
             let lead_type = '{{request('type')}}';
             let junk = '{{config('constants.lead_status_junk')}}';
 
@@ -224,6 +225,15 @@
             }
         </script>
         <script src="{{asset('assets/js/pages/leads/leads.js')}}"></script>
+
+        <script>
+            jQuery(document).ready( function () {
+                @if(request('create') != '' && request('create') !== null)
+                    $("#create_lead").click()
+                @endif
+            });
+
+        </script>
     @endpush
 
 @endsection
