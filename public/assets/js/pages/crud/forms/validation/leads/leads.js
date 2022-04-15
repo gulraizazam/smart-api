@@ -36,6 +36,13 @@ var ConvertValidation = function () {
                             }
                         }
                     },
+                    service_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The service field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {
