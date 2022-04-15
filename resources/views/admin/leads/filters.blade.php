@@ -72,7 +72,7 @@
             </div>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mt-6">
+        <div class="col-lg-3 mb-lg-0">
             <label>Created By:</label>
             <select class="form-control filter-field select2" id="search_created_by">
             </select>
