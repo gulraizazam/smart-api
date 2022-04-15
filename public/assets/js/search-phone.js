@@ -48,7 +48,65 @@ $(document).ready( function () {
         }
     });
 
+    $("#add_service_id").change( function () {
+
+        loadLead(patient)
+    });
+
 });
+
+var patient;
+
+function loadLeadData(value) {
+
+    $.ajax({
+        type: 'get',
+        url: route('admin.users.get_patient_number'),
+        data: {
+            'patient_id': value
+        },
+        success: function (resposne) {
+            if (resposne.status) {
+                patient = resposne.data.patient;
+                $('#add_phone').val(patient?.phone);
+                $('#add_full_name').val(patient?.name);
+                $('#add_gender_id').val(patient?.gender).change();
+                $('#add_referred_by_id').val(patient?.referred_by).change();
+
+                if ($("#create_consultancy_service").val() != '') {
+                    loadLead(patient);
+                }
+            }
+
+        },
+    });
+}
+
+function loadLead(patient) {
+
+    if (typeof patient !== "undefined" && patient !== null) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'post',
+            url: route('admin.appointments.load_lead'),
+            data: {
+                'referred_by': patient.referred_by,
+                'service_id': $("#add_service_id").val(),
+                'patient_id': patient.id,
+                'phone': patient.phone,
+            },
+            success: function (resposne) {
+                if (resposne.status) {
+                    let lead_source_id = resposne.data.lead_source_id;
+                    $('#add_lead_source_id').val(lead_source_id).change();
+                }
+
+            },
+        });
+    }
+}
 
 function selectPatient(phone, patient_id, form_type) {
 
