@@ -56,9 +56,15 @@
             Your discount limit exceeded.
         </div>
 
+        <div id="edit_consumeservice" class="alert alert-danger" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Unable to delete consume service.
+        </div>
+
         <!--begin::Form-->
-        <form id="modal_edit_plan_form" method="post" action="{{route('admin.packages.store')}}">
-            <!--begin::Scroll-->
+
+            <input type="hidden" id="edit_random_id">
+            <input type="hidden" id="edit_slug">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -88,7 +94,7 @@
                             <div class="checkbox-inline mt-12">
                                 <span>Is Exclusive </span> &nbsp;
                                 <label for="edit_is_exclusive" class="checkbox checkbox-rounded">
-                                    <input id="edit_is_exclusive" type="checkbox" checked="checked" name="is_exclusive">
+                                    <input id="edit_is_exclusive" type="checkbox" value="1" checked="checked" name="is_exclusive">
                                     <span></span>
                                 </label>
                             </div>
@@ -133,7 +139,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <div class="text-center mt-10">
-                                <button type="button" id="EditPackage" class="btn btn-primary float-right spinner-button">
+                                <button type="button" id="EditPackage" class="btn btn-primary float-right spinner-button-edit-add">
                                     <span class="indicator-label">Add</span>
                                 </button>
                             </div>
@@ -151,8 +157,9 @@
                         <thead>
                         <tr>
                             <th>Service Name</th>
-                            <th>Service/Bundle Price</th>
+                            <th>Service Price</th>
                             <th>Discount Name</th>
+                            <th>Discount Type</th>
                             <th>Discount Price</th>
                             <th>Amount</th>
                             <th>Tax %</th>
@@ -161,7 +168,7 @@
                         </tr>
                         </thead>
 
-                        <tbody class="plan_services"><tr class="text-center"><td colspan="8">No record found</td></tr></tbody>
+                        <tbody id="edit_plan_services"><tr class="text-center service_not_found"><td colspan="9">No record found</td></tr></tbody>
 
                     </table>
                 </div>
@@ -171,7 +178,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
-                            <input type="text" id="edit_package_total" class="form-control" name="package_total_1">
+                            <input type="text" id="edit_package_total" class="form-control" value="0" name="package_total_1">
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
@@ -204,13 +211,11 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button">
+                <button id="EditPackageFinal" type="submit" class="btn btn-primary spinner-button-edit-save">
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>
-            <!--end::Actions-->
-        </form>
-        <!--end::Form-->
+
 
         <div class="row">
             <div class="table-responsive">
