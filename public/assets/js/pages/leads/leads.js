@@ -507,8 +507,8 @@ function setConvert(response) {
             });
         }
 
-        $("#convert_city").html(city_options);
-        $("#convert_treatment_id").html(service_options);
+        $("#convert_city").html(city_options).val(lead.city_id).change();
+        $("#convert_treatment_id").html(service_options).val(lead.service_id).change();
         $("#convert_consultancy_type_id").html(consultancy_options);
 
         $("#convert_lead_id").val(lead.id);
