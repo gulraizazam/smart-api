@@ -361,7 +361,6 @@ function getPatientDetail($this) {
 
 function loadLead(patient) {
 
-    console.log(patient)
     if (typeof patient !== "undefined" && patient !== null) {
         $.ajax({
             headers: {
