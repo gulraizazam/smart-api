@@ -385,9 +385,9 @@
 
 			$where = self::filters_packageAdvances( $request , $account_id , $id , $apply_filter, $filename ) ;
 			if (count($where)) {
-				return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+				return self::where($where)->where('cash_amount', '!=', 0)->limit($iDisplayLength)->offset($iDisplayStart)->get();
 			} else {
-				return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
+				return self::where('cash_amount', '!=', 0)->limit($iDisplayLength)->offset($iDisplayStart)->get();
 			}
 		}
 
