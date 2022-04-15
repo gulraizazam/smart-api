@@ -38,7 +38,6 @@
                 <input type="hidden" id="convert_patient_address" name="address">
                 <input type="hidden" id="convert_lead_source_id" name="lead_source_id">
                 <input type="hidden" id="convert_referred_by" name="referred_by">
-                <input type="hidden" id="convert_service_id" name="service_id">
 
                 <div class="form-group">
                     <div class="row">
@@ -65,7 +64,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0"> Treatment <span class="text text-danger">*</span></label>
-                            <select id="convert_treatment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
+                            <select id="convert_treatment_id" name="service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
                         </div>
 
