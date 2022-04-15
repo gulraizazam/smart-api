@@ -40,7 +40,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
 
                             <input type="text" oninput="phoneField(this);" id="add_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
-                            <div class="suggesstion-box">
+                            <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
 

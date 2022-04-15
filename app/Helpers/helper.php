@@ -94,7 +94,10 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
 
         if ($query == 'junk' && request()->fullUrl() == $url) {
             return 'menu-item-active';
-        } else if($query == 'other' && request()->fullUrl() == $url) {
+        } else if($query == 'create' && request()->fullUrl() == $url) {
+            return 'menu-item-active';
+        }
+        else if($query == 'other' && request()->fullUrl() == $url) {
             return 'menu-item-active';
         }
 
