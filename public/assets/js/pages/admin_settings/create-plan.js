@@ -78,7 +78,7 @@ $(document).ready( function () {
     planeEditValidation.init();
 
     $("#add_patient_id").on("select2:select", function (e) {
-        getAppointments();
+        getAppointments($(this).val());
     });
 
 
@@ -1118,6 +1118,8 @@ function getServices() {
 
 function setServices(response) {
 
+    getAppointments($("#add_patient_id").val());
+
     try {
 
         let services = response.data.service;
@@ -1132,12 +1134,12 @@ function setServices(response) {
     } catch (error) {
         showException(error);
     }
+
 }
 
 function getAppointments(patient) {
-
+    console.log(patient)
     let location = $("#add_plan_location_id").val();
-   // let patient = $("#add_patient_id").val();
 
     if (location != '' && patient != '') {
 
@@ -1199,7 +1201,7 @@ function getServiceDiscount($this, type = '') {
     hideMessages();
 
     var service_id = $this.val();
-    var patient_id = $('#client_id').val();
+    var patient_id = $('#add_patient_id').val();
     var location_id = $('#add_plan_location_id').val();
 
     $("#"+type+"add_discount_id").val('0').trigger('change');
