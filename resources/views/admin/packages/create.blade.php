@@ -76,7 +76,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                            <select onchange="getAppointments($(this).val());" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="name">
+                            <select onchange="getAppointments($(this).val());" id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="name">
                             </select>
                         </div>
 
