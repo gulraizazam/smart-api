@@ -451,7 +451,7 @@ class PackagesController extends Controller
         ])->first();
         if ($status) {
 
-            return ApiHelper::apiResponse($this->success, 'Record not found', false);
+            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false);
 
         } else {
 
@@ -472,7 +472,7 @@ class PackagesController extends Controller
                 }
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record not found', true, [
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'total' => $total,
                 'id' => $request->id
             ]);

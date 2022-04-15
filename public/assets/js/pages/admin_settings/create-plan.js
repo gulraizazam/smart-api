@@ -1712,8 +1712,8 @@ function edit_keyfunction_grandtotal() {
 
     hideMessages();
 
-    var cash_amount = $('#edit_cash_amount_1').val();
-    var total = $('#edit_package_total_1').val();
+    var cash_amount = $('#edit_cash_amount').val();
+    var total = $('#edit_package_total').val();
     var random_id = $('#edit_random_id').val();
 
     if (cash_amount && total) {
