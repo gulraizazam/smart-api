@@ -51,11 +51,11 @@ var table_columns = [
             let appointment_status = data.appointment_status;
 
             if (permissions.status) {
-                if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
+               /* if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
                     return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
-                } else {
+                } else {*/
                     return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
-                }
+               // }
             } else {
                 return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
             }
