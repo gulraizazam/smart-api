@@ -225,7 +225,7 @@ function actions(data) {
                 </li>';
             }
 
-            if (permissions.convert) {
+            if (permissions.convert && lead_type === 'junk') {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-recycle"></i></span>\
