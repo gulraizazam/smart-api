@@ -177,6 +177,10 @@ $(document).ready(function () {
         if ($(".select-all-checkboxes").is(":checked")) {
             $(".select-all-checkboxes").click();
         }
+        if ($(".table-checkboxes").is(":checked")) {
+            $(".select-all-checkboxes").prop("checked", false)
+            $(".delete-records").addClass("d-none");
+        }
     });
 
 });
@@ -425,6 +429,11 @@ function resetFilters() {
     if ($(".select-all-checkboxes").is(":checked")) {
 
         $(".select-all-checkboxes").click();
+    }
+
+    if ($(".table-checkboxes").is(":checked")) {
+        $(".select-all-checkboxes").prop("checked", false)
+        $(".delete-records").addClass("d-none");
     }
 }
 
