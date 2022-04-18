@@ -191,7 +191,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('doctors/password/{id}', [DoctorsController::class, 'changePassword'])->name('doctors.change_password');
     Route::patch('doctors/password', [DoctorsController::class, 'savePassword'])->name('doctors.save_password');
     Route::post('doctors/status', [DoctorsController::class, 'status'])->name('doctors.status');
-    Route::resource('doctors', DoctorsController::class)->except(['index', 'create', 'show']);
+    Route::resource('doctors', DoctorsController::class)->except(['index', 'show']);
     Route::get('doctors/locations/{id}', [DoctorsController::class, 'displaylocation'])->name('doctors.location_manage');
     Route::get('doctors/get-service', [DoctorsController::class, 'getservices'])->name('doctors.get_service');
     Route::post('doctors/save_service', [DoctorsController::class, 'saveservices'])->name('doctors.save_service');
