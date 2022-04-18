@@ -503,7 +503,7 @@ class PlanAppointmentCalculation
 
         if (Appointments::where('id', '=', $req['appointment_id'])->where('appointment_type_id', '=', Config::get('constants.appointment_type_consultancy'))->exists()) {
 
-            if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->exists()) {
+            if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus?->id)->exists()) {
                 $appointmentStatus = AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->where('active', '=', 1)->first();
                 if ($appointmentStatus) {
                     Appointments::where('id', '=', $req['appointment_id'])->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $appointmentStatus->id]);
@@ -511,7 +511,10 @@ class PlanAppointmentCalculation
                     Appointments::where('id', '=', $req['appointment_id'])->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id]);
                 }
             } else {
-                Appointments::where('id', '=', $req['appointment_id'])->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id]);
+                Appointments::where('id', '=', $req['appointment_id'])->update([
+                    'base_appointment_status_id' => $arrivedStatus?->id,
+                'appointment_status_id' => $arrivedStatus?->id
+                ]);
             }
         }
 
