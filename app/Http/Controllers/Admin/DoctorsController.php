@@ -410,7 +410,7 @@ class DoctorsController extends Controller
             'DoctorServices' => $DoctorServices,
             'roles'  => $roles
         ]);
-        
+
     }
 
 
