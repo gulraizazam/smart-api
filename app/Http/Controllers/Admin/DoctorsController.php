@@ -371,7 +371,7 @@ class DoctorsController extends Controller
     /**
      * Show the form for creating new User As Doctors.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create()
     {
@@ -400,9 +400,17 @@ class DoctorsController extends Controller
 
         $DoctorServices = [];
 
-        $roles = Role::get()->pluck('name', 'name');
+        $roles = Role::get()->pluck('name', 'id');
 
-        return view('admin.doctors.create', compact('locations', 'userstype', 'userstype', 'doctor', 'Services', 'DoctorServices', 'roles'));
+        return ApiHelper::apiResponse($this->success, 'Data found', true, [
+            'locations' => $locations,
+            'userstype' => $userstype,
+            'user' => $doctor,
+            'Services' => $Services,
+            'DoctorServices' => $DoctorServices,
+            'roles'  => $roles
+        ]);
+        
     }
 
 
@@ -552,7 +560,7 @@ class DoctorsController extends Controller
      *
      * @param int $id
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
@@ -592,9 +600,28 @@ class DoctorsController extends Controller
                 ['active', '=', '1'],
             ])->get()->pluck('full_address', 'id');
 
-            $roles = Role::get()->pluck('name', 'name');
+            $roles = Role::get()->pluck('name', 'id');
+            $user_roles = $doctor->user_roles()->pluck('id');
 
-            return view('admin.doctors.edit', compact('doctor', 'user_has_locations', 'locations', 'userstype', 'DoctorServices', 'Services', 'roles'));
+            return ApiHelper::apiResponse($this->success, 'Data found', true, [
+                'user' => $doctor,
+                'user_has_locations' => $user_has_locations,
+                'locations' => $locations,
+                'userstype' => $userstype,
+                'DoctorServices' => $DoctorServices,
+                'Services' => $Services,
+                'roles' => $roles,
+                'user_roles' => $user_roles
+            ]);
+
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'roles' => $roles,
+                'user' => $doctor,
+                'locations' => $locations,
+                'roles_commissions' => $roles_commissions,
+                'user_has_locations' => $user_has_locations,
+                'user_roles' => $user_roles
+            ]);
         }
     }
 

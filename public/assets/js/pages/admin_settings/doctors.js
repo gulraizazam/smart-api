@@ -136,7 +136,7 @@ function editRow(id) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.users.edit', {id: id}),
+        url: route('admin.doctors.edit', {id: id}),
         type: "GET",
         cache: false,
         success: function (response) {
@@ -367,9 +367,12 @@ function setCreateData(response) {
     let roles = response.data.roles;
     let roles_options = '<option value="">Select</option>';
 
-    for (let i = 0; i< roles.length; i++) {
+    /*for (let i = 0; i< roles.length; i++) {
         roles_options += '<option value="'+roles[i].id+'">'+roles[i].name+'</option>';
-    }
+    }*/
+    Object.entries(roles).forEach( function (role) {
+        roles_options += '<option value="'+role[0].id+'">'+role[1]+'</option>';
+    })
     $("#add_user_roles").html(roles_options);
 }
 
