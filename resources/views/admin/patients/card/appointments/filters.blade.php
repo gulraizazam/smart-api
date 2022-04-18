@@ -19,7 +19,7 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Patient:</label>
-            <input type="text" class="form-control filter-field" placeholder="Enter Patient" id="appoint_search_patient" />
+            <input type="text" class="form-control filter-field" placeholder="Enter Name" id="appoint_search_patient" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
