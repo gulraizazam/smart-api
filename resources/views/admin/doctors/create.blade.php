@@ -63,7 +63,7 @@
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Commission</label>
                             <div class="input-group">
-                                <input id="add_user_commission" type="number" min="0" max="100" name="commission" class="form-control form-control-lg form-control-solid mb-2"/>
+                                <input id="add_user_commission" type="number" min="0" max="100" name="commission" class="form-control form-control-lg form-control-solid mb-2" style="padding-right: 5px;">
                                 <div class="input-group-append popup-percentage">
                                     <span class="input-group-text">%</span>
                                 </div>
