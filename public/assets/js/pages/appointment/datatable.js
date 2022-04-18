@@ -44,7 +44,7 @@ var table_columns = [
     },{
         field: 'appointment_status_id',
         title: 'Status',
-        width: 100,
+        width: 80,
         template: function (data) {
 
             let unscheduled_appointment_status = data.unscheduled_appointment_status;
@@ -99,7 +99,7 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 'auto',
+        width: 210,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
@@ -389,8 +389,37 @@ function actions(data) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
-            </a>\
-            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="overflow-y: scroll; height: 200px">\
+            </a>';
+
+        if (permissions.invoice) {
+        if(!data.invoice) {
+            if (data.appointment_type == 2) {
+                actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="navi-link btn btn-icon btn-light btn-hover-warning btn-sm">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                            <!--<span class="navi-text">Create Invoice</span>-->\
+                        </a>';
+            }
+
+            if(data.appointment_type == 1) {
+                actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="navi-link btn btn-icon btn-light btn-hover-warning btn-sm">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                            <!--<span class="navi-text">Create Invoice</span>-->\
+                        </a>';
+            }
+        }
+
+    }
+
+    if (permissions.invoice_display) {
+        if(data.invoice) {
+            actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link btn btn-icon btn-light btn-hover-info btn-sm">\
+                            <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
+                           <!-- <span class="navi-text">View Invoice</span>-->\
+                        </a>';
+        }
+    }
+
+    actions += '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="overflow-y: scroll; height: 200px">\
                 <ul class="navi flex-column navi-hover py-2">\
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
@@ -448,40 +477,6 @@ function actions(data) {
                         </a>\
                     </li>';
                 }
-            }
-        }
-
-        if (permissions.invoice) {
-            if(!data.invoice) {
-                if (data.appointment_type == 2) {
-                    actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-file-invoice"></i></span>\
-                            <span class="navi-text">Create Invoice</span>\
-                        </a>\
-                    </li>';
-            }
-
-                if(data.appointment_type == 1) {
-                    actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
-                            <span class="navi-text">Create Invoice</span>\
-                        </a>\
-                    </li>';
-                }
-            }
-
-        }
-
-        if (permissions.invoice_display) {
-            if(data.invoice) {
-                actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-file"></i></span>\
-                            <span class="navi-text">View Invoice</span>\
-                        </a>\
-                    </li>';
             }
         }
 
