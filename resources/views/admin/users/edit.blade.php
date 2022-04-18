@@ -41,7 +41,7 @@
                         <div class="fv-row col-md-6">
                             <i onclick="phoneReset('phone-field')" class="fa fa-edit"></i>
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone</label>
-                            <input id="edit_user_phone" type="number" name="phone" value="{{$user->phone ?? ''}}" class="form-control phone-field form-control-lg form-control-solid mb-2" />
+                            <input id="edit_user_phone" type="text" oninput="phoneField(this)" name="phone" value="{{$user->phone ?? ''}}" class="form-control phone-field form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">

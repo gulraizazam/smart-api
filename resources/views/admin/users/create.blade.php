@@ -49,7 +49,7 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone</label>
-                            <input type="number" id="add_user_phone" name="phone" class="form-control form-control-lg form-control-solid mb-2" />
+                            <input type="text" oninput="phoneField(this)" id="add_user_phone" name="phone" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
