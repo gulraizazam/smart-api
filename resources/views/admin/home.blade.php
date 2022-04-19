@@ -439,8 +439,8 @@
                         <!--begin::Header-->
                         <div class="card-header border-0 pt-5">
                             <h3 class="card-title align-items-start flex-column">
-                                <span class="card-label font-weight-bolder text-dark">Up coming</span>
-                                <span class="text-muted mt-3 font-weight-bold font-size-sm">More than <span class=" badge badge-circle badge-info total-members"></span> up coming</span>
+                                <span class="card-label font-weight-bolder text-dark">Upcomings</span>
+                                <span class="text-muted mt-3 font-weight-bold font-size-sm">More than <span class=" badge badge-circle badge-info total-members"></span> Upcomings</span>
                             </h3>
                             <div class="card-toolbar">
                                 <div class="dropdown dropdown-inline" data-toggle="tooltip" title="Quick actions" data-placement="left">
