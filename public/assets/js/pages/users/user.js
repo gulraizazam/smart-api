@@ -21,7 +21,7 @@ var table_columns = [
     }, {
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 90,
     }, {
         field: 'gender',
         title: 'Gender',
