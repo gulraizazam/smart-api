@@ -23,11 +23,11 @@ var table_columns = [
         title: 'Scheduled',
         width: 'auto',
         template: function (data) {
-           if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
-               return '<span>'+data.scheduled_date+'</span>';
-           } else {
-               return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
-           }
+            if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
+                return '<span>'+data.scheduled_date+'</span>';
+            } else {
+                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+            }
         }
     },{
         field: 'service_id',
@@ -51,11 +51,11 @@ var table_columns = [
             let appointment_status = data.appointment_status;
 
             if (permissions.status) {
-               /* if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
-                    return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
-                } else {*/
+                if (data.scheduled_date == '-') {
+                    return '<span>Un-Scheduled</span>';
+                } else {
                     return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
-               // }
+                }
             } else {
                 return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
             }
@@ -162,6 +162,11 @@ function setStatusData(response, id) {
         $("#base_appointment_status_id").html(base_status_option);
         $("#appointment_status_id").html(appoint_status_option);
 
+        $("#appointment_id").val(id);
+        $("#appointment_status_not_show").val(appointment_status_not_show);
+        $("#cancellation_reason_other_reason").val(cancellation_reason_other_reason);
+
+
         if (appointments?.appointment_status?.parent_id != 0) {
             $("#base_appointment_status_id").val(appointments?.appointment_status?.parent_id);
         } else {
@@ -184,18 +189,23 @@ function setStatusData(response, id) {
                 $("#reason").val(appointments?.reason);
             }
         } else {
-        if(base_appointments[appointments.appointment_status.parent_id].is_comment == 0
-            && appointments?.appointment_status?.is_comment == 0) {
+            if(base_appointments[appointments.appointment_status?.parent_id]?.is_comment == 0
+                && appointments?.appointment_status?.is_comment == 0) {
+            } else {
+                $("#appointment_reason").hide();
+                $("#appointment_status_id_section").hide();
+
+            }
+            if(base_appointments[appointments.appointment_status.parent_id].is_comment == 0
+                && appointments?.appointment_status?.is_comment == 0) {
                 $("#appointment_reason").hide();
             } else {
-            $("#appointment_reason").show();
-            $("#reason").val(appointments?.reason);
+                $("#appointment_reason").show();
+                $("#appointment_status_id_section").show();
+                $("#reason").val(appointments?.reason);
+                $("#appointment_status_id").val(appointments?.appointment_status?.id);
+            }
         }
-        }
-
-        $("#appointment_id").val(id);
-        $("#appointment_status_not_show").val(appointment_status_not_show);
-        $("#cancellation_reason_other_reason").val(cancellation_reason_other_reason);
 
     } catch (error) {
         showException(error);
@@ -219,8 +229,8 @@ function editSchedule(id) {
         success: function(response) {
             if (response.status) {
                 let appointment = response.data.appointment;
-               $("#schedule_date").val(appointment?.scheduled_date);
-               $("#schedule_time").val(appointment?.scheduled_time);
+                $("#schedule_date").val(appointment?.scheduled_date);
+                $("#schedule_time").val(appointment?.scheduled_time);
             }
         },
         error: function(xhr, ajaxOptions, thrownError) {
@@ -240,6 +250,10 @@ const extraValidate = {
 
 let loadChildStatuses = function (appointmentStatusId) {
 
+    statusValidate.addField('appointment_status_id', extraValidate);
+    statusValidate.addField('reason', extraValidate);
+    statusValidate.removeField('appointment_status_id', '');
+    statusValidate.removeField('reason', '');
     if(appointmentStatusId != '') {
         resetDropdowns();
         $("input[type=submit]").attr('disabled', true);
@@ -262,7 +276,8 @@ let loadChildStatuses = function (appointmentStatusId) {
                     } else {
                         $('.appointment_status_id').hide();
                         $('#appointment_status_id').html('');
-                        statusValidate.addField('appointment_status_id', '');
+                        statusValidate.addField('appointment_status_id', extraValidate);
+                        statusValidate.removeField('appointment_status_id', '');
                     }
                 } else {
                     resetDropdowns();
@@ -275,6 +290,7 @@ let loadChildStatuses = function (appointmentStatusId) {
                     statusValidate.addField('reason', extraValidate);
                 } else {
                     resetReason();
+                    statusValidate.addField('reason', extraValidate);
                     statusValidate.removeField('reason', '');
                 }
                 $("input[type=submit]").removeAttr('disabled');
@@ -318,6 +334,9 @@ var resetChildStatuses = function () {
 }
 
 let statusListener = function (appointmentStatusId) {
+
+    statusValidate.addField('reason', extraValidate);
+    statusValidate.removeField('reason', '');
     if(appointmentStatusId != '') {
         $("input[type=submit]").attr('disabled', true);
         $.ajax({
@@ -392,39 +411,39 @@ function actions(data) {
             </a>';
 
         if (permissions.invoice) {
-        if(!data.invoice) {
-            if (data.appointment_type == 2) {
-                actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="navi-link btn btn-icon btn-light btn-hover-warning btn-sm">\
+            if(!data.invoice) {
+                if (data.appointment_type == 2) {
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="navi-link btn btn-icon btn-light btn-hover-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                             <!--<span class="navi-text">Create Invoice</span>-->\
                         </a>';
+                }
+
+                if(data.appointment_type == 1) {
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="navi-link btn btn-icon btn-light btn-hover-warning btn-sm">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                            <!--<span class="navi-text">Create Invoice</span>-->\
+                        </a>';
+                }
             }
 
-            if(data.appointment_type == 1) {
-                actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="navi-link btn btn-icon btn-light btn-hover-warning btn-sm">\
-                            <span class="navi-icon"><i class="la la-file"></i></span>\
-                            <!--<span class="navi-text">Create Invoice</span>-->\
-                        </a>';
-            }
         }
 
-    }
-
-    if (permissions.invoice_display) {
-        if(data.invoice) {
-            actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link btn btn-icon btn-light btn-hover-info btn-sm">\
+        if (permissions.invoice_display) {
+            if(data.invoice) {
+                actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link btn btn-icon btn-light btn-hover-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                            <!-- <span class="navi-text">View Invoice</span>-->\
                         </a>';
+            }
         }
-    }
 
-    actions += '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="overflow-y: scroll; height: 200px">\
+        actions += '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="overflow-y: scroll; height: 200px">\
                 <ul class="navi flex-column navi-hover py-2">\
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-            actions += '<li class="navi-item">\
+        actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-eye"></i></span>\
                             <span class="navi-text">Detail</span>\
@@ -543,13 +562,13 @@ function actions(data) {
                 (data?.unscheduled_appointment_status?.id == data?.appointment_status_id) &&
                 (!data?.scheduled_date && !data?.scheduled_time)
             ) {*/
-                actions += '<li class="navi-item">\
+            actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-trash"></i></span>\
                             <span class="navi-text">Delete</span>\
                             </a>\
                         </li>';
-            }
+        }
         //}
 
         actions += '</ul>\
@@ -786,7 +805,7 @@ function setEditData(response) {
 
 
     } catch (error) {
-       showException(error);
+        showException(error);
     }
 
 }
@@ -865,7 +884,7 @@ function setTreatmentEditData(response) {
         $("#treatment_appointment_type").val(appointment?.appointment_type_id);
 
     } catch (error) {
-       showException(error);
+        showException(error);
     }
 
 }
@@ -917,14 +936,14 @@ function setSmsLogs(response) {
                     rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
                     rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
                     rows += '<span class="full_text" style="display: none; text-underline: none;">' + smsLog.text + '</span>';
-                        '</a></td>';
+                    '</a></td>';
 
                     if(smsLog.status) {
                         rows += '<td id="smsRow{'+smsLog.id+'">Yes</td>';
                     } else {
                         rows += '<td><span class="text-center" id="spanRow'+smsLog.id+'">No</span>\
                         <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+', `'+sent_url+'`);" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
-                        '<i class="la la-send-o"></i></a></td>';
+                            '<i class="la la-send-o"></i></a></td>';
                     }
 
                     if(smsLog.is_refund == "Yes") {
@@ -1118,8 +1137,8 @@ function resetCustomFilters() {
     setQueryStringParameter('from');
     setQueryStringParameter('to');
     setQueryStringParameter('center_id');
-   /* $(".advance-filters").slideUp();
-    $(".advance-arrow").addsClass("fa-caret-right").removeClass("fa-caret-down")*/
+    /* $(".advance-filters").slideUp();
+     $(".advance-arrow").addsClass("fa-caret-right").removeClass("fa-caret-down")*/
 }
 
 jQuery(document).ready(function () {
@@ -1263,7 +1282,7 @@ var AppointScheduleValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                   reInitTable();
+                    reInitTable();
                 } else {
                     toastr.error(response.message);
                 }
