@@ -491,7 +491,7 @@ class HomeController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
             'pie' => $data,
-            'total' => $total ?? 0
+            'total' => number_format($total ?? 0, 2)
         ]);
     }
 
@@ -578,7 +578,7 @@ class HomeController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
-                'total' => $total
+                'total' =>  number_format($total ?? 0, 2)
             ]);
         }
     }
@@ -772,7 +772,7 @@ class HomeController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
-            'total' => $total,
+            'total' =>  number_format($total ?? 0, 2),
         ]);
     }
 
@@ -853,7 +853,7 @@ class HomeController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Appointment data', true, [
                 'appointment' => $data,
-                'total' => $total
+                'total' =>  number_format($total ?? 0, 2)
             ]);
         }
     }
