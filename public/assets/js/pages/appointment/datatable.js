@@ -964,7 +964,7 @@ function applyFilters(datatable) {
             name: $("#appoint_search_patient").val(),
             phone: $("#appoint_search_phone").val(),
             date_from: $("#appoint_search_start").val(),
-            date_to: $("#appoint_search_end").val(),
+            date_to: $("#appoint_appoint_end").val(),
             appointment_type_id: $("#appoint_search_type").val(),
             service_id: $("#appoint_search_service").val(),
             region_id: $("#appoint_search_region").val(),
@@ -1091,7 +1091,7 @@ function setFilters(filter_values, active_filters) {
         $("#appoint_search_updated_by").val(active_filters.converted_by);
         $("#appoint_search_rescheduled_by").val(active_filters.updated_by);
         $("#appoint_search_type").val(active_filters.appointment_type_id);
-        $("#appoint_search_status").val(active_filters.appointment_status);
+        $("#appoint_search_status").val(active_filters.appointment_status_id);
         $("#appoint_search_doctor").val(active_filters.doctor_id);
         $("#appoint_search_centre").val(active_filters.location_id);
         $("#appoint_search_city").val(active_filters.city_id);

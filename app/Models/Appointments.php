@@ -600,7 +600,7 @@ class Appointments extends Model
      * @param $time
      * @return string
      */
-    public function getScheduledTimeAttribute($time, $format = 'h:i A') { //h:ia
+    /*public function getScheduledTimeAttribute($time, $format = 'h:i A') { //h:ia
        return Carbon::parse($time)->format($format);
-    }
+    }*/
 }

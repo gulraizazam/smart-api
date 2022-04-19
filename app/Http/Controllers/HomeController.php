@@ -51,23 +51,25 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $data = [];
+        $timeZone = "Asia/Karachi";
 
         $location_id = $this->getUserLocation();
 
         list($start_date, $end_date) = $this->getDates($request);
 
-        $data = $this->consultancies($data, $start_date, $end_date);
-        $data = $this->treatments($data, $start_date, $end_date);
-        $data = $this->leads($data);
+        $data = $this->consultancies($data, $start_date, $end_date, $location_id);
+        $data = $this->treatments($data, $start_date, $end_date, $location_id);
+        $data = $this->leads($data, $location_id);
         $data = $this->salesByCentre($request, $data);
 
-        $data['today'] = Carbon::now()->timezone("Asia/Karachi")->format("Y-m-d");
-        $data['startWeek'] = Carbon::now()->timezone("Asia/Karachi")->startOfWeek()->format("Y-m-d");
-        $data['month'] = Carbon::now()->timezone("Asia/Karachi")->format("Y-m-d");
-        $data['currentTime'] = Carbon::now()->timezone("Asia/Karachi")->format("H:i:s");
+        $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
+        $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
+        $data['month'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
+        $data['currentTime'] = Carbon::now()->timezone($timeZone)->format("H:i:s");
         $data['location_id'] = $location_id;
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
+        $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
 
         return view('admin.home', $data);
     }
@@ -80,7 +82,8 @@ class HomeController extends Controller
         $filter = $this->getTableFilter($request->all());
 
         $today = Carbon::now()->format("Y-m-d");
-        $todayTime = Carbon::now()->timezone("Asia/Karachi")->format("H:i:s");
+       
+        $todayTime = Carbon::now()->timezone("Asia/Karachi")->format("H:i"). ':00';
 
         if ($request->has('sort')) {
 
@@ -149,15 +152,15 @@ class HomeController extends Controller
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
             $start_week = $filter['date'];
             $end_week = Carbon::parse($start_week)->endOfWeek()->format('Y-m-d');
-            $time = $filter['time'];
-            $countQuery->whereBetween('appointments.scheduled_date', [$start_week, $end_week]);
+
+            $countQuery->whereBetween('appointments.scheduled_date', [$today, $end_week]);
 
         } else if (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
             $start_month = Carbon::parse($filter['date'])->startOfMonth()->format('Y-m-d');
             $end_month = Carbon::parse($filter['date'])->endOfMonth()->format('Y-m-d');
-            $time = $filter['time'];
-            $countQuery->whereBetween('appointments.scheduled_date', [$start_month, $end_month]);
+
+            $countQuery->whereBetween('appointments.scheduled_date', [$today, $end_month]);
         } else {
             $countQuery->whereDate('appointments.scheduled_date', $today);
             $countQuery->where('appointments.scheduled_time', '>=', $todayTime);
@@ -215,18 +218,18 @@ class HomeController extends Controller
         }
 
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
+
             $start_week = $filter['date'];
             $end_week = Carbon::parse($start_week)->endOfWeek()->format('Y-m-d');
-            $time = $filter['time'];
-            $resultQuery->whereBetween('appointments.scheduled_date', [$start_week, $end_week]);
+
+            $resultQuery->whereBetween('appointments.scheduled_date', [$today, $end_week]);
 
         } else if (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
             $start_month = Carbon::parse($filter['date'])->startOfMonth()->format('Y-m-d');
             $end_month = Carbon::parse($filter['date'])->endOfMonth()->format('Y-m-d');
-            $time = $filter['time'];
 
-            $resultQuery->whereBetween('appointments.scheduled_date', [$start_month, $end_month]);
+            $resultQuery->whereBetween('appointments.scheduled_date', [$today, $end_month]);
         } else {
             $resultQuery->whereDate('appointments.scheduled_date', $today);
 
@@ -239,6 +242,14 @@ class HomeController extends Controller
             ->orderBy($orderBy, $order)
             ->orderBy('appointments.scheduled_time', "DESC")
             ->get();
+
+        $todayAppointments = $Appointments->where('scheduled_date', $today);
+        if ($todayAppointments->count() > 0) {
+            $todayScheduled = $todayAppointments->where('scheduled_time', '<=', $todayTime);
+
+            $Appointments = $Appointments->whereNotIn('id',  $todayScheduled->pluck('id')->toArray());
+          //  dd($todayTime, $Appointments->toArray());
+        }
 
         $invoicearray = array();
 
@@ -329,13 +340,14 @@ class HomeController extends Controller
         return [];
     }
 
-    private function consultancies($data, $start_date, $end_date) {
+    private function consultancies($data, $start_date, $end_date, $location_id) {
 
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
-            ->whereBetween('scheduled_date', [$start_date, $end_date]);
-        if (auth()->id() != 1) {
+            ->whereBetween('scheduled_date', [$start_date, $end_date])
+            ->where('location_id', $location_id);
+        /*if (auth()->id() != 1) {
             $query->whereIn('location_id', ACL::getUserCentres());
-        }
+        }*/
 
         $data['all_consultancies'] = $query->count();
 
@@ -345,13 +357,14 @@ class HomeController extends Controller
         return $data;
     }
 
-    private function treatments($data, $start_date, $end_date) {
+    private function treatments($data, $start_date, $end_date, $location_id) {
 
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_service'))
-            ->whereBetween('scheduled_date', [$start_date, $end_date]);
-        if (auth()->id() != 1) {
+            ->whereBetween('scheduled_date', [$start_date, $end_date])
+            ->where('location_id', $location_id);
+        /*if (auth()->id() != 1) {
             $query->whereIn('location_id', ACL::getUserCentres());
-        }
+        }*/
 
         $data['all_treatments'] = $query->count();
 
@@ -361,7 +374,7 @@ class HomeController extends Controller
         return $data;
     }
 
-    private function leads($data) {
+    private function leads($data, $location_id) {
 
         $data['leads'] = Leads::where('active', 1)->count();
 
@@ -375,7 +388,6 @@ class HomeController extends Controller
     private function salesByCentre(Request $request, $data)
     {
         $data['revenue'] = 0;
-        // if (Gate::allows('dashboard_revenue_by_centre') || Gate::allows('dashboard_my_revenue_by_centre')) {
 
         $locations = Locations::where([
             ['account_id', '=', Auth::User()->account_id],
@@ -410,8 +422,6 @@ class HomeController extends Controller
                 }
             }
         }
-
-        //}
 
         return $data;
     }

@@ -153,13 +153,9 @@
                 },1000);
             }
 
-            var consultancy = true;
             $(document).ready(function () {
                 setTimeout( function () {
-                  //  if(consultancy) {
-                        setDashboardFilters();
-                    //}
-                    consultancy = false
+                    setDashboardFilters();
                 },1500)
 
             });
@@ -173,12 +169,14 @@
                     $("#appoint_search_start").val('{{request('from')}}');
                     $("#appoint_appoint_end").val('{{request('to')}}');
                     $("#appoint_search_centre").val('{{request('center_id')}}').change();
+                    $("#appoint_search_status").val('{{request('appoint_status')}}').change();
 
                     datatable.search({
                         location_id: '{{request('center_id')}}',
                         appointment_type_id: '{{request('type')}}',
                         date_from: '{{request('from')}}',
                         date_to: '{{request('to')}}',
+                        appointment_status_id: '{{request('appoint_status')}}',
                         filter: 'filter',
                     }, 'search');
                 }

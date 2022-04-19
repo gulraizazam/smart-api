@@ -94,7 +94,7 @@
 
                                                           <span class="dashboard-counter">{{$done_consultancies}}/{{$all_consultancies}}</span>
                                                     </span>
-                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
                                         </div>
                                     </div>
                                     <!--end::Row-->
@@ -105,7 +105,7 @@
                                                        <i class="la la-medkit" style="font-size: 40px;"></i>
                                                          <span class="dashboard-counter">{{$done_treatments}}/{{$all_treatments}}</span>
                                                     </span>
-                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
                                         </div>
                                         <div class="col bg-light-success px-6 py-8 rounded-xl">
                                                   <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
@@ -439,8 +439,8 @@
                         <!--begin::Header-->
                         <div class="card-header border-0 pt-5">
                             <h3 class="card-title align-items-start flex-column">
-                                <span class="card-label font-weight-bolder text-dark">New Arrivals</span>
-                                <span class="text-muted mt-3 font-weight-bold font-size-sm">More than <span class=" badge badge-circle badge-info total-members"></span> new arrivals</span>
+                                <span class="card-label font-weight-bolder text-dark">Up coming</span>
+                                <span class="text-muted mt-3 font-weight-bold font-size-sm">More than <span class=" badge badge-circle badge-info total-members"></span> up coming</span>
                             </h3>
                             <div class="card-toolbar">
                                 <div class="dropdown dropdown-inline" data-toggle="tooltip" title="Quick actions" data-placement="left">
