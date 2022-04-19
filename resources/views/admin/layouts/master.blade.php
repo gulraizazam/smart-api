@@ -102,6 +102,14 @@
 
 @stack('js')
 
+<script>
+    var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    if (width < 1848) {
+        $("#kt_aside_toggle").addClass("active");
+        $("#kt_body").addClass("aside-minimize");
+    }
+</script>
+
 </body>
 <!--end::Body-->
 </html>

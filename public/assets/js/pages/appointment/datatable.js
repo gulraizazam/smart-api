@@ -7,21 +7,29 @@ var table_columns = [
         title: 'ID',
         width: 60,
         sortable: false,
+        template: function (data) {
+            let detail_url = route('admin.appointments.detail', {id: data.id});
+            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.Patient_ID+' <i class="text text-info la la-eye"></i></a>';
+        }
     },{
         field: 'name',
         title: 'Patient',
-        width: 100,
+        width: 80,
+        template: function (data) {
+            let detail_url = route('admin.appointments.detail', {id: data.id});
+            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.name+' <i class="text text-info la la-eye"></i></a>';
+        }
     },{
         field: 'phone',
         title: 'Phone',
-        width: 100,
+        width: 90,
         template: function (data) {
             return phoneClip(data);
         }
     },{
         field: 'scheduled_date',
         title: 'Scheduled',
-        width: 'auto',
+        width: 80,
         template: function (data) {
             if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
                 return '<span>'+data.scheduled_date+'</span>';
@@ -36,11 +44,11 @@ var table_columns = [
     },{
         field: 'appointment_type_id',
         title: 'Type',
-        width: 100,
+        width: 85,
     },{
         field: 'doctor_id',
         title: 'Doctor',
-        width: 'auto',
+        width: 90,
     },{
         field: 'appointment_status_id',
         title: 'Status',
@@ -405,10 +413,7 @@ function actions(data) {
         || permissions.plans_create
         || permissions.patient_card
     ) {
-        let actions = '<div class="dropdown dropdown-inline action-dots">\
-            <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
-                <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
-            </a>';
+        let actions = '<div class="dropdown dropdown-inline action-dots">';
 
         if (permissions.invoice) {
             if(!data.invoice) {
@@ -437,6 +442,10 @@ function actions(data) {
                         </a>';
             }
         }
+
+        actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+                        <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+                    </a>';
 
         actions += '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="overflow-y: scroll; height: 200px">\
                 <ul class="navi flex-column navi-hover py-2">\
