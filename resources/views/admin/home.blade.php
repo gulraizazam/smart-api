@@ -85,15 +85,15 @@
 
                                                           <span class="dashboard-counter">{{number_format($revenue)}}</span>
                                                     </span>
-                                            <a href="#" class="text-warning font-weight-bold font-size-h6">Sales</a>
+                                            <a href="javascript:void(0);" style="cursor: none;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
                                         <div class="col bg-light-primary px-6 py-8 rounded-xl mb-7">
-                                                    <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
+                                                <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
 
-                                                        <i class="la la-stethoscope" style="font-size: 40px;"></i>
+                                                    <i class="la la-stethoscope" style="font-size: 40px;"></i>
 
-                                                          <span class="dashboard-counter">{{$done_consultancies}}/{{$all_consultancies}}</span>
-                                                    </span>
+                                                      <span class="dashboard-counter">{{$done_consultancies}}/{{$all_consultancies}}</span>
+                                                </span>
                                             <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
                                         </div>
                                     </div>
@@ -121,7 +121,7 @@
                                                       <span class="dashboard-counter">{{$leads}}</span>
                                                     </span>
 
-                                            <a href="#" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
+                                            <a  href="javascript:void(0);" style="cursor: none;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
                                         </div>
                                     </div>
                                     <!--end::Row-->

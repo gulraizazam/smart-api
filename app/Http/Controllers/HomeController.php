@@ -82,7 +82,7 @@ class HomeController extends Controller
         $filter = $this->getTableFilter($request->all());
 
         $today = Carbon::now()->format("Y-m-d");
-       
+
         $todayTime = Carbon::now()->timezone("Asia/Karachi")->format("H:i"). ':00';
 
         if ($request->has('sort')) {
