@@ -85,7 +85,7 @@
 
                                                           <span class="dashboard-counter">{{number_format($revenue)}}</span>
                                                     </span>
-                                            <a href="javascript:void(0);" style="cursor: none;" class="text-warning font-weight-bold font-size-h6">Sales</a>
+                                            <a href="javascript:void(0);" style="cursor: default;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
                                         <div class="col bg-light-primary px-6 py-8 rounded-xl mb-7">
                                                 <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
@@ -121,7 +121,7 @@
                                                       <span class="dashboard-counter">{{$leads}}</span>
                                                     </span>
 
-                                            <a  href="javascript:void(0);" style="cursor: none;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
+                                            <a  href="javascript:void(0);" style="cursor: default;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
                                         </div>
                                     </div>
                                     <!--end::Row-->
