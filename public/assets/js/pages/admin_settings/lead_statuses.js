@@ -174,6 +174,7 @@ function setEditData(response) {
 }
 
 function applyFilters(datatable) {
+
     $('#apply-filters').on('click', function () {
         let filters = {
             delete: '',

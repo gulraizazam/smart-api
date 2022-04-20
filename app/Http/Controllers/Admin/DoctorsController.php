@@ -228,7 +228,7 @@ class DoctorsController extends Controller
                 $where[] = [
                     'users.phone',
                     'like',
-                    '%' . GeneralFunctions::cleanNumber($request->get('phone')) . '%',
+                    '%' . GeneralFunctions::cleanNumber($filters['phone']) . '%',
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'phone', $filters['phone']);
             } else {
