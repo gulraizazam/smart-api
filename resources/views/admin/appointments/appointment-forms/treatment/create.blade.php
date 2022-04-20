@@ -70,12 +70,12 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
                             <select id="create_treatment_gender" class="form-control select2" name="gender"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>
                             <select id="create_treatment_lead" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source">
                             </select>
                         </div>

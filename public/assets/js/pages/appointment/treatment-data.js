@@ -142,7 +142,17 @@ function getTreatmentPatientDetail($this) {
                 let patient = resposne.data.patient;
                 $('#create_treatment_phone').val(patient?.phone);
                 $('#create_treatment_patient_name').val(patient?.name);
-                $('#create_treatment_gender').val(patient?.gender).change();
+                $('#create_treatment_gender').val(patient?.gender).trigger("change");
+
+                if (patient?.phone != '') {
+                    $("#create_treatment_phone").removeClass("is-invalid")
+                    $("#create_treatment_phone").parent("div").find(".fv-help-block").remove();
+                }
+
+                if (patient?.name != '') {
+                    $("#create_treatment_patient_name").removeClass("is-invalid")
+                    $("#create_treatment_patient_name").parent("div").find(".fv-help-block").remove();
+                }
             }
 
         },
@@ -157,6 +167,7 @@ function setResourceValue(value) {
 
 
 jQuery(document).ready(function () {
+
     $("#Add_treatment_comment").click(function () {
         if ($('#treatment_comment').val() !== '') {
             $.ajax({
@@ -178,5 +189,11 @@ jQuery(document).ready(function () {
             toastr.error("Please fill out the comment field");
         }
         $('#treatment_cment')[0].reset();
+    });
+
+
+
+    $(document).on("click", ".croxcli", function () {
+        $('.treatment_patient_search_id').val(null).trigger('change');
     });
 })
