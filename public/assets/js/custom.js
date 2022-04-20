@@ -183,12 +183,14 @@ $(document).ready(function () {
         }
     });
 
+    /*Restrict modal by closing from out side*/
     $('.modal').modal({
         'show': false,
         backdrop: 'static',
         keyboard: false
     });
 
+    /*Search filter working by press enter for input field*/
     $("input").on('keyup', function (e) {
         if (e.key === 'Enter' || e.keyCode === 13) {
             $('#apply-filters').click();
@@ -196,12 +198,9 @@ $(document).ready(function () {
     });
 
     $(document).on('keyup', '.select2-search__field', function (e) {
-        if (e.which === 13) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
             $('#apply-filters').click();
-            setTimeout( function () {
-                reInitSelect2('.select2', 'All');
-            }, 100);
-
+            reInitSelect2('.select2', 'All');
         }
     });
 
