@@ -189,6 +189,23 @@ $(document).ready(function () {
         keyboard: false
     });
 
+    $("input").on('keyup', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            $('#apply-filters').click();
+        }
+    });
+
+    $(document).on('keyup', '.select2-search__field', function (e) {
+        if (e.which === 13) {
+            $('#apply-filters').click();
+            setTimeout( function () {
+                reInitSelect2('.select2', 'All');
+            }, 100);
+
+        }
+    });
+
+
 });
 
 function customDatePicker() {
@@ -378,7 +395,7 @@ function errorMessage(xhr) {
 
 function reInitSelect2(elem, title = 'Select') {
     $(elem).select2({
-        placeholder: 'Select'
+        placeholder: title
     });
 }
 
