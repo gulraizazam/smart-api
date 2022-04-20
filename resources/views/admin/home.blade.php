@@ -805,7 +805,8 @@
 
                 </div>
 
-                <div class="col-lg-12 col-xxl-12">
+                @can('appointments_manage')
+                    <div class="col-lg-12 col-xxl-12">
                     <div class="card card-custom card-stretch gutter-b">
                         <!--begin::Header-->
                         <div class="card-header border-0 pt-5">
@@ -837,6 +838,8 @@
                     <!--end::List Widget 1-->
                     {{--end datatable--}}
                 </div>
+                @endcan
+
 
 </div>
 <!--end::Container-->
