@@ -75,7 +75,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender </label>
-                            <select id="create_consultancy_gender" class="form-control select2" name="gender"></select>
+                            <select id="create_consultancy_gender" class="form-control" name="gender"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
