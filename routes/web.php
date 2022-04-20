@@ -94,7 +94,6 @@ use App\Http\Controllers\Admin\AppointmentsController;
         Route::get('/home/my-revenue-by-centre', [App\Http\Controllers\HomeController::class, 'myRevenueByCentre'])->name('home.myRevenueByCentre');
         Route::get('/home/revenue-by-service', [App\Http\Controllers\HomeController::class, 'revenueByService'])->name('home.revenueByService');
         Route::get('/home/my-revenue-by-service', [App\Http\Controllers\HomeController::class, 'myRevenueByService'])->name('home.myRevenueByService');
-        Route::get('/home/appointment-status', [App\Http\Controllers\HomeController::class, 'appointmentByStatus'])->name('home.appointmentByStatus');
 
 
         Route::get('settings', [SettingsController::class,'index'])->name('settings.index');
