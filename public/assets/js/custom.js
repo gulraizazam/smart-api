@@ -183,6 +183,12 @@ $(document).ready(function () {
         }
     });
 
+    $('.modal').modal({
+        'show': false,
+        backdrop: 'static',
+        keyboard: false
+    });
+
 });
 
 function customDatePicker() {
