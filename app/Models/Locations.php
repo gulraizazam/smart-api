@@ -159,6 +159,26 @@ class Locations extends BaseModal
         }
     }
 
+    static public function getActiveSortedLocations($locationId = false)
+    {
+        if ($locationId && !is_array($locationId)) {
+            $locationId = array($locationId);
+        }
+        if ($locationId) {
+            return self::whereIn('id', $locationId)->where([
+                ['account_id', '=', Auth::User()->account_id],
+                ['active', '=', '1'],
+                ['slug', '=', 'custom']
+            ])->get();
+        } else {
+            return self::where([
+                ['account_id', '=', Auth::User()->account_id],
+                ['active', '=', '1'],
+                ['slug', '=', 'custom']
+            ])->get();
+        }
+    }
+
     /**
      * Get active and sorted data only for staff wise report.
      */
