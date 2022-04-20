@@ -532,7 +532,7 @@ function actions(data) {
             if (permissions.medical_form_manage) {
                 actions += '<li class="navi-item">\
                         <a href="'+medicals_url+'" target="_blank" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-plus-square"></i></span>\
+                            <span class="navi-icon"><i class="la la-medkit"></i></span>\
                             <span class="navi-text">Medical</span>\
                         </a>\
                     </li>';

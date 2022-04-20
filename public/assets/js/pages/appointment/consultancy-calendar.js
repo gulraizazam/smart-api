@@ -413,11 +413,11 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     if (permissions.edit) {
         if (appointment.appointment_type_id == 1) {
             buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
-            <i class="la la-edit"></i>Edit\
+            <i class="la la-pencil"></i>Edit\
             </a>';
         } else {
             buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `' + $class + '`);" >\
-            <i class="la la-edit"></i>Edit\
+            <i class="la la-pencil"></i>Edit\
             </a>';
         }
     }
@@ -429,13 +429,13 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
         if (!invoice) {
             if (appointment.appointment_type_id == 2) {
                 buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + service_invoice_url + '`);">\
-                <i class="la la-file-invoice" title="Generate Invoice"></i>Generate Invoice\
+                <i class="la la-file" title="Generate Invoice"></i>Generate Invoice\
                 </a>';
             }
 
             if (appointment.appointment_type_id == 1) {
                 buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" >\
-                <i class="la la-file-invoice" title="Generate Invoice"></i>Generate Invoice\
+                <i class="la la-file" title="Generate Invoice"></i>Generate Invoice\
                 </a>';
             }
         }
@@ -452,13 +452,13 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     if (appointment.appointment_type_id == 2) {
         if (permissions.image_manage) {
             buttons += '<a class="btn btn-sm btn-info mr-2" href="'+image_url+'" target="_blank">\
-        <i class="la la-images" title="Images"></i>Images\
+        <i class="la la-image" title="Images"></i>Images\
         </a>';
         }
 
         if (permissions.measurement_manage) {
             buttons += '<a class="btn btn-sm btn-info mr-2" href="'+measurement_url+'"  target="_blank">\
-        <i class="la la-stethoscope" title="Measurement"></i>Measurement\
+        <i class="la la-ruler-horizontal" title="Measurement"></i>Measurement\
         </a>';
         }
     }
@@ -474,13 +474,13 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
 
     if (permissions.plans_create) {
         buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_create_url+'`);">\
-            <i class="la la-clipboard" title="Create Plan"></i>Create Plan\
+            <i class="la la-paper-plane" title="Create Plan"></i>Create Plan\
             </a>';
     }
 
     if(permissions.patient_card) {
         buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="'+patient_url+'">\
-        <i class="la la-users" title="Patient Card"></i>Patient Card\
+        <i class="la la-user" title="Patient Card"></i>Patient Card\
         </a>';
     }
 
