@@ -473,7 +473,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
         /*Consultancy Routes*/
         Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
 
-        Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
+        //Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
 
         Route::get('appointments/load-non-scheduled-appointments', [AppointmentsController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
 

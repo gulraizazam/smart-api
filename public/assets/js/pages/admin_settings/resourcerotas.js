@@ -413,7 +413,7 @@ var table_columns = [
         title: 'Created at',
         width: 'auto',
     },{
-        field: 'status',
+        field: 'active',
         title: 'Status',
         width: 'auto',
         template: function (data) {

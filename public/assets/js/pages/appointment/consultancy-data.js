@@ -348,6 +348,16 @@ function getPatientDetail($this) {
                 $('#create_consultancy_gender').val(patient?.gender).change();
                 $('#create_consultancy_referred_by').val(patient?.referred_by).change();
 
+                if (patient?.phone != '') {
+                    $("#create_consultancy_phone").removeClass("is-invalid")
+                    $("#create_consultancy_phone").parent("div").find(".fv-help-block").remove();
+                }
+
+                if (patient?.name != '') {
+                    $("#create_patient_name").removeClass("is-invalid")
+                    $("#create_patient_name").parent("div").find(".fv-help-block").remove();
+                }
+
                 if ($("#create_consultancy_service").val() != '') {
                     loadLead(patient);
                 }

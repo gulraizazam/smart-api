@@ -1361,14 +1361,22 @@ class AppointmentsController extends Controller
         $data = $request->all();
         $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
 
-        return $validator = Validator::make($data, [
+        if (is_null($request->new_patient)) {
+            return Validator::make($data, [
+                'name' => 'required',
+                'phone' => 'required',
+            ]);
+        }
+
+        return Validator::make($data, [
             'name' => 'required',
-            //'phone' => 'required|unique:users',
             'phone' => [
                 'required',
                 Rule::unique('users')->ignore($id),
             ],
         ]);
+
+
     }
 
     /**
@@ -4456,11 +4464,7 @@ class AppointmentsController extends Controller
 
         return Validator::make($data, [
             'name' => 'required',
-            'phone' => [
-                'required',
-                Rule::unique('users')->ignore($id),
-            ],
-
+            'phone' => 'required',
             'city_id' => 'required',
             'location_id' => 'required',
             'doctor_id' => 'required',
