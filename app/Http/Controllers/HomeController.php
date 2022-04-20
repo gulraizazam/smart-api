@@ -9,6 +9,7 @@ use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
+use App\Models\AuditTrails;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Leads;
@@ -61,6 +62,7 @@ class HomeController extends Controller
         $data = $this->treatments($data, $start_date, $end_date, $location_id);
         $data = $this->leads($data, $location_id);
         $data = $this->salesByCentre($request, $data);
+        $data = $this->recentActivities($data);
 
         $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
@@ -331,99 +333,6 @@ class HomeController extends Controller
         ];
 
         return ApiHelper::apiDataTable($records);
-    }
-
-    private function getTableFilter($filters) {
-        if (isset($filters['query']) && isset($filters['query']['filter'])) {
-            return $filters['query']['filter'];
-        }
-        return [];
-    }
-
-    private function consultancies($data, $start_date, $end_date, $location_id) {
-
-        $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
-            ->whereBetween('scheduled_date', [$start_date, $end_date])
-            ->where('location_id', $location_id);
-        /*if (auth()->id() != 1) {
-            $query->whereIn('location_id', ACL::getUserCentres());
-        }*/
-
-        $data['all_consultancies'] = $query->count();
-
-        $query->where('appointment_status_id', config('constants.appointment_status_arrived'));
-        $data['done_consultancies'] = $query->count();
-
-        return $data;
-    }
-
-    private function treatments($data, $start_date, $end_date, $location_id) {
-
-        $query = Appointments::where('appointment_type_id', config('constants.appointment_type_service'))
-            ->whereBetween('scheduled_date', [$start_date, $end_date])
-            ->where('location_id', $location_id);
-        /*if (auth()->id() != 1) {
-            $query->whereIn('location_id', ACL::getUserCentres());
-        }*/
-
-        $data['all_treatments'] = $query->count();
-
-        $query->where('appointment_status_id', config('constants.appointment_status_arrived'));
-        $data['done_treatments'] = $query->count();
-
-        return $data;
-    }
-
-    private function leads($data, $location_id) {
-
-        $data['leads'] = Leads::where('active', 1)->count();
-
-        return $data;
-    }
-
-    private function getUserLocation() {
-        return UserHasLocations::where('user_id', auth()->id())->value('location_id');
-    }
-
-    private function salesByCentre(Request $request, $data)
-    {
-        $data['revenue'] = 0;
-
-        $locations = Locations::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1']
-        ])->whereIn('id', ACL::getUserCentres())->get();
-
-        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-
-        list($start_date, $end_date) = $this->getDates($request);
-
-
-        $todayRecords = \App\Models\Invoices::whereBetween('created_at',  [$start_date, $end_date])
-            ->whereIn('location_id', ACL::getUserCentres())
-            ->where('invoice_status_id', '=', $invoicestatus->id);
-
-        if ($request->get('performance') == '1') {
-            $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
-        }
-
-        $todayRecords = $todayRecords->select('location_id', DB::raw("SUM(invoices.total_price) AS total_price"))
-            ->groupBy('location_id')
-            ->get();
-
-        if ($locations) {
-            foreach ($locations as $location) {
-                if ($todayRecords) {
-                    foreach ($todayRecords as $todayRecord) {
-                        if ($todayRecord->location_id == $location->id) {
-                            $data['revenue'] += $todayRecord->total_price;
-                        }
-                    }
-                }
-            }
-        }
-
-        return $data;
     }
 
     public function collectionByCentre(Request $request)
@@ -1179,6 +1088,108 @@ class HomeController extends Controller
             $start_date,
             $end_date
         ];
+    }
+
+    private function getTableFilter($filters) {
+        if (isset($filters['query']) && isset($filters['query']['filter'])) {
+            return $filters['query']['filter'];
+        }
+        return [];
+    }
+
+    private function consultancies($data, $start_date, $end_date, $location_id) {
+
+        $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
+            ->whereBetween('scheduled_date', [$start_date, $end_date])
+            ->where('location_id', $location_id);
+        /*if (auth()->id() != 1) {
+            $query->whereIn('location_id', ACL::getUserCentres());
+        }*/
+
+        $data['all_consultancies'] = $query->count();
+
+        $query->where('appointment_status_id', config('constants.appointment_status_arrived'));
+        $data['done_consultancies'] = $query->count();
+
+        return $data;
+    }
+
+    private function treatments($data, $start_date, $end_date, $location_id) {
+
+        $query = Appointments::where('appointment_type_id', config('constants.appointment_type_service'))
+            ->whereBetween('scheduled_date', [$start_date, $end_date])
+            ->where('location_id', $location_id);
+        /*if (auth()->id() != 1) {
+            $query->whereIn('location_id', ACL::getUserCentres());
+        }*/
+
+        $data['all_treatments'] = $query->count();
+
+        $query->where('appointment_status_id', config('constants.appointment_status_arrived'));
+        $data['done_treatments'] = $query->count();
+
+        return $data;
+    }
+
+    private function leads($data, $location_id) {
+
+        $data['leads'] = Leads::where('active', 1)->count();
+
+        return $data;
+    }
+
+    private function getUserLocation() {
+        return UserHasLocations::where('user_id', auth()->id())->value('location_id');
+    }
+
+    private function salesByCentre(Request $request, $data)
+    {
+        $data['revenue'] = 0;
+
+        $locations = Locations::where([
+            ['account_id', '=', Auth::User()->account_id],
+            ['active', '=', '1']
+        ])->whereIn('id', ACL::getUserCentres())->get();
+
+        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+
+        list($start_date, $end_date) = $this->getDates($request);
+
+
+        $todayRecords = \App\Models\Invoices::whereBetween('created_at',  [$start_date, $end_date])
+            ->whereIn('location_id', ACL::getUserCentres())
+            ->where('invoice_status_id', '=', $invoicestatus->id);
+
+        if ($request->get('performance') == '1') {
+            $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
+        }
+
+        $todayRecords = $todayRecords->select('location_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+            ->groupBy('location_id')
+            ->get();
+
+        if ($locations) {
+            foreach ($locations as $location) {
+                if ($todayRecords) {
+                    foreach ($todayRecords as $todayRecord) {
+                        if ($todayRecord->location_id == $location->id) {
+                            $data['revenue'] += $todayRecord->total_price;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    private function recentActivities($data) {
+
+        $data['recent_activities'] = AuditTrails::with(['auditTable','auditAction','user'])
+           //->where('created_at', Carbon::now()->format("Y-m-d"))
+           ->limit(10)->get();
+
+        return $data;
     }
 
 }
