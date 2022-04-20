@@ -103,7 +103,7 @@ class AppointmentCheckesWidget
 
         if ($start < $today && $back_date_config->data==0) {
             $appointment_status = false;
-            $message = "Cannot create an event in back date.";
+            $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
                 'status' => $appointment_status,
                 'message' => $message
@@ -227,7 +227,7 @@ class AppointmentCheckesWidget
 
         if ($start < $today && $back_date_config->data==0) {
             $appointment_status = false;
-            $message = "Cannot create an event in back date";
+            $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
                 'status' => $appointment_status,
                 'message' => $message
@@ -345,7 +345,7 @@ class AppointmentCheckesWidget
 
         if ($start < $today && $back_date_config->data==0 ) {
             $appointment_status = false;
-            $message = "Cannot create an event in back date";
+            $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
                 'status' => $appointment_status,
                 'message' => $message
