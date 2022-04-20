@@ -243,28 +243,28 @@ var CreateTreatmentValidation = function () {
                     base_service_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The consultancy type field is required'
+                                message: 'The service field is required'
                             }
                         }
                     },
                     service_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The city field is required'
+                                message: 'The child service field is required'
                             }
                         }
                     },
                     phone: {
                         validators: {
                             notEmpty: {
-                                message: 'The location field is required'
+                                message: 'The phone field is required'
                             }
                         }
                     },
                     name: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
+                                message: 'The patient name field is required'
                             }
                         }
                     },
