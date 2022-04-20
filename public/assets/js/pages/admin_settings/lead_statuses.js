@@ -23,8 +23,8 @@ var table_columns = [
         sortable: false,
     },
     {
-        field: 'is_comment',
-        title: 'Ask for comments',
+        field: 'is_junk',
+        title: 'Default for Junk Leads',
         width: 'auto',
         sortable: false,
     },
@@ -45,10 +45,9 @@ var table_columns = [
         title: 'Default for Converted Leads',
         width: 'auto',
         sortable: false,
-    },
-    {
-        field: 'is_junk',
-        title: 'Default for Junk Leads',
+    },{
+        field: 'is_comment',
+        title: 'Ask for comments',
         width: 'auto',
         sortable: false,
     },
