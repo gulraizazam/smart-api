@@ -738,3 +738,6 @@ div > input {
     /*padding-left: 20px;*/
     float: right;
 }
+[data-field="session_count"] {
+    text-align: center;
+}
