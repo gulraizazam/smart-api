@@ -3,9 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Permission;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 
 class PermissionSeeder extends Seeder
 {
@@ -40,10 +38,10 @@ class PermissionSeeder extends Seeder
             array('name' => 'dashboard_revenue_by_service', 'title' => 'Revenue by Service', 'main_group' => 0, 'parent_id' => 5),
             array('name' => 'dashboard_my_revenue_by_centre', 'title' => 'My Performance by Centre', 'main_group' => 0, 'parent_id' => 5),
             array('name' => 'dashboard_my_revenue_by_service', 'title' => 'My Performance by Service', 'main_group' => 0, 'parent_id' => 5),
-            array('name' => 'dashboard_appointment_by_status', 'title' => 'Appointment by Status', 'main_group' => 0, 'parent_id' => 5),
-            array('name' => 'dashboard_appointment_by_type', 'title' => 'Appointment by Type', 'main_group' => 0, 'parent_id' => 5),
-            array('name' => 'dashboard_my_appointment_by_status', 'title' => 'My Appointments Performance by Status', 'main_group' => 0, 'parent_id' => 5),
-            array('name' => 'dashboard_my_appointment_by_type', 'title' => 'My Appointments Performance by Type', 'main_group' => 0, 'parent_id' => 5),
+            array('name' => 'dashboard_states', 'title' => 'States', 'main_group' => 0, 'parent_id' => 5),
+            array('name' => 'dashboard_recent_activities', 'title' => 'Recent Activities', 'main_group' => 0, 'parent_id' => 5),
+            array('name' => 'dashboard_upcomings', 'title' => 'Upcomings', 'main_group' => 0, 'parent_id' => 5),
+            // array('name' => 'dashboard_my_appointment_by_type', 'title' => 'My Appointments Performance by Type', 'main_group' => 0, 'parent_id' => 5),
             array('name' => 'roles_manage', 'title' => 'Roles', 'main_group' => 1, 'parent_id' => 0),
             array('name' => 'roles_create', 'title' => 'Create', 'main_group' => 0, 'parent_id' => 14),
             array('name' => 'roles_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 14),

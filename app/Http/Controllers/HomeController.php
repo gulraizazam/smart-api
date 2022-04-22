@@ -7,7 +7,6 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\Financelog;
 use App\Helpers\GeneralFunctions;
-use App\Models\Accounts;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
@@ -85,6 +84,9 @@ class HomeController extends Controller
 
     public function datatable(Request $request)
     {
+        if (Gate::allows('dashboard_upcomings')) {
+            return [];
+        }
 
         $where = array();
 
@@ -1106,6 +1108,13 @@ class HomeController extends Controller
 
     private function consultancies($data, $start_date, $end_date, $location_id) {
 
+        if (!Gate::allows('dashboard_states')) {
+            $data['all_consultancies'] = null;
+            $data['done_consultancies'] = null;
+
+            return $data;
+        }
+
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->where('location_id', $location_id);
@@ -1122,6 +1131,13 @@ class HomeController extends Controller
     }
 
     private function treatments($data, $start_date, $end_date, $location_id) {
+
+        if (!Gate::allows('dashboard_states')) {
+            $data['all_treatments'] = null;
+            $data['done_treatments'] = null;
+
+            return $data;
+        }
 
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_service'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
@@ -1140,6 +1156,12 @@ class HomeController extends Controller
 
     private function leads($data, $location_id) {
 
+        if (!Gate::allows('dashboard_states')) {
+            $data['leads'] = null;
+
+            return $data;
+        }
+
         $data['leads'] = Leads::where('active', 1)->count();
 
         return $data;
@@ -1152,6 +1174,12 @@ class HomeController extends Controller
     private function salesByCentre(Request $request, $data)
     {
         $data['revenue'] = 0;
+
+        if (!Gate::allows('dashboard_states')) {
+            $data['revenue'] = null;
+
+            return $data;
+        }
 
         $locations = Locations::where([
             ['account_id', '=', Auth::User()->account_id],
@@ -1201,13 +1229,22 @@ class HomeController extends Controller
 
     private function recentActivities($data) {
 
+        if (!Gate::allows('dashboard_recent_activities')) {
+            return $data['recent_activities'] = [
+                'finance_log' => [],
+                'appointment_log' => [],
+                'unauthorized' => true,
+            ];
+        }
+
         $action_array = array(
-            1 => 'Create',
-            2 => 'Edit',
-            3 => 'Delete',
-            4 => 'Inactive',
-            5 => 'Active',
-            6 => 'Cancel',
+            1 => 'Received',
+            2 => 'Edited',
+            3 => 'Deleted',
+            4 => 'Inactivated',
+            5 => 'Activated',
+            6 => 'Cancelled',
+            7 => 'Received',
         );
         $table_array = array(
             26 => 'Invoice',
@@ -1216,16 +1253,22 @@ class HomeController extends Controller
         );
         $finance_log = array();
 
-        $package_advances = PackageAdvances::whereDate('created_at', Carbon::now()->format('Y-m-d'))->limit(10)->orderBy('created_at','asc')->get();
+        $package_advances = PackageAdvances::whereDate('created_at', Carbon::now()->format('Y-m-d'))->orderBy('created_at','DESC')->get();
 
         foreach ($package_advances as $advance) {
 
-            $audit_info = AuditTrails::where([
+            $query = AuditTrails::where([
                 ['table_record_id', '=', $advance->id],
                 ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
-            ])
-                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))->orderBy('created_at','asc')->get();
+            ])->whereDate('created_at', Carbon::now()->format('Y-m-d'))->orderBy('created_at','DESC');
 
+            if (auth()->id() != 1) {
+                $query->where("user_id", auth()->id());
+            }
+
+            $audit_info = $query->get();
+
+            //dd($audit_info->toArray());
             foreach ($audit_info as $audit){
                 $finance_log[$audit->id] = array(
                     'id' => $audit->id,
@@ -1239,10 +1282,14 @@ class HomeController extends Controller
 
                 foreach ($audit_info_detail as $audit_detail) {
                     $result = Financelog::Calculate_Val_advance($audit_detail);
+
                     $finance_log[$audit->id][$audit_detail->field_name] = $result;
                 }
             }
         }
+
+       // $finance_log = collect($finance_log)->where('payment_mode_id', 'Cash');
+
 
         $appointment_log = $this->viewLog();
 
@@ -1257,11 +1304,15 @@ class HomeController extends Controller
     {
         $appointment = AuditTrailTables::whereName('appointments')->first();
 
-        $audit_trails = AuditTrails::has('auditTrailChanges')
+        $query = AuditTrails::has('auditTrailChanges')
             ->with('auditTrailChanges')
-            ->where("user_id", auth()->id())
             ->where('audit_trail_table_name', '=', $appointment->id)
-            ->whereDate('created_at', Carbon::now()->format('Y-m-d'))->get();
+            ->whereDate('created_at', Carbon::now()->format('Y-m-d'))->orderBy("created_at", 'DESC');
+        if (auth()->id() != 1) {
+            $query->where("user_id", auth()->id());
+        }
+
+        $audit_trails = $query->get();
 
         $data = array();
 
@@ -1340,10 +1391,10 @@ class HomeController extends Controller
                     unset($data[$audit_trail->id]);
                 }
 
-                /*if (!isset($data[$audit_trail->id]['appointment_type_id'])) {
+                if (!isset($data[$audit_trail->id]['appointment_type_id'])) {
 
                     unset($data[$audit_trail->id]);
-                }*/
+                }
 
             }
         }
