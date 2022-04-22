@@ -193,6 +193,13 @@ var CreateConsultancytValidation = function () {
                                 message: 'The patient name field is required'
                             }
                         }
+                    },
+                    gender: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The gender field is required'
+                            }
+                        }
                     }
 
                 },
