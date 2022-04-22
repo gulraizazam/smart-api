@@ -33,29 +33,6 @@
 
                                         </form>
 
-                                        {{--<a href="#" class="btn btn-transparent-white btn-sm font-weight-bolder dropdown-toggle px-5" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Today</a>
-                                        <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
-                                            <!--begin::Navigation-->
-                                            <ul class="navi navi-hover">
-                                                <li class="navi-item">
-                                                    <a href="#" class="navi-link">
-                                                        <span class="navi-icon">
-                                                            <i class="la la-chart-bar"></i>
-                                                        </span>
-                                                        <span class="navi-text">Yesterday</span>
-                                                    </a>
-                                                </li>
-                                                <li class="navi-item">
-                                                    <a href="#" class="navi-link">
-                                                        <span class="navi-icon">
-                                                            <i class="la la-chart-bar"></i>
-                                                        </span>
-                                                        <span class="navi-text">2 days ago</span>
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                            <!--end::Navigation-->
-                                        </div>--}}
                                     </div>
                                 </div>
                             </div>
@@ -83,7 +60,7 @@
                                                         </svg>
                                                         <!--end::Svg Icon-->
 
-                                                          <span class="dashboard-counter">{{number_format($revenue)}}</span>
+                                                          <span class="dashboard-counter">{{$revenue ? number_format($revenue) : 'Your are not authorized'}}</span>
                                                     </span>
                                             <a href="javascript:void(0);" style="cursor: default;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
@@ -92,9 +69,14 @@
 
                                                     <i class="la la-stethoscope" style="font-size: 40px;"></i>
 
-                                                      <span class="dashboard-counter">{{$done_consultancies}}/{{$all_consultancies}}</span>
+                                                      <span class="dashboard-counter">{{$done_consultancies && $all_consultancies ? $done_consultancies .'/'.$all_consultancies : 'Your are not authorized'}}</span>
                                                 </span>
-                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            @if($done_consultancies && $all_consultancies)
+                                                <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            @else
+
+                                            <a href="javascript:void(0);" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            @endif
                                         </div>
                                     </div>
                                     <!--end::Row-->
@@ -103,9 +85,13 @@
                                         <div class="col bg-light-danger px-6 py-8 rounded-xl mr-7">
                                                     <span class="svg-icon svg-icon-3x svg-icon-danger d-block my-2">
                                                        <i class="la la-medkit" style="font-size: 40px;"></i>
-                                                         <span class="dashboard-counter">{{$done_treatments}}/{{$all_treatments}}</span>
+                                                         <span class="dashboard-counter">{{$done_treatments && $all_treatments ? $done_treatments .'/'. $all_treatments : 'Your are not authorized'}}</span>
                                                     </span>
-                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            @if($done_consultancies && $all_consultancies)
+                                                <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            @else
+                                            <a href="javascript:void(0);" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            @endif
                                         </div>
                                         <div class="col bg-light-success px-6 py-8 rounded-xl">
                                                   <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
@@ -118,7 +104,7 @@
                                                             </g>
                                                         </svg>
                                                       <!--end::Svg Icon-->
-                                                      <span class="dashboard-counter">{{$leads}}</span>
+                                                      <span class="dashboard-counter">{{$leads ? $leads : 'Your are not authorized'}}</span>
                                                     </span>
 
                                             <a  href="javascript:void(0);" style="cursor: default;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
@@ -160,20 +146,26 @@
                             <div class="card-header align-items-center border-0 mt-4">
                                 <h3 class="card-title align-items-start flex-column">
                                     <span class="font-weight-bolder text-dark">Recent Activity</span>
-                                    <span class="text-muted mt-3 font-weight-bold font-size-sm">{{count($finance_log) + count($appointment_log)}} Activites</span>
+                                    <span class="text-muted mt-3 font-weight-bold font-size-sm">{{count($finance_log) + count($appointment_log)}} activities</span>
                                 </h3>
                             </div>
                             <!--end::Header-->
                             <!--begin::Body-->
                             <div class="card-body pt-4">
                                 <!--begin::Timeline-->
+                                @if(isset($unauthorized))
+                                    <div class="text-center">
+                                        <span >Your are not authorized</span>
+                                    </div>
+                                @else
+
                                 @if(count($finance_log) + count($appointment_log) > 0)
                                     <div class="timeline timeline-6 mt-3">
 
 
                                         @foreach($appointment_log as $appoint_log)
-                                            @if(isset($appoint_log['appointment_type_id']))
-                                                <div class="timeline-item align-items-start">
+
+                                            <div class="timeline-item align-items-start">
                                                     <!--begin::Label-->
                                                     <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">{{\Illuminate\Support\Carbon::parse($appoint_log['created_at'])->format("h:i")}}</div>
                                                     <!--end::Label-->
@@ -194,7 +186,7 @@
                                                     </div>
                                                     <!--end::Content-->
                                                 </div>
-                                            @endif
+
                                         @endforeach
 
                                         @foreach($finance_log as $log)
@@ -210,10 +202,12 @@
                                             <!--end::Badge-->
                                             <!--begin::Desc-->
                                             <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                                                {{$log['user_id'] ?? 'N/A'}}
-                                                {{$log['action'] ?? 'N/A'}}
-                                                <a href="javascript:void(0);" class="text-info">{{$log['appointment_type_id'] ?? 'Appointment'}}</a>
-                                                For <a href="javascript:void(0);" class="text-warning"> {{$log['patient_id']}}</a> In  {{$log['location_id']}} Centre
+                                                <span class="text-primary">{{$log['user_id'] ?? 'N/A'}}</span>
+                                                {{$log['action'] ?? 'N/A'}} a payment of
+                                                 <strong class="text-dark">{{ $log['cash_amount'] }}</strong> for
+                                                <span  class="text-primary"> {{$log['patient_id']}}</span> against
+                                                <span  class="text-info">{{$log['appointment_type_id'] ?? 'Appointment'}}</span>
+                                                 In  {{$log['location_id']}} Centre
                                             </div>
                                             <!--end::Desc-->
                                         </div>
@@ -226,6 +220,7 @@
                                     <div class="text-center">
                                         <span >No Activity Found</span>
                                     </div>
+                                @endif
                                 @endif
 
                             <!--end::Timeline-->
@@ -681,7 +676,7 @@
 
                 </div>
 
-                @can('appointments_manage')
+                @can('dashboard_upcomings')
                     <div class="col-lg-12 col-xxl-12">
                     <div class="card card-custom card-stretch gutter-b">
                         <!--begin::Header-->
