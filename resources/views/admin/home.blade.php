@@ -155,24 +155,53 @@
                     {{--Activity--}}
                     <div class="col-lg-6 col-xxl-6">
                         <!--begin::List Widget 9-->
-                        <div class="card card-custom card-stretch gutter-b">
+                        <div class="card card-custom card-stretch gutter-b" style="height: 600px; overflow-y: scroll;">
                             <!--begin::Header-->
                             <div class="card-header align-items-center border-0 mt-4">
                                 <h3 class="card-title align-items-start flex-column">
                                     <span class="font-weight-bolder text-dark">Recent Activity</span>
-                                    <span class="text-muted mt-3 font-weight-bold font-size-sm">{{$recent_activities->count()}} Activites</span>
+                                    <span class="text-muted mt-3 font-weight-bold font-size-sm">{{count($finance_log) + count($appointment_log)}} Activites</span>
                                 </h3>
                             </div>
                             <!--end::Header-->
                             <!--begin::Body-->
                             <div class="card-body pt-4">
                                 <!--begin::Timeline-->
-                                <div class="timeline timeline-6 mt-3">
-                                    @foreach($recent_activities as $recent_activity)
+                                @if(count($finance_log) + count($appointment_log) > 0)
+                                    <div class="timeline timeline-6 mt-3">
+
+
+                                        @foreach($appointment_log as $appoint_log)
+                                            @if(isset($appoint_log['appointment_type_id']))
+                                                <div class="timeline-item align-items-start">
+                                                    <!--begin::Label-->
+                                                    <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">{{\Illuminate\Support\Carbon::parse($appoint_log['created_at'])->format("h:i")}}</div>
+                                                    <!--end::Label-->
+                                                    <!--begin::Badge-->
+                                                    <div class="timeline-badge">
+                                                        <i class="fa fa-genderless text-success icon-xl"></i>
+                                                    </div>
+                                                    <!--end::Badge-->
+                                                    <!--begin::Content-->
+                                                    <div class="timeline-content d-flex">
+                                                   <span class="font-weight-bolder text-dark-75 pl-3 font-size-lg">
+                                                       {{$appoint_log['user_id'] ?? 'N/A'}}
+                                                        Scheduled ({{$appoint_log['action'] ?? 'N/A'}}) {{$appoint_log['appointment_type_id'] ?? 'N/A'}} At
+                                                       {{$appoint_log['scheduled_date']}} - {{$appoint_log['scheduled_time']}}
+                                                        For {{$appoint_log['name'] ?? 'N/A'}} In
+                                                       {{$appoint_log['location_id'] ?? 'N/A'}}
+                                                   </span>
+                                                    </div>
+                                                    <!--end::Content-->
+                                                </div>
+                                            @endif
+                                        @endforeach
+
+                                        @foreach($finance_log as $log)
 
                                         <div class="timeline-item align-items-start">
                                             <!--begin::Label-->
-                                            <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">{{\Illuminate\Support\Carbon::parse($recent_activity->created_at)->format("h:i")}}</div>
+                                            <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">{{\Illuminate\Support\Carbon::parse($log['created_at'])->format("h:i")}}</div>
                                             <!--end::Label-->
                                             <!--begin::Badge-->
                                             <div class="timeline-badge">
@@ -181,15 +210,25 @@
                                             <!--end::Badge-->
                                             <!--begin::Desc-->
                                             <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                                                {{$recent_activity?->user?->name ?? 'N/A'}}
-                                                {{$recent_activity?->auditAction?->name ?? 'N/A'}}
-                                                <a href="javascript:void(0);" class="text-info">{{$recent_activity?->auditTable?->name ?? 'N/A'}}</a> Screen</div>
+                                                {{$log['user_id'] ?? 'N/A'}}
+                                                {{$log['action'] ?? 'N/A'}}
+                                                <a href="javascript:void(0);" class="text-info">{{$log['appointment_type_id'] ?? 'Appointment'}}</a>
+                                                For <a href="javascript:void(0);" class="text-warning"> {{$log['patient_id']}}</a> In  {{$log['location_id']}} Centre
+                                            </div>
                                             <!--end::Desc-->
                                         </div>
 
                                     @endforeach
+
                                 </div>
-                                <!--end::Timeline-->
+
+                                @else
+                                    <div class="text-center">
+                                        <span >No Activity Found</span>
+                                    </div>
+                                @endif
+
+                            <!--end::Timeline-->
                             </div>
                             <!--end: Card Body-->
                         </div>

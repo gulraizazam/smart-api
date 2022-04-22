@@ -5,15 +5,21 @@ namespace App\Http\Controllers;
 use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Helpers\Financelog;
 use App\Helpers\GeneralFunctions;
+use App\Models\Accounts;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
+use App\Models\AuditTrailActions;
+use App\Models\AuditTrailChanges;
 use App\Models\AuditTrails;
+use App\Models\AuditTrailTables;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Leads;
 use App\Models\Locations;
+use App\Models\PackageAdvances;
 use App\Models\Regions;
 use App\Models\Services;
 use App\Models\User;
@@ -22,6 +28,7 @@ use App\Reports\dashboardreport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -58,11 +65,11 @@ class HomeController extends Controller
 
         list($start_date, $end_date) = $this->getDates($request);
 
+        $data = $this->recentActivities($data);
         $data = $this->consultancies($data, $start_date, $end_date, $location_id);
         $data = $this->treatments($data, $start_date, $end_date, $location_id);
         $data = $this->leads($data, $location_id);
         $data = $this->salesByCentre($request, $data);
-        $data = $this->recentActivities($data);
 
         $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
@@ -1183,13 +1190,167 @@ class HomeController extends Controller
         return $data;
     }
 
-    private function recentActivities($data) {
+    private function old_recentActivities($data) {
 
         $data['recent_activities'] = AuditTrails::with(['auditTable','auditAction','user'])
            //->where('created_at', Carbon::now()->format("Y-m-d"))
            ->limit(10)->get();
 
         return $data;
+    }
+
+    private function recentActivities($data) {
+
+        $action_array = array(
+            1 => 'Create',
+            2 => 'Edit',
+            3 => 'Delete',
+            4 => 'Inactive',
+            5 => 'Active',
+            6 => 'Cancel',
+        );
+        $table_array = array(
+            26 => 'Invoice',
+            27 => 'Invoice Detail',
+            25 => 'Finance',
+        );
+        $finance_log = array();
+
+        $package_advances = PackageAdvances::whereDate('created_at', Carbon::now()->format('Y-m-d'))->limit(10)->orderBy('created_at','asc')->get();
+
+        foreach ($package_advances as $advance) {
+
+            $audit_info = AuditTrails::where([
+                ['table_record_id', '=', $advance->id],
+                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
+            ])
+                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))->orderBy('created_at','asc')->get();
+
+            foreach ($audit_info as $audit){
+                $finance_log[$audit->id] = array(
+                    'id' => $audit->id,
+                    'action' => $action_array[$audit->audit_trail_action_name],
+                    'table' => $table_array[$audit->audit_trail_table_name],
+                    'user_id' => $audit->user->name,
+                    'created_at' => $audit->created_at,
+                    'updated_at' => $audit->updated_at,
+                );
+                $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
+
+                foreach ($audit_info_detail as $audit_detail) {
+                    $result = Financelog::Calculate_Val_advance($audit_detail);
+                    $finance_log[$audit->id][$audit_detail->field_name] = $result;
+                }
+            }
+        }
+
+        $appointment_log = $this->viewLog();
+
+        return $data['recent_activities'] = [
+            'finance_log' => $finance_log,
+            'appointment_log' => $appointment_log,
+        ];
+    }
+
+
+    private function viewLog()
+    {
+        $appointment = AuditTrailTables::whereName('appointments')->first();
+
+        $audit_trails = AuditTrails::has('auditTrailChanges')
+            ->with('auditTrailChanges')
+            ->where("user_id", auth()->id())
+            ->where('audit_trail_table_name', '=', $appointment->id)
+            ->whereDate('created_at', Carbon::now()->format('Y-m-d'))->get();
+
+        $data = array();
+
+        foreach ($audit_trails as $audit_trail) {
+
+            $audit_trail_action = AuditTrailActions::find($audit_trail->audit_trail_action_name);
+
+            $data[$audit_trail->id] = array(
+                'action' => $audit_trail_action->name,
+                'user_id' => $audit_trail->userr->name,
+                'created_at' => $audit_trail->created_at,
+            );
+
+            foreach ($audit_trail->auditTrailChanges as $auditTrailChange) {
+
+                switch ($auditTrailChange->field_name) {
+                    case 'scheduled_date':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->field_after;
+                        break;
+                    case 'scheduled_time':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->field_after;
+                        break;
+                    case 'name':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->field_after;
+                        break;
+                    case 'patient_id':
+                        $data[$audit_trail->id]['phone'] = $auditTrailChange->user->phone;
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->field_after;
+                        break;
+                    case 'appointment_type_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->AppointmentType->name;
+                        break;
+                    case 'base_appointment_status_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->appointmentStatus->name;
+                        break;
+                    case 'appointment_status_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->appointmentStatus->name;
+                        break;
+                    case 'created_by':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->appointmentCreatedBy->name;
+                        break;
+                    case 'updated_by':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->appointmentCreatedBy->name;
+                        break;
+                    case 'converted_by':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->appointmentCreatedBy->name;
+                        break;
+                    case 'service_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->service->name;
+                        break;
+                    case 'doctor_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = isset($auditTrailChange->doctor) ? $auditTrailChange->doctor->name : 'N/A';
+                        break;
+                    case 'resource_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = isset($auditTrailChange->resource) ? $auditTrailChange->resource->name : 'N/A';
+                        break;
+                    case 'region_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->region->name;
+                        break;
+                    case 'city_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->city->name;
+                        break;
+                    case 'location_id':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->location->name;
+                        break;
+                    case 'send_message':
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->field_after;
+                        break;
+                    default:
+                        $data[$audit_trail->id][$auditTrailChange->field_name] = $auditTrailChange->field_after;
+                        break;
+                }
+
+                if (!isset($data[$audit_trail->id]['scheduled_date'])) {
+
+                    unset($data[$audit_trail->id]);
+                }
+
+                /*if (!isset($data[$audit_trail->id]['appointment_type_id'])) {
+
+                    unset($data[$audit_trail->id]);
+                }*/
+
+            }
+        }
+
+        return $data;
+
+
     }
 
 }

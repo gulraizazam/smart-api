@@ -176,21 +176,21 @@ var CreateConsultancytValidation = function () {
                     service_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The city field is required'
+                                message: 'The consultancy field is required'
                             }
                         }
                     },
                     phone: {
                         validators: {
                             notEmpty: {
-                                message: 'The location field is required'
+                                message: 'The phone  field is required'
                             }
                         }
                     },
                     name: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
+                                message: 'The patient name field is required'
                             }
                         }
                     }
