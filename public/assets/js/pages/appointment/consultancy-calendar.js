@@ -625,6 +625,12 @@ function setCreateConsultancy(response, start) {
             $(".consult-type").hide();
         }
 
+        setTimeout( function () {
+            $(".select2-selection").removeClass("select2-is-invalid");
+        }, 200);
+
+
+
     } catch (e) {
         showException(e);
     }
