@@ -206,7 +206,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -215,7 +215,7 @@ var table_columns = [
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
-        width: 'auto',
+        width: 60,
     },{
         field: 'name',
         title: 'Patient',
@@ -225,7 +225,7 @@ var table_columns = [
         field: 'package_id',
         title: 'Plans',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'location_id',
         title: 'Centres',
@@ -235,50 +235,50 @@ var table_columns = [
         field: 'session_count',
         title: 'Session count',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'total',
         title: 'Total',
         sortable: false,
-        width: 'auto',
+        width: 60,
     },{
         field: 'cash_receive',
         title: 'Cash receive',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'settle_amount',
         title: 'Settle Amount',
         sortable: false,
-        width: 'auto',
-    },{
-        field: 'refund',
-        title: 'Refund',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'created_at',
-        title: 'Created at',
-        width: 'auto',
+        width: 60,
     },{
         field: 'status',
         title: 'Status',
         sortable: false,
-        width: 'auto',
+        width: 60,
         template: function (data) {
             let status_url = route('admin.packages.status');
             return statuses(data, status_url);
         }
     },{
+        field: 'refund',
+        title: 'Refund',
+        sortable: false,
+        width: 60,
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 80,
+        width: 'auto',
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
             return actions(data);
         }
+    },{
+        field: 'created_at',
+        title: 'Created at',
+        width: 'auto',
     }];
 
 function actions(data) {
