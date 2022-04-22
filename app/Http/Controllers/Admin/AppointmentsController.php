@@ -5257,7 +5257,7 @@ class AppointmentsController extends Controller
             abort(404);
         }
 
-        $appointment = Appointments::select('appointment_type_id')->find($id);
+       // $appointment = Appointments::select('appointment_type_id')->find($id);
 
         $appointments = AuditTrailTables::whereName('appointments')->first();
 
@@ -5352,7 +5352,6 @@ class AppointmentsController extends Controller
 
             return ApiHelper::apiDataTable($records);
 
-            //return view('admin.appointments.logs.appointmentlog', compact('id', 'data', 'appointment'));
         }
 
         return $this->viewLogInExcel($id, $data);
