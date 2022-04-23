@@ -104,7 +104,8 @@
 
 <script>
     var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
-    if (width < 1848) {
+
+    if (width < 1536) {
         $("#kt_aside_toggle").addClass("active");
         $("#kt_body").addClass("aside-minimize");
     }

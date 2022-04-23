@@ -252,11 +252,6 @@ var table_columns = [
         sortable: false,
         width: 60,
     },{
-        field: 'refund',
-        title: 'Refund',
-        sortable: false,
-        width: 60,
-    },{
         field: 'status',
         title: 'Status',
         sortable: false,
@@ -275,6 +270,11 @@ var table_columns = [
         template: function (data) {
             return actions(data);
         }
+    },{
+        field: 'refund',
+        title: 'Refund',
+        sortable: false,
+        width: 60,
     },{
         field: 'created_at',
         title: 'Created at',
