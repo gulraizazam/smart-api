@@ -9,7 +9,7 @@ var table_columns = [
         sortable: false,
         template: function (data) {
             let detail_url = route('admin.appointments.detail', {id: data.id});
-            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.Patient_ID+' <br> <i class="text text-primary la la-eye"></i></a>';
+            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.Patient_ID+'</a>';
         }
     },{
         field: 'name',
@@ -65,12 +65,12 @@ var table_columns = [
             }
         }
     },{
-        field: 'region_id',
-        title: 'Region',
-        width: 'auto',
-    },{
         field: 'city_id',
         title: 'City',
+        width: 'auto',
+    },{
+        field: 'region_id',
+        title: 'Region',
         width: 'auto',
     },{
         field: 'location_id',
@@ -414,16 +414,15 @@ function actions(data) {
         if (permissions.invoice) {
             if(!data.invoice) {
                 if (data.appointment_type == 2) {
-                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="navi-link btn btn-icon btn-light btn-hover-warning btn-sm">\
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                             <!--<span class="navi-text">Create Invoice</span>-->\
                         </a>';
                 }
 
                 if(data.appointment_type == 1) {
-                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="navi-link btn btn-icon btn-light btn-hover-warning btn-sm">\
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
-                            <!--<span class="navi-text">Create Invoice</span>-->\
                         </a>';
                 }
             }
@@ -432,9 +431,8 @@ function actions(data) {
 
         if (permissions.invoice_display) {
             if(data.invoice) {
-                actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link btn btn-icon btn-light btn-hover-info btn-sm">\
+                actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="btn btn-icon btn-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
-                           <!-- <span class="navi-text">View Invoice</span>-->\
                         </a>';
             }
         }
@@ -1126,6 +1124,8 @@ function setFilters(filter_values, active_filters) {
         /*For Consultancy filter*/
         $("#consultancy_city_filter").html(city_options);
         $("#treatment_city_filter").html(city_options);
+
+        getUserCity();
 
     } catch (error) {
         showException(error);
