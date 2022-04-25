@@ -60,7 +60,7 @@
                                                         </svg>
                                                         <!--end::Svg Icon-->
 
-                                                          <span class="dashboard-counter">{{$revenue ? number_format($revenue) : 'Your are not authorized'}}</span>
+                                                          <span class="dashboard-counter">{{!is_null($revenue) ? number_format($revenue) : 'Your are not authorized'}}</span>
                                                     </span>
                                             <a href="javascript:void(0);" style="cursor: default;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
@@ -69,9 +69,9 @@
 
                                                     <i class="la la-stethoscope" style="font-size: 40px;"></i>
 
-                                                      <span class="dashboard-counter">{{$done_consultancies && $all_consultancies ? $done_consultancies .'/'.$all_consultancies : 'Your are not authorized'}}</span>
+                                                      <span class="dashboard-counter">{{!is_null($done_consultancies) && !is_null($all_consultancies) ? $done_consultancies .'/'.$all_consultancies : 'Your are not authorized'}}</span>
                                                 </span>
-                                            @if($done_consultancies && $all_consultancies)
+                                            @if(!is_null($done_consultancies) && !is_null($all_consultancies))
                                                 <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
                                             @else
 
@@ -85,9 +85,9 @@
                                         <div class="col bg-light-danger px-6 py-8 rounded-xl mr-7">
                                                     <span class="svg-icon svg-icon-3x svg-icon-danger d-block my-2">
                                                        <i class="la la-medkit" style="font-size: 40px;"></i>
-                                                         <span class="dashboard-counter">{{$done_treatments && $all_treatments ? $done_treatments .'/'. $all_treatments : 'Your are not authorized'}}</span>
+                                                         <span class="dashboard-counter">{{!is_null($done_treatments) && !is_null($all_treatments) ? $done_treatments .'/'. $all_treatments : 'Your are not authorized'}}</span>
                                                     </span>
-                                            @if($done_consultancies && $all_consultancies)
+                                            @if(!is_null($done_treatments) && !is_null($all_treatments))
                                                 <a href="{{route('admin.appointments.index', ['tab' => 'appointment', 'type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => $location_id, 'appoint_status' => $appointment_status_arrived])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
                                             @else
                                             <a href="javascript:void(0);" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>

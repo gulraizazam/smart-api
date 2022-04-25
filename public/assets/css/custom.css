@@ -327,6 +327,10 @@ div > input {
     padding: 0.65rem 0rem 0.65rem 1rem;
 }
 
+.search_input .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0.65rem 0rem 0.65rem 1rem;
+}
+
 .select2-search .select2-container--default .select2-selection--single .select2-selection__rendered {
     padding: 0.65rem 0rem 0.65rem 1rem;
 }
@@ -741,6 +745,13 @@ div > input {
 [data-field="session_count"] {
     text-align: center;
 }
-.card-custom {
-    top: -70px;
+#kt_content {
+    margin-top: -70px;
+}
+
+.menu_section {
+    margin-top: 00px;
+}
+.plan-filters .select2 {
+    width: 109% !important;
 }

@@ -286,7 +286,7 @@ class Packages extends BaseModal
 
         $where = self::filters( $request , $account_id , $id , $apply_filter , $filename );
 
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'id', 'DESC');
 
         return self::when(count($where), fn ($query) => $query->where($where))->whereIn('location_id', ACL::getUserCentres())->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
     }

@@ -827,7 +827,8 @@ class PackagesController extends Controller
         // Get Total Records
         $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
 
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'id', 'DESC');
+
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
