@@ -86,7 +86,8 @@ var AddUserValidation = function () {
                     closePopup(modal_id);
                     reInitTable();
                 } else {
-                    $("#validate-msg").text(response.message).show();
+                    $("#validate-msg").html('<div class="fv-help-block pass-msg">'+response.message+'</div>');
+                    $("#add_user_password").addClass("is-invalid");
                     toastr.error(response.message);
                 }
             }, form);

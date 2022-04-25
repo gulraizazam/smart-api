@@ -195,7 +195,8 @@ function changePassword(id) {
 
 function createUsers($route) {
 
-    $("#validate-msg").hide();
+    $(".pass-msg").remove();
+    $("#add_user_password").removeClass("is-invalid");
 
     $.ajax({
         headers: {
@@ -394,3 +395,11 @@ function hideShowAdvanceFilters(active_filters) {
         $(".advance-arrow").addClass("fa fa-caret-down");
     }
 }
+
+jQuery(document).ready( function () {
+
+    $("#add_user_password").keyup( function () {
+        $(".pass-msg").remove();
+        $("#add_user_password").removeClass("is-invalid");
+    });
+})
