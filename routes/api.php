@@ -44,7 +44,7 @@ use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 
 /*
-|--------------------------------------------------------------------------
+|-----------------------------------------viewDetail---------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |
