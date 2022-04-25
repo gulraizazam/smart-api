@@ -9,16 +9,12 @@ var table_columns = [
         sortable: false,
         template: function (data) {
             let detail_url = route('admin.appointments.detail', {id: data.id});
-            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.Patient_ID+' <i class="text text-info la la-eye"></i></a>';
+            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.Patient_ID+' <br> <i class="text text-primary la la-eye"></i></a>';
         }
     },{
         field: 'name',
         title: 'Patient',
-        width: 80,
-        template: function (data) {
-            let detail_url = route('admin.appointments.detail', {id: data.id});
-            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.name+' <i class="text text-info la la-eye"></i></a>';
-        }
+        width: 80
     },{
         field: 'phone',
         title: 'Phone',
