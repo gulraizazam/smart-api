@@ -4,7 +4,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             let id = data.id;
@@ -20,12 +20,12 @@ var table_columns = [
         field: 'fdo_name',
         title: 'FDO Name',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'fdo_phone',
         title: 'FDO Phone',
         sortable: false,
-        width: 'auto',
+        width: 100,
     },{
         field: 'address',
         title: 'Address',
@@ -35,24 +35,24 @@ var table_columns = [
         field: 'city',
         title: 'City',
         sortable: false,
-        width: 'auto',
+        width: 60,
     },{
         field: 'region',
         title: 'Region',
          sortable: false,
-        width: 'auto',
+        width: 120,
     },{
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-    }, {
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 60,
         template: function (data) {
             let status_url = route('admin.locations.status');
             return statuses(data, status_url);
         }
+    }, {
+        field: 'created_at',
+        title: 'Created At',
+        width: 'auto',
     }, {
         field: 'actions',
         title: 'Actions',
