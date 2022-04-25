@@ -103,12 +103,12 @@
             <select class="form-control filter-field select2" id="appoint_search_city"></select>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
+        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Status:</label>
             <select class="form-control filter-field select2" id="appoint_search_status"></select>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
+        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Consultancy Type:</label>
             <select class="form-control filter-field select2" id="appoint_search_consultancy_type"></select>
         </div>
