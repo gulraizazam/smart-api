@@ -55,8 +55,8 @@ var TreatmentCalendar = function() {
                 groupByResource: true,
                 businessHours: true,
                 refetchResourcesOnNavigate: true,
-                resources: function(callback) {
-                   console.log("here we are.")
+                resources: function (callback, start, end, timezone) {
+
                 },
                 events: function(event, callback) {
 
@@ -101,6 +101,8 @@ var TreatmentCalendar = function() {
                                 callback(events);
                             }
                         });
+
+                        //TreatmentCalendar.getResources(event, callback);
 
                     }
 
@@ -227,14 +229,14 @@ var TreatmentCalendar = function() {
                                 id: 'availableForMeeting',
                                 start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(rota.date + " " + rota.start_off, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#treatment_doctor_filter').val(),
+                                resourceIds: response.resource_ids,
                                 rendering: 'background'
                             });
                             events.push({
                                 id: 'availableForMeeting',
                                 start: formatDate(rota.date + " " + rota.end_off, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#treatment_doctor_filter').val(),
+                                resourceIds: response.resource_ids,
                                 rendering: 'background'
                             });
                         } else if (rota.start_time && !rota.start_off) {
@@ -242,7 +244,7 @@ var TreatmentCalendar = function() {
                                 id: 'availableForMeeting',
                                 start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#treatment_doctor_filter').val(),
+                                resourceIds: response.resource_ids,
                                 rendering: 'background'
                             });
                         }
@@ -296,6 +298,124 @@ var TreatmentCalendar = function() {
             });
         },
 
+        getResources(event, callback) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.appointments.get_room_resources_with_specific_date'),
+                type: 'GET',
+                data: {
+                    start: formatDate(event.start, 'YYYY-MM-DD'),
+                    end: formatDate(event.end, 'YYYY-MM-DD'),
+                    location_id: $("#treatment_location_filter").val(),
+                    machine_id: $("#treatment_resource_filter").val()
+                },
+                cache: false,
+                success: function (response) {
+                    if (response.status == '1') {
+                        var resources = [];
+                        $.each(response.data, function (id, resource) {
+
+                            if (resource.resource_rota) {
+                                var businessHoursArray = [];
+                                if (resource.resource_rota.sunday) {
+                                    var sunday = resource.resource_rota.sunday.split(",");
+                                    var  sunday_start = sunday[0];
+                                    var sunday_end = sunday[1];
+                                    businessHoursArray.push({
+                                        start: moment(sunday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(sunday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [0]
+                                    });
+                                }
+
+                                if (resource.resource_rota.monday) {
+                                    var  monday = resource.resource_rota.monday.split(",");
+                                    var   monday_start = monday[0];
+                                    var  monday_end = monday[1];
+                                    businessHoursArray.push({
+                                        start: moment(monday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(monday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [1]
+                                    });
+                                }
+
+                                if (resource.resource_rota.tuesday) {
+                                    var  tuesday = resource.resource_rota.tuesday.split(",");
+                                    var  tuesday_start = tuesday[0];
+                                    var  tuesday_end = tuesday[1];
+                                    businessHoursArray.push({
+                                        start: moment(tuesday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(tuesday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [2]
+                                    });
+                                }
+
+                                if (resource.resource_rota.wednesday) {
+                                    var   wednesday = resource.resource_rota.wednesday.split(",");
+                                    var  wednesday_start = wednesday[0];
+                                    var  wednesday_end = wednesday[1];
+                                    businessHoursArray.push({
+                                        start: moment(wednesday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(wednesday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [3]
+                                    });
+                                }
+
+
+                                if (resource.resource_rota.thursday) {
+                                    var  thursday = resource.resource_rota.thursday.split(",");
+                                    var  thursday_start = thursday[0];
+                                    var  thursday_end = thursday[1];
+                                    businessHoursArray.push({
+                                        start: moment(thursday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(thursday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [4]
+                                    });
+                                }
+                                if (resource.resource_rota.friday) {
+                                    var friday = resource.resource_rota.friday.split(",");
+                                    var  friday_start = friday[0];
+                                    var  friday_end = friday[1];
+                                    businessHoursArray.push({
+                                        start: moment(friday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(friday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [5]
+                                    });
+                                }
+
+                                if (resource.resource_rota.saturday) {
+                                    var  saturday = resource.resource_rota.saturday.split(",");
+                                    var   saturday_start = saturday[0];
+                                    var  saturday_end = saturday[1];
+                                    businessHoursArray.push({
+                                        start: moment(saturday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(saturday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [6]
+                                    });
+                                }
+                            }
+
+                            resources.push({
+                                id: resource.id,
+                                title: resource.name, // use the element's text as the event title
+                                businessHours: businessHoursArray
+                            });
+
+                        });
+                        callback(resources);
+                    } else {
+                        var resources = [];
+                        callback(resources);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    var events = [];
+                    callback(events);
+                }
+            });
+        },
         setEventId: function(eventId) {
             window.eventData.createdId = eventId;
         },
