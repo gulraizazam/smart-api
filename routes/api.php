@@ -270,6 +270,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
     Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
     Route::get('users/get_patient_number', [UsersController::class, 'getpatientnumber'])->name('users.get_patient_number');
+    Route::get('users/get_cities', [UsersController::class, 'getUserCities'])->name('users.get_cities');
+    Route::get('users/get_centers', [UsersController::class, 'getUserCenters'])->name('users.get_centers');
 
     /*packages*/
     Route::post('plans/planDatatable/{id}', [PackagesController::class, 'planDatatable'])->name('packages.planDatatable');

@@ -131,7 +131,6 @@
     {{--All forms popups--}}
     @include('admin.appointments.appointment-forms.modals')
 
-
     @push('js')
 
         <script>
@@ -180,6 +179,47 @@
                         filter: 'filter',
                     }, 'search');
                 }
+            }
+
+            function getUserCity() {
+
+                @if (auth()->id() != 1)
+                    $.ajax({
+                    url: '{{route('admin.users.get_cities')}}',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.status) {
+                            $("#consultancy_city_filter").val(response.data.city).change();
+                            $("#treatment_city_filter").val(response.data.city).change();
+                           setTimeout( function () {
+                               getUserCentre();
+                           }, 400);
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
+                @endif
+
+            }
+
+            function getUserCentre() {
+                $.ajax({
+                    url: '{{route('admin.users.get_centers')}}',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.status) {
+                            $("#consultancy_location_filter").val(response.data.center).change();
+                            $("#treatment_location_filter").val(response.data.center).change();
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
             }
 
         </script>

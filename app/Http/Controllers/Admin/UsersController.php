@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
@@ -862,5 +863,25 @@ class UsersController extends Controller
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'patient' => $patient
         ]);
+    }
+
+    public function getUserCities() {
+       $cities =  ACL::getUserCities();
+       if (count($cities) == 1) {
+           return ApiHelper::apiResponse($this->success, 'City found', true, [
+               'city' => $cities[0]
+           ]);
+       }
+        return ApiHelper::apiResponse($this->success, 'City not found', false);
+    }
+
+    public function getUserCenters() {
+       $centers =  ACL::getUserCentres();
+       if (count($centers) == 1) {
+           return ApiHelper::apiResponse($this->success, 'Center found', true, [
+               'center' => $centers[0]
+           ]);
+       }
+        return ApiHelper::apiResponse($this->success, 'Center not found', false);
     }
 }
