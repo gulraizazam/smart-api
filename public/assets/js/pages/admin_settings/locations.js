@@ -36,10 +36,9 @@ var table_columns = [
         title: 'City',
         sortable: false,
         width: 60,
-    },{
-        field: 'region',
-        title: 'Region',
-         sortable: false,
+    }, {
+        field: 'created_at',
+        title: 'Created At',
         width: 120,
     },{
         field: 'status',
@@ -50,10 +49,11 @@ var table_columns = [
             return statuses(data, status_url);
         }
     }, {
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-    }, {
+        field: 'region',
+        title: 'Region',
+        sortable: false,
+        width: 120,
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
