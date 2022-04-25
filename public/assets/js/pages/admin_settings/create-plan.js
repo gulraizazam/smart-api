@@ -198,6 +198,10 @@ $(document).ready( function () {
     });
     /*End*/
 
+    $(document).on("click", ".croxcli", function () {
+        $('.package_id').val(null).trigger('change');
+    });
+
 });
 
 var table_url = route('admin.packages.datatable');
@@ -220,12 +224,16 @@ var table_columns = [
         field: 'name',
         title: 'Patient',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'package_id',
         title: 'Plans',
         sortable: false,
         width: 70,
+        template: function (data) {
+            let display_url = route('admin.packages.display', {id: data.id});
+            return '<a href="javascript:void(0);" onclick="viewPlan(`'+display_url+'`)">'+data.package_id+'</a>';
+        }
     },{
         field: 'location_id',
         title: 'Centres',
@@ -261,20 +269,20 @@ var table_columns = [
             return statuses(data, status_url);
         }
     },{
+        field: 'refund',
+        title: 'Refund',
+        sortable: false,
+        width: 60,
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 'auto',
+        width: 170,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
             return actions(data);
         }
-    },{
-        field: 'refund',
-        title: 'Refund',
-        sortable: false,
-        width: 60,
     },{
         field: 'created_at',
         title: 'Created at',
@@ -294,8 +302,14 @@ function actions(data) {
         let log_url = route('admin.packages.log', {id: id, type:  'web'});
 
         if (permissions.create || permissions.log || permissions.sms_log || permissions.edit) {
-            let actions = '<div class="dropdown dropdown-inline action-dots">\
-        <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+            let actions = '<div class="dropdown dropdown-inline action-dots">';
+            if (permissions.edit) {
+                actions += '<a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="btn btn-icon btn-light btn-hover-primary btn-sm mx-3">\
+                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                    </a>';
+            }
+
+            actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
         </a>\
         <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
@@ -303,15 +317,6 @@ function actions(data) {
                 <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                     Choose an action: \
                     </li>';
-
-            if (permissions.edit) {
-                actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                        <span class="navi-text">Edit</span>\
-                    </a>\
-                </li>';
-            }
 
             if (permissions.delete) {
                 actions += '<li class="navi-item">\

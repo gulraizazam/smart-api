@@ -51,8 +51,6 @@
 <!--begin::Wrapper-->
     <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
 
-        @include('admin.partials.header')
-
         @yield('content')
 
 
@@ -109,6 +107,20 @@
         $("#kt_aside_toggle").addClass("active");
         $("#kt_body").addClass("aside-minimize");
     }
+
+    $(function () {
+        $(".user-setting").click(function () {
+            $(".user-popup").slideToggle();
+        });
+
+        $(document).on('click', function(e) {
+            var container = $(".user-setting");
+            if (!$(e.target).closest(container).length) {
+                $(".user-popup").hide();
+            }
+        });
+    });
+
 </script>
 
 </body>

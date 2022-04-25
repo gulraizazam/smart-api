@@ -147,7 +147,7 @@ $(document).ready(function () {
         },
         minimumInputLength: 1,
         templateResult: formatRepo,
-        templateSelection: formatRepoSelection
+        templateSelection: packageFormatRepoSelection
     });
 
     /*input mask*/
@@ -200,10 +200,9 @@ $(document).ready(function () {
     $(document).on('keyup', '.select2-search__field', function (e) {
         if (e.key === 'Enter' || e.keyCode === 13) {
             $('#apply-filters').click();
-            reInitSelect2('.select2', 'All');
+           // reInitSelect2('.select2', 'All');
         }
     });
-
 
 });
 
@@ -787,6 +786,14 @@ function formatRepoSelection(item) {
         return item.text + " <span onclick='addUsers()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></span>";
     } else {
         return 'Select Patient';
+    }
+}
+
+function packageFormatRepoSelection(item) {
+    if (item.id) {
+        return item.text + " <span onclick='addUsers()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></span>";
+    } else {
+        return 'Select Plan';
     }
 }
 
