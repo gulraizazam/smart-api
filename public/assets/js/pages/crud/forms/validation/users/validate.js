@@ -60,7 +60,7 @@ var AddUserValidation = function () {
                     'centers[]': {
                         validators: {
                             notEmpty: {
-                                message: 'The commission field is required'
+                                message: 'The centre field is required'
                             }
                         }
                     },
@@ -162,7 +162,7 @@ var EditUserValidation = function () {
                     'centers[]': {
                         validators: {
                             notEmpty: {
-                                message: 'The commission field is required'
+                                message: 'The centre field is required'
                             }
                         }
                     },
