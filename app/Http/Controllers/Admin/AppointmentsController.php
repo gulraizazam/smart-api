@@ -2860,7 +2860,6 @@ class AppointmentsController extends Controller
 
                 } else {
                     $locations = Locations::getActiveRecordsByCity($request->get("city_id"), ACL::getUserCentres(), Auth::User()->account_id);
-
                     if ($locations) {
                         $locations = $locations->pluck("name", "id");
                     }

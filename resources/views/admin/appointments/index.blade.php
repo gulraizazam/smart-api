@@ -184,23 +184,25 @@
             function getUserCity() {
 
                 @if (auth()->id() != 1)
-                    $.ajax({
-                    url: '{{route('admin.users.get_cities')}}',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.status) {
-                            $("#consultancy_city_filter").val(response.data.city).change();
-                            $("#treatment_city_filter").val(response.data.city).change();
-                           setTimeout( function () {
-                               getUserCentre();
-                           }, 400);
-                        }
-                    },
-                    error: function () {
 
-                    }
-                });
+                    $.ajax({
+                        url: '{{route('admin.users.get_cities')}}',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function (response) {
+                            if (response.status) {
+                                $("#consultancy_city_filter").val(response.data.city).change();
+                                $("#treatment_city_filter").val(response.data.city).change();
+                               setTimeout( function () {
+                                   getUserCentre();
+                               }, 400);
+                            }
+                        },
+                        error: function () {
+
+                        }
+                    });
+
                 @endif
 
             }
