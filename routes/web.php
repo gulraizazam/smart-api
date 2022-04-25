@@ -385,7 +385,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::get('appointments/get_room_resources', [AppointmentsController::class, 'getRoomResources'])->name('appointments.get_room_resources');
 
-        Route::get('appointments/get_room_resources_with_specific_date', ['uses' => 'Admin\AppointmentsController@getRoomResourcesWithDate', 'as' => 'appointments.get_room_resources_with_specific_date']);
+        Route::get('appointments/get_room_resources_with_specific_date', [AppointmentsController::class, 'getRoomResourcesWithDate'])->name('appointments.get_room_resources_with_specific_date');
 
 
         //Appointment Route section for treatment invoice start

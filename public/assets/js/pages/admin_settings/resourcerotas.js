@@ -368,7 +368,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -377,58 +377,58 @@ var table_columns = [
         field: 'name',
         title: 'Resource Name',
         sortable: false,
-        width: 300,
+        width: 130,
     },{
         field: 'type',
         title: 'Type',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'region',
         title: 'Regions',
         sortable: false,
-        width: 'auto',
+        width: 90,
     },{
         field: 'city',
         title: 'City',
         sortable: false,
-        width: 'auto',
-    },{
-        field: 'location',
-        title: 'Centre',
-        sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'from',
         title: 'From',
         sortable: false,
-        width: 'auto',
+        width: 120,
     },{
         field: 'to',
         title: 'To',
         sortable: false,
-        width: 'auto',
-    },{
-        field: 'created_at',
-        title: 'Created at',
-        width: 'auto',
+        width: 120,
     },{
         field: 'active',
         title: 'Status',
-        width: 'auto',
+        width: 70,
         template: function (data) {
             return statuses(data, route('admin.resourcerotas.status'));
         }
+    },{
+        field: 'created_at',
+        title: 'Created at',
+        width: 140,
     }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 80,
+        width: 140,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
             return actions(data);
         }
+    },{
+        field: 'location',
+        title: 'Centre',
+        sortable: false,
+        width: 'auto',
     }];
 
 function actions(data) {
