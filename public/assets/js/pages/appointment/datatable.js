@@ -546,7 +546,7 @@ function actions(data) {
             actions += '<li class="navi-item">\
                         <a target="_blank" href="'+patient_url+'" class="navi-link">\
                             <span class="navi-icon"><i class="la la-user"></i></span>\
-                            <span class="navi-text">Patient</span>\
+                            <span class="navi-text">Patient Card</span>\
                         </a>\
                     </li>';
         }
