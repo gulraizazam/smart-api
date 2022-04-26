@@ -71,8 +71,6 @@
                                         <th>Service/Consultancy</th>
                                         <td id="treatment_service_consultancy_name"></td>
                                     </tr>
-                                    <tr>
-                                    </tr>
                                     </tbody>
                                 </table>
 
@@ -92,7 +90,7 @@
 
 
                             <div class="form-group">
-                            <div class="row">
+                                <div class="row">
 
                                 <div class="col-md-12">
                                     <label>Comment</label>
@@ -104,11 +102,12 @@
                                 </div>
 
                             </div>
-                        </div>
+                            </div>
 
                         </form>
 
                             </div>
+                        </div>
 
                     </div>
 

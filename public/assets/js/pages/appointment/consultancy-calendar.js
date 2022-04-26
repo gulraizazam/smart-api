@@ -412,7 +412,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
 
     if (permissions.edit) {
         if (appointment.appointment_type_id == 1) {
-            buttons += '<li><a class="text" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
+            buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
             <i class="la la-pencil"></i> Edit\
             </a></li>';
         } else {
