@@ -49,7 +49,7 @@ jQuery(document).ready(function() {
 
     $("#Add_comment").click(function () {
 
-        if ($('input[name=comment]').val() !== '') {
+        if ($('#consultancy_comment').val() !== '') {
             $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -57,8 +57,8 @@ jQuery(document).ready(function() {
                 type: 'get',
                 url: route('admin.appointments.storecomment'),
                 data: {
-                    'comment': $('input[name=comment]').val(),
-                    'appointment_id': $('input[name=appointment_id]').val(),
+                    'comment': $('#consultancy_comment').val(),
+                    'appointment_id': $('#comment_appointment_id').val(),
                 },
                 success: function (data) {
                     console.log(data);
