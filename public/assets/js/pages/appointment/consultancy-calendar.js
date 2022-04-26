@@ -408,89 +408,87 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     let plan_create_url = route('admin.appointmentplans.create', {id: appointment.id});
     let log_url = route('admin.appointments.loadPage', {id: appointment.id, type: 'web'});
 
-    let buttons = '<td colspan="4" style="text-align: right;">';
+    let buttons = '';
 
     if (permissions.edit) {
         if (appointment.appointment_type_id == 1) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
-            <i class="la la-pencil"></i>Edit\
-            </a>';
+            buttons += '<li><a class="text" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
+            <i class="la la-pencil"></i> Edit\
+            </a></li>';
         } else {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `' + $class + '`);" >\
-            <i class="la la-pencil"></i>Edit\
-            </a>';
+            buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `' + $class + '`);" >\
+            <i class="la la-pencil"></i> Edit\
+            </a></li>';
         }
     }
 
-    buttons += '<a href="javascript:void(0);" onclick="viewSmsLogs(`' + sms_logs_url + '`);" class="btn btn-sm btn-info mr-2" >\
-        <i class="la la-sms" data-toggle="tooltip" title="SMS Logs"></i>SMS Logs\
-        </a>';
+    buttons += '<li><a href="javascript:void(0);" onclick="viewSmsLogs(`' + sms_logs_url + '`);" class="text text-primary" >\
+        <i class="la la-sms" data-toggle="tooltip" title="SMS Logs"></i> SMS Logs\
+        </a></li>';
     if (permissions.invoice) {
         if (!invoice) {
             if (appointment.appointment_type_id == 2) {
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + service_invoice_url + '`);">\
-                <i class="la la-file" title="Generate Invoice"></i>Generate Invoice\
-                </a>';
+                buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + service_invoice_url + '`);">\
+                <i class="la la-file" title="Generate Invoice"></i> Generate Invoice\
+                </a></li>';
             }
 
             if (appointment.appointment_type_id == 1) {
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" >\
-                <i class="la la-file" title="Generate Invoice"></i>Generate Invoice\
-                </a>';
+                buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" >\
+                <i class="la la-file" title="Generate Invoice"></i> Generate Invoice\
+                </a></li>';
             }
         }
         if (permissions.invoice_display) {
             if (invoice) {
                 let invoice_url = route('admin.appointments.InvoiceDisplay', {id: invoiceid});
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_url + '`);" >\
-                <i class="la la-file-invoice-dollar" title="Invoice Display"></i>Invoice Display\
-                </a>';
+                buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_url + '`);" >\
+                <i class="la la-file-invoice-dollar" title="Invoice Display"></i> Invoice Display\
+                </a></li>';
             }
         }
     }
 
     if (appointment.appointment_type_id == 2) {
         if (permissions.image_manage) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+image_url+'" target="_blank">\
-        <i class="la la-image" title="Images"></i>Images\
-        </a>';
+            buttons += '<li><a class="text text-primary" href="'+image_url+'" target="_blank">\
+        <i class="la la-image" title="Images"></i> Images\
+        </a></li>';
         }
 
         if (permissions.measurement_manage) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+measurement_url+'"  target="_blank">\
-        <i class="la la-ruler-horizontal" title="Measurement"></i>Measurement\
-        </a>';
+            buttons += '<li><a class="text text-primary" href="'+measurement_url+'"  target="_blank">\
+        <i class="la la-ruler-horizontal" title="Measurement"></i> Measurement\
+        </a></li>';
         }
     }
 
     if (appointment.appointment_type_id == 1) {
 
         if(permissions.medical_form_manage) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+medical_url+'" target="_blank">\
-            <i class="la la-medkit" title="Medical History Form"></i>Medical Form\
-            </a>';
+            buttons += '<li><a class="text text-primary" href="'+medical_url+'" target="_blank">\
+            <i class="la la-medkit" title="Medical History Form"></i> Medical Form\
+            </a></li>';
         }
     }
 
     if (permissions.plans_create) {
-        buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_create_url+'`);">\
-            <i class="la la-paper-plane" title="Create Plan"></i>Create Plan\
-            </a>';
+        buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_create_url+'`);">\
+            <i class="la la-paper-plane" title="Create Plan"></i> Create Plan\
+            </a></li>';
     }
 
     if(permissions.patient_card) {
-        buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="'+patient_url+'">\
+        buttons += '<li><a class="text text-primary" target="_blank" href="'+patient_url+'">\
         <i class="la la-user" title="Patient Card"></i>Patient Card\
-        </a>';
+        </a></li>';
     }
 
     if (permissions.log) {
-        buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="'+log_url+'">\
-        <i class="la la-history" title="Log"></i>Log\
-        </a>';
+        buttons += '<li><a class="text text-primary" target="_blank" href="'+log_url+'">\
+        <i class="la la-history" title="Log"></i> Log\
+        </a></li>';
     }
-
-    buttons += '</td>';
 
     $("." + $class).html(buttons);
 

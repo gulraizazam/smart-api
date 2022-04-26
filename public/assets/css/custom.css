@@ -755,3 +755,25 @@ div > input {
 .plan-filters .select2 {
     width: 109% !important;
 }
+.calendar-left-menu {
+    border-right: 1px solid lightgrey;
+    margin-top: -11px;
+    padding-top: 10px;
+    height: 100%;
+}
+.calendar-left-menu > li {
+    margin-top: 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    background-color: #013162;
+    padding: 5px 5px 5px 5px;
+    width: 90%;
+    border-radius: 5px;
+
+}
+
+.calendar-left-menu > li > a, .calendar-left-menu > li > a > i {
+    color: #fff !important;
+}

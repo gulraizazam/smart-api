@@ -26,79 +26,90 @@
 
             <div class="form-group">
 
-                <div class="row">
+                <div class="row" style="margin-right: 0;">
 
 
                     <div class="table-responsive">
 
-                        <table class="table">
-                            <tbody>
-                            <tr class="detail-actions"></tr>
-                            <tr>
-                                <th>Patient Name</th>
-                                <td id="patient_name"></td>
-                                <th>Patient Phone</th>
-                                <td id="patient_phone"></td>
-                            </tr>
-                            <tr>
-                                <th>Email</th>
-                                <td id="patient_email"></td>
-                                <th>Gender</th>
-                                <td id="patient_gender"></td>
-                            </tr>
-                            <tr>
-                                <th>Appointment Time</th>
-                                <td id="patient_scheduled_time"></td>
-                                <th>Doctor</th>
-                                <td id="doctor_name"></td>
-                            </tr>
-                            <tr>
-                                <th>City</th>
-                                <td id="city_name"></td>
-                                <th>Centre</th>
-                                <td id="center_name"></td>
-                            </tr>
-                            <tr>
-                                <th>Appointment Status</th>
-                                <td id="appointment_status"></td>
-                                <th>Service/Consultancy</th>
-                                <td id="service_consultancy_name"></td>
-                            </tr>
-                            <tr>
-                            </tr>
-                            </tbody>
-                        </table>
+                        <div class="row" style="margin-right: 0;">
+                            <div class="col-md-3">
+                                <ul class="calendar-left-menu list-unstyled detail-actions"></ul>
+                            </div>
 
-                        <form id="cment" style="margin-top: 35px;">
+                            <div class="col-md-9">
 
-                            <h3 class="box-title">Comment</h3>
+                                <table class="table">
+                                    <tbody>
+                                    <tr>
+                                        <th>Patient Name</th>
+                                        <td id="patient_name"></td>
+                                        <th>Patient Phone</th>
+                                        <td id="patient_phone"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email</th>
+                                        <td id="patient_email"></td>
+                                        <th>Gender</th>
+                                        <td id="patient_gender"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Appointment Time</th>
+                                        <td id="patient_scheduled_time"></td>
+                                        <th>Doctor</th>
+                                        <td id="doctor_name"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>City</th>
+                                        <td id="city_name"></td>
+                                        <th>Centre</th>
+                                        <td id="center_name"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Appointment Status</th>
+                                        <td id="appointment_status"></td>
+                                        <th>Service/Consultancy</th>
+                                        <td id="service_consultancy_name"></td>
+                                    </tr>
+                                    <tr>
+                                    </tr>
+                                    </tbody>
+                                </table>
 
-                            <div class="row">
-                                <div class="col-md-11">
-                                    <div class="col-md-12">
-                                        <div class="portlet-body" id="commentsection">
+                                <form id="cment" style="margin-top: 35px;">
+
+                                    <h3 class="box-title">Comment</h3>
+
+                                    <div class="row">
+                                        <div class="col-md-11">
+                                            <div class="col-md-12">
+                                                <div class="portlet-body" id="commentsection">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+
+
+                                    <div class="form-group">
+                                        <div class="row">
+
+                                            <div class="col-md-12">
+                                                <label>Comment</label>
+                                                <input type="text" name="comment" id="consultancy_comment" class="form-control" required="">
+                                            </div>
+                                            <input type="hidden" name="appointment_id" id="comment_appointment_id" class="form-control" value=""><br>
+                                            <div class="col-md-12 mt-5">
+                                                <button type="button" name="Add_comment" id="Add_comment" class="btn btn-success">Comment</button>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                </form>
+
                             </div>
 
-
-                            <div class="form-group">
-                            <div class="row">
-
-                                <div class="col-md-12">
-                                    <label>Comment</label>
-                                    <input type="text" name="comment" class="form-control" required="">
-                                </div>
-                                <input type="hidden" name="appointment_id" id="comment_appointment_id" class="form-control" value=""><br>
-                                <div class="col-md-12 mt-5">
-                                    <button type="button" name="Add_comment" id="Add_comment" class="btn btn-success">Comment</button>
-                                </div>
-
-                            </div>
                         </div>
 
-                        </form>
 
                     </div>
 

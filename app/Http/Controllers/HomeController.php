@@ -228,7 +228,7 @@ class HomeController extends Controller
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
 
             $end_week = Carbon::parse($today)->addDays(6)->format('Y-m-d');
-           
+
             $resultQuery->whereBetween('appointments.scheduled_date', [$today, $end_week]);
 
         } else if (hasFilter($filter, 'type') && $filter['type'] == 'month') {
