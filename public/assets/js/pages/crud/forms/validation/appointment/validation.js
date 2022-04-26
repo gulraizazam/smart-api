@@ -261,6 +261,13 @@ var CreateTreatmentValidation = function () {
                             }
                         }
                     },
+                    patient_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The patient field is required'
+                            }
+                        }
+                    },
                     phone: {
                         validators: {
                             notEmpty: {

@@ -25,7 +25,7 @@
         <form id="modal_create_treatment_form" method="post" action="{{route('admin.appointments.store_service')}}">
 
             <input type="hidden" id="treatment_lead_id" name="lead_id">
-            <input type="hidden" id="treatment_patient_id" name="patient_id" value="0">
+            {{--<input type="hidden" id="treatment_patient_id" name="patient_id" value="0">--}}
             <input type="hidden" id="treatment_city_id" name="city_id">
             <input type="hidden" id="treatment_location_id" name="location_id">
             <input type="hidden" id="treatment_doctor_id" name="doctor_id">
