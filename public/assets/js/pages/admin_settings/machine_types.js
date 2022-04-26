@@ -4,7 +4,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -19,7 +19,7 @@ var table_columns = [
     {
         field: 'services',
         sortable: false,
-        width: 'auto',
+        width: 450,
         title: 'Services',
         template: function (data) {
             let badge='';
@@ -39,7 +39,7 @@ var table_columns = [
     {
         field: 'status',
         title: 'Status',
-        width: 'auto',
+        width: 60,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.machine_types.status');
