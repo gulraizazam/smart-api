@@ -6,7 +6,7 @@ var table_columns = [
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'name',
         title: 'Name',
@@ -21,12 +21,7 @@ var table_columns = [
         field: 'package_id',
         title: 'Plans',
         sortable: false,
-        width: 'auto',
-    },{
-        field: 'location_id',
-        title: 'Centres',
-        sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'session_count',
         title: 'Session count',
@@ -36,17 +31,18 @@ var table_columns = [
         field: 'total',
         title: 'Total',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'cash_receive',
         title: 'Cash receive',
         sortable: false,
-        width: 'auto',
+        width: 100,
     },{
-        field: 'created_at',
-        title: 'Created at',
-        width: 'auto',
-    }, {
+        field: 'location_id',
+        title: 'Centres',
+        sortable: false,
+        width: 170,
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -56,6 +52,10 @@ var table_columns = [
         template: function (data) {
             return actions(data);
         }
+    },{
+        field: 'created_at',
+        title: 'Created at',
+        width: 'auto',
     }];
 
 
