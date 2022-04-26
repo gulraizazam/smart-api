@@ -24,7 +24,7 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
         $iDisplayStart = intval(isset($request->pagination['page']) ? (($request->pagination['page'] - 1) * $iDisplayLength) : 0);
         $page = intval($request->pagination['page'] ?? 1);
-        $pages = intval(ceil($iTotalRecords / $iDisplayLength));
+        $pages = 7;
 
         if ($iDisplayLength >= $iTotalRecords) {
             $iDisplayStart = 0;

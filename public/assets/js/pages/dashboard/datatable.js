@@ -62,21 +62,21 @@ var table_columns = [
             }
         }
     },{
-        field: 'region_id',
-        title: 'Region',
+        field: 'location_id',
+        title: 'Centre',
         width: 'auto',
     },{
         field: 'city_id',
         title: 'City',
         width: 'auto',
     },{
-        field: 'location_id',
-        title: 'Centre',
+        field: 'region_id',
+        title: 'Region',
         width: 'auto',
     },{
         field: 'consultancy_type',
         title: 'Consultancy Type',
-        width: 'auto',
+        width: 90,
     },{
         field: 'created_at',
         title: 'Created At',

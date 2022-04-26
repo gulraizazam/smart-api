@@ -688,8 +688,8 @@
                             <div class="card-toolbar">
                                 <div class="dropdown dropdown-inline" data-toggle="tooltip" title="Quick actions" data-placement="left">
                                     <div class="btn-location">
-                                        <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$month}}', '{{$currentTime}}', 'month');">This Month</button>
-                                        <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$startWeek}}', '{{$currentTime}}', 'week');">This Week</button>
+                                        <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$month}}', '{{$currentTime}}', 'month');">Month</button>
+                                        <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$startWeek}}', '{{$currentTime}}', 'week');">Week</button>
                                         <button class="arrival-btn btn btn-primary" onclick="getArrivalsByDate($(this), '{{$today}}', '{{$currentTime}}', 'today');">Today</button>
                                     </div>
 
