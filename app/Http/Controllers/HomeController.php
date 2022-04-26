@@ -84,7 +84,7 @@ class HomeController extends Controller
 
     public function datatable(Request $request)
     {
-        if (Gate::allows('dashboard_upcomings')) {
+        if (!Gate::allows('dashboard_upcomings')) {
             return [];
         }
 
@@ -156,20 +156,17 @@ class HomeController extends Controller
             $countQuery->where($where);
         }
 
-        if (auth()->id() != 1) {
-            $countQuery->where('location_id', $this->getUserLocation());
-        }
+       // $countQuery->whereIn('location_id', ACL::getUserCentres());
 
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
-            $start_week = $filter['date'];
-            $end_week = Carbon::parse($start_week)->endOfWeek()->format('Y-m-d');
+
+            $end_week = Carbon::parse($today)->addDays(6)->format('Y-m-d');
 
             $countQuery->whereBetween('appointments.scheduled_date', [$today, $end_week]);
 
         } else if (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
-            $start_month = Carbon::parse($filter['date'])->startOfMonth()->format('Y-m-d');
-            $end_month = Carbon::parse($filter['date'])->endOfMonth()->format('Y-m-d');
+            $end_month = Carbon::parse($today)->addMonth()->format('Y-m-d');
 
             $countQuery->whereBetween('appointments.scheduled_date', [$today, $end_month]);
         } else {
@@ -230,15 +227,13 @@ class HomeController extends Controller
 
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
 
-            $start_week = $filter['date'];
-            $end_week = Carbon::parse($start_week)->endOfWeek()->format('Y-m-d');
-
+            $end_week = Carbon::parse($today)->addDays(6)->format('Y-m-d');
+           
             $resultQuery->whereBetween('appointments.scheduled_date', [$today, $end_week]);
 
         } else if (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
-            $start_month = Carbon::parse($filter['date'])->startOfMonth()->format('Y-m-d');
-            $end_month = Carbon::parse($filter['date'])->endOfMonth()->format('Y-m-d');
+            $end_month = Carbon::parse($today)->addMonth()->format('Y-m-d');
 
             $resultQuery->whereBetween('appointments.scheduled_date', [$today, $end_month]);
         } else {
@@ -1118,9 +1113,6 @@ class HomeController extends Controller
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->where('location_id', $location_id);
-        /*if (auth()->id() != 1) {
-            $query->whereIn('location_id', ACL::getUserCentres());
-        }*/
 
         $data['all_consultancies'] = $query->count();
 
@@ -1176,6 +1168,7 @@ class HomeController extends Controller
         $data['revenue'] = 0;
 
         if (!Gate::allows('dashboard_states')) {
+
             $data['revenue'] = null;
 
             return $data;
@@ -1214,15 +1207,6 @@ class HomeController extends Controller
                 }
             }
         }
-
-        return $data;
-    }
-
-    private function old_recentActivities($data) {
-
-        $data['recent_activities'] = AuditTrails::with(['auditTable','auditAction','user'])
-           //->where('created_at', Carbon::now()->format("Y-m-d"))
-           ->limit(10)->get();
 
         return $data;
     }
