@@ -4,7 +4,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 40,
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -13,7 +13,7 @@ var table_columns = [
     {
         field: 'name',
         title: 'Name',
-        width: 300,
+        width: 190,
     },
     {
         field: 'price',
@@ -29,7 +29,7 @@ var table_columns = [
     {
         field: 'apply_discount',
         title: 'Apply Discount',
-        width: 'auto',
+        width: 100,
     },
     {
         field: 'start',
@@ -40,22 +40,16 @@ var table_columns = [
         field: 'end',
         title: 'Valid To',
         width: 'auto',
-    },
-    {
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-    },
-    {
+    },{
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 130,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.bundles.status');
             return statuses(data, status_url);
         }
-    }, {
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -65,6 +59,10 @@ var table_columns = [
         template: function (data) {
             return actions(data);
         }
+    }, {
+        field: 'created_at',
+        title: 'Created At',
+        width: 'auto',
     }];
 
 
