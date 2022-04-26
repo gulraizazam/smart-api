@@ -2,72 +2,145 @@
 
 var table_url = route('admin.invoices.datatable');
 
-var table_columns = [
-    {
-        field: 'patient_id',
-        title: 'Patient ID',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'name',
-        title: 'Patient Name',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'phone',
-        title: 'Phone',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'region',
-        title: 'Region',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'city',
-        title: 'City',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'location',
-        title: 'Centre',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'service',
-        title: 'Consultancy/Service',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'invoice_status',
-        title: 'Invoice Status',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'appointment_type_id',
-        title: 'Type',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'price',
-        title: 'Price',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'created_at',
-        title: 'Created at',
-        width: 'auto',
-    }, {
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 80,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
-        }
-    }];
+var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+
+if (width > 1280) {
+
+    var table_columns = [
+        {
+            field: 'patient_id',
+            title: 'Patient ID',
+            sortable: false,
+            width: 80,
+        },{
+            field: 'name',
+            title: 'Patient Name',
+            sortable: false,
+            width: 120,
+        },{
+            field: 'phone',
+            title: 'Phone',
+            sortable: false,
+            width: 100,
+        },{
+            field: 'region',
+            title: 'Region',
+            sortable: false,
+            width: 100,
+        },{
+            field: 'city',
+            title: 'City',
+            sortable: false,
+            width: 100,
+        },{
+            field: 'service',
+            title: 'Consultancy/Service',
+            sortable: false,
+            width: 180,
+        },{
+            field: 'price',
+            title: 'Price',
+            sortable: false,
+            width: 80,
+        },{
+            field: 'invoice_status',
+            title: 'Invoice Status',
+            sortable: false,
+            width: 90,
+        },{
+            field: 'actions',
+            title: 'Actions',
+            sortable: false,
+            width: 120,
+            overflow: 'visible',
+            autoHide: false,
+            template: function (data) {
+                return actions(data);
+            }
+        },{
+            field: 'appointment_type_id',
+            title: 'Type',
+            sortable: false,
+            width: 'auto',
+        },{
+            field: 'created_at',
+            title: 'Created at',
+            width: 'auto',
+        },{
+            field: 'location',
+            title: 'Centre',
+            sortable: false,
+            width: 'auto',
+        }];
+} else {
+    var table_columns = [
+        {
+            field: 'patient_id',
+            title: 'Patient ID',
+            sortable: false,
+            width: 70,
+        },{
+            field: 'name',
+            title: 'Patient Name',
+            sortable: false,
+            width: 90,
+        },{
+            field: 'phone',
+            title: 'Phone',
+            sortable: false,
+            width: 90,
+        },{
+            field: 'region',
+            title: 'Region',
+            sortable: false,
+            width: 90,
+        },{
+            field: 'city',
+            title: 'City',
+            sortable: false,
+            width: 80,
+        },{
+            field: 'price',
+            title: 'Price',
+            sortable: false,
+            width: 70,
+        },{
+            field: 'service',
+            title: 'Consultancy/Service',
+            sortable: false,
+            width: 170,
+        },{
+            field: 'invoice_status',
+            title: 'Invoice Status',
+            sortable: false,
+            width: 75,
+        },{
+            field: 'actions',
+            title: 'Actions',
+            sortable: false,
+            width: 100,
+            overflow: 'visible',
+            autoHide: false,
+            template: function (data) {
+                return actions(data);
+            }
+        },{
+            field: 'location',
+            title: 'Centre',
+            sortable: false,
+            width: 'auto',
+        },{
+            field: 'appointment_type_id',
+            title: 'Type',
+            sortable: false,
+            width: 'auto',
+        },{
+            field: 'created_at',
+            title: 'Created at',
+            width: 'auto',
+        }];
+}
+
 
 function actions(data) {
     if (typeof data.id !== 'undefined') {
