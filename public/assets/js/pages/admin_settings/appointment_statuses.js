@@ -1,83 +1,160 @@
 var table_url = route('admin.appointment_statuses.datatable');
 
-var table_columns = [
-    {
-        field: 'id',
-        sortable: false,
-        width: 'auto',
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    },
-    {
-        field: 'name',
-        title: 'Name',
-        width: 'auto',
-        sortable: false,
-    },
-    {
-        field: 'parent_id',
-        title: 'Parent Group',
-        width: 'auto',
-        sortable: false,
-    },
-    {
-        field: 'is_comment',
-        title: 'Ask for comments',
-        width: 'auto',
-        sortable: false,
-    },
-    {
-        field: 'allow_message',
-        title: 'Allow Send SMS',
-        width: 'auto',
-        sortable: false,
-    },
-    {
-        field: 'is_default',
-        title: 'Default Status for New Appointments',
-        width: 'auto',
-        sortable: false,
-    },
-    {
-        field: 'is_arrived',
-        title: 'Default Status for Arrived Appointments',
-        width: 'auto',
-        sortable: false,
-    },
-    {
-        field: 'is_cancelled',
-        title: 'Default Status for Cancelled Appointments',
-        width: 'auto',
-        sortable: false,
-    },
-    {
-        field: 'is_unscheduled',
-        title: 'Default Status for Un-Scheduled Appointments',
-        width: 'auto',
-        sortable: false,
-    },
-    {
-        field: 'status',
-        title: 'status',
-        width: 'auto',
-        sortable: false,
-        template: function (data) {
-            let status_url = route('admin.appointment_statuses.status');
-            return statuses(data, status_url);
-        }
-    }, {
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 80,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
-        }
-    }];
+var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+if (width > 1280) {
+    var table_columns = [
+        {
+            field: 'id',
+            sortable: false,
+            width: 30,
+            title: renderCheckbox(),
+            template: function (data) {
+                return childCheckbox(data);
+            }
+        },
+        {
+            field: 'name',
+            title: 'Name',
+            width: 90,
+            sortable: false,
+        },
+        {
+            field: 'parent_id',
+            title: 'Parent Group',
+            width: 80,
+            sortable: false,
+        },
+        {
+            field: 'is_comment',
+            title: 'Ask for comments',
+            width: 80,
+            sortable: false,
+        },
+        {
+            field: 'allow_message',
+            title: 'Allow Send SMS',
+            width: 80,
+            sortable: false,
+        },
+        {
+            field: 'is_default',
+            title: 'Default Status for New Appointments',
+            width: 'auto',
+            sortable: false,
+        },
+        {
+            field: 'is_arrived',
+            title: 'Default Status for Arrived Appointments',
+            width: 'auto',
+            sortable: false,
+        },
+        {
+            field: 'is_cancelled',
+            title: 'Default Status for Cancelled Appointments',
+            width: 'auto',
+            sortable: false,
+        },{
+            field: 'status',
+            title: 'status',
+            width: 60,
+            sortable: false,
+            template: function (data) {
+                let status_url = route('admin.appointment_statuses.status');
+                return statuses(data, status_url);
+            }
+        },{
+            field: 'actions',
+            title: 'Actions',
+            sortable: false,
+            width: 150,
+            overflow: 'visible',
+            autoHide: false,
+            template: function (data) {
+                return actions(data);
+            }
+        },{
+            field: 'is_unscheduled',
+            title: 'Default Status for Un-Scheduled Appointments',
+            width: 'auto',
+            sortable: false,
+        }];
+} else {
+    var table_columns = [
+        {
+            field: 'id',
+            sortable: false,
+            width: 30,
+            title: renderCheckbox(),
+            template: function (data) {
+                return childCheckbox(data);
+            }
+        },
+        {
+            field: 'name',
+            title: 'Name',
+            width: 100,
+            sortable: false,
+        },
+        {
+            field: 'parent_id',
+            title: 'Parent Group',
+            width: 80,
+            sortable: false,
+        },
+        {
+            field: 'is_comment',
+            title: 'Ask for comments',
+            width: 80,
+            sortable: false,
+        },
+        {
+            field: 'allow_message',
+            title: 'Allow Send SMS',
+            width: 80,
+            sortable: false,
+        },
+        {
+            field: 'is_default',
+            title: 'Default Status for New Appointments',
+            width: 'auto',
+            sortable: false,
+        },
+        {
+            field: 'is_arrived',
+            title: 'Default Status for Arrived Appointments',
+            width: 'auto',
+            sortable: false,
+        },{
+            field: 'status',
+            title: 'status',
+            width: 60,
+            sortable: false,
+            template: function (data) {
+                let status_url = route('admin.appointment_statuses.status');
+                return statuses(data, status_url);
+            }
+        },{
+            field: 'actions',
+            title: 'Actions',
+            sortable: false,
+            width: 100,
+            overflow: 'visible',
+            autoHide: false,
+            template: function (data) {
+                return actions(data);
+            }
+        }, {
+            field: 'is_cancelled',
+            title: 'Default Status for Cancelled Appointments',
+            width: 'auto',
+            sortable: false,
+        },{
+            field: 'is_unscheduled',
+            title: 'Default Status for Un-Scheduled Appointments',
+            width: 'auto',
+            sortable: false,
+        }];
+}
 
 
 function actions(data) {
