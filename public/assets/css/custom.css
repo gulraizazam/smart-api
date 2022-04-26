@@ -771,7 +771,10 @@ div > input {
     padding: 5px 5px 5px 5px;
     width: 90%;
     border-radius: 5px;
+}
 
+.calendar-left-menu > li:hover {
+    color: #0073e9 !important;
 }
 
 .calendar-left-menu > li > a, .calendar-left-menu > li > a > i {
