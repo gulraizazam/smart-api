@@ -131,6 +131,10 @@ var loadEndServices = function (baseServiceId) {
 
 function getTreatmentPatientDetail($this) {
 
+    if ($this.val() != '') {
+        $this.parent("div").find(".select2-selection").removeClass("select2-is-invalid");
+        $this.parent("div").find(".fv-help-block").text("");
+    }
     $.ajax({
         type: 'get',
         url: route('admin.users.get_patient_number'),
@@ -195,5 +199,8 @@ jQuery(document).ready(function () {
 
     $(document).on("click", ".croxcli", function () {
         $('.treatment_patient_search_id').val(null).trigger('change');
+
+        $("#create_treatment_patient_search").parent("div").find(".select2-selection").addClass("select2-is-invalid");
+        $("#create_treatment_patient_search").parent("div").find(".fv-help-block").text("The patient field is required");
     });
 })

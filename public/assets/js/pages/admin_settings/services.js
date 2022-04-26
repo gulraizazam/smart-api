@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -14,7 +14,7 @@ var table_columns = [
         field: 'name',
         title: 'Name',
         sortable: false,
-        width: 300,
+        width: 230,
         template: function (data) {
             if (data.parent_id == 0) {
                 return '<b class="text text-dark" style="font-size: 12px;">'+data.name+'</b>';
@@ -25,7 +25,7 @@ var table_columns = [
         field: 'duration',
         title: 'Duration',
         sortable: false,
-        width: 'auto',
+        width: 80,
         template: function (data) {
             if (typeof data.price !== 'undefined') {
                 return '<span>'+data.duration+' mins</span>';
@@ -36,7 +36,7 @@ var table_columns = [
         field: 'color',
         title: 'Color',
         sortable: false,
-        width: 'auto',
+        width: 80,
         template: function (data) {
             return '<span class="badge" style="background-color: '+data.color+' !important; color: #fff; font-size: 12px;">'+data.color+'</span>';
         }
@@ -44,7 +44,7 @@ var table_columns = [
         field: 'price',
         title: 'Price',
         sortable: false,
-        width: 'auto',
+        width: 80,
         template: function (data) {
             if (data.slug == 'all') {
                 return '-';
@@ -59,7 +59,7 @@ var table_columns = [
         field: 'complimentory',
         title: 'Complimentory',
         sortable: false,
-        width: 'auto',
+        width: 120,
         template: function (data) {
             if (data.parent_id == 0) {
                 return '-';
@@ -73,7 +73,7 @@ var table_columns = [
     }, {
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 60,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.services.status');
