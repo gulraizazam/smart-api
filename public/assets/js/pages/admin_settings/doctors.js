@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 60,
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -18,14 +18,15 @@ var table_columns = [
     }, {
         field: 'email',
         title: 'Email',
+        width: 160,
     }, {
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 100,
     }, {
         field: 'gender',
         title: 'Gender',
-        width: 'auto',
+        width: 60,
     }, {
         field: 'roles',
         title: 'roles',
@@ -45,17 +46,17 @@ var table_columns = [
             return roles;
         }
     }, {
-        field: 'created',
-        title: 'Created At',
-        width: 'auto',
-    }, {
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 60,
         template: function (data) {
             let status_url = route('admin.doctors.status');
             return statuses(data, status_url);
         }
+    },{
+        field: 'created',
+        title: 'Created At',
+        width: 'auto',
     },  {
         field: 'actions',
         title: 'Actions',
