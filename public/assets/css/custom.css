@@ -773,10 +773,12 @@ div > input {
     border-radius: 5px;
 }
 
-.calendar-left-menu > li:hover {
+.calendar-left-menu > li:hover a{
     color: #0073e9 !important;
 }
 
 .calendar-left-menu > li > a, .calendar-left-menu > li > a > i {
     color: #fff !important;
+    display: flex;
+    margin-right: 5px;
 }
