@@ -1855,7 +1855,7 @@ class AppointmentsController extends Controller
         if (count($serviceIds)) {
             $services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
         } else {
-            $services[''] = '';
+            $services = [];
         }
 
         $lead_sources = LeadSources::getActiveSorted();
