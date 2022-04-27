@@ -558,6 +558,12 @@ function setCreateTreatment(response, start) {
 
     try {
 
+        patientSearch('treatment_patient_search_id');
+
+        $("#modal_create_treatment").modal("show");
+
+        $("#modal_create_treatment_form")[0].reset();
+
         let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
         let location_id = response.data.location_id;
@@ -570,17 +576,6 @@ function setCreateTreatment(response, start) {
 
         let consultancy_types = response.data.consultancy_types;
 
-        if (Object.keys(services).length === 0) {
-            toastr.error("Services not found.");
-            return false;
-        }
-
-        patientSearch('treatment_patient_search_id');
-
-        $("#modal_create_treatment").modal("show");
-
-        $("#modal_create_treatment_form")[0].reset();
-
         /*Hidden fields*/
         $("#treatment_lead_id").val(lead?.id);
         $("#treatment_patient_id").val(lead?.patient_id ? lead?.patient_id : '0');
@@ -589,6 +584,11 @@ function setCreateTreatment(response, start) {
         $("#treatment_doctor_id").val(doctor_id);
         $("#treatment_start").val(start);
         $("#treatment_resource_id").val($("#treatment_resource_filter").val());
+        /*$("#treatment_cnic").val();
+        $("#treatment_email").val();
+        $("#treatment_dob").val();
+        $("#treatment_address").val();
+        $("#treatment_town_id").val();*/
 
         let type_options = '<option value="">Select Consultancy Type</option>';
         if (consultancy_types) {

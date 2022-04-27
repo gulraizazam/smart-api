@@ -1855,7 +1855,7 @@ class AppointmentsController extends Controller
         if (count($serviceIds)) {
             $services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
         } else {
-            $services = [];
+            return ApiHelper::apiResponse($this->success, "Services not found for this doctor and resource.", false);
         }
 
         $lead_sources = LeadSources::getActiveSorted();
