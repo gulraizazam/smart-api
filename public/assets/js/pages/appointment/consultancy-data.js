@@ -346,7 +346,10 @@ function getPatientDetail($this) {
                 $('#create_consultancy_phone').val(patient?.phone);
                 $('#create_patient_name').val(patient?.name);
                 $('#create_consultancy_gender').val(patient?.gender).change();
-                $('#create_consultancy_referred_by').val(patient?.referred_by).change();
+
+                if (isExist(patient?.referred_by)) {
+                    $('#create_consultancy_referred_by').val(patient?.referred_by).change();
+                }
 
                 if (patient?.phone != '') {
                     $("#create_consultancy_phone").removeClass("is-invalid")
@@ -387,7 +390,10 @@ function loadLead(patient) {
             success: function (resposne) {
                 if (resposne.status) {
                     let lead_source_id = resposne.data.lead_source_id;
-                    $('#create_consultancy_lead').val(lead_source_id).change();
+                    
+                    if (isExist(lead_source_id)) {
+                        $('#create_consultancy_lead').val(lead_source_id).change();
+                    }
                 }
 
             },

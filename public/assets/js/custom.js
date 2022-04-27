@@ -852,3 +852,7 @@ function resendSMS(smsId, url, method = 'PUT') {
 function removeExtraSelect2(elem = 'create_treatment_patient_search') {
     $("#" + elem).parent("div").find(".selection").remove();
 }
+
+function isExist(value) {
+    return typeof value !== "undefined" && value !== null && value != 0;
+}
