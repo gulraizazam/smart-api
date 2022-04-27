@@ -204,6 +204,24 @@ $(document).ready(function () {
         }
     });
 
+    var date = new Date();
+    $('.scheduled_date').datepicker({
+        format: 'yyyy-mm-dd',
+        startDate: date
+    }).on('changeDate', function(ev){
+        $(this).datepicker('hide');
+    });
+
+    $('.scheduled_time').timepicker({
+        timeFormat: 'h:mm p',
+        interval: 15,
+        minTime: '09:00am',
+        maxTime: '10:30pm',
+        dynamic: false,
+        dropdown: true,
+        scrollbar: true
+    });
+
 });
 
 function customDatePicker() {

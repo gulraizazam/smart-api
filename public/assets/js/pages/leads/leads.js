@@ -6,7 +6,7 @@ if (typeof lead_type !== 'undefined' && lead_type != '') {
 var table_columns = [{
     field: 'id',
     sortable: false,
-    width: 60,
+    width: 20,
     title: renderCheckbox(),
     template: function(data) {
         return childCheckbox(data, data.lead_id);
@@ -15,7 +15,7 @@ var table_columns = [{
     field: 'PatientId',
     title: 'ID',
     sortable: false,
-    width: 80,
+    width: 60,
 }, {
     field: 'name',
     title: 'Full Name',
@@ -25,7 +25,7 @@ var table_columns = [{
     field: 'phone',
     title: 'Phone',
     sortable: false,
-    width: 'auto',
+    width: 90,
     template: function (data) {
         return phoneClip(data);
     }
@@ -33,7 +33,7 @@ var table_columns = [{
     field: 'city_id',
     title: 'City',
     sortable: false,
-    width: 80,
+    width: 70,
     className: 'tooltip_wrap',
     template: function (data) {
 
@@ -49,17 +49,12 @@ var table_columns = [{
     field: 'service_id',
     title: 'Service',
     sortable: false,
-    width: 'auto',
-},/*{
-    field: 'region_id',
-    title: 'Region',
-    sortable: false,
-    width: 'auto',
-}, */{
+    width: 110,
+},{
     field: 'lead_status_id',
     title: 'Lead Status',
     sortable: false,
-    width: 'auto',
+    width: 70,
     template: function (data) {
 
         return '<a href="javascript:void(0);" onclick="editLeadStatus('+data.lead_id+');">'+data.lead_status_id+'</a>';
@@ -68,22 +63,22 @@ var table_columns = [{
     field: 'status',
     title: 'Status',
     sortable: false,
-    width: 'auto',
+    width: 70,
     template: function(data) {
         let status_url = route('admin.leads.status');
         return statuses(data, status_url);
     }
+},{
+    field: 'created_by',
+    title: 'Created By',
+    sortable: false,
+    width: 70,
 }, {
     field: 'created_at',
     title: 'Created At',
     sortable: false,
     width: 'auto',
-}, {
-    field: 'created_by',
-    title: 'Created By',
-    sortable: false,
-    width: 'auto',
-},  {
+},{
     field: 'actions',
     title: 'Actions',
     sortable: false,
@@ -199,8 +194,15 @@ function actions(data) {
         let convert_url = route('admin.leads.convert', { id: id });
 
         if (permissions.create || permissions.edit) {
-            let actions = '<div class="dropdown dropdown-inline action-dots">\
-        <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+            let actions = '<div class="dropdown dropdown-inline action-dots">';
+
+            if (permissions.convert && lead_type === 'junk') {
+                actions += '<a title="Convert Lead" href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="btn btn-icon btn-success btn-sm">\
+                        <span class="navi-icon"><i class="la la-recycle"></i></span>\
+                    </a> &nbsp;';
+            }
+
+        actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
         </a>\
         <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
@@ -221,15 +223,6 @@ function actions(data) {
                     <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, '+id+');" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
-                    </a>\
-                </li>';
-            }
-
-            if (permissions.convert && lead_type === 'junk') {
-                actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-recycle"></i></span>\
-                        <span class="navi-text">Convert</span>\
                     </a>\
                 </li>';
             }
