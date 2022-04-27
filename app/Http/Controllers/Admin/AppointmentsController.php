@@ -5534,6 +5534,8 @@ class AppointmentsController extends Controller
 
         $appointment = Appointments::select('id', 'scheduled_date', 'scheduled_time')->find($request->id);
 
+        $appointment->scheduled_time = Carbon::parse($appointment->scheduled_time)->format("h:i A");
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointment' => $appointment
         ]);
