@@ -539,6 +539,7 @@ function submitForm(action, method, data, callback, form = '') {
                 callback({
                     'status': response.status,
                     'message': response.message,
+                    'data' : response?.data
                 });
                 hideSpinnerRestForm(form);
             } else {
