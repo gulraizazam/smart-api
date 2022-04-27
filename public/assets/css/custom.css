@@ -782,3 +782,6 @@ div > input {
     display: flex;
     margin-right: 5px;
 }
+.fc-time-grid-event {
+    cursor: pointer !important;
+}
