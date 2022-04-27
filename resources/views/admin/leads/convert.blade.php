@@ -44,7 +44,7 @@
 
                         <input type="hidden" id="lead_id">
 
-                        <div class="fv-row col-md-6 mt-5">
+                        <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0"> City <span class="text text-danger">*</span></label>
                             <select id="convert_city" name="city_id" onchange="loadLocations($(this).val());" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
@@ -72,6 +72,16 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0"> Consultancy Type <span class="text text-danger">*</span></label>
                             <select id="convert_consultancy_type_id" name="consultancy_type_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Date </label>
+                            <input type="text" name="scheduled_date" value="{{date('Y-m-d')}}" id="schedule_date" class="form-control scheduled_date form-control-solid mb-3 mb-lg-0">
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Time </label>
+                            <input id="schedule_time" name="scheduled_time" value="{{date('h:i A')}}" class="form-control scheduled_time">
                         </div>
 
 

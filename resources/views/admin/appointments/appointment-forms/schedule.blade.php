@@ -34,12 +34,12 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Date </label>
-                            <input type="text" name="scheduled_date" id="schedule_date" class="form-control custom-datepicker form-control-solid mb-3 mb-lg-0">
+                            <input type="text" name="scheduled_date" id="schedule_date" class="form-control scheduled_date form-control-solid mb-3 mb-lg-0">
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Time </label>
-                            <input id="schedule_time" name="scheduled_time" class="form-control timepicker">
+                            <input id="schedule_time" name="scheduled_time" class="form-control scheduled_time">
                         </div>
 
                     </div>
