@@ -27,7 +27,7 @@
                                            <select class="form-control" name="type" onchange="changeDate();">
                                                <option value="today"  {{request('type') == 'today' ? 'selected' : ''}}>Today</option>
                                                <option value="yesterday" {{request('type') == 'yesterday' ? 'selected' : ''}}>Yesterday</option>
-                                               <option value="week" {{request('type') == 'week' ? 'selected' : ''}}>Last 7 Days</option>
+                                               <option value="week" {{request('type') == 'week' ? 'selected' : ''}}>This Week</option>
                                                <option value="month" {{request('type') == 'month' ? 'selected' : ''}}>This Month</option>
                                            </select>
 
