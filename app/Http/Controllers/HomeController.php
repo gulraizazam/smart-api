@@ -88,8 +88,6 @@ class HomeController extends Controller
             return [];
         }
 
-        $where = array();
-
         $filter = $this->getTableFilter($request->all());
 
         $today = Carbon::now()->format("Y-m-d");
@@ -114,23 +112,18 @@ class HomeController extends Controller
             }
         }
 
-        $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
-        $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
+        /*$consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
+        $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();*/
 
         $countQuery = Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
-        })/*->where([
-            ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-            ['appointments.appointment_type_id', '!=', $treatmentslug->id]
-        ])*/
+        })
         ->where('appointment_status_id', config('constants.appointment_status_pending'))
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres());
 
-        if (count($where)) {
-            $countQuery->where($where);
-        }
+        $countQuery->where('appointments.location_id', $this->getUserLocation());
 
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
 
@@ -145,13 +138,22 @@ class HomeController extends Controller
             $countQuery->whereBetween('appointments.scheduled_date', [$today, $end_month]);
         } else {
             $countQuery->whereDate('appointments.scheduled_date', $today);
+
             $countQuery->where('appointments.scheduled_time', '>=', $todayTime);
+        }
+
+        $totalCount = $countQuery->select('appointments.id')->get();
+
+        $todayCount = $totalCount->where('scheduled_date', $today);
+        if ($todayCount->count() > 0) {
+            $todayScheduled = $todayCount->where('scheduled_time', '<=', $todayTime);
+
+            $countQuery = $countQuery->whereNotIn('id',  $todayScheduled->pluck('id')->toArray());
         }
 
         $iTotalRecords = $countQuery->count();
 
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-       // dd($iDisplayLength, $iDisplayStart, $pages, $page);
 
         $records = array();
         $records["data"] = array();
@@ -172,9 +174,7 @@ class HomeController extends Controller
             $orderBy = 'appointments.name';
         }
 
-        if (auth()->id() != 1) {
-            $resultQuery->where('appointments.location_id', $this->getUserLocation());
-        }
+        $resultQuery->where('appointments.location_id', $this->getUserLocation());
 
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
 
