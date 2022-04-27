@@ -3315,7 +3315,7 @@ class AppointmentsController extends Controller
                             ])
                         );
 
-                        return ApiHelper::apiResponse($this->success, 'Event Updated Successfully');
+                        return ApiHelper::apiResponse($this->success, 'Appointment Updated Successfully');
                     }
                 }
 
@@ -4680,7 +4680,7 @@ class AppointmentsController extends Controller
                                 ])
                             );
 
-                            return ApiHelper::apiResponse($this->success, 'Event Updated Successfully.');
+                            return ApiHelper::apiResponse($this->success, 'Appointment Updated Successfully Updated Successfully.');
                         }
                     }
 
