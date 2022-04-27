@@ -1700,6 +1700,10 @@ class AppointmentsController extends Controller
 
             return ApiHelper::apiResponse($this->success, $message, true, [
                 'id' => $appointment->id,
+                'city_id' => $request->city_id,
+                'doctor_id' => $request->doctor_id,
+                'location_id' => $request->location_id,
+                'appointment_type' => 'consultancy',
             ]);
         }
 
@@ -1718,7 +1722,7 @@ class AppointmentsController extends Controller
         $appointment->appointment_type_id = 1;
 
         $rota = $this->checkRota($appointment, $request);
-        
+
         if ($rota['status']) {
 
             return [
