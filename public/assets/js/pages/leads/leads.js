@@ -1030,11 +1030,16 @@ let loadDoctors = function (locationId) {
 
      let form_id = 'modal_import_leads_form';
      let form = document.getElementById(form_id);
+     if ($(".leads_file").val() == '') {
+         addValidation($(".leads_file"))
+         return false;
+     }
 
      submitFileForm($(form).attr('action'), $(form).attr('method'), form_id, function (response) {
          if (response.status) {
              toastr.success(response.message);
-             //closePopup(modal_id);
+             closePopup("modal_import_leads_form");
+             reInitTable();
          } else {
              toastr.error(response.message);
          }
@@ -1051,3 +1056,22 @@ function skipStatus($this) {
         $(".skip_lead_status").css("opacity", 0.7);
     }
 }
+
+function addValidation(elem) {
+    
+    if (elem.val() == '') {
+        elem.addClass("is-invalid");
+        $(".lead_file_msg").removeClass("d-none");
+    } else {
+        elem.removeClass("is-invalid");
+        $(".lead_file_msg").addClass("d-none");
+    }
+}
+
+jQuery(document).ready( function () {
+
+    $(".leads_file").change( function () {
+        addValidation($(this))
+
+    })
+});
