@@ -1594,8 +1594,7 @@ class LeadsController extends Controller
     public function uploadLeads(FileUploadLeadsRequest $request)
     {
         if (!Gate::allows('leads_import')) {
-            flash('You are not authorized to access this resource.')->error()->important();
-            return redirect()->route('admin.leads.index');
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         try {
