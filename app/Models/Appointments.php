@@ -478,10 +478,6 @@ class Appointments extends Model
 
         $nodeList = array();
 
-        if ($drop_down) {
-            $nodeList[''] = 'Select a Child Service';
-        }
-
         if (count($services)) {
             foreach ($services as $key => $service) {
                 if ($key < 0) {
