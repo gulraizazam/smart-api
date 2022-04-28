@@ -123,6 +123,7 @@ function editRow(url) {
 }
 
 function setEditData(response) {
+
     let machine_type = response.data.machine_type;
     let services = response.data.services;
     let service_machine_type = response.data.service_machine_type;
@@ -145,6 +146,20 @@ function setEditData(response) {
     $("#edit_machine_types_services").html(service_options);
     $("#edit_machine_types_services").val(service_machine_type).change();
 
+    setServiceScroll();
+
+}
+
+function setServiceScroll() {
+
+    setTimeout( function () {
+        let elem = $("#modal_edit_machine_types_form").find(".selection").find("ul");
+        height = elem.height();
+        if (height > 28.57) {
+            elem.css("height", "150px");
+            elem.css("overflow-y", "scroll");
+        }
+    }, 400);
 
 }
 
