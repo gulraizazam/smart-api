@@ -1,5 +1,5 @@
 .aside {
-  background-color: #1e1e2d;
+  background-color:  #043464;
 }
 .aside .aside-menu.ps > .ps__rail-x {
   background-color: transparent;
@@ -39,7 +39,7 @@
 }
 
 .aside-menu {
-  background-color: #1e1e2d;
+  background-color: #043464;
 }
 .aside-menu .menu-nav > .menu-item > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item > .menu-link .menu-text {
@@ -78,7 +78,7 @@
 }
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-heading,
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link {
-  background-color: #1b1b28;
+  background-color: #02203d;
 }
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-text {
@@ -156,7 +156,7 @@
 }
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-heading,
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link {
-  background-color: #1b1b28;
+  background-color: #02203d;
 }
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link .menu-text {
@@ -195,7 +195,7 @@
 }
 .aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-heading,
 .aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link {
-  background-color: #1b1b28;
+  background-color: #02203d;
 }
 .aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link .menu-text {
@@ -229,7 +229,7 @@
   color: #ffffff;
 }
 .aside-menu .menu-nav > .menu-item > .menu-arrow {
-  color: #1e1e2d;
+  color: #043464;
 }
 .aside-menu .menu-nav > .menu-section .menu-text {
   color: #4c4e6f;
@@ -351,7 +351,7 @@
 }
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-heading,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link {
-  background-color: #1b1b28;
+  background-color: #02203d;
 }
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link .menu-text {
@@ -390,7 +390,7 @@
 }
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-heading,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link {
-  background-color: #1b1b28;
+  background-color: #02203d;
 }
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link .menu-text {

@@ -544,12 +544,12 @@ div > input {
 }
 
 .horizontal-nav-bar-li a:hover {
-    background-color: #1e1e2d;
+    background-color: #043464;
     color: #fff;
 }
 
 .nav-bar-active{
-    background-color: #1e1e2d;
+    background-color: #043464;
     color: #fff !important;
 }
 .fa_icon i{
@@ -767,7 +767,7 @@ div > input {
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
-    background-color: #013162;
+    background-color: #043464;
     padding: 5px 5px 5px 5px;
     width: 90%;
     border-radius: 5px;
@@ -784,7 +784,4 @@ div > input {
 }
 .fc-time-grid-event {
     cursor: pointer !important;
-}
-.selection > .select2-selection__rendered {
-    height: 200px;
 }
