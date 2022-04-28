@@ -110,7 +110,7 @@ var loadEndServices = function (baseServiceId) {
             success: function(response) {
                 if(response.status) {
                     let services = response.data.services;
-                    let service_option = '<option value="">Select Service</option>';
+                    let service_option = '<option value="">Select a Child Service</option>';
 
                     Object.entries(services).forEach( function (service) {
                         service_option += '<option value="'+service[0]+'">'+service[1]+'</option>';
