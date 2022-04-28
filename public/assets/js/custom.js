@@ -193,14 +193,13 @@ $(document).ready(function () {
     /*Search filter working by press enter for input field*/
     $("input").on('keyup', function (e) {
         if (e.key === 'Enter' || e.keyCode === 13) {
-            $('#apply-filters').click();
+            submitFilters();
         }
     });
 
     $(document).on('keyup', '.select2-search__field', function (e) {
         if (e.key === 'Enter' || e.keyCode === 13) {
-            $('#apply-filters').click();
-           // reInitSelect2('.select2', 'All');
+           submitFilters();
         }
     });
 
@@ -223,6 +222,22 @@ $(document).ready(function () {
     });
 
 });
+
+function submitFilters() {
+
+    $('#apply-filters').click();
+    $('#appointment-form-search').click();
+    $('#medical-search').click();
+    $('#custom-form-search').click();
+    $('#measurement-search').click();
+    $('#document-search').click();
+    $('#plan-search').click();
+    $('#invoice-search').click();
+    $('#refund-search').click();
+    $('#o-plan-refund-search').click();
+    $('#finance-search').click();
+
+}
 
 function customDatePicker() {
 
