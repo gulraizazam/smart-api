@@ -65,16 +65,16 @@ var table_columns = [
             }
         }
     },{
+        field: 'location_id',
+        title: 'Centre',
+        width: 'auto',
+    },{
         field: 'city_id',
         title: 'City',
         width: 'auto',
     },{
         field: 'region_id',
         title: 'Region',
-        width: 'auto',
-    },{
-        field: 'location_id',
-        title: 'Centre',
         width: 'auto',
     },{
         field: 'consultancy_type',
