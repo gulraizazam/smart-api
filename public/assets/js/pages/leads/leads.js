@@ -1058,7 +1058,7 @@ function skipStatus($this) {
 }
 
 function addValidation(elem) {
-    
+
     if (elem.val() == '') {
         elem.addClass("is-invalid");
         $(".lead_file_msg").removeClass("d-none");

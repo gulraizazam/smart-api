@@ -1,18 +1,18 @@
 @push("css")
     <style>
-        .type-filter .select2 {
+        .service-filter .select2 {
             width: 135% !important;
         }
-        .service-filter .select2 {
+        .type-filter .select2 {
             margin-left: 4%;
             width: 80% !important;
         }
 
-        .center-filter .select2 {
-            margin-left: -27%;
-            width: 80%;
-        }
         .doctor-filter .select2 {
+            margin-left: -27%;
+            width: 80% !important
+        }
+        .center-filter .select2 {
             margin-left: -89%;
             width: 195% !important;
         }
@@ -66,26 +66,27 @@
             </div>
         </div>
 
-        <div class="col-lg-1 mb-lg-0 mb-6 type-filter">
-            <label>Type:</label>
-            <select class="form-control filter-field select2" id="appoint_search_type"></select>
-        </div>
-
-        <div class="col-lg-2 mb-lg-0 mb-6 service-filter">
+        <div class="col-lg-1 mb-lg-0 mb-6 service-filter">
             <label>Service:</label>
             <select class="form-control filter-field select2" id="appoint_search_service"></select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 center-filter">
-            <label style="margin-left: -27%;">Centre:</label>
-            <br>
-            <select class="form-control filter-field select2" id="appoint_search_centre"></select>
+        <div class="col-lg-2 mb-lg-0 mb-6 type-filter">
+            <label>Type:</label>
+            <select class="form-control filter-field select2" id="appoint_search_type"></select>
+
         </div>
 
-        <div class="col-lg-1 mb-lg-0 mb-6 doctor-filter">
-            <label style="margin-left: -89%;">Doctor:</label>
+        <div class="col-lg-2 mb-lg-0 mb-6 doctor-filter">
+            <label style="margin-left: -27%;">Doctor:</label>
             <br>
             <select class="form-control filter-field select2" id="appoint_search_doctor"></select>
+        </div>
+
+        <div class="col-lg-1 mb-lg-0 mb-6 center-filter">
+            <label style="margin-left: -89%;">Centre:</label>
+            <br>
+            <select class="form-control filter-field select2" id="appoint_search_centre"></select>
         </div>
 
     </div>
