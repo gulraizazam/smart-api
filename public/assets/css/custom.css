@@ -785,3 +785,6 @@ div > input {
 .fc-time-grid-event {
     cursor: pointer !important;
 }
+.selection > .select2-selection__rendered {
+    height: 200px;
+}
