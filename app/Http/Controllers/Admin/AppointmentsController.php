@@ -823,17 +823,6 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
         }
 
-
-        if (hasFilter($filters, 'location_id')) {
-            $where[] = array(
-                'location_id',
-                '=',
-                $filters['location_id']
-            );
-
-            Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
-        }
-
         if (hasFilter($filters, 'service_id')) {
             $where[] = array(
                 'service_id',
@@ -966,6 +955,16 @@ class AppointmentsController extends Controller
             $countQuery->where($where);
         }
 
+        if (hasFilter($filters, 'location_id')) {
+            $ids = explode(',', $filters['location_id']);
+
+            if (count($ids) > 1) {
+                $countQuery->whereIn('location_id', $ids);
+            } else {
+                $countQuery->where('location_id', $ids);
+            }
+        }
+
         if (hasFilter($filters, 'name')) {
             $countQuery->where(function ($query) use ($filters) {
                 $query->where(
@@ -1026,6 +1025,16 @@ class AppointmentsController extends Controller
         }
         if (count($where)) {
             $resultQuery->where($where);
+        }
+
+        if (hasFilter($filters, 'location_id')) {
+            $ids = explode(',', $filters['location_id']);
+
+            if (count($ids) > 1) {
+                $resultQuery->whereIn('location_id', $ids);
+            } else {
+                $resultQuery->where('location_id', $ids);
+            }
         }
 
         if (hasFilter($filters, 'name')) {

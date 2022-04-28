@@ -65,8 +65,8 @@ class HomeController extends Controller
         list($start_date, $end_date) = $this->getDates($request);
 
         $data = $this->recentActivities($data);
-        $data = $this->consultancies($data, $start_date, $end_date, $location_id);
-        $data = $this->treatments($data, $start_date, $end_date, $location_id);
+        $data = $this->consultancies($data, $start_date, $end_date);
+        $data = $this->treatments($data, $start_date, $end_date);
         $data = $this->leads($data, $location_id);
         $data = $this->salesByCentre($request, $data);
 
@@ -74,7 +74,12 @@ class HomeController extends Controller
         $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
         $data['month'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['currentTime'] = Carbon::now()->timezone($timeZone)->format("H:i:s");
-        $data['location_id'] = $location_id;
+
+        if (auth()->id() == 1) {
+            $data['location_id'] = [];
+        } else {
+            $data['location_id'] = ACL::getUserCentres();
+        }
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
@@ -1051,7 +1056,7 @@ class HomeController extends Controller
         return [];
     }
 
-    private function consultancies($data, $start_date, $end_date, $location_id) {
+    private function consultancies($data, $start_date, $end_date) {
 
         if (!Gate::allows('dashboard_states')) {
             $data['all_consultancies'] = null;
@@ -1062,7 +1067,7 @@ class HomeController extends Controller
 
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
-            ->where('location_id', $location_id);
+            ->whereIn('location_id', ACL::getUserCentres());
 
         $data['all_consultancies'] = $query->count();
 
@@ -1072,7 +1077,7 @@ class HomeController extends Controller
         return $data;
     }
 
-    private function treatments($data, $start_date, $end_date, $location_id) {
+    private function treatments($data, $start_date, $end_date) {
 
         if (!Gate::allows('dashboard_states')) {
             $data['all_treatments'] = null;
@@ -1083,10 +1088,7 @@ class HomeController extends Controller
 
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_service'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
-            ->where('location_id', $location_id);
-        /*if (auth()->id() != 1) {
-            $query->whereIn('location_id', ACL::getUserCentres());
-        }*/
+            ->whereIn('location_id', ACL::getUserCentres());
 
         $data['all_treatments'] = $query->count();
 
