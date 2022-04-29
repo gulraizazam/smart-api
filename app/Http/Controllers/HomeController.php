@@ -1224,7 +1224,7 @@ class HomeController extends Controller
             }
         }
 
-       // $finance_log = collect($finance_log)->where('payment_mode_id', 'Cash');
+        //$finance_log = collect($finance_log)->where('payment_mode_id', 'Cash');
 
 
         $appointment_log = $this->viewLog();

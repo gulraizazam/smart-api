@@ -738,6 +738,6 @@
     color: white;
 }
 
-.horizontal-nav-bar .horizontal-nav-bar-li a:hover{
-    color: white;
+horizontal-nav-bar-li  .font-icon:hover{
+    color: white !important;
 }
