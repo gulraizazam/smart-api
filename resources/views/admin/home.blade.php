@@ -141,7 +141,7 @@
                     {{--Activity--}}
                     <div class="col-lg-6 col-xxl-6">
                         <!--begin::List Widget 9-->
-                        <div class="card card-custom card-stretch gutter-b" style="height: 600px; overflow-y: scroll;">
+                        <div class="card card-custom card-stretch gutter-b" style="height: 600px; overflow-y: auto;">
                             <!--begin::Header-->
                             <div class="card-header align-items-center border-0 mt-4">
                                 <h3 class="card-title align-items-start flex-column">
