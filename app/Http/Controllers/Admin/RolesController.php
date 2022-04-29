@@ -665,6 +665,7 @@ class RolesController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
+
             unset($request['DataTables_Table_0_length']);
             $role = Role::findOrFail($id);
             $role->update($request->except('permission'));

@@ -737,16 +737,16 @@ class AppointmentsController extends Controller
 
         if ($request->has('sort')) {
 
-            list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC', 'appointments');
+            list($orderBy, $order) = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
 
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'appointments', 'order', $order);
         } else {
 
-            $orderBy = 'created_at';
+            $orderBy = 'scheduled_date';
             $order = 'desc';
-            if ($orderBy == 'created_at') {
-                $orderBy = 'appointments.created_at';
+            if ($orderBy == 'scheduled_date') {
+                $orderBy = 'appointments.scheduled_date';
 
                 Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
                 Filters::put(Auth::User()->id, 'appointments', 'order', $order);
