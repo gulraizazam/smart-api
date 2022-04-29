@@ -5631,5 +5631,4 @@ class AppointmentsController extends Controller
 
     }
 
-
 }

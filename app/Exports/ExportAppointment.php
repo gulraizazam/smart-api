@@ -10,6 +10,7 @@ use App\Models\LeadStatuses;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -71,10 +72,16 @@ class ExportAppointment implements FromCollection, WithHeadings, WithMapping, Wi
             $consultancy_type = 'N/A';
         }
 
+        if (!Gate::allows('contact')) {
+            $phone = '***********';
+        } else {
+            $phone = $appointment->phone ?? 'N/A';
+        }
+
         return [
             GeneralFunctions::patientSearchStringAdd($appointment->id),
             $appointment->name ?? 'N/A',
-            $appointment->phone ?? 'N/A',
+            $phone,
             Carbon::parse($appointment->scheduled_date)->format('F j,Y h:i A') ?? 'N/A',
             $appointment->doctor->name ?? 'N/A',
             $appointment->region->name ?? 'N/A',
