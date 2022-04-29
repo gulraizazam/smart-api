@@ -9,7 +9,7 @@ var table_columns = [
     },{
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 90,
     },{
         field: 'scheduled_date',
         title: 'Scheduled',
@@ -17,11 +17,11 @@ var table_columns = [
     },{
         field: 'doctor_id',
         title: 'Doctor',
-        width: 'auto',
+        width: 100,
     },{
         field: 'city_id',
         title: 'City',
-        width: 'auto',
+        width: 80,
     },{
         field: 'location_id',
         title: 'Centre',
