@@ -552,6 +552,10 @@ div > input {
     background-color: #043464;
     color: #fff !important;
 }
+
+.horizontal-nav-bar-li a.change-tab.nav-bar-active span.text-muted i{
+    color: white !important;
+}
 .fa_icon i{
     font-size: 23px;
 }
@@ -786,3 +790,11 @@ div > input {
     cursor: pointer !important;
 }
 
+
+.horizontal-nav-bar-li a.change-tab:hover span.text-muted i{
+    color: white;
+}
+#personal_info .form-group strong{
+    width: 85px;
+    display: inline-block;
+}

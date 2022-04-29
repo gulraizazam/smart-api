@@ -741,3 +741,6 @@
 horizontal-nav-bar-li  .font-icon:hover{
     color: white !important;
 }
+.horizontal-nav-bar-li a:hover fa_icon i{
+    color: white;
+}

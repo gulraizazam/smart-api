@@ -237,7 +237,7 @@ class PackageAdvancesController extends Controller
         // Get Total Records
         $iTotalRecords = PackageAdvances::getTotalRecords( $request, Auth::user()->account_id, $patient_id , $apply_filter,$jason_var );
 
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC');
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $packagesadvances = PackageAdvances::getRecords( $request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $patient_id, $apply_filter,$jason_var );
