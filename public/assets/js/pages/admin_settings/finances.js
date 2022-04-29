@@ -6,17 +6,17 @@ var table_columns = [
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'patient',
         title: 'Patient',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'phone',
         title: 'Phone',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'transtype',
         title: 'Transaction type',
@@ -26,21 +26,21 @@ var table_columns = [
         field: 'cash_in',
         title: 'Cash In',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'cash_out',
         title: 'Cash Out',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'balance',
         title: 'Balance',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'created_at',
         title: 'Created at',
-        width: 'auto',
+        width: 150,
     }];
 
 function applyFilters(datatable) {

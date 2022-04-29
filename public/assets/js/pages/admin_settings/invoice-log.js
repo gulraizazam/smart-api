@@ -7,37 +7,37 @@ var table_columns = [
         field: 'cash_flow',
         title: 'Cash Flow',
         sortable: false,
-        width: 300,
+        width: 80,
     },{
         field: 'cash_amount',
         title: 'Cash Amount',
         sortable: false,
-        width: 'auto',
+        width: 90,
     },{
         field: 'is_refund',
         title: 'Refund',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'is_adjustment',
         title: 'Adjustment',
         sortable: false,
-        width: 'auto',
+        width: 100,
     },{
         field: 'is_tax',
         title: 'Tax',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'is_cancel',
         title: 'Cancel',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'refund_note',
         title: 'Refund Note',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'payment_mode_id',
         title: 'Payment Mode',
@@ -47,24 +47,24 @@ var table_columns = [
         field: 'appointment_type_id',
         title: 'Appointment Type',
         sortable: false,
-        width: 'auto',
+        width: 100,
     },{
         field: 'location_id',
         title: 'Location',
         sortable: false,
         width: 'auto',
     },{
+        field: 'package_id',
+        title: 'Plan',
+        sortable: false,
+        width: 'auto',
+    }, {
         field: 'created_by',
         title: 'Created By',
         width: 'auto',
     }, {
         field: 'updated_by',
         title: 'Updated By',
-        sortable: false,
-        width: 'auto',
-    }, {
-        field: 'package_id',
-        title: 'Plan',
         sortable: false,
         width: 'auto',
     }, {
