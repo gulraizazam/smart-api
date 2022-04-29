@@ -478,6 +478,7 @@ class LeadsController extends Controller
                 'inactive' => Gate::allows('leads_inactive'),
                 'create' => Gate::allows('leads_create'),
                 'convert' => Gate::allows('leads_convert'),
+                'contact' => Gate::allows('contact'),
             ];
 
             return ApiHelper::apiDataTable($records);
@@ -992,23 +993,20 @@ class LeadsController extends Controller
      *
      * @param \Illuminate\Http\Request $request
      * @param int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         $data = array($request, $id);
 
         if (!Gate::allows('leads_edit')) {
-            return abort(401);
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ));
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         $lead = Leads::findOrFail($id);

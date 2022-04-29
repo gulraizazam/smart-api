@@ -1168,6 +1168,7 @@ class AppointmentsController extends Controller
             'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
             'plans_create' => Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
+            'contact' => Gate::allows('contact'),
         ];
 
         return ApiHelper::apiDataTable($records);

@@ -653,11 +653,18 @@ function setEditData(response) {
         $("#edit_gender_id").val(lead.patient.gender);
         $("#edit_lead_source_id").val(lead.lead_source_id);
         $("#edit_lead_status_id").val(lead.lead_status_id);
-        $("#edit_phone").val(lead.patient.phone);
         $("#edit_full_name").val(lead.patient.name);
-
         $("#edit_patient_id").val(lead.patient.id);
+
         $("#edit_lead_id").val(lead.id);
+
+        $("#edit_old_phone").val(lead.patient.phone);
+
+        if (permissions.contact) {
+            $("#edit_phone").val(lead.patient.phone);
+        } else {
+            $("#edit_phone").val("***********").attr("readonly", true);
+        }
 
     } catch (error) {
         showException(error);

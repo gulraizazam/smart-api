@@ -82,6 +82,7 @@
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Phone <span class="text text-danger">*</span> </label>
                             <input oninput="phoneField(this);" type="text" name="phone" id="edit_patient_phone" class="form-control">
+                            <input type="hidden" name="old_phone" id="edit_old_patient_phone">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">

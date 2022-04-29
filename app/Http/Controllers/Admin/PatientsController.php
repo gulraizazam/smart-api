@@ -236,7 +236,13 @@ class PatientsController extends Controller
          * To validate phone number with unique
          */
         $data = $request->all();
-        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+
+        if($request->input('phone') == '***********'){
+            GeneralFunctions::cleanNumber($data['old_phone']);
+        } else {
+
+            $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        }
 
         return Validator::make($data, [
             'email' => 'sometimes|nullable|email',
@@ -380,6 +386,7 @@ class PatientsController extends Controller
                     'active' => Gate::allows('patients_active'),
                     'inactive' => Gate::allows('patients_inactive'),
                     'manage' => Gate::allows('patients_manage'),
+                    'contact' => Gate::allows('contact'),
                 ],
             ]);
         }
