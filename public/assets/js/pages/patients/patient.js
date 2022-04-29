@@ -34,6 +34,12 @@ var table_columns = [
         title: 'Phone',
         width: 90,
         sortable: false,
+        template: function (data) {
+            if (permissions.contact) {
+                return data.phone;
+            }
+            return '***********';
+        }
     },{
         field: 'gender',
         title: 'Gender',
