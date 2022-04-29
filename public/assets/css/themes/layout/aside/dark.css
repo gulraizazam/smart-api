@@ -731,7 +731,10 @@
 }
 .aside-menu .menu-nav .menu-item > .menu-heading:hover, .aside-menu .menu-nav .menu-item > .menu-link:hover{
     background-color: #043464 !important;
+    color: white;
 }
-.font-icon:hover{
-    color: white !important;
+
+.aside-menu .menu-nav .menu-item > .menu-link:hover .font-icon,.aside-menu .menu-nav .menu-item > .menu-link:hover.menu-text{
+    color: white;
 }
+
