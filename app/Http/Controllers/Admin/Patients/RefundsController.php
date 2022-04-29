@@ -378,15 +378,16 @@ class RefundsController extends Controller
                 );
             }
 
-            $records["meta"] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
         }
+
+        $records["meta"] = [
+            'field' => $orderBy,
+            'page' => $page,
+            'pages' => $pages,
+            'perpage' => $iDisplayLength,
+            'total' => $iTotalRecords,
+            'sort' => $order,
+        ];
 
         return ApiHelper::apiDataTable($records);
     }
