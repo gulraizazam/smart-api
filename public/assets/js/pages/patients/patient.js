@@ -169,7 +169,14 @@ function setEditData(response) {
     $("#edit_gender_id").html(gender_option);
     $("#edit_name").val(patient.name);
     $("#edit_email").val(patient.email);
-    $("#edit_phone").val(patient.phone);
+    $("#edit_old_phone").val(patient.phone);
+
+    if (permissions.contact) {
+        $("#edit_phone").val(patient.phone);
+    } else {
+        $("#edit_phone").val("***********").attr("readonly", true);
+    }
+
     $("#edit_gender_id").val(patient.gender);
 
 }

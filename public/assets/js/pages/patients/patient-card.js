@@ -40,6 +40,7 @@ function getPatient() {
 
 function setPatientData(response) {
 
+   let permission = response.data.permissions
     if (response?.data?.patient) {
         let patient = response.data.patient;
 
@@ -48,7 +49,15 @@ function setPatientData(response) {
         $("#patient_id").text(makePatientId(patient.id));
         $("#patient_name").text(patient.name);
         $("#patient_email").text(patient.email);
-        $("#patient_phone").text(patient.phone);
+
+        if (permission.contact) {
+            $("#patient_phone").text(patient.phone);
+        } else {
+            $("#patient_phone").text("***********");
+        }
+
+
+
         $("#patient_gender").text(getGender(patient.gender));
 
         $(".statuses").addClass("d-none");

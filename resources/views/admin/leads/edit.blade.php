@@ -30,7 +30,6 @@
 
             <input type="hidden" name="patient_id" id="edit_patient_id" value="">
             <input type="hidden" name="id" id="edit_lead_id" value="">
-            <input type="hidden" name="old_phone" id="edit_old_phone" value="">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -65,6 +64,8 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
 
                             <input type="text" oninput="phoneField(this);" id="edit_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
+                            <input type="hidden" id="edit_old_phone" name="old_phone">
+
                             <div class="suggesstion-box">
                                 <ul class="suggestion-list"></ul>
                             </div>

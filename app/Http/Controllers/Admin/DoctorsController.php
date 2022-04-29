@@ -149,6 +149,7 @@ class DoctorsController extends Controller
                 'inactive' => Gate::allows('doctors_inactive'),
                 'delete' => Gate::allows('doctors_destroy'),
                 'allocate' => Gate::allows('doctors_allocate'),
+                'contact' => Gate::allows('contact'),
             ];
 
             $filters = Filters::all(Auth::User()->id, 'doctors');

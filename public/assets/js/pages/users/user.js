@@ -284,9 +284,16 @@ function setEditData(response) {
 
     $("#edit_user_name").val(user.name);
     $("#edit_user_email").val(user.email);
-    $("#edit_user_phone").val(user.phone);
     $("#edit_user_gender").val(user.gender);
     $("#edit_user_commission").val(user.commission);
+
+    $("#edit_old_user_phone").val(user.phone);
+
+    if (permissions.contact) {
+        $("#edit_user_phone").val(user.phone);
+    } else {
+        $("#edit_user_phone").val("***********").attr("readonly", true);
+    }
 
     $('#edit_user_roles').val(user_roles).change();
 

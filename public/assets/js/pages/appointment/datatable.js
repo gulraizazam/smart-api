@@ -455,14 +455,14 @@ function actions(data) {
         if (permissions.edit) {
             if(data.appointment_type==1) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`, `detail-actions`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
             } else if(data.appointment_type==2) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `treatment-detail-actions`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
@@ -723,12 +723,14 @@ function editRow(url, id, $class = 'detail-actions') {
         type: "GET",
         cache: false,
         success: function (response) {
+
             if ($class === 'detail-actions') {
                 setEditData(response);
+                reInitTable();
             } else {
                 setTreatmentEditData(response);
+                reInitTable();
             }
-
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -795,7 +797,15 @@ function setEditData(response) {
         $("#edit_scheduled_time").val(appointment.scheduled_time);
         $("#scheduled_time_old").val(appointment.scheduled_time);
         $("#edit_patient_name").val(appointment?.patient?.name);
-        $("#edit_patient_phone").val(appointment?.patient?.phone);
+
+        $("#edit_old_patient_phone").val(appointment?.patient?.phone);
+
+        if (permissions.contact) {
+            $("#edit_patient_phone").val(appointment?.patient?.phone);
+        } else {
+            $("#edit_patient_phone").val("***********").attr("readonly", true);
+        }
+
         $("#back-date").val(back_date_config.data);
         $("#old_phone").val(appointment?.lead?.patient?.phone);
         $("#lead_id").val(appointment?.lead_id);
@@ -874,9 +884,15 @@ function setTreatmentEditData(response) {
         $("#scheduled_treatment_time_old").val(appointment.scheduled_time);
 
         $("#edit_treatment_patient_name").val(appointment?.patient?.name);
-        $("#edit_treatment_patient_phone").val(appointment?.patient?.phone);
 
-        $("#treatment_old_phone").val(appointment?.lead?.patient?.phone);
+        if (permissions.contact) {
+            $("#edit_treatment_patient_phone").val(appointment?.patient?.phone);
+        } else {
+            $("#edit_treatment_patient_phone").val("***********").attr("readonly", true);
+        }
+
+        $("#edit_old_treatment_patient_phone").val(appointment?.lead?.patient?.phone);
+
         $("#treatment_leadId").val(appointment?.lead_id);
         $("#treatment_appointment_id").val(appointment?.id);
         $("#treatment_resourceRotaDayID").val(resourceHadRotaDay?.id);

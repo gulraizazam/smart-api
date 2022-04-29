@@ -398,6 +398,7 @@ class UsersController extends Controller
                 'active' => Gate::allows('users_active'),
                 'inactive' => Gate::allows('users_inactive'),
                 'delete' => Gate::allows('users_destroy'),
+                'contact' => Gate::allows('contact'),
             ];
 
             $records["meta"] = [
