@@ -1,5 +1,5 @@
 .aside {
-  background-color:  #043464;
+  background-color:  #02203d;
 }
 .aside .aside-menu.ps > .ps__rail-x {
   background-color: transparent;
@@ -39,7 +39,7 @@
 }
 
 .aside-menu {
-  background-color: #043464;
+  background-color: #02203d;
 }
 .aside-menu .menu-nav > .menu-item > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item > .menu-link .menu-text {
@@ -78,7 +78,7 @@
 }
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-heading,
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link {
-  background-color: #02203d;
+  /*background-color: #043464;*/
 }
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-text {
@@ -156,7 +156,7 @@
 }
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-heading,
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link {
-  background-color: #02203d;
+  background-color: #043464;
 }
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link .menu-text {
@@ -351,7 +351,7 @@
 }
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-heading,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link {
-  background-color: #02203d;
+  background-color: #043464;
 }
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-heading .menu-text,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link .menu-text {
@@ -728,4 +728,10 @@
 .aside-menu.aside-menu-dropdown .menu-nav .menu-item:not([data-menu-submenu-mode=accordion]).menu-item-hover > .menu-submenu .menu-subnav .menu-separator {
     border-bottom: 1px solid rgba(0, 0, 0, 0.07);
   }
+}
+.aside-menu .menu-nav .menu-item > .menu-heading:hover, .aside-menu .menu-nav .menu-item > .menu-link:hover{
+    background-color: #043464 !important;
+}
+.font-icon:hover{
+    color: white !important;
 }
