@@ -92,7 +92,7 @@ function changeProfilePage($this, page_id) {
 
     $(".toolbar-" + page_id).removeClass("d-none");
 
-    if (page_id != 'personal_info') {
+    if (page_id != 'personal_info' || page_id != 'change_profile_picture') {
         $("#kt_profile_aside").addClass("d-none");
         $(".main-patient-section").attr("style", "margin-left: 0px !important");
     }
