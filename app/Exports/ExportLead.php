@@ -9,6 +9,7 @@ use App\Models\LeadStatuses;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -70,10 +71,15 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function map($lead): array
     {
+        if (!Gate::allows('contact')) {
+            $phone = '***********';
+        } else {
+            $phone = $lead->phone ?? 'N/A';
+        }
         return [
             GeneralFunctions::patientSearchStringAdd($lead->id),
             $lead->name ?? 'N/A',
-            $lead->phone ?? 'N/A',
+            $phone,
             $lead->city->name ?? 'N/A',
             $lead->region->name ?? 'N/A',
             $lead->lead_status->name ?? 'N/A',
