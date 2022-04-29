@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Appointments;
+use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -23,10 +24,17 @@ class AppointmentExport implements FromCollection, WithHeadings,ShouldAutoSize
     {
 
         foreach($this->filters['reportData'] as $reportRow) {
+
+            if (!Gate::allows('contact')) {
+                $phone = '***********';
+            } else {
+                $phone = $reportRow->patient->phone ?? 'N/A';
+            }
+
             $records[] = array(
                 'ID' => $reportRow->patient_id,
                 'Client' => $reportRow->patient->name,
-                'Phone' => $reportRow->patient->phone,
+                'Phone' => $phone,
                 'Email' => $reportRow->patient->email,
                 'Scheduled' => ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-',
                 'Doctor' => (array_key_exists($reportRow->doctor_id, $this->filters['doctors'])) ? $this->filters['doctors'][$reportRow->doctor_id]->name : '',
