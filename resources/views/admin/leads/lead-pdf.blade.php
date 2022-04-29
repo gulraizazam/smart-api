@@ -13,10 +13,17 @@
         </tr>
 
         @foreach($leads as $lead)
+            @php
+                if (!Gate::allows('contact')) {
+                   $phone = '***********';
+               } else {
+                   $phone = $lead->phone ?? 'N/A';
+               }
+            @endphp
             <tr style="font-size: 14px; background-color: #f6f6f6;">
                 <td style="padding: 10px 5px 10px 5px;">C-{{$lead->id ?? $loop->iteration}}</td>
                 <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->name ?? 'N/A'}}</td>
-                <td style="padding: 10px 5px 10px 5px;">{{$lead->phone ?? 'N/A'}}</td>
+                <td style="padding: 10px 5px 10px 5px;">{{$phone ?? 'N/A'}}</td>
                 <td style="padding: 10px 5px 10px 5px;">{{$lead->city->name ?? 'N/A'}} </td>
                 <td style="padding: 10px 5px 10px 5px;">{{$lead->region->name ?? 'N/A'}}</td>
                 <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->lead_status->name ?? 'N/A'}}</td>
