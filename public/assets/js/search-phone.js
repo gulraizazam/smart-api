@@ -177,7 +177,9 @@ function selectPatient(phone, patient_id, form_type) {
             $('#' +form_type+ 'full_name').val(response.name);
             $('#' +form_type+ 'city_id').val(response.city_id).select2().trigger('change');
             $('#' +form_type+ 'lead_source_id').val(response.lead_source_id).select2().trigger('change');
-            $('#' +form_type+ 'lead_status_id').val(response.lead_status_id).select2().trigger('change');
+            if (response.lead_status_id) {
+                $('#' +form_type+ 'lead_status_id').val(response.lead_status_id).select2().trigger('change');
+            }
             $('#' +form_type+ 'patient_id').val(response.patient_id);
             $('#' +form_type+ 'referred_by_id').val(response.referred_by);
         }
