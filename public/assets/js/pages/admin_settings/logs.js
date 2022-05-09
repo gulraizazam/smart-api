@@ -20,7 +20,7 @@ var table_columns = [
         width: 'auto',
         sortable: false,
         template: function (data) {
-            return data.audit_table.screen;
+            return data?.audit_table?.screen ?? 'N/A';
         }
     },
     {

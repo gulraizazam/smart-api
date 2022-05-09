@@ -8,8 +8,11 @@
 
 namespace App\Helpers;
 
+use App\Models\AppointmentLog;
 use App\Models\Appointments;
+use App\Models\Locations;
 use App\Models\Services;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -309,6 +312,26 @@ class GeneralFunctions
             $options['Others']["##head_office_phone##"] = 'Head Office Phone';
         }
         return $options;
+    }
+
+    public static function saveAppointmentLogs($action, $screen, $data) {
+
+        try {
+
+            AppointmentLog::create([
+                'action_by' => auth()->user()->name ?? 'Admin',
+                'action_for' => $data->name ?? '',
+                'action' => $action,
+                'screen' => $screen,
+                'address' => Locations::find($data->location_id ?? 0)->name ?? '',
+                'date' => Carbon::now()->timezone("Asia/Karachi")->format("Y-m-d"),
+                'time' => Carbon::now()->timezone("Asia/Karachi")->format("h:i:s"),
+                'type' => $action,
+            ]);
+        } catch (\Exception $e) {
+           //
+        }
+
     }
 
 }

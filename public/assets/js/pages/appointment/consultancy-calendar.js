@@ -279,7 +279,7 @@ var ConsultancyCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.success("unabled to process the request, please try again.")
+                    toastr.success("unable to process the request, please try again.")
                 }
             });
         },
@@ -314,7 +314,7 @@ var ConsultancyCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error("Unabled to process the request");
+                    toastr.error("Unable to process the request");
                 }
             });
 
@@ -346,7 +346,7 @@ function clickEvent(info, jsEvent, view) {
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                toastr.error("Unabled to process the request.")
+                toastr.error("Unable to process the request.")
             }
         });
 

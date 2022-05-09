@@ -1365,7 +1365,13 @@ class AppointmentsController extends Controller
     protected function verifyFields(Request $request, $id = null)
     {
         $data = $request->all();
-        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+
+        $phone = $data['phone'];
+        if ($data['phone'] == '***********') {
+            $phone = $data['old_phone'];
+        }
+
+        $data['phone'] = GeneralFunctions::cleanNumber($phone);
 
         if (is_null($request->new_patient)) {
             return Validator::make($data, [
@@ -1421,6 +1427,7 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
+
         $rotaCheck = $this->scheduledConsultancy($request);
 
         if ($rotaCheck['status']) {
@@ -1428,7 +1435,15 @@ class AppointmentsController extends Controller
             // Store form data in a variable
             $appointmentData = $request->all();
             $appointmentData['account_id'] = Auth::user()->account_id;
-            $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
+
+            $phone = $appointmentData['phone'];
+            if ($appointmentData['phone'] == '***********') {
+                $phone = $appointmentData['old_phone'];
+            }
+
+            unset($appointmentData['old_phone']);
+
+            $appointmentData['phone'] = GeneralFunctions::cleanNumber($phone);
             $appointmentData['created_by'] = Auth::user()->id;
             $appointmentData['updated_by'] = Auth::user()->id;
             $appointmentData['converted_by'] = Auth::user()->id;
@@ -1591,8 +1606,14 @@ class AppointmentsController extends Controller
             $appointmentData['updated_by'] = Auth::User()->id;
 
 
-            $appointmentData['scheduled_date'] = Carbon::parse($request->scheduled_date)->format("Y-m-d");
-            $appointmentData['scheduled_time'] = Carbon::parse($request->scheduled_time)->format("H:i:s");
+            if ($request->scheduled_date && $request->scheduled_time) {
+                $appointmentData['scheduled_date'] = Carbon::parse($request->scheduled_date)->format("Y-m-d");
+                $appointmentData['scheduled_time'] = Carbon::parse($request->scheduled_time)->format("H:i:s");
+            } else {
+                $appointmentData['scheduled_date'] = Carbon::parse($request->start)->format("Y-m-d");
+                $appointmentData['scheduled_time'] = Carbon::parse($request->start)->format("H:i:s");
+            }
+
             $appointmentData['appointment_status_id'] = config('constants.appointment_status_pending');
 
             $appointment = Appointments::create($appointmentData);
@@ -2138,6 +2159,7 @@ class AppointmentsController extends Controller
             $cities = $cities->pluck('full_name', 'id');
         }
 
+        $appointment->scheduled_time = Carbon::parse($appointment->scheduled_time)->format("h:i A");
         if ($appointment->service_id) {
             $services = Services::where(['id' => $appointment->service_id])->get()->pluck('name', 'id');
             $serviceid = Services::where(['id' => $appointment->service_id])->first();
@@ -2468,8 +2490,10 @@ class AppointmentsController extends Controller
 //            unset($patientData['name']);
 //        }
 
+        GeneralFunctions::saveAppointmentLogs('updated', 'Consultancy', $appointment);
+
         $patient = Patients::updateRecord($lead->patient_id, $patientData);
-        //$patient->update($patientData);
+        $patient->update($patientData);
 
         /*
          * Lead Operations End
@@ -4212,8 +4236,14 @@ class AppointmentsController extends Controller
         }
         // Store form data in a variable
         $appointmentData = $request->all();
+
+        $phone = $appointmentData['phone'];
+        if ($appointmentData['phone'] == '***********') {
+            $phone = $appointmentData['old_phone'];
+        }
+
+        $appointmentData['phone'] = GeneralFunctions::cleanNumber($phone);
         $appointmentData['account_id'] = Auth::User()->account_id;
-        $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
         $appointmentData['created_by'] = Auth::user()->id;
         $appointmentData['updated_by'] = Auth::user()->id;
         $appointmentData['converted_by'] = Auth::user()->id;
@@ -4494,7 +4524,12 @@ class AppointmentsController extends Controller
     protected function verifyServiceFields(Request $request, $id = null)
     {
         $data = $request->all();
-        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+
+        $phone = $data['phone'];
+        if ($data['phone'] == '***********') {
+            $phone = $data['old_phone'];
+        }
+        $data['phone'] = GeneralFunctions::cleanNumber($phone);
 
         return Validator::make($data, [
             'name' => 'required',
