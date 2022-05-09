@@ -469,6 +469,27 @@ function actions(data) {
                     </li>';
             }
         }
+        if(data.appointment_type==1) {
+            if (permissions.consultancy) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
+                        <span class="navi-text">Consultancy</span>\
+                    </a>\
+                </li>';
+            }
+        }
+
+        if(data.appointment_type==2) {
+            if (permissions.treatment) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-medkit"></i></span>\
+                        <span class="navi-text">Treatment</span>\
+                    </a>\
+                </li>';
+            }
+        }
 
         actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
@@ -585,14 +606,6 @@ function actions(data) {
 
 function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
 
-    /*setQueryStringParameter('city_id');
-    setQueryStringParameter('location_id');
-    setQueryStringParameter('doctor_id');
-
-    $("#consultancy_city_filter").val('').trigger("change")
-    $("#consultancy_location_filter").val('').trigger("change")
-    $("#consultancy_doctor_filter").val('').trigger("change")*/
-
     if (type == 'appointment') {
         $(".export-appointments").show();
         reInitTable();
@@ -622,11 +635,11 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
 
         setTimeout( function () {
             $("#treatment_resource_filter").val(resource_id).trigger("change");
-        },700);
+        },1100);
 
         setTimeout( function () {
             $("#treatment_doctor_filter").val(doctor_id).trigger("change");
-        },800);
+        },1200);
 
 
     }
