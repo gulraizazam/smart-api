@@ -231,6 +231,17 @@
                 @if(request('create') != '' && request('create') !== null)
                     $("#create_lead").click()
                 @endif
+
+                @if(request('from') != '' && request('to') != '')
+                    setTimeout( function () {
+
+                        $("#search_created_from").val("{{request('from')}}");
+                        $("#search_created_to").val("{{request('to')}}");
+                        $("#apply-filters").click();
+
+                    }, 800);
+
+                @endif
             });
 
         </script>
