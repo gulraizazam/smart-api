@@ -73,7 +73,13 @@ function loadLeadData(value) {
         success: function (resposne) {
             if (resposne.status) {
                 patient = resposne.data.patient;
-                $('#add_phone').val(patient?.phone);
+
+                $('#add_old_phone').val(patient?.phone);
+                if (permissions.contact) {
+                    $('#add_phone').val(patient?.phone);
+                } else {
+                    $('#add_phone').val("***********");
+                }
                 $('#add_full_name').val(patient?.name);
                 $('#add_gender_id').val(patient?.gender).change();
                 $('#add_referred_by_id').val(patient?.referred_by).change();
