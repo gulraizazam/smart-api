@@ -63,7 +63,7 @@ var table_columns = [{
     field: 'status',
     title: 'Status',
     sortable: false,
-    width: 70,
+    width: 60,
     template: function(data) {
         let status_url = route('admin.leads.status');
         return statuses(data, status_url);
@@ -199,7 +199,7 @@ function actions(data) {
             if (permissions.convert && lead_type === 'junk') {
                 actions += '<a title="Convert Lead" href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="btn btn-icon btn-success btn-sm">\
                         <span class="navi-icon"><i class="la la-recycle"></i></span>\
-                    </a> &nbsp;';
+                    </a>';
             }
 
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
