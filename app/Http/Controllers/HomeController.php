@@ -67,7 +67,7 @@ class HomeController extends Controller
         $data = $this->recentActivities($data);
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
-        $data = $this->leads($data, $location_id);
+        $data = $this->leads($data, $location_id, $start_date, $end_date);
         $data = $this->salesByCentre($request, $data);
 
         $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
@@ -1098,15 +1098,18 @@ class HomeController extends Controller
         return $data;
     }
 
-    private function leads($data, $location_id) {
+    private function leads($data, $location_id, $start, $end) {
 
         if (!Gate::allows('dashboard_states')) {
-            $data['leads'] = null;
+            $data['leads'] = false;
+            $data['totalLeads'] = false;
 
             return $data;
         }
 
-        $data['leads'] = Leads::where('active', 1)->count();
+        $data['leads'] = Leads::where('active', 1)
+            ->whereBetween('created_at', [$start, $end])->count();
+        $data['totalLeads'] = Leads::where('active', 1)->count();
 
         return $data;
     }

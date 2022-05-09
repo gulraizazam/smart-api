@@ -62,7 +62,7 @@
 
                                                           <span class="dashboard-counter">{{!is_null($revenue) ? number_format($revenue) : 'Your are not authorized'}}</span>
                                                     </span>
-                                            <a href="javascript:void(0);" style="cursor: default;" class="text-warning font-weight-bold font-size-h6">Sales</a>
+                                            <a href="javascript:void(0);" style="cursor: pointer;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
                                         <div class="col bg-light-primary px-6 py-8 rounded-xl mb-7">
                                                 <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
@@ -104,10 +104,10 @@
                                                             </g>
                                                         </svg>
                                                       <!--end::Svg Icon-->
-                                                      <span class="dashboard-counter">{{$leads ? $leads : 'Your are not authorized'}}</span>
+                                                      <span class="dashboard-counter">{{$leads !== false && $totalLeads !== false ? $leads .'/'. $totalLeads : 'Your are not authorized'}}</span>
                                                     </span>
 
-                                            <a  href="javascript:void(0);" style="cursor: default;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
+                                            <a href="{{route('admin.leads.index', ['from' => $start_date, 'to' => $end_date])}}" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
                                         </div>
                                     </div>
                                     <!--end::Row-->
