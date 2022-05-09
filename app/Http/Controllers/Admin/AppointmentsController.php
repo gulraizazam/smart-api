@@ -5423,6 +5423,10 @@ class AppointmentsController extends Controller
                 'sort' => "DESC",
             ];
 
+            $records["permissions"] = [
+                'contact' => Gate::allows('contact')
+            ];
+
             return ApiHelper::apiDataTable($records);
 
         }
