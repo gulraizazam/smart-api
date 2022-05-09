@@ -7,6 +7,7 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\Financelog;
 use App\Helpers\GeneralFunctions;
+use App\Models\AppointmentLog;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
@@ -1230,7 +1231,8 @@ class HomeController extends Controller
         //$finance_log = collect($finance_log)->where('payment_mode_id', 'Cash');
 
 
-        $appointment_log = $this->viewLog();
+        //$appointment_log = $this->viewLog();
+        $appointment_log = $this->viewAppointmentLog();
 
         return $data['recent_activities'] = [
             'finance_log' => $finance_log,
@@ -1238,6 +1240,16 @@ class HomeController extends Controller
         ];
     }
 
+    private function viewAppointmentLog() {
+
+        $query = AppointmentLog::query();
+        if (auth()->id() != 1) {
+            $query->where('user_id', auth()->id());
+        }
+
+        return $query->get();
+
+    }
 
     private function viewLog()
     {

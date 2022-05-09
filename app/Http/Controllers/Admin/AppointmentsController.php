@@ -1427,7 +1427,6 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
-
         $rotaCheck = $this->scheduledConsultancy($request);
 
         if ($rotaCheck['status']) {
@@ -1718,6 +1717,9 @@ class AppointmentsController extends Controller
 
             // Send Promotion SMS
             $this->sendPromotionSMS($appointment->id, $appointmentData['phone']);
+
+
+            GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
 
             /**
              * Dispatch Elastic Search Index
@@ -2490,7 +2492,9 @@ class AppointmentsController extends Controller
 //            unset($patientData['name']);
 //        }
 
-        GeneralFunctions::saveAppointmentLogs('updated', 'Consultancy', $appointment);
+        $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
+
+        GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
 
         $patient = Patients::updateRecord($lead->patient_id, $patientData);
         $patient->update($patientData);
@@ -4497,6 +4501,8 @@ class AppointmentsController extends Controller
         // Send Promotion SMS
         $this->sendPromotionSMS($appointment->id, $appointmentData['phone']);
 
+        GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
+
         /**
          * Dispatch Elastic Search Index
          */
@@ -5640,6 +5646,9 @@ class AppointmentsController extends Controller
                     'appointment_status_id' => config('constants.appointment_status_pending'),
                 ]);
 
+                $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
+                GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
+
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
 
@@ -5653,7 +5662,11 @@ class AppointmentsController extends Controller
     private function checkRota($appointment, $request) {
 
         $object = new \stdClass();
-        $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
+        if ($request->scheduled_date && $request->scheduled_time) {
+            $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
+        } else {
+            $object->start = $request->start;
+        }
         $object->city_id = $appointment->city_id;
         $object->doctor_id = $appointment->doctor_id;
         $object->location_id = $appointment->location_id;

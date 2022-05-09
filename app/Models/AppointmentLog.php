@@ -10,6 +10,7 @@ class AppointmentLog extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'action_by',
         'action_for',
         'action',

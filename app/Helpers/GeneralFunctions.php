@@ -319,13 +319,14 @@ class GeneralFunctions
         try {
 
             AppointmentLog::create([
+                'user_id' => auth()->id(),
                 'action_by' => auth()->user()->name ?? 'Admin',
                 'action_for' => $data->name ?? '',
                 'action' => $action,
                 'screen' => $screen,
                 'address' => Locations::find($data->location_id ?? 0)->name ?? '',
                 'date' => Carbon::now()->timezone("Asia/Karachi")->format("Y-m-d"),
-                'time' => Carbon::now()->timezone("Asia/Karachi")->format("h:i:s"),
+                'time' => Carbon::now()->timezone("Asia/Karachi")->format("H:i:s"),
                 'type' => $action,
             ]);
         } catch (\Exception $e) {

@@ -167,7 +167,7 @@
 
                                             <div class="timeline-item align-items-start">
                                                     <!--begin::Label-->
-                                                    <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">{{\Illuminate\Support\Carbon::parse($appoint_log['created_at'])->format("h:i")}}</div>
+                                                    <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">{{\Illuminate\Support\Carbon::parse($appoint_log['time'])->format("h:i")}}</div>
                                                     <!--end::Label-->
                                                     <!--begin::Badge-->
                                                     <div class="timeline-badge">
@@ -177,11 +177,28 @@
                                                     <!--begin::Content-->
                                                     <div class="timeline-content d-flex">
                                                    <span class="font-weight-bolder text-dark-75 pl-3 font-size-lg">
-                                                       {{$appoint_log['user_id'] ?? 'N/A'}}
-                                                        Scheduled ({{$appoint_log['action'] ?? 'N/A'}}) {{$appoint_log['appointment_type_id'] ?? 'N/A'}} At
-                                                       {{$appoint_log['scheduled_date']}} - {{$appoint_log['scheduled_time']}}
-                                                        For {{$appoint_log['name'] ?? 'N/A'}} In
-                                                       {{$appoint_log['location_id'] ?? 'N/A'}}
+                                                       @if($appoint_log['type'] == 'rescheduled')
+                                                           <span style="color: #056FBF;">{{$appoint_log['action_by'] ?? 'N/A'}}</span>
+                                                           {{$appoint_log['action'] ?? 'N/A'}} <span style="color: #F5B183;">{{$appoint_log['screen'] ?? 'N/A'}}</span>
+                                                           for <span style="color: #3E7FBB;">{{$appoint_log['action_for']}}</span>
+                                                           to {{\Illuminate\Support\Carbon::parse($appoint_log['date'])->format("d/m/Y") ?? 'N/A'}}
+                                                       @elseif($appoint_log['type'] == 'booked')
+
+                                                           <span style="color: #056FBF;">{{$appoint_log['action_by'] ?? 'N/A'}}</span>
+                                                           a {{$appoint_log['action'] ?? 'N/A'}}
+                                                           <span style="color: #F5B183;">{{$appoint_log['screen'] ?? 'N/A'}}</span>
+                                                           for <span style="color: #3E7FBB;">{{$appoint_log['action_for']}}</span>
+                                                           at <span style="color: #F5B183;">{{\Illuminate\Support\Carbon::parse($appoint_log['time'])->format("h:s A") ?? 'N/A'}} {{\Illuminate\Support\Carbon::parse($appoint_log['date'])->format("d/m/Y") ?? 'N/A'}} </span>
+                                                           in {{$appoint_log['address'] ?? 'N/A'}}
+
+                                                       @else
+                                                           <span style="color: #056FBF;">{{$appoint_log['action_by'] ?? 'N/A'}}</span>
+                                                           {{$appoint_log['action'] ?? 'N/A'}} <span style="color: #F5B183;">{{$appoint_log['screen'] ?? 'N/A'}}</span>
+                                                           for <span style="color: #3E7FBB;">{{$appoint_log['action_for']}}</span>
+                                                           in {{$appoint_log['address'] ?? 'N/A'}}
+                                                       @endif
+
+
                                                    </span>
                                                     </div>
                                                     <!--end::Content-->
