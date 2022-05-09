@@ -1242,12 +1242,17 @@ class HomeController extends Controller
 
     private function viewAppointmentLog() {
 
-        $query = AppointmentLog::query();
-        if (auth()->id() != 1) {
-            $query->where('user_id', auth()->id());
-        }
+        try {
 
-        return $query->get();
+            $query = AppointmentLog::query();
+            if (auth()->id() != 1) {
+                $query->where('user_id', auth()->id());
+            }
+
+            return $query->get();
+        } catch (\Exception $e) {
+            return collect();
+        }
 
     }
 
