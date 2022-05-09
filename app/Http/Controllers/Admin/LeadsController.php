@@ -693,6 +693,11 @@ class LeadsController extends Controller
             }
             /*End*/
 
+            $data['phone'] = $data['phone'];
+            if ($data['phone'] == '***********') {
+                $data['phone'] = $data['old_phone'];
+            }
+
             $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
             $data['created_by'] = Auth::user()->id;
             $data['updated_by'] = Auth::user()->id;
@@ -790,7 +795,12 @@ class LeadsController extends Controller
 
     private function existingLead(Request $request) {
 
-        $phone = GeneralFunctions::cleanNumber($request->phone);
+        $phoneNo = $request->phone;
+        if ($phoneNo == '***********') {
+            $phoneNo = $request->old_phone;
+        }
+
+        $phone = GeneralFunctions::cleanNumber($phoneNo);
 
         $patient_ids = Patients::where('phone', $phone)->pluck('id');
 
