@@ -256,6 +256,7 @@ var TreatmentCalendar = function() {
                 callback(events);
             }
         },
+
         showOnlyAvailableSlotsTreatment: function(minxTime, maxTime) {
 
             if (typeof minxTime !== "undefined") {
@@ -266,6 +267,7 @@ var TreatmentCalendar = function() {
                 treatment_calendar.setOption('maxTime', maxTime);
             }
         },
+
         async checkAndUpdateTreatment(info) {
 
             let event = info.event;
@@ -293,7 +295,7 @@ var TreatmentCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error("Unabled to process the request, please try again.")
+                    toastr.error("Unable to process the request, please try again.")
                 }
             });
         },
@@ -416,9 +418,11 @@ var TreatmentCalendar = function() {
                 }
             });
         },
+
         setEventId: function(eventId) {
             window.eventData.createdId = eventId;
         },
+
         createTreatment: function (info) {
 
             removeExtraSelect2();
@@ -453,11 +457,12 @@ var TreatmentCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error("Unabled to process the request");
+                    toastr.error("Unable to process the request");
                 }
             });
 
         },
+
         clickTreatmentEvent: function (info) {
 
             let event = info.event.extendedProps;
@@ -481,13 +486,14 @@ var TreatmentCalendar = function() {
                         }
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
-                        toastr.error("Unabled to process the request.")
+                        toastr.error("Unable to process the request.")
                     }
                 });
 
             }
 
         },
+
         hoverPopup: function(info) {
 
             let id = info.event.id;

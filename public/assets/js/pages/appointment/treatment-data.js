@@ -142,9 +142,16 @@ function getTreatmentPatientDetail($this) {
             'patient_id': $this.val()
         },
         success: function (resposne) {
-            if (resposne.status) {
+            if (resposne.status && resposne.data.patient) {
                 let patient = resposne.data.patient;
-                $('#create_treatment_phone').val(patient?.phone);
+
+                $('#create_old_treatment_phone').val(patient?.phone);
+                if (permissions.contact) {
+                    $('#create_treatment_phone').val(patient?.phone);
+                } else {
+                    $('#create_treatment_phone').val("***********");
+                }
+
                 $('#create_treatment_patient_name').val(patient?.name);
                 $('#create_treatment_gender').val(patient?.gender).trigger("change");
 

@@ -73,6 +73,8 @@ class AuditTrailTableSeeder extends Seeder
             ['name' => 'machine_types', 'screen' => 'Machine Type'],
             ['name' => 'machine_type_has_services', 'screen' => 'Machine Type Has Resource'],
             ['name' => 'towns', 'screen' => 'Town'],
+            ['name' => 'consultancy', 'screen' => 'Consultancy'],
+            ['name' => 'treatment', 'screen' => 'Treatment'],
         ];
     }
 }

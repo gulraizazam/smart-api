@@ -341,9 +341,17 @@ function getPatientDetail($this) {
             'patient_id': $this.val()
         },
         success: function (resposne) {
-            if (resposne.status) {
+            if (resposne.status && resposne.data.patient) {
+
                 patient = resposne.data.patient;
-                $('#create_consultancy_phone').val(patient?.phone);
+                $('#create_old_consultancy_phone').val(patient?.phone);
+
+                if (permissions.contact) {
+                    $('#create_consultancy_phone').val(patient?.phone);
+                } else {
+                    $('#create_consultancy_phone').val("***********");
+                }
+
                 $('#create_patient_name').val(patient?.name);
                 $('#create_consultancy_gender').val(patient?.gender).change();
 
@@ -390,7 +398,7 @@ function loadLead(patient) {
             success: function (resposne) {
                 if (resposne.status) {
                     let lead_source_id = resposne.data.lead_source_id;
-                    
+
                     if (isExist(lead_source_id)) {
                         $('#create_consultancy_lead').val(lead_source_id).change();
                     }
