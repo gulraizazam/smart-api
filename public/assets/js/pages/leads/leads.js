@@ -650,10 +650,21 @@ function setEditData(response) {
 
         $("#edit_service_id").val(lead.service_id);
         $("#edit_city_id").val(lead.city_id);
-        $("#edit_referred_by_id").val(lead?.patient?.referred_by);
-        $("#edit_gender_id").val(lead.patient.gender);
-        $("#edit_lead_source_id").val(lead.lead_source_id);
-        $("#edit_lead_status_id").val(lead.lead_status_id);
+
+        if (lead?.patient?.referred_by && lead?.patient?.referred_by != 0) {
+            $("#edit_referred_by_id").val(lead?.patient?.referred_by);
+        }
+        if (lead.patient.gender) {
+            $("#edit_gender_id").val(lead.patient.gender);
+        }
+        if (lead.lead_source_id) {
+            $("#edit_lead_source_id").val(lead.lead_source_id);
+        }
+
+        if (lead.lead_status_id) {
+            $("#edit_lead_status_id").val(lead.lead_status_id);
+        }
+
         $("#edit_full_name").val(lead.patient.name);
         $("#edit_patient_id").val(lead.patient.id);
 
