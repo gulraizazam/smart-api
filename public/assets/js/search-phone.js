@@ -88,7 +88,7 @@ function loadLeadData(value) {
                 if (patient?.referred_by) {
                     $('#add_referred_by_id').val(patient?.referred_by).change();
                 }
-                
+
                 if ($("#create_consultancy_service").val() != '') {
                     loadLead(patient);
                 }
@@ -112,7 +112,10 @@ function loadEditLeadData(value) {
                 $('#edit_phone').val(patient?.phone);
                 $('#edit_full_name').val(patient?.name);
                 $('#edit_gender_id').val(patient?.gender).change();
-                $('#edit_referred_by_id').val(patient?.referred_by).change();
+
+                if(patient?.referred_by) {
+                    $('#edit_referred_by_id').val(patient?.referred_by).change();
+                }
 
                 if ($("#edit_service_id").val() != '') {
                     loadLead(patient, 'edit_');
