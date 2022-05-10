@@ -248,6 +248,8 @@ function actions(data) {
 
 function createLead(url) {
 
+    $(".croxcli").click();
+
     $('.msg_new_patient').hide();
     $('.new_patient').prop("checked", false);
 
@@ -335,7 +337,6 @@ function setLeadData(response) {
         $("#add_gender_id").html(gender_options);
         $("#add_lead_source_id").html(lead_sources_options);
         $("#add_lead_status_id").html(lead_statuses_options);
-
 
     } catch (error) {
         showException(error);

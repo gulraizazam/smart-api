@@ -81,9 +81,14 @@ function loadLeadData(value) {
                     $('#add_phone').val("***********");
                 }
                 $('#add_full_name').val(patient?.name);
-                $('#add_gender_id').val(patient?.gender).change();
-                $('#add_referred_by_id').val(patient?.referred_by).change();
 
+                if (patient?.gender) {
+                    $('#add_gender_id').val(patient?.gender).change();
+                }
+                if (patient?.referred_by) {
+                    $('#add_referred_by_id').val(patient?.referred_by).change();
+                }
+                
                 if ($("#create_consultancy_service").val() != '') {
                     loadLead(patient);
                 }
@@ -137,7 +142,9 @@ function loadLead(patient, type = 'add_') {
             success: function (resposne) {
                 if (resposne.status) {
                     let lead_source_id = resposne.data.lead_source_id;
-                    $('#'+type+'lead_source_id').val(lead_source_id).change();
+                    if (lead_source_id) {
+                        $('#'+type+'lead_source_id').val(lead_source_id).change();
+                    }
                 }
 
             },
