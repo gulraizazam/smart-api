@@ -26,12 +26,12 @@ var table_columns = [
         field: 'location',
         title: 'Centre',
         sortable: false,
-        width: 200,
+        width: 150,
     },{
         field: 'service',
         title: 'Consultancy/Service',
         sortable: false,
-        width: 'auto',
+        width: 180,
     },{
         field: 'invoice_status',
         title: 'Invoice Status',
