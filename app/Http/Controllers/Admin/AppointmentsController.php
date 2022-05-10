@@ -963,6 +963,8 @@ class AppointmentsController extends Controller
             } else {
                 $countQuery->where('location_id', $ids);
             }
+
+            Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
         }
 
         if (hasFilter($filters, 'name')) {
@@ -1035,6 +1037,8 @@ class AppointmentsController extends Controller
             } else {
                 $resultQuery->where('location_id', $ids);
             }
+
+            Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
         }
 
         if (hasFilter($filters, 'name')) {
