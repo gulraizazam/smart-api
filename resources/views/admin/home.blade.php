@@ -958,6 +958,11 @@
                     var pie = response.data.pie.month;
                 @endif
 
+                @if(request('type') == '')
+                    $(".my-service-title").text('Today Income')
+                    var pie = response.data.pie.today;
+                @endif
+
                 myrevenueByService(pie, colors);
             },
             error: function (xhr, ajaxOptions, thrownError) {
