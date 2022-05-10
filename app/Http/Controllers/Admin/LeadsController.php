@@ -111,7 +111,7 @@ class LeadsController extends Controller
 
 
             if ($request->has('sort')) {
-                list($orderBy, $order) = getSortBy($request);
+                list($orderBy, $order) = getSortBy($request, 'leads.created_at', 'DESC');
 
                 Filters::put(Auth::User()->id, $filename, 'order_by', $orderBy);
                 Filters::put(Auth::User()->id, $filename, 'order', $order);

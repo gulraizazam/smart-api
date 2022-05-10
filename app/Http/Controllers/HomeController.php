@@ -142,14 +142,13 @@ class HomeController extends Controller
             $countQuery->where('appointments.scheduled_time', '>=', $todayTime);
         }
 
-        $totalCountGet = $countQuery->select('appointments.id', 'appointments.scheduled_date', 'appointments.scheduled_time')->get();
-
-        $todayCount = $totalCountGet->where('scheduled_date', $today);
+        $countQuery = $countQuery->get();
+        $todayCount = $countQuery->where('scheduled_date', $today);
 
         if ($todayCount->count() > 0) {
-            $todayScheduled = $todayCount->where('appointments.scheduled_time', '<=', $todayTime);
+            $todayScheduled = $todayCount->where('scheduled_time', '<=', $todayTime);
 
-            $countQuery = $countQuery->whereNotIn('appointments.id',  $todayScheduled->pluck('id')->toArray());
+            $countQuery = $countQuery->whereNotIn('id',  $todayScheduled->pluck('id')->toArray());
         }
 
         $iTotalRecords = $countQuery->count();
@@ -193,7 +192,7 @@ class HomeController extends Controller
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order)
-            ->orderBy('appointments.scheduled_time', "DESC")
+            ->orderBy('appointments.scheduled_time', "ASC")
             ->get();
 
         $todayAppointments = $Appointments->where('scheduled_date', $today);

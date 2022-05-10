@@ -661,6 +661,10 @@ function keyfunction_cash(type = '') {
                     } else {
                         $("#"+type+"addinvoice").hide();
                     }
+
+                    if ((cash == 0 || cash == '') && amount_type == 0) {
+                        $('#addinvoice').show();
+                    }
                 }
             },
         });

@@ -566,7 +566,7 @@
                                                 </span>
                                             </span>
 
-                                        <span class="dashboard-counter" style="margin-left: -40px;">REVENUE BY SERVICE</span>
+                                        <span class="dashboard-counter" style="margin-left: -40px;">Revenue by Service</span>
 
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
@@ -640,7 +640,7 @@
                                                 </span>
                                             </span>
 
-                                        <span class="dashboard-counter" style="margin-left: -40px;">My REVENUE BY SERVICE</span>
+                                        <span class="dashboard-counter" style="margin-left: -40px;">My Revenue by Service</span>
 
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-service"></span>
