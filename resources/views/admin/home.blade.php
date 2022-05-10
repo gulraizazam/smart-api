@@ -219,11 +219,11 @@
                                             <!--end::Badge-->
                                             <!--begin::Desc-->
                                             <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                                                <span class="text-primary">{{$log['user_id'] ?? 'N/A'}}</span>
+                                                <span style="color: #056FBF;">{{$log['user_id'] ?? 'N/A'}}</span>
                                                 {{$log['action'] ?? 'N/A'}} a payment of
-                                                 <strong class="text-dark">{{ $log['cash_amount'] }}</strong> for
-                                                <span  class="text-primary"> {{$log['patient_id']}}</span> against
-                                                <span  class="text-info">{{$log['appointment_type_id'] ?? 'Appointment'}}</span>
+                                                 <strong >{{ $log['cash_amount'] }}</strong> for
+                                                <span  style="color: #F5B183;"> {{$log['patient_id']}}</span> against
+                                                <span  style="color: #F5B183;">{{$log['appointment_type_id'] ?? 'Appointment'}}</span>
                                                  In  {{$log['location_id']}} Centre
                                             </div>
                                             <!--end::Desc-->
