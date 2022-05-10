@@ -370,6 +370,7 @@ class HomeController extends Controller
             switch ($request->type) {
                 case 'today':
                     list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
+                    dd($report_data, $total);
                     if (count($report_data)) {
                         foreach ($report_data as $record) {
                             $data['today'][] = $record;
