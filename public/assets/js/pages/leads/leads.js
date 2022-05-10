@@ -562,6 +562,8 @@ function commentData(user_name, created_at, comment) {
 
 function editRow(url, id) {
 
+   // $(".croxcli").click();
+
     $('.new_patient').prop("checked", false);
     $('.msg_new_patient').hide();
     $("#modal_edit_leads").modal("show");
