@@ -142,16 +142,18 @@ class HomeController extends Controller
             $countQuery->where('appointments.scheduled_time', '>=', $todayTime);
         }
 
-        $totalCount = $countQuery->select('appointments.id')->get();
+        $totalCountGet = $countQuery->select('appointments.id', 'appointments.scheduled_date', 'appointments.scheduled_time')->get();
 
-        $todayCount = $totalCount->where('scheduled_date', $today);
+        $todayCount = $totalCountGet->where('scheduled_date', $today);
+
         if ($todayCount->count() > 0) {
-            $todayScheduled = $todayCount->where('scheduled_time', '<=', $todayTime);
+            $todayScheduled = $todayCount->where('appointments.scheduled_time', '<=', $todayTime);
 
-            $countQuery = $countQuery->whereNotIn('id',  $todayScheduled->pluck('id')->toArray());
+            $countQuery = $countQuery->whereNotIn('appointments.id',  $todayScheduled->pluck('id')->toArray());
         }
 
         $iTotalRecords = $countQuery->count();
+
 
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
