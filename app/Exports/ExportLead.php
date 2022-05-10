@@ -51,7 +51,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
        return $resultQuery->limit($this->limit)->offset($this->offset)
            ->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
-            ->get();
+            ->orderBy("leads.created_at", "DESC")->get();
     }
 
     public function headings(): array

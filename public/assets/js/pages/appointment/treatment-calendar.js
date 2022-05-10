@@ -266,6 +266,8 @@ var TreatmentCalendar = function() {
             if (typeof maxTime !== "undefined") {
                 treatment_calendar.setOption('maxTime', maxTime);
             }
+
+            rotaTimeTitle();
         },
 
         async checkAndUpdateTreatment(info) {

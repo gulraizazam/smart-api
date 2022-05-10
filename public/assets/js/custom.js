@@ -890,3 +890,8 @@ function removeExtraSelect2(elem = 'create_treatment_patient_search') {
 function isExist(value) {
     return typeof value !== "undefined" && value !== null && value != 0;
 }
+
+function rotaTimeTitle() {
+
+    return $(".fc-axis.fc-widget-header").html("<span>Time</span>");
+}

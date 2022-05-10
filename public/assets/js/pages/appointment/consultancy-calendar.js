@@ -251,6 +251,8 @@ var ConsultancyCalendar = function() {
             if (typeof maxTime !== "undefined") {
                 calendar.setOption('maxTime', maxTime);
             }
+
+            rotaTimeTitle();
         },
         checkAndUpdateAppointment: function(info) {
 

@@ -1066,6 +1066,7 @@ class AppointmentsController extends Controller
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order)
+            ->orderBy("appointments.scheduled_time", "ASC")
             ->get();
 
         $invoicearray = array();

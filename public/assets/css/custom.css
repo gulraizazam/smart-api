@@ -798,3 +798,6 @@ div > input {
     width: 85px;
     display: inline-block;
 }
+.fc-day-grid {
+    display: none;
+}
