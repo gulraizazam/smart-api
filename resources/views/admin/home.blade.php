@@ -1096,7 +1096,7 @@
             chart.draw(data, options);
         });
 
-        if (service.length > 1) {
+        if (typeof service !== 'undefined' && service.length > 1) {
             $("#revenue-service").css("height", "500px");
         }
     }
@@ -1120,7 +1120,7 @@
             chart.draw(data, options);
         });
 
-        if (service.length > 1) {
+        if (typeof service !== 'undefined' && service.length > 1) {
             $("#my-revenue-service").css("height", "500px");
         }
     }
