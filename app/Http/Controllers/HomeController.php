@@ -367,12 +367,6 @@ class HomeController extends Controller
 
             $location_information = Locations::getActiveSorted(ACL::getUserCentres());
 
-            dd($location_information);
-            $location_information = Locations::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
-            ])->pluck('name', 'id');
-
             switch ($request->type) {
                 case 'today':
                     list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
