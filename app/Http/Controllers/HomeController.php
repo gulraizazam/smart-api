@@ -118,9 +118,6 @@ class HomeController extends Controller
             }
         }
 
-        /*$consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
-        $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();*/
-
         $countQuery = Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
@@ -128,8 +125,6 @@ class HomeController extends Controller
         ->where('appointment_status_id', config('constants.appointment_status_pending'))
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres());
-
-        $countQuery->where('appointments.location_id', $this->getUserLocation());
 
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
 
