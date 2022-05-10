@@ -1244,12 +1244,16 @@ class HomeController extends Controller
 
         try {
 
-            $query = AppointmentLog::query();
+            list($start, $end) = $this->getDates(request());
+
+            $query = AppointmentLog::whereBetween("date", [$start, $end]);
+
             if (auth()->id() != 1) {
                 $query->where('user_id', auth()->id());
             }
 
             return $query->get();
+
         } catch (\Exception $e) {
             return collect();
         }
