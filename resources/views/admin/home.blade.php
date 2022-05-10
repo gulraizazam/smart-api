@@ -812,6 +812,11 @@
                     var pie = response.data.pie.month;
                 @endif
 
+                @if(request('type') == '')
+                $(".my-collection-title").text('Today Income')
+                var pie = response.data.pie.today;
+                @endif
+
                 myCollectionCentreChart(pie);
             },
             error: function (xhr, ajaxOptions, thrownError) {
