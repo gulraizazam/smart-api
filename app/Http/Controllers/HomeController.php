@@ -10,7 +10,6 @@ use App\Helpers\GeneralFunctions;
 use App\Models\AppointmentLog;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
-use App\Models\AppointmentTypes;
 use App\Models\AuditTrailActions;
 use App\Models\AuditTrailChanges;
 use App\Models\AuditTrails;
@@ -435,32 +434,7 @@ class HomeController extends Controller
 
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
-            switch ($request->type) {
-                case 'today':
-                    $start_date = Carbon::now()->format('Y-m-d');
-                    $end_date = Carbon::now()->format('Y-m-d');
-                    break;
-
-                case 'yesterday':
-                    $start_date = Carbon::now()->subDay(1)->format('Y-m-d');
-                    $end_date = Carbon::now()->subDay(1)->format('Y-m-d');
-                    break;
-
-                case 'week':
-                    $start_date = Carbon::now()->subDay(6)->format('Y-m-d');
-                    $end_date = Carbon::now()->format('Y-m-d');
-                    break;
-
-                case 'month':
-                    $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
-                    $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
-                    break;
-                default:
-                    $start_date = Carbon::now()->format('Y-m-d');
-                    $end_date = Carbon::now()->format('Y-m-d');
-                    break;
-            }
-
+           list($start_date, $end_date) =  $this->getDates($request);
 
             $todayRecords = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
@@ -520,32 +494,7 @@ class HomeController extends Controller
 
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
-            switch ($request->type) {
-                case 'today':
-                    $start_date = Carbon::now()->format('Y-m-d');
-                    $end_date = Carbon::now()->format('Y-m-d');
-                    break;
-
-                case 'yesterday':
-                    $start_date = Carbon::now()->subDay(1)->format('Y-m-d');
-                    $end_date = Carbon::now()->subDay(1)->format('Y-m-d');
-                    break;
-
-                case 'week':
-                    $start_date = Carbon::now()->subDay(6)->format('Y-m-d');
-                    $end_date = Carbon::now()->format('Y-m-d');
-                    break;
-
-                case 'month':
-                    $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
-                    $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
-                    break;
-                default:
-                    $start_date = Carbon::now()->format('Y-m-d');
-                    $end_date = Carbon::now()->format('Y-m-d');
-                    break;
-            }
-
+            list($start_date, $end_date) =  $this->getDates($request);
 
             $todayRecords = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
@@ -1028,7 +977,7 @@ class HomeController extends Controller
                 $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
                 break;
             default:
-                $start_date = \Carbon\Carbon::now()->format('Y-m-d');
+                $start_date = Carbon::now()->format('Y-m-d');
                 $end_date = Carbon::now()->format('Y-m-d');
                 break;
         }
