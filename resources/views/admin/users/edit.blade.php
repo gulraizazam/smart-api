@@ -46,7 +46,7 @@
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Email</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Email <span class="text text-danger">*</span></label>
                             <input id="edit_user_email" type="email" name="email" value="{{$user->email ?? ''}}" class="form-control form-control-lg form-control-solid" />
                         </div>
 
