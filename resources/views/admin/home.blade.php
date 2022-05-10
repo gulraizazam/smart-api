@@ -775,8 +775,8 @@
                 @endif
 
                 @if(request('type') == '')
-                $(".pie-income-title").text('Today Income')
-                var pie = response.data.pie.today;
+                    $(".pie-income-title").text('Today Income')
+                    var pie = response.data.pie.today;
                 @endif
 
                 collectionCentreChart(pie);
@@ -813,8 +813,8 @@
                 @endif
 
                 @if(request('type') == '')
-                $(".my-collection-title").text('Today Income')
-                var pie = response.data.pie.today;
+                    $(".my-collection-title").text('Today Income')
+                    var pie = response.data.pie.today;
                 @endif
 
                 myCollectionCentreChart(pie);
@@ -916,6 +916,11 @@
                 @if(request('type') == 'month')
                     $(".service-title").text('Monthly Income')
                     var pie = response.data.pie.month;
+                @endif
+
+                @if(request('type') == '')
+                    $(".pie-income-title").text('Today Income')
+                    var pie = response.data.pie.today;
                 @endif
 
                 revenueByService(pie, colors);
