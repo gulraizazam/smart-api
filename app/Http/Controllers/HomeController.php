@@ -1019,8 +1019,8 @@ class HomeController extends Controller
                 break;
 
             case 'week':
-                $start_date = Carbon::now()->subDay(6)->format('Y-m-d');
-                $end_date = Carbon::now()->format('Y-m-d');
+                $start_date = Carbon::now()->startOfWeek()->format('Y-m-d');
+                $end_date = Carbon::now()->endOfWeek()->format('Y-m-d');
                 break;
 
             case 'month':
