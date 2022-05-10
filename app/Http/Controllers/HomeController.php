@@ -167,11 +167,7 @@ class HomeController extends Controller
         $resultQuery = Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
-        })/*->where([
-            ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-            ['appointments.appointment_type_id', '!=', $treatmentslug->id]
-        ])*/
-        ->where('appointment_status_id', config('constants.appointment_status_pending'))
+        })->where('appointment_status_id', config('constants.appointment_status_pending'))
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres());
 
@@ -179,8 +175,6 @@ class HomeController extends Controller
         if ($orderBy == 'name') { /* Need to append appropriate table name to order by, it was missing before*/
             $orderBy = 'appointments.name';
         }
-
-        $resultQuery->where('appointments.location_id', $this->getUserLocation());
 
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
 
