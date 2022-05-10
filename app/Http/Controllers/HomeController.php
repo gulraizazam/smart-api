@@ -363,11 +363,15 @@ class HomeController extends Controller
             'month' => array(),
         );
 
-        if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
+        if (Gate::allows('dashboard_my_collection_by_centre')) {
 
-            $location_information = Locations::getActiveSorted(ACL::getUserCentres());
+            //$location_information = Locations::getActiveSorted(ACL::getUserCentres());
 
-
+            $location_information = Locations::where([
+                ['account_id', '=', Auth::User()->account_id],
+                ['active', '=', '1']
+            ])->pluck('name', 'id');
+            
             switch ($request->type) {
                 case 'today':
                     list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
