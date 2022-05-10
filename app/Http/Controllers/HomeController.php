@@ -406,7 +406,7 @@ class HomeController extends Controller
                     break;
                 default:
                     list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
-                   dd($report_data, $total);
+                   dd($report_data, $total, $location_information);
                     if (count($report_data)) {
                         foreach ($report_data as $record) {
                             $data['today'][] = $record;
