@@ -774,6 +774,11 @@
                     var pie = response.data.pie.month;
                 @endif
 
+                @if(request('type') == '')
+                $(".pie-income-title").text('Today Income')
+                var pie = response.data.pie.today;
+                @endif
+
                 collectionCentreChart(pie);
             },
             error: function (xhr, ajaxOptions, thrownError) {
