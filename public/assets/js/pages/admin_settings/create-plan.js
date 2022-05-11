@@ -1086,7 +1086,7 @@ function setPlanData(response) {
     getServices();
 
     getUserCentre();
-    
+
 }
 
 function getServices() {
