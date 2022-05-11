@@ -107,6 +107,31 @@
     @push('js')
         <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/locations.js')}}"></script>
         <script src="{{asset('assets/js/pages/crud/file-upload/image-input.js')}}"></script>
+
+        <script>
+            function getUserCity() {
+
+                @if (auth()->id() != 1)
+
+                $.ajax({
+                    url: '{{route('admin.users.get_cities')}}',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.status) {
+                            $("#search_city").val(response.data.city).change();
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
+
+                @endif
+
+            }
+        </script>
+
     @endpush
 
 @endsection

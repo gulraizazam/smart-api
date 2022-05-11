@@ -275,6 +275,8 @@ function setFilters(filter_values, active_filters) {
     $("#search_region").val(active_filters.region_id);
 
     hideShowAdvanceFilters(active_filters);
+
+    getUserCity();
 }
 
 function createCentre($route) {
