@@ -372,7 +372,7 @@ class UsersController extends Controller
                         if ($locationchecked->slug == 'custom') {
                             $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
                         } else {
-                            $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
+                            $locations[] = $loc[$location]->name ?? '';
                         }
                     }
                 }
