@@ -366,6 +366,7 @@ class UsersController extends Controller
                 $locations = [];
                 $userhaslocation = $user->user_has_locations ? $user->user_has_locations->pluck('location_id') : [];
                 $user_has_locations = LocationsWidget::generatelocationArrayEdit($userhaslocation, Auth::User()->account_id, $user);
+
                 if ($user_has_locations) {
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
