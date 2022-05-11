@@ -387,6 +387,8 @@ function setFilters(filter_values, active_filters) {
     $("#search_status").val(active_filters.status);
 
     hideShowAdvanceFilters(active_filters);
+
+    getUserCentre();
 }
 
 function hideShowAdvanceFilters(active_filters) {
