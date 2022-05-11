@@ -194,6 +194,12 @@ class dashboardreport
             '=',
             Auth::User()->id
         );
+
+        $report_data[0] = [
+            'Task',
+            'Hours per Day'
+        ];
+
         $counter = 0;
         foreach ($location_information as $key => $location_infomation) {
             if ($where == 'today') {
@@ -228,13 +234,6 @@ class dashboardreport
             }
 
             $location_single_info = Locations::find($key);
-
-            if ($packagesadvances->count() === 0) {
-                $report_data[$location_single_info->id] = [
-                    'Task',
-                    'Hours per Day'
-                ];
-            }
 
             if ($packagesadvances) {
                 $balance = 0;
