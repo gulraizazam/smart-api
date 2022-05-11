@@ -295,12 +295,10 @@ class HomeController extends Controller
 
         if (Gate::allows('dashboard_collection_by_centre')) {
 
-            /*$location_information = Locations::where([
+            $location_information = Locations::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1']
-            ])->pluck('name', 'id');*/
-
-            $location_information['46'] = 'CUTERA, Johar Town, Lahore';
+            ])->pluck('name', 'id');
 
             switch ($request->type) {
                 case 'today':
