@@ -188,12 +188,13 @@ class dashboardreport
         $total = 0;
         $report_data = array();
         $wherecondtion = array();
-
-        $wherecondtion[] = array(
-            'created_by',
-            '=',
-            Auth::User()->id
-        );
+        if(auth()->id() != 1){
+            $wherecondtion[] = array(
+                'created_by',
+                '=',
+                Auth::User()->id
+            );
+        }
         $counter = 0;
         foreach ($location_information as $key => $location_infomation) {
             if ($where == 'today') {
