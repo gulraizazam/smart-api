@@ -209,7 +209,6 @@ class dashboardreport
                         ['account_id', '=', $account_id],
                         ['location_id', '=', $key],
                     ])->where($wherecondtion)->get();
-                dd($packagesadvances, $wherecondtion, $key);
             }
             if ($where == 'last7day') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
