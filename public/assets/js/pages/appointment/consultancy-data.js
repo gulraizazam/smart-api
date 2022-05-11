@@ -110,7 +110,12 @@ function toggleSection($this, $class) {
 
     $(".change-label").text($this.text());
 
-    getUserCity();
+    if ($class != 'appointment') {
+        setDashboardFilters();
+
+        getUserCity();
+    }
+
 }
 
 
