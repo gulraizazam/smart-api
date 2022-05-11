@@ -108,7 +108,9 @@ function toggleSection($this, $class) {
     $(".change-tab").removeClass("nav-bar-active");
     $this.addClass("nav-bar-active");
 
-    $(".change-label").text($this.text())
+    $(".change-label").text($this.text());
+
+    getUserCity();
 }
 
 

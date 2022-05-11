@@ -192,7 +192,7 @@ class dashboardreport
         if (auth()->id() === 1) {
             return self::collectionbyrevenuewidgets($location_information, $account_id, $where, $request);
         }
-        
+
         $total = 0;
         $report_data = array();
         $wherecondtion = array();
