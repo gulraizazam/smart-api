@@ -183,12 +183,12 @@ class dashboardreport
      * Collection by centre widgets calculation
      */
 
-    public static function collectionbyrevenuewidgets($location_information, $account_id, $where,$request, $is_admin = false)
+    public static function collectionbyrevenuewidgets($location_information, $account_id, $where,$request)
     {
         $total = 0;
         $report_data = array();
         $wherecondtion = array();
-        if($is_admin){
+        if($request->performance){
             $wherecondtion[] = array(
                 'created_by',
                 '=',
