@@ -100,7 +100,6 @@
         <script src="{{asset('assets/js/pages/admin_settings/invoices.js')}}"></script>
 
         <script>
-
             function getUserCentre() {
                 $.ajax({
                     url: '{{route('admin.users.get_centers')}}',
