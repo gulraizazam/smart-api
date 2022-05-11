@@ -1154,6 +1154,8 @@ function setFilters(filter_values, active_filters) {
         $("#consultancy_city_filter").html(city_options);
         $("#treatment_city_filter").html(city_options);
 
+        setDashboardFilters();
+
         getUserCity();
 
     } catch (error) {
