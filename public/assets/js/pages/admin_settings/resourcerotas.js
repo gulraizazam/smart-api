@@ -922,6 +922,8 @@ function setFilters(filter_values, active_filters) {
 
         hideShowAdvanceFilters(active_filters);
 
+        getUserCity();
+
     } catch (error) {
         showException(error);
     }
