@@ -366,6 +366,7 @@ class HomeController extends Controller
         if (Gate::allows('dashboard_my_collection_by_centre')) {
 
             $location_information = Locations::getActiveSorted(ACL::getUserCentres());
+            dd($location_information);
 
             switch ($request->type) {
                 case 'today':
