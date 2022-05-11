@@ -331,6 +331,9 @@ class dashboardreport
             $In_hand_balance = $total_revenue - $total_refund_out;
 
 
+            if ($counter === 0) {
+                //
+            } else {
                 if ($In_hand_balance > 0) {
                     $report_data[] = array(
                         $location_single_info->city->name . ' - ' . $location_single_info->name,
@@ -339,6 +342,7 @@ class dashboardreport
 
                     $total += $In_hand_balance;
                 }
+            }
 
 
             $counter++;
