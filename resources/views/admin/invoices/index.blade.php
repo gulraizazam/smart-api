@@ -98,6 +98,29 @@
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/invoices.js')}}"></script>
+
+        <script>
+            jQuery(document).ready( function () {
+                getUserCentre();
+            });
+
+            function getUserCentre() {
+                $.ajax({
+                    url: '{{route('admin.users.get_centers')}}',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.status) {
+                            $("#search_location_id").val(response.data.center).change();
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
+            }
+        </script>
+
     @endpush
 
 @endsection
