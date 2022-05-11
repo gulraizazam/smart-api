@@ -328,15 +328,15 @@ class dashboardreport
                     'Task',
                     'Hours per Day'
                 ];
-            }
+            } else {
+                if ($In_hand_balance > 0) {
+                    $report_data[$location_single_info->id] = array(
+                        $location_single_info->city->name . ' - ' . $location_single_info->name,
+                        $In_hand_balance,
+                    );
 
-            if ($In_hand_balance > 0) {
-                $report_data[$location_single_info->id] = array(
-                    $location_single_info->city->name . ' - ' . $location_single_info->name,
-                    $In_hand_balance,
-                );
-
-                $total += $In_hand_balance;
+                    $total += $In_hand_balance;
+                }
             }
 
             $counter++;
