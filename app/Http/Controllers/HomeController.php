@@ -295,10 +295,7 @@ class HomeController extends Controller
 
         if (Gate::allows('dashboard_collection_by_centre')) {
 
-            $location_information = Locations::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
-            ])->pluck('name', 'id');
+            $location_information = Locations::getActiveSorted(ACL::getUserCentres());
 
             switch ($request->type) {
                 case 'today':
@@ -366,7 +363,6 @@ class HomeController extends Controller
         if (Gate::allows('dashboard_my_collection_by_centre')) {
 
             $location_information = Locations::getActiveSorted(ACL::getUserCentres());
-            dd($location_information);
 
             switch ($request->type) {
                 case 'today':
