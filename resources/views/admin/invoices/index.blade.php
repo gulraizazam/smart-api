@@ -100,9 +100,6 @@
         <script src="{{asset('assets/js/pages/admin_settings/invoices.js')}}"></script>
 
         <script>
-            jQuery(document).ready( function () {
-                getUserCentre();
-            });
 
             function getUserCentre() {
                 $.ajax({
