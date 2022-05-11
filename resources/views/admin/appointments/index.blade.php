@@ -199,6 +199,7 @@
                             if (response.status) {
                                 $("#consultancy_city_filter").val(response.data.city).change();
                                 $("#treatment_city_filter").val(response.data.city).change();
+                                $("#appoint_search_city").val(response.data.city).change();
                                setTimeout( function () {
                                    getUserCentre();
                                }, 400);
@@ -222,6 +223,7 @@
                         if (response.status) {
                             $("#consultancy_location_filter").val(response.data.center).change();
                             $("#treatment_location_filter").val(response.data.center).change();
+                            $("#appoint_search_centre").val(response.data.center).change();
                         }
                     },
                     error: function () {
