@@ -196,12 +196,6 @@ class dashboardreport
             );
         }
         $counter = 0;
-
-        $report_data[] = [
-            'Task',
-            'Hours per Day'
-        ];
-
         foreach ($location_information as $key => $location_infomation) {
             if ($where == 'today') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
@@ -330,12 +324,14 @@ class dashboardreport
             $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
             $In_hand_balance = $total_revenue - $total_refund_out;
 
-
-            if ($counter === 0) {
-                //
+            if ($counter == 0) {
+                $report_data[$location_single_info->id] = [
+                    'Task',
+                    'Hours per Day'
+                ];
             } else {
                 if ($In_hand_balance > 0) {
-                    $report_data[] = array(
+                    $report_data[$location_single_info->id] = array(
                         $location_single_info->city->name . ' - ' . $location_single_info->name,
                         $In_hand_balance,
                     );
@@ -343,7 +339,6 @@ class dashboardreport
                     $total += $In_hand_balance;
                 }
             }
-
 
             $counter++;
         }
