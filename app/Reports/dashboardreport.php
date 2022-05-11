@@ -188,7 +188,7 @@ class dashboardreport
         $total = 0;
         $report_data = array();
         $wherecondtion = array();
-        if(auth()->id() != 1){
+        if($request->performance){
             $wherecondtion[] = array(
                 'created_by',
                 '=',
