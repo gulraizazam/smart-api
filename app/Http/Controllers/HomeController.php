@@ -302,7 +302,7 @@ class HomeController extends Controller
 
             switch ($request->type) {
                 case 'today':
-                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
+                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request, true);
                     if (count($report_data)) {
                         foreach ($report_data as $record) {
                             $data['today'][] = $record;
@@ -311,7 +311,7 @@ class HomeController extends Controller
                     break;
 
                 case 'yesterday':
-                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
+                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'yesterday', $request, true);
                     if (count($report_data)) {
                         foreach ($report_data as $record) {
                             $data['yesterday'][] = $record;
@@ -320,7 +320,7 @@ class HomeController extends Controller
                     break;
 
                 case 'week':
-                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'last7day', $request);
+                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'last7day', $request, true);
                     if (count($report_data)) {
                         foreach ($report_data as $record) {
                             $data['week'][] = $record;
@@ -329,7 +329,7 @@ class HomeController extends Controller
                     break;
 
                 case 'month':
-                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
+                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'thisMonth', $request, true);
                     if (count($report_data)) {
                         foreach ($report_data as $record) {
                             $data['month'][] = $record;
@@ -337,7 +337,7 @@ class HomeController extends Controller
                     }
                     break;
                 default:
-                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
+                    list( $report_data, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request, true);
                     if (count($report_data)) {
                         foreach ($report_data as $record) {
                             $data['today'][] = $record;
