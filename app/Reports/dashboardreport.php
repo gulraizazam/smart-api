@@ -197,7 +197,7 @@ class dashboardreport
         }
         $counter = 0;
 
-        $report_data[0] = [
+        $report_data[] = [
             'Task',
             'Hours per Day'
         ];
@@ -332,7 +332,7 @@ class dashboardreport
 
 
                 if ($In_hand_balance > 0) {
-                    $report_data[$location_single_info->id] = array(
+                    $report_data[] = array(
                         $location_single_info->city->name . ' - ' . $location_single_info->name,
                         $In_hand_balance,
                     );
