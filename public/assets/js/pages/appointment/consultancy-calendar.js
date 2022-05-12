@@ -646,8 +646,11 @@ function hoverPopup(info) {
 
     if (id !== 'availableForMeeting') {
 
-       let left = event.pageX - $(info.el).position().left;
-       let top = event.pageY - $(info.el).position().top;
+       /*let left = event.pageX - $(info.el).position().left;
+       let top = event.pageY - $(info.el).position().top;*/
+
+        let left = event.pageX - $('#consultancy_calendar').offset().left + 320;
+        let top = event.pageY - $('#consultancy_calendar').offset().top + 400;
 
         $(".modal_consultancy_popup").css({top: top,left: left}).show();
 

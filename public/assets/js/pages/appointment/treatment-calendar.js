@@ -505,7 +505,7 @@ var TreatmentCalendar = function() {
             if (id !== 'availableForMeeting') {
 
                 let left = event.pageX - $('#treatment_calendar').offset().left + 320;
-                let top = event.pageY - $('#treatment_calendar').offset().top + 500;
+                let top = event.pageY - $('#treatment_calendar').offset().top + 400;
 
                 $(".modal_consultancy_popup").css({top: top,left: left}).show();
 
