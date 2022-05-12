@@ -395,108 +395,6 @@ function setDetailData(response) {
     }
 }
 
-function detailActions(appointment, invoice, invoiceid, permissions, $class = 'detail-actions') {
-
-    let id = appointment.id;
-
-    let edit_url = route('admin.appointments.edit', {id: appointment.id});
-    let edit_service_url = route('admin.appointments.edit_service', {id: appointment.id});
-    let detail_url = route('admin.appointments.detail', {id: appointment.id});
-    let sms_logs_url = route('admin.appointments.sms_logs', {id: appointment.id});
-    let patient_url = route('admin.patients.preview', {id: appointment.patient_id});
-    let service_invoice_url = route('admin.appointments.invoicecreate', {id: appointment.id});
-    let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: appointment.id, type: 'appointment'});
-    let image_url = route('admin.appointmentsimage.imageindex', {id: appointment.id});
-    let measurement_url = route('admin.appointmentsmeasurement.measurements', {id: appointment.id});
-    let medical_url = route('admin.appointmentsmedical.medicals', {id: appointment.id});
-    let plan_create_url = route('admin.appointmentplans.create', {id: appointment.id});
-    let log_url = route('admin.appointments.loadPage', {id: appointment.id, type: 'web'});
-
-    let buttons = '';
-
-    if (permissions.edit) {
-        if (appointment.appointment_type_id == 1) {
-            buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
-            <i class="la la-pencil"></i> Edit\
-            </a></li>';
-        } else {
-            buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `' + $class + '`);" >\
-            <i class="la la-pencil"></i> Edit\
-            </a></li>';
-        }
-    }
-
-    buttons += '<li><a href="javascript:void(0);" onclick="viewSmsLogs(`' + sms_logs_url + '`);" class="text text-primary" >\
-        <i class="la la-sms" data-toggle="tooltip" title="SMS Logs"></i> SMS Logs\
-        </a></li>';
-    if (permissions.invoice) {
-        if (!invoice) {
-            if (appointment.appointment_type_id == 2) {
-                buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + service_invoice_url + '`);">\
-                <i class="la la-file" title="Generate Invoice"></i> Generate Invoice\
-                </a></li>';
-            }
-
-            if (appointment.appointment_type_id == 1) {
-                buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" >\
-                <i class="la la-file" title="Generate Invoice"></i> Generate Invoice\
-                </a></li>';
-            }
-        }
-        if (permissions.invoice_display) {
-            if (invoice) {
-                let invoice_url = route('admin.appointments.InvoiceDisplay', {id: invoiceid});
-                buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_url + '`);" >\
-                <i class="la la-file-invoice-dollar" title="Invoice Display"></i> Invoice Display\
-                </a></li>';
-            }
-        }
-    }
-
-    if (appointment.appointment_type_id == 2) {
-        if (permissions.image_manage) {
-            buttons += '<li><a class="text text-primary" href="'+image_url+'" target="_blank">\
-        <i class="la la-image" title="Images"></i> Images\
-        </a></li>';
-        }
-
-        if (permissions.measurement_manage) {
-            buttons += '<li><a class="text text-primary" href="'+measurement_url+'"  target="_blank">\
-        <i class="la la-ruler-horizontal" title="Measurement"></i> Measurement\
-        </a></li>';
-        }
-    }
-
-    if (appointment.appointment_type_id == 1) {
-
-        if(permissions.medical_form_manage) {
-            buttons += '<li><a class="text text-primary" href="'+medical_url+'" target="_blank">\
-            <i class="la la-medkit" title="Medical History Form"></i> Medical Form\
-            </a></li>';
-        }
-    }
-
-    if (permissions.plans_create) {
-        buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_create_url+'`);">\
-            <i class="la la-paper-plane" title="Create Plan"></i> Create Plan\
-            </a></li>';
-    }
-
-    if(permissions.patient_card) {
-        buttons += '<li><a class="text text-primary" target="_blank" href="'+patient_url+'">\
-        <i class="la la-user" title="Patient Card"></i>Patient Card\
-        </a></li>';
-    }
-
-    if (permissions.log) {
-        buttons += '<li><a class="text text-primary" target="_blank" href="'+log_url+'">\
-        <i class="la la-history" title="Log"></i> Log\
-        </a></li>';
-    }
-
-    $("." + $class).html(buttons);
-
-}
 
 function setComments(appointment) {
 
@@ -510,30 +408,7 @@ function setComments(appointment) {
     $("#commentsection").html(comment_html);
 }
 
-function commentData(user_name, created_at, comment) {
 
-    let comment_html = '';
-
-    comment_html = '<div class="tab-content" id="itemComment">' +
-        ' <div class="tab-pane active" id="portlet_comments_1"> ' +
-        '<div class="mt-comments"> ' +
-        '<div class="mt-comment">' +
-        ' <div class="mt-comment-img" id="imgContainer"> ' +
-        '<img src="'+asset_url+'assets/media/avatar.jpg" alt="Avatar"> ' +
-        '</div><div class="mt-comment-body"> ' +
-        '<div class="mt-comment-info"> ' +
-        '<span class="mt-comment-author" id="creat_by">';
-    comment_html += user_name ?? 'N/A';
-    comment_html += '</span> <span class="mt-comment-date" id="datetime">';
-    comment_html += formatDate(created_at, 'ddd MMM, mm yyyy HH:mm A');
-    comment_html += '</span> </div>' +
-        '<div class="mt-comment-text" id="message">';
-    comment_html += comment ?? 'N/A';
-    comment_html += '</div><div class="mt-comment-details"> </div>' +
-        '</div></div></div></div></div>';
-
-    return comment_html;
-}
 
 function setCreateConsultancy(response, start) {
 

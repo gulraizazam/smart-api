@@ -211,7 +211,7 @@
 
                     @if(Gate::allows('appointments_manage'))
 
-                        <li class="menu-item menu-item-submenu {{openMenu(['admin.appointments.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                        <li class="menu-item menu-item-submenu {{openMenu(['admin.consultancy.index'])}} {{openMenu(['admin.treatment.index'])}} {{openMenu(['admin.appointments.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
 
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <span class="svg-icon menu-icon fa_icon">
@@ -226,12 +226,12 @@
                                 <ul class="menu-subnav">
 
                                     @can('appointments_manage')
-                                        <li class="menu-item manage-appointment {{activeMenu('admin.appointments.index', 'menu-item-active', 'appointment')}}" aria-haspopup="true">
-                                            <a href="{{route('admin.appointments.index', ['tab' => 'appointment'])}}" class="menu-link">
+                                        <li class="menu-item manage-appointment {{activeMenu('admin.consultancy.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.consultancy.index')}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
                                                 </i>
-                                                <span class="menu-text">Appointments</span>
+                                                <span class="menu-text">Consultancies</span>
                                             </a>
                                         </li>
                                     @endcan
@@ -246,6 +246,17 @@
                                             </a>
                                         </li>
                                     @endcan
+
+                                        @can('appointments_manage')
+                                            <li class="menu-item manage-appointment {{activeMenu('admin.treatment.index')}}" aria-haspopup="true">
+                                                <a href="{{route('admin.treatment.index')}}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-dot">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Treatments</span>
+                                                </a>
+                                            </li>
+                                        @endcan
 
                                         @can('appointments_services')
                                             <li class="menu-item manage-treatment {{activeMenu('admin.appointments.index', 'menu-item-active', 'treatment')}}" aria-haspopup="true">

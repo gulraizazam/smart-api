@@ -8,7 +8,7 @@
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6" id="patient_id">
-            <label>Patient:</label>
+            <label>Patient Search:</label>
             <select style="width: 120%;" class="form-control filter-field patient_id" id="search_patient_id"></select>
         </div>
 

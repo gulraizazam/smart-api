@@ -68,7 +68,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="fw-bold fs-6 mb-2 pl-0">Scheduled Date <span class="text text-danger">*</span> </label>
-                            <input readonly id="edit_treatment_scheduled_date" class="form-control" name="scheduled_date">
+                            <input readonly id="edit_treatment_scheduled_date" class="form-control current-datepicker" name="scheduled_date">
 
                             <input type="hidden" id="edit_treatment_scheduled_date_old">
 

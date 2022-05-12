@@ -8,14 +8,14 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Consultancy List', 'title' => 'Consultancies'])
+    @include('admin.partials.breadcrumb', ['module' => 'Treatments List', 'title' => 'Treatments'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
             <div class="container">
 
-                @include('admin.appointments.partials.consultancy-menu')
+                @include('admin.appointments.partials.treatment-menu')
 
                 <!--begin::Card-->
                 <div class="card card-custom">
@@ -36,7 +36,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label change-label">Consultancies</h3>
+                            <h3 class="card-label change-label">Treatments</h3>
 
                         </div>
 
@@ -65,7 +65,7 @@
                     <!--Start Appointment Section-->
                     <div class="card-body appointment appointment-section">
                         <!--begin::Search Form-->
-                        @include('admin.appointments.filters', ['custom_reset' => 'custom_reset'])
+                        @include('admin.appointments.treatment-filters', ['custom_reset' => 'custom_reset'])
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -95,6 +95,28 @@
 
                     </div>
                     <!--End Consultancy Section-->
+
+                    <!--Start Treatment Section-->
+                    <div class="card-body appointment treatment-section d-none">
+
+                        @include('admin.appointments.services.filters')
+
+                        <div id="treatment_calendar" style="position: relative">
+
+                            {{--loader befor get celendar events--}}
+                            <div class="appointment-loader-base" style="display: none;">
+                                <div class="blockui"> <span>Please wait...</span>
+                                    <span>
+                                        <div class="spinner spinner-primary"></div>
+                                    </span>
+                                </div>
+                            </div>
+                            {{--end loader--}}
+
+                        </div>
+
+                    </div>
+                    <!--End Treatment Section-->
 
                 </div>
                 <!--end::Card-->
@@ -212,11 +234,10 @@
 
         </script>
         <script src="{{asset('assets/js/pages/appointment/invoice.js?v=1')}}"></script>
-        <script src="{{asset('assets/js/pages/appointment/consultancy-calendar.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js')}}"></script>
 
         <script src="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js')}}"></script>
-        <script src="{{asset('assets/js/pages/appointment/consultancy-data.js')}}"></script>
-        {{--<script src="{{asset('assets/js/pages/appointment/treatment-data.js')}}"></script>--}}
+        <script src="{{asset('assets/js/pages/appointment/treatment-data.js')}}"></script>
 
         <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/plan/create.js')}}"></script>
@@ -226,7 +247,7 @@
 
     @push('datatable-js')
 
-        <script src="{{asset('assets/js/pages/appointment/datatable.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatmentDatatable.js')}}"></script>
     @endpush
 
 @endsection
