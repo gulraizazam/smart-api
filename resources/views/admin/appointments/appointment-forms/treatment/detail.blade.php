@@ -48,8 +48,8 @@
                                         <td id="treatment_patient_phone"></td>
                                     </tr>
                                     <tr>
-                                        <th>Email</th>
-                                        <td id="treatment_patient_email"></td>
+                                        <th>Customer ID</th>
+                                        <td id="treatment_customer_id"></td>
                                         <th>Gender</th>
                                         <td id="treatment_patient_gender"></td>
                                     </tr>

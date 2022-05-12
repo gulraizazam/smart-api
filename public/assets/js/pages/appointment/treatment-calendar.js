@@ -546,7 +546,9 @@ function setTreatmentDetailData(response) {
         $("#treatment_comment_appointment_id").val(appointment?.id ?? 0);
         $("#treatment_patient_name").text(patient?.name ?? 'N/A');
         $("#treatment_patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
-        $("#treatment_patient_email").text(patient?.email ?? 'N/A');
+        if ( patient?.id) {
+            $("#treatment_customer_id").text("C-" + patient?.id ?? 'N/A');
+        }
         $("#treatment_patient_gender").text(getGender(patient?.gender));
         $("#treatment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
         $("#treatment_doctor_name").text(doctor?.name ?? 'N/A');

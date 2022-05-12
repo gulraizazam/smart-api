@@ -378,7 +378,9 @@ function setDetailData(response) {
         $("#comment_appointment_id").val(appointment?.id ?? 0);
         $("#patient_name").text(patient?.name ?? 'N/A');
         $("#patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
-        $("#patient_email").text(patient?.email ?? 'N/A');
+        if (patient?.id) {
+            $("#patient_c_id").text(makePatientId(patient?.id));
+        }
         $("#patient_gender").text(getGender(patient?.gender));
         $("#patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
         $("#doctor_name").text(doctor?.name ?? 'N/A');
@@ -574,7 +576,7 @@ function setCreateConsultancy(response, start) {
         $("#consultancy_address").val();
         $("#consultancy_town_id").val();
 
-        let type_options = '<option value="">Select Consultancy Type</option>';
+        let type_options = '';
         if (consultancy_types) {
             Object.entries(consultancy_types).forEach(function (consultancy_type) {
                 type_options += '<option value="'+consultancy_type[0]+'">'+consultancy_type[1]+'</option>';
@@ -644,8 +646,8 @@ function hoverPopup(info) {
 
     if (id !== 'availableForMeeting') {
 
-       let left = event.pageX - $('#consultancy_calendar').offset().left + 320;
-       let top = event.pageY - $('#consultancy_calendar').offset().top + 500;
+       let left = event.pageX - $(info.el).position().left;
+       let top = event.pageY - $(info.el).position().top;
 
         $(".modal_consultancy_popup").css({top: top,left: left}).show();
 

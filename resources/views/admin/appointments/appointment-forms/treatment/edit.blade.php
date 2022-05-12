@@ -82,13 +82,13 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Phone <span class="text text-danger">*</span> </label>
-                            <input id="edit_treatment_patient_phone" class="form-control" name="phone">
+                            <input readonly id="edit_treatment_patient_phone" class="form-control" name="phone">
                             <input id="edit_old_treatment_patient_phone" name="old_phone" type="hidden">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input id="edit_treatment_patient_name" class="form-control" name="name">
+                            <input readonly id="edit_treatment_patient_name" class="form-control" name="name">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">

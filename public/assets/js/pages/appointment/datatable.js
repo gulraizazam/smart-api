@@ -739,10 +739,8 @@ function editRow(url, id, $class = 'detail-actions') {
 
             if ($class === 'detail-actions') {
                 setEditData(response);
-                reInitTable();
             } else {
                 setTreatmentEditData(response);
-                reInitTable();
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {

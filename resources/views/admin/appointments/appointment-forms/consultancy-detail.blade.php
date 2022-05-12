@@ -48,7 +48,7 @@
                                     </tr>
                                     <tr>
                                         <th>Email</th>
-                                        <td id="patient_email"></td>
+                                        <td id="patient_c_id"></td>
                                         <th>Gender</th>
                                         <td id="patient_gender"></td>
                                     </tr>
