@@ -71,11 +71,16 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Customer ID <span class="text text-danger">*</span> </label>
+                            <input readonly id="create_treatment_c_id" class="form-control" name="client_id">
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
                             <select id="create_treatment_gender" class="form-control select2" name="gender"></select>
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
+                        {{--<div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>
                             <select id="create_treatment_lead" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source">
                             </select>
@@ -85,7 +90,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Referred By</label>
                             <select id="create_treatment_referred_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="referred_by">
                             </select>
-                        </div>
+                        </div>--}}
 
                     </div>
                 </div>

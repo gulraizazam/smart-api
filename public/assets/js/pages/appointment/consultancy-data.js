@@ -27,9 +27,6 @@ jQuery(document).ready(function() {
         && typeof result.machine_id !== "undefined"
         && typeof result.tab !== 'undefined' && result.tab == 'treatment') {
 
-        //loadDoctors(result.location_id, result.tab);
-
-
         setTimeout( function () {
             $("#treatment_city_filter").val(result.city_id).change();
         }, 200);
@@ -322,9 +319,9 @@ let ConsultancyDoctorListener = function (doctorId) {
             && $("#consultancy_doctor_filter").val() !== ""
             && typeof result.tab !== 'undefined' && result.tab == 'consultancy') {
 
-            window.eventData = {}
-            window.eventData.city_id = $("#consultancy_city_filter").val()
-            window.eventData.location_id = $("#consultancy_location_filter").val()
+            window.eventData = {};
+            window.eventData.city_id = $("#consultancy_city_filter").val();
+            window.eventData.location_id = $("#consultancy_location_filter").val();
             window.eventData.doctor_id = $("#consultancy_doctor_filter").val();
             window.eventData.id = null;
             window.eventData.firstTime = true;

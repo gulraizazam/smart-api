@@ -153,6 +153,9 @@ function getTreatmentPatientDetail($this) {
                 }
 
                 $('#create_treatment_patient_name').val(patient?.name);
+                if (patient?.id) {
+                    $('#create_treatment_c_id').val(makePatientId(patient?.id));
+                }
                 $('#create_treatment_gender').val(patient?.gender).trigger("change");
 
                 if (patient?.phone != '') {
