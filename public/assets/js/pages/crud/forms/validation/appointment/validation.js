@@ -419,7 +419,7 @@ var EditTreatmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
+                    reInitTable();
                 } else {
                     toastr.error(response.message);
                 }

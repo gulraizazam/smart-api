@@ -1,3 +1,69 @@
+jQuery(document).ready(function() {
+
+    var result = get_query();
+
+    if (typeof result.tab !== 'undefined') {
+        $("." + result.tab+ '-tab').click();
+    } else {
+        $(".appointment-tab").addClass("nav-bar-active")
+    }
+
+    if (typeof result.city_id !== "undefined"
+        && typeof result.location_id !== "undefined"
+        && typeof result.doctor_id !== "undefined"
+        && typeof result.machine_id !== "undefined"
+        && typeof result.tab !== 'undefined' && result.tab == 'treatment') {
+
+        setTimeout( function () {
+            $("#treatment_city_filter").val(result.city_id).change();
+        }, 200);
+        setTimeout( function () {
+            $("#treatment_location_filter").val(result.location_id).change();
+        },300);
+
+        setTimeout( function () {
+            $("#treatment_doctor_filter").val(result.doctor_id).change();
+        },900);
+
+        setTimeout( function () {
+            $("#treatment_resource_filter").val(result.machine_id).change();
+        },1200);
+
+    }
+
+    $("#Add_comment").click(function () {
+
+        if ($('#consultancy_comment').val() !== '') {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'get',
+                url: route('admin.appointments.storecomment'),
+                data: {
+                    'comment': $('#consultancy_comment').val(),
+                    'appointment_id': $('#comment_appointment_id').val(),
+                },
+                success: function (data) {
+                    $('#commentsection').prepend(commentData(data.username, data.appointmentCommentDate, data.appointment.comment));
+                },
+
+            });
+        } else {
+            toastr.error("Please fill out the comment field");
+        }
+        $('#cment')[0].reset();
+    });
+
+    patientSearch('appointment_patient_id');
+
+    $(document).on("click", ".croxcli", function () {
+        $('.appointment_patient_id').val(null).trigger('change');
+    });
+
+});
+
+
 var counter = 0;
 var treatmentDoctorListener = function (doctorId) {
 
@@ -42,7 +108,7 @@ let loadMachine = function(locationId) {
                    // $("#treatment_resource_filter").val(result.machine_id).change();
                 }
 
-                $('.select2').select2({ width: '100%' });
+              //  $('.select2').select2({ width: '100%' });
             } else {
                 resetDoctors();
             }

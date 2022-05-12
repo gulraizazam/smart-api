@@ -1,4 +1,4 @@
-var table_url = route('admin.consultancy.datatable');
+var table_url = route('admin.treatment.datatable');
 
 var table_columns = [
 
@@ -1009,24 +1009,20 @@ function applyFilters(datatable) {
 
         let filters =  {
             delete: '',
-            patient_id: $("#appointment_patient_id").val(),
-          /*  name: $("#appoint_search_patient").val(),
-            phone: $("#appoint_search_phone").val(),*/
-            date_from: $("#appoint_search_start").val(),
-            date_to: $("#appoint_appoint_end").val(),
-            appointment_type_id: $("#appoint_search_type").val(),
-            service_id: $("#appoint_search_service").val(),
-            region_id: $("#appoint_search_region").val(),
-            city_id: $("#appoint_search_city").val(),
-            location_id: $("#appoint_search_centre").val(),
-            doctor_id: $("#appoint_search_doctor").val(),
-            appointment_status_id: $("#appoint_search_status").val(),
-            consultancy_type: $("#appoint_search_consultancy_type").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
-            created_by: $("#appoint_search_created_by").val(),
-            converted_by: $("#appoint_search_updated_by").val(),
-            updated_by: $("#appoint_search_rescheduled_by").val(),
+            patient_id: $("#treatment_patient_id").val(),
+            date_from: $("#treatment_search_start").val(),
+            date_to: $("#treatment_appoint_end").val(),
+            region_id: $("#treatment_search_region").val(),
+            city_id: $("#treatment_search_city").val(),
+            location_id: $("#treatment_search_centre").val(),
+            doctor_id: $("#treatment_search_doctor").val(),
+            appointment_status_id: $("#treatment_search_status").val(),
+            consultancy_type: $("#treatment_search_consultancy_type").val(),
+            created_from: $("#treatment_search_created_from").val(),
+            created_to: $("#treatment_search_created_to").val(),
+            created_by: $("#treatment_search_created_by").val(),
+            converted_by: $("#treatment_search_updated_by").val(),
+            updated_by: $("#treatment_search_rescheduled_by").val(),
             filter: 'filter',
         }
 
@@ -1124,80 +1120,73 @@ function setFilters(filter_values, active_filters) {
             consultancy_type_options += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
         });
 
-        let created_by = $("#appoint_search_created_by").val();
+        let created_by = $("#treatment_search_created_by").val();
         if (created_by == null || created_by == '') {
-            $("#appoint_search_created_by").html(user_options);
+            $("#treatment_search_created_by").html(user_options);
         }
 
-        let updated_by = $("#appoint_search_updated_by").val();
+        let updated_by = $("#treatment_search_updated_by").val();
         if (updated_by == null || updated_by == '') {
-            $("#appoint_search_updated_by").html(user_options);
+            $("#treatment_search_updated_by").html(user_options);
         }
 
-        let rescheduled_by = $("#appoint_search_rescheduled_by").val();
+        let rescheduled_by = $("#treatment_search_rescheduled_by").val();
         if (rescheduled_by == null || rescheduled_by == '') {
-            $("#appoint_search_rescheduled_by").html(user_options);
+            $("#treatment_search_rescheduled_by").html(user_options);
         }
 
-        let search_type = $("#appoint_search_type").val();
-        if (search_type == null || search_type == '') {
-            $("#appoint_search_type").html(appoint_type_options);
-        }
-
-        let status = $("#appoint_search_status").val();
+        let status = $("#treatment_search_status").val();
         if (status == null || status == '') {
-            $("#appoint_search_status").html(appoint_status_options);
+            $("#treatment_search_status").html(appoint_status_options);
         }
 
-        let doctor = $("#appoint_search_doctor").val();
-        if (doctor == null || doctor == '') {
-            $("#appoint_search_doctor").html(doctor_options);
+        let doctor_id = $("#treatment_search_doctor").val();
+        if (doctor_id == null || doctor_id == '') {
+            $("#treatment_search_doctor").html(doctor_options);
         }
 
-        let centre = $("#appoint_search_centre").val();
-        if (centre == null || centre == '') {
-            $("#appoint_search_centre").html(location_options);
+        let centre_id = $("#treatment_search_centre").val();
+        if (centre_id == null || centre_id == '') {
+            $("#treatment_search_centre").html(location_options);
         }
 
-        let city = $("#appoint_search_city").val();
-        if (city == null || city == '') {
-            $("#appoint_search_city").html(city_options);
+        let city_id = $("#treatment_search_city").val();
+
+        if (city_id == null || city_id == '') {
+            $("#treatment_search_city").html(city_options);
+        }
+        let region_id = $("#treatment_search_region").val();
+
+        if (region_id == null || region_id == '') {
+            $("#treatment_search_region").html(region_options);
         }
 
-        let region = $("#appoint_search_region").val();
-        if (region == null || region == '') {
-            $("#appoint_search_region").html(region_options);
-        }
+        let consultancy_type = $("#treatment_search_consultancy_type").val();
 
-        let service = $("#appoint_search_service").val();
-        if (service == null || service == '') {
-            $("#appoint_search_service").html(service_options);
-        }
-        let consultancy_type = $("#appoint_search_consultancy_type").val();
         if (consultancy_type == null || consultancy_type == '') {
-            $("#appoint_search_consultancy_type").html(consultancy_type_options);
+            $("#treatment_search_consultancy_type").html(consultancy_type_options);
         }
 
-        $("#appoint_search_created_by").val(active_filters.created_by);
-        $("#appoint_search_updated_by").val(active_filters.converted_by);
-        $("#appoint_search_rescheduled_by").val(active_filters.updated_by);
-        $("#appoint_search_type").val(active_filters.appointment_type_id);
-        $("#appoint_search_status").val(active_filters.appointment_status_id);
-        $("#appoint_search_doctor").val(active_filters.doctor_id);
-        $("#appoint_search_centre").val(active_filters.location_id);
-        $("#appoint_search_city").val(active_filters.city_id);
-        $("#appoint_search_region").val(active_filters.region_id);
-        $("#appoint_search_service").val(active_filters.service_id);
-        $("#appoint_search_consultancy_type").val(active_filters.consultancy_type);
+
+        $("#treatment_search_created_by").val(active_filters.created_by);
+        $("#treatment_search_updated_by").val(active_filters.converted_by);
+        $("#treatment_search_rescheduled_by").val(active_filters.updated_by);
+        $("#treatment_search_type").val(active_filters.appointment_type_id);
+        $("#treatment_search_status").val(active_filters.appointment_status_id);
+        $("#treatment_search_doctor").val(active_filters.doctor_id);
+        $("#treatment_search_centre").val(active_filters.location_id);
+        $("#treatment_search_city").val(active_filters.city_id);
+        $("#treatment_search_region").val(active_filters.region_id);
+        $("#treatment_search_service").val(active_filters.service_id);
+        $("#treatment_search_consultancy_type").val(active_filters.consultancy_type);
 
         /*For Consultancy filter*/
-        let city_value = $("#consultancy_city_filter").val();
+       // $("#consultancy_city_filter").html(city_options);
+        let city_value = $("#treatment_city_filter").val();
 
         if (city_value == null) {
-            $("#consultancy_city_filter").html(city_options);
+            $("#treatment_city_filter").html(city_options);
         }
-
-        //$("#treatment_city_filter").html(city_options);
 
         getUserCity();
 
@@ -1210,7 +1199,6 @@ function resetCustomFilters() {
 
     $('.appointment_patient_id').val(null).trigger('change');
     $(".filter-field").val('');
-   // $('.select2').val(null).trigger('change');
 
     setQueryStringParameter('type');
     setQueryStringParameter('from');

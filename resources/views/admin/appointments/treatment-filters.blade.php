@@ -51,7 +51,7 @@
 
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Patient Search:</label>
-            <select class="form-control filter-field appointment_patient_id" id="appointment_patient_id"></select>
+            <select class="form-control filter-field appointment_patient_id" id="treatment_patient_id"></select>
         </div>
 
         {{--<div class="col-lg-1 mb-lg-0 mb-6" id="patient_id">
@@ -72,13 +72,13 @@
         <div class="col-lg-2 mb-lg-0 mb-6" style="margin-left: -1.7%; margin-right: 4%;">
             <label>Scheduled:</label>
             <div class="input-daterange input-group to-from-datepicker" style="width: 112%;">
-                <input type="text" id="appoint_search_start" autocomplete="off" class="form-control filter-field datatable-input" name="created_start" placeholder="From">
+                <input type="text" id="treatment_search_start" autocomplete="off" class="form-control filter-field datatable-input" name="created_start" placeholder="From">
                 <div class="input-group-append" style="width: 0;">
                     <span class="input-group-text">
                         <i class="la la-ellipsis-h"></i>
                     </span>
                 </div>
-                <input type="text" id="appoint_appoint_end" autocomplete="off" class="form-control filter-field datatable-input" name="created_end" placeholder="To" >
+                <input type="text" id="treatment_appoint_end" autocomplete="off" class="form-control filter-field datatable-input" name="created_end" placeholder="To" >
             </div>
         </div>
 
@@ -90,28 +90,28 @@
         <div class="col-lg-2 mb-lg-0 mb-6 doctor-filter">
             <label style="margin-left: -27%;">Doctor:</label>
             <br>
-            <select class="form-control filter-field select2" id="appoint_search_doctor"></select>
+            <select class="form-control filter-field select2" id="treatment_search_doctor"></select>
         </div>
 
         <div class="col-lg-1 mb-lg-0 mb-6 center-filter">
             <label style="margin-left: -136%;">Centre:</label>
             <br>
-            <select class="form-control filter-field select2" id="appoint_search_centre"></select>
+            <select class="form-control filter-field select2" id="treatment_search_centre"></select>
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6 appoint_search_status" style="margin-left: -4.2%;">
             <label style="width: 80%">Status:</label>
-            <select class="form-control filter-field select2" id="appoint_search_status"></select>
+            <select class="form-control filter-field select2" id="treatment_search_status"></select>
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6 appoint_search_city" style="margin-left: -4.6%;">
             <label  style="width: 70%">City:</label>
-            <select class="form-control filter-field select2" id="appoint_search_city"></select>
+            <select class="form-control filter-field select2" id="treatment_search_city"></select>
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6" style="margin-left: -6%;">
             <label>Region:</label>
-            <select class="form-control filter-field select2" id="appoint_search_region"></select>
+            <select class="form-control filter-field select2" id="treatment_search_region"></select>
         </div>
 
     </div>
@@ -121,37 +121,37 @@
 
         <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
             <label>Consultancy Type:</label>
-            <select class="form-control filter-field select2" id="appoint_search_consultancy_type"></select>
+            <select class="form-control filter-field select2" id="treatment_search_consultancy_type"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Create At:</label>
             <div class="input-daterange input-group to-from-datepicker" >
-                <input type="text" id="appoint_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5">
+                <input type="text" id="treatment_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5">
                 <div class="input-group-append" style="width: 0;">
                     <span class="input-group-text">
                         <i class="la la-ellipsis-h"></i>
                     </span>
                 </div>
-                <input type="text" id="appoint_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5">
+                <input type="text" id="treatment_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5">
             </div>
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
             <label>Created By:</label>
-            <select class="form-control filter-field select2" id="appoint_search_created_by">
+            <select class="form-control filter-field select2" id="treatment_search_created_by">
             </select>
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
             <label>Updated By:</label>
-            <select class="form-control filter-field select2" id="appoint_search_updated_by">
+            <select class="form-control filter-field select2" id="treatment_search_updated_by">
             </select>
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
             <label>Rescheduled By:</label>
-            <select class="form-control filter-field select2" id="appoint_search_rescheduled_by">
+            <select class="form-control filter-field select2" id="treatment_search_rescheduled_by">
             </select>
         </div>
 

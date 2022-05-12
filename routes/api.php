@@ -469,7 +469,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
 
     /*Appointment routes*/
-    Route::post('appointments/datatable', [AppointmentsController::class, 'datatable'])->name('appointments.datatable');
+    Route::post('consultancy/datatable', [AppointmentsController::class, 'datatable'])->name('consultancy.datatable');
+    Route::post('treatment/datatable', [AppointmentsController::class, 'treatmentDatatable'])->name('treatment.datatable');
     Route::get('appointments/show/status', [AppointmentsController::class, 'showAppointmentStatuses'])->name('appointments.showappointmentstatus');
     Route::post('appointments/load-child-appointment-statuses', [AppointmentsController::class, 'loadAppointmentStatuses'])->name('appointments.load_child_appointment_statuses');
     Route::put('appointments/store/appointmentstatus', [AppointmentsController::class, 'storeAppointmentStatuses'])->name('appointments.storeappointmentstatus');
@@ -480,7 +481,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::put('appointments/send/logged_sms', [AppointmentsController::class, 'sendLogSMS'])->name('appointments.resend_sms');
 
-    Route::resource('appointments', AppointmentsController::class)->except('index');
+    Route::resource('consultancy', AppointmentsController::class)->except('index');
 
 
     Route::post('appointments/load-doctor-rota', [AppointmentsController::class, 'loadRotaByDoctor'])->name('appointments.load_doctor_rota');
