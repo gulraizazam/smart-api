@@ -1349,7 +1349,7 @@ var AppointScheduleValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('treatment');
                 } else {
                     toastr.error(response.message);
                 }
