@@ -1,8 +1,8 @@
 
 function toggleSection($this, $class) {
 
-    $(".menu-item").removeClass('menu-item-active');
-    $(".manage-" + $class).addClass('menu-item-active');
+    /*$(".menu-item").removeClass('menu-item-active');
+    $(".manage-" + $class).addClass('menu-item-active');*/
 
 
 

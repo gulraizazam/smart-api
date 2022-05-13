@@ -226,7 +226,7 @@
                                 <ul class="menu-subnav">
 
                                     @can('appointments_manage')
-                                        <li class="menu-item manage-appointment {{activeMenu('admin.consultancy.index')}}" aria-haspopup="true">
+                                        <li class="menu-item manage-consultancy {{activeMenu('admin.consultancy.index')}}" aria-haspopup="true">
                                             <a href="{{route('admin.consultancy.index')}}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
@@ -237,7 +237,7 @@
                                     @endcan
 
                                         @can('appointments_manage')
-                                            <li class="menu-item manage-appointment {{activeMenu('admin.treatment.index')}}" aria-haspopup="true">
+                                            <li class="menu-item manage-treatment {{activeMenu('admin.treatment.index')}}" aria-haspopup="true">
                                                 <a href="{{route('admin.treatment.index')}}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-dot">
                                                         <span></span>
