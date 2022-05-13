@@ -168,7 +168,7 @@ $(document).ready(function () {
         var appointment_id = $('#invoice_appointment_id').val();
         var amount_create = $('.amount').val();
         var tax_create = $('.tax').val();
-        if ($('#amount_type').val() == 1) {
+        /*if ($('#amount_type').val() == 1) {
             if ($('#cash').val() == 0) {
                 $('#customfield').show();
                 toastr.warning("Cash must be greater than zero.")
@@ -184,7 +184,12 @@ $(document).ready(function () {
             var price = $('.tax_amt').val();
             var settle = $('.settle').val();
             var outstand = $('.outstand').val();
-        }
+        }*/
+
+        var price = $('#cash').val();
+        var settle = 0;
+        var outstand = 0;
+
         var balance = $('.balance').val();
         var cash = $('#cash').val();
         var payment_mode_id = $('#payment_mode_id').val();
@@ -240,7 +245,8 @@ $(document).ready(function () {
                         reInitTable();
                         closeAllPopup('.modal-dialog')
                         $("#consultancy-invoice-create").remove();
-                        window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
+                       // window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
+                        displayInvoice(route('admin.appointments.InvoiceDisplay', {id: invoice_id}), invoice_id);
                     } else {
                         $('#wrongMessage').show();
                         toastr.error(" Something Went Wrong!");
@@ -605,10 +611,10 @@ function keyfunction_cash(type = '') {
 
     var price = $('.tax_amt').val();
     /*tax amt. amount*/
-    var balance = $('.balance').val();
+   // var balance = $('.balance').val();
     var cash = $('#cash').val();
-    var settleamount = $('.settle').val();
-    var outstanding = $('.outstand').val();
+   // var settleamount = $('.settle').val();
+   // var outstanding = $('.outstand').val();
     var amount_type = $('#amount_type').val();
 
     if (cash == 0 || cash == '') {
@@ -622,13 +628,13 @@ function keyfunction_cash(type = '') {
         var outstand_cash = $("#outstanding_cash").val();
         if (type == '') {
             $("#settle").text(settle_cash);
-            $(".settle").val(settle_cash);
+            //$(".settle").val(settle_cash);
         } else {
             $("#settle_create").text(settle_cash);
-            $(".settle_create").val(settle_cash);
+            //$(".settle_create").val(settle_cash);
         }
         $("#outstand").text(outstand_cash);
-        $(".outstand").val(outstand_cash);
+       // $(".outstand").val(outstand_cash);
     }
 
     if (price && balance && cash) {
@@ -636,7 +642,7 @@ function keyfunction_cash(type = '') {
             type: 'get',
             url: route('admin.appointments.getfinalcalculation'),
             data: {
-                'price': price,
+                'price': cash,
                 'balance': balance,
                 'cash': cash,
                 'settleamount': settleamount,
@@ -656,7 +662,7 @@ function keyfunction_cash(type = '') {
                         $(".settle_create").val(resposne.settleamount);
                     }
 
-                    if (resposne.outstdanding == '0') {
+                   /* if (resposne.outstdanding == '0') {
                         $("#"+type+"addinvoice").show();
                     } else {
                         $("#"+type+"addinvoice").hide();
@@ -664,7 +670,7 @@ function keyfunction_cash(type = '') {
 
                     if ((cash == 0 || cash == '') && amount_type == 0) {
                         $('#addinvoice').show();
-                    }
+                    }*/
                 }
             },
         });

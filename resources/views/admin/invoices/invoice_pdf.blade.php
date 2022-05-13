@@ -1,6 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
+    <meta charset="utf-8" />
+    <title>Cutera</title>
+    <meta content="Cutera Aesthetic is a Medical Spa offering more than 60 treatment for skin rejuvenation and body contouring" name="description" />
+    <meta content="Red Signal" name="author"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <style>
         table {
             font-family: arial, sans-serif;
@@ -155,6 +161,7 @@
         }
     </style>
 </head>
+
 <body>
 <div class="invoice-pdf">
     <!-- <table style="display:none;">
@@ -447,6 +454,17 @@
         <td><div class="danger-alert">Invoice is not Refundable</div></td>
     </tr>
 </table>--}}
+
+<script>
+    window.addEventListener('DOMContentLoaded', (event) => {
+        window.print();
+        $(".action-button").click()
+    });
+
+
+</script>
+
+
 </body>
 
 </html>

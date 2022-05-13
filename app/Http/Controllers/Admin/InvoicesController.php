@@ -420,6 +420,7 @@ class InvoicesController extends Controller
                 return $pdf->stream('admin.invoices.invoice_pdf.pdf');
             }
         } else {
+            //return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'));
             $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);

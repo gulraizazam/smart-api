@@ -1,5 +1,8 @@
+
+
 <!--begin::Modal content-->
 <div class="modal-content">
+
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
@@ -22,7 +25,34 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15">
 
-        <div class="form-group">
+        <table style="margin-top: 20px;">
+            <tr>
+                <td>
+                    <img style="width: 235px; margin-bottom: 10px;" class="img-responsive logo" src="{{asset('assets/media/logos/logo.svg')}}" alt=""/>
+                    <p class="logo_caption">{{$location_info->address}}.</p>
+                    <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}}  &nbsp; |  &nbsp; Email. {{$account->email}}  &nbsp; | &nbsp;  www.cutera.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
+                </td>
+                <td style="padding:0px !important; float:right; width:120px; text-align:right;">
+                    <div class="invoice_btn" style="width:120px; float:right; text-align:right;">
+                        <span>INVOICE</span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <table style="margin:19px 0px 30px;">
+            <tr>
+                <td class="main_heading"><?php echo \Carbon\Carbon::parse($Invoiceinfo->created_at)->format('F j,Y'); ?>, {{\Carbon\Carbon::parse($Invoiceinfo->created_at)->format('h:i a')}}</td>
+            </tr>
+            <tr>
+                <td class="main_heading">Consumption Invoice <strong>#{{$Invoiceinfo->id}}</strong></td>
+            </tr>
+            <tr>
+                <td class="main_heading">{{ucfirst($patient->name)}}, <strong>C-{{$patient->id}}</strong></td>
+            </tr>
+        </table>
+
+
+        {{--<div class="form-group">
 
             <div class="row">
 
@@ -35,9 +65,9 @@
                 </div>
 
             </div>
-        </div>
+        </div>--}}
 
-        <div class="form-group mt-10">
+       {{-- <div class="form-group mt-10">
 
             <div class="row">
                 <div class="col-md-8 col-sm-8 col-xs-12 invoice-logo-space">
@@ -86,7 +116,7 @@
                     </ul>
                 </div>
             </div>
-        </div>
+        </div>--}}
 
         <!--begin::Form-->
         <div class="d-flex flex-column scroll-y me-n7 pe-7 mt-10" id="kt_modal_resourcerotas_scroll">
@@ -187,24 +217,26 @@
 
                 </div>
 
-                <div class="row float-right">
+                <div class="row">
                     <div class="col-md-12 col-sm-12 col-xs-12 mt-10">
-                        <ul class="list-unstyled amounts">
+                        <ul class="list-unstyled amounts float-right">
                             <li>
                                 <strong>Total:</strong> <?php echo number_format($Invoiceinfo->total_price);?>/-
                             </li>
                         </ul>
                         <br/>
 
-                        <a class="btn btn-sm btn-primary blue hidden-print margin-bottom-5" target="_blank"
-                           href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id, 'download']) }}">Download
-                            <i class="fa fa-download"></i>
-                        </a>
+                        <div class="text-center">
+                            <a style="width: 200px;" class="btn btn-success blue hidden-print margin-bottom-5" target="_blank"
+                               href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id]) }}">Print
+                                <i class="fa fa-print"></i>
+                            </a>
 
-                        <a class="btn btn-sm btn-primary blue hidden-print margin-bottom-5" target="_blank"
-                           href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id]) }}">Print
-                            <i class="fa fa-print"></i>
-                        </a>
+                            <a class="btn btn-sm btn-primary blue hidden-print margin-bottom-5" target="_blank"
+                               href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id, 'download']) }}">Download
+                                <i class="fa fa-download"></i>
+                            </a>
+                        </div>
 
                     </div>
                 </div>
