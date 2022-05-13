@@ -119,11 +119,6 @@
     <hr class="advance-filters" style="display: none;">
     <div class="row mb-8 advance-filters" style="display: none;">
 
-        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
-            <label>Consultancy Type:</label>
-            <select class="form-control filter-field select2" id="treatment_search_consultancy_type"></select>
-        </div>
-
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Create At:</label>
             <div class="input-daterange input-group to-from-datepicker" >
@@ -137,19 +132,19 @@
             </div>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
+        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Created By:</label>
             <select class="form-control filter-field select2" id="treatment_search_created_by">
             </select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
+        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Updated By:</label>
             <select class="form-control filter-field select2" id="treatment_search_updated_by">
             </select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
+        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Rescheduled By:</label>
             <select class="form-control filter-field select2" id="treatment_search_rescheduled_by">
             </select>
