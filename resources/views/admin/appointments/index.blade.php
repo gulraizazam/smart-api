@@ -138,6 +138,7 @@
             });
 
             function setDashboardFilters() {
+
                 let result = get_query();
 
                 if(result?.type != null ) {
@@ -167,28 +168,38 @@
 
             function getUserCity() {
 
-                @if (auth()->id() != 1)
+                setTimeout( function () {
 
-                    $.ajax({
-                        url: '{{route('admin.users.get_cities')}}',
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function (response) {
-                            if (response.status) {
-                                $("#consultancy_city_filter").val(response.data.city).change();
-                                $("#treatment_city_filter").val(response.data.city).change();
-                                $("#appoint_search_city").val(response.data.city).change();
-                               setTimeout( function () {
-                                   getUserCentre();
-                               }, 400);
+                    let city_value = $("#consultancy_city_filter").val();
+
+                    if (city_value == null || city_value == '') {
+
+                        @if (auth()->id() != 1)
+
+                        $.ajax({
+                            url: '{{route('admin.users.get_cities')}}',
+                            type: 'GET',
+                            dataType: 'json',
+                            success: function (response) {
+                                if (response.status) {
+                                    $("#consultancy_city_filter").val(response.data.city).change();
+                                    $("#treatment_city_filter").val(response.data.city).change();
+                                    $("#appoint_search_city").val(response.data.city).change();
+                                    setTimeout( function () {
+                                        getUserCentre();
+                                    }, 400);
+                                }
+                            },
+                            error: function () {
+
                             }
-                        },
-                        error: function () {
+                        });
 
-                        }
-                    });
+                        @endif
 
-                @endif
+                    }
+
+                }, 500);
 
             }
 
