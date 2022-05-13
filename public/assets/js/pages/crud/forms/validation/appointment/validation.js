@@ -33,7 +33,13 @@ var UpdateStatusValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    let query = get_query();
+                    if (query.type == 1) {
+                        var appointment = 'consultancy';
+                    } else {
+                        var appointment = 'treatment';
+                    }
+                    reInitTable(appointment);
                 } else {
                     toastr.error(response.message);
                 }
@@ -141,7 +147,7 @@ var EditAppointmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                  reInitTable();
+                  reInitTable('consultancy');
                 } else {
                     toastr.error(response.message);
                 }
@@ -419,7 +425,7 @@ var EditTreatmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('treatment');
                 } else {
                     toastr.error(response.message);
                 }
