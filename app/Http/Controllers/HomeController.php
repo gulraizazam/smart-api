@@ -999,7 +999,7 @@ class HomeController extends Controller
 
     private function consultancies($data, $start_date, $end_date) {
 
-        if (Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['all_consultancies'] = null;
             $data['done_consultancies'] = null;
 
