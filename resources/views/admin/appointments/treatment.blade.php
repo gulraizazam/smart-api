@@ -165,16 +165,16 @@
                 if(result?.type != null ) {
 
                     $("#appoint_search_type").val('{{request('type')}}').change();
-                    $("#appoint_search_start").val('{{request('from')}}');
-                    $("#appoint_appoint_end").val('{{request('to')}}');
+                    $("#treatment_search_start").val('{{request('from')}}');
+                    $("#treatment_appoint_end").val('{{request('to')}}');
                     @php
                         $ids = explode(',', request('center_id'));
                     @endphp
                         @if (count($ids) == 1)
-                            $("#appoint_search_centre").val('{{request('center_id')}}').change();
+                            $("#treatment_search_centre").val('{{request('center_id')}}').change();
                         @endif
 
-                    $("#appoint_search_status").val('{{request('appoint_status')}}').change();
+                    $("#treatment_search_status").val('{{request('appoint_status')}}').change();
 
                     datatable.search({
                         location_id: '{{request('center_id')}}',
