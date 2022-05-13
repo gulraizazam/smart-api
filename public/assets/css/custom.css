@@ -800,3 +800,18 @@ div > input {
 .fc-day-grid {
     display: none;
 }
+.invoice_btn{
+    float:right;
+}
+.invoice_btn span {
+    text-align: center;
+    font-size:18px;
+    font-weight:lighter;
+    background:#1d1d1b;
+    padding:6px 26px;
+    color:#fff;
+    display: inline-block;
+    vertical-align:middle;
+    text-transform:capitalize;
+    letter-spacing:4px;
+}

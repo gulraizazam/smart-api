@@ -60,9 +60,35 @@
         <div class="row mt-5">
 
             {{--left section--}}
-            <div class="col-md-8">
+            <div class="col-md-10">
 
-                <div class="md-col-10" style="max-width: 79.6666666667%">
+                <div class="col-md-12 mt-5">
+                    <strong class="mt-5">Date</strong>
+                    <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
+                    <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
+                           class="form-control custom-datepicker float-right custom_field" id="created_at" readonly>
+                </div>
+
+                <div class="col-md-12 mt-5 mb-10">
+                    <strong class="mt-5">Pay</strong>
+                    <input style="width: 50%;" type="number" name="cash" id="cash" value="{{$cash}}" class="form-control float-right">
+                </div>
+
+                <div class="col-md-12 mt-5">
+                    <strong>Payment Mode</strong>
+                    {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control float-right','id'=>'payment_mode_id', 'style' => 'width:50%;']) !!}
+
+                </div>
+
+                <br>
+                <div class="col-md-12 mt-5 mb-10">
+                    <div id="addinvoice">
+                        <button class="btn btn-primary spinner-button" name="savepackageinformation" id="savepackageinformation"
+                                style="float: right;margin-top:20px;"><i class="la la-paper-plane-o"></i> Show Invoice
+                        </button>
+                    </div>
+
+               {{-- <div class="md-col-10" style="max-width: 79.6666666667%">
 
                     <label style="margin-left: 15px;"><strong>Amount Type</strong></label>
                     <select style="margin-left: 15px;" name="amount_type" id="amount_type" class="form-control discount_id">
@@ -70,7 +96,7 @@
                         <option value="1">Custom Amount</option>
                     </select>
 
-                </div>
+                </div>--}}
 
                 @if($discounts->count() > 0)
                 <div class="col-md-10 mt-5">
@@ -102,9 +128,9 @@
 
             {{--end left section--}}
 
-            <div class="col-md-4">
-                <div class="col-md-10 mt-12">
-                    <!--begin::Option-->
+            <div class="col-md-4" style="display: none;">
+
+                {{--<div class="col-md-10 mt-12">
                     <span class="switch switch-sm switch-icon switch_custom">
                         <div class="col-md-12" style="padding-left: 0">
                             <strong>Exclusive</strong>
@@ -124,18 +150,11 @@
                                @endif
                             </div>
                     </span>
-                </div>
-
-                {{--<div class="col-md-10 mt-5">
-                    <strong>Amount</strong>
-                    <strong class="float-right" id="amount">{{$price}}</strong>
                 </div>--}}
+
+
                 <input type="hidden" class="amount" name="amount" value="{{$price}}">
 
-                {{--<div class="col-md-10 mt-5">
-                    <strong>Tax Price</strong>
-                    <strong id="tax" class="float-right" >{{$tax}}</strong>
-                </div>--}}
                 <input type="hidden" class="tax" name="tax" value="{{$tax}}">
 
                 <div class="col-md-10 mt-5">
@@ -160,32 +179,6 @@
                     <strong>Outstanding</strong>
                     <strong id="outstand" class="float-right">{{$outstanding}}</strong>
                     <input type="hidden" class="outstand" name="outstand" value="{{$outstanding}}">
-                </div>
-
-                <div class="col-md-11 mt-5">
-                    <strong class="mt-5">Date</strong>
-                    <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
-                    <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
-                           class="form-control custom-datepicker float-right custom_field" id="created_at" readonly>
-                </div>
-
-                <div class="col-md-10 mt-5 mb-10">
-                    <strong class="mt-5">Pay</strong>
-                    <input style="width: 50%;" type="number" name="cash" id="cash" value="{{$cash}}" class="form-control float-right">
-                </div>
-
-                <div class="col-md-10 mt-5" id="paymentmode" style="display: none;">
-                    <strong>Payment Mode</strong>
-                    {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control float-right','id'=>'payment_mode_id', 'style' => 'width:50%;']) !!}
-
-                </div>
-
-                <br>
-                <div class="col-md-10 mt-5 mb-10">
-                <div id="addinvoice">
-                    <button class="btn btn-primary spinner-button" name="savepackageinformation" id="savepackageinformation"
-                            style="float: right;margin-top:20px;"><i class="la la-paper-plane-o"></i> Save & Print Invoice
-                    </button>
                 </div>
 
             </div>
