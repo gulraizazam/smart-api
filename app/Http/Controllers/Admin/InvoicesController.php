@@ -398,11 +398,13 @@ class InvoicesController extends Controller
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
+
         if($appointment_info?->appointment_type_id == 1){
 
             $setting_info = Settings::where('slug','=','sys-consultancy-invoice-medical-operator')->first();
 
             if($setting_info->data = 1){
+                return view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'));
                 $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
@@ -411,6 +413,7 @@ class InvoicesController extends Controller
                 }
                 return $pdf->stream('admin.invoices.InvoiceMedicalHistorypdf.pdf');
             } else {
+                return view('admin.invoices.invoice_pdf', compact('appointment_info', 'Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
                 $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
@@ -420,7 +423,7 @@ class InvoicesController extends Controller
                 return $pdf->stream('admin.invoices.invoice_pdf.pdf');
             }
         } else {
-            //return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'));
+            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'));
             $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);

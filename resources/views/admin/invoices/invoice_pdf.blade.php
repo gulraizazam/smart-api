@@ -159,6 +159,20 @@
             width:100%;
             text-align:center;
         }
+        @media not print {
+            .invoice-pdf {
+                width: 50%;
+                margin-left: 25%;
+                margin-top: 50px;
+                height: 100%;
+            }
+        }
+        @page {
+            size: auto;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
     </style>
 </head>
 
@@ -456,11 +470,9 @@
 </table>--}}
 
 <script>
-    window.addEventListener('DOMContentLoaded', (event) => {
-        window.print();
-        $(".action-button").click()
-    });
 
+    window.print();
+    setTimeout(function () { window.close(); }, 100);
 
 </script>
 
