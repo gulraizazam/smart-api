@@ -255,6 +255,7 @@
                     success: function (response) {
                         if (response.status) {
                             $("#search_city_id").val(response.data.city).change();
+                            $("#add_city_id").val(response.data.city).change();
                         }
                     },
                     error: function () {
