@@ -154,6 +154,7 @@ class ResourceHasRota extends BaseModal
                 if (isset($data['city_id']) && $data['city_id']) {
                     $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
                 }
+
                 $resourcerota = ResourceHasRota::create($data);
                 AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $resourcerota);
 
