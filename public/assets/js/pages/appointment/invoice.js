@@ -242,7 +242,7 @@ $(document).ready(function () {
                         let invoice_id = resposne.data.invoice_id;
                         $('#successMessage').show();
                         toastr.success("Invoice successfully created");
-                        reInitTable();
+                        reInitTable('consultancy');
                         closeAllPopup('.modal-dialog')
                         $("#consultancy-invoice-create").remove();
                        // window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
@@ -433,7 +433,7 @@ $(document).ready(function () {
                                 let invoice_id = resposne.data.invoice_id;
                                 $('#successMessage').show();
                                 toastr.success("Invoice successfully created");
-                                reInitTable();
+                                reInitTable('treatment');
                                 closeAllPopup('.modal-dialog')
                                 $("#treatment-invoice-create").remove();
                                 window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
