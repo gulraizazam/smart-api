@@ -76,11 +76,11 @@ function loadLeadData(value) {
 
                 $('#add_old_phone').val(patient?.phone);
                 if (permissions.contact) {
-                    $('#add_phone').val(patient?.phone);
+                    $('#add_phone').val(patient?.phone).prop("readonly", true);
                 } else {
-                    $('#add_phone').val("***********");
+                    $('#add_phone').val("***********").prop("readonly", true);
                 }
-                $('#add_full_name').val(patient?.name);
+                $('#add_full_name').val(patient?.name).prop("readonly", true);
 
                 if (patient?.gender) {
                     $('#add_gender_id').val(patient?.gender).change();
