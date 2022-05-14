@@ -1048,9 +1048,36 @@ class HomeController extends Controller
             return $data;
         }
 
-        $data['leads'] = Leads::where('active', 1)
-            ->whereBetween('created_at', [$start, $end])->count();
-        $data['totalLeads'] = Leads::where('active', 1)->count();
+        $where[] = array(
+            'leads.created_at',
+            '>=',
+            $start . ' 00:00:00'
+        );
+        $where[] = array(
+            'leads.created_at',
+            '<=',
+            $end . ' 23:59:59'
+        );
+
+       $query = Leads::join('users', 'users.id', '=', 'leads.patient_id')
+            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
+            ->where(function ($query) {
+                $query->where('leads.active', 1);
+                $query->whereIn('leads.city_id', ACL::getUserCities());
+                $query->orWhereNull('leads.city_id');
+            });
+
+        $query->where($where);
+
+        $data['leads'] = $query->count();
+
+        $data['totalLeads'] = Leads::join('users', 'users.id', '=', 'leads.patient_id')
+            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
+            ->where(function ($query) {
+                $query->where('leads.active', 1);
+                $query->whereIn('leads.city_id', ACL::getUserCities());
+                $query->orWhereNull('leads.city_id');
+            })->count();
 
         return $data;
     }
@@ -1079,8 +1106,18 @@ class HomeController extends Controller
 
         list($start_date, $end_date) = $this->getDates($request);
 
+        $where[] = array(
+            'created_at',
+            '>=',
+            $start_date . ' 00:00:00'
+        );
+        $where[] = array(
+            'created_at',
+            '<=',
+            $end_date . ' 23:59:59'
+        );
 
-        $todayRecords = \App\Models\Invoices::whereBetween('created_at',  [$start_date, $end_date])
+        $todayRecords = \App\Models\Invoices::where($where)
             ->whereIn('location_id', ACL::getUserCentres())
             ->where('invoice_status_id', '=', $invoicestatus->id);
 
@@ -1186,7 +1223,18 @@ class HomeController extends Controller
 
             list($start, $end) = $this->getDates(request());
 
-            $query = AppointmentLog::whereBetween("date", [$start, $end]);
+            $where[] = array(
+                'date',
+                '>=',
+                $start
+            );
+            $where[] = array(
+                'date',
+                '<=',
+                $end
+            );
+
+            $query = AppointmentLog::where("date", [$start, $end]);
 
             if (auth()->id() != 1) {
                 $query->where('user_id', auth()->id());
