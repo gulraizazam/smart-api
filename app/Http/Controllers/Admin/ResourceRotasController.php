@@ -213,7 +213,7 @@ class ResourceRotasController extends Controller
                 $records["message"] = "Records has been deleted successfully!";
             }
 
-            list($orderBy, $order) = getSortBy($request);
+            list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC');
 
             $where = array();
             $wherename = array();
