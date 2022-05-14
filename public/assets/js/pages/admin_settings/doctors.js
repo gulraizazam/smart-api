@@ -372,7 +372,7 @@ function setCreateData(response) {
         roles_options += '<option value="'+roles[i].id+'">'+roles[i].name+'</option>';
     }*/
     Object.entries(roles).forEach( function (role) {
-        roles_options += '<option value="'+role[0].id+'">'+role[1]+'</option>';
+        roles_options += '<option value="'+role[0]+'">'+role[1]+'</option>';
     })
     $("#add_user_roles").html(roles_options);
 }
