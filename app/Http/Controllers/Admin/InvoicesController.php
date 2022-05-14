@@ -404,33 +404,40 @@ class InvoicesController extends Controller
             $setting_info = Settings::where('slug','=','sys-consultancy-invoice-medical-operator')->first();
 
             if($setting_info->data = 1){
-                return view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'));
-                $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
-                $pdf = App::make('dompdf.wrapper');
-                $pdf->loadHTML($content);
+
                 if ($download) {
+
+                    $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'))->render();
+                    $pdf = App::make('dompdf.wrapper');
+                    $pdf->loadHTML($content);
+
                     return $pdf->download('admin.invoices.InvoiceMedicalHistorypdf.pdf');
                 }
-                return $pdf->stream('admin.invoices.InvoiceMedicalHistorypdf.pdf');
+
+                return view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'));
+
             } else {
-                return view('admin.invoices.invoice_pdf', compact('appointment_info', 'Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
-                $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'))->render();
-                $pdf = App::make('dompdf.wrapper');
-                $pdf->loadHTML($content);
+
                 if ($download) {
+
+                    $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle', 'download'))->render();
+                    $pdf = App::make('dompdf.wrapper');
+                    $pdf->loadHTML($content);
                     return $pdf->download('admin.invoices.invoice_pdf.pdf');
                 }
-                return $pdf->stream('admin.invoices.invoice_pdf.pdf');
+
+                return view('admin.invoices.invoice_pdf', compact('appointment_info', 'Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle', 'download'));
             }
         } else {
-            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'));
-            $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
+
+            $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'))->render();
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);
             if ($download) {
                 return $pdf->download('admin.invoices.invoice_pdf.pdf');
             }
-            return $pdf->stream('admin.invoices.invoice_pdf.pdf');
+
+            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'));
         }
     }
 

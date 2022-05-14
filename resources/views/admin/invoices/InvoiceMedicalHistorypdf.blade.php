@@ -104,19 +104,23 @@
             padding-top: 8px
         }
 
-        @media not print {
-            .invoice-pdf {
-                width: 50%;
-                margin-left: 25%;
-                margin-top: 50px;
-                height: 100%;
+        @if($download != 'download')
+
+            @media not print {
+                .invoice-pdf {
+                    width: 50%;
+                    margin-left: 25%;
+                    margin-top: 50px;
+                    height: 100%;
+                }
             }
-        }
-        @page {
-            size: auto;
-            margin-top: 0;
-            margin-bottom: 0;
-        }
+            @page {
+                size: auto;
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+
+        @endif
 
     </style>
 </head>
