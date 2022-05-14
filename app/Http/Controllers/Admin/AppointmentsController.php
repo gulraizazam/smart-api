@@ -2688,7 +2688,7 @@ class AppointmentsController extends Controller
             foreach ($doctors_no_final as $key => $doctor) {
                 $resource = Resources::where('external_id', '=', $key)->first();
                 $doctor_rota = ResourceHasRota::where([
-                    ['resource_id', '=', $resource->id],
+                    ['resource_id', '=', $resource?->id],
                     ['is_consultancy', '=', '1']
                 ])->get();
                 if (count($doctor_rota) == 0) {
