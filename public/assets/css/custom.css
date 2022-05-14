@@ -797,7 +797,7 @@ div > input {
     width: 85px;
     display: inline-block;
 }
-.fc-day-grid {
+.fc-timeGridWeek-view .fc-day-grid, .fc-timeGridDay-view .fc-day-grid {
     display: none;
 }
 .invoice_btn{
