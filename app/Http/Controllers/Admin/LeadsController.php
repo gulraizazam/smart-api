@@ -381,6 +381,14 @@ class LeadsController extends Controller
             if (count($where)) {
                 $countQuery->where($where);
             }
+            if ($lead_type) {
+
+                $countQuery->where('leads.lead_status_id', $junk_lead_statuses->id ?? 0);
+
+            } else {
+                $countQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
+            }
+
             $iTotalRecords = $countQuery->count();
 
 
