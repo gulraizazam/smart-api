@@ -144,7 +144,7 @@ class Invoices extends Model
     {
         $where = self::filters_invoices( $request, $account_id , $id , $apply_filter, $filename );
 
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC');
 
 
         if (count($where)) {
@@ -164,7 +164,7 @@ class Invoices extends Model
                 ->whereIn('invoices.location_id',ACL::getUserCentres())
                 ->whereNull('invoices.deleted_at')
                 ->select('invoices.*', 'invoice_details.service_id','appointments.appointment_type_id')
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
         }
     }
 
