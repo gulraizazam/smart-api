@@ -837,9 +837,16 @@ function newPatient() {
         if ($(this).is(":checked")) {
             $('.new_patient').val('1');
             $('.msg_new_patient').show();
+
+            $("#add_phone").removeAttr("readonly");
+            $("#add_full_name").removeAttr("readonly");
+
         } else {
             $('.new_patient').val('0');
             $('.msg_new_patient').hide();
+
+            $("#add_phone").prop("readonly", true);
+            $("#add_full_name").prop("readonly", true);
         }
     });
 }
@@ -1098,5 +1105,16 @@ jQuery(document).ready( function () {
     $(".leads_file").change( function () {
         addValidation($(this))
 
-    })
+    });
+
+
+    $(document).on("click", ".croxcli", function () {
+
+        setTimeout( function () {
+            $("#add_phone").removeAttr("readonly");
+            $("#add_full_name").removeAttr("readonly");
+        },300);
+
+    });
+
 });
