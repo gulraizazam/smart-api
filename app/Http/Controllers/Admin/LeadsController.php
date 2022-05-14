@@ -362,7 +362,6 @@ class LeadsController extends Controller
                 }
             }
 
-
             // Find Junk Lead Status to exclude
             $junk_lead_statuses = LeadStatuses::where(array(
                 'account_id' => Auth::User()->account_id,
@@ -375,7 +374,6 @@ class LeadsController extends Controller
                     $query->whereIn('leads.city_id', ACL::getUserCities());
                     $query->orWhereNull('leads.city_id');
                 });
-                /*->whereNotIn('leads.lead_status_id', array($junk_lead_statuses->id ?? 0))*/;
 
 
             if (count($where)) {
