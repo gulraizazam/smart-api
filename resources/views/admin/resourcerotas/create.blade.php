@@ -309,6 +309,7 @@
                         <div class="col-md-4"></div>
                         <div class="fv-row col-md-4 mt-5">
                             <label class="checkbox is_consultancy_1">
+                                <input type="hidden" name="is_consultancy" value="0"/>
                                 <input id="is_consultancy_1" type="checkbox" name="is_consultancy" value="1" checked class="mr-2">
                                 <span></span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Consultancy</strong>
@@ -317,6 +318,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="checkbox is_treatment_1">
+                                <input type="hidden" name="is_treatment" value="0"/>
                                 <input  id="is_treatment_1" type="checkbox" name="is_treatment" value="1" checked class="mr-2">
                                 <span></span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Treatment</strong>
