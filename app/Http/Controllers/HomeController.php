@@ -1146,7 +1146,7 @@ class HomeController extends Controller
 
     private function recentActivities($data) {
 
-        if (Gate::allows('dashboard_recent_activities')) {
+        if (!Gate::allows('dashboard_recent_activities')) {
             return $data['recent_activities'] = [
                 'finance_log' => [],
                 'appointment_log' => [],
@@ -1209,7 +1209,7 @@ class HomeController extends Controller
 
         //$appointment_log = $this->viewLog();
         $appointment_log = $this->viewAppointmentLog();
-        
+
         return $data['recent_activities'] = [
             'finance_log' => $finance_log,
             'appointment_log' => $appointment_log,
