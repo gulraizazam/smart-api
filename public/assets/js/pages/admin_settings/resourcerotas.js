@@ -722,18 +722,15 @@ function setEditData(response) {
         }
 
         if (resourceRota.is_treatment == 1) {
-            $("#edit_is_consultancy_1").attr("checked", false);
             $("#edit_is_treatment_1").attr("checked", true);
+        } else {
+            $("#edit_is_treatment_1").attr("checked", false);
         }
 
         if (resourceRota.is_consultancy == 1) {
-            $("#edit_is_treatment_1").attr("checked", false);
             $("#edit_is_consultancy_1").attr("checked", true);
-        }
-
-        if (resourceRota.is_treatment == 1 && resourceRota.is_consultancy == 1) {
-            $("#edit_is_consultancy_1").attr("checked", true);
-            $("#edit_is_treatment_1").attr("checked", true);
+        } else {
+            $("#edit_is_consultancy_1").attr("checked", false);
         }
 
         /*Monday*/
