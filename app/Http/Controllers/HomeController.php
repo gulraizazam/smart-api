@@ -1146,7 +1146,7 @@ class HomeController extends Controller
 
     private function recentActivities($data) {
 
-        if (!Gate::allows('dashboard_recent_activities')) {
+        if (Gate::allows('dashboard_recent_activities')) {
             return $data['recent_activities'] = [
                 'finance_log' => [],
                 'appointment_log' => [],
@@ -1185,7 +1185,6 @@ class HomeController extends Controller
 
             $audit_info = $query->get();
 
-            //dd($audit_info->toArray());
             foreach ($audit_info as $audit){
                 $finance_log[$audit->id] = array(
                     'id' => $audit->id,
@@ -1205,12 +1204,12 @@ class HomeController extends Controller
             }
         }
 
-        //$finance_log = collect($finance_log)->where('payment_mode_id', 'Cash');
+        $finance_log = collect($finance_log)->where('cash_flow', 'in')->unique('appointment_id');
 
 
         //$appointment_log = $this->viewLog();
         $appointment_log = $this->viewAppointmentLog();
-
+        
         return $data['recent_activities'] = [
             'finance_log' => $finance_log,
             'appointment_log' => $appointment_log,
