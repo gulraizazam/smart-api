@@ -675,6 +675,18 @@ class DoctorsController extends Controller
                     }
                 }
                 $resource_doctor = Resources::where('external_id', '=', $user->id)->first();
+                if (!$resource_doctor) {
+
+                    $resourcetype_id = ResourceTypes::where('name', '=', 'doctor')->first();
+
+                    Resources::create([
+                        'name' => $user->name ?? '',
+                        'account_id' => Auth::User()->account_id ?? '',
+                        'resource_type_id' => $resourcetype_id->id ?? '',
+                        'external_id' => $user->id ?? '',
+                        'active' => 1,
+                    ]);
+                }
                 if ($resource_doctor) {
                     $resource_doctor->name = $request->name;
                     $resource_doctor->save();
