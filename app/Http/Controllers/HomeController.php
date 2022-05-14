@@ -125,33 +125,61 @@ class HomeController extends Controller
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres());
 
+        $appoints = Appointments::join('users', function ($join) {
+            $join->on('users.id', '=', 'appointments.patient_id')
+                ->where('users.user_type_id', '=', config('constants.patient_id'));
+        })
+            ->where('appointment_status_id', config('constants.appointment_status_pending'))
+            ->whereIn('appointments.city_id', ACL::getUserCities())
+            ->whereIn('appointments.location_id', ACL::getUserCentres());
+
+        $todayAppoints = 0;
+        if (hasFilter($filter, 'type') && $filter['type'] != 'today') {
+
+            $todayAppoints = $appoints->whereDate('scheduled_date', $today)
+                ->where('appointments.scheduled_time', '>=', $todayTime)->count();
+        }
+
         if (hasFilter($filter, 'type') && $filter['type'] == 'week') {
 
             $end_week = Carbon::parse($today)->addDays(6)->format('Y-m-d');
 
-            $countQuery->whereBetween('appointments.scheduled_date', [$today, $end_week]);
+            $where[] = array(
+                'appointments.scheduled_date',
+                '>',
+                $today
+            );
+            $where[] = array(
+                'appointments.scheduled_date',
+                '<=',
+                $end_week
+            );
+
+            $countQuery->where($where);
 
         } else if (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
             $end_month = Carbon::parse($today)->addMonth()->format('Y-m-d');
 
-            $countQuery->whereBetween('appointments.scheduled_date', [$today, $end_month]);
+            $where[] = array(
+                'appointments.scheduled_date',
+                '>',
+                $today
+            );
+            $where[] = array(
+                'appointments.scheduled_date',
+                '<=',
+                $end_month
+            );
+
+            $countQuery->where($where);
         } else {
             $countQuery->whereDate('appointments.scheduled_date', $today);
 
             $countQuery->where('appointments.scheduled_time', '>=', $todayTime);
         }
 
-        $countQuery = $countQuery->get();
-        $todayCount = $countQuery->where('scheduled_date', $today);
-
-        if ($todayCount->count() > 0) {
-            $todayScheduled = $todayCount->where('scheduled_time', '<=', $todayTime);
-
-            $countQuery = $countQuery->whereNotIn('id',  $todayScheduled->pluck('id')->toArray());
-        }
-
-        $iTotalRecords = $countQuery->count();
+        $iTotalRecords = $countQuery->count() + $todayAppoints;
 
 
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
@@ -162,7 +190,16 @@ class HomeController extends Controller
         $resultQuery = Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
-        })->where('appointment_status_id', config('constants.appointment_status_pending'))
+        })
+            ->where('appointment_status_id', config('constants.appointment_status_pending'))
+            ->whereIn('appointments.city_id', ACL::getUserCities())
+            ->whereIn('appointments.location_id', ACL::getUserCentres());
+
+        $todayResult = Appointments::join('users', function ($join) {
+            $join->on('users.id', '=', 'appointments.patient_id')
+                ->where('users.user_type_id', '=', config('constants.patient_id'));
+        })
+            ->where('appointment_status_id', config('constants.appointment_status_pending'))
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres());
 
@@ -175,32 +212,56 @@ class HomeController extends Controller
 
             $end_week = Carbon::parse($today)->addDays(6)->format('Y-m-d');
 
-            $resultQuery->whereBetween('appointments.scheduled_date', [$today, $end_week]);
+            $where[] = array(
+                'appointments.scheduled_date',
+                '>',
+                $today
+            );
+            $where[] = array(
+                'appointments.scheduled_date',
+                '<=',
+                $end_week
+            );
+
+            $resultQuery->where($where);
+
 
         } else if (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
             $end_month = Carbon::parse($today)->addMonth()->format('Y-m-d');
 
-            $resultQuery->whereBetween('appointments.scheduled_date', [$today, $end_month]);
+            $where[] = array(
+                'appointments.scheduled_date',
+                '>',
+                $today
+            );
+            $where[] = array(
+                'appointments.scheduled_date',
+                '<=',
+                $end_month
+            );
+
+            $resultQuery->where($where);
         } else {
             $resultQuery->whereDate('appointments.scheduled_date', $today);
 
             $resultQuery->where('appointments.scheduled_time', '>=', $todayTime);
         }
 
-        $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+        $todayData = [];
+        if (hasFilter($filter, 'type') && $filter['type'] != 'today') {
+
+            $todayData = $todayResult->whereDate('scheduled_date', $today)
+                ->where('appointments.scheduled_time', '>=', $todayTime)->pluck('appointments.id')->toArray();
+
+        }
+
+        $Appointments = $resultQuery->orWhereIn('appointments.id', $todayData)->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order)
             ->orderBy('appointments.scheduled_time', "ASC")
             ->get();
-
-        $todayAppointments = $Appointments->where('scheduled_date', $today);
-        if ($todayAppointments->count() > 0) {
-            $todayScheduled = $todayAppointments->where('scheduled_time', '<=', $todayTime);
-
-            $Appointments = $Appointments->whereNotIn('id',  $todayScheduled->pluck('id')->toArray());
-        }
 
         $invoicearray = array();
 
