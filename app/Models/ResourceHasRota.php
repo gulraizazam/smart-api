@@ -77,7 +77,8 @@ class ResourceHasRota extends BaseModal
             if ($request->resource_doctor || $request->resource_machine) {
                 if ($request->resource_doctor) {
                     $resourcedoctor = Resources::where('external_id', '=', $request->resource_doctor)->first();
-                    $data['resource_id'] = $resourcedoctor?->id;
+                    dd($resourcedoctor, $request->resource_doctor);
+                    $data['resource_id'] = $resourcedoctor->id;
                 } else {
                     $data['resource_id'] = $request->resource_machine;
                     $data['is_consultancy'] = '0';
