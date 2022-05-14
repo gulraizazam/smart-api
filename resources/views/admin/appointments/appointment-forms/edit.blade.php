@@ -82,17 +82,17 @@
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Phone <span class="text text-danger">*</span> </label>
                             <input oninput="phoneField(this);" type="text" name="phone" id="edit_patient_phone" class="form-control">
-                            <input type="hidden" name="old_phone" id="edit_old_patient_phone">
+                            <input readonly type="hidden" name="old_phone" id="edit_old_patient_phone">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input type="text" name="name" id="edit_patient_name" class="form-control">
+                            <input readonly type="text" name="name" id="edit_patient_name" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
-                            <select id="edit_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
+                            <select  id="edit_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
                             </select>
                         </div>
 
