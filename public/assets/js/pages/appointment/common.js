@@ -21,7 +21,15 @@ function toggleSection($this, $class) {
     if ($class == 'appointment') {
         $(".export-appointments").show();
         setQueryStringParameter('tab', $class);
-        reInitTable();
+        let url = window.location.href;
+        const lastSegment = url.split("/").pop();
+        var appointment = 'treatment';
+       if (lastSegment == 'treatment?tab=appointment') {
+           appointment = 'treatment';
+       } else {
+           appointment = 'consultancy';
+       }
+        reInitTable(appointment);
     } else {
         $(".export-appointments").hide();
         setQueryStringParameter('tab', $class);
