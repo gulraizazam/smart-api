@@ -47,7 +47,7 @@
                                         <td id="patient_phone"></td>
                                     </tr>
                                     <tr>
-                                        <th>Customer ID</th>
+                                        <th>Patient ID</th>
                                         <td id="patient_c_id"></td>
                                         <th>Gender</th>
                                         <td id="patient_gender"></td>

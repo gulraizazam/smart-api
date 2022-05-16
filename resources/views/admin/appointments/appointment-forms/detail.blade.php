@@ -41,8 +41,8 @@
                                 <td id="appointment_patient_phone"></td>
                             </tr>
                             <tr>
-                                <th>Email</th>
-                                <td id="appointment_patient_email"></td>
+                                <th>Patient ID</th>
+                                <td id="appointment_patient_c_id"></td>
                                 <th>Gender</th>
                                 <td id="appointment_patient_gender"></td>
                             </tr>

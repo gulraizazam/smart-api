@@ -1,9 +1,9 @@
 <?php
 
-    use App\Helpers\Filters;
+use App\Helpers\Filters;
 use App\Models\PackageAdvances;
 
-function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) {
+    function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) {
 
         if ($request->has('sort')) {
             $orderBy = $request->get('sort')['field'];
