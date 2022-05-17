@@ -52,7 +52,7 @@
                             @endif
 
                             <div>
-                                <a id="today_consultancies" onclick="loadTodayAppointments('{{date('Y-m-d')}}');" href="javascript:void(0);" class="btn btn-info font-weight-bolder">
+                                <a id="today_consultancies" onclick="loadTodayAppointments('{{date('Y-m-d')}}', 'treatment');" href="javascript:void(0);" class="btn btn-info font-weight-bolder">
                                     Today Treatments
                                 </a>
                             </div>&nbsp;&nbsp;&nbsp;
