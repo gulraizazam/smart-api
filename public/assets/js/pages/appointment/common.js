@@ -438,3 +438,8 @@ function loadTodayAppointments(today) {
     }
 
 }
+
+/*this function is using */
+function getTreatmentPatientDetail($this) {
+
+}
