@@ -716,7 +716,7 @@ div > input {
 }
 
 .suggestion-list {
-    max-height: 500px;
+    max-height: 275px;
     overflow: auto;
 }
 /*.colored-text {

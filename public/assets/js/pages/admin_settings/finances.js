@@ -112,6 +112,7 @@ jQuery(document).ready(function () {
     /*To get patient on search*/
 
     $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
         $('.patient_search_id').val(null).trigger('change');
     });
     patientSearch('patient_search_id');

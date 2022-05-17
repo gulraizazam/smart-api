@@ -1109,7 +1109,7 @@ jQuery(document).ready( function () {
 
 
     $(document).on("click", ".croxcli", function () {
-
+        $('.search_field').val('').change();
         setTimeout( function () {
             $("#add_phone").removeAttr("readonly");
             $("#add_full_name").removeAttr("readonly");
