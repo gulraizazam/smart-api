@@ -255,6 +255,7 @@ function customDatePicker() {
 function addUsers() {
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
+    $('.search_field').val('').change();
 }
 
 // not working
@@ -823,6 +824,53 @@ function get_query(){
 
 function patientSearch(search_id = 'patient_id') {
 
+    $("." + search_id).keyup(function() {
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+
+        if ($(this).val() != '') {
+
+            let form_type = $(this).parents("form").find('.form_type').val();
+
+            $.ajax({
+                type: "GET",
+                url: route('admin.users.getpatient.id'),
+                dataType: 'json',
+                delay: 250,
+                data: {search: $(this).val()},
+
+                success: function (response) {
+
+                    let html = '';
+                    let patients = response.data.patients;
+
+                    if (patients.length) {
+                        Object.values(patients).forEach(function (patient) {
+                            html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`);">' + patient.name + '</li>'
+                        });
+
+                        $(".suggestion-list").html(html);
+
+                        $(".suggesstion-box").show();
+                    } else {
+                        $(".suggesstion-box").hide();
+                    }
+
+                }
+            });
+
+        } else {
+            $(".suggesstion-box").hide();
+        }
+    });
+
+    return false;
+
     $("." + search_id).select2({
         width: '100%',
         placeholder: 'Select Patient',
@@ -865,6 +913,15 @@ function patientSearch(search_id = 'patient_id') {
         templateResult: formatRepo,
         templateSelection: formatRepoSelection
     });
+
+}
+
+function selectUser(name, user_id,  search_id) {
+
+    $(".search_field").val(user_id).change();
+    $("." + search_id).val(name);
+    $(".suggesstion-box").hide();
+    $("." + search_id).focus();
 
 }
 

@@ -38,8 +38,14 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
-                            <select  onchange="loadEditLeadData($(this).val());" id="edit_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="patient_id">
-                            </select>
+                            <input class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="patient_id">
+
+                            <input type="hidden" onchange="loadEditLeadData($(this).val())"  name="patient_id" class="filter-field search_field" id="edit_patient_id">
+                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+
                         </div>
 
                         <div class="fv-row col-md-12 mt-10">

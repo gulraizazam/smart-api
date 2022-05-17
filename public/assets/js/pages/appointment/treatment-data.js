@@ -58,6 +58,7 @@ jQuery(document).ready(function() {
     patientSearch('appointment_patient_id');
 
     $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
         $('.appointment_patient_id').val(null).trigger('change');
     });
 
@@ -274,6 +275,7 @@ jQuery(document).ready(function () {
 
 
     $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
         $('.treatment_patient_search_id').val(null).trigger('change');
 
         $("#create_treatment_patient_search").parent("div").find(".select2-selection").addClass("select2-is-invalid");

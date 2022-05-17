@@ -35,7 +35,6 @@ jQuery(document).ready(function() {
                     'appointment_id': $('#comment_appointment_id').val(),
                 },
                 success: function (data) {
-                    console.log(data);
                     $('#commentsection').prepend(commentData(data.username, data.appointmentCommentDate, data.appointment.comment));
                 },
 
@@ -53,6 +52,7 @@ jQuery(document).ready(function() {
     patientSearch('appointment_patient_id');
 
     $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
         $('.appointment_patient_id').val(null).trigger('change');
     });
 

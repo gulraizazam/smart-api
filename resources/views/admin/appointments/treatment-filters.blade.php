@@ -31,7 +31,7 @@
     </style>
 @endpush
 
-<div class="mt-2 mb-7">
+<div class="mt-2 mb-15">
 
     <div class="row align-items-center">
         <div class="advance-search col-md-12 col-lg-12 col-xl-12">
@@ -51,7 +51,13 @@
 
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Patient Search:</label>
-            <select class="form-control filter-field appointment_patient_id" id="treatment_patient_id"></select>
+            <input class="form-control filter-field appointment_patient_id">
+            <input type="hidden" class="filter-field search_field" id="treatment_patient_id">
+            <span onclick="addUsers()" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+            <div class="suggesstion-box" style="display: none;">
+                <ul class="suggestion-list"></ul>
+            </div>
+
         </div>
 
         {{--<div class="col-lg-1 mb-lg-0 mb-6" id="patient_id">
@@ -104,20 +110,32 @@
             <select class="form-control filter-field select2" id="treatment_search_status"></select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 appoint_search_city" style="margin-left: -4.6%;">
-            <label  style="width: 70%">City:</label>
-            <select class="form-control filter-field select2" id="treatment_search_city"></select>
+        <div class="col-lg-2 mb-lg-0 mb-6 appoint_search_status" style="margin-left: -4.6%;">
+            <label>Created By:</label>
+            <select class="form-control filter-field select2" id="treatment_search_created_by">
+            </select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6" style="margin-left: -6%;">
-            <label>Region:</label>
-            <select class="form-control filter-field select2" id="treatment_search_region"></select>
+        <div class="col-lg-2 mb-lg-0 mt-8" style="margin-left: -4.5%;">
+
+            @include('admin.partials.filter-buttons', ['custom_reset', $custom_reset])
+
         </div>
 
     </div>
 
     <hr class="advance-filters" style="display: none;">
     <div class="row mb-8 advance-filters" style="display: none;">
+
+        <div class="col-lg-2 mb-lg-0 mt-6">
+            <label  style="width: 70%">City:</label>
+            <select class="form-control filter-field select2" id="treatment_search_city"></select>
+        </div>
+
+        <div class="col-lg-2 mb-lg-0 mt-6">
+            <label>Region:</label>
+            <select class="form-control filter-field select2" id="treatment_search_region"></select>
+        </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Create At:</label>
@@ -130,12 +148,6 @@
                 </div>
                 <input type="text" id="treatment_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5">
             </div>
-        </div>
-
-        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
-            <label>Created By:</label>
-            <select class="form-control filter-field select2" id="treatment_search_created_by">
-            </select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
@@ -152,11 +164,11 @@
 
     </div>
 
-    <div class="row">
+    {{--<div class="row">
         <div class="col-md-10">
 
             @include('admin.partials.filter-buttons', ['custom_reset', $custom_reset])
 
         </div>
-    </div>
+    </div>--}}
 </div>

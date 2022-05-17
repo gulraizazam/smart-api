@@ -421,3 +421,20 @@ function commentData(user_name, created_at, comment) {
 
     return comment_html;
 }
+
+function loadTodayAppointments(today) {
+
+    $("#appoint_search_start").val(today);
+    $("#appoint_appoint_end").val(today);
+
+    $("#treatment_search_start").val(today);
+    $("#treatment_appoint_end").val(today);
+
+    if (typeof datatable !== 'undefined') {
+        datatable.search({
+            date_from: today,
+            date_to: today,
+        }, 'search');
+    }
+
+}

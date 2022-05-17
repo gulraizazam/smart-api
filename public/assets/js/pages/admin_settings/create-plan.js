@@ -199,6 +199,7 @@ $(document).ready( function () {
     /*End*/
 
     $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
         $('.package_id').val(null).trigger('change');
     });
 

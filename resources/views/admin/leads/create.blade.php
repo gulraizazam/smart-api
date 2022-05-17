@@ -38,8 +38,12 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
-                            <select  onchange="loadLeadData($(this).val());" id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="patient_id">
-                            </select>
+                            <input type="hidden" onchange="loadLeadData($(this).val());" name="patient_id" class="search_field" id="add_patient_id" >
+                            <input class="form-control form-control-solid mb-3 mb-lg-0 patient_id" >
+                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:36px; right:22px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
                         </div>
 
 
@@ -63,10 +67,10 @@
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
 
-                            <input type="text" oninput="phoneField(this);" id="add_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
-                            <div class="suggesstion-box" style="display: none;">
+                            <input type="text" oninput="phoneField(this);" id="add_phone" name="phone" autocomplete="off" class="form-control" placeholder="Enter Phone" />
+                            {{--<div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
-                            </div>
+                            </div>--}}
 
                         </div>
 
