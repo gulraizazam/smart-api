@@ -422,7 +422,7 @@ function commentData(user_name, created_at, comment) {
     return comment_html;
 }
 
-function loadTodayAppointments(today) {
+function loadTodayAppointments(today, appointment) {
 
     $("#appoint_search_start").val(today);
     $("#appoint_appoint_end").val(today);
@@ -431,10 +431,7 @@ function loadTodayAppointments(today) {
     $("#treatment_appoint_end").val(today);
 
     if (typeof datatable !== 'undefined') {
-        datatable.search({
-            date_from: today,
-            date_to: today,
-        }, 'search');
+        reInitTable(appointment);
     }
 
 }
