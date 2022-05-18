@@ -918,7 +918,9 @@ function patientSearch(search_id = 'patient_id') {
 
 function selectUser(name, user_id,  search_id) {
 
-    $(".search_field").val(user_id).change();
+
+    $("." + search_id).parent('div').find('.search_field').val(user_id).change();
+   // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
