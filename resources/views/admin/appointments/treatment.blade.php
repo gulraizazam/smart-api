@@ -51,7 +51,7 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            <div>
+                            <div class="export-appointments">
                                 <a id="today_consultancies" onclick="loadTodayAppointments('{{date('Y-m-d')}}', 'treatment');" href="javascript:void(0);" class="btn btn-info font-weight-bolder">
                                     Today Treatments
                                 </a>

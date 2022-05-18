@@ -52,7 +52,8 @@ jQuery(document).ready(function() {
     patientSearch('appointment_patient_id');
 
     $(document).on("click", ".croxcli", function () {
-        $('.search_field').val('').change();
+        $(this).parent('div').find('.search_field').val('').change()
+       // $('.search_field').val('').change();
         $('.appointment_patient_id').val(null).trigger('change');
     });
 
