@@ -252,4 +252,9 @@ $(document).ready( function () {
 
     patientSearch('search_patient');
 
+    $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
+        $('.search_patient').val(null).trigger('change');
+    });
+
 });

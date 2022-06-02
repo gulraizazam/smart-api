@@ -27,7 +27,7 @@
             <label>Patient Search:</label>
             <input class="form-control filter-field search_patient">
             <input type="hidden" class="filter-field search_field" id="search_patient">
-            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
             <div class="suggesstion-box" style="display: none;">
                 <ul class="suggestion-list"></ul>
             </div>
