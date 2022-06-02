@@ -66,7 +66,38 @@ var table_columns = [{
     width: 60,
     template: function(data) {
         let status_url = route('admin.leads.status');
-        return statuses(data, status_url);
+        let id = data.id;
+        let active = data.active;
+        let status = '';
+
+        if (active) {
+            if (permissions.update_status) {
+                status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+            } else {
+                status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+            }
+
+        } else {
+
+            status += '<span class="switch switch-icon">\
+        <label>\
+            <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" name="select">\
+            <span></span>\
+        </label>\
+        </span>';
+        }
+
+        return status;
     }
 },{
     field: 'created_by',

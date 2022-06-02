@@ -485,6 +485,7 @@ class LeadsController extends Controller
                 'create' => Gate::allows('leads_create'),
                 'convert' => Gate::allows('leads_convert'),
                 'contact' => Gate::allows('contact'),
+                'update_status' => Gate::allows('leads_lead_status'),
             ];
 
             return ApiHelper::apiDataTable($records);
