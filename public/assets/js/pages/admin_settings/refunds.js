@@ -247,3 +247,9 @@ function hideShowAdvanceFilters(active_filters) {
     }
 
 }
+
+$(document).ready( function () {
+
+    patientSearch('search_patient');
+
+});

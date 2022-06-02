@@ -23,9 +23,14 @@
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6" id="patient_id">
-            <label>Patient:</label>
-            <select class="form-control filter-field patient_id" id="search_patient">
-            </select>
+
+            <label>Patient Search:</label>
+            <input class="form-control filter-field search_patient">
+            <input type="hidden" class="filter-field search_field" id="search_patient">
+            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+            <div class="suggesstion-box" style="display: none;">
+                <ul class="suggestion-list"></ul>
+            </div>
         </div>
 
         {{--<div class="col-lg-3 mb-lg-0 mb-6">

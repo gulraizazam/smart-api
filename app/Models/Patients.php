@@ -91,6 +91,21 @@
                 ])->select('name', 'id', 'phone')->get();
             }
 
+            $users = collect();
+            if (is_numeric($name)) {
+
+                $users =  self::where([
+                    ['user_type_id', '=', '3'],
+                    ['active', '=', '1'],
+                    ['account_id', '=', $account_id],
+                    ['id', 'LIKE', "%{$name}%"]
+                ])->select('name', 'id', 'phone')->get();
+            }
+
+            if ($users->count() > 0) {
+                return $users;
+            }
+
 		    $name = GeneralFunctions::patientSearch($name);
 
             $phone_numeric = GeneralFunctions::clearnString($name);
