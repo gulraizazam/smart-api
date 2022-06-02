@@ -330,7 +330,7 @@ class PlanAppointmentCalculation
 
         $package_bundle_info = PackageBundles::where('random_id', '=', $request->random_id)->first();
 
-        $service_id = self::findRoot($package_bundle_info->packageservice()->first()->service_id, $searchServices);
+        $service_id = self::findRoot($package_bundle_info?->packageservice()->first()->service_id, $searchServices);
 
         return $service_id;
     }

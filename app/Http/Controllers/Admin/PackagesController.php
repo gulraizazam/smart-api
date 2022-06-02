@@ -577,6 +577,7 @@ class PackagesController extends Controller
                 ));
             }
         } catch (\Exception $e) {
+            dd($e);
             // Rollback Transaction
             DB::rollback();
 
