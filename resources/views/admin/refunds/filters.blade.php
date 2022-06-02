@@ -31,6 +31,7 @@
             <div class="suggesstion-box" style="display: none;">
                 <ul class="suggestion-list"></ul>
             </div>
+
         </div>
 
         {{--<div class="col-lg-3 mb-lg-0 mb-6">

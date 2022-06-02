@@ -198,9 +198,13 @@ $(document).ready( function () {
     });
     /*End*/
 
+    patientSearch('search_patient');
+
     $(document).on("click", ".croxcli", function () {
         $('.search_field').val('').change();
         $('.package_id').val(null).trigger('change');
+
+        $('.search_patient').val(null).trigger('change');
     });
 
 });
@@ -1147,7 +1151,7 @@ function setServices(response) {
 }
 
 function getAppointments(patient) {
-    console.log(patient)
+
     let location = $("#add_plan_location_id").val();
 
     if (location != '' && patient != '') {
@@ -1959,7 +1963,7 @@ jQuery(document).ready( function () {
        hideMessages();
 
         var random_id = $('#random_id_1').val();
-        var patient_id = $('#add_location_id').val();
+        var patient_id = $('#add_patient_id').val();
         var total = $('#package_total_1').val();
         var payment_mode_id = $('#payment_mode_id_1').val();
         var cash_amount = $('#cash_amount_1').val();
