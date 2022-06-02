@@ -851,7 +851,7 @@ function patientSearch(search_id = 'patient_id') {
 
                     if (patients.length) {
                         Object.values(patients).forEach(function (patient) {
-                            html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`);">' + patient.name + '</li>'
+                            html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
                         });
 
                         $(".suggestion-list").html(html);
