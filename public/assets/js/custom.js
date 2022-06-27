@@ -13,7 +13,11 @@ $(document).ready(function () {
 
     $(document).on( "click", ".popup-close", function () {
         $(this).parents(".modal").modal("toggle");
-    })
+
+        $(this).parents(".modal").find("input").val('')
+        $(this).parents(".modal").find(".select2").val(null).trigger("change");
+        $(this).parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    });
 
     $('.select2').select2();
 
