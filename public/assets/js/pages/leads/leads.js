@@ -873,6 +873,7 @@ function newPatient() {
             $("#add_full_name").removeAttr("readonly");
 
             $("#modal_add_leads_form")[0].reset();
+            $("#modal_edit_leads_form")[0].reset();
             $('.select2').val(null).trigger('change');
         } else {
             $('.new_patient').val('0');
