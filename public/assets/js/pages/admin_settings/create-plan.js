@@ -207,6 +207,13 @@ $(document).ready( function () {
         $('.search_patient').val(null).trigger('change');
     });
 
+
+    $(".popup-close").click( function () {
+        $("#packages_add").find("input").val('')
+        $("#packages_add").find(".select2").val(null).trigger("change");
+        $("#packages_add").find(".select2-selection").removeClass("select2-is-invalid");
+
+    });
 });
 
 var table_url = route('admin.packages.datatable');
