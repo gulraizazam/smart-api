@@ -94,7 +94,7 @@ class AppointmentsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('appointments_manage')) {
+        if (!Gate::allows('appointments_consultancy')) {
             return abort(404);
         }
 
@@ -103,7 +103,7 @@ class AppointmentsController extends Controller
 
     public function treatment()
     {
-        if (!Gate::allows('appointments_manage')) {
+        if (!Gate::allows('appointments_services')) {
             return abort(404);
         }
 
