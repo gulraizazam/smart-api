@@ -71,7 +71,6 @@ use App\Helpers\Widgets\AppointmentEditWidget;
 use App\Models\MachineType;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 
-
 class AppointmentsController extends Controller
 {
     public $success;
