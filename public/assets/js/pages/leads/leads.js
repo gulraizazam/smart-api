@@ -595,8 +595,6 @@ function commentData(user_name, created_at, comment) {
 
 function editRow(url, id) {
 
-   // $(".croxcli").click();
-
     $('.new_patient').prop("checked", false);
     $('.msg_new_patient').hide();
     $("#modal_edit_leads").modal("show");
@@ -872,6 +870,16 @@ function newPatient() {
             $("#add_phone").removeAttr("readonly");
             $("#add_full_name").removeAttr("readonly");
 
+            if ($("#add_phone").val() != '') {
+                $(".select2").val(null).trigger("change");
+                $("input").val('');
+            }
+
+
+           /* $("#modal_add_leads_form").find('input').val('');
+            $("#modal_edit_leads_form").find('input').val('');
+            $(".select2").val(null).trigger("change");*/
+
         } else {
             $('.new_patient').val('0');
             $('.msg_new_patient').hide();
@@ -1146,6 +1154,14 @@ jQuery(document).ready( function () {
             $("#add_full_name").removeAttr("readonly");
         },300);
 
+    });
+
+    $(document).on( "click", ".popup-close", function () {
+        $("#modal_add_leads_form")[0].reset();
+        $("#modal_edit_leads_form")[0].reset();
+        $("#modal_add_leads_form").find('input').val('');
+        $("#modal_edit_leads_form").find('input').val('');
+        $(".select2").val(null).trigger("change");
     });
 
 });
