@@ -338,6 +338,7 @@
                             <span class="menu-text">Admin Settings</span>
                             <i class="menu-arrow"></i>
                         </a>
+
                         @can('settings_manage')
                             <div class="menu-submenu">
                             <i class="menu-arrow"></i>
@@ -424,8 +425,7 @@
                         @endcan
 
                         @can('towns_manage')
-
-                        <div class="menu-submenu">
+                            <div class="menu-submenu">
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
                                 <li class="menu-item {{activeMenu('admin.towns.index')}}" aria-haspopup="true">
@@ -579,6 +579,7 @@
                                 </ul>
                             </div>
                         @endcan
+
                         @can('sms_templates_manage')
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
@@ -595,9 +596,6 @@
                                 </ul>
                             </div>
                         @endcan
-
-
-
 
                         @can('discounts_manage')
                             <div class="menu-submenu">
@@ -634,6 +632,7 @@
                                 </ul>
                             </div>
                         @endcan
+
                         @can('packages_manage')
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
@@ -654,8 +653,8 @@
 
                         @can('doctors_manage')
                             <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
                             <li class="menu-item {{activeMenu('admin.doctors.index')}}" aria-haspopup="true">
                                 <a href="{{route('admin.doctors.index')}}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -666,7 +665,7 @@
                             </li>
 
                         </ul>
-                    </div>
+                            </div>
                         @endcan
 
                         @can('finances_manage')
@@ -819,6 +818,60 @@
 
                     </li>
 
+                    @endif
+
+                    @if(
+                       Gate::allows('finance_general_revenue_reports_manage')
+                    )
+                        <li class="menu-item menu-item-submenu {{openMenu([
+                            'admin.reports.finance_reports',
+                            'admin.reports.operations_report'
+
+                            ])}}" aria-haspopup="true" data-menu-toggle="hover">
+
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <span class="svg-icon menu-icon">
+                                    <i class="font-icon la la-file-text-o"></i>
+                                </span>
+                                <span class="menu-text">Reports Management</span>
+                                <i class="menu-arrow"></i>
+                            </a>
+
+                            @can('finance_general_revenue_reports_manage')
+                                <div class="menu-submenu">
+                                    <i class="menu-arrow"></i>
+                                    <ul class="menu-subnav">
+                                        <li class="menu-item {{activeMenu('admin.reports.finance_reports')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.reports.finance_reports')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">General Revenue Report</span>
+                                            </a>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            @endcan
+
+                            @can('operations_reports_manage')
+                                <div class="menu-submenu">
+                                    <i class="menu-arrow"></i>
+                                    <ul class="menu-subnav">
+                                        <li class="menu-item {{activeMenu('admin.reports.operations_report')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.reports.operations_report')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Operation Reports</span>
+                                            </a>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            @endcan
+
+                        </li>
                     @endif
 
                 </ul>
