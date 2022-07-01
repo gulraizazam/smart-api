@@ -232,7 +232,7 @@
                                             </div>
                                             <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                                 {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
-                                                <a href="javascript:void(0);" onclick="loadReport();" id="load_report"
+                                                <a href="javascript:void(0);" onclick="loadReport($(this));" id="load_report"
                                                    class="btn btn-success spinner-button">Load Report</a>
                                             </div>
 
@@ -298,7 +298,7 @@
                 endDate  : moment()
             });
 
-            var loadReport = function () {
+            var loadReport = function (that) {
 
                 if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
                     return false;
