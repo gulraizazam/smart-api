@@ -13,6 +13,7 @@ use App\Models\Regions;
 use App\Models\Services;
 use App\Models\StaffTargets;
 use App\Models\StaffTargetServices;
+use App\Models\UserHasLocations;
 use App\User;
 use Composer\Package\Package;
 use Config;
@@ -729,9 +730,127 @@ class Operations
                 $next_first_appointment = array();
             }
 
+            $fdmExists = '';
+            $fdm = GeneralFunctions::getFDM($data['location_id'], $appointment->created_by);
+            if ($fdm) {
+                $fdmExists = 'fdm';
+            }
+
             $appointment_data[$appointment->id] = array(
                 'schedule_date' => Carbon::parse($appointment->scheduled_date, null)->format('M j, Y'),
                 'id' => $appointment->patient_id,
+                'fdm' => $fdmExists,
+                'client_name' => $appointment->patient->name,
+                'appointment_type' => $appointment->appointment_type->name,
+                'appointment_slug' => $appointment->appointment_type->slug,
+                'doctor_name' => $appointment->doctor->name,
+                'service' => $appointment->service->name,
+                'appointment_status_parent' => $appointment->appointment_status_base->name,
+                'appointment_status_child' => $appointment->appointment_status->name,
+                'appointment_status_isarrived' => $appointment->appointment_status->is_arrived,
+                'next_appointment_info' => array(),
+            );
+            if ($next_first_appointment) {
+                $appointment_data[$appointment->id]['next_appointment_info'][$count++] = array(
+                    'appointment_id' => $next_first_appointment->id,
+                    'appointment_type' => $next_first_appointment->appointment_type->name,
+                    'appointment_slug' => $next_first_appointment->appointment_type->slug,
+                    'schedule_date' => Carbon::parse($next_first_appointment->scheduled_date, null)->format('M j, Y'),
+                    'client_name' => $next_first_appointment->patient->name,
+                    'doctor_name' => $next_first_appointment->doctor->name,
+                    'service' => $next_first_appointment->service->name,
+                    'appointment_status_parent' => $next_first_appointment->appointment_status_base->name,
+                    'appointment_status_child' => $next_first_appointment->appointment_status->name,
+                    'appointment_status_isarrived' => $next_first_appointment->appointment_status->is_arrived,
+                );
+            } else {
+                $appointment_data[$appointment->id]['next_appointment_info'][$count++] = array(
+                    'appointment_id' => 'NULL',
+                    'appointment_type' => '-',
+                    'appointment_slug' => '-',
+                    'schedule_date' => '-',
+                    'client_name' => '-',
+                    'doctor_name' => '-',
+                    'service' => '-',
+                    'appointment_status_parent' => '-',
+                    'appointment_status_child' => '-',
+                    'appointment_status_isarrived' => '-',
+                );
+            }
+        }
+        return $appointment_data;
+    }
+
+    public static function walking_report($data, $account_id)
+    {
+        if (isset($data['date_range']) && $data['date_range']) {
+            $date_range = explode(' - ', $data['date_range']);
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
+        }
+        if (isset($data['location_id']) && $data['location_id']) {
+            $where[] = array(
+                'location_id',
+                '=',
+                $data['location_id']
+            );
+        }
+        if (isset($data['appointment_type_id']) && $data['appointment_type_id']) {
+            $where[] = array(
+                'appointment_type_id',
+                '=',
+                $data['appointment_type_id']
+            );
+        }
+        $where[] = array(
+            'account_id',
+            '=',
+            $account_id
+        );
+
+        $appointment_info = Appointments::where($where)->whereIn('location_id', ACL::getUserCentres())
+            ->whereNotNull('scheduled_date')
+            ->whereDate('scheduled_date', '>=', $start_date)
+            ->whereDate('scheduled_date', '<=', $end_date)
+            ->orderBy('appointment_type_id', 'asc')
+            ->get();
+        $appointment_data = array();
+        $count = 1;
+        foreach ($appointment_info as $appointment) {
+            $scheduled_2 = Carbon::createFromFormat('Y-m-d H:i:s', $end_date . ' ' . $appointment->scheduled_time);
+
+            $next_info = Appointments::where([
+                [$where],
+                ['patient_id', '=', $appointment->patient_id],
+                ['id', '!=', $appointment->id]
+            ])->select('*', DB::raw("CONCAT(scheduled_date,' ', scheduled_time) AS scheduled"))->whereIn('location_id',ACL::getUserCentres())->whereNotNull('scheduled_date')->orderBy('scheduled_date','asc')->get();
+
+            if(count($next_info) > 0){
+                foreach ($next_info as $next) {
+                    if (Carbon::parse($next->scheduled)->format('Y-m-d H:i:s') >= Carbon::parse($scheduled_2)->format('Y-m-d H:i:s')) {
+                        $next_first_appointment = $next;
+                        break;
+                    } else {
+                        $next_first_appointment = array();
+                    }
+                }
+            } else {
+                $next_first_appointment = array();
+            }
+
+            $fdmExists = '';
+            $fdm = GeneralFunctions::getFDM($data['location_id'], $appointment->created_by);
+            if ($fdm) {
+                $fdmExists = 'fdm';
+            }
+
+            $appointment_data[$appointment->id] = array(
+                'schedule_date' => Carbon::parse($appointment->scheduled_date, null)->format('M j, Y'),
+                'id' => $appointment->patient_id,
+                'fdm' => $fdmExists,
                 'client_name' => $appointment->patient->name,
                 'appointment_type' => $appointment->appointment_type->name,
                 'appointment_slug' => $appointment->appointment_type->slug,

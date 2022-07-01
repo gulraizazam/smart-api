@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
+use App\Http\Controllers\Admin\Reports\FinanceReportController;
+use App\Http\Controllers\Admin\Reports\OperationsReportController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +46,7 @@ use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageController;
 use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -483,6 +486,17 @@ use App\Http\Controllers\Admin\AppointmentsController;
 
         Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
 
+        Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports');
 
+        Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
+
+        Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
+
+
+        //Route start for Operations reports
+        Route::get('operation_reports/loaddayarray', [OperationsReportController::class, 'loaddayarray'])->name('reports.operations_report_loadday');
+        Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report');
+        Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
+        //Route end for Operations reports
 
     });

@@ -2,18 +2,15 @@
 
 namespace App\Reports;
 
-use App\Helpers\Widgets\AppointmentEditWidget;
 use App\Models\Bundles;
 use App\Models\InvoiceStatuses;
-use App\Models\MachineType;
 use App\Models\PackageBundles;
 use App\Models\Packages;
 use App\Models\PackageService;
-use App\Models\Resources;
 use App\Models\Services;
-use App\User;
-use DB;
-use Auth;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Helpers\NodesTree;
 use App\Models\Appointments;
 use Illuminate\Support\Facades\Config;
@@ -115,7 +112,7 @@ class Invoices
         if (isset($data['location_id']) && $data['location_id']) {
             $where['invoices.location_id'] = $data['location_id'];
         }
-        
+
         if (isset($data['service_id']) && $data['service_id']) {
             $service_data=Services::where('id','=',$data['service_id'])->where('parent_id','=',0)->first();
             if($service_data){
@@ -126,7 +123,7 @@ class Invoices
                 $flag = 0;
                 $service_data_ids=array();
             }
-            
+
         }
 
         $where['invoices.invoice_status_id'] = '3';
@@ -157,9 +154,9 @@ class Invoices
                     if(! in_array($record->id, $service_data_ids)){
                          array_push($serviceArr,$record->service_id);
                     }
-                             
+
                 }
-                   
+
         $reportdata = array();
         if (isset($data['service_id']) && $data['service_id']) {
             foreach ($filters['services'] as $service) {

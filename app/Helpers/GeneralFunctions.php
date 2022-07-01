@@ -12,6 +12,7 @@ use App\Models\AppointmentLog;
 use App\Models\Appointments;
 use App\Models\Locations;
 use App\Models\Services;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -333,6 +334,20 @@ class GeneralFunctions
            //
         }
 
+    }
+
+    public static function getFDM($location_id, $created_by) {
+
+        $fdmExists = false;
+        $fdo_phone = Locations::where('id', $location_id)->value('fdo_phone');
+        if ($fdo_phone) {
+            $fdo_id = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))->where('user_type_id', 2)->value('id');
+            if ($fdo_id == $created_by) {
+                $fdmExists = true;
+            }
+        }
+
+        return $fdmExists;
     }
 
 }
