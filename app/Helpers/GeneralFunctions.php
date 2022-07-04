@@ -11,10 +11,12 @@ namespace App\Helpers;
 use App\Models\AppointmentLog;
 use App\Models\Appointments;
 use App\Models\Locations;
+use App\Models\RoleHasUsers;
 use App\Models\Services;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class GeneralFunctions
@@ -348,6 +350,23 @@ class GeneralFunctions
         }
 
         return $fdmExists;
+    }
+
+    public static function getCSR()
+    {
+       /* $query = DB::table('user_has_locations');
+        if ($location_id) {
+            $query->where('location_id', $location_id);
+        }
+
+        $user_ids = $query->pluck('user_id')->toArray();*/
+
+        $csr_user_ids = DB::table('role_has_users')/*->whereIn('user_id', $user_ids)*/
+            ->whereIn('role_id', ['2', '3'])
+            ->pluck('user_id')->toArray();
+
+            return $csr_user_ids;
+
     }
 
 }
