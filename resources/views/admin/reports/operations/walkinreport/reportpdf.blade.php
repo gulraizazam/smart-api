@@ -95,6 +95,24 @@
                 </tr>
             @endforeach
             <tr class="shdoc-header">
+                <th style="color: #fff">Total Walkin</th>
+                <th style="text-align:right;color: #fff">{{$totalWalkin ?? 0}}</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+                <tr class="shdoc-header">
                 <th style="color: #fff">Consultation Booked</th>
                 <th style="text-align:right;color: #fff">{{$consultantbooked}}</th>
                 <th></th>

@@ -152,7 +152,6 @@
                                 @endforeach
                             </tr>
                         @endforeach
-                    {{dd($consultantbooked, $consultantarrived)}}
 
                         <tr class="shdoc-header">
                             <td style="color: #fff">Consultation Booked</td>

@@ -1318,7 +1318,7 @@ class OperationsReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        $reportData = Operations::walking_report($request->all(), Auth::User()->account_id);
+        list($reportData, $totalWalkin) = Operations::walking_report($request->all(), Auth::User()->account_id);
 
         $newtreatment = 0;
         $newconsultant = 0;
@@ -1349,23 +1349,23 @@ class OperationsReportController extends Controller
 
         switch ($request->get('medium_type')) {
             case 'web':
-                return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'));
+                return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'));
                 break;
             case 'print':
-                return view('admin.reports.operations.walkinreport.reportprint', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'));
+                return view('admin.reports.operations.walkinreport.reportprint', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'));
                 break;
             case 'pdf':
-                $content = view('admin.reports.operations.walkinreport.reportpdf', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'))->render();
+                $content = view('admin.reports.operations.walkinreport.reportpdf', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
-                return $pdf->stream('DAR Report', 'landscape');
+                return $pdf->stream('Walkin Report', 'landscape');
                 break;
             case 'excel':
-                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment);
+                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, 'Walkin Report');
                 break;
             default:
-                return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'));
+                return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'));
                 break;
         }
     }
@@ -1425,10 +1425,10 @@ class OperationsReportController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
-                return $pdf->stream('Agent', 'landscape');
+                return $pdf->stream('Agent Report', 'landscape');
                 break;
             case 'excel':
-                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment);
+                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, 'Agent Report');
                 break;
             default:
                 return view('admin.reports.operations.agentreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'));
@@ -1445,7 +1445,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment)
+    private static function dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, $reportName = 'DAR Report')
     {
 
 
@@ -1581,7 +1581,7 @@ class OperationsReportController extends Controller
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'DAR Report' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="' . $reportName . '.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
