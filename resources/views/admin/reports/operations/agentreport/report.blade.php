@@ -189,7 +189,7 @@
                             <td></td>
                             <td></td>
                         </tr>
-                        <tr class="shdoc-header">
+                       {{-- <tr class="shdoc-header">
                             <td style="color: #fff">New Consultation Converted</td>
                             <td style="text-align:right;color: #fff">{{$newconsultant}}</td>
                             <td></td>
@@ -206,7 +206,7 @@
                             <td></td>
                             <td></td>
                             <td></td>
-                        </tr>
+                        </tr>--}}
                         @if($consultantbooked>0)
                             <tr class="shdoc-header">
                                 <td style="color: #fff">Consultation Arrival Ratio</td>
