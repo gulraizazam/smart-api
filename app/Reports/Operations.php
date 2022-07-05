@@ -707,6 +707,18 @@ class Operations
             ->whereDate('scheduled_date', '<=', $end_date)
             ->orderBy('appointment_type_id', 'asc')
             ->get();
+
+        $fdm = GeneralFunctions::getFDM($data['location_id']);
+
+        $walkinAppointment = Appointments::where($where)->whereIn('location_id', ACL::getUserCentres())
+            ->whereNotNull('scheduled_date')
+            ->whereIn('created_by', $fdm)
+            ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
+            ->whereDate('scheduled_date', '>=', $start_date)
+            ->whereDate('scheduled_date', '<=', $end_date)
+            ->orderBy('appointment_type_id', 'asc')
+            ->count();
+
         $appointment_data = array();
         $count = 1;
         foreach ($appointment_info as $appointment) {
@@ -731,16 +743,9 @@ class Operations
                 $next_first_appointment = array();
             }
 
-            $fdmExists = '';
-            $fdm = GeneralFunctions::getFDM();
-            if ($fdm) {
-                $fdmExists = 'fdm';
-            }
-
             $appointment_data[$appointment->id] = array(
                 'schedule_date' => Carbon::parse($appointment->scheduled_date, null)->format('M j, Y'),
                 'id' => $appointment->patient_id,
-                'fdm' => $fdmExists,
                 'client_name' => $appointment->patient->name,
                 'appointment_type' => $appointment->appointment_type->name,
                 'appointment_slug' => $appointment->appointment_type->slug,
@@ -779,7 +784,7 @@ class Operations
                 );
             }
         }
-        return $appointment_data;
+        return [$appointment_data, $walkinAppointment];
     }
 
     public static function walking_report($data, $account_id)
@@ -928,9 +933,13 @@ class Operations
             $account_id
         );
 
-        $csr_ids = GeneralFunctions::getCSR();
+        if (isset($data['agent_id']) && $data['agent_id'] != '') {
+            $agent_id = array($data['agent_id']);
+        } else {
+            $agent_id = GeneralFunctions::getCSR();
+        }
 
-        $appointment_info = Appointments::where($where)->whereIn('created_by', $csr_ids)
+        $appointment_info = Appointments::where($where)->whereIn('created_by', $agent_id)
             ->whereIn('location_id', ACL::getUserCentres())
             ->whereNotNull('scheduled_date')
             ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
