@@ -25,6 +25,11 @@
             .sn-white-btn > i {
                 color: #fff !important;;
             }
+            .shdoc-header {
+                background: rgba(54, 65, 80, 1) !important;
+                color: #fff !important;
+                font-weight: bold !important;
+            }
         </style>
     @endpush
 
@@ -183,7 +188,7 @@
                                             <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                                  id="location_id_E">
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
-                                                {!! Form::select('location_id', $locations, null, ['onchange' => 'loadmachine();' , 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select']) !!}
+                                                {!! Form::select('location_id', $locations, null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
                                             <div class="form-group col-md-3 sn-select @if($errors->has('machine')) has-error @endif"
