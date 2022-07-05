@@ -120,11 +120,7 @@
                             <tr>
                                 @if($reportsingle['appointment_slug'] == 'consultancy')
                                     <?php
-
-                                    if ($reportsingle['fdm'] == '') {
                                         $consultantbooked++;
-                                    }
-
                                     ?>
                                 @elseif($reportsingle['appointment_slug'] == 'treatment')
                                     <?php $treatmentbooked++; ?>
@@ -156,6 +152,24 @@
                         @endforeach
 
                         <tr class="shdoc-header">
+                            <td style="color: #fff">Total Walkin</td>
+                            <td style="text-align:right;color: #fff">{{$totalWalkin ?? 0}}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                            <tr class="shdoc-header">
                             <td style="color: #fff">Consultation Booked</td>
                             <td style="text-align:right;color: #fff">{{$consultantbooked}}</td>
                             <td></td>

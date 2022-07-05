@@ -338,30 +338,29 @@ class GeneralFunctions
 
     }
 
-    public static function getFDM($location_id, $created_by) {
+    public static function getFDM($location_id = null) {
 
-        $fdmExists = false;
-        $fdo_phone = Locations::where('id', $location_id)->value('fdo_phone');
-        if ($fdo_phone) {
-            $fdo_id = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))->where('user_type_id', 2)->value('id');
-            if ($fdo_id == $created_by) {
-                $fdmExists = true;
+        if ($location_id) {
+            $fdo_id = [0];
+            $fdo_phone = Locations::where('id', $location_id)->value('fdo_phone');
+            if ($fdo_phone) {
+                $fdo_id = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))->where('user_type_id', 2)->value('id');
             }
+
+            return [$fdo_id];
         }
 
-        return $fdmExists;
+        $fdm_ids = DB::table('role_has_users')
+            ->whereIn('role_id', ['4'])
+            ->pluck('user_id')->toArray();
+
+        return $fdm_ids;
+
     }
 
     public static function getCSR()
     {
-       /* $query = DB::table('user_has_locations');
-        if ($location_id) {
-            $query->where('location_id', $location_id);
-        }
-
-        $user_ids = $query->pluck('user_id')->toArray();*/
-
-        $csr_user_ids = DB::table('role_has_users')/*->whereIn('user_id', $user_ids)*/
+        $csr_user_ids = DB::table('role_has_users')
             ->whereIn('role_id', ['2', '3'])
             ->pluck('user_id')->toArray();
 
