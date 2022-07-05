@@ -110,7 +110,7 @@
                                             <span id="location_id_handler"></span>
                                         </div>
                                         <div class="form-group col-md-3 sn-select @if($errors->has('service_id')) has-error @endif"
-                                             id="services">
+                                             id="services" style="display: none;">
                                             {!! Form::label('service_id', 'Services', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="service_id" name="service_id">
                                                 <option value="">Select Service</option>
@@ -126,6 +126,19 @@
                                                 @endforeach
                                             </select>
                                             <span id="service_id_handler"></span>
+                                        </div>
+
+                                        <div class="form-group col-md-3 sn-select @if($errors->has('service_id')) has-error @endif"
+                                             id="agent" style="display: none;">
+                                            {!! Form::label('agent_id', 'agent', ['class' => 'control-label']) !!}
+                                            <select class="form-control select2" id="agent_id" name="agent_id">
+                                                <option value="">Select Agent</option>
+                                                @foreach($agents as $agent)
+
+                                                    <option value="{{$agent->id ?? ''}}">{{$agent->name ?? ''}}</option>
+                                                @endforeach
+                                            </select>
+
                                         </div>
 
                                         <div style="display: none;" id="appointment_type_C"
@@ -227,6 +240,7 @@
                     type: "POST",
                     data: {
                         date_range: $('#date_range').val(),
+                        agent_id: $('#agent_id').val(),
                         date_range_by: $('#date_range_by').val(),
                         date_range_by_first: $('#date_range_by_first').val(),
                         year: $('#year').val(),
@@ -282,6 +296,21 @@
                 $('#report_type-report').val($('#report_type').val());
                 $('#report-form').submit();
             }
+
+
+            $(document).on('change', '#report_type', function () {
+                var type_p = $("#report_type").val();
+                if (type_p == 'dar_report') {
+                    $('#services').hide();
+                    $('#agent').hide();
+                } else if (type_p == 'walking_report') {
+                    $('#services').hide();
+                    $('#agent').hide();
+                } else if (type_p == 'agent_report') {
+                    $('#services').hide();
+                    $('#agent').show();
+                }
+            });
 
 
         </script>

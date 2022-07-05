@@ -169,7 +169,7 @@
                             <td></td>
                             <td></td>
                         </tr>
-                            <tr class="shdoc-header">
+                        {{--<tr class="shdoc-header">
                             <td style="color: #fff">Consultation Booked</td>
                             <td style="text-align:right;color: #fff">{{$consultantbooked}}</td>
                             <td></td>
@@ -356,7 +356,7 @@
                                 <td></td>
                                 <td></td>
                             </tr>
-                        @endif
+                        @endif--}}
                     @else
                         <tr>
                             <td colspan="12" align="center">No record round.</td>

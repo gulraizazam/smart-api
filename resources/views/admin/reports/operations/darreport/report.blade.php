@@ -113,7 +113,7 @@
                         <th>Appointment Status Child</th>
                     </tr>
                     </thead>
-                    @php $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
+                    @php $walkin = 0; $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
                     @if(count($reportData))
                         @foreach($reportData as $reportsingle)
 
@@ -121,9 +121,7 @@
                                 @if($reportsingle['appointment_slug'] == 'consultancy')
                                     <?php
 
-                                    if ($reportsingle['fdm'] == '') {
-                                        $consultantbooked++;
-                                    }
+                                    $consultantbooked++;
 
                                     ?>
                                 @elseif($reportsingle['appointment_slug'] == 'treatment')
@@ -192,8 +190,44 @@
                             <td></td>
                         </tr>
                         <tr class="shdoc-header">
-                            <td style="color: #fff">New Consultation Converted</td>
-                            <td style="text-align:right;color: #fff">{{$newconsultant}}</td>
+                            <td style="color: #fff">Total Walkin</td>
+                            <td style="text-align:right;color: #fff">{{$walkinAppointment}}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="shdoc-header">
+                            <td style="color: #fff">Booked without walkin</td>
+                            <td style="text-align:right;color: #fff">{{$consultantbooked - $walkinAppointment}}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="shdoc-header">
+                            <td style="color: #fff">Arrived without walkin</td>
+                            <td style="text-align:right;color: #fff">{{$consultantarrived - $walkinAppointment}}</td>
                             <td></td>
                             <td></td>
                             <td></td>
@@ -212,7 +246,13 @@
                         @if($consultantbooked>0)
                             <tr class="shdoc-header">
                                 <td style="color: #fff">Consultation Arrival Ratio</td>
-                                <td style="text-align:right;color: #fff"><?php echo number_format(($consultantarrived / $consultantbooked) * 100, 2) . '%'?></td>
+                                <td style="text-align:right;color: #fff">
+                                    <?php
+                                    $booking_without_walkin = $consultantbooked - $walkinAppointment;
+                                    $arrived_without_walkin = $consultantarrived - $walkinAppointment;
+                                    echo number_format(($arrived_without_walkin / $booking_without_walkin) * 100, 2) . '%'
+                                    ?>
+                                </td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -229,7 +269,7 @@
                                 <td></td>
                             </tr>
                         @endif
-                        @if($consultantarrived>0)
+                       {{-- @if($consultantarrived>0)
                             <tr class="shdoc-header">
                                 <td style="color: #fff">Consultation Conversion Ratio</td>
                                 <td style="text-align:right;color: #fff"><?php echo number_format(($newconsultant / $consultantarrived) * 100, 2) . '%'?></td>
@@ -342,7 +382,7 @@
                                 <td></td>
                                 <td></td>
                             </tr>
-                        @endif
+                        @endif--}}
                     @else
                         <tr>
                             <td colspan="12" align="center">No record round.</td>

@@ -227,7 +227,7 @@
                                 <td></td>
                             </tr>
                         @endif
-                        @if($consultantarrived>0)
+                       {{-- @if($consultantarrived>0)
                             <tr class="shdoc-header">
                                 <td style="color: #fff">Consultation Conversion Ratio</td>
                                 <td style="text-align:right;color: #fff"><?php echo number_format(($newconsultant / $consultantarrived) * 100, 2) . '%'?></td>
@@ -340,7 +340,7 @@
                                 <td></td>
                                 <td></td>
                             </tr>
-                        @endif
+                        @endif--}}
                     @else
                         <tr>
                             <td colspan="12" align="center">No record round.</td>
