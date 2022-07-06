@@ -81,28 +81,70 @@
         @endif
 
         <tr class="shdoc-header">
-            <td style="color: #fff">Total</td>
+            <td style="color: #000">Total</td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
-            <td style="text-align: right; color: #fff;">{{ number_format($total,2) }}</td>
+            <td style="text-align: right; color: #000;">{{ number_format($total,2) }}</td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
         </tr>
         <tr class="shdoc-header">
-            <td style="color: #fff">Count</td>
+            <td style="color: #000">Total Count</td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
-            <td style="text-align: right ; color: #fff;">{{ $count }}</td>
+            <td style="text-align: right; color: #000;">{{ count($report_data) }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr class="shdoc-header">
+            <td style="color: #000">Converted Count</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td style="text-align: right ; color: #000;">{{ $count }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr class="shdoc-header">
+            <td style="color: #000">Converted Ration</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td style="text-align: right ; color: #000;">{{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr class="shdoc-header">
+            <td style="color: #000">Conversion Average</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td style="text-align: right ; color: #000;">{{ $total > 0 ? number_format($total / $count, 2) : 0}}</td>
             <td></td>
             <td></td>
             <td></td>

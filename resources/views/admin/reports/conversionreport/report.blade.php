@@ -193,7 +193,7 @@
                         <td></td>
                     </tr>
                     <tr class="shdoc-header">
-                        <td style="color: #fff">Convertion Average</td>
+                        <td style="color: #fff">Conversion Average</td>
                         <td></td>
                         <td></td>
                         <td></td>

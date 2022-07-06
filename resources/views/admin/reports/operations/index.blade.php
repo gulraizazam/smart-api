@@ -221,7 +221,7 @@
                     'Last Year'  : [moment().subtract(1, 'year').startOf('month'), moment().subtract(1, 'year').endOf('year')],
                 },
                 startDate: moment().subtract(29, 'days'),
-                endDate  : moment()
+                endDate  : moment(),
             });
 
             var loadReport = function (that) {

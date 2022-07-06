@@ -1468,8 +1468,8 @@ class OperationsReportController extends Controller
 
         $activeSheet->setCellValue('A3', '');
 
-        $activeSheet->setCellValue('A4', 'Today\'s Appointments')->getStyle('A4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('K4', 'Treatment Booked')->getStyle('K4')->getFont()->setBold(true);
+        //$activeSheet->setCellValue('A4', 'Today\'s Appointments')->getStyle('A4')->getFont()->setBold(true);
+        //$activeSheet->setCellValue('K4', 'Treatment Booked')->getStyle('K4')->getFont()->setBold(true);
 
         $activeSheet->setCellValue('A5', 'Sr#')->getStyle('A5')->getFont()->setBold(true);
         $activeSheet->setCellValue('B5', 'Scheduled Date')->getStyle('B5')->getFont()->setBold(true);
@@ -1481,13 +1481,13 @@ class OperationsReportController extends Controller
         $activeSheet->setCellValue('H5', 'Appointment Status Parent')->getStyle('H5')->getFont()->setBold(true);
         $activeSheet->setCellValue('I5', 'Appointment Status Child')->getStyle('I5')->getFont()->setBold(true);
 
-        $activeSheet->setCellValue('J5', '--')->getStyle('J5')->getFont()->setBold(true);
+        /*$activeSheet->setCellValue('J5', '--')->getStyle('J5')->getFont()->setBold(true);
         $activeSheet->setCellValue('K5', 'Scheduled Date')->getStyle('K5')->getFont()->setBold(true);
         $activeSheet->setCellValue('L5', 'Practitioner')->getStyle('L5')->getFont()->setBold(true);
         $activeSheet->setCellValue('M5', 'Appointment Type')->getStyle('M5')->getFont()->setBold(true);
         $activeSheet->setCellValue('N5', 'Service')->getStyle('N5')->getFont()->setBold(true);
         $activeSheet->setCellValue('O5', 'Appointment Status Parent')->getStyle('O5')->getFont()->setBold(true);
-        $activeSheet->setCellValue('P5', 'Appointment Status Child')->getStyle('P5')->getFont()->setBold(true);
+        $activeSheet->setCellValue('P5', 'Appointment Status Child')->getStyle('P5')->getFont()->setBold(true);*/
 
 
         $activeSheet->setCellValue('A6', '');
@@ -1520,7 +1520,7 @@ class OperationsReportController extends Controller
                 $activeSheet->setCellValue('H' . $counter, $reportsingle['appointment_status_parent'])->getStyle('H' . $counter)->getFont();
                 $activeSheet->setCellValue('I' . $counter, $reportsingle['appointment_status_child'])->getStyle('I' . $counter)->getFont();
 
-                foreach ($reportsingle['next_appointment_info'] as $next_appointment_info) {
+                /*foreach ($reportsingle['next_appointment_info'] as $next_appointment_info) {
 
                     $activeSheet->setCellValue('J' . $counter, '-')->getStyle('J' . $counter)->getFont();
                     $activeSheet->setCellValue('K' . $counter, $next_appointment_info['schedule_date'])->getStyle('K' . $counter)->getFont();
@@ -1529,7 +1529,7 @@ class OperationsReportController extends Controller
                     $activeSheet->setCellValue('N' . $counter, $next_appointment_info['service'])->getStyle('N' . $counter)->getFont();
                     $activeSheet->setCellValue('O' . $counter, $next_appointment_info['appointment_status_child'])->getStyle('O' . $counter)->getFont();
                     $activeSheet->setCellValue('p' . $counter, $next_appointment_info['appointment_status_parent'])->getStyle('P' . $counter)->getFont();
-                }
+                }*/
                 $counter++;
             }
             $activeSheet->setCellValue('A' . $counter, '');
@@ -1559,7 +1559,7 @@ class OperationsReportController extends Controller
                 $counter++;
             }
 
-            $activeSheet->setCellValue('A' . $counter, 'Treatment Booked')->getStyle('A' . $counter)->getFont()->setBold(true);
+            /*$activeSheet->setCellValue('A' . $counter, 'Treatment Booked')->getStyle('A' . $counter)->getFont()->setBold(true);
             $activeSheet->setCellValue('B' . $counter, $treatmentbooked)->getStyle('B' . $counter)->getFont()->setBold(true);;
             $counter++;
 
@@ -1581,7 +1581,7 @@ class OperationsReportController extends Controller
                 $activeSheet->setCellValue('A' . $counter, 'Treatment Arrival Ratio')->getStyle('A' . $counter)->getFont()->setBold(true);
                 $activeSheet->setCellValue('B' . $counter, number_format(($newtreatment / $treatmentarrived) * 100, 2) . '%')->getStyle('B' . $counter)->getFont()->setBold(true);;
                 $counter++;
-            }
+            }*/
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
