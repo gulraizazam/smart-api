@@ -2455,7 +2455,6 @@ class Finanaces
             }
             /*case 1 end*/
         }
-        //dd($appointments_info);
 
         /*case 2 start*/
         $records = Appointments::join('appointments as appoint_2', 'appointments.id', '=', 'appoint_2.appointment_id')

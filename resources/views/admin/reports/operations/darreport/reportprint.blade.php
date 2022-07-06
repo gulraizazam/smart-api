@@ -47,13 +47,13 @@
             <th>Service</th>
             <th>Appointment Status Parent</th>
             <th>Appointment Status Child</th>
-            <th>--</th>
+            {{--<th>--</th>
             <th>Scheduled Date</th>
             <th>Practitioner</th>
             <th>Appointment Type</th>
             <th>Service</th>
             <th>Appointment Status Parent</th>
-            <th>Appointment Status Child</th>
+            <th>Appointment Status Child</th>--}}
         </tr>
         @php $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
         @if(count($reportData))
@@ -78,7 +78,7 @@
                     <td>{{$reportsingle['service']}}</td>
                     <td>{{$reportsingle['appointment_status_parent']}}</td>
                     <td>{{$reportsingle['appointment_status_child']}}</td>
-                    <td>{{'-'}}</td>
+                    {{--<td>{{'-'}}</td>
                     @foreach($reportsingle['next_appointment_info'] as $next_appointment_info)
                         <td>{{$next_appointment_info['schedule_date']}}</td>
                         <td>{{$next_appointment_info['doctor_name']}}</td>
@@ -86,7 +86,7 @@
                         <td>{{$next_appointment_info['service']}}</td>
                         <td>{{$next_appointment_info['appointment_status_child']}}</td>
                         <td>{{$next_appointment_info['appointment_status_parent']}}</td>
-                    @endforeach
+                    @endforeach--}}
                 </tr>
             @endforeach
             <tr class="shdoc-header">

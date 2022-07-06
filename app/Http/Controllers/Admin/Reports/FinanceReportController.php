@@ -2340,8 +2340,17 @@ class FinanceReportController extends Controller
             $activeSheet->setCellValue('A' . $counter, 'Total')->getStyle('A' . $counter)->getFont()->setBold(true);
             $activeSheet->setCellValue('H' . $counter, number_format($total, 2));
             $counter++;
-            $activeSheet->setCellValue('A' . $counter, 'Count')->getStyle('A' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('A' . $counter, 'Total Count')->getStyle('A' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('H' . $counter, count($reportData));
+            $counter++;
+            $activeSheet->setCellValue('A' . $counter, 'Converted Count')->getStyle('A' . $counter)->getFont()->setBold(true);
             $activeSheet->setCellValue('H' . $counter, $count);
+            $counter++;
+            $activeSheet->setCellValue('A' . $counter, 'Converted Ration')->getStyle('A' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('H' . $counter,  $count > 0 ? number_format($count / count($reportData) * 100, 2) : 0 . '%');
+            $counter++;
+            $activeSheet->setCellValue('A' . $counter, 'Conversion Average')->getStyle('A' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('H' . $counter,  $total > 0 ? number_format($total / $count, 2) : 0);
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
