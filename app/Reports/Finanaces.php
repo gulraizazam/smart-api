@@ -2365,6 +2365,7 @@ class Finanaces
 
         $appointments = Appointments::join('packages', 'appointments.id', '=', 'packages.appointment_id')
             ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
+            ->where('appointments.base_appointment_status_id', config('constants.appointment_status_arrived'))
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
             ->where($where)

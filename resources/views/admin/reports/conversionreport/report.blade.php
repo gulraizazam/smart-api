@@ -44,7 +44,7 @@
 <div class="sn-table-holder">
     <div class="sn-report-head">
         <div class="sn-title">
-            <h1>{{ 'Conversion report'  }}</h1>
+            <h1>{{ 'Conversion Report'  }}</h1>
         </div>
         <div class="sn-buttons">
             @if($request->get('medium_type') == 'web')
@@ -151,7 +151,21 @@
                         <td></td>
                     </tr>
                     <tr class="shdoc-header">
-                        <td style="color: #fff">Count</td>
+                        <td style="color: #fff">Total Count</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td style="text-align: right ; color: #fff;">{{ count($report_data) }}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr class="shdoc-header">
+                        <td style="color: #fff">Converted Count</td>
                         <td></td>
                         <td></td>
                         <td></td>
@@ -159,6 +173,34 @@
                         <td></td>
                         <td></td>
                         <td style="text-align: right ; color: #fff;">{{ $count }}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr class="shdoc-header">
+                        <td style="color: #fff">Converted Ration</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td style="text-align: right ; color: #fff;">{{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr class="shdoc-header">
+                        <td style="color: #fff">Convertion Average</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td style="text-align: right ; color: #fff;">{{ $total > 0 ? number_format($total / $count, 2) : 0}}</td>
                         <td></td>
                         <td></td>
                         <td></td>
