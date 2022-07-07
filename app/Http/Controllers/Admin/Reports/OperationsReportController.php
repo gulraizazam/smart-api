@@ -1257,44 +1257,22 @@ class OperationsReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        list($reportData, $walkinAppointment) = Operations::dar_report($request->all(), Auth::User()->account_id);
+        list($reportData, $locationData) = Operations::dar_report($request->all(), Auth::User()->account_id);
+
+       // dd($locationData);
 
         $newtreatment = 0;
         $newconsultant = 0;
-        $newtreatmentarray = array();
-        $newconsultantarray = array();
-
-        foreach ($reportData as $reportsingle) {
-            if ($reportsingle['appointment_slug'] == 'consultancy') {
-                foreach ($reportsingle['next_appointment_info'] as $next_appointment_info) {
-                    if ($next_appointment_info['appointment_id'] != 'NULL') {
-                        if (!in_array($next_appointment_info['appointment_id'], $newconsultantarray)) {
-                            $newconsultant++;
-                        }
-                        $newconsultantarray[] = $next_appointment_info['appointment_id'];
-                    }
-                }
-            } else {
-                foreach ($reportsingle['next_appointment_info'] as $next_appointment_info){
-                    if ($next_appointment_info['appointment_id'] != 'NULL') {
-                        if (!in_array($next_appointment_info['appointment_id'], $newtreatmentarray)) {
-                            $newtreatment++;
-                        }
-                        $newtreatmentarray[] = $next_appointment_info['appointment_id'];
-                    }
-                }
-            }
-        }
 
         switch ($request->get('medium_type')) {
             case 'web':
-                return view('admin.reports.operations.darreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'walkinAppointment'));
+                return view('admin.reports.operations.darreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
                 break;
             case 'print':
-                return view('admin.reports.operations.darreport.reportprint', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'walkinAppointment'));
+                return view('admin.reports.operations.darreport.reportprint', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
                 break;
             case 'pdf':
-                $content = view('admin.reports.operations.darreport.reportpdf', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'walkinAppointment'))->render();
+                $content = view('admin.reports.operations.darreport.reportpdf', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
@@ -1304,7 +1282,7 @@ class OperationsReportController extends Controller
                 self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment);
                 break;
             default:
-                return view('admin.reports.operations.darreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'walkinAppointment'));
+                return view('admin.reports.operations.darreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
                 break;
         }
     }

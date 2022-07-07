@@ -106,9 +106,17 @@
                                         <div class="form-group col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
                                              id="locations">
                                             {!! Form::label('location_id', 'Centre', ['class' => 'control-label']) !!}
-                                            {!! Form::select('location_id', $locations, null, ['id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
+                                            {!! Form::select('location_id', $locations, null, ['multiple', 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
                                             <span id="location_id_handler"></span>
                                         </div>
+
+                                        {{--<div class="form-group col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
+                                             id="locations">
+                                            {!! Form::label('status_id', 'Status', ['class' => 'control-label']) !!}
+                                            {!! Form::select('status_id', ['1' => 'Arrived', '0' => 'Not Arrived'], null, ['id' => 'status_id', 'style' => 'width: 100%;', 'class' => 'form-control']) !!}
+                                            <span id="location_id_handler"></span>
+                                        </div>--}}
+
                                         <div class="form-group col-md-3 sn-select @if($errors->has('service_id')) has-error @endif"
                                              id="services" style="display: none;">
                                             {!! Form::label('service_id', 'Services', ['class' => 'control-label']) !!}
@@ -311,6 +319,18 @@
                     $('#agent').show();
                 }
             });
+
+
+            function toggleMenu($this, $class) {
+
+                $(".change-tab").removeClass("nav-bar-active");
+                $this.addClass("nav-bar-active");
+
+                $(".all-sections").hide();
+                
+                $(".section-" + $class).show();
+
+            }
 
 
         </script>

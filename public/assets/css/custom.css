@@ -815,3 +815,7 @@ div > input {
     text-transform:capitalize;
     letter-spacing:4px;
 }
+.section-states{
+    display: flex;
+    flex-wrap: wrap;
+}
