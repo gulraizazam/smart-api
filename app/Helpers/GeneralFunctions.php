@@ -338,16 +338,18 @@ class GeneralFunctions
 
     }
 
-    public static function getFDM($location_id = null) {
-
-        if ($location_id) {
-            $fdo_id = [0];
-            $fdo_phone = Locations::where('id', $location_id)->value('fdo_phone');
-            if ($fdo_phone) {
-                $fdo_id = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))->where('user_type_id', 2)->value('id');
+    public static function getFDM($location_ids = null) {
+        $fdo_ids = [];
+        if ($location_ids && count($location_ids) > 0) {
+            $fdo_phones = Locations::whereIn('id', $location_ids)->pluck('fdo_phone');
+            if ($fdo_phones->count()) {
+                foreach ($fdo_phones as $fdo_phone) {
+                    $fdo_ids[] = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))
+                        ->where('user_type_id', 2)->value('id');
+                }
             }
 
-            return [$fdo_id];
+            return count($fdo_ids) > 0 ? array_filter($fdo_ids) : [0];
         }
 
         $fdm_ids = DB::table('role_has_users')
@@ -366,6 +368,17 @@ class GeneralFunctions
 
             return $csr_user_ids;
 
+    }
+
+    public static function getLocationIds($location_id)
+    {
+        $location_ids = null;
+        $locationIds = array_filter($location_id);
+        if (isset($locationIds) && count($locationIds)) {
+            $location_ids = $locationIds;
+        }
+
+        return $location_ids;
     }
 
 }
