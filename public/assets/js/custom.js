@@ -1019,3 +1019,13 @@ function rotaTimeTitle() {
 
     return $(".fc-axis.fc-widget-header").html("<span>Time</span>");
 }
+
+
+function toggleMenu($this, $class) {
+    $(".change-tab").removeClass("nav-bar-active");
+    $this.addClass("nav-bar-active");
+
+    $(".all-sections").hide();
+
+    $(".section-" + $class).show();
+}

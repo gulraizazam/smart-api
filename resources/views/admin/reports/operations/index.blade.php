@@ -140,7 +140,7 @@
                                              id="agent" style="display: none;">
                                             {!! Form::label('agent_id', 'agent', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="agent_id" name="agent_id">
-                                                <option value="">Select Agent</option>
+                                                <option value="">All</option>
                                                 @foreach($agents as $agent)
 
                                                     <option value="{{$agent->id ?? ''}}">{{$agent->name ?? ''}}</option>
@@ -319,18 +319,6 @@
                     $('#agent').show();
                 }
             });
-
-
-            function toggleMenu($this, $class) {
-
-                $(".change-tab").removeClass("nav-bar-active");
-                $this.addClass("nav-bar-active");
-
-                $(".all-sections").hide();
-                
-                $(".section-" + $class).show();
-
-            }
 
 
         </script>
