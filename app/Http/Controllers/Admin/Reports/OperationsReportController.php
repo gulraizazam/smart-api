@@ -1259,8 +1259,6 @@ class OperationsReportController extends Controller
         }
         list($reportData, $locationData) = Operations::dar_report($request->all(), Auth::User()->account_id);
 
-       // dd($locationData);
-
         $newtreatment = 0;
         $newconsultant = 0;
 
@@ -1283,6 +1281,48 @@ class OperationsReportController extends Controller
                 break;
             default:
                 return view('admin.reports.operations.darreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
+                break;
+        }
+    }
+
+    private static function agentReport(Request $request)
+    {
+
+        if (!Gate::allows('operations_reports_dar_report')) {
+            return abort(401);
+        }
+        if ($request->get('date_range')) {
+            $date_range = explode(' - ', $request->get('date_range'));
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
+        }
+        list($reportData, $locationData) = Operations::agent_report($request->all(), Auth::User()->account_id);
+
+        $newtreatment = 0;
+        $newconsultant = 0;
+
+        switch ($request->get('medium_type')) {
+            case 'web':
+                return view('admin.reports.operations.agentreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
+                break;
+            case 'print':
+                return view('admin.reports.operations.agentreport.reportprint', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
+                break;
+            case 'pdf':
+                $content = view('admin.reports.operations.agentreport.reportpdf', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'))->render();
+                $pdf = App::make('dompdf.wrapper');
+                $pdf->loadHTML($content);
+                $pdf->setPaper('A2', 'landscape');
+                return $pdf->stream('Agent Report', 'landscape');
+                break;
+            case 'excel':
+                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, 'Agent Report');
+                break;
+            default:
+                return view('admin.reports.operations.agentreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
                 break;
         }
     }
@@ -1348,72 +1388,6 @@ class OperationsReportController extends Controller
                 break;
             default:
                 return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'));
-                break;
-        }
-    }
-
-    private static function agentReport(Request $request)
-    {
-
-        if (!Gate::allows('operations_reports_dar_report')) {
-            return abort(401);
-        }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-        $reportData = Operations::agent_report($request->all(), Auth::User()->account_id);
-
-        $newtreatment = 0;
-        $newconsultant = 0;
-        $newtreatmentarray = array();
-        $newconsultantarray = array();
-
-        foreach ($reportData as $reportsingle) {
-            if ($reportsingle['appointment_slug'] == 'consultancy') {
-                foreach ($reportsingle['next_appointment_info'] as $next_appointment_info) {
-                    if ($next_appointment_info['appointment_id'] != 'NULL') {
-                        if (!in_array($next_appointment_info['appointment_id'], $newconsultantarray)) {
-                            $newconsultant++;
-                        }
-                        $newconsultantarray[] = $next_appointment_info['appointment_id'];
-                    }
-                }
-            } else {
-                foreach ($reportsingle['next_appointment_info'] as $next_appointment_info){
-                    if ($next_appointment_info['appointment_id'] != 'NULL') {
-                        if (!in_array($next_appointment_info['appointment_id'], $newtreatmentarray)) {
-                            $newtreatment++;
-                        }
-                        $newtreatmentarray[] = $next_appointment_info['appointment_id'];
-                    }
-                }
-            }
-        }
-
-        switch ($request->get('medium_type')) {
-            case 'web':
-                return view('admin.reports.operations.agentreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'));
-                break;
-            case 'print':
-                return view('admin.reports.operations.agentreport.reportprint', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'));
-                break;
-            case 'pdf':
-                $content = view('admin.reports.operations.agentreport.reportpdf', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'))->render();
-                $pdf = App::make('dompdf.wrapper');
-                $pdf->loadHTML($content);
-                $pdf->setPaper('A2', 'landscape');
-                return $pdf->stream('Agent Report', 'landscape');
-                break;
-            case 'excel':
-                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, 'Agent Report');
-                break;
-            default:
-                return view('admin.reports.operations.agentreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date'));
                 break;
         }
     }

@@ -67,35 +67,14 @@
 
 <div class="card mb-8 menu_section" style="width: 100%">
 
-    <div class="card-body menu-card">
-        <ul class="horizontal-nav-bar list-unstyled mb-0 appointment-menu">
-
-            <li class="horizontal-nav-bar-li menu-section" style="width: 50%;">
-                <a href="javascript:void(0)" onclick="toggleMenu($(this), 'detail');" class="change-tab navi-link py-4 nav-bar-active">
-                         <span class="text-muted mb-2 fa_icon">
-                             <i class="la la-home"></i>
-                        </span>
-                    <p class="navi-text">Detail</p>
-                </a>
-            </li>
-
-            <li class="horizontal-nav-bar-li menu-section" style="width: 50%;">
-                <a href="javascript:void(0)" onclick="toggleMenu($(this), 'states');" class="change-tab navi-link py-4">
-                             <span class="text-muted mb-2 fa_icon">
-                                 <i class="la la-info"></i>
-                            </span>
-                    <p class="navi-text">Stats</p>
-                </a>
-            </li>
-
-        </ul>
-    </div>
+    @include('admin.reports.common.tab')
 
 </div>
 
 <div class="panel-body sn-table-body">
     <div class="bordered">
         <div class="sn-table-head">
+
             <div class="row">
                 <div class="col-md-2">
                     <img style="width: 145px;" src="{{ asset('assets/media/logos/logo.svg') }}" height="80">
@@ -159,7 +138,7 @@
             </div>
 
             <div class="pt-4 border-top  all-sections section-states" style="display: none;">
-
+                @if(isset($locationData) && count($locationData) > 0)
                     @foreach($locationData as $key => $location)
 
                         <div class="col-md-6 mb-3">
@@ -184,14 +163,19 @@
 
                     </tr>
 
-                    @if($location['consultantbooked'] > 0)
+                    @if(isset($location['consultantbooked']) && $location['consultantbooked'] > 0)
                         <tr class="">
                             <td class="border-top bg-light" style="">Consultation Arrival Ratio</td>
                             <td class="border-top bg-light" style="text-align:right;">
                                 <?php
-                                $booking_without_walkin = $location['consultantbooked'] - $location['walking'];
-                                $arrived_without_walkin = $location['consultantarrived'] - $location['walking'];
-                                echo number_format(($arrived_without_walkin / $booking_without_walkin) * 100, 2) . '%'
+                                if (isset($location['consultantbooked']) && isset($location['consultantarrived'])) {
+                                    $booking_without_walkin = $location['consultantbooked'] - $location['walking'];
+                                    $arrived_without_walkin = $location['consultantarrived'] - $location['walking'];
+                                    echo number_format(($arrived_without_walkin / $booking_without_walkin) * 100, 2) . '%'
+                                } else {
+                                    echo '00.00 %';
+                                }
+
                                 ?>
                             </td>
                         </tr>
@@ -202,7 +186,8 @@
                         </div>
 
                     @endforeach
-                </div>
+                @endif
+            </div>
 
 
         </div>
