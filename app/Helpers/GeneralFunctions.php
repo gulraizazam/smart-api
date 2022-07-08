@@ -371,19 +371,27 @@ class GeneralFunctions
             ->whereIn('role_id', ['2', '3'])
             ->pluck('user_id')->toArray();
 
-            return $csr_user_ids;
+        return $csr_user_ids;
 
     }
 
     public static function getLocationIds($location_id)
     {
-        $location_ids = null;
-        $locationIds = array_filter($location_id);
-        if (isset($locationIds) && count($locationIds)) {
-            $location_ids = $locationIds;
+        if ($location_id) {
+            
+            $location_ids = null;
+            if (is_string($location_id)) {
+                $location_id = explode(',', $location_id);
+            }
+            $locationIds = array_filter($location_id);
+            if (isset($locationIds) && count($locationIds)) {
+                $location_ids = $locationIds;
+            }
+
+            return $location_ids;
         }
 
-        return $location_ids;
+        return null;
     }
 
 }
