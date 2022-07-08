@@ -2620,7 +2620,6 @@ class Finanaces
             }
         }
 
-        dd($locationData);
         return [
             $appointments_info,
             $locationData

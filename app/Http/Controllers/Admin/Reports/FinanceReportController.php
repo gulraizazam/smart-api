@@ -2213,7 +2213,7 @@ class FinanceReportController extends Controller
             $end_date = null;
         }
 
-        $report_data = Finanaces::conversion_report($request->all(), Auth::user()->account_id);
+        list($report_data, $locationData) = Finanaces::conversion_report($request->all(), Auth::user()->account_id);
 
         switch ($request->get('medium_type')) {
             case 'web':
