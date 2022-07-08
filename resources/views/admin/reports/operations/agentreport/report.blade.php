@@ -82,11 +82,11 @@
                 <div class="col-md-6">&nbsp;</div>
                 <div class="col-md-4">
                     <table class="dark-th-table table table-bordered">
-                        <tr>
+                        <tr class="bg-light">
                             <th width="25%">Duration</th>
                             <td>From {{ $start_date }} to {{ $end_date }}</td>
                         </tr>
-                        <tr>
+                        <tr class="bg-light">
                             <th>Date</th>
                             <td>{{ \Carbon\Carbon::now()->format('Y-m-d') }}</td>
                         </tr>

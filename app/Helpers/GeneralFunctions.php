@@ -340,8 +340,9 @@ class GeneralFunctions
 
     public static function getFDM($location_ids = null) {
         $fdo_ids = [];
+        $fdm_ids = [];
         if ($location_ids && count($location_ids) > 0) {
-            $fdo_phones = Locations::whereIn('id', $location_ids)->pluck('fdo_phone');
+            $fdo_phones = Locations::whereIn('id', $location_ids)->pluck('fdo_phone');;
             if ($fdo_phones->count()) {
                 foreach ($fdo_phones as $fdo_phone) {
                     $fdo_ids[] = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))
@@ -349,7 +350,11 @@ class GeneralFunctions
                 }
             }
 
-            return count($fdo_ids) > 0 ? array_filter($fdo_ids) : [0];
+            $fdm_ids = count($fdo_ids) > 0 ? array_filter($fdo_ids) : [0];
+        }
+
+        if (count($fdm_ids) > 0) {
+            return $fdm_ids;
         }
 
         $fdm_ids = DB::table('role_has_users')

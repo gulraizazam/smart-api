@@ -759,13 +759,6 @@ class Operations
             $start_date = null;
             $end_date = null;
         }
-        if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
-                'location_id',
-                '=',
-                $data['location_id']
-            );
-        }
         if (isset($data['appointment_type_id']) && $data['appointment_type_id']) {
             $where[] = array(
                 'appointment_type_id',
@@ -779,10 +772,11 @@ class Operations
             $account_id
         );
 
-        $fdm_ids = GeneralFunctions::getFDM($data['location_id']);
+        $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
 
         $appointment_info = Appointments::where($where)
-            ->whereIn('created_by', $fdm_ids)
+            ->when($location_ids, fn ($q) => $q->whereIn('location_id', $location_ids))
+            ->whereIn('created_by', GeneralFunctions::getFDM($location_ids))
             ->whereIn('location_id', ACL::getUserCentres())
             ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereNotNull('scheduled_date')
@@ -791,31 +785,20 @@ class Operations
             ->orderBy('appointment_type_id', 'asc')
             ->get();
 
-        $totalWalkin = $appointment_info->count();
+        $walkinAppointment = Appointments::select('id', 'location_id', DB::raw('count(id) as walkin'))
+            ->where($where)
+            ->whereNotNull('scheduled_date')
+            ->whereIn('created_by', GeneralFunctions::getFDM($location_ids))
+            ->when($location_ids, fn($q) => $q->whereIn('location_id', $location_ids))
+            ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
+            ->whereDate('scheduled_date', '>=', $start_date)
+            ->whereDate('scheduled_date', '<=', $end_date)
+            ->groupBy('location_id')
+            ->pluck('walkin', 'location_id');
 
         $appointment_data = array();
-        $count = 1;
+        $locationData = array();
         foreach ($appointment_info as $appointment) {
-            $scheduled_2 = Carbon::createFromFormat('Y-m-d H:i:s', $end_date . ' ' . $appointment->scheduled_time);
-
-            $next_info = Appointments::where([
-                [$where],
-                ['patient_id', '=', $appointment->patient_id],
-                ['id', '!=', $appointment->id]
-            ])->select('*', DB::raw("CONCAT(scheduled_date,' ', scheduled_time) AS scheduled"))->whereIn('location_id',ACL::getUserCentres())->whereNotNull('scheduled_date')->orderBy('scheduled_date','asc')->get();
-
-            if(count($next_info) > 0){
-                foreach ($next_info as $next) {
-                    if (Carbon::parse($next->scheduled)->format('Y-m-d H:i:s') >= Carbon::parse($scheduled_2)->format('Y-m-d H:i:s')) {
-                        $next_first_appointment = $next;
-                        break;
-                    } else {
-                        $next_first_appointment = array();
-                    }
-                }
-            } else {
-                $next_first_appointment = array();
-            }
 
             $appointment_data[$appointment->id] = array(
                 'schedule_date' => Carbon::parse($appointment->scheduled_date, null)->format('M j, Y'),
@@ -828,40 +811,15 @@ class Operations
                 'appointment_status_parent' => $appointment->appointment_status_base->name,
                 'appointment_status_child' => $appointment->appointment_status->name,
                 'appointment_status_isarrived' => $appointment->appointment_status->is_arrived,
-                'next_appointment_info' => array(),
             );
-            if ($next_first_appointment) {
-                $appointment_data[$appointment->id]['next_appointment_info'][$count++] = array(
-                    'appointment_id' => $next_first_appointment->id,
-                    'appointment_type' => $next_first_appointment->appointment_type->name,
-                    'appointment_slug' => $next_first_appointment->appointment_type->slug,
-                    'schedule_date' => Carbon::parse($next_first_appointment->scheduled_date, null)->format('M j, Y'),
-                    'client_name' => $next_first_appointment->patient->name,
-                    'doctor_name' => $next_first_appointment->doctor->name,
-                    'service' => $next_first_appointment->service->name,
-                    'appointment_status_parent' => $next_first_appointment->appointment_status_base->name,
-                    'appointment_status_child' => $next_first_appointment->appointment_status->name,
-                    'appointment_status_isarrived' => $next_first_appointment->appointment_status->is_arrived,
-                );
-            } else {
-                $appointment_data[$appointment->id]['next_appointment_info'][$count++] = array(
-                    'appointment_id' => 'NULL',
-                    'appointment_type' => '-',
-                    'appointment_slug' => '-',
-                    'schedule_date' => '-',
-                    'client_name' => '-',
-                    'doctor_name' => '-',
-                    'service' => '-',
-                    'appointment_status_parent' => '-',
-                    'appointment_status_child' => '-',
-                    'appointment_status_isarrived' => '-',
-                );
-            }
+
+            $locationData[$appointment->location->name]['walkin'] = isset($walkinAppointment[$appointment->location_id]) ? $walkinAppointment[$appointment->location_id] : 0;
+
         }
 
         return [
             $appointment_data,
-            $totalWalkin
+            $locationData
         ];
     }
 
