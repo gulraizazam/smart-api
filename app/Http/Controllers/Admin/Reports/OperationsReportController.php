@@ -1277,7 +1277,7 @@ class OperationsReportController extends Controller
                 return $pdf->stream('DAR Report', 'landscape');
                 break;
             case 'excel':
-                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment);
+                self::dar_report_excel($reportData, $start_date, $end_date, $locationData, 'DAR Report',  'dar');
                 break;
             default:
                 return view('admin.reports.operations.darreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
@@ -1319,7 +1319,7 @@ class OperationsReportController extends Controller
                 return $pdf->stream('Agent Report', 'landscape');
                 break;
             case 'excel':
-                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, 'Agent Report');
+                self::dar_report_excel($reportData, $start_date, $end_date, $locationData, 'Agent Report', 'agent');
                 break;
             default:
                 return view('admin.reports.operations.agentreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
@@ -1360,7 +1360,7 @@ class OperationsReportController extends Controller
                 return $pdf->stream('Walkin Report', 'landscape');
                 break;
             case 'excel':
-                self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, 'Walkin Report');
+                self::dar_report_excel($reportData, $start_date, $end_date, $locationData, 'Walkin Report', 'walkin');
                 break;
             default:
                 return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
@@ -1377,7 +1377,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, $reportName = 'DAR Report')
+    private static function dar_report_excel($reportData, $start_date, $end_date, $locationData , $reportName = 'DAR Report', $type = 'dar')
     {
 
 
@@ -1396,9 +1396,6 @@ class OperationsReportController extends Controller
 
         $activeSheet->setCellValue('A3', '');
 
-        //$activeSheet->setCellValue('A4', 'Today\'s Appointments')->getStyle('A4')->getFont()->setBold(true);
-        //$activeSheet->setCellValue('K4', 'Treatment Booked')->getStyle('K4')->getFont()->setBold(true);
-
         $activeSheet->setCellValue('A5', 'Sr#')->getStyle('A5')->getFont()->setBold(true);
         $activeSheet->setCellValue('B5', 'Scheduled Date')->getStyle('B5')->getFont()->setBold(true);
         $activeSheet->setCellValue('C5', 'Client Id')->getStyle('C5')->getFont()->setBold(true);
@@ -1407,16 +1404,6 @@ class OperationsReportController extends Controller
         $activeSheet->setCellValue('F5', 'Practitioner')->getStyle('F5')->getFont()->setBold(true);
         $activeSheet->setCellValue('G5', 'Service')->getStyle('G5')->getFont()->setBold(true);
         $activeSheet->setCellValue('H5', 'Appointment Status Parent')->getStyle('H5')->getFont()->setBold(true);
-        $activeSheet->setCellValue('I5', 'Appointment Status Child')->getStyle('I5')->getFont()->setBold(true);
-
-        /*$activeSheet->setCellValue('J5', '--')->getStyle('J5')->getFont()->setBold(true);
-        $activeSheet->setCellValue('K5', 'Scheduled Date')->getStyle('K5')->getFont()->setBold(true);
-        $activeSheet->setCellValue('L5', 'Practitioner')->getStyle('L5')->getFont()->setBold(true);
-        $activeSheet->setCellValue('M5', 'Appointment Type')->getStyle('M5')->getFont()->setBold(true);
-        $activeSheet->setCellValue('N5', 'Service')->getStyle('N5')->getFont()->setBold(true);
-        $activeSheet->setCellValue('O5', 'Appointment Status Parent')->getStyle('O5')->getFont()->setBold(true);
-        $activeSheet->setCellValue('P5', 'Appointment Status Child')->getStyle('P5')->getFont()->setBold(true);*/
-
 
         $activeSheet->setCellValue('A6', '');
 
@@ -1446,70 +1433,92 @@ class OperationsReportController extends Controller
                 $activeSheet->setCellValue('F' . $counter, $reportsingle['doctor_name'])->getStyle('F' . $counter)->getFont();
                 $activeSheet->setCellValue('G' . $counter, $reportsingle['service'])->getStyle('G' . $counter)->getFont();
                 $activeSheet->setCellValue('H' . $counter, $reportsingle['appointment_status_parent'])->getStyle('H' . $counter)->getFont();
-                $activeSheet->setCellValue('I' . $counter, $reportsingle['appointment_status_child'])->getStyle('I' . $counter)->getFont();
 
-                /*foreach ($reportsingle['next_appointment_info'] as $next_appointment_info) {
-
-                    $activeSheet->setCellValue('J' . $counter, '-')->getStyle('J' . $counter)->getFont();
-                    $activeSheet->setCellValue('K' . $counter, $next_appointment_info['schedule_date'])->getStyle('K' . $counter)->getFont();
-                    $activeSheet->setCellValue('L' . $counter, $next_appointment_info['doctor_name'])->getStyle('L' . $counter)->getFont();
-                    $activeSheet->setCellValue('M' . $counter, $next_appointment_info['appointment_type'])->getStyle('M' . $counter)->getFont();
-                    $activeSheet->setCellValue('N' . $counter, $next_appointment_info['service'])->getStyle('N' . $counter)->getFont();
-                    $activeSheet->setCellValue('O' . $counter, $next_appointment_info['appointment_status_child'])->getStyle('O' . $counter)->getFont();
-                    $activeSheet->setCellValue('p' . $counter, $next_appointment_info['appointment_status_parent'])->getStyle('P' . $counter)->getFont();
-                }*/
                 $counter++;
-            }
+            } /*end loop*/
+
             $activeSheet->setCellValue('A' . $counter, '');
             $counter++;
 
-            $activeSheet->setCellValue('A' . $counter, 'Consultation Booked')->getStyle('A' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('B' . $counter, $consultantbooked)->getStyle('B' . $counter)->getFont()->setBold(true);;
-            $counter++;
+            if(isset($locationData) && count($locationData) > 0) {
+                foreach ($locationData as $key => $location) {
 
-            $activeSheet->setCellValue('A' . $counter, 'Consultation Arrived')->getStyle('A' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('B' . $counter, $consultantarrived)->getStyle('B' . $counter)->getFont()->setBold(true);
-            $counter++;
+                    if ($type == 'dar') { /*DAR type*/
 
-            $activeSheet->setCellValue('A' . $counter, 'New Consultation Converted')->getStyle('A' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('B' . $counter, $newconsultant)->getStyle('B' . $counter)->getFont()->setBold(true);
-            $counter++;
+                        $counter++;
+                        $counter++;
+                        $activeSheet->setCellValue('A' . $counter, $key)->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $counter++;
+                        $counter++;
 
-            if ($consultantbooked > 0) {
-                $activeSheet->setCellValue('A' . $counter, 'Consultation Arrival Ratio')->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('B' . $counter, number_format(($consultantarrived / $consultantbooked) * 100, 2) . '%')->getStyle('B' . $counter)->getFont()->setBold(true);;
-                $counter++;
+                        $activeSheet->setCellValue('A' . $counter, 'Consultation Booked')->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('B' . $counter, $location['consultantbooked'] ?? '')->getStyle('B' . $counter)->getFont()->setBold(true);;
+                        $counter++;
+
+                        $activeSheet->setCellValue('A' . $counter, 'Consultation Arrived')->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('B' . $counter, $location['consultantarrived'] ?? '')->getStyle('B' . $counter)->getFont()->setBold(true);
+                        $counter++;
+
+                        $activeSheet->setCellValue('A' . $counter, 'Total Walkin')->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('B' . $counter, $location['walking'] ?? '')->getStyle('B' . $counter)->getFont()->setBold(true);
+                        $counter++;
+
+                        if ($consultantbooked > 0) {
+                            $ratio = '00.00 %';
+                            if (isset($location['consultantbooked']) && isset($location['consultantarrived'])) {
+                                $booking_without_walkin = $location['consultantbooked'] - $location['walking'];
+                                $arrived_without_walkin = $location['consultantarrived'] - $location['walking'];
+                                $ratio = number_format(($arrived_without_walkin / $booking_without_walkin) * 100, 2) . '%';
+                            }
+
+                            $activeSheet->setCellValue('A' . $counter, 'Consultation Arrival Ratio')->getStyle('A' . $counter)->getFont()->setBold(true);
+                            $activeSheet->setCellValue('B' . $counter, $ratio)->getStyle('B' . $counter)->getFont()->setBold(true);;
+                            $counter++;
+                        }
+
+                    } elseif ($type == 'agent') { /*For agent*/
+
+                        $counter++;
+                        $counter++;
+                        $activeSheet->setCellValue('A' . $counter, $key)->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $counter++;
+                        $counter++;
+
+                        $activeSheet->setCellValue('A' . $counter, 'Consultation Booked')->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('B' . $counter, $location['consultantbooked'] ?? '')->getStyle('B' . $counter)->getFont()->setBold(true);;
+                        $counter++;
+
+                        $activeSheet->setCellValue('A' . $counter, 'Consultation Arrived')->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('B' . $counter, $location['consultantarrived'] ?? '')->getStyle('B' . $counter)->getFont()->setBold(true);
+                        $counter++;
+
+                        if ($consultantbooked > 0) {
+                            $ratio = '00.00 %';
+                            if (isset($location['consultantbooked']) && isset($location['consultantarrived'])) {
+                                $ratio = number_format(($location['consultantarrived'] / $location['consultantbooked']) * 100, 2) . '%';
+                            }
+
+                            $activeSheet->setCellValue('A' . $counter, 'Consultation Arrival Ratio')->getStyle('A' . $counter)->getFont()->setBold(true);
+                            $activeSheet->setCellValue('B' . $counter, $ratio)->getStyle('B' . $counter)->getFont()->setBold(true);;
+                            $counter++;
+                        }
+
+                    } elseif ($type == 'walkin') { /*Walkin*/
+
+                        $counter++;
+                        $counter++;
+                        $activeSheet->setCellValue('A' . $counter, $key)->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $counter++;
+                        $counter++;
+
+                        $activeSheet->setCellValue('A' . $counter, 'Total Walkin')->getStyle('A' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('B' . $counter, $location['walkin'] ?? '')->getStyle('B' . $counter)->getFont()->setBold(true);
+                        $counter++;
+
+                    }
+
+                }
             }
-
-            if ($consultantarrived > 0) {
-                $activeSheet->setCellValue('A' . $counter, 'Consultation Conversion Ratio')->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('B' . $counter, number_format(($newconsultant / $consultantarrived) * 100, 2) . '%')->getStyle('B' . $counter)->getFont()->setBold(true);;
-                $counter++;
-            }
-
-            /*$activeSheet->setCellValue('A' . $counter, 'Treatment Booked')->getStyle('A' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('B' . $counter, $treatmentbooked)->getStyle('B' . $counter)->getFont()->setBold(true);;
-            $counter++;
-
-            $activeSheet->setCellValue('A' . $counter, 'Treatment Arrived')->getStyle('A' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('B' . $counter, $treatmentarrived)->getStyle('B' . $counter)->getFont()->setBold(true);;
-            $counter++;
-
-            $activeSheet->setCellValue('A' . $counter, 'New Treatment Converted')->getStyle('A' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('B' . $counter, $newtreatment)->getStyle('B' . $counter)->getFont()->setBold(true);;
-            $counter++;
-
-            if ($treatmentbooked > 0) {
-                $activeSheet->setCellValue('A' . $counter, 'Treatment Arrival Ratio')->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('B' . $counter, number_format(($treatmentarrived / $treatmentbooked) * 100, 2) . '%')->getStyle('B' . $counter)->getFont()->setBold(true);;
-                $counter++;
-            }
-
-            if ($treatmentarrived > 0) {
-                $activeSheet->setCellValue('A' . $counter, 'Treatment Arrival Ratio')->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('B' . $counter, number_format(($newtreatment / $treatmentarrived) * 100, 2) . '%')->getStyle('B' . $counter)->getFont()->setBold(true);;
-                $counter++;
-            }*/
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

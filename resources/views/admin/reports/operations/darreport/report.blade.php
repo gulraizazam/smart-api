@@ -106,7 +106,7 @@
                         <th>Practitioner</th>
                         <th>Service</th>
                         <th>Appointment Status Parent</th>
-                        <th>Appointment Status Child</th>
+                        {{--<th>Appointment Status Child</th>--}}
                     </tr>
                     </thead>
                     @php $walkin = 0; $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
@@ -124,7 +124,7 @@
                                 <td>{{$reportsingle['doctor_name']}}</td>
                                 <td>{{$reportsingle['service']}}</td>
                                 <td>{{$reportsingle['appointment_status_parent']}}</td>
-                                <td>{{$reportsingle['appointment_status_child']}}</td>
+                                {{--<td>{{$reportsingle['appointment_status_child']}}</td>--}}
                             </tr>
                             @endif
                         @endforeach
@@ -149,18 +149,14 @@
                     <tr class="">
                         <td class="bg-light">Consultation Booked</td>
                         <td class="bg-light" style="text-align:right;">{{$location['consultantbooked']}}</td>
-
                     </tr>
                     <tr class="">
                         <td class="border-top bg-light" style="">Consultation Arrived</td>
                         <td class="border-top bg-light" style="text-align:right;">{{$location['consultantarrived']}}</td>
-
                     </tr>
                     <tr class="">
                         <td class="border-top bg-light" style="">Total Walkin</td>
                         <td class="border-top bg-light" style="text-align:right;">{{$location['walking']}}</td>
-
-
                     </tr>
 
                     @if(isset($location['consultantbooked']) && $location['consultantbooked'] > 0)
@@ -171,7 +167,7 @@
                                 if (isset($location['consultantbooked']) && isset($location['consultantarrived'])) {
                                     $booking_without_walkin = $location['consultantbooked'] - $location['walking'];
                                     $arrived_without_walkin = $location['consultantarrived'] - $location['walking'];
-                                    echo number_format(($arrived_without_walkin / $booking_without_walkin) * 100, 2) . '%'
+                                    echo number_format(($arrived_without_walkin / $booking_without_walkin) * 100, 2) . '%';
                                 } else {
                                     echo '00.00 %';
                                 }
