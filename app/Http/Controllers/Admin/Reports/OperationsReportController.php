@@ -1340,44 +1340,20 @@ class OperationsReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        list($reportData, $totalWalkin) = Operations::walking_report($request->all(), Auth::User()->account_id);
+        list($reportData, $locationData) = Operations::walking_report($request->all(), Auth::User()->account_id);
 
         $newtreatment = 0;
         $newconsultant = 0;
-        $newtreatmentarray = array();
-        $newconsultantarray = array();
-
-        foreach ($reportData as $reportsingle) {
-            if ($reportsingle['appointment_slug'] == 'consultancy') {
-                foreach ($reportsingle['next_appointment_info'] as $next_appointment_info) {
-                    if ($next_appointment_info['appointment_id'] != 'NULL') {
-                        if (!in_array($next_appointment_info['appointment_id'], $newconsultantarray)) {
-                            $newconsultant++;
-                        }
-                        $newconsultantarray[] = $next_appointment_info['appointment_id'];
-                    }
-                }
-            } else {
-                foreach ($reportsingle['next_appointment_info'] as $next_appointment_info){
-                    if ($next_appointment_info['appointment_id'] != 'NULL') {
-                        if (!in_array($next_appointment_info['appointment_id'], $newtreatmentarray)) {
-                            $newtreatment++;
-                        }
-                        $newtreatmentarray[] = $next_appointment_info['appointment_id'];
-                    }
-                }
-            }
-        }
 
         switch ($request->get('medium_type')) {
             case 'web':
-                return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'));
+                return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
                 break;
             case 'print':
-                return view('admin.reports.operations.walkinreport.reportprint', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'));
+                return view('admin.reports.operations.walkinreport.reportprint', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
                 break;
             case 'pdf':
-                $content = view('admin.reports.operations.walkinreport.reportpdf', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'))->render();
+                $content = view('admin.reports.operations.walkinreport.reportpdf', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
@@ -1387,7 +1363,7 @@ class OperationsReportController extends Controller
                 self::dar_report_excel($reportData, $start_date, $end_date, $newconsultant, $newtreatment, 'Walkin Report');
                 break;
             default:
-                return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'totalWalkin'));
+                return view('admin.reports.operations.walkinreport.report', compact('reportData', 'newtreatment', 'newconsultant', 'start_date', 'end_date', 'locationData'));
                 break;
         }
     }
