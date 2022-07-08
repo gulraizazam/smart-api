@@ -38,10 +38,6 @@
         </tr>
     </table>
     <table class="table">
-        {{--<tr class="shdoc-header">
-            <th colspan="10">Today's Appointments</th>
-            <th colspan="6">Treatment Booked</th>
-        </tr>--}}
         <tr class="shdoc-header">
             <th>Sr#</th>
             <th>Scheduled Date</th>
@@ -50,30 +46,12 @@
             <th>Appointment Type</th>
             <th>Practitioner</th>
             <th>Service</th>
-            <th>Appointment Status Parent</th>
-            <th>Appointment Status Child</th>
-           {{-- <th>--</th>
-            <th>Scheduled Date</th>
-            <th>Practitioner</th>
-            <th>Appointment Type</th>
-            <th>Service</th>
-            <th>Appointment Status Parent</th>
-            <th>Appointment Status Child</th>--}}
+            <th>Appointment Status</th>
         </tr>
         @php $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
         @if(count($reportData))
             @foreach($reportData as $reportsingle)
                 <tr>
-                    @if($reportsingle['appointment_slug'] == 'consultancy')
-                        <?php $consultantbooked++; ?>
-                    @elseif($reportsingle['appointment_slug'] == 'treatment')
-                        <?php $treatmentbooked++; ?>
-                    @endif
-                    @if($reportsingle['appointment_slug'] == 'consultancy' && $reportsingle['appointment_status_isarrived'] == '1')
-                        <?php $consultantarrived++; ?>
-                    @elseif($reportsingle['appointment_slug'] == 'treatment' && $reportsingle['appointment_status_isarrived'] == '1')
-                        <?php $treatmentarrived++; ?>
-                    @endif
                     <td>{{$count++}}</td>
                     <td>{{$reportsingle['schedule_date']}}</td>
                     <td>{{$reportsingle['id']}}</td>
@@ -83,205 +61,52 @@
                     <td>{{$reportsingle['service']}}</td>
                     <td>{{$reportsingle['appointment_status_parent']}}</td>
                     <td>{{$reportsingle['appointment_status_child']}}</td>
-                   {{-- <td>{{'-'}}</td>
-                    @foreach($reportsingle['next_appointment_info'] as $next_appointment_info)
-                        <td>{{$next_appointment_info['schedule_date']}}</td>
-                        <td>{{$next_appointment_info['doctor_name']}}</td>
-                        <td>{{$next_appointment_info['appointment_type']}}</td>
-                        <td>{{$next_appointment_info['service']}}</td>
-                        <td>{{$next_appointment_info['appointment_status_child']}}</td>
-                        <td>{{$next_appointment_info['appointment_status_parent']}}</td>
-                    @endforeach--}}
                 </tr>
             @endforeach
-            <tr class="shdoc-header">
-                <th style="color: #fff">Consultation Booked</th>
-                <th style="text-align:right;color: #fff">{{$consultantbooked}}</th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            <tr class="shdoc-header">
-                <th style="color: #fff">Consultation Arrived</th>
-                <th style="text-align:right;color: #fff">{{$consultantarrived}}</th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            <tr class="shdoc-header">
-                <th style="color: #fff">New Consultation Converted</th>
-                <th style="text-align:right;color: #fff">{{$newconsultant}}</th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            @if($consultantbooked>0)
-                <tr class="shdoc-header">
-                    <th style="color: #fff">Consultation Arrival Ratio</th>
-                    <th style="text-align:right;color: #fff"><?php echo number_format(($consultantarrived / $consultantbooked) * 100, 2) . '%'?></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            @endif
-            @if($consultantarrived>0)
-                <tr class="shdoc-header">
-                    <th style="color: #fff">Consultation Conversion Ratio</th>
-                    <th style="text-align:right;color: #fff"><?php echo number_format(($newconsultant / $consultantarrived) * 100, 2) . '%'?></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            @endif
-            <tr class="shdoc-header">
-                <th style="color: #fff">Treatment Booked</th>
-                <th style="text-align:right;color: #fff">{{$treatmentbooked}}</th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            <tr class="shdoc-header">
-                <th style="color: #fff">Treatment Arrived</th>
-                <th style="text-align:right;color: #fff">{{$treatmentarrived}}</th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            <tr class="shdoc-header">
-                <th style="color: #fff">New Treatment Converted</th>
-                <th style="text-align:right;color: #fff">{{$newtreatment}}</th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-            @if($treatmentbooked>0)
-                <tr class="shdoc-header">
-                    <th style="color: #fff">Treatment Arrival Ratio</th>
-                    <th style="text-align:right;color: #fff"><?php echo number_format(($treatmentarrived / $treatmentbooked) * 100, 2) . '%'?></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            @endif
-            @if($treatmentarrived>0)
-                <tr class="shdoc-header">
-                    <th style="color: #fff">Treatment Conversion Ratio</th>
-                    <th style="text-align:right;color: #fff"><?php echo number_format(($newtreatment / $treatmentarrived) * 100, 2) . '%'?></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            @endif
+
+
+                <div class="pt-4 border-top  all-sections section-states" style="margin-top: 20px;">
+
+                    @if(isset($locationData) && count($locationData) > 0)
+                        @foreach($locationData as $key => $location)
+
+                            <div class="col-md-6 mb-3">
+                                <h3 class="">{{$key}}</h3>
+
+                                <table class="table border">
+                                    <thead>
+                                    <tr class="">
+                                        <td class="bg-light">Consultation Booked</td>
+                                        <td class="bg-light" style="text-align:right;">{{$location['consultantbooked'] ?? 0}}</td>
+                                    </tr>
+                                    <tr class="">
+                                        <td class="border-top bg-light" style="">Consultation Arrived</td>
+                                        <td class="border-top bg-light" style="text-align:right;">{{$location['consultantarrived'] ?? 0}}</td>
+                                    </tr>
+
+                                    @if(isset($location['consultantbooked']) && $location['consultantbooked'] > 0)
+                                        <tr class="">
+                                            <td class="border-top bg-light" style="">Consultation Arrival Ratio</td>
+                                            <td class="border-top bg-light" style="text-align:right;">
+                                                <?php
+                                                if (isset($location['consultantarrived']) && isset($location['consultantbooked'])) {
+                                                    echo number_format(($location['consultantarrived'] / $location['consultantbooked']) * 100, 2) . '%';
+                                                } else {
+                                                    echo '00.00 %';
+                                                }
+                                                ?>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                    </thead>
+                                </table>
+
+                            </div>
+
+                        @endforeach
+                    @endif
+                </div>
+
         @else
             <tr>
                 <td colspan="12" align="center">No record round.</td>

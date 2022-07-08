@@ -113,31 +113,9 @@ class OperationsReportController extends Controller
      */
     public function reportLoad(Request $request)
     {
+        ini_set('memory_limit', '-1');
+
         switch ($request->get('report_type')) {
-            /*case 'Highest_paying_clients':
-                return self::Highestpayingclients($request);
-                break;
-            case 'operations_company_health':
-                return self::companyHealth($request);
-                break;
-            case 'center_target_report':
-                return self::centertargetreport($request);
-                break;
-            case 'List_of_refunds_for_a_certain_period_date_based':
-                return self::Listofrefundsforacertainperioddatebased($request);
-                break;
-            case 'List_of_services_that_CAN_be_offered_Complimentary':
-                return self::ListofservicesthatCANbeofferedComplimentary($request);
-                break;
-            case 'List_of_services_that_CAN_not_be_offered_Complimentary':
-                return self::ListofservicesthatCANnotbeofferedComplimentary($request);
-                break;
-            case 'conversion_report_consultancy':
-                return self::conversionreportconsultancy($request);
-                break;
-            case 'conversion_report_treatment':
-                return self::conversionreportTreatment($request);
-                break;*/
             case 'dar_report':
                 return self::darreport($request);
                 break;
@@ -146,13 +124,6 @@ class OperationsReportController extends Controller
                 break;
             case 'agent_report':
                 return self::agentReport($request);
-                break;
-            /*case 'dtr_report':
-                return self::dtrreport($request);
-                break;
-            case 'complimentory_report':
-                return self::complimentoryreport($request);
-                break;*/
             default:
                 return self::darreport($request);
                 break;
