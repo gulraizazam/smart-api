@@ -53,7 +53,7 @@ class FinanceReportController extends Controller
         if (!Gate::allows('finance_general_revenue_reports_manage')) {
             return abort(401);
         }
-        $allserviceslug = Services::where('slug', '=', 'all')->first();
+        $allserviceslug = Services::where('slug', '=', 'all')->isActive()->first();
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
         $parentGroups->build(0, Auth::User()->account_id);
@@ -90,7 +90,7 @@ class FinanceReportController extends Controller
         $regions->prepend('All', '');
 
         $cities = Cities::getActiveSorted(ACL::getUserCities());
-        $cities->prepend('Select City', '');
+        $cities->prepend('All', '');
 
         return view('admin.reports.accountsalesreport.index', compact('locations', 'services', 'users', 'appointment_types', 'regions', 'locations_com', 'operators', 'cities'));
     }
@@ -121,44 +121,6 @@ class FinanceReportController extends Controller
             default:
                 return self::collectionbyservice($request);
                 break;
-            /*case 'center_performance_stats_by_revenue':
-                return self::centerperformancestatsbyrevenue($request);
-                break;
-            case 'center_performance_stats_by_service_type':
-                return self::centerperformancestatsbyservicetype($request);
-                break;
-            case 'account_sales_report':
-                return self::accountsalesreportReport($request);
-                break;
-            case 'daily_employee_stats_summary':
-                return self::dailyEmployeeStatsSummary($request);
-                break;
-            case 'sales_by_service_category':
-                return self::salesbyservicecategory($request);
-                break;
-            case 'discount_report':
-                return self::discountReport($request);
-                break;
-            case 'pabau_record_revenue_report':
-                return self::pabaurecordrevenuereport($request);
-                break;
-            case 'machine_wise_invoice_revenue_report':
-                return self::machinewiseinvoicerevenuereport($request);
-                break;
-            case 'machine_wise_collection_report':
-                return self::machinewisecollectionreport($request);
-                break;
-            case 'partner_collection_report':
-                return self::partnercollectionreport($request);
-                break;
-            case 'staff_wise_revenue':
-                return self::staffwiserevenue($request);
-                break;*/
-
-           /* case 'consume_plan_revenue_report':
-                return self::consumeplanrevenuereport($request);
-                break;*/
-
         }
     }
 
