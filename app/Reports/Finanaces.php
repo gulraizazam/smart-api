@@ -2,6 +2,7 @@
 
 namespace App\Reports;
 
+use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\AppointmentEditWidget;
 use App\Models\AppointmentTypes;
 use App\Models\InvoiceDetails;
@@ -2302,13 +2303,6 @@ class Finanaces
             $start_date = null;
             $end_date = null;
         }
-        if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
-                'appointments.location_id',
-                '=',
-                $data['location_id']
-            );
-        }
 
         if (isset($data['region_id']) && $data['region_id']) {
             $where[] = array(
@@ -2363,8 +2357,11 @@ class Finanaces
             0
         );
 
-        $appointments = Appointments::join('packages', 'appointments.id', '=', 'packages.appointment_id')
+        $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
+        $appointments = Appointments::with('location:id,name')
+            ->join('packages', 'appointments.id', '=', 'packages.appointment_id')
             ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
+            ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
             ->where('appointments.base_appointment_status_id', config('constants.appointment_status_arrived'))
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
@@ -2374,13 +2371,27 @@ class Finanaces
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->get();
-        $revenue_in = 0;
-        $out = 0;
-        $actual = 0;
 
+        $centerWise = Appointments::select('appointments.id', 'appointments.location_id', DB::raw('count(appointments.id) as count'))
+            ->join('packages', 'appointments.id', '=', 'packages.appointment_id')
+            ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
+            ->where($where)
+            ->whereNotNull('scheduled_date')
+            ->when($location_ids, fn($q) => $q->whereIn('appointments.location_id', $location_ids))
+            ->where('appointments.appointment_type_id', config('constants.appointment_type_consultancy'))
+            ->whereDate('scheduled_date', '>=', $start_date)
+            ->whereDate('scheduled_date', '<=', $end_date)
+            ->groupBy('appointments.location_id')
+            ->pluck('count', 'appointments.location_id');
+
+
+        $total = 0;
+        $count = array();
+        $arrived_count = array();
+        $centerWiseData = array();
         $appointmentss = array();
         $appointments_info = array();
-
+        $locationData = array();
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
                 if (!in_array($appointment->id, $appointmentss)) {
@@ -2449,6 +2460,29 @@ class Finanaces
                             $appointments_info[$appointment->id]['converted'] = 'Yes';
 
                             $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
+
+                            /*$centerWiseData = self::centerWiseData(
+                                $appointments_info[$appointment->id],
+                                $appointment,
+                                $centerWise,
+                                $count,
+                                $arrived_count,
+                                $total,
+                                $locationData
+                            );*/
+
+
+                            $count[$appointment->location->id][] = 1;
+
+                            $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
+                            if($appointment['converted'] != '') {
+                                $arrived_count[$appointment->location->id][] = 1;
+                                $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
+                            }
+                            $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
+
+                            $locationData[$appointment->location->name]['total'] = $total;
+
                         }
                     }
                 }
@@ -2457,8 +2491,10 @@ class Finanaces
         }
 
         /*case 2 start*/
-        $records = Appointments::join('appointments as appoint_2', 'appointments.id', '=', 'appoint_2.appointment_id')
+        $records = Appointments::with('location:id,name')
+            ->join('appointments as appoint_2', 'appointments.id', '=', 'appoint_2.appointment_id')
             ->join('package_advances', 'appoint_2.id', '=', 'package_advances.appointment_id')
+            ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
             ->where($where)
@@ -2485,7 +2521,7 @@ class Finanaces
                         ->whereDate('created_at', '>=', $start_date)
                         ->whereDate('created_at', '<=', $end_date)
                         ->get();
-                    //dd($packageadvance_info->toArray());
+
                     if (count($packageadvance_info) > 0) {
 
                         $check = 0;
@@ -2494,7 +2530,6 @@ class Finanaces
                             ->where('cash_amount', '>', 0)
                             ->orderBy('created_at', 'asc')
                             ->first();
-                        //dd($first_advance->toArray());
 
                         $date = ($first_advance->updated_at)->format('Y-m-d');
 
@@ -2561,9 +2596,52 @@ class Finanaces
                         $appointments_info[$appointment->id]['converted'] = 'Yes';
                     }
                 }
+
+                /*$centerWiseData = self::centerWiseData(
+                    $appointments_info[$appointment->id],
+                    $appointment,
+                    $centerWise,
+                    $count,
+                    $arrived_count,
+                    $total,
+                    $locationData
+                );*/
+
+                $count[$appointment->location->id][] = 1;
+
+                $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
+                if($appointment['converted'] != '') {
+                    $arrived_count[$appointment->location->id][] = 1;
+                    $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
+                }
+                $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
+
+                $locationData[$appointment->location->name]['total'] = $total;
             }
         }
-        return $appointments_info;
+
+        dd($locationData);
+        return [
+            $appointments_info,
+            $locationData
+        ];
+    }
+
+    private static function centerWiseData($appointments_info, $appointment, $centerWise, $count, $arrived_count, $total, $locationData)
+    {
+        $count[$appointment->location->id][] = 1;
+        dump(count($count[$appointment->location->id]));
+
+        $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
+        if($appointment['converted'] != '') {
+            $arrived_count[$appointment->location->id][] = 1;
+            $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
+        }
+        $total += $appointments_info['conversion_spend'] ? $appointments_info['conversion_spend'] : 0;
+
+        $locationData[$appointment->location->name]['total'] = $total;
+
+        return $locationData;
     }
 
     /*

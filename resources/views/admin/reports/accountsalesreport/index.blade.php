@@ -176,19 +176,19 @@
                                             <div class="form-group col-md-3 sn-select @if($errors->has('city_id')) has-error @endif"
                                                  id="city_id_E">
                                                 {!! Form::label('city_id', 'City', ['class' => 'control-label']) !!}
-                                                {!! Form::select('city_id', $cities, null, ['id' => 'city_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
+                                                {!! Form::select('city_id', $cities, null, ['onchange' => 'getCenters($(this));', 'id' => 'city_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
                                                 <span id="city_id_handler"></span>
                                             </div>
-                                            <div class="form-group col-md-3 sn-select @if($errors->has('region_id')) has-error @endif"
+                                           {{-- <div class="form-group col-md-3 sn-select @if($errors->has('region_id')) has-error @endif"
                                                  id="region_id_E">
                                                 {!! Form::label('region_id', 'Region', ['class' => 'control-label']) !!}
                                                 {!! Form::select('region_id', $regions, null, ['id' => 'region_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
                                                 <span id="region_id_handler"></span>
-                                            </div>
+                                            </div>--}}
                                             <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                                  id="location_id_E">
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
-                                                {!! Form::select('location_id', $locations, null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select']) !!}
+                                                {!! Form::select('location_id', $locations, null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select', 'multiple']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
                                             <div class="form-group col-md-3 sn-select @if($errors->has('machine')) has-error @endif"
@@ -208,7 +208,7 @@
                                                  id="service_id_E">
                                                 {!! Form::label('service_id', 'Services', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="service_id" name="service_id">
-                                                    <option value="">Select Service</option>
+                                                    <option value="">All</option>
                                                     @foreach($services as $id => $service)
                                                         @if ($id == 0) @continue; @endif
                                                         @if($id < 0)
@@ -388,17 +388,7 @@
                     $("#doctors_id").hide();
                     $("#machine").hide();
                     $('#discount').hide();
-                } /*else if (type_p == 'sales_by_service_category') {
-                    $("#machine").hide();
-                    $('#discount').hide();
-                    $("#doctors_id").hide();
-                    $("#appointment_type_id_E").show();
-                    $("#user_id_E").hide();
-                    $("#patient_id_E").show();
-                    $("#location_id_E").show();
-                    $("#location_id_D").hide();
-                    $("#service_id_E").show();
-                }*/ else if (type_p == 'daily_employee_stats_summary') {
+                } else if (type_p == 'daily_employee_stats_summary') {
                     $("#machine").hide();
                     $('#discount').hide();
                     $("#doctors_id").hide();
@@ -419,50 +409,7 @@
                     $("#doctors_id").hide();
                     $("#machine").hide();
                     $('#discount').hide();
-                } /*else if (type_p == 'pabau_record_revenue_report') {
-                    $("#patient_id_E").hide();
-                    $("#appointment_type_id_E").hide();
-                    $("#location_id_D").hide();
-                    $("#location_id_E").show();
-                    $("#user_id_E").hide();
-                    $("#service_id_E").hide();
-                    $("#region_id_E").hide();
-                    $("#doctors_id").hide();
-                    $("#machine").hide();
-                    $('#discount').hide();
-                } else if (type_p == 'machine_wise_invoice_revenue_report' || type_p == 'machine_wise_collection_report') {
-                    $("#patient_id_E").hide();
-                    $("#appointment_type_id_E").hide();
-                    $("#location_id_D").hide();
-                    $("#location_id_E").show();
-                    $("#user_id_E").hide();
-                    $("#service_id_E").hide();
-                    $("#region_id_E").show();
-                    $("#doctors_id").hide();
-                    $("#machine").hide();
-                    $('#discount').hide();
-                } else if (type_p == 'partner_collection_report') {
-                    $("#patient_id_E").hide();
-                    $("#appointment_type_id_E").hide();
-                    $("#location_id_D").hide();
-                    $("#location_id_E").show();
-                    $("#user_id_E").hide();
-                    $("#service_id_E").hide();
-                    $("#region_id_E").hide();
-                    $("#doctors_id").hide();
-                    $('#discount').hide();
-                } else if (type_p == 'staff_wise_revenue') {
-                    $("#patient_id_E").hide();
-                    $("#appointment_type_id_E").hide();
-                    $("#location_id_D").hide();
-                    $("#location_id_E").show();
-                    $("#user_id_E").hide();
-                    $("#service_id_E").hide();
-                    $("#region_id_E").hide();
-                    $("#doctors_id").show();
-                    $("#machine").hide();
-                    $('#discount').hide();
-                }*/ else if (type_p == 'conversion_report') {
+                } else if (type_p == 'conversion_report') {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
                     $("#patient_id_E").show();
@@ -497,18 +444,7 @@
                     $("#doctors_id").show();
                     $("#machine").hide();
                     $('#discount').hide();
-                } /*else if (type_p == 'consume_plan_revenue_report') {
-                    $("#patient_id_E").hide();
-                    $("#appointment_type_id_E").hide();
-                    $("#location_id_D").hide();
-                    $("#location_id_E").show();
-                    $("#user_id_E").hide();
-                    $("#service_id_E").hide();
-                    $("#region_id_E").show();
-                    $("#doctors_id").hide();
-                    $("#machine").hide();
-                    $('#discount').hide();
-                }*/ else {
+                } else {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
                     $("#patient_id_E").hide();
@@ -523,6 +459,37 @@
                 }
             });
             $('#report_type').change();
+
+
+            function getCenters(that) {
+
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: route('admin.appointments.load_locations'),
+                    type: "POST",
+                    data: {
+                        city_id: that.val(),
+                    },
+                    success: function(response){
+                        if (response.status) {
+                            let dropdown_options = '<option value="">All</option>';
+                            let dropdowns = response.data.dropdown;
+
+                            Object.entries(dropdowns).forEach(function (dropdown) {
+                                dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                            });
+
+                            $("#location_id").html(dropdown_options);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        return false;
+                    }
+                });
+
+            }
 
         </script>
 

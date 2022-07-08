@@ -23,6 +23,11 @@ class Services extends BaseModal
 
     protected static $_table = 'services';
 
+    public function scopeIsActive($query, $status = 1)
+    {
+        return $query->where('active', $status);
+    }
+
     /**
      * Get the Service.
      */

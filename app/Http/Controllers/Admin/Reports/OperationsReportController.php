@@ -61,15 +61,11 @@ class OperationsReportController extends Controller
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         $locations->prepend('All', '');
 
-//        $employee = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $select_All = array('' => 'All');
 
-//        $employees = ($select_All + $employee->toArray() + $operators->toArray());
-
         $employees = ($select_All + $operators->toArray());
 
-        //$months[''] = 'All';
         $months_data = Config::get("constants.months_array");
         foreach ($months_data as $key => $value) {
             $months[$key] = $value;
@@ -78,7 +74,6 @@ class OperationsReportController extends Controller
         $regions = Regions::getActiveSorted(ACL::getUserRegions());
         $regions->prepend('Select a Region', '');
 
-        //$years[''] = 'All';
         $years_data = range(Carbon::now()->year, Carbon::now()->subYears(10)->year);
         foreach ($years_data as $year) {
             $years[$year] = $year;
@@ -88,7 +83,7 @@ class OperationsReportController extends Controller
 
         $csrs = GeneralFunctions::getCSR();
 
-        $agents = User::whereIn('id', $csrs)->get(['name', 'id']);
+        $agents = User::whereIn('id', $csrs)->isActive()->get(['name', 'id']);
 
         return view('admin.reports.operations.index', compact('locations', 'employees', 'services', 'regions', 'months', 'years', 'cities', 'appointment_types', 'agents'));
     }
