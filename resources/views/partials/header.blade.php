@@ -3,7 +3,7 @@
         <div class="navbar-header">
             <a href="{{ url('/admin/home') }}"
                class="navbar-brand">
-                @trans('global.global_title_cutera')
+                @trans('global.global_title_smart')
             </a>
         </div>
         <a href="javascript:;"

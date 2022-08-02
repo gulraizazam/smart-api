@@ -18,12 +18,12 @@ class AccountsSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         Accounts::truncate();
-        if (!Accounts::where('email', 'care@cutera.pk')->exists()) {
+        if (!Accounts::where('email', 'care@smartaesthetics.pk')->exists()) {
             Accounts::create([
-                'name' => 'Cutera Aesthetics',
-                'email' => 'care@cutera.pk',
-                'contact' => '03111113355',
-                'resource_person' => 'Cutera Life',
+                'name' => 'Smart Aesthetics',
+                'email' => 'care@smartaesthetics.pk',
+                'contact' => '03403402222',
+                'resource_person' => 'Smart Life',
                 'suspended' => '0',
             ]);
         }

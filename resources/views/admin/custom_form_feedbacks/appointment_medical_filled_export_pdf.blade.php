@@ -340,7 +340,7 @@
                     <tr class="data-split-wrap"  style="margin-bottom: 30px;">
                         <td>
                             {{--<img src="{{ asset('centre_logo/logo_final.png') }}" height="80">--}}
-                            <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(asset('assets/media/logos/logo.svg')))}}" height="80">
+                            <img src="{{'data:image/jpg;base64,'.base64_encode(file_get_contents(asset('assets/media/logos/smart.svg')))}}" height="80">
                         </td>
                         <td>
                             <p class="order-date text-right">#{{ $thisId }} / {{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $medicalinformation->date.' 00:00:00')->format('Y-M-d') }}</p>

@@ -169,7 +169,7 @@ function setEditData(response) {
     $("#edit_ntn").val(location.ntn);
     $("#edit_stn").val(location.stn);
 
-    let image = asset_url +'assets/media/logos/logo.svg';
+    let image = asset_url +'assets/media/logos/smart.svg';
     if (location.image_src != '') {
         image = asset_url +'storage/centre_logo/'+ location.image_src;
     }
@@ -317,7 +317,7 @@ function setCreateData(response) {
 
     $("#add_location_services").html(service_options);
 
-    let image = asset_url +'assets/media/logos/logo.svg';
+    let image = asset_url +'assets/media/logos/smart.svg';
 
     $("#add_center_image").css('background-image', "url(" + image + ")");
 }
