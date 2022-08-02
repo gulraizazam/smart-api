@@ -19,7 +19,7 @@ return [
         'success_log_in' => 'You have successfully logged in!!!',
         'settings_updated' => 'Settings Successfully Updated!!!',
         'logout_success' => 'You have been successfully logged out',
-        'app_title' => '3d Life Style',
+        'app_title' => 'Smart Style',
         'contact_us_email' => 'Contact Request E-mail',
         'email_sent' => 'E-mail Successfully Sent',
         'contact_name' => 'Contact User Name',

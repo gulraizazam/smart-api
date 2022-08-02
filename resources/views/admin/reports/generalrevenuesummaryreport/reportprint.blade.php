@@ -15,7 +15,7 @@
 <div class="invoice-pdf">
     <div class="sn-table-head">
         <div class="print-logo">
-            <img src="{{ asset('assets/media/logos/logo.svg') }}" height="80" alt=""/>
+            <img src="{{ asset('assets/media/logos/smart.svg') }}" height="80" alt=""/>
         </div>
         <div class="print-time">
             <table class="dark-th-table table table-bordered">

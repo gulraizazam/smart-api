@@ -31,10 +31,10 @@ class AccountSeeder extends Seeder
         Accounts::insert([
             1 => array(
                 'id' => 1,
-                'name' => '3D Lifestyle',
-                'email'=>' hello@3dlifestyle.pk',
-                'contact'=>'03214466755',
-                'resource_person'=>'3D Life',
+                'name' => 'Smart Aesthetics',
+                'email'=>'care@smartaesthetics.pk',
+                'contact'=>'03403402222',
+                'resource_person'=>'Smart Life',
                 'suspended'=>'0',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),

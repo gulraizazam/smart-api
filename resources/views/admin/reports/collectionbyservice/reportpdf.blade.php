@@ -50,7 +50,7 @@
                 <table>
                     <tr>
                         <td>
-                            <img class="logo" src="{{ asset('assets/media/logos/logo.svg') }}"
+                            <img class="logo" src="{{ asset('assets/media/logos/smart.svg') }}"
                                  class="img-responsive" alt=""/>
                         </td>
                     </tr>
