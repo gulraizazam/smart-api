@@ -571,7 +571,13 @@ function getLocations($this) {
         cache: false,
         success: function (response) {
 
-            setLocations(response);
+            if(response.status != false){
+                setLocations(response);
+            }else{
+                let location_options = '<option>Select a Centre</option>';
+                $("#location_id").html(location_options);
+            }
+            
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -610,8 +616,14 @@ function getResource($this) {
         data: { location_id: $this.val() },
         cache: false,
         success: function (response) {
-
-            setResources(response);
+            if(response.status != false){
+                setResources(response);
+            }else{
+                let doctors_options = '<option value="">Select a Doctor</option>';
+                let machine_options = '<option value="">Select a Machine</option>';
+                $("#machine_id").html(machine_options);
+                $("#doctor_id").html(doctors_options);
+            }
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
