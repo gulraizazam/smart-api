@@ -178,7 +178,7 @@ class RegionsController extends Controller
             if (!Gate::allows('regions_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $regions = Regions::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
+            $regions = Regions::where(['account_id' => Auth::User()->account_id])->where('slug', '=', 'custom')->orderby('sort_number', 'ASC')->get();
             return ApiHelper::apiResponse($this->success, 'Success', true, $regions);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

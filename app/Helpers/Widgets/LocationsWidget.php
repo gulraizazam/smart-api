@@ -35,6 +35,7 @@ class LocationsWidget
     {
         $regions = Regions::where(array(
             'account_id' => $account_id,
+            'active' => 1,
         ))->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
 
         $dropdown_array = array();
