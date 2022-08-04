@@ -763,7 +763,14 @@ class LocationsWidget
                     'user_id' => $doctor_id
                 ])->get();
             }else{
-                $regionlocation =null;
+                $regionlocation = DoctorHasLocations::where([
+                    'location_id' => Locations::where(array(
+                        'slug' => 'region',
+                        'account_id' => $account_id,
+                        'region_id' => null,
+                    ))->select('id')->first()->id,
+                    'user_id' => $doctor_id
+                ])->get();
             }
 
             if ($regionlocation->count()) {
