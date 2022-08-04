@@ -369,10 +369,12 @@ class UsersController extends Controller
                 if ($user_has_locations) {
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
-                        if ($locationchecked->slug == 'custom') {
-                            $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
-                        } else {
-                            $locations[] = $loc[$location]->name ?? '';
+                        if($locationchecked != null){
+                            if ($locationchecked->slug == 'custom') {
+                                $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
+                            } else {
+                                $locations[] = $loc[$location]->name ?? '';
+                            }
                         }
                     }
                 }
