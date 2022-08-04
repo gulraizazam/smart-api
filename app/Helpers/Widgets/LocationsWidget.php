@@ -768,7 +768,7 @@ class LocationsWidget
                         'slug' => 'region',
                         'account_id' => $account_id,
                         'region_id' => null,
-                    ))->select('id')->first()->id,
+                    ))->select('id')->first(),
                     'user_id' => $doctor_id
                 ])->get();
             }
