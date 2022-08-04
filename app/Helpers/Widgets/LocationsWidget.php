@@ -752,14 +752,19 @@ class LocationsWidget
         } else {
             // 2. Find All Regions
             $singleLocation = Locations::find($location_id);
-            $regionlocation = DoctorHasLocations::where([
-                'location_id' => Locations::where(array(
-                    'slug' => 'region',
-                    'account_id' => $account_id,
-                    'region_id' => $singleLocation->region_id,
-                ))->select('id')->first()->id,
-                'user_id' => $doctor_id
-            ])->get();
+            $location_count=Locations::where(array('slug' => 'region', 'account_id' => $account_id,'region_id' => $singleLocation->region_id))->count();
+            if($location_count){
+                $regionlocation = DoctorHasLocations::where([
+                    'location_id' => Locations::where(array(
+                        'slug' => 'region',
+                        'account_id' => $account_id,
+                        'region_id' => $singleLocation->region_id,
+                    ))->select('id')->first()->id,
+                    'user_id' => $doctor_id
+                ])->get();
+            }else{
+                $regionlocation =null;
+            }
 
             if ($regionlocation->count()) {
                 //      Find All Services
