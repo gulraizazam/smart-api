@@ -83,6 +83,7 @@ class LocationsWidget
                 'account_id' => $account_id,
                 'region_id' => $region->id,
                 'slug' => 'custom',
+                'active' => 1,
             ))->orderBy('name', 'asc')->get();
 
             if ($other_childrens) {
