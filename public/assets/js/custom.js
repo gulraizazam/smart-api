@@ -1,3 +1,4 @@
+ let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 $(document).ready(function () {
 
     $(document).on("change", ".select2", function () {
@@ -15,7 +16,9 @@ $(document).ready(function () {
         $(this).parents(".modal").modal("toggle");
 
         $(this).parents(".modal").find("input").val('')
-        $(this).parents(".modal").find(".select2").val(null).trigger("change");
+        if(inModalNotChangeSelectBoxArr.indexOf(window.location.pathname) == -1){
+            $(this).parents(".modal").find(".select2").val(null).trigger("change");
+        }
         $(this).parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     });
 

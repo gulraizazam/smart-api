@@ -36,7 +36,7 @@ class LocationsWidget
         $regions = Regions::where(array(
             'account_id' => $account_id,
             'active' => 1,
-        ))->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
+        ))->whereIn('slug',['custom','all'])->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
 
         $dropdown_array = array();
 
@@ -67,6 +67,7 @@ class LocationsWidget
                     'account_id' => $account_id,
                     'region_id' => $region->id,
                     'slug' => 'region',
+                    'active' => 1,
                 ))->select('id', 'name', 'slug')->first();
 
                 if ($first_child) {
