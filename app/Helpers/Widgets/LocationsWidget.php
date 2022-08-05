@@ -201,6 +201,7 @@ class LocationsWidget
                 $region_centres = Locations::where(array(
                     'account_id' => $account_id,
                     'slug' => 'region',
+                    'active' => 1,
                 ))->select('id', 'name', 'region_id')->get();
                 if ($region_centres) {
 
