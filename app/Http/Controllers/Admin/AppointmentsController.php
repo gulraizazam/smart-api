@@ -4859,8 +4859,15 @@ class AppointmentsController extends Controller
             } else {
                 $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
             }
-            $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-            $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+            $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
+            if($lead){
+                $lead->lead_status_id = 4;
+                $lead->save();
+            }else{
+                $leadObj['lead_status_id'] = $default_converted_lead_status_id;
+                $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+            }
+            
         } else {
             $lead = Leads::findOrFail($request->get('lead_id'));
             /*
