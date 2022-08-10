@@ -314,7 +314,6 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
 var patient;
 
 function getPatientDetail($this) {
-
     $.ajax({
         type: 'get',
         url: route('admin.users.get_patient_number'),
@@ -343,6 +342,11 @@ function getPatientDetail($this) {
                 if (patient?.phone != '') {
                     $("#create_consultancy_phone").removeClass("is-invalid")
                     $("#create_consultancy_phone").parent("div").find(".fv-help-block").remove();
+                }
+
+                if (patient?.gender != '') {
+                    $("#create_consultancy_gender").removeClass("is-invalid")
+                    $("#create_consultancy_gender").parent("div").find(".fv-help-block").remove();
                 }
 
                 if (patient?.name != '') {
