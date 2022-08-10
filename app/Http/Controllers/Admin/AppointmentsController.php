@@ -684,8 +684,6 @@ class AppointmentsController extends Controller
                 $appointment['id'] = $appointment_row['_id'];
                 $appointment['_id'] = $appointment_row['_id'];
 
-//                dd($appointment);
-
                 $invoice = Invoices::where([
                     ['appointment_id', '=', $appointment['_id']],
                     ['invoice_status_id', '=', $invoice_status->id]
@@ -2036,7 +2034,15 @@ class AppointmentsController extends Controller
                 }
                 $leadObj['lead_status_id'] = $default_converted_lead_status_id;
                 $leadObj['base_service_id'] = $leadObj['service_id'];
-                $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+                $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
+                if($lead){
+                    $lead->lead_status_id = 4;
+                    $lead->save();
+                }else{
+                    $leadObj['lead_status_id'] = $default_converted_lead_status_id;
+                    $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+                }
+                
             } else {
 
                 if ($request->get("start")) {
