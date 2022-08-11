@@ -44,13 +44,13 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    end_node: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The end node field is required'
-                            }
-                        }
-                    },
+                    // end_node: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The end node field is required'
+                    //         }
+                    //     }
+                    // },
                 },
 
                 plugins: {
