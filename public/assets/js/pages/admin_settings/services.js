@@ -320,7 +320,7 @@ function setCreateData(response) {
         let durations = response.data.durations;
         let tax_treatment_types = response.data.tax_treatment_types;
         let select_tax_treatment_type = response.data.select_tax_treatment_type;
-        let services_options = '<option value="">Parent Service</option>';
+        let services_options = '<option value="0">Parent Service</option>';
         let duration_options = '<option value="">Select a Duration</option>';
         let radios = '';
 
