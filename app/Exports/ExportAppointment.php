@@ -82,7 +82,7 @@ class ExportAppointment implements FromCollection, WithHeadings, WithMapping, Wi
             GeneralFunctions::patientSearchStringAdd($appointment->id),
             $appointment->name ?? 'N/A',
             $phone,
-            Carbon::parse($appointment->scheduled_date)->format('F j,Y h:i A') ?? 'N/A',
+            Carbon::parse($appointment->scheduled_date)->format('F j,Y') .' '. Carbon::parse($appointment->scheduled_time)->format('h:i A') ?? 'N/A',
             $appointment->doctor->name ?? 'N/A',
             $appointment->region->name ?? 'N/A',
             $appointment->city->name ?? 'N/A',

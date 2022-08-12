@@ -187,7 +187,7 @@ class BundlesController extends Controller
             'price' => 'required|numeric|min:0',
             'total_services' => 'required|numeric|min:1',
             'service_id' => 'required|array',
-            'tax_treatment_type_id' => 'required'
+            //'tax_treatment_type_id' => 'required'
         ]);
     }
 
