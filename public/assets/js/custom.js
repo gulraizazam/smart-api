@@ -927,10 +927,12 @@ function selectUser(name, user_id,  search_id) {
 
 
     $("." + search_id).parent('div').find('.search_field').val(user_id).change();
+    $("#add_patient_id").val(user_id);
    // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
+    getServices('add');
 
 }
 
