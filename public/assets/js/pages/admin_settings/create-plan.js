@@ -2213,9 +2213,7 @@ jQuery(document).ready( function () {
         }
 
         if(payment_mode_id == ''){
-            toastr.error("Kindly select payment mode.")
-            hideSpinner("-edit-save");
-            return false;
+            payment_mode_id = 1;
         }
 
         if (random_id && (patient_id > 0) && total && status==1?payment_mode_id:true && cash_amount >= 0 && grand_total && location_id) {
