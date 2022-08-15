@@ -390,7 +390,8 @@ function setEditData(response) {
 
                 if(packageadvance.cash_amount != '0') {
 
-                    history_options += '<tr id="history_cash_row_" '+packageadvance.id+'>';
+                    let selector = 'history_cash_row_'+packageadvance.id;
+                    history_options += '<tr id="'+selector+'">';
 
                     if (packageadvance.is_tax == 1 && packageadvance.cash_flow == 'out') {
                         history_options += '<td>Tax</td>';

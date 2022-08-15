@@ -198,6 +198,12 @@ class PackagesController extends Controller
 
         /*Total belongs to total Amount that increase when we enter new bundle*/
         $total = filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+        if($total == ""){
+            $total = 0;
+        }
+        if($request->is_exclusive == ""){
+            $request->merge([ 'is_exclusive' => 1]);
+        }
         if ($request->get('package_bundles')) {
             $package_bundles = PackageBundles::whereIn('id', $request->get('package_bundles'))->get();
             if ($package_bundles) {
@@ -262,7 +268,7 @@ class PackagesController extends Controller
                 $data['is_exclusive'] = 0;
             }
             /*In case If you not select any discount*/
-            if ($request->discount_id == '0') {
+            if ($request->discount_id == '0' || $request->discount_id == "") {
                 $data['discount_id'] = null;
             }
             /*date is develop to save package bundle*/
@@ -329,7 +335,7 @@ class PackagesController extends Controller
                 $packageservice = PackageService::createPackageService($data_service);
             }
             /*calculate package value to return*/
-            $total = number_format($total + $packagesbundly->tax_including_price);
+            $total = number_format((float) $total + (float) $packagesbundly->tax_including_price);
 
             /*Set variables for return to show information*/
             $net_amount = $packagesbundly->net_amount;
@@ -743,7 +749,7 @@ class PackagesController extends Controller
         }
 
         return ApiHelper::apiResponse($this->success, 'Records found.', false, [
-            'net_amount' => isset($service_data) ? $service_data->price : 0
+            'net_amount' => isset($bundle) ? $bundle->price : 0
         ]);
     }
 
