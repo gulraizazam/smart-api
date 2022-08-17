@@ -385,6 +385,10 @@ function actions(data) {
 
 function editRow(url) {
     $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    $("#edit_discount_id").html('<option value="">Select Discount</option>');
+    $("#edit_discount_type").attr('disabled',true);
+    $("#edit_discount_value_1").val('');
+    $("#edit_discount_value_1").attr('disabled',true);
     hideMessages();
     $("#update_plane_form")[0].reset();
 
@@ -1039,6 +1043,14 @@ function hideShowAdvanceFilters(active_filters) {
 
 function createPlan(url, id) {
     $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    setTimeout(function() { 
+        $("#add_discount_id").html('<option value="">Select Discount</option>');
+    },500)
+   
+    $("#add_discount_type").attr('disabled',true);
+    $("#add_discount_value_1").val('');
+    $("#add_discount_value_1").attr('disabled',true);
+
     $('#successMessage').hide();
     hideSpinner("-save");
     hideSpinner("-add");
@@ -1273,6 +1285,7 @@ function getServiceDiscount($this, type = '') {
     
     if((service_id == null || service_id == '') && patient_id != ''){
         $("#add_discount_id").html('<option value="">Select Discount</option>');
+        $("#add_discount_type").attr('disabled',true);
         setTimeout(function() { 
             $('#discount_value_1').val('');
             $("#add_discount_type").val('').change();
@@ -1534,6 +1547,7 @@ function editServiceDiscount($this, type = '') {
 
     if((service_id == null || service_id == '') && patient_id != ''){
         $("#edit_discount_id").html('<option value="">Select Discount</option>');
+        $("#edit_discount_type").attr('disabled',true);
         setTimeout(function() { 
             $('#edit_discount_value_1').val('');
             $("#edit_discount_type").val('').change();
