@@ -1243,6 +1243,11 @@ function getServiceDiscount($this, type = '') {
     var patient_id = $('#add_patient_id').val();
     var location_id = $('#add_plan_location_id').val();
     //$("#"+type+"add_discount_id").val('0').trigger('change');
+    setTimeout(function() { 
+        $('#discount_value_1').val('');
+        $("#add_discount_type").val('').change();
+        $("#add_discount_type").attr('disabled',true);
+    },500)
     if (service_id && patient_id) {
         $.ajax({
             type: 'get',
@@ -1293,7 +1298,7 @@ function getServiceDiscount($this, type = '') {
             $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             $("#net_amount_1").val('');
             return false;
-        },100)
+        },500)
         return false;
     }
 
@@ -1504,7 +1509,11 @@ function editServiceDiscount($this, type = '') {
     var patient_id = $('#edit_parent_id').val();
 
     //$("#"+type+"discount_id").val('0').trigger('change');
-
+    setTimeout(function() { 
+        $('#edit_discount_value_1').val('');
+        $("#edit_discount_type").val('').change();
+        $("#edit_discount_type").attr('disabled',true);
+    },500)
     if (service_id && patient_id) {
         $.ajax({
             type: 'get',
