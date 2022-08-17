@@ -135,7 +135,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="text" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1">
+                            <input type="text" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">

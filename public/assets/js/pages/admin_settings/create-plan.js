@@ -1245,6 +1245,7 @@ function getServiceDiscount($this, type = '') {
     //$("#"+type+"add_discount_id").val('0').trigger('change');
     setTimeout(function() { 
         $('#discount_value_1').val('');
+        $("#discount_value_1").attr('disabled',true);
         $("#add_discount_type").val('').change();
         $("#add_discount_type").attr('disabled',true);
     },500)
@@ -1511,6 +1512,7 @@ function editServiceDiscount($this, type = '') {
     //$("#"+type+"discount_id").val('0').trigger('change');
     setTimeout(function() { 
         $('#edit_discount_value_1').val('');
+        $("#edit_discount_value_1").attr('disabled',true);
         $("#edit_discount_type").val('').change();
         $("#edit_discount_type").attr('disabled',true);
     },500)
