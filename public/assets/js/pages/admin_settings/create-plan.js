@@ -1274,7 +1274,10 @@ function getServiceDiscount($this, type = '') {
     if((service_id == null || service_id == '') && patient_id != ''){
         $("#add_discount_id").html('<option value="">Select Discount</option>');
         setTimeout(function() { 
+            $('#discount_value_1').val('');
+            $("#add_discount_type").val('').change();
             $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+            $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             $("#net_amount_1").val('');
             return false;
         },100)
@@ -1532,6 +1535,9 @@ function editServiceDiscount($this, type = '') {
     if((service_id == null || service_id == '') && patient_id != ''){
         $("#edit_discount_id").html('<option value="">Select Discount</option>');
         setTimeout(function() { 
+            $('#edit_discount_value_1').val('');
+            $("#edit_discount_type").val('').change();
+            $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             $("#edit_net_amount_1").val('');
             return false;
