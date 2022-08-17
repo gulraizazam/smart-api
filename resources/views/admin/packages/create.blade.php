@@ -135,7 +135,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="number" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1">
+                            <input type="text" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1">
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
@@ -201,7 +201,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="number" min="0" id="cash_amount_1" class="form-control" placeholder="Enter Amount" value="0" name="cash_amount">
+                            <input type="text" min="0" id="cash_amount_1" class="form-control" placeholder="Enter Amount" value="0" name="cash_amount">
                         </div>
 
 
