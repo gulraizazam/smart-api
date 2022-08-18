@@ -1069,6 +1069,7 @@ function createPlan(url, id) {
         success: function (response) {
 
             setPlanData(response);
+            $("#cash_amount_1").val(0);
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -1312,6 +1313,9 @@ function getDiscountInfo($this) {
 
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
+    setTimeout(function() {
+        $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    },100)
     if (service_id == null && (discount_id == null || discount_id == '')) {
         $("#add_discount_type").prop("disabled", false);
         $("#add_discount_type").val('').trigger('change');
@@ -1580,7 +1584,9 @@ function editDiscountInfo($this) {
 
     var service_id = $('#edit_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
-
+    setTimeout(function() { 
+        $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    },50)
     if (service_id == null && (discount_id == null || discount_id == '')) {
 
         $("#edit_discount_type").prop("disabled", false);
@@ -1837,7 +1843,6 @@ function toggle(id) {
 function deletePlanRow(id, type = '') {
 
     hideMessages();
-
     swal.fire({
         title: 'Are you sure you want to delete?',
         type: 'danger',
@@ -1933,14 +1938,14 @@ jQuery(document).ready( function () {
         var location_id = $('#add_plan_location_id').val();
 
         if (service_id && net_amount && location_id) {
-
+            
             showSpinner("-add");
-
             if (discount_slug == 'custom' && discount_id != '') {
                 if (discount_price == '') {
                     hideSpinner("-add");
-                    $('#inputfieldMessage').show();
+                    toastr.error("Please select the payment mode");
                     return false;
+                   
                 }
                 if (discount_type == 'Percentage') {
                     if (discount_price > 100) {
@@ -2089,6 +2094,11 @@ jQuery(document).ready( function () {
 
         if(payment_mode_id == '' && cash_amount > 0){
             toastr.error("Please select the payment mode");
+            return false;
+        }
+
+        if(total <= 0){
+            toastr.error("Please add atleast one session");
             return false;
         }
 
@@ -2293,6 +2303,11 @@ jQuery(document).ready( function () {
 
         if(payment_mode_id == '' && cash_amount > 0){
             toastr.error("Please select the payment mode");
+            return false;
+        }
+
+        if(total <= 0){
+            toastr.error("Please add atleast one session");
             return false;
         }
 

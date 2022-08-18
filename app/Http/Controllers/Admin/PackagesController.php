@@ -1085,7 +1085,7 @@ class PackagesController extends Controller
             $grand_total = number_format($total_price - $cash_amount_in);
 
             $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
-            $paymentmodes->prepend('Select Payment Mode', '');
+            //$paymentmodes->prepend('Select Payment Mode', '');
 
             $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();
 
