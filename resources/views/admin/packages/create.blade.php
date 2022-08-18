@@ -118,7 +118,7 @@
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts <span class="text text-danger"></span></label>
                             <select onchange="getDiscountInfo($(this));" id="add_discount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id_1">
                                 <option value="">Select Discount</option>
                             </select>
