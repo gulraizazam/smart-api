@@ -462,7 +462,9 @@ class PackagesController extends Controller
         } else {
 
             $packageService = PackageBundles::find($request->id);
-
+            if($request->package_total == ''){
+                $request->merge([ 'package_total' => 0]);
+            }
             $package_total = filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
 
             $total = $package_total - $packageService->tax_including_price;
