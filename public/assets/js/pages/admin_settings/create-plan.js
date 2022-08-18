@@ -1315,7 +1315,7 @@ function getDiscountInfo($this) {
     var discount_id = $this.val();
     setTimeout(function() {
         $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-    },100)
+    },500)
     if (service_id == null && (discount_id == null || discount_id == '')) {
         $("#add_discount_type").prop("disabled", false);
         $("#add_discount_type").val('').trigger('change');
@@ -1586,7 +1586,7 @@ function editDiscountInfo($this) {
     var discount_id = $this.val();
     setTimeout(function() { 
         $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-    },50)
+    },500)
     if (service_id == null && (discount_id == null || discount_id == '')) {
 
         $("#edit_discount_type").prop("disabled", false);
