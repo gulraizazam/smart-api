@@ -1248,6 +1248,7 @@ function getServiceDiscount($this, type = '') {
         $("#discount_value_1").attr('disabled',true);
         $("#add_discount_type").val('').change();
         $("#add_discount_type").attr('disabled',true);
+        $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     },500)
     if (service_id && patient_id) {
         $.ajax({
@@ -1515,6 +1516,7 @@ function editServiceDiscount($this, type = '') {
         $("#edit_discount_value_1").attr('disabled',true);
         $("#edit_discount_type").val('').change();
         $("#edit_discount_type").attr('disabled',true);
+        $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     },500)
     if (service_id && patient_id) {
         $.ajax({
