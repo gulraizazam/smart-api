@@ -670,6 +670,11 @@ function toggleResource($this) {
         $("#doctor_field").removeClass("d-none");
         $("#Rota_type_operation").removeClass("d-none");
     }
+    $("#is_consultancy_name").val(0);
+    $("#is_consultancy_1").val(1);
+
+    $("#is_treatment_name").val(0);
+    $("#is_treatment_1").val(1);
 }
 
 function editRow(url) {
@@ -953,4 +958,28 @@ function hideShowAdvanceFilters(active_filters) {
     }
 
 }
+
+
+/*Define query for define rota type for consultancy*/
+$('#is_consultancy_1').change(function () {
+    if ($(this).is(":checked")) {
+        $('#is_consultancy_1').val('1');
+    }
+    else {
+        $('#is_consultancy_1').val('0');
+    }
+});
+$('#is_consultancy_1').change();
+/*End*/
+/*Define query for define rota type for treatment*/
+$('#is_treatment_1').change(function () {
+    if ($(this).is(":checked")) {
+        $('#is_treatment_1').val('1');
+    }
+    else {
+        $('#is_treatment_1').val('0');
+    }
+});
+$('#is_treatment_1').change();
+/*End*/
 
