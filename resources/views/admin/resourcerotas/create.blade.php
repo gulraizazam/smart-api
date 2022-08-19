@@ -98,7 +98,7 @@
 
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="mondayElement_1" checked type="checkbox" name="mondaychecked" class="mr-2">
+                                    <input id="mondayElement_1" checked type="checkbox" name="mondaychecked">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Monday</strong>
@@ -108,8 +108,7 @@
                             <div class="ml-2">
                                 <label class="checkbox">
                                 <input type="checkbox" id="copy_all_1" name="copy_all" value='' style="display: none;">
-                                <strong style="font-size: 12px;border-bottom: 1px solid #333; cursor: pointer;margin-left: 100px;
-    margin-top: -18px;">Copy As All</strong>
+                                <strong style="font-size: 12px;border-bottom: 1px solid #333; cursor: pointer;margin-left: 100px;margin-top: -18px;">Copy As All</strong>
                                 <span style="display: none;"></span>
                                 </label>
                             </div>
@@ -139,7 +138,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="tuesdayElement_1" checked type="checkbox" name="tuesdaychecked" class="mr-2">
+                                    <input id="tuesdayElement_1" checked type="checkbox" name="tuesdaychecked">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Tuesday</strong>
@@ -168,7 +167,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="wednesdayElement_1" type="checkbox" name="wednesdaychecked" checked class="mr-2">
+                                    <input id="wednesdayElement_1" type="checkbox" name="wednesdaychecked" checked>
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Wednesday</strong>
@@ -198,7 +197,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="thursdayElement_1" type="checkbox" name="thursdaychecked" checked class="mr-2">
+                                    <input id="thursdayElement_1" type="checkbox" name="thursdaychecked" checked>
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Thursday</strong>
@@ -225,7 +224,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="fridayElement_1" type="checkbox" name="fridaychecked" checked class="mr-2">
+                                    <input id="fridayElement_1" type="checkbox" name="fridaychecked" checked>
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Friday</strong>
@@ -252,7 +251,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="saturdayElement_1" type="checkbox" name="saturdaychecked" checked class="mr-2">
+                                    <input id="saturdayElement_1" type="checkbox" name="saturdaychecked" checked>
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Saturday</strong>
@@ -279,7 +278,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox check_final_1">
-                                    <input id="sundayElement_1" type="checkbox" name="sundaychecked" checked class="mr-2">
+                                    <input id="sundayElement_1" type="checkbox" name="sundaychecked" checked>
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Sunday</strong>
@@ -309,7 +308,7 @@
                         <div class="col-md-4"></div>
                         <div class="fv-row col-md-4 mt-5">
                             <label class="checkbox is_consultancy_1">
-                                <input type="hidden" name="is_consultancy" value="0"/>
+                                <input type="hidden" name="is_consultancy" value="0" id="is_consultancy_name"/>
                                 <input id="is_consultancy_1" type="checkbox" name="is_consultancy" value="1" checked class="mr-2">
                                 <span></span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Consultancy</strong>
@@ -318,7 +317,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="checkbox is_treatment_1">
-                                <input type="hidden" name="is_treatment" value="0"/>
+                                <input type="hidden" name="is_treatment" value="0" id="is_treatment_name"/>
                                 <input  id="is_treatment_1" type="checkbox" name="is_treatment" value="1" checked class="mr-2">
                                 <span></span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Treatment</strong>
@@ -333,7 +332,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <a href="" class="btn btn-light me-3 popup-close" >Cancel</a>
+                <a href="#" class="btn btn-light me-3 popup-close" >Cancel</a>
                 <button type="submit" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
