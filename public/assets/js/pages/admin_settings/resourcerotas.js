@@ -500,6 +500,14 @@ function createRota($route) {
 
             setCreateData(response);
             setCreateEditData(response);
+
+            $("#mondayElement_1").val('on');
+            $("#tuesdayElement_1").val('on');
+            $("#wednesdayElement_1").val('on');
+            $("#thursdayElement_1").val('on');
+            $("#fridayElement_1").val('on');
+            $("#saturdayElement_1").val('on');
+            $("#sundayElement_1").val('on');
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
