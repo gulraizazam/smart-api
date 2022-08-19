@@ -25,8 +25,7 @@
         <form id="modal_edit_resourcerotas_form" method="post" action="">
             <!--begin::Scroll-->
 
-            @method('put')
-
+            <input type="hidden" name="_method" value="put">
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resourcerotas_scroll">
 
                 <div class="form-group">
