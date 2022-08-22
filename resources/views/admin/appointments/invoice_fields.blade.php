@@ -93,6 +93,7 @@
                         <th> Tax Amt.</th>
                     </tr>
                     </thead>
+                    
                     <tr class="HR_{{$constant}}">
                     </tr>
                 </table>

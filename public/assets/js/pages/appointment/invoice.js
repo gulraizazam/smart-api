@@ -305,7 +305,7 @@ $(document).ready(function () {
                 success: function (resposne) {
 
                     if (resposne.status == '1') {
-                        $('#table_1').find('tbody').remove();
+                        $('#table_1').find('tbody').html('');
                         jQuery.each(resposne.packagebundles, function (i, packagebundles) {
 
                             if (packagebundles.discount_id == null) {
@@ -323,7 +323,7 @@ $(document).ready(function () {
                             } else {
                                 var discountprice = packagebundles.discount_price;
                             }
-                            $('#table_1').append("<tr id='table_1' class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
+                            $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
 
                             jQuery.each(resposne.packageservices, function (i, packageservices) {
 

@@ -4014,7 +4014,7 @@ class AppointmentsController extends Controller
                     ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
                 $status = 'true';
 
-                if (count($packages) >= 0) {
+                if (count($packages) <= 0) {
 
                     $location_information = Locations::find($appointment->location_id);
 
@@ -4105,6 +4105,13 @@ class AppointmentsController extends Controller
 
         $package = Packages::find($request->package_id_create);
 
+        if($package == null){
+            return response()->json(array(
+                'status' => true,
+                'packagebundles' => [],
+                'packageservices' => [],
+            ));
+        }
 
         $packagebundles = PackageBundles::leftjoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
             ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
