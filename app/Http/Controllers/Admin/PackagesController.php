@@ -1156,7 +1156,8 @@ class PackagesController extends Controller
         /*We discuss in future what happen next*/
         $package_advances_cash_amount = $package_advances_cash_amount_1;
 
-        $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        //$package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_total = (float) $request->total;
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
 
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
@@ -1201,7 +1202,7 @@ class PackagesController extends Controller
             /*save Package information and also update random id in package service table*/
 
             $data_package = $request->all();
-            $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+            $data_package['total_price'] = (float) $request->total;//filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
             $data_package['sessioncount'] = '1';
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['appointment_id'] = $appointment_id;
