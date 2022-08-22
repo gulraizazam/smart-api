@@ -1272,9 +1272,10 @@ function createTreatmentInvoice(url) {
         success: function(response) {
 
             $("#create_treatment_invoice").html(response)
-
+            $('#package_id_create').change();
             $("#modal_create_treatment_invoice").modal("show");
             customDatePicker();
+            
         },
         error: function(xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
