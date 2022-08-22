@@ -4252,7 +4252,7 @@ class AppointmentsController extends Controller
                 'settleamount' => $request->settleamount_for_zero,
             ));
         }
-        $outstdanding = $request->price_create - $request->cash_create - $request->balance_create;
+        $outstdanding = $request->price_create - $request->cash_create - $request->settleamount_for_zero;
 
         $balance = $request->balance_create;
 
