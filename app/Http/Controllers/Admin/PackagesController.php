@@ -1162,9 +1162,11 @@ class PackagesController extends Controller
         ])->sum('cash_amount');
         /*We discuss in future what happen next*/
         $package_advances_cash_amount = $package_advances_cash_amount_1;
+        
 
         //$package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
-        $package_total = (float) $request->total;
+        $package_total = str_replace( ',', '', $request->total );
+
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
 
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
