@@ -722,6 +722,7 @@ class PackagesController extends Controller
 
                 $select_discount = [];
                 $lowest = false;
+                //dd($Discount_array);
                 if (count($Discount_array) > 0) {
                     foreach ($Discount_array as $value) {
                         if ($lowest === false || $value['net_amount'] < $lowest) {
@@ -730,13 +731,19 @@ class PackagesController extends Controller
                         }
                     }
                     $discounts = $discounts->toArray();
-                     $select_discount = ["discount_type" => "Percentage","discount_price" => 0.0,"id" => 0,"net_amount" => 0.0];
-                    return response()->json(array(
-                        'status' => true,
+                    // $select_discount = ["discount_type" => "Percentage","discount_price" => 0.0,"id" => 0,"net_amount" => 0.0];
+                    // return response()->json(array(
+                    //     'status' => true,
+                    //     'discounts' => $discounts,
+                    //     'checked_custom' => '0',
+                    //     'dis_price_info' => $select_discount,
+                    // ));
+                    return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '0',
                         'dis_price_info' => $select_discount,
-                    ));
+                        'net_amount' => $select_discount['net_amount']
+                    ]);
                 } else {
                     $discounts = $discounts->toArray();
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
