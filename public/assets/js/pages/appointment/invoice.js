@@ -693,12 +693,12 @@ function keyfunction(type = '') {
         $('#paymentmode').show();
     }
 
-    if (!cash_create) {
-        $("#settle_create").text(settleamount_for_zero);
-        $(".settle_create").val(settleamount_for_zero);
-        $("#outstand_create").text(outstanding_for_zero);
-        $(".outstand_create").val(outstanding_for_zero);
-    }
+    // if (!cash_create) {
+    //     $("#settle_create").text(settleamount_for_zero);
+    //     $(".settle_create").val(settleamount_for_zero);
+    //     $("#outstand_create").text(outstanding_for_zero);
+    //     $(".outstand_create").val(outstanding_for_zero);
+    // }
 
     if (price_create && balance_create && cash_create) {
 

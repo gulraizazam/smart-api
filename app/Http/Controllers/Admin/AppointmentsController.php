@@ -4258,7 +4258,7 @@ class AppointmentsController extends Controller
 
         $settleamount = $request->price_create - $request->cash_create;
 
-        $settleamount = min($settleamount, $balance);
+        //$settleamount = min($settleamount, $balance);
 
         return response()->json(array(
             'status' => true,
@@ -4337,7 +4337,7 @@ class AppointmentsController extends Controller
 
             $appointmentinfo->update(['appointment_id' => $appointment_id_consultancy]);
         }
-
+        
         if ($request->package_mode_id == '0') {
             $paymemt = PaymentModes::first();
             $payment_mode_id = $paymemt->id;
