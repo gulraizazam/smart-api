@@ -1938,16 +1938,18 @@ class LeadsController extends Controller
                                     $lead_status_id = $default_lead_status_id;
                                 }
                             }
-
+                            
                             /*
                              * Process Treatment, If Treatment not found skip this record
                              */
                             $service_id = null;
+                            
                             if (isset($SingleRow['H'])) {
                                 $service = trim(strtolower($SingleRow['H']));
                             } else {
                                 $service = null;
                             }
+                            
                             if ($Treatments && $service) {
                                 foreach ($Treatments as $Name => $Id) {
                                     if (trim(strtolower($service)) == trim(strtolower($Name))) {
@@ -1955,12 +1957,12 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
+                            
                             // Treatment ID is not exist and leads are exist, lets skip this record
-                            if (!$service_id && array_key_exists($phone, $allLeadsMapping)) {
-                                // Skip this record.
-                                continue;
-                            }
-
+                            // if (!$service_id && array_key_exists($phone, $allLeadsMapping)) {
+                            //     // Skip this record.
+                            //     continue;
+                            // }
                             /*
                              * Check cases mentioned above
                              */
