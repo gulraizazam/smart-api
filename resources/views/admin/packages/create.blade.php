@@ -174,7 +174,7 @@
                             <th>Discount Price</th>
                             <th>Amount</th>
                             <th>Tax %</th>
-                            <th>Tax Amt.</th>
+                            <th>Total Amount</th>
                             <th>Action</th>
                         </tr>
                         </thead>

@@ -63,7 +63,7 @@
                     </div>
                     <div class="row mt-5">
                         <div class="fv-row col-10">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Default Status for New Appointments?</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Services</label>
                             <select id="services" class="form-control form-control-lg select2 form-control-solid">
                             </select>
                         </div>
