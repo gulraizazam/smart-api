@@ -196,7 +196,6 @@ class PackagesController extends Controller
 
         $service_data = Bundles::find($request->bundle_id);
         /*Total belongs to total Amount that increase when we enter new bundle*/
-        //dd($request->package_total);
         $total = str_replace( ',', '', $request->package_total);//filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
         if($total == ""){
             $total = 0;
