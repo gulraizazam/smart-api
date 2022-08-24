@@ -195,9 +195,9 @@ class PackagesController extends Controller
         $status = true;
 
         $service_data = Bundles::find($request->bundle_id);
-
         /*Total belongs to total Amount that increase when we enter new bundle*/
-        $total = filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+        //dd($request->package_total);
+        $total = str_replace( ',', '', $request->package_total);//filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
         if($total == ""){
             $total = 0;
         }
@@ -465,7 +465,7 @@ class PackagesController extends Controller
             if($request->package_total == ''){
                 $request->merge([ 'package_total' => 0]);
             }
-            $package_total = filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+            $package_total = str_replace( ',', '', $request->package_total);//filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
 
             $total = $package_total - $packageService->tax_including_price;
 
@@ -722,7 +722,6 @@ class PackagesController extends Controller
 
                 $select_discount = [];
                 $lowest = false;
-                //dd($Discount_array);
                 if (count($Discount_array) > 0) {
                     foreach ($Discount_array as $value) {
                         if ($lowest === false || $value['net_amount'] < $lowest) {
@@ -738,11 +737,12 @@ class PackagesController extends Controller
                     //     'checked_custom' => '0',
                     //     'dis_price_info' => $select_discount,
                     // ));
+                    $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
                     return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '0',
                         'dis_price_info' => $select_discount,
-                        'net_amount' => $select_discount['net_amount']
+                        'net_amount' => $service_data->price
                     ]);
                 } else {
                     $discounts = $discounts->toArray();
@@ -793,7 +793,7 @@ class PackagesController extends Controller
      */
     public function getgrandtotal(Request $request)
     {
-        $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_total = str_replace( ',', '', $request->total);//filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $grand_total = number_format($package_total - $request->cash_amount);
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -1211,7 +1211,7 @@ class PackagesController extends Controller
             /*save Package information and also update random id in package service table*/
 
             $data_package = $request->all();
-            $data_package['total_price'] = (float) $request->total;//filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+            $data_package['total_price'] = str_replace( ',', '', $request->total );//filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
             $data_package['sessioncount'] = '1';
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['appointment_id'] = $appointment_id;

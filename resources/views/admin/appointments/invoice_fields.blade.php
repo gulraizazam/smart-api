@@ -188,7 +188,7 @@
                 <input type="hidden" class="tax_create" name="tax_create" value="{{$tax_create}}">
 
                 <div class="col-md-10 mt-5">
-                    <strong>Tax Amt.</strong>
+                    <strong>Total Amount</strong>
                     <strong class="float-right" id="price_create">{{$price}}</strong>
                     <input type="hidden" class="price_create" name="price_create" value="{{$price}}">
                     <input type="hidden" name="remaining" id="remaining" />

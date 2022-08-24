@@ -29,8 +29,8 @@
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Regions:</label>
-            <select class="form-control filter-field select2" id="search_region_id">
+            <label>Centre:</label>
+            <select class="form-control filter-field select2" id="search_location_id">
             </select>
         </div>
 
@@ -46,8 +46,8 @@
     <div class="row mb-8 advance-filters" style="display: none;">
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Centre:</label>
-            <select class="form-control filter-field select2" id="search_location_id">
+            <label>Regions:</label>
+            <select class="form-control filter-field select2" id="search_region_id">
             </select>
         </div>
 

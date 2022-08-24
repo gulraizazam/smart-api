@@ -953,7 +953,7 @@ function setFilters(filter_values, active_filters) {
 
 function hideShowAdvanceFilters(active_filters) {
 
-    if ((typeof active_filters.location_id !== 'undefined' && active_filters.location_id != '')
+    if ((typeof active_filters.region_id !== 'undefined' && active_filters.region_id != '')
         || (typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
         || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
         || (typeof active_filters.startdate !== 'undefined' && active_filters.startdate != '')
