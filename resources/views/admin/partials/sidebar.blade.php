@@ -186,7 +186,7 @@
                                 </li>
                             @endcan
 
-                                @can('leads_manage')
+                                @can('leads_junk')
                                     <li class="menu-item {{isActive(url('admin/leads?type=junk'), 'junk')}}" aria-haspopup="true">
                                         <a href="{{route('admin.leads.index', ['type' => 'junk'])}}" class="menu-link">
                                             <i class="menu-bullet menu-bullet-dot">
