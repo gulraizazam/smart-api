@@ -47,12 +47,13 @@
                             <!--begin::Button-->
                             @if(Gate::allows('permissions_create'))
 
-                            @endif
+                            
 
                             <a href="javascript:void(0);" onclick="createPermission('{{ route('admin.permissions.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_permission">
                                 <i class="la la-plus"></i>
                                 Add New
                             </a>
+                            @endif
 
                             <!--end::Button-->
                         </div>
