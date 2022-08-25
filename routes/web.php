@@ -290,8 +290,8 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
         Route::get('leads_cities', [LeadsController::class, 'loadCities'])->name('leads.cities');
 
         Route::put('leads_save_city', [LeadsController::class, 'saveCity'])->name('leads.save_city');
-        Route::get('leads/export/pdf/{limit?}/{offset?}', [LeadsController::class, 'exportPdf'])->name('leads.export.pdf');
-        Route::get('leads/export/excel/{limit?}/{offset?}', [LeadsController::class, 'exportDocs'])->name('leads.export.excel');
+        Route::get('leads/export/pdf', [LeadsController::class, 'exportPdf'])->name('leads.export.pdf');
+        Route::get('leads/export/excel', [LeadsController::class, 'exportDocs'])->name('leads.export.excel');
 
         Route::get('patients/{id}/preview', [PatientsController::class, 'preview'])->name("patients.preview");
 

@@ -2707,40 +2707,68 @@ class LeadsController extends Controller
         }
     }
 
-    public function exportPdf($limit = 1000, $offset = 0) {
+    public function exportPdf(Request $request) {
 
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
-            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
-            ->where(function ($query) {
-                $query->whereIn('leads.city_id', ACL::getUserCities());
-                $query->orWhereNull('leads.city_id');
-            });
+            ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
 
-        $junk_lead_statuses_id = LeadStatuses::where(array(
-            'account_id' => Auth::User()->account_id,
-            'is_junk' => 1,
-        ))->value('id');
-
-        if (request()->has('type')) {
-
-            $resultQuery->where('leads.lead_status_id', $junk_lead_statuses_id ?? 0);
-
-        } else {
-            $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses_id ?? 0);
+        if($request->id != null || $request->id != ''){
+            $resultQuery->where('leads.patient_id', $request->id);
         }
 
-        $leads = $resultQuery->limit($limit)->offset($offset)
-            ->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+        if($request->service_id != null || $request->service_id != ''){
+            $resultQuery->where('leads.service_id', $request->service_id);
+        }
+
+        if($request->lead_status_id != null || $request->lead_status_id != ''){
+            $resultQuery->where('leads.lead_status_id', $request->lead_status_id);
+        }
+
+        if($request->city_id != null || $request->city_id != ''){
+            $resultQuery->where('leads.city_id', $request->city_id);
+        }
+
+        if($request->region_id != null || $request->region_id != ''){
+            $resultQuery->where('leads.region_id', $request->region_id);
+        }
+
+        if($request->created_by != null || $request->created_by != ''){
+            $resultQuery->where('leads.created_by', $request->created_by);
+        }
+
+        if($request->name != null || $request->name != ''){
+            $resultQuery->where('users.name','like', $request->name.'%');
+        }
+
+        if($request->name != null || $request->name != ''){
+            $resultQuery->where('users.name','like', $request->name.'%');
+        }
+
+        if($request->start_date != null || $request->start_date != ''){
+            $resultQuery->whereBetween('leads.created_at', [$request->start_date, $request->end_date]);
+        }
+            
+        // $junk_lead_statuses_id = LeadStatuses::where(array(
+        //     'account_id' => Auth::User()->account_id,
+        //     'is_junk' => 1,
+        // ))->value('id');
+
+        // if (request()->has('type')) {
+
+        //     $resultQuery->where('leads.lead_status_id', $junk_lead_statuses_id ?? 0);
+
+        // } else {
+        //     $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses_id ?? 0);
+        // }
+
+        $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
             ->get();
 
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'));
         return $pdf->download('leads.pdf');
     }
 
-    public function exportDocs($limit = 1000, $offset = 0) {
-
-        $ex = request('type') ? 'csv' : 'xlsx';
-
-        return Excel::download(new ExportLead($limit, $offset), 'leads.'.$ex);
+    public function exportDocs(Request $request) {
+        return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
     }
 }

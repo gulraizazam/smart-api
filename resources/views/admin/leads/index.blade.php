@@ -62,18 +62,19 @@
                                     </a>
                                     <ul class="dropdown-menu pull-right export_leads" id="datatable_ajax_tools">
                                         <li>
-                                            <a  title="Max pdf export limit is 100 records"  onclick="setPdfLimit($(this));" id="export-pdf-leads" href="{{route('admin.leads.export.pdf', [500, 0, 'type' => request('type')])}}" data-action="0" class="tool-action"><i class="la la-file-pdf"></i>
+                                            <a href="#" title="Max pdf export limit is 100 records" id="export-pdf-leads" data-href="{{route('admin.leads.export.pdf')}}" data-action="0" class="tool-action"><i class="la la-file-pdf"></i>
                                                 PDF
-                                                <span class="export-pdf-limit">(1 to {{config('constants.export-lead-pdf-limit')}})</span></a>
+                                                <!-- <span class="export-pdf-limit">(1 to {{config('constants.export-lead-pdf-limit')}})</span></a> -->
                                             </a>
                                         </li>
                                         <li>
-                                            <a title="Max export limit is 1000 records" onclick="setExportLimit($(this));" id="export-leads" href="{{route('admin.leads.export.excel', 1000, 0)}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i>
+                                            <a href="#" title="Max export limit is 1000 records" id="export-leads" data-href="{{route('admin.leads.export.excel')}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i>
                                                 Excel
-                                                <span class="export-excel-limit">(1 to {{config('constants.export-lead-excel-limit')}})</span></a>
+                                                <!-- <span class="export-excel-limit">(1 to {{config('constants.export-lead-excel-limit')}})</span> -->
+                                            </a>
                                         </li>
                                         <li>
-                                            <a href="{{route('admin.leads.export.excel', ['type' => 'csv'])}}" data-action="2" class="tool-action"><i class="la la-file-csv"></i> CSV</a>
+                                            <a href="#" data-href="{{route('admin.leads.export.excel')}}" id="csv-leads" data-action="2" class="tool-action"><i class="la la-file-csv"></i> CSV</a>
                                         </li>
                                     </ul>
                                 </div>
@@ -190,9 +191,9 @@
             var pdf_offset = 0;
 
             $(document).ready(function () {
-                $("#export-leads").attr('href', route('admin.leads.export.excel', [limit, offset]));
+                //$("#export-leads").attr('href', route('admin.leads.export.excel', [limit, offset]));
 
-                $("#export-pdf-leads").attr('href', route('admin.leads.export.pdf', [pdf_limit, pdf_offset]));
+                //$("#export-pdf-leads").attr('href', route('admin.leads.export.pdf', [pdf_limit, pdf_offset]));
             });
 
             function setExportLimit($this) {
@@ -218,7 +219,7 @@
                 pdf_offset = parseInt(pdf_offset) + parseInt(next);
 
                 setTimeout( function () {
-                    $this.attr('href', route('admin.leads.export.pdf', [pdf_limit, pdf_offset]));
+                    //$this.attr('href', route('admin.leads.export.pdf', [pdf_limit, pdf_offset]));
 
                     $(".export-pdf-limit").text("("+pdf_previousLimit+" to "+pdf_limit+")")
                 },1000);
