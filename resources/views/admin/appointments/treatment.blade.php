@@ -50,18 +50,21 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
+                            @if(Gate::allows('appointments_export_today'))
+                                <div class="export-appointments">
+                                    <a id="today_consultancies" onclick="loadTodayAppointments('{{date('Y-m-d')}}', 'treatment');" href="javascript:void(0);" class="btn btn-info font-weight-bolder">
+                                        Today Treatments
+                                    </a>
+                                </div>&nbsp;&nbsp;&nbsp;
+                            @endif
 
-                            <div class="export-appointments">
-                                <a id="today_consultancies" onclick="loadTodayAppointments('{{date('Y-m-d')}}', 'treatment');" href="javascript:void(0);" class="btn btn-info font-weight-bolder">
-                                    Today Treatments
-                                </a>
-                            </div>&nbsp;&nbsp;&nbsp;
-
-                            <div class="delete-records export-appointments">
-                                <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{route('admin.appointments.export', [1000, 0])}}" class="btn btn-primary font-weight-bolder">
-                                    <i class="la la-file-export"></i> Export
-                                </a>
-                            </div>
+                            @if(Gate::allows('appointments_export'))
+                                <div class="delete-records export-appointments">
+                                    <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{route('admin.appointments.export', [1000, 0])}}" class="btn btn-primary font-weight-bolder">
+                                        <i class="la la-file-export"></i> Export
+                                    </a>
+                                </div>
+                            @endif
 
                         <!--end::Button-->
                         </div>
