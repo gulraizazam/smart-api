@@ -2321,10 +2321,10 @@ jQuery(document).ready( function () {
             return false;
         }
 
-        if(total <= 0){
-            toastr.error("Please add atleast one session");
-            return false;
-        }
+        // if(total <= 0){
+        //     toastr.error("Please add atleast one session");
+        //     return false;
+        // }
 
         if (random_id && (patient_id > 0) && total && status==1?payment_mode_id:true && cash_amount >= 0 && grand_total && location_id) {
 
