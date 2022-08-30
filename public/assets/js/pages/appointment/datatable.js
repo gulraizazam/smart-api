@@ -1089,7 +1089,7 @@ function setFilters(filter_values, active_filters) {
             appoint_type_options += '<option value="' + appointment_type[0] + '">' + appointment_type[1] + '</option>';
         });
 
-        let city_options = '<option value="">All</option>';
+        let city_options = '<option value="">Select City</option>';
         Object.entries(cities).forEach(function (city, index) {
             city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
         });

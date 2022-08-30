@@ -397,7 +397,7 @@ $(document).ready(function () {
         var status = true;
 
         if (cash > 0) {
-            if(package_mode_id=='') {
+            if(package_mode_id=='' || package_mode_id== '0') {
                 status = false;
             }
         }
@@ -451,7 +451,7 @@ $(document).ready(function () {
                 }
             } else {
                 $('#definefield').show();
-                toastr.error("Kindly define payment mode");
+                //toastr.error("Kindly define payment mode");
                 hideSpinner();
             }
         } else {

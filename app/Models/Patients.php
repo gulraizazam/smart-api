@@ -195,7 +195,7 @@
 		 */
 		static public function createRecord($data,$flag=0)
 		{   if($flag == 1){
-			$patient=Patients::find($data['patient_id']);
+			$patient=Patients::where('phone',$data['phone'])->first();
 			if(!$patient){
 				$record = Patients::create($data);
 				AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);

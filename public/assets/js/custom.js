@@ -641,6 +641,12 @@ function submitForm(action, method, data, callback, form = '') {
                     'message': 'You are not authorized to access this resource',
                 });
                 hideSpinnerRestForm();
+            } else if (xhr.status == '500') {
+                callback({
+                    'status': 0,
+                    'message': xhr.responseJSON.message,
+                });
+                hideSpinnerRestForm();
             } else {
                 callback({
                     'status': 0,

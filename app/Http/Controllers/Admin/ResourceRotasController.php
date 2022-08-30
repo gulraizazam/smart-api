@@ -153,6 +153,10 @@ class ResourceRotasController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
+        if($request->is_consultancy == "0" && $request->is_treatment == "0"){
+            return ApiHelper::apiResponse($this->error, 'Please check at least one from consultancy and treatment');
+        }
+
         $response = ResourceHasRota::createRecord($request, Auth::User()->account_id);
 
         if ($response['status']) {
@@ -663,6 +667,11 @@ class ResourceRotasController extends Controller
 
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+        }
+
+       
+        if($request->is_consultancy == "0" && $request->is_treatment == "0"){
+            return ApiHelper::apiResponse($this->error, 'Please check at least one from consultancy and treatment');
         }
 
         $resourcerota = ResourceHasRota::find($id);

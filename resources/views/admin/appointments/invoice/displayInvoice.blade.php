@@ -28,7 +28,7 @@
         <table style="margin-top: 20px;">
             <tr>
                 <td>
-                    <img style="width: 235px; margin-bottom: 10px;" class="img-responsive logo" src="{{asset('assets/media/logos/smart.svg')}}" alt=""/>
+                    <img style="width: 235px; margin-bottom: 10px;" class="img-responsive logo" src="{{asset('assets/media/logos/smart-invoice-logo.png')}}" alt=""/>
                     <p class="logo_caption">{{$location_info->address}}.</p>
                     <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}}  &nbsp; |  &nbsp; Email. {{$account->email}}  &nbsp; | &nbsp;  www.smartaesthetics.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
                 </td>
@@ -57,7 +57,7 @@
             <div class="row">
 
                 <div class="col-md-6 col-sm-6 col-xs-12 invoice-logo-space">
-                    <img src="{{asset('assets/media/logos/smart.svg')}}" style="width: 50%;" class="img-responsive " alt=""/>
+                    <img src="{{asset('assets/media/logos/smart-invoice-logo.png')}}" style="width: 50%;" class="img-responsive " alt=""/>
                 </div>
 
                 <div class="col-md-6 col-sm-6 col-xs-12 invoice-logo-space text-right">
