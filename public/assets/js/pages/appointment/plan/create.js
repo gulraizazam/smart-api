@@ -66,6 +66,11 @@ function setPlanData(response) {
     $("#random_id_1").val(random_id);
     $("#client_id").val(patient.id).trigger('change');
     $("#parent_id_1").val(patient.id).trigger('change');
+    setTimeout(function() { 
+        $("#add_discount_type").attr('disabled',true);
+        $('#add_discount_type').val('').change();
+        $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    },250)
 
     getAppointments(appointmentinformation);
 
@@ -227,8 +232,10 @@ function getDiscountInfo($this) {
 
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
-
-    if (service_id == null && discount_id == null) {
+    setTimeout(function() {
+        $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    },500)
+    if (service_id == null && (discount_id == null || discount_id == '')) {
 
         $("#add_discount_type").prop("disabled", false);
         $("#add_discount_type").val('').trigger('change');
@@ -238,13 +245,19 @@ function getDiscountInfo($this) {
         $("#net_amount_1").val('');
         $("#slug_1").val('not_custom');
 
-    } else if (discount_id == null && service_id != null) {
+    } else if ((discount_id == null || discount_id == '') && service_id != null) {
 
         $("#add_discount_type").prop("disabled", true);
         $("#add_discount_type").val('').trigger('change');
         $("#discount_value_1").prop("disabled", true);
         $("#discount_value_1").val('');
         $("#slug_1").val('not_custom');
+        setTimeout(function() { 
+            $('#add_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+            if($("#net_amount_1").val() == ''){
+                $("#add_service_id").val($("#add_service_id").val()).change();
+            }
+        }, 100);
 
     } else if (service_id == null && discount_id == '0') {
 

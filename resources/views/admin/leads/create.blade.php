@@ -49,7 +49,7 @@
 
                         <div class="fv-row col-md-12 mt-10">
                             <label class="custom_checkbox">
-                                <input class="new_patient" onclick="newPatient();" type="checkbox">
+                                <input class="new_patient" name="new_patient" onclick="newPatient();" type="checkbox">
                                 <strong></strong>
                                <span class="ml-5"> New Patient ?</span>
                             </label>

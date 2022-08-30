@@ -1958,7 +1958,7 @@ jQuery(document).ready( function () {
             if (discount_slug == 'custom' && discount_id != '') {
                 if (discount_price == '') {
                     hideSpinner("-add");
-                    toastr.error("Please select the payment mode");
+                    toastr.error("Please add discount value");
                     return false;
                    
                 }

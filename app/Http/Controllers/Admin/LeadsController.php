@@ -723,7 +723,7 @@ class LeadsController extends Controller
             if ($request->new_patient == '1') {
                 $data['created_by'] = Auth::User()->id;
                 $data['updated_by'] = Auth::User()->id;
-                $patient = Patients::createRecord($data);
+                $patient = Patients::createRecord($data,1);
             } else {
                 $logLevelPatient = Patients::where(array(
 //                    'id' => $request->patient_id,
