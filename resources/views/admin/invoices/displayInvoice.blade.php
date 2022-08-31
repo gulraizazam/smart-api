@@ -49,7 +49,7 @@
                         <li>
                             <strong>Patient ID:</strong> <span id="client_id"></span>
                         </li>
-                        <li>
+                        <li id="client_email_li">
                             <strong>Email:</strong> <span id="client_email"></span>
                         </li>
                     </ul>
