@@ -1090,8 +1090,7 @@ class AppointmentsController extends Controller
         $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
-            ->orderBy($orderBy, $order)
-            ->orderBy("appointments.scheduled_time", "ASC")
+            ->orderBy("appointments.id", "DESC")
             ->get();
 
         $invoicearray = array();
