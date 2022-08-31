@@ -1723,12 +1723,13 @@ function getDiscountValue($this) {
             },
             success: function (resposne) {
                 if (resposne.status) {
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true, 'AddPackage');
                     inputSpinner(false)
                 } else {
+                    $("#AddPackage").attr("disabled",true);
                     $('#DiscountRange').show();
-                    inputSpinner(false, 'AddPackage')
+                    //inputSpinner(false, 'AddPackage')
                 }
             },
             error: function () {
