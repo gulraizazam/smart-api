@@ -1342,7 +1342,10 @@ function getDiscountInfo($this) {
             $('#add_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             if($("#net_amount_1").val() == ''){
                 $("#add_service_id").val($("#add_service_id").val()).change();
+            }else{
+                getServiceDiscount($("#add_service_id"));
             }
+
         }, 100);
         
         
