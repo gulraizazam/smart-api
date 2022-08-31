@@ -327,8 +327,14 @@ function setInvoiceData(response) {
 
         $("#client_id").text("C-" + patient.id);
         $("#client_name").text(patient.name);
-        $("#client_email").text(patient.email);
 
+        if(patient.email != "" && patient.email != null){
+            $("#client_email_li").show();
+            $("#client_email").text(patient.email);
+        }else{
+            $("#client_email_li").hide();
+        }
+        
         $("#company_name").text(account.name)
         $("#contact_no").text(company_phone_number.data)
         $("#company_email").text(account.email)
