@@ -23,10 +23,10 @@ if (width > 1280) {
             sortable: false,
             width: 100,
         },{
-            field: 'region',
-            title: 'Region',
+            field: 'location',
+            title: 'Centre',
             sortable: false,
-            width: 100,
+            width: 'auto',
         },{
             field: 'city',
             title: 'City',
@@ -67,10 +67,10 @@ if (width > 1280) {
             title: 'Created at',
             width: 'auto',
         },{
-            field: 'location',
-            title: 'Centre',
+            field: 'region',
+            title: 'Region',
             sortable: false,
-            width: 'auto',
+            width: 100,
         }];
 } else {
     var table_columns = [
@@ -90,8 +90,8 @@ if (width > 1280) {
             sortable: false,
             width: 90,
         },{
-            field: 'region',
-            title: 'Region',
+            field: 'location',
+            title: 'Centre',
             sortable: false,
             width: 90,
         },{
@@ -125,8 +125,8 @@ if (width > 1280) {
                 return actions(data);
             }
         },{
-            field: 'location',
-            title: 'Centre',
+            field: 'region',
+            title: 'Region',
             sortable: false,
             width: 'auto',
         },{
