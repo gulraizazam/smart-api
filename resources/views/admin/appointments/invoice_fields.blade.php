@@ -227,7 +227,7 @@
 
                 <div class="col-md-10 mt-5 mb-10">
                     <strong class="mt-5">Pay</strong>
-                    <input style="width: 50%;" type="number" name="cash_create" id="cash_create" value="0" class="form-control float-right">
+                    <input style="width: 50%;" type="text" name="cash_create" id="cash_create" value="0" class="form-control float-right">
                 </div>
 
                 <div class="col-md-10 mt-5" id="paymentmode" style="display: none;">
