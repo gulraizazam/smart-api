@@ -1454,7 +1454,7 @@ function editDiscountValue($this) {
             },
             success: function (resposne) {
                 if (resposne.status) {
-                    $("#edit_net_amount_1").val(resposne.data.net_amount);
+                    $("#edit_net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
                     $("#edit_net_amount_1").prop("disabled", true, 'EditPackage');
                     inputSpinner(false)
                 } else {
