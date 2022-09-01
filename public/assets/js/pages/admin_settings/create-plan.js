@@ -1617,6 +1617,8 @@ function editDiscountInfo($this) {
             $('#edit_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             if($("#edit_net_amount_1").val() == ''){
                 $("#edit_service_id").val($("#edit_service_id").val()).change();
+            }else{
+                editServiceDiscount($("#edit_service_id"));
             }
         }, 100);
 
