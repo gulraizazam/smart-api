@@ -1458,8 +1458,9 @@ function editDiscountValue($this) {
                     $("#edit_net_amount_1").prop("disabled", true, 'EditPackage');
                     inputSpinner(false)
                 } else {
+                    $("#EditPackage").attr("disabled",true);
                     $('#edit_DiscountRange').show();
-                    inputSpinner(false, 'EditPackage')
+                    //inputSpinner(false, 'EditPackage')
                 }
             },
             error: function () {
