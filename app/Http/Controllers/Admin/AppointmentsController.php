@@ -4420,7 +4420,8 @@ class AppointmentsController extends Controller
                 ->join('package_services', 'package_bundles.id', '=', 'package_services.package_bundle_id')
                 ->where([
                     ['packages.id', '=', $request->package_id],
-                    ['package_services.service_id', '=', $appointmentinfo->service_id]
+                    ['package_services.service_id', '=', $appointmentinfo->service_id],
+                    ['package_services.is_consumed', '= 0']
                 ])->select('package_bundles.discount_type', 'package_bundles.discount_price', 'package_bundles.discount_id')->first();
 
             if ($packages->discount_type != null) {
