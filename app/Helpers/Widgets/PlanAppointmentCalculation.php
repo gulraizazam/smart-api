@@ -76,18 +76,18 @@ class PlanAppointmentCalculation
             }
 
             // Remember I create that funtion for getting doctors in creating rota here I take help of this function
-            $doctors = self::loadDoctorsByLocation($request?->location_id, $doctorids);
+            // $doctors = self::loadDoctorsByLocation($request?->location_id, $doctorids);
 
-            if ($doctors) {
-                foreach ($doctors as $key => $doctor) {
-                    if ($doctor) {
-                        $appointmentArray_doctor[$key] = array(
-                            'id' => $key . '.' . 'D',
-                            'name' => $doctor,
-                        );
-                    }
-                }
-            }
+            // if ($doctors) {
+            //     foreach ($doctors as $key => $doctor) {
+            //         if ($doctor) {
+            //             $appointmentArray_doctor[$key] = array(
+            //                 'id' => $key . '.' . 'D',
+            //                 'name' => $doctor,
+            //             );
+            //         }
+            //     }
+            // }
             $appointment = array_merge($appointmentArray_appointment, $appointmentArray_doctor);
             return $appointment;
         } else {
