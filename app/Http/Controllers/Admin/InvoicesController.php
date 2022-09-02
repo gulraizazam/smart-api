@@ -350,7 +350,7 @@ class InvoicesController extends Controller
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf($id, $download = null)
+    public function invoice_pdf($id, $download = null,$flag=0)
     {
         if (!Gate::allows('invoices_manage') && !Gate::allows('appointments_invoice_display')) {
             return abort(401);
@@ -399,7 +399,7 @@ class InvoicesController extends Controller
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
 
-        if($appointment_info?->appointment_type_id == 1){
+        if($appointment_info?->appointment_type_id == 1 && $flag == 0){
 
             $setting_info = Settings::where('slug','=','sys-consultancy-invoice-medical-operator')->first();
 
