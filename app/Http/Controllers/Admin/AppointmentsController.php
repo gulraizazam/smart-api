@@ -5470,6 +5470,7 @@ class AppointmentsController extends Controller
         }
         $Invoiceinfo = DB::table('invoices')
             ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            ->join('appointments', 'appointments.id', '=', 'invoices.appointment_id')
             ->where('invoices.id', '=', $id)
             ->select('invoices.*',
                 'invoice_details.discount_type',
@@ -5484,7 +5485,8 @@ class AppointmentsController extends Controller
                 'invoice_details.tax_percenatage',
                 'invoice_details.tax_price',
                 'invoice_details.tax_including_price',
-                'invoice_details.is_exclusive'
+                'invoice_details.is_exclusive',
+                'appointments.appointment_type_id'
             )
             ->first();
 
