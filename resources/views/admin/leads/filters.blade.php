@@ -72,12 +72,14 @@
             </div>
         </div>
 
+    </div>
+
+    <div class="row mb-8 advance-filters" style="display: none;">
         <div class="col-lg-3 mb-lg-0">
             <label>Created By:</label>
             <select class="form-control filter-field select2" id="search_created_by">
             </select>
         </div>
-
     </div>
 
     <div class="row">

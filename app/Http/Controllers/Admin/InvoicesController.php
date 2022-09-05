@@ -411,7 +411,7 @@ class InvoicesController extends Controller
                     $pdf = App::make('dompdf.wrapper');
                     $pdf->loadHTML($content);
 
-                    return $pdf->download('admin.invoices.InvoiceMedicalHistorypdf.pdf');
+                    return $pdf->download('consultancy-medical-history-form.pdf');
                 }
 
                 return view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'));
@@ -434,7 +434,10 @@ class InvoicesController extends Controller
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);
             if ($download) {
-                return $pdf->download('admin.invoices.invoice_pdf.pdf');
+                if($flag == 1){
+                    return $pdf->download('consultancy-invoice.pdf');
+                }
+                return $pdf->download('treatment-invoice.pdf');
             }
 
             return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'));
