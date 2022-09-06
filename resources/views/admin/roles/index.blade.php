@@ -73,7 +73,7 @@
 
                                         <div class="col-md-3 my-md-0">
                                             <div class="input-icon">
-                                                <input type="text" value="{{$filters['commission'] ?? ''}}" class="form-control filter-field" placeholder="Commission" id="search_commission" />
+                                                <input type="text" oninput="phoneField(this);" value="{{$filters['commission'] ?? ''}}" class="form-control filter-field" placeholder="Commission" id="search_commission" />
                                                 <span>
                                                     <i class="flaticon2-search-1 text-muted"></i>
                                                 </span>

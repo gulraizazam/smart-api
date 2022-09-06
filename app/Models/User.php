@@ -47,6 +47,11 @@ class User extends Authenticatable
         return ucfirst($this->name) . ' - ' . strtolower($this->email);
     }
 
+    public function scopeIsActive($query, $status = 1)
+    {
+        return $query->where('active', $status);
+    }
+
     /**
      * Get the refunds.
      */

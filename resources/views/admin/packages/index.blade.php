@@ -115,8 +115,38 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="plan_edit_cash" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="plan_edit">
+
+            @include('admin.packages.plane-edit')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
     @push('js')
         <script src="{{asset('assets/js/pages/admin_settings/create-plan.js')}}"></script>
+
+        <script>
+            function getUserCentre() {
+                $.ajax({
+                    url: '{{route('admin.users.get_centers')}}',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.status) {
+                            $("#search_location_id").val(response.data.center).change();
+                            $("#add_plan_location_id").val(response.data.center).change();
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
+            }
+        </script>
+
     @endpush
 
 @endsection

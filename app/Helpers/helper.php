@@ -1,9 +1,9 @@
 <?php
 
-    use App\Helpers\Filters;
+use App\Helpers\Filters;
 use App\Models\PackageAdvances;
 
-function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) {
+    function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) {
 
         if ($request->has('sort')) {
             $orderBy = $request->get('sort')['field'];
@@ -24,13 +24,11 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
         $iDisplayStart = intval(isset($request->pagination['page']) ? (($request->pagination['page'] - 1) * $iDisplayLength) : 0);
         $page = intval($request->pagination['page'] ?? 1);
-        $pages = intval(ceil($iTotalRecords / $iDisplayLength));
+        $pages = 7;
 
         if ($iDisplayLength >= $iTotalRecords) {
             $iDisplayStart = 0;
         }
-
-
 
         return [
             $iDisplayLength,
@@ -92,12 +90,25 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null) 
         return '';
     }
 
+    function isActive($url, $query = 'junk') {
+
+        if ($query == 'junk' && request()->fullUrl() == $url) {
+            return 'menu-item-active';
+        } else if($query == 'create' && request()->fullUrl() == $url) {
+            return 'menu-item-active';
+        }
+        else if($query == 'other' && request()->fullUrl() == $url) {
+            return 'menu-item-active';
+        }
+
+        return  '';
+    }
+
     function getPatientName($id) {
        return \App\Models\Patients::find($id)?->name ?? '';
     }
 
     function getPatientInfo() {
-
 
         $total_cash_in = PackageAdvances::where('cash_flow', '=', 'in')
             ->where('patient_id', request('id'))

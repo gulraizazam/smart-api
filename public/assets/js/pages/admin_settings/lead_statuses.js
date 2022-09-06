@@ -23,8 +23,8 @@ var table_columns = [
         sortable: false,
     },
     {
-        field: 'is_comment',
-        title: 'Ask for comments',
+        field: 'is_junk',
+        title: 'Default for Junk Leads',
         width: 'auto',
         sortable: false,
     },
@@ -45,10 +45,9 @@ var table_columns = [
         title: 'Default for Converted Leads',
         width: 'auto',
         sortable: false,
-    },
-    {
-        field: 'is_junk',
-        title: 'Default for Junk Leads',
+    },{
+        field: 'is_comment',
+        title: 'Ask for comments',
         width: 'auto',
         sortable: false,
     },
@@ -82,7 +81,7 @@ function actions(data) {
     let url = route('admin.lead_statuses.edit', {id: id});
     let delete_url = route('admin.lead_statuses.destroy', {id: id});
 
-    if (permissions.edit && permissions.delete) {
+    if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -175,6 +174,7 @@ function setEditData(response) {
 }
 
 function applyFilters(datatable) {
+
     $('#apply-filters').on('click', function () {
         let filters = {
             delete: '',
@@ -207,7 +207,7 @@ function setFilters(filter_values, active_filters) {
         status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
     Object.entries(parents).forEach(function (value, index) {
-        parent_options += '<option value="' + value[1].id + '">' + value[1].name + '</option>';
+        parent_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
     $("#search_status").html(status_options);

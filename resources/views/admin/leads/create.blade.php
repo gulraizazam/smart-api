@@ -29,7 +29,7 @@
 
             <input type="hidden" name="patient_id" id="add_patient_id" value="">
             <input type="hidden" name="id" id="add_lead_id" value="">
-            <input type="hidden" name="old_phone" id="add_old_phone" value="">
+            <input type="hidden" id="add_old_phone" name="old_phone">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -37,25 +37,19 @@
                     <div class="row">
 
                         <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
-
-                            <input type="text" oninput="phoneField(this);" id="add_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
-                            <div class="suggesstion-box">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
+                            <input type="hidden" onchange="loadLeadData($(this).val());" name="patient_id" class="search_field" id="add_patient_id" >
+                            <input class="form-control form-control-solid mb-3 mb-lg-0 patient_id" >
+                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:36px; right:22px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
-
                         </div>
 
 
-                        {{--<div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
-                            <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="patient_id">
-                            </select>
-                        </div>--}}
-
                         <div class="fv-row col-md-12 mt-10">
                             <label class="custom_checkbox">
-                                <input class="new_patient" onclick="newPatient();" type="checkbox">
+                                <input class="new_patient" name="new_patient" onclick="newPatient();" type="checkbox">
                                 <strong></strong>
                                <span class="ml-5"> New Patient ?</span>
                             </label>
@@ -71,25 +65,35 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
+
+                            <input type="text" oninput="phoneField(this);" id="add_phone" name="phone" autocomplete="off" class="form-control" placeholder="Enter Phone" />
+                            {{--<div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>--}}
+
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Full Name <span class="text text-danger">*</span></label>
                             <input type="text" id="add_full_name" name="name" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
                             <select id="add_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
                             </select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">City</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
                             <select id="add_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
                             </select>
                         </div>
 
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source </label>
                             <select id="add_lead_source_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source_id">
                             </select>
                         </div>
@@ -126,6 +130,4 @@
     <!--end::Modal body-->
 </div>
 <!--end::Modal content-->
-
-
 

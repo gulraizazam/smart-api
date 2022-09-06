@@ -93,7 +93,6 @@ class ResourceHasRotaDays extends Model
             }
         }
 
-        //echo $start->format('l') . '<br/>';
 
         for($day = 1; $day <= $diffDays; $day++) {
 
@@ -132,6 +131,7 @@ class ResourceHasRotaDays extends Model
         /*
          * Code for saving resource has rota days
         * */
+
         foreach ($days as $day){
 
             $data_days['date'] = $day['date'];
@@ -353,9 +353,9 @@ class ResourceHasRotaDays extends Model
         $days[0] = array(
             'date' => $start->format('Y-m-d'),
         );
-        
+
         if($resourcerota->copy_all == '1'){
-        
+
             foreach ($week as $week_day)
             {
                 $data['time_f_' . $week_day] = $data['time_f_monday'];
@@ -370,10 +370,10 @@ class ResourceHasRotaDays extends Model
                 }
             }
         }
-        
+
         foreach($week as $week_day) {
             if($week_day == strtolower($start->format('l'))) {
-               
+
                 if($data[$week_day]!=null) {
                     if(isset($data['time_f_' . $week_day]) && isset($data['time_to_' . $week_day])){
                         $days[0]['start'] = $data['time_f_' . $week_day];
@@ -399,7 +399,7 @@ class ResourceHasRotaDays extends Model
                 }
             }
         }
-        
+
 
         for($day = 1; $day <= $diffDays; $day++) {
 

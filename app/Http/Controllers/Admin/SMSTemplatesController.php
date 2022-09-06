@@ -262,7 +262,7 @@ class SMSTemplatesController extends Controller
                 if (!Gate::allows('sms_templates_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                $update=$sms_template->update(['active' => 0]);
+                $update=$sms_template->update(['active' => 1]);
                 return ApiHelper::apiResponse($this->success, 'Record has been activated successfully.');
             }
         } catch (\Exception $e) {

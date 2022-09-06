@@ -8,9 +8,15 @@
 
 namespace App\Helpers;
 
+use App\Models\AppointmentLog;
 use App\Models\Appointments;
+use App\Models\Locations;
+use App\Models\RoleHasUsers;
 use App\Models\Services;
+use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class GeneralFunctions
@@ -139,10 +145,7 @@ class GeneralFunctions
 
     public static function ServicesTree($request = null, $total = 0)
     {
-
-        $allService = Services::where('parent_id', 0)
-            ->where('slug', 'all')
-            ->first();
+        $where = [];
 
         if ($total > 0) {
             $filename = 'services';
@@ -193,11 +196,18 @@ class GeneralFunctions
             }
         }
 
+        $allService = Services::where('parent_id', 0)
+            ->where('slug', 'all')
+            ->first();
+
+        if (count($where) > 0) {
+            $allService = null;
+        }
 
         $query = Services::with('children')
             ->where('parent_id', 0)
             ->where('slug', '!=', 'all')
-            ->when(isset($where) && count($where) > 0, fn($q) => $q->where([[$where]]));
+            ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
 
         $services = $query->get();
 
@@ -207,7 +217,7 @@ class GeneralFunctions
             $children = collect($service->children)->flatten();
             unset($service->children);
 
-            if ($key === 0) {
+            if ($key === 0 && $allService) {
                 $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
             }
 
@@ -305,6 +315,83 @@ class GeneralFunctions
             $options['Others']["##head_office_phone##"] = 'Head Office Phone';
         }
         return $options;
+    }
+
+    public static function saveAppointmentLogs($action, $screen, $data) {
+
+        try {
+
+            AppointmentLog::create([
+                'user_id' => auth()->id(),
+                'action_by' => auth()->user()->name ?? 'Admin',
+                'action_for' => $data->name ?? '',
+                'action' => $action,
+                'screen' => $screen,
+                'address' => Locations::find($data->location_id ?? 0)->name ?? '',
+                'date' => Carbon::now()->timezone("Asia/Karachi")->format("Y-m-d"),
+                'time' => Carbon::now()->timezone("Asia/Karachi")->format("H:i:s"),
+                'type' => $action,
+            ]);
+        } catch (\Exception $e) {
+           //
+        }
+
+    }
+
+    public static function getFDM($location_ids = null) {
+        $fdo_ids = [];
+        $fdm_ids = [];
+        if ($location_ids && count($location_ids) > 0) {
+            $fdo_phones = Locations::whereIn('id', $location_ids)->pluck('fdo_phone');;
+            if ($fdo_phones->count()) {
+                foreach ($fdo_phones as $fdo_phone) {
+                    $fdo_ids[] = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))
+                        ->where('user_type_id', 2)->value('id');
+                }
+            }
+
+            $fdm_ids = count($fdo_ids) > 0 ? array_filter($fdo_ids) : [0];
+        }
+
+        if (count($fdm_ids) > 0) {
+            return $fdm_ids;
+        }
+
+        $fdm_ids = DB::table('role_has_users')
+            ->whereIn('role_id', ['4'])
+            ->pluck('user_id')->toArray();
+
+        return $fdm_ids;
+
+    }
+
+    public static function getCSR()
+    {
+        $csr_user_ids = DB::table('role_has_users')
+            ->whereIn('role_id', ['2', '3'])
+            ->pluck('user_id')->toArray();
+
+        return $csr_user_ids;
+
+    }
+
+    public static function getLocationIds($location_id)
+    {
+        if ($location_id) {
+            
+            $location_ids = null;
+            if (is_string($location_id)) {
+                $location_id = explode(',', $location_id);
+            }
+            $locationIds = array_filter($location_id);
+            if (isset($locationIds) && count($locationIds)) {
+                $location_ids = $locationIds;
+            }
+
+            return $location_ids;
+        }
+
+        return null;
     }
 
 }

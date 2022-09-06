@@ -11,6 +11,12 @@ var table_columns = [
         field: 'phone',
         title: 'Phone',
         width: 'auto',
+        template: function (data) {
+            if (permissions.contact) {
+                return data.phone ?? 'N/A';
+            }
+            return '***********';
+        }
     },{
         field: 'scheduled_date',
         title: 'SCHEDULED AT',

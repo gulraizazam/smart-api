@@ -119,9 +119,9 @@ class UserTypes extends BaseModal
         }
 
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            return self::where($where)->where('name', '!=', 'Administrator')->limit($iDisplayLength)->offset($iDisplayStart)->get();
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
+            return self::where('name', '!=', 'Administrator')->limit($iDisplayLength)->offset($iDisplayStart)->get();
         }
     }
 

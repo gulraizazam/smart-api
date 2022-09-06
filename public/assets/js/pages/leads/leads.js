@@ -6,16 +6,16 @@ if (typeof lead_type !== 'undefined' && lead_type != '') {
 var table_columns = [{
     field: 'id',
     sortable: false,
-    width: 'auto',
+    width: 20,
     title: renderCheckbox(),
     template: function(data) {
-        return childCheckbox(data);
+        return childCheckbox(data, data.lead_id);
     }
 }, {
     field: 'PatientId',
     title: 'ID',
     sortable: false,
-    width: 'auto',
+    width: 60,
 }, {
     field: 'name',
     title: 'Full Name',
@@ -25,7 +25,7 @@ var table_columns = [{
     field: 'phone',
     title: 'Phone',
     sortable: false,
-    width: 'auto',
+    width: 90,
     template: function (data) {
         return phoneClip(data);
     }
@@ -33,7 +33,7 @@ var table_columns = [{
     field: 'city_id',
     title: 'City',
     sortable: false,
-    width: 'auto',
+    width: 70,
     className: 'tooltip_wrap',
     template: function (data) {
 
@@ -43,47 +43,73 @@ var table_columns = [{
             city = city_id;
         }
 
-        return '<a href="javascript:void(0);" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`)" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
+        return '<a href="javascript:void(0);" data-city_id="'+data.cityId+'" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`, $(this))" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
     }
-}, {
-    field: 'region_id',
-    title: 'Region',
+},{
+    field: 'service_id',
+    title: 'Service',
     sortable: false,
-    width: 'auto',
-}, {
+    width: 110,
+},{
     field: 'lead_status_id',
     title: 'Lead Status',
     sortable: false,
-    width: 'auto',
+    width: 70,
     template: function (data) {
 
         return '<a href="javascript:void(0);" onclick="editLeadStatus('+data.lead_id+');">'+data.lead_status_id+'</a>';
     }
 }, {
-    field: 'service_id',
-    title: 'Service',
+    field: 'status',
+    title: 'Status',
     sortable: false,
-    width: 'auto',
+    width: 60,
+    template: function(data) {
+        let status_url = route('admin.leads.status');
+        let id = data.id;
+        let active = data.active;
+        let status = '';
+
+        if (active) {
+            if (permissions.update_status) {
+                status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+            } else {
+                status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+            }
+
+        } else {
+
+            status += '<span class="switch switch-icon">\
+        <label>\
+            <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" name="select">\
+            <span></span>\
+        </label>\
+        </span>';
+        }
+
+        return status;
+    }
+},{
+    field: 'created_by',
+    title: 'Created By',
+    sortable: false,
+    width: 70,
 }, {
     field: 'created_at',
     title: 'Created At',
     sortable: false,
     width: 'auto',
-}, {
-    field: 'created_by',
-    title: 'Created By',
-    sortable: false,
-    width: 'auto',
-}, {
-    field: 'status',
-    title: 'Status',
-    sortable: false,
-    width: 'auto',
-    template: function(data) {
-        let status_url = route('admin.leads.status');
-        return statuses(data, status_url);
-    }
-}, {
+},{
     field: 'actions',
     title: 'Actions',
     sortable: false,
@@ -174,6 +200,7 @@ function updateLeadStatus() {
                 $("#modal_change_status").modal("hide");
                 toastr.success(response.message);
                 hideSpinnerRestForm($("#modal_change_status_form")[0]);
+                reInitTable();
             } else {
                 toastr.error(response.message);
                 hideSpinnerRestForm();
@@ -197,9 +224,16 @@ function actions(data) {
         let delete_url = route('admin.leads.destroy', { id: id });
         let convert_url = route('admin.leads.convert', { id: id });
 
-        if (permissions.create && permissions.edit) {
-            let actions = '<div class="dropdown dropdown-inline action-dots">\
-        <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+        if (permissions.create || permissions.edit) {
+            let actions = '<div class="dropdown dropdown-inline action-dots">';
+
+            if (permissions.convert && lead_type === 'junk') {
+                actions += '<a title="Convert Lead" href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="btn btn-icon btn-success btn-sm">\
+                        <span class="navi-icon"><i class="la la-recycle"></i></span>\
+                    </a>';
+            }
+
+        actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
         </a>\
         <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
@@ -224,15 +258,6 @@ function actions(data) {
                 </li>';
             }
 
-            if (permissions.convert) {
-                actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-recycle"></i></span>\
-                        <span class="navi-text">Convert</span>\
-                    </a>\
-                </li>';
-            }
-
             if (permissions.delete) {
                 actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
@@ -253,6 +278,8 @@ function actions(data) {
 }
 
 function createLead(url) {
+
+    $(".croxcli").click();
 
     $('.msg_new_patient').hide();
     $('.new_patient').prop("checked", false);
@@ -342,6 +369,7 @@ function setLeadData(response) {
         $("#add_lead_source_id").html(lead_sources_options);
         $("#add_lead_status_id").html(lead_statuses_options);
 
+        getUserCity();
 
     } catch (error) {
         showException(error);
@@ -506,8 +534,8 @@ function setConvert(response) {
             });
         }
 
-        $("#convert_city").html(city_options);
-        $("#convert_treatment_id").html(service_options);
+        $("#convert_city").html(city_options).val(lead.city_id).change();
+        $("#convert_treatment_id").html(service_options).val(lead.service_id).change();
         $("#convert_consultancy_type_id").html(consultancy_options);
 
         $("#convert_lead_id").val(lead.id);
@@ -655,15 +683,33 @@ function setEditData(response) {
 
         $("#edit_service_id").val(lead.service_id);
         $("#edit_city_id").val(lead.city_id);
-        $("#edit_referred_by_id").val(lead?.patient?.referred_by);
-        $("#edit_gender_id").val(lead.patient.gender);
-        $("#edit_lead_source_id").val(lead.lead_source_id);
-        $("#edit_lead_status_id").val(lead.lead_status_id);
-        $("#edit_phone").val(lead.patient.phone);
-        $("#edit_full_name").val(lead.patient.name);
 
+        if (lead?.patient?.referred_by && lead?.patient?.referred_by != 0) {
+            $("#edit_referred_by_id").val(lead?.patient?.referred_by);
+        }
+        if (lead.patient.gender) {
+            $("#edit_gender_id").val(lead.patient.gender);
+        }
+        if (lead.lead_source_id) {
+            $("#edit_lead_source_id").val(lead.lead_source_id);
+        }
+
+        if (lead.lead_status_id) {
+            $("#edit_lead_status_id").val(lead.lead_status_id);
+        }
+
+        $("#edit_full_name").val(lead.patient.name);
         $("#edit_patient_id").val(lead.patient.id);
+
         $("#edit_lead_id").val(lead.id);
+
+        $("#edit_old_phone").val(lead.patient.phone);
+
+        if (permissions.contact) {
+            $("#edit_phone").val(lead.patient.phone);
+        } else {
+            $("#edit_phone").val("***********").attr("readonly", true);
+        }
 
     } catch (error) {
         showException(error);
@@ -766,9 +812,15 @@ function setFilters(filter_values, active_filters) {
             });
         }
 
+        if (lead_type == 'junk') {
+            $("#search_status_id").html('<option value="">All</option><option value="'+junk+'">Junk</option>');
+        } else {
+            $("#search_status_id").html(status_options);
+        }
+
+
         $("#search_city_id").html(city_options);
         $("#search_region_id").html(region_options);
-        $("#search_status_id").html(status_options);
         $("#search_service_id").html(service_options);
         $("#search_created_by").html(user_options);
 
@@ -784,6 +836,8 @@ function setFilters(filter_values, active_filters) {
         $("#search_created_by").val(active_filters.created_by);
 
         hideShowAdvanceFilters(active_filters);
+
+        getUserCity();
 
     } catch (error) {
         showException(error);
@@ -812,14 +866,31 @@ function newPatient() {
         if ($(this).is(":checked")) {
             $('.new_patient').val('1');
             $('.msg_new_patient').show();
+
+            $("#add_phone").removeAttr("readonly");
+            $("#add_full_name").removeAttr("readonly");
+
+            if ($("#add_phone").val() != '') {
+                $(".select2").val(null).trigger("change");
+                $("input").val('');
+            }
+
+
+           /* $("#modal_add_leads_form").find('input').val('');
+            $("#modal_edit_leads_form").find('input').val('');
+            $(".select2").val(null).trigger("change");*/
+
         } else {
             $('.new_patient').val('0');
             $('.msg_new_patient').hide();
+
+            $("#add_phone").prop("readonly", true);
+            $("#add_full_name").prop("readonly", true);
         }
     });
 }
 
-function editInline($lead_id, city_id) {
+function editInline($lead_id, city_id, $this) {
 
     let cities = filter_values.cities;
     let city_options = '<option value="">Select City</option>';
@@ -851,12 +922,15 @@ function editInline($lead_id, city_id) {
 
     $(".city-editable-" + $lead_id).find(".city-select").val(city_id);
 
+    $(".city-select").val($this.data("city_id"))
+
 }
 
 function saveCity(lead_id) {
 
     showSpinner();
     let city_id = $(".city-editable-" + lead_id).find('.city-select').val();
+    $("#lead-" + lead_id).data("city_id", city_id);
 
     $.ajax({
         headers: {
@@ -872,7 +946,7 @@ function saveCity(lead_id) {
                 toastr.success(response.message);
                 $("#lead-" + lead_id).text(city);
                 $("#lead-" + lead_id).animate({backgroundColor: "#dd0000"}, 'slow').fadeOut(500).fadeIn(500).fadeOut(500).fadeIn(500);
-
+                closeEditable(lead_id)
             } else {
                 toastr.error(response.message);
             }
@@ -1027,13 +1101,130 @@ let loadDoctors = function (locationId) {
 
      let form_id = 'modal_import_leads_form';
      let form = document.getElementById(form_id);
+     if ($(".leads_file").val() == '') {
+         addValidation($(".leads_file"))
+         return false;
+     }
 
      submitFileForm($(form).attr('action'), $(form).attr('method'), form_id, function (response) {
          if (response.status) {
              toastr.success(response.message);
-             //closePopup(modal_id);
+             closePopup("modal_import_leads_form");
+             reInitTable();
          } else {
              toastr.error(response.message);
          }
      });
 }
+
+function skipStatus($this) {
+
+    if ($this.is(":checked")) {
+        $("#skip_lead_statuses").prop("disabled", false);
+        $(".skip_lead_status").css("opacity", 1);
+    } else {
+        $("#skip_lead_statuses").prop("disabled", true);
+        $(".skip_lead_status").css("opacity", 0.7);
+    }
+}
+
+function addValidation(elem) {
+
+    if (elem.val() == '') {
+        elem.addClass("is-invalid");
+        $(".lead_file_msg").removeClass("d-none");
+    } else {
+        elem.removeClass("is-invalid");
+        $(".lead_file_msg").addClass("d-none");
+    }
+}
+
+jQuery(document).ready( function () {
+
+    $(".leads_file").change( function () {
+        addValidation($(this))
+
+    });
+
+
+    $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
+        setTimeout( function () {
+            $("#add_phone").removeAttr("readonly");
+            $("#add_full_name").removeAttr("readonly");
+        },300);
+
+    });
+
+    $(document).on( "click", ".popup-close", function () {
+        $("#modal_add_leads_form")[0].reset();
+        $("#modal_edit_leads_form")[0].reset();
+        $("#modal_add_leads_form").find('input').val('');
+        $("#modal_edit_leads_form").find('input').val('');
+        $(".select2").val(null).trigger("change");
+    });
+
+});
+
+$("#export-pdf-leads").on("click",function(){
+
+    let id =$('#search_id').val();
+    let name =$('#search_full_name').val();
+    let phone =$("#search_phone").val()
+    let city_id =$("#search_city_id").val()
+    let region_id =$("#search_region_id").val()
+    let lead_status_id =$("#search_status_id").val()
+    let service_id =$("#search_service_id").val()
+    let start_date =$("#search_created_from").val()
+    let end_date =$("#search_created_to").val()
+    let created_by =$("#search_created_by").val();
+    let url = $(this).data('href');
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by;
+});
+
+$("#export-leads").on("click",function(){
+
+    let id =$('#search_id').val();
+    let name =$('#search_full_name').val();
+    let phone =$("#search_phone").val()
+    let city_id =$("#search_city_id").val()
+    let region_id =$("#search_region_id").val()
+    let lead_status_id =$("#search_status_id").val()
+    let service_id =$("#search_service_id").val()
+    let start_date =$("#search_created_from").val()
+    let end_date =$("#search_created_to").val()
+    let created_by =$("#search_created_by").val();
+    let url = $(this).data('href');
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=xlsx';
+});
+
+$("#csv-leads").on("click",function(){
+
+    let id =$('#search_id').val();
+    let name =$('#search_full_name').val();
+    let phone =$("#search_phone").val()
+    let city_id =$("#search_city_id").val()
+    let region_id =$("#search_region_id").val()
+    let lead_status_id =$("#search_status_id").val()
+    let service_id =$("#search_service_id").val()
+    let start_date =$("#search_created_from").val()
+    let end_date =$("#search_created_to").val()
+    let created_by =$("#search_created_by").val();
+    let url = $(this).data('href');
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=csv';
+});
+
+function cleanId(id){
+
+    if (id.indexOf('c-') > -1)
+    {
+      return id.replace('c-','');
+    }
+    if (id.indexOf('C-') > -1)
+    {
+      return id.replace('C-','');
+    }
+    return id;
+}
+
+

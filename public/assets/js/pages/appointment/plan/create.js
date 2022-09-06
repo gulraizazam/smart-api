@@ -54,7 +54,7 @@ function setPlanData(response) {
     let payment_options = '<option value="">Select Payment Mode</option>';
     if (paymentmodes) {
         Object.entries(paymentmodes).forEach( function(paymentmode) {
-            payment_options += '<option value="'+paymentmode[1]+'">'+paymentmode[1]+'</option>';
+            payment_options += '<option value="'+paymentmode[0]+'">'+paymentmode[1]+'</option>';
         });
     }
 
@@ -66,8 +66,13 @@ function setPlanData(response) {
     $("#random_id_1").val(random_id);
     $("#client_id").val(patient.id).trigger('change');
     $("#parent_id_1").val(patient.id).trigger('change');
+    setTimeout(function() { 
+        $("#add_discount_type").attr('disabled',true);
+        $('#add_discount_type').val('').change();
+        $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    },250)
 
-    getAppointments(appointmentinformation.appoitment_id);
+    getAppointments(appointmentinformation);
 
     getServices();
 
@@ -127,7 +132,7 @@ function setServices(response) {
     }
 }
 
-function getAppointments(appoitment_id) {
+function getAppointments(appoitmentInfo) {
 
     hideMessages();
 
@@ -149,13 +154,13 @@ function getAppointments(appoitment_id) {
 
                     let appointments = resposne.data.appointments;
 
-                    let options = '<option value="" >Select Appointment</option>';
+                    let options = '';
 
                     jQuery.each(appointments, function (i, appointment) {
                         options += '<option value="' + appointment.id + '">' + appointment.name + '</option>';
                     });
 
-                    $("#add_appointment_id").html(options).val(appoitment_id);
+                    $("#add_appointment_id").html(options);
 
                 } else {
                     let options = '<option value="" >Select Appointment</option>';
@@ -227,8 +232,10 @@ function getDiscountInfo($this) {
 
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
-
-    if (service_id == null && discount_id == null) {
+    setTimeout(function() {
+        $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    },500)
+    if (service_id == null && (discount_id == null || discount_id == '')) {
 
         $("#add_discount_type").prop("disabled", false);
         $("#add_discount_type").val('').trigger('change');
@@ -238,13 +245,19 @@ function getDiscountInfo($this) {
         $("#net_amount_1").val('');
         $("#slug_1").val('not_custom');
 
-    } else if (discount_id == null && service_id != null) {
+    } else if ((discount_id == null || discount_id == '') && service_id != null) {
 
         $("#add_discount_type").prop("disabled", true);
         $("#add_discount_type").val('').trigger('change');
         $("#discount_value_1").prop("disabled", true);
         $("#discount_value_1").val('');
         $("#slug_1").val('not_custom');
+        setTimeout(function() { 
+            $('#add_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+            if($("#net_amount_1").val() == ''){
+                $("#add_service_id").val($("#add_service_id").val()).change();
+            }
+        }, 100);
 
     } else if (service_id == null && discount_id == '0') {
 
@@ -508,6 +521,7 @@ function hideMessages() {
     $('#AlreadyExitMessage').hide();
     $('#DiscountRange').hide();
     $('#datanotexist').hide();
+    $('#successMessage').hide();
 }
 
 

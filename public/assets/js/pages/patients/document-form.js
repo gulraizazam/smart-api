@@ -43,7 +43,7 @@ function actions(data) {
         let view_url = asset_url + "storage/" + file;
         let delete_url = route('admin.patients.documentsdestroy', {id: id});
 
-        if (permissions.edit && permissions.delete && permissions.manage) {
+        if (permissions.edit || permissions.delete || permissions.manage) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -263,10 +263,6 @@ var EditDocumentValidation = function () {
     };
 }();
 
-
-function reloadTable(table_class) {
-    patientDatatable[table_class].search({ datatable_reload: 'reload' }, 'search');
-}
 
 jQuery(document).ready(function() {
     DocumentValidation.init();

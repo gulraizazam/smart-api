@@ -59,7 +59,7 @@ function actions(data) {
     let url = route('admin.cities.edit', {id: id});
     let delete_url = route('admin.cities.destroy', {id: id});
 
-    if (permissions.edit && permissions.delete) {
+    if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -168,7 +168,8 @@ function setFilters(filter_values, active_filters) {
         status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
 
-    let regions_options = '<option value="">Select Region</option>';
+    //let regions_options = '<option value="">Select Region</option>';
+    let regions_options = '<option value="">All</option>';
     Object.entries(regions).forEach(function(value, index) {
         regions_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });

@@ -80,7 +80,6 @@
             <br>
             <div class="table-responsive">
                 <table id="table_1" class="table table-striped table-bordered table-advance table-hover">
-                    {{ csrf_field() }}
                     <thead>
                     <?php $constant = 555;?>
                     <tr>
@@ -94,6 +93,7 @@
                         <th> Tax Amt.</th>
                     </tr>
                     </thead>
+                    
                     <tr class="HR_{{$constant}}">
                     </tr>
                 </table>
@@ -102,174 +102,154 @@
     @endif
     {{--End--}}
     <br>
-    {{--That is generic inputs that use for all conditon--}}
-    <div class="invice-holder">
 
-        {{--In case if treatment not belong to treatment plan--}}
-        @if($status == 'false')
-            <div class="row">
-                <div class="col-md-4 text-right"></div>
-                <div class="col-md-4 text-right">
-                    <label><strong>Appointment</strong></label>
-                </div>
-                <div class="col-md-4">
-                    <select name="appointment_link_cons" id="appointment_link_cons" class="form-control select2">
-                        <option value="">Select Appointment</option>
-                        @foreach($appointmentArray as $appointment)
-                            <option value="{{$appointment['id']}}"
-                                    @if ($loop->first) selected @endif>{{$appointment['name']}}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        @endif
-        {{--End--}}
-        <br>
-        {{--In case of services not belong to treatment plans--}}
-        @if($appointment_type->name == Config::get('constants.Service'))
-            @if($status == 'false')
 
-                {{--Hidden Input for service that not belongs to treatment plans--}}
-                <input type="hidden" value="{{$amount_create_is_inclusive}}" id="orignal_price_h">
-                <input type="hidden" value="{{$location_id}}" id="location_id_tax">
-                <input type="hidden" value="{{$service->tax_treatment_type_id}}" id="tax_treatment_type_id">
-                {{--end--}}
+    <div class="form-group">
 
-                <div class="row">
-                    <div class="col-md-4 text-right"></div>
-                    <div class="col-md-4 text-right">
-                        <label><strong>Exclusive</strong></label>
+        <div class="row mt-5">
+
+            {{--left section--}}
+            <div class="col-md-8">
+
+                {{--In case if treatment not belong to treatment plan--}}
+                @if($status == 'false')
+                    <div class="col-md-10">
+                        <label><strong>Appointment</strong></label>
+                        <select name="appointment_link_cons" id="appointment_link_cons" class="form-control">
+                            <option value="">Select Appointment</option>
+                            @foreach($appointmentArray as $appointment)
+                                <option value="{{$appointment['id']}}"
+                                        @if ($loop->first) selected @endif>{{$appointment['name']}}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="col-md-4">
-                        <label class="mt-checkbox is_consultancy_1">
-                            @if($service->tax_treatment_type_id == Config::get('constants.tax_both') || $service->tax_treatment_type_id == Config::get('constants.tax_is_exclusive'))
+                @endif
+                {{--End--}}
 
-                                <input type="hidden" name="is_exclusive" value="0"/>
-                                <label class="custom_checkbox checkbox-all">
-                                    <input class="select-all-checkboxes" id="is_exclusive" type="checkbox" name="is_exclusive" value="1" checked>
-                                    <strong></strong>
-                                </label>
+            </div>
 
-                            @else
-                                <input type="hidden" name="is_exclusive" value="0"/>
-                                <label class="custom_checkbox checkbox-all">
-                                    <input class="select-all-checkboxes"  id="is_exclusive" type="checkbox" name="is_exclusive" value="0">
-                                    <strong></strong>
-                                </label>
-                            @endif
-                        </label>
+            <div class="col-md-4">
+
+                {{--In case of services not belong to treatment plans--}}
+                @if($appointment_type->name == Config::get('constants.Service'))
+                    @if($status == 'false')
+
+                        {{--Hidden Input for service that not belongs to treatment plans--}}
+                        <input type="hidden" value="{{$amount_create_is_inclusive}}" id="orignal_price_h">
+                        <input type="hidden" value="{{$location_id}}" id="location_id_tax">
+                        <input type="hidden" value="{{$service->tax_treatment_type_id}}" id="tax_treatment_type_id">
+                        {{--end--}}
+
+                        <div class="col-md-10 mt-12">
+                            <!--begin::Option-->
+                            <span class="switch switch-sm switch-icon switch_custom">
+                                <div class="col-md-12" style="padding-left: 0">
+                                    <strong>Exclusive</strong>
+
+                                @if($service->tax_treatment_type_id == Config::get('constants.tax_both') || $service->tax_treatment_type_id == Config::get('constants.tax_is_exclusive'))
+
+                                    <input type="hidden" name="is_exclusive" value="0"/>
+
+                                        <label class="float-right">
+                                            <input id="is_exclusive" type="checkbox" name="is_exclusive" value="1" checked>
+                                            <span></span>
+                                        </label>
+
+
+                                @else
+                                    <input type="hidden" name="is_exclusive" value="0"/>
+                                        <label class="float-right">
+                                            <input id="is_exclusive" type="checkbox" name="is_exclusive" value="0">
+                                            <span></span>
+                                        </label>
+
+                                @endif
+
+                                </div>
+                            </span>
+                        </div>
+
+
+                    @endif
+                @endif
+                {{--End--}}
+
+                {{--<div class="col-md-10 mt-5">
+                    <strong>Amount</strong>
+                    <strong class="float-right" id="amount_create">{{$amount_create}}</strong>
+                </div>--}}
+                <input type="hidden" class="amount_create" name="amount_create" value="{{$amount_create}}">
+
+
+               {{-- <div class="col-md-10 mt-5">
+                    <strong>Tax Price</strong>
+                    <strong class="float-right" id="tax_create">{{$tax_create}}</strong>
+                </div>--}}
+                <input type="hidden" class="tax_create" name="tax_create" value="{{$tax_create}}">
+
+                <div class="col-md-10 mt-5">
+                    <strong>Total Amount</strong>
+                    <strong class="float-right" id="price_create">{{$price}}</strong>
+                    <input type="hidden" class="price_create" name="price_create" value="{{$price}}">
+                    <input type="hidden" name="remaining" id="remaining" />
+                </div>
+
+
+                @if($balance > 0)
+                    <div class="col-md-10 mt-5">
+                        <strong>Balance Amount</strong>
+                        <strong class="float-right" id="balance_create">{{$balance}}</strong>
+                    </div>
+                @endif
+                <input type="hidden" class="balance_create" name="balance_create" value="{{$balance}}">
+
+
+                @if($settleamount > 0)
+                    <div class="col-md-10 mt-5">
+                        <strong>Settle Amount</strong>
+                        <strong class="float-right" id="settle_create">{{$settleamount}}</strong>
+                    </div>
+                @endif
+                <input type="hidden" class="settle_create" name="settle_create" value="{{$settleamount}}">
+
+                <div class="col-md-10 mt-5">
+                    <strong>Outstanding</strong>
+                    <strong class="float-right" id="outstand_create">{{$outstanding}}</strong>
+                    <input type="hidden" class="outstand_create" name="outstand_create" value="{{$outstanding}}">
+                </div>
+
+                <div class="col-md-11 mt-5">
+                    <strong class="mt-5">Date</strong>
+                    <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
+                    <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
+                           class="form-control custom-datepicker float-right custom_field" id="created_at" readonly>
+                </div>
+
+                <div class="col-md-10 mt-5 mb-10">
+                    <strong class="mt-5">Pay</strong>
+                    <input style="width: 50%;" type="text" name="cash_create" id="cash_create" value="0" class="form-control float-right">
+                </div>
+
+                <div class="col-md-10 mt-5" id="paymentmode" style="display: none;">
+                    <strong>Payment Mode</strong>
+                    {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control float-right','id'=>'payment_mode_id', 'style' => 'width:50%;']) !!}
+
+                </div>
+
+
+                <div class="col-md-10 mt-5 mb-10">
+                    <div id="treatment_addinvoice" style="display: none;">
+                        <button class="btn btn-primary spinner-button" name="savepackageinformation" id="treatment_savepackageinformation"
+                                style="float: right;margin-top:20px;"><i class="la la-paper-plane-o"></i> Save & Print Invoice
+                        </button>
                     </div>
                 </div>
-            @endif
-        @endif
-        {{--End--}}
-        <br>
-        {{--introduce for tax--}}
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Amount</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="amount_create" id="amount_create" class="form-control disabled-field" value="{{$amount_create}}"
-                       readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Tax Price</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="tax_create" id="tax_create" class="form-control disabled-field" value="{{$tax_create}}" readonly>
-            </div>
-        </div>
-        {{--end for introduce tax--}}
-        <br>
 
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Tax Amt.</strong></label>
             </div>
-            <div class="col-md-4">
-                <input type="text" name="price_create" id="price_create" class="form-control" value="{{$price}}" readonly>
-                <input type="hidden" name="remaining" id="remaining" />
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Balance Amount</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="balance_create" id="balance_create" class="form-control disabled-field" value="{{$balance}}"
-                       readonly>
-            </div>
-        </div>
-        <br>
 
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Amount Received</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="number" name="cash_create" id="cash_create" value="0" class="form-control">
-            </div>
         </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Settle Amount</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="settle_create" id="settle_create" class="form-control disabled-field" value="{{$settleamount}}"
-                       readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Outstanding</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="outstand_create" id="outstand_create" class="form-control disabled-field" value="{{$outstanding}}"
-                       onchange='outstandingAmount()' readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Date</strong></label>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
-                       class="form-control disabled-field custom-datepicker" id="created_at" required readonly>
-            </div>
-        </div>
-        <br>
-        <div class="row" id="paymentmode" style="display: none">
-            <div class="col-md-4 text-right"></div>
-            <div class="col-md-4 text-right">
-                <label><strong>Payment Mode</strong></label>
-            </div>
-            <div class="col-md-4">
-                {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control select2','id'=>'payment_mode_id']) !!}
-            </div>
-        </div>
+
     </div>
-    <div class="row">
-        <div class="col-md-12" id="addinvoice">
-            <button class="btn btn-success spinner-button" name="savepackageinformation" id="treatmne_savepackageinformation"
-                    style="float: right;margin-top:20px;">Save
-            </button>
-        </div>
-    </div>
-    {{--End--}}
+
+
 </div>

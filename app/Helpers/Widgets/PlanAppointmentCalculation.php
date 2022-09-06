@@ -76,18 +76,18 @@ class PlanAppointmentCalculation
             }
 
             // Remember I create that funtion for getting doctors in creating rota here I take help of this function
-            $doctors = self::loadDoctorsByLocation($request?->location_id, $doctorids);
+            // $doctors = self::loadDoctorsByLocation($request?->location_id, $doctorids);
 
-            if ($doctors) {
-                foreach ($doctors as $key => $doctor) {
-                    if ($doctor) {
-                        $appointmentArray_doctor[$key] = array(
-                            'id' => $key . '.' . 'D',
-                            'name' => $doctor,
-                        );
-                    }
-                }
-            }
+            // if ($doctors) {
+            //     foreach ($doctors as $key => $doctor) {
+            //         if ($doctor) {
+            //             $appointmentArray_doctor[$key] = array(
+            //                 'id' => $key . '.' . 'D',
+            //                 'name' => $doctor,
+            //             );
+            //         }
+            //     }
+            // }
             $appointment = array_merge($appointmentArray_appointment, $appointmentArray_doctor);
             return $appointment;
         } else {
@@ -330,7 +330,7 @@ class PlanAppointmentCalculation
 
         $package_bundle_info = PackageBundles::where('random_id', '=', $request->random_id)->first();
 
-        $service_id = self::findRoot($package_bundle_info->packageservice()->first()->service_id, $searchServices);
+        $service_id = self::findRoot($package_bundle_info?->packageservice()->first()->service_id, $searchServices);
 
         return $service_id;
     }
@@ -503,7 +503,7 @@ class PlanAppointmentCalculation
 
         if (Appointments::where('id', '=', $req['appointment_id'])->where('appointment_type_id', '=', Config::get('constants.appointment_type_consultancy'))->exists()) {
 
-            if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->exists()) {
+            if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus?->id)->exists()) {
                 $appointmentStatus = AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->where('active', '=', 1)->first();
                 if ($appointmentStatus) {
                     Appointments::where('id', '=', $req['appointment_id'])->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $appointmentStatus->id]);
@@ -511,7 +511,10 @@ class PlanAppointmentCalculation
                     Appointments::where('id', '=', $req['appointment_id'])->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id]);
                 }
             } else {
-                Appointments::where('id', '=', $req['appointment_id'])->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id]);
+                Appointments::where('id', '=', $req['appointment_id'])->update([
+                    'base_appointment_status_id' => $arrivedStatus?->id,
+                'appointment_status_id' => $arrivedStatus?->id
+                ]);
             }
         }
 

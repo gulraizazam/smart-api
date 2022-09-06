@@ -25,7 +25,7 @@
         <form id="modal_create_treatment_form" method="post" action="{{route('admin.appointments.store_service')}}">
 
             <input type="hidden" id="treatment_lead_id" name="lead_id">
-            <input type="hidden" id="treatment_patient_id" name="patient_id" value="0">
+            {{--<input type="hidden" id="treatment_patient_id" name="patient_id" value="0">--}}
             <input type="hidden" id="treatment_city_id" name="city_id">
             <input type="hidden" id="treatment_location_id" name="location_id">
             <input type="hidden" id="treatment_doctor_id" name="doctor_id">
@@ -51,31 +51,44 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Child Service <span class="text text-danger">*</span> </label>
-                            <select id="create_treatment_service" onchange="setResourceValue($(this).val());" class="form-control select2" name="service_id"></select>
+                            <select id="create_treatment_service" class="form-control select2" name="service_id"></select>
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <select id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))" class="form-control patient_search_id" name="patient_id"></select>
+                            <input  class="form-control treatment_patient_search_id">
+
+                            <input type="hidden" id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))"  name="patient_id" class="filter-field search_field">
+                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
-                            <input id="create_treatment_phone" class="form-control" name="phone">
+                            <input readonly id="create_treatment_phone" class="form-control" name="phone">
+                            <input type="hidden" id="create_old_treatment_phone" class="form-control" name="old_phone">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input id="create_treatment_patient_name" class="form-control" name="name">
+                            <input readonly id="create_treatment_patient_name" class="form-control" name="name">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Customer ID <span class="text text-danger">*</span> </label>
+                            <input readonly id="create_treatment_c_id" class="form-control" name="client_id">
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
                             <select id="create_treatment_gender" class="form-control select2" name="gender"></select>
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source <span class="text text-danger">*</span></label>
+                        {{--<div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>
                             <select id="create_treatment_lead" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source">
                             </select>
                         </div>
@@ -84,7 +97,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Referred By</label>
                             <select id="create_treatment_referred_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="referred_by">
                             </select>
-                        </div>
+                        </div>--}}
 
                     </div>
                 </div>

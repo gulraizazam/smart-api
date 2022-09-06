@@ -35,6 +35,9 @@
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Discount Type:</label>
             <select class="form-control filter-field select2" id="search_discount_type">
+                <option value="">All</option>
+                <option value="Consultancy">Consultancy</option>
+                <option value="Treatment">Treatment</option>
             </select>
         </div>
 

@@ -153,6 +153,10 @@ class ResourceRotasController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
+        if($request->is_consultancy == "0" && $request->is_treatment == "0"){
+            return ApiHelper::apiResponse($this->error, 'Please check at least one from consultancy and treatment');
+        }
+
         $response = ResourceHasRota::createRecord($request, Auth::User()->account_id);
 
         if ($response['status']) {
@@ -213,7 +217,7 @@ class ResourceRotasController extends Controller
                 $records["message"] = "Records has been deleted successfully!";
             }
 
-            list($orderBy, $order) = getSortBy($request);
+            list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC');
 
             $where = array();
             $wherename = array();
@@ -665,12 +669,16 @@ class ResourceRotasController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
+       
+        if($request->is_consultancy == "0" && $request->is_treatment == "0"){
+            return ApiHelper::apiResponse($this->error, 'Please check at least one from consultancy and treatment');
+        }
+
         $resourcerota = ResourceHasRota::find($id);
 
         if ($resourcerota->end <= $request->end) {
 
             $response = ResourceHasRota::updateRecord($id, $request, Auth::User()->account_id);
-
 
             return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
 
@@ -829,6 +837,10 @@ class ResourceRotasController extends Controller
                 }
             } else {
                 return ApiHelper::apiResponse($this->success, 'From or To require, kindly define again.', false);
+            }
+
+            if($request->start_off >= $request->end_off){
+                return ApiHelper::apiResponse($this->success, "To break time can't be greater than or equal to from break time.", false);
             }
 
             if($request->start_off && $request->end_off){

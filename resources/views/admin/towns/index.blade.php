@@ -58,7 +58,7 @@
 
                             @if(Gate::allows('towns_import'))
 
-                                <a href="{{ route('admin.towns.import') }}" class="btn btn-primary">s
+                                <a style ="margin: 5px;" href="{{ route('admin.towns.import') }}" class="btn btn-primary">
                                     <i class="la la-plus"></i>
                                     Import
                                 </a>

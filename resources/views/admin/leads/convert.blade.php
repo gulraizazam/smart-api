@@ -38,14 +38,13 @@
                 <input type="hidden" id="convert_patient_address" name="address">
                 <input type="hidden" id="convert_lead_source_id" name="lead_source_id">
                 <input type="hidden" id="convert_referred_by" name="referred_by">
-                <input type="hidden" id="convert_service_id" name="service_id">
 
                 <div class="form-group">
                     <div class="row">
 
                         <input type="hidden" id="lead_id">
 
-                        <div class="fv-row col-md-6 mt-5">
+                        <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0"> City <span class="text text-danger">*</span></label>
                             <select id="convert_city" name="city_id" onchange="loadLocations($(this).val());" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
@@ -65,7 +64,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0"> Treatment <span class="text text-danger">*</span></label>
-                            <select id="convert_treatment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
+                            <select id="convert_treatment_id" name="service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
                         </div>
 
@@ -73,6 +72,16 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0"> Consultancy Type <span class="text text-danger">*</span></label>
                             <select id="convert_consultancy_type_id" name="consultancy_type_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Date </label>
+                            <input type="text" name="scheduled_date" value="{{date('Y-m-d')}}" id="schedule_date" class="form-control scheduled_date form-control-solid mb-3 mb-lg-0">
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Time </label>
+                            <input id="schedule_time" name="scheduled_time" value="{{date('h:i A')}}" class="form-control scheduled_time">
                         </div>
 
 

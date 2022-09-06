@@ -1,3 +1,4 @@
+ let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 $(document).ready(function () {
 
     $(document).on("change", ".select2", function () {
@@ -13,7 +14,13 @@ $(document).ready(function () {
 
     $(document).on( "click", ".popup-close", function () {
         $(this).parents(".modal").modal("toggle");
-    })
+
+        $(this).parents(".modal").find("input").val('')
+        if(inModalNotChangeSelectBoxArr.indexOf(window.location.pathname) == -1){
+            $(this).parents(".modal").find(".select2").val(null).trigger("change");
+        }
+        $(this).parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    });
 
     $('.select2').select2();
 
@@ -32,6 +39,7 @@ $(document).ready(function () {
     $('.current-datepicker').datepicker({
         todayHighlight: true,
         orientation: 'bottom',
+        startDate: new Date(),
         format: 'yyyy-mm-dd',
         templates: {
             leftArrow: '<i class="la la-angle-left"></i>',
@@ -146,7 +154,7 @@ $(document).ready(function () {
         },
         minimumInputLength: 1,
         templateResult: formatRepo,
-        templateSelection: formatRepoSelection
+        templateSelection: packageFormatRepoSelection
     });
 
     /*input mask*/
@@ -172,7 +180,71 @@ $(document).ready(function () {
         $('.default-timepicker').text($("#edit_scheduled_time").val());
     });
 
+    $("#apply-filters").click( function () {
+        if ($(".select-all-checkboxes").is(":checked")) {
+            $(".select-all-checkboxes").click();
+        }
+        if ($(".table-checkboxes").is(":checked")) {
+            $(".select-all-checkboxes").prop("checked", false)
+            $(".delete-records").addClass("d-none");
+        }
+    });
+
+    /*Restrict modal by closing from out side*/
+    $('.modal').modal({
+        'show': false,
+        backdrop: 'static',
+        keyboard: false
+    });
+
+    /*Search filter working by press enter for input field*/
+    $("input").on('keyup', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            submitFilters();
+        }
+    });
+
+    $(document).on('keyup', '.select2-search__field', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+           submitFilters();
+        }
+    });
+
+    var date = new Date();
+    $('.scheduled_date').datepicker({
+        format: 'yyyy-mm-dd',
+        startDate: date
+    }).on('changeDate', function(ev){
+        $(this).datepicker('hide');
+    });
+
+    $('.scheduled_time').timepicker({
+        timeFormat: 'h:mm p',
+        interval: 15,
+        minTime: '09:00am',
+        maxTime: '10:30pm',
+        dynamic: false,
+        dropdown: true,
+        scrollbar: true
+    });
+
 });
+
+function submitFilters() {
+
+    $('#apply-filters').click();
+    $('#appointment-form-search').click();
+    $('#medical-search').click();
+    $('#custom-form-search').click();
+    $('#measurement-search').click();
+    $('#document-search').click();
+    $('#plan-search').click();
+    $('#invoice-search').click();
+    $('#refund-search').click();
+    $('#o-plan-refund-search').click();
+    $('#finance-search').click();
+
+}
 
 function customDatePicker() {
 
@@ -190,6 +262,7 @@ function customDatePicker() {
 function addUsers() {
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
+    $('.search_field').val('').change();
 }
 
 // not working
@@ -363,7 +436,7 @@ function errorMessage(xhr) {
 
 function reInitSelect2(elem, title = 'Select') {
     $(elem).select2({
-        placeholder: 'Select'
+        placeholder: title
     });
 }
 
@@ -392,7 +465,7 @@ function closeAllPopup(modal) {
     $(modal).parents(".modal").modal("hide");
 }
 
-function reInitTable() {
+function reInitTable(appointment = null) {
 
     setTimeout(function () {
         /**
@@ -400,16 +473,77 @@ function reInitTable() {
          */
         //$('#kt_datatable').KTDatatable('reload');
 
-        /*this is for reload datatable*/
-        if (typeof datatable !== 'undefined') {
-            datatable.search({ datatable_reload: 'reload' }, 'search');
+        if (appointment == 'treatment') {
+            if (typeof datatable !== 'undefined') {
+                treatmentFilters();
+            }
+        } else if(appointment == 'consultancy') {
+            if (typeof datatable !== 'undefined') {
+                consultancyFilters();
+            }
+        } else {
+
+            /*this is for reload datatable*/
+            if (typeof datatable !== 'undefined') {
+                datatable.search({datatable_reload: 'reload'}, 'search');
+            }
         }
 
     }, 400);
 }
 
-function getAllFilterValues() {
+function treatmentFilters() {
 
+    let filters =  {
+        delete: '',
+        patient_id: $("#treatment_patient_id").val(),
+        date_from: $("#treatment_search_start").val(),
+        date_to: $("#treatment_appoint_end").val(),
+        region_id: $("#treatment_search_region").val(),
+        city_id: $("#treatment_search_city").val(),
+        location_id: $("#treatment_search_centre").val(),
+        doctor_id: $("#treatment_search_doctor").val(),
+        appointment_status_id: $("#treatment_search_status").val(),
+        consultancy_type: $("#treatment_search_consultancy_type").val(),
+        created_from: $("#treatment_search_created_from").val(),
+        created_to: $("#treatment_search_created_to").val(),
+        created_by: $("#treatment_search_created_by").val(),
+        converted_by: $("#treatment_search_updated_by").val(),
+        updated_by: $("#treatment_search_rescheduled_by").val(),
+        filter: 'filter',
+    };
+
+    datatable.search(filters, 'search');
+}
+
+function consultancyFilters() {
+
+    let filters =  {
+        delete: '',
+        patient_id: $("#appointment_patient_id").val(),
+        date_from: $("#appoint_search_start").val(),
+        date_to: $("#appoint_appoint_end").val(),
+        appointment_type_id: $("#appoint_search_type").val(),
+        service_id: $("#appoint_search_service").val(),
+        region_id: $("#appoint_search_region").val(),
+        city_id: $("#appoint_search_city").val(),
+        location_id: $("#appoint_search_centre").val(),
+        doctor_id: $("#appoint_search_doctor").val(),
+        appointment_status_id: $("#appoint_search_status").val(),
+        consultancy_type: $("#appoint_search_consultancy_type").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        created_by: $("#appoint_search_created_by").val(),
+        converted_by: $("#appoint_search_updated_by").val(),
+        updated_by: $("#appoint_search_rescheduled_by").val(),
+        filter: 'filter',
+    };
+
+    datatable.search(filters, 'search');
+}
+
+function reloadTable(table_class) {
+    patientDatatable[table_class].search({ datatable_reload: 'reload' }, 'search');
 }
 
 function resetFilters() {
@@ -417,6 +551,15 @@ function resetFilters() {
     $(".select2").select2({
         placeholder: 'Select'
     });
+    if ($(".select-all-checkboxes").is(":checked")) {
+
+        $(".select-all-checkboxes").click();
+    }
+
+    if ($(".table-checkboxes").is(":checked")) {
+        $(".select-all-checkboxes").prop("checked", false)
+        $(".delete-records").addClass("d-none");
+    }
 }
 
 function advanceFilters() {
@@ -482,6 +625,7 @@ function submitForm(action, method, data, callback, form = '') {
                 callback({
                     'status': response.status,
                     'message': response.message,
+                    'data' : response?.data
                 });
                 hideSpinnerRestForm(form);
             } else {
@@ -497,6 +641,12 @@ function submitForm(action, method, data, callback, form = '') {
                 callback({
                     'status': 0,
                     'message': 'You are not authorized to access this resource',
+                });
+                hideSpinnerRestForm();
+            } else if (xhr.status == '500') {
+                callback({
+                    'status': 0,
+                    'message': xhr.responseJSON.message,
                 });
                 hideSpinnerRestForm();
             } else {
@@ -576,8 +726,12 @@ function renderCheckbox() {
     return '<label class="custom_checkbox checkbox-all"><input class="select-all-checkboxes" type="checkbox"><strong></strong></label>';
 }
 
-function childCheckbox(data) {
-    return '<label class="checkbox checkbox-single checkbox-all"><input value="'+data.id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
+function childCheckbox(data, id = null) {
+
+    if (id === null) {
+        id = data.id
+    }
+    return '<label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
 }
 
 
@@ -685,6 +839,53 @@ function get_query(){
 
 function patientSearch(search_id = 'patient_id') {
 
+    $("." + search_id).keyup(function() {
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+
+        if ($(this).val() != '') {
+
+            let form_type = $(this).parents("form").find('.form_type').val();
+
+            $.ajax({
+                type: "GET",
+                url: route('admin.users.getpatient.id'),
+                dataType: 'json',
+                delay: 250,
+                data: {search: $(this).val()},
+
+                success: function (response) {
+
+                    let html = '';
+                    let patients = response.data.patients;
+
+                    if (patients.length) {
+                        Object.values(patients).forEach(function (patient) {
+                            html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
+                        });
+
+                        $(".suggestion-list").html(html);
+
+                        $(".suggesstion-box").show();
+                    } else {
+                        $(".suggesstion-box").hide();
+                    }
+
+                }
+            });
+
+        } else {
+            $(".suggesstion-box").hide();
+        }
+    });
+
+    return false;
+
     $("." + search_id).select2({
         width: '100%',
         placeholder: 'Select Patient',
@@ -708,7 +909,7 @@ function patientSearch(search_id = 'patient_id') {
                         results: $.map(data, function (item) {
 
                             return {
-                                text: item.name + ' - ' + item.id,
+                                text: item.name + ' - C-' + item.id,
                                 id: item.id
                             }
                         }),
@@ -723,10 +924,23 @@ function patientSearch(search_id = 'patient_id') {
         escapeMarkup: function (markup) {
             return markup;
         },
-        minimumInputLength: 3,
+        minimumInputLength: 1,
         templateResult: formatRepo,
         templateSelection: formatRepoSelection
     });
+
+}
+
+function selectUser(name, user_id,  search_id) {
+
+
+    $("." + search_id).parent('div').find('.search_field').val(user_id).change();
+    $("#add_patient_id").val(user_id);
+   // $(".search_field").val(user_id).change();
+    $("." + search_id).val(name);
+    $(".suggesstion-box").hide();
+    $("." + search_id).focus();
+    getServices('add');
 
 }
 
@@ -743,6 +957,14 @@ function formatRepoSelection(item) {
         return item.text + " <span onclick='addUsers()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></span>";
     } else {
         return 'Select Patient';
+    }
+}
+
+function packageFormatRepoSelection(item) {
+    if (item.id) {
+        return item.text + " <span onclick='addUsers()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></span>";
+    } else {
+        return 'Select Plan';
     }
 }
 
@@ -796,4 +1018,27 @@ function resendSMS(smsId, url, method = 'PUT') {
             hideSpinnerRestForm();
         }
     });
+}
+
+function removeExtraSelect2(elem = 'create_treatment_patient_search') {
+    $("#" + elem).parent("div").find(".selection").remove();
+}
+
+function isExist(value) {
+    return typeof value !== "undefined" && value !== null && value != 0;
+}
+
+function rotaTimeTitle() {
+
+    return $(".fc-axis.fc-widget-header").html("<span>Time</span>");
+}
+
+
+function toggleMenu($this, $class) {
+    $(".change-tab").removeClass("nav-bar-active");
+    $this.addClass("nav-bar-active");
+
+    $(".all-sections").hide();
+
+    $(".section-" + $class).show();
 }

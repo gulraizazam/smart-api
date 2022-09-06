@@ -5,13 +5,13 @@ var table_columns = [
     {
         field: 'patient_id',
         title: 'Patient',
-        width: 'auto',
+        width: 70,
     },{
         field: 'phone',
         title: 'Phone',
         width: 'auto',
     },{
-        field: 'transaction_type',
+        field: 'transtype',
         title: 'Transaction type',
         width: 'auto',
         sortable: false,
@@ -37,7 +37,7 @@ var table_columns = [
         template: function (data) {
             return formatDate(data.date)
         }
-    },{
+    }/*,{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -47,7 +47,7 @@ var table_columns = [
         template: function (data) {
             return actions(data);
         }
-    }];
+    }*/];
 
 
 function actions(data) {
@@ -62,7 +62,7 @@ function actions(data) {
         let log_url = route('admin.plans.log', {id: id, patient_id: patientCardID, type: 'web'});
         let sms_log_url = route('admin.packages.sms_logs', {id: id});
 
-        if (permissions.create && permissions.log && permissions.sms_log && permissions.edit) {
+        if (permissions.create || permissions.log || permissions.sms_log || permissions.edit) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\

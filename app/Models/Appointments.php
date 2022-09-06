@@ -478,10 +478,6 @@ class Appointments extends Model
 
         $nodeList = array();
 
-        if ($drop_down) {
-            $nodeList[''] = 'Select a Child Service';
-        }
-
         if (count($services)) {
             foreach ($services as $key => $service) {
                 if ($key < 0) {
@@ -600,7 +596,7 @@ class Appointments extends Model
      * @param $time
      * @return string
      */
-    public function getScheduledTimeAttribute($time, $format = 'h:i A') { //h:ia
+    /*public function getScheduledTimeAttribute($time, $format = 'h:i A') { //h:ia
        return Carbon::parse($time)->format($format);
-    }
+    }*/
 }

@@ -161,9 +161,9 @@
     <table>
         <tr>
             <td style="float:left">
-                <img style="margin-bottom: 10px;" class="logo" src="{{asset('assets/media/logos/logo.svg')}}" class="img-responsive" alt=""/>
+                <img style="margin-bottom: 10px;" class="logo" src="{{asset('assets/media/logos/smart-invoice-logo.png')}}" class="img-responsive" alt=""/>
                 <p class="logo_caption">{{$location_info->address}}.</p>
-                <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}} &nbsp;| &nbsp; Email. {{$account_info->email}}  &nbsp; | &nbsp;  www.cutera.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
+                <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}} &nbsp;| &nbsp; Email. {{$account_info->email}}  &nbsp; | &nbsp;  www.smartaesthetics.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
             </td>
             <td style="padding:0px !important; float:right; width:120px; text-align:right;">
                 <div class="invoice_btn" style="width:120px; float:right; text-align:right;">
@@ -415,7 +415,7 @@
     </table>
     <table class="grand-tax" style="margin-top: 18px;">
         <tr>
-            <td style="font-size:15px;">Thank you for your business with Cutera Aesthetics.</td>
+            <td style="font-size:15px;">Thank you for your business with Smart Aesthetics.</td>
         </tr>
 
         <tr>
@@ -425,7 +425,7 @@
             <td style="font-size:15px;">
                 <strong>Note: </strong>For Privacy, Cancellation,
                 Late and Refund policies, please visit
-                <a href="https://cuteraesthetics.com" target="_blank">www.cuteraesthetics.com</a>
+                <a href="http://smartaesthetics.pk" target="_blank">www.smartaesthetics.pk</a>
             </td>
         </tr>
 

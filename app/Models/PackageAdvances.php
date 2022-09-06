@@ -364,9 +364,9 @@
 			$where = self::filters_packageAdvances( $request , $account_id , $id , $apply_filter,$filename ) ;
 
 			if (count($where)) {
-				return self::where($where)->count();
+				return self::where($where)->where('cash_amount', '!=', 0)->count();
 			} else {
-				return self::count();
+				return self::where('cash_amount', '!=', 0)->count();
 			}
 		}
 
@@ -382,12 +382,13 @@
 		 */
 		static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false , $apply_filter = false,$filename )
 		{
+            list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC');
 
 			$where = self::filters_packageAdvances( $request , $account_id , $id , $apply_filter, $filename ) ;
 			if (count($where)) {
-				return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+				return self::where($where)->where('cash_amount', '!=', 0)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 			} else {
-				return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
+				return self::where('cash_amount', '!=', 0)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 			}
 		}
 

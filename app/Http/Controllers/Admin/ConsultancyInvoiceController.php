@@ -90,6 +90,9 @@ class ConsultancyInvoiceController extends Controller
 
             $balance = 0;
             $cash = 0;
+            $price_tax = 0;
+            $tax = 0;
+            $price = 0;
 
             $appointment = Appointments::find($id);
 
@@ -148,7 +151,7 @@ class ConsultancyInvoiceController extends Controller
             $cash = null;
         }
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
-        $paymentmodes->prepend('Select Payment Mode', '0');
+        $paymentmodes->prepend('Select', '0');
 
         if (is_null($type)) {
 
@@ -439,8 +442,8 @@ class ConsultancyInvoiceController extends Controller
         $data_detail['is_exclusive'] = $is_exclusive;
 
         $data_detail['qty'] = '1';
-        $data_detail['service_price'] = $appointmentinfo->service->price;
-        $data_detail['service_id'] = $appointmentinfo->service_id;
+        $data_detail['service_price'] = $appointmentinfo?->service?->price ?? 0;
+        $data_detail['service_id'] = $appointmentinfo->service_id ?? 0;
         $data_detail['invoice_id'] = $invoice->id;
 
         $data_detail['created_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
@@ -515,9 +518,13 @@ class ConsultancyInvoiceController extends Controller
 
         $arrivedStatus = AppointmentStatuses::where('is_arrived', '=', 1)->select('id')->first();
 
+       if (!$arrivedStatus) {
+           $arrivedStatus = AppointmentStatuses::where('name', 'LIKE', "%Arrived%")->select('id')->first();
+       }
+
         if (Appointments::where('id', '=', $request->appointment_id)->where('appointment_type_id', '=', Config::get('constants.appointment_type_consultancy'))->exists()) {
 
-            if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->exists()) {
+            if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus?->id)->exists()) {
                 $appointmentStatus = AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->where('active', '=', 1)->first();
                 if ($appointmentStatus) {
                     Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $appointmentStatus->id]);
@@ -525,7 +532,7 @@ class ConsultancyInvoiceController extends Controller
                     Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id]);
                 }
             } else {
-                Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id]);
+                Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus?->id, 'appointment_status_id' => $arrivedStatus?->id]);
             }
         }
 
@@ -544,8 +551,8 @@ class ConsultancyInvoiceController extends Controller
             ])
         );
 
-        return response()->json(array(
-            'status' => true,
-        ));
+        return ApiHelper::apiResponse($this->success, 'Invoice created successfully', true, [
+            'invoice_id' => $invoice->id
+        ]);
     }
 }

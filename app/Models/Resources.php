@@ -182,14 +182,14 @@ class Resources extends BaseModal
             ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
             ->where("resources.external_id", "=", $doctor_id)
             ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
-            ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"])
-            ->get()->toArray();
+           // ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"]) /*No Actually if start time exist in rota we'll create its treatment*/
+            ->first();
 
         if ($record) {
-            if ($record[0]['start_time']) {
-                if ($record[0]['start_off']) {
-                    $start_break = Carbon::parse($record[0]['start_off'])->format('H:i');
-                    $end_break = Carbon::parse($record[0]['end_off'])->format('H:i');
+            if ($record->start_time) {
+                if ($record->start_off) {
+                    $start_break = Carbon::parse($record->start_off)->format('H:i');
+                    $end_break = Carbon::parse($record->end_off)->format('H:i');
                     if (
                         ($start_for_break_check > $start_break &&
                             $start_for_break_check < $end_break)
@@ -263,17 +263,13 @@ class Resources extends BaseModal
         } else {
             return false;
         }
-        $record = self::join("resource_has_rota", "resource_id", "=", "resource_has_rota.resource_id")
+        return self::join("resource_has_rota", "resource_id", "=", "resource_has_rota.resource_id")
             ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
             ->where("resources.id", "=", $resource_id)
             ->where("resource_has_rota.resource_id", "=", $resource_id)
             ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
             ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"])
-            ->get()->toArray();
-        if ($record)
-            return $record;
-        else
-            return false;
+            ->exists();
     }
 
 
@@ -556,7 +552,6 @@ class Resources extends BaseModal
 
         $filename = 'resources';
         $filters = getFilters($request->all());
-        $apply_filter = checkFilters($filters, $filename);
 
         if ($account_id) {
             $where[] = array(

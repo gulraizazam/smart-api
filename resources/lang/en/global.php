@@ -635,7 +635,7 @@ return [
     'app_Sortservice' => 'Sort Services',
     'app_SortCenters'=>'Sort Centers',
     'app_Sortcancellation_reason' => 'Sort No Show Reasons',
-    'global_title_cutera' => 'Cutera',
+    'global_title_smart' => 'Smart',
     'global_title_keto' => 'KetoSlim',
     'app_warning'=>'Warning',
     'app_appointmentimages' => 'Appointment Images',

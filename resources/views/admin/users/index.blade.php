@@ -57,9 +57,9 @@
                     </div>
 
                     <div class="card-body">
-                    
-                        
-										
+
+
+
                      <!--begin::Search Form-->
                         @include('admin.users.filters')
                         <!--end::Search Form-->
@@ -80,7 +80,7 @@
     <div class="modal fade" id="modal_add_user" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="user-create">
-            
+
             @include('admin.users.create')
 
         </div>
@@ -91,7 +91,7 @@
     <div class="modal fade" id="modal_edit_user" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
-            
+
              @include('admin.users.edit')
 
         </div>
@@ -102,7 +102,7 @@
     <div class="modal fade" id="change_modal" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="change_password">
-            
+
         </div>
         <!--end::Modal dialog-->
     </div>
@@ -118,6 +118,25 @@
     @push('js')
         <script src="{{asset('assets/js/pages/crud/forms/validation/users/validate.js')}}"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/users/change-validate.js')}}"></script>
+
+        <script>
+            function getUserCentre() {
+                $.ajax({
+                    url: '{{route('admin.users.get_centers')}}',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.status) {
+                            $("#search_center").val(response.data.center).change();
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
+            }
+        </script>
+
     @endpush
 
 @endsection

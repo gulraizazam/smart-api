@@ -212,6 +212,14 @@ class Settings extends BaseModal
             return null;
         }
 
+        $data['min'] = ltrim($data['min'], '0');
+        $data['max'] = ltrim($data['max'], '0');
+
+        $timeArray = explode(':',$data['data']);
+        $time_1 = ltrim($timeArray[0], '0');
+        $time_2 = ltrim($timeArray[1], '0');
+        $data['data'] = $time_1 .":". $time_2;
+
         $record->update($data);
 
         AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);

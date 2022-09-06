@@ -19,8 +19,8 @@ class AuditTrails extends BaseModal
 
     protected $table = 'audit_trails';
 
-    protected $casts =[
-        'created_at'=>'datetime:D M, j Y, H:i:a'
+    protected $casts = [
+        'created_at'=>'datetime:D M, j Y, h:i:a'
     ];
 
     /**

@@ -32,12 +32,18 @@ var table_columns = [
     },{
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 90,
         sortable: false,
+        template: function (data) {
+            if (permissions.contact) {
+                return data.phone;
+            }
+            return '***********';
+        }
     },{
         field: 'gender',
         title: 'Gender',
-        width: 'auto',
+        width: 60,
         sortable: false,
         template: function (data) {
             return getGender(data.gender);
@@ -53,7 +59,7 @@ var table_columns = [
     }, {
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 70,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.patients.status');
@@ -80,7 +86,7 @@ function actions(data) {
     let delete_url = route('admin.patients.destroy', {id: id});
     let view_url = route('admin.patients.preview', {id: id});
 
-    if (permissions.edit && permissions.delete) {
+    if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -163,7 +169,14 @@ function setEditData(response) {
     $("#edit_gender_id").html(gender_option);
     $("#edit_name").val(patient.name);
     $("#edit_email").val(patient.email);
-    $("#edit_phone").val(patient.phone);
+    $("#edit_old_phone").val(patient.phone);
+
+    if (permissions.contact) {
+        $("#edit_phone").val(patient.phone);
+    } else {
+        $("#edit_phone").val("***********").attr("readonly", true);
+    }
+
     $("#edit_gender_id").val(patient.gender);
 
 }

@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\RegionsController;
+use App\Http\Controllers\Admin\Reports\FinanceReportController;
+use App\Http\Controllers\Admin\Reports\OperationsReportController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +49,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\OrdersController;
+use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
 
     /*
     |--------------------------------------------------------------------------
@@ -90,6 +93,13 @@ use App\Http\Controllers\Admin\OrdersController;
         Route::post('update_password',  [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
 
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+        Route::post('/home/datatable', [App\Http\Controllers\HomeController::class, 'datatable'])->name('home.datatable');
+        Route::get('/home/collection-by-centre', [App\Http\Controllers\HomeController::class, 'collectionByCentre'])->name('home.collectionByCentre');
+        Route::get('/home/my-collection-by-centre', [App\Http\Controllers\HomeController::class, 'myCollectionByCentre'])->name('home.myCollectionByCentre');
+        Route::get('/home/revenue-by-centre', [App\Http\Controllers\HomeController::class, 'revenueByCentre'])->name('home.revenueByCentre');
+        Route::get('/home/my-revenue-by-centre', [App\Http\Controllers\HomeController::class, 'myRevenueByCentre'])->name('home.myRevenueByCentre');
+        Route::get('/home/revenue-by-service', [App\Http\Controllers\HomeController::class, 'revenueByService'])->name('home.revenueByService');
+        Route::get('/home/my-revenue-by-service', [App\Http\Controllers\HomeController::class, 'myRevenueByService'])->name('home.myRevenueByService');
 
 
         Route::get('settings', [SettingsController::class,'index'])->name('settings.index');
@@ -203,7 +213,7 @@ use App\Http\Controllers\Admin\OrdersController;
         Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
         Route::resource('invoices', InvoicesController::class)->only('index');
         //Invoice Management route end
-        Route::get('invoices/pdf/{id}/{download?}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
+        Route::get('invoices/pdf/{id}/{download?}/{flag?}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
 
         // Package route start
         Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');
@@ -369,9 +379,9 @@ use App\Http\Controllers\Admin\OrdersController;
 
         Route::post('appointments/status', [AppointmentsController::class, 'status'])->name('appointments.status');
 
-        Route::post('appointments/loadlead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
-
-        Route::resource('appointments', AppointmentsController::class)->only('index');
+        /*Route::resource('appointments', AppointmentsController::class)->only('index');*/
+        Route::resource('consultancy', AppointmentsController::class)->only('index');
+        Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index');
 
 
         /*service routes*/
@@ -383,7 +393,7 @@ use App\Http\Controllers\Admin\OrdersController;
 
         Route::get('appointments/get_room_resources', [AppointmentsController::class, 'getRoomResources'])->name('appointments.get_room_resources');
 
-        Route::get('appointments/get_room_resources_with_specific_date', ['uses' => 'Admin\AppointmentsController@getRoomResourcesWithDate', 'as' => 'appointments.get_room_resources_with_specific_date']);
+        Route::get('appointments/get_room_resources_with_specific_date', [AppointmentsController::class, 'getRoomResourcesWithDate'])->name('appointments.get_room_resources_with_specific_date');
 
 
         //Appointment Route section for treatment invoice start
@@ -470,7 +480,7 @@ use App\Http\Controllers\Admin\OrdersController;
         /*Consultancy Routes*/
         Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
 
-        Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
+        //Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
 
         Route::get('appointments/load-non-scheduled-appointments', [AppointmentsController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
 
@@ -492,6 +502,17 @@ use App\Http\Controllers\Admin\OrdersController;
         Route::get('order/refunds',[OrdersController::class,'refund'])->name('order.refunds.index');
 
         Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
+        Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports');
 
+        Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
+
+        Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
+
+
+        //Route start for Operations reports
+        Route::get('operation_reports/loaddayarray', [OperationsReportController::class, 'loaddayarray'])->name('reports.operations_report_loadday');
+        Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report');
+        Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
+        //Route end for Operations reports
 
     });

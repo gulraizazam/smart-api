@@ -21,6 +21,7 @@
     <!--end::Modal header-->
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+
         <!--begin::Form-->
         <form id="modal_add_user_form" method="post" action="{{route('admin.users.store')}}">
             <!--begin::Scroll-->
@@ -29,12 +30,12 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
                             <input type="text" id="add_user_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Email</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Email <span class="text text-danger">*</span></label>
                             <input type="email" id="add_user_email" name="email" class="form-control form-control-lg form-control-solid" />
                         </div>
                     </div>
@@ -43,14 +44,13 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone</label>
-                            <input type="number" id="add_user_phone" name="phone" class="form-control form-control-lg form-control-solid mb-2" />
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
+                            <input type="text" oninput="phoneField(this)" id="add_user_phone" name="phone" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
                             <select id="add_user_gender" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
-                                <option value=""></option>
                                 <option value="1">Male</option>
                                 <option value="2">Female</option>
                             </select>
@@ -61,9 +61,9 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Commission</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Commission <span class="text text-danger">*</span></label>
                             <div class="input-group">
-                                <input id="add_user_commission" type="number" min="0" max="100" name="commission" class="form-control form-control-lg form-control-solid mb-2"/>
+                                <input style="padding-right: 8px !important;" id="add_user_commission" type="number" min="0" max="100" name="commission" class="form-control form-control-lg form-control-solid mb-2"/>
                                 <div class="input-group-append popup-percentage">
                                     <span class="input-group-text">%</span>
                                 </div>
@@ -71,8 +71,12 @@
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Password</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Password <span class="text text-danger">*</span></label>
                             <input id="add_user_password" type="password" name="password" class="form-control form-control-lg form-control-solid mb-2" />
+
+                            <div class="fv-plugins-message-container" id="validate-msg">
+
+                           </div>
                         </div>
 
                     </div>
@@ -81,7 +85,7 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centres</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centres <span class="text text-danger">*</span></label>
                             <select id="add_user_centers" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="centers[]">
 
                             </select>
@@ -89,7 +93,7 @@
                     </div>
                     <div class="row mt-10">
                         <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Roles</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Roles <span class="text text-danger">*</span></label>
                             <select id="add_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
 
                             </select>

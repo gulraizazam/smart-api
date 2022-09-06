@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class CitiesController extends Controller
 {
@@ -94,28 +95,30 @@ class CitiesController extends Controller
 
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
 
-            if ($Cities) {
-                foreach ($Cities as $citie) {
-                    $citie->is_featured = $citie->is_featured == 1 ? 'Yes' : 'No';
-                    $citie->region_id = (array_key_exists($citie->region_id, $Regions)) ? $Regions[$citie->region_id]->name : 'N/A';
+            if($Cities) {
+                foreach($Cities as $citie) {
+                    $records["data"][] = array(
+                        'id' => $citie->id,
+                        'name' => $citie->name,
+                        'is_featured' => $citie->is_featured ? 'Yes' : 'No',
+                        'region_id' => (array_key_exists($citie->region_id, $Regions)) ? $Regions[$citie->region_id]->name : 'N/A',
+                        'active' => $citie->active,
+                    );
                 }
             }
-            $records['data'] = $Cities;
+
             $records["permissions"] = [
                 'edit' => Gate::allows('cities_edit'),
                 'delete' => Gate::allows('cities_destroy'),
                 'active' => Gate::allows('cities_active'),
                 'inactive' => Gate::allows('cities_inactive'),
             ];
-            $all_regions = array();
-            foreach ($Regions as $region) {
-                $all_regions[$region->id] = $region->name;
-            }
 
+            $regions = Regions::getActiveSorted(ACL::getUserRegions());
             $filters = Filters::all(Auth::User()->id, 'cities');
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
-                'regions' => $all_regions,
+                'regions' => $regions,
                 'is_featured' => [1 => 'Yes', 0 => 'No'],
                 'status' => config('constants.status')
             ];
@@ -230,10 +233,13 @@ class CitiesController extends Controller
      * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request, $id = null)
     {
         return $validator = Validator::make($request->all(), [
-            'name' => 'required',
+            'name' => [
+                'required',
+                Rule::unique('cities')->ignore($id),
+            ],
         ]);
     }
 
@@ -277,7 +283,7 @@ class CitiesController extends Controller
             if (!Gate::allows('cities_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $validator = $this->verifyFields($request);
+            $validator = $this->verifyFields($request, $id);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }

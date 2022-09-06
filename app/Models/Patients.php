@@ -80,12 +80,43 @@
 		 * */
 		static public function getPatientidAjax($name, $account_id)
 		{
-			if (is_numeric($name)) {
+		    if (stripos($name, 'C-') !== false) {
+                $name = str_replace(['C-', 'c-'], '', $name);
+
+                return self::where([
+                    ['user_type_id', '=', '3'],
+                    ['active', '=', '1'],
+                    ['account_id', '=', $account_id],
+                    ['id', 'LIKE', "%{$name}%"]
+                ])->select('name', 'id', 'phone')->get();
+            }
+
+            $users = collect();
+            if (is_numeric($name)) {
+
+                $users =  self::where([
+                    ['user_type_id', '=', '3'],
+                    ['active', '=', '1'],
+                    ['account_id', '=', $account_id],
+                    ['id', 'LIKE', "%{$name}%"]
+                ])->select('name', 'id', 'phone')->get();
+            }
+
+            if ($users->count() > 0) {
+                return $users;
+            }
+
+		    $name = GeneralFunctions::patientSearch($name);
+
+            $phone_numeric = GeneralFunctions::clearnString($name);
+
+			if (is_numeric($phone_numeric)) {
+                $phone = GeneralFunctions::cleanNumber($name);
 				return self::where([
 					['user_type_id', '=', '3'],
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
-					['id', 'LIKE', "%{$name}%"]
+					['phone', 'LIKE', "%{$phone}%"]
 				])->select('name', 'id', 'phone')->get();
 			} else {
 				return self::where([
@@ -164,7 +195,7 @@
 		 */
 		static public function createRecord($data,$flag=0)
 		{   if($flag == 1){
-			$patient=Patients::find($data['patient_id']);
+			$patient=Patients::where('phone',$data['phone'])->first();
 			if(!$patient){
 				$record = Patients::create($data);
 				AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);

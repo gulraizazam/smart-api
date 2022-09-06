@@ -109,12 +109,12 @@ class InvoicesController extends Controller
             list($orderBy, $order) = getSortBy($request);
 
             // Get Total Records
-            $iTotalRecords = Invoices::getTotalRecords($request, Auth::User()->account_id, false, $apply_filter, 'invoices');
+            $iTotalRecords = Invoices::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, 'invoices');
 
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
 
-            $invoice = Invoices::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, false, $apply_filter, 'invoices');
+            $invoice = Invoices::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, 'invoices');
 
             $records = $this->filtersData($records);
 
@@ -350,7 +350,7 @@ class InvoicesController extends Controller
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf($id, $download = null)
+    public function invoice_pdf($id, $download = null,$flag=0)
     {
         if (!Gate::allows('invoices_manage') && !Gate::allows('appointments_invoice_display')) {
             return abort(401);
@@ -398,35 +398,49 @@ class InvoicesController extends Controller
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
-        if($appointment_info?->appointment_type_id == 1){
+
+        if($appointment_info?->appointment_type_id == 1 && $flag == 0){
 
             $setting_info = Settings::where('slug','=','sys-consultancy-invoice-medical-operator')->first();
 
             if($setting_info->data = 1){
-                $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
-                $pdf = App::make('dompdf.wrapper');
-                $pdf->loadHTML($content);
+
                 if ($download) {
-                    return $pdf->download('admin.invoices.InvoiceMedicalHistorypdf.pdf');
+
+                    $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'))->render();
+                    $pdf = App::make('dompdf.wrapper');
+                    $pdf->loadHTML($content);
+
+                    return $pdf->download('consultancy-medical-history-form.pdf');
                 }
-                return $pdf->stream('admin.invoices.InvoiceMedicalHistorypdf.pdf');
+
+                return view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'));
+
             } else {
-                $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'))->render();
-                $pdf = App::make('dompdf.wrapper');
-                $pdf->loadHTML($content);
+
                 if ($download) {
+
+                    $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle', 'download'))->render();
+                    $pdf = App::make('dompdf.wrapper');
+                    $pdf->loadHTML($content);
                     return $pdf->download('admin.invoices.invoice_pdf.pdf');
                 }
-                return $pdf->stream('admin.invoices.invoice_pdf.pdf');
+
+                return view('admin.invoices.invoice_pdf', compact('appointment_info', 'Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle', 'download'));
             }
         } else {
-            $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle'))->render();
+
+            $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'))->render();
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);
             if ($download) {
-                return $pdf->download('admin.invoices.invoice_pdf.pdf');
+                if($flag == 1){
+                    return $pdf->download('consultancy-invoice.pdf');
+                }
+                return $pdf->download('treatment-invoice.pdf');
             }
-            return $pdf->stream('admin.invoices.invoice_pdf.pdf');
+
+            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'));
         }
     }
 

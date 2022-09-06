@@ -1,5 +1,5 @@
 <!--begin::Modal content-->
-<div class="modal-content">
+<div class="modal-content" id="add_patient_plane">
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
@@ -57,10 +57,12 @@
         </div>
 
         <!--begin::Form-->
-        <form id="modal_add_plan_form" method="post" action="{{route('admin.packages.store')}}">
-            <!--begin::Scroll-->
+
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+
+                <input type="hidden" name="patient_id" id="add_patient_id">
+                <input type="hidden" name="random_id_1" id="random_id_1">
 
                 <div class="form-group">
                     <div class="row">
@@ -72,7 +74,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Centers <span class="text text-danger">*</span></label>
-                            <select onchange="getServices();" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                            <select onchange="getServices('add', '{{request('id')}}');" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
                                 <option value="">Select Centre</option>
                             </select>
                         </div>
@@ -88,7 +90,7 @@
                             <div class="checkbox-inline mt-12">
                                 <span>Is Exclusive </span> &nbsp;
                                 <label for="is_exclusive" class="checkbox checkbox-rounded">
-                                    <input id="is_exclusive" type="checkbox" checked="checked" name="is_exclusive">
+                                    <input id="is_exclusive" type="checkbox" checked="checked" value="1" name="is_exclusive">
                                     <span></span>
                                 </label>
                             </div>
@@ -102,7 +104,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
-                            <select id="add_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                            <select onchange="addServiceDiscount($(this));" id="add_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
                                 <option value="">Select Service</option>
                             </select>
                         </div>
@@ -123,17 +125,17 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="number" name="discount_value" class="form-control" id="add_discount_value">
+                            <input onkeyup="getDiscountValue($(this));" type="number" name="discount_value" class="form-control" id="add_discount_value">
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
-                            <input type="number" name="price" class="form-control" id="add_price">
+                            <input type="number" readonly name="price" class="form-control" id="net_amount_1">
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
                             <div class="text-center mt-10">
-                                <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button">
+                                <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button-add">
                                     <span class="indicator-label">Add</span>
                                 </button>
                             </div>
@@ -153,6 +155,7 @@
                             <th>Service Name</th>
                             <th>Service/Bundle Price</th>
                             <th>Discount Name</th>
+                            <th>Discount Type</th>
                             <th>Discount Price</th>
                             <th>Amount</th>
                             <th>Tax %</th>
@@ -161,7 +164,7 @@
                         </tr>
                         </thead>
 
-                        <tbody class="plan_services"><tr class="text-center"><td colspan="8">No record found</td></tr></tbody>
+                        <tbody id="plan_services"><tr class="text-center not_found"><td colspan="9">No record found</td></tr></tbody>
 
                     </table>
                 </div>
@@ -171,7 +174,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
-                            <input type="number" id="add_package_total" class="form-control" name="package_total_1">
+                            <input type="text" id="add_package_total" class="form-control" name="package_total_1" value="0">
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
@@ -183,13 +186,13 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="number" min="0" id="add_cash_amount" class="form-control" value="0" name="cash_amount">
+                            <input type="text" min="0" id="add_cash_amount" class="form-control" value="0" name="cash_amount">
                         </div>
 
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
-                            <input type="number" min="0" name="total_price" value="0" class="form-control" id="add_total_price">
+                            <input type="text" min="0" name="total_price" value="0" class="form-control" id="add_total_price">
                         </div>
 
                     </div>
@@ -204,13 +207,12 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button">
+                <button type="submit" id="AddPackageFinal" class="btn btn-primary spinner-button-save">
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>
             <!--end::Actions-->
-        </form>
-        <!--end::Form-->
+
     </div>
     <!--end::Modal body-->
 </div>

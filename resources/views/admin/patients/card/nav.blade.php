@@ -124,7 +124,7 @@
 <!--end::Nav-->
 
 {{--Menu--}}
-<div class="card mb-8" style="width: 100%">
+<div class="card mb-8 menu_section" style="width: 100%">
 
     <div class="card-body menu-card">
         <ul class="horizontal-nav-bar list-unstyled mb-0">

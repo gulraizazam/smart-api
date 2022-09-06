@@ -87,7 +87,7 @@ class RolesController extends Controller
 
         list($orderBy, $order) = getSortBy($request);
 
-        if(count($filters) > 0 && hasFilter($filters, 'name')) {
+        if(hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
                 'like',
@@ -108,7 +108,7 @@ class RolesController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'commission')) {
+        if (hasFilter($filters, 'commission') && is_numeric($filters['commission'])) {
             $where[] = array(
                 'commission',
                 '=',
@@ -357,10 +357,10 @@ class RolesController extends Controller
             'my_revenue_by_centre' => 'My Revenue by Centre',
             'revenue_by_service' => 'Revenue by Service',
             'my_revenue_by_service' => 'My Revenue by Service',
-            'appointment_by_status' => 'Appointment by Status',
-            'my_appointment_by_status' => 'My Appointments by Status',
-            'appointment_by_type' => 'Appointment by Type',
-            'my_appointment_by_type' => 'My Appointments by Type',
+            'states' => 'States',
+            'recent_activities' => 'Recent Activities',
+            'upcomings' => 'Upcomings',
+            //'my_appointment_by_type' => 'My Appointments by Type',
         );
     }
 
@@ -492,7 +492,6 @@ class RolesController extends Controller
         $permissionsMapping = $mapping['permissionsMapping'];
         $dashboardPermissionsMapping = $mapping['dashboardPermissionsMapping'];
         $reportsPermissionsMapping = $mapping['reportsPermissionsMapping'];
-
 
         return ApiHelper::makeResponse([
             'role' => $role,
@@ -666,6 +665,7 @@ class RolesController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
+
             unset($request['DataTables_Table_0_length']);
             $role = Role::findOrFail($id);
             $role->update($request->except('permission'));

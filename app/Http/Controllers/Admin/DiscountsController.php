@@ -616,9 +616,9 @@ class DiscountsController extends Controller
 
         try {
 
-            Discounts::deleteRecord($id);
+             $record = Discounts::deleteRecord($id);
 
-            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+            return ApiHelper::apiResponse($this->success, $record);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }

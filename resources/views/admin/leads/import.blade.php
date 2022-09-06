@@ -33,9 +33,10 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">File <span class="text text-danger">*</span></label>
-                            <input type="file" id="file" name="leads_file" class="form-control">
+                            <input type="file" id="file" name="leads_file" class="form-control leads_file">
                             <p class="help-block">To download sample file <a href="{{ asset('assets/files/SampleLeads.xlsx') }}" target="_blank">click here</a> .</p>
 
+                            <span class="text text-danger lead_file_msg d-none">Please choose a file first.</span>
                         </div>
 
 
@@ -44,12 +45,12 @@
 
 
                                 <label class="custom_checkbox mt-5">
-                                    <input type="checkbox" value="1" id="update_records" name="update_records">
+                                    <input onchange="skipStatus($(this));" type="checkbox" value="1" id="update_records" name="update_records">
                                     <strong></strong>
                                     <span class="ml-5">Update existing records</span>
                                 </label>
 
-                                <label class="custom_checkbox mt-5">
+                                <label class="custom_checkbox mt-5 skip_lead_status" style="opacity: 0.7">
                                     <input type="checkbox" disabled value="1" id="skip_lead_statuses" name="skip_lead_statuses">
                                     <strong></strong>
                                     <span class="ml-5">Skip Lead Statuses</span>

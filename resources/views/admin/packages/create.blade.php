@@ -76,8 +76,15 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                            <select onchange="getAppointments($(this).val());" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 patient_id" name="name">
-                            </select>
+
+                            <label>Patient Search:</label>
+                            <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient">
+                            <input type="hidden" class="filter-field search_field" id="add_patient_id">
+                            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
@@ -111,14 +118,14 @@
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts <span class="text text-danger"></span></label>
                             <select onchange="getDiscountInfo($(this));" id="add_discount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id_1">
                                 <option value="">Select Discount</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
                             <select id="add_discount_type" onchange="changeDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type_1">
                                 <option value="">Select Discount Type</option>
                                 <option value="Fixed">Fixed</option>
@@ -128,7 +135,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="number" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1">
+                            <input type="text" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
@@ -167,7 +174,7 @@
                             <th>Discount Price</th>
                             <th>Amount</th>
                             <th>Tax %</th>
-                            <th>Tax Amt.</th>
+                            <th>Total Amount</th>
                             <th>Action</th>
                         </tr>
                         </thead>
@@ -194,7 +201,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="number" min="0" id="cash_amount_1" class="form-control" placeholder="Enter Amount" value="0" name="cash_amount">
+                            <input type="text" min="0" id="cash_amount_1" class="form-control" placeholder="Enter Amount" value="0" name="cash_amount" value="0">
                         </div>
 
 

@@ -102,6 +102,25 @@
 
     @push('js')
         <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/resources.js')}}"></script>
+
+        <script>
+            function getUserCentre() {
+                $.ajax({
+                    url: '{{route('admin.users.get_centers')}}',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.status) {
+                            $("#search_location_id").val(response.data.center).change();
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
+            }
+        </script>
+
     @endpush
 
 @endsection

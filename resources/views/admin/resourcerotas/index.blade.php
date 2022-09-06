@@ -102,6 +102,50 @@
 
     @push('js')
             <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/resourcerotas.js')}}"></script>
+
+            <script>
+                function getUserCity() {
+
+                    @if (auth()->id() != 1)
+
+                    $.ajax({
+                        url: '{{route('admin.users.get_cities')}}',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function (response) {
+                            if (response.status) {
+                                $("#search_city_id").val(response.data.city).change();
+                                setTimeout( function () {
+                                    getUserCentre();
+                                }, 400);
+                            }
+                        },
+                        error: function () {
+
+                        }
+                    });
+
+                    @endif
+
+                }
+
+                function getUserCentre() {
+                    $.ajax({
+                        url: '{{route('admin.users.get_centers')}}',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function (response) {
+                            if (response.status) {
+                                $("#search_location_id").val(response.data.center).change();
+                            }
+                        },
+                        error: function () {
+
+                        }
+                    });
+                }
+            </script>
+
     @endpush
 
 @endsection

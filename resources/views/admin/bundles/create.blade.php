@@ -63,7 +63,7 @@
                     </div>
                     <div class="row mt-5">
                         <div class="fv-row col-10">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Default Status for New Appointments?</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Services</label>
                             <select id="services" class="form-control form-control-lg select2 form-control-solid">
                             </select>
                         </div>
@@ -92,13 +92,13 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Valid From <span
                                     class="text text-danger">*</span> </label>
                             <input type="text" id="start" name="start" readonly
-                                   class="custom-datepicker form-control form-control-lg form-control-solid mb-2">
+                                   class="current-datepicker form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Valid To <span
                                     class="text text-danger">*</span> </label>
                             <input type="text" id="end" name="end" readonly
-                                   class="custom-datepicker form-control form-control-lg form-control-solid mb-2">
+                                   class="current-datepicker form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                     <div class="row mt-5">

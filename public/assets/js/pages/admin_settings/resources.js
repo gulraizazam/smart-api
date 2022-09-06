@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 70,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -14,7 +14,7 @@ var table_columns = [
         field: 'name',
         title: 'Name',
         sortable: false,
-        width: 300,
+        width: 'auto',
     },{
         field: 'resource_types.name',
         title: 'Resource Type',
@@ -44,7 +44,7 @@ var table_columns = [
     }, {
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 70,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.resources.status');
@@ -70,7 +70,7 @@ function actions(data) {
         let url = route('admin.resources.edit', {id: id});
         let delete_url = route('admin.resources.destroy', {id: id});
 
-        if (permissions.edit && permissions.delete) {
+        if (permissions.edit || permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -263,6 +263,8 @@ function setFilters(filter_values, active_filters) {
         $("#search_status").val(active_filters.status);
 
         hideShowAdvanceFilters(active_filters);
+
+        getUserCentre();
 
     } catch (err) {
         showException(error);

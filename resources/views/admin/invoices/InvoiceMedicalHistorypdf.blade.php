@@ -103,6 +103,25 @@
         .client-info td{
             padding-top: 8px
         }
+
+        @if($download != 'download')
+
+            @media not print {
+                .invoice-pdf {
+                    width: 50%;
+                    margin-left: 25%;
+                    margin-top: 50px;
+                    height: 100%;
+                }
+            }
+            @page {
+                size: auto;
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+
+        @endif
+
     </style>
 </head>
 <body>
@@ -122,7 +141,7 @@
     @endif
     <table class="mt-0">
         <tr>
-            <td><img class="logo" src="{{asset('assets/media/logos/logo.svg')}}" class="img-responsive" alt=""/></td>
+            <td><img class="logo" src="{{asset('assets/media/logos/smart-invoice-logo.png')}}" class="img-responsive" alt=""/></td>
             <td><h4 class="date">#{{$Invoiceinfo->id}}
                     / <?php echo \Carbon\Carbon::parse($Invoiceinfo->created_at)->format('F j,Y'); ?></h4></td>
         </tr>
@@ -329,10 +348,10 @@
         </tr>
     </table>
 
-    <table class="mt-0" style="width: 100%;position: fixed;bottom: 40px;">
+    <table class="mt-0">
         <tr>
             <td>&nbsp;</td>
-            <td style="text-align: right;">{{$location_info->address}}</td>
+            <td style="text-align: right;padding-top: 50px;">{{$location_info->address}}</td>
         </tr>
         <tr>
             <td><strong>Consultant Signature: </strong><span>__________________________</span></td>
@@ -341,11 +360,14 @@
     </table>
 </div>
 
-{{--<table style="width: 100%;" class="mt-0">
-    <tr>
-        <td><div class="danger-alert">Invoice is not Refundable</div></td>
-    </tr>
-</table>--}}
+
+<script>
+
+   window.print();
+   setTimeout(function () { window.close(); }, 100);
+
+</script>
+
 </body>
 
 </html>

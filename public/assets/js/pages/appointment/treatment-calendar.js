@@ -55,8 +55,8 @@ var TreatmentCalendar = function() {
                 groupByResource: true,
                 businessHours: true,
                 refetchResourcesOnNavigate: true,
-                resources: function(callback) {
-                   console.log("here we are.")
+                resources: function (callback, start, end, timezone) {
+
                 },
                 events: function(event, callback) {
 
@@ -101,6 +101,8 @@ var TreatmentCalendar = function() {
                                 callback(events);
                             }
                         });
+
+                      //  TreatmentCalendar.getResources(event, callback);
 
                     }
 
@@ -227,14 +229,14 @@ var TreatmentCalendar = function() {
                                 id: 'availableForMeeting',
                                 start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(rota.date + " " + rota.start_off, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#treatment_doctor_filter').val(),
+                                resourceIds: response.resource_ids,
                                 rendering: 'background'
                             });
                             events.push({
                                 id: 'availableForMeeting',
                                 start: formatDate(rota.date + " " + rota.end_off, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#treatment_doctor_filter').val(),
+                                resourceIds: response.resource_ids,
                                 rendering: 'background'
                             });
                         } else if (rota.start_time && !rota.start_off) {
@@ -242,7 +244,7 @@ var TreatmentCalendar = function() {
                                 id: 'availableForMeeting',
                                 start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#treatment_doctor_filter').val(),
+                                resourceIds: response.resource_ids,
                                 rendering: 'background'
                             });
                         }
@@ -254,6 +256,7 @@ var TreatmentCalendar = function() {
                 callback(events);
             }
         },
+
         showOnlyAvailableSlotsTreatment: function(minxTime, maxTime) {
 
             if (typeof minxTime !== "undefined") {
@@ -263,7 +266,10 @@ var TreatmentCalendar = function() {
             if (typeof maxTime !== "undefined") {
                 treatment_calendar.setOption('maxTime', maxTime);
             }
+
+            rotaTimeTitle();
         },
+
         async checkAndUpdateTreatment(info) {
 
             let event = info.event;
@@ -291,7 +297,126 @@ var TreatmentCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error("Unabled to process the request, please try again.")
+                    toastr.error("Unable to process the request, please try again.")
+                }
+            });
+        },
+
+        getResources(event, callback) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.appointments.get_room_resources_with_specific_date'),
+                type: 'GET',
+                data: {
+                    start: formatDate(event.start, 'YYYY-MM-DD'),
+                    end: formatDate(event.end, 'YYYY-MM-DD'),
+                    location_id: $("#treatment_location_filter").val(),
+                    machine_id: $("#treatment_resource_filter").val()
+                },
+                cache: false,
+                success: function (response) {
+                    if (response.status == '1') {
+                        var resources = [];
+                        $.each(response.data, function (id, resource) {
+
+                            if (resource.resource_rota) {
+                                var businessHoursArray = [];
+                                if (resource.resource_rota.sunday) {
+                                    var sunday = resource.resource_rota.sunday.split(",");
+                                    var  sunday_start = sunday[0];
+                                    var sunday_end = sunday[1];
+                                    businessHoursArray.push({
+                                        start: moment(sunday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(sunday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [0]
+                                    });
+                                }
+
+                                if (resource.resource_rota.monday) {
+                                    var  monday = resource.resource_rota.monday.split(",");
+                                    var   monday_start = monday[0];
+                                    var  monday_end = monday[1];
+                                    businessHoursArray.push({
+                                        start: moment(monday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(monday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [1]
+                                    });
+                                }
+
+                                if (resource.resource_rota.tuesday) {
+                                    var  tuesday = resource.resource_rota.tuesday.split(",");
+                                    var  tuesday_start = tuesday[0];
+                                    var  tuesday_end = tuesday[1];
+                                    businessHoursArray.push({
+                                        start: moment(tuesday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(tuesday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [2]
+                                    });
+                                }
+
+                                if (resource.resource_rota.wednesday) {
+                                    var   wednesday = resource.resource_rota.wednesday.split(",");
+                                    var  wednesday_start = wednesday[0];
+                                    var  wednesday_end = wednesday[1];
+                                    businessHoursArray.push({
+                                        start: moment(wednesday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(wednesday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [3]
+                                    });
+                                }
+
+
+                                if (resource.resource_rota.thursday) {
+                                    var  thursday = resource.resource_rota.thursday.split(",");
+                                    var  thursday_start = thursday[0];
+                                    var  thursday_end = thursday[1];
+                                    businessHoursArray.push({
+                                        start: moment(thursday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(thursday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [4]
+                                    });
+                                }
+                                if (resource.resource_rota.friday) {
+                                    var friday = resource.resource_rota.friday.split(",");
+                                    var  friday_start = friday[0];
+                                    var  friday_end = friday[1];
+                                    businessHoursArray.push({
+                                        start: moment(friday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(friday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [5]
+                                    });
+                                }
+
+                                if (resource.resource_rota.saturday) {
+                                    var  saturday = resource.resource_rota.saturday.split(",");
+                                    var   saturday_start = saturday[0];
+                                    var  saturday_end = saturday[1];
+                                    businessHoursArray.push({
+                                        start: moment(saturday_start, "HH:mm a").format("HH:mm"),
+                                        end: moment(saturday_end, "HH:mm a").format("HH:mm"),
+                                        dow: [6]
+                                    });
+                                }
+                            }
+
+                            resources.push({
+                                id: resource.id,
+                                title: resource.name, // use the element's text as the event title
+                                businessHours: businessHoursArray
+                            });
+
+                        });
+                        callback(resources);
+                    } else {
+                        var resources = [];
+                        callback(resources);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    var events = [];
+                    callback(events);
                 }
             });
         },
@@ -299,7 +424,14 @@ var TreatmentCalendar = function() {
         setEventId: function(eventId) {
             window.eventData.createdId = eventId;
         },
+
         createTreatment: function (info) {
+
+            removeExtraSelect2();
+
+            $("#create_treatment_service").html('');
+            $("#create_treatment_patient_search").html('');
+            $("#modal_create_treatment_form")[0].reset();
 
             let start = formatDate(info.date, 'YYYY-MM-DDTHH:mm:ss');
             let create_url = route('admin.appointments.treatment.create', {
@@ -307,6 +439,7 @@ var TreatmentCalendar = function() {
                 location_id : $("#treatment_location_filter").val(),
                 machine_id : $("#treatment_resource_filter").val(),
                 doctor_id : $("#treatment_doctor_filter").val(),
+                resource_id : $("#treatment_resource_filter").val(),
                 start : start,
                 appointment_type : 'treatment',
             });
@@ -326,11 +459,12 @@ var TreatmentCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error("Unabled to process the request");
+                    toastr.error("Unable to process the request");
                 }
             });
 
         },
+
         clickTreatmentEvent: function (info) {
 
             let event = info.event.extendedProps;
@@ -354,13 +488,14 @@ var TreatmentCalendar = function() {
                         }
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
-                        toastr.error("Unabled to process the request.")
+                        toastr.error("Unable to process the request.")
                     }
                 });
 
             }
 
         },
+
         hoverPopup: function(info) {
 
             let id = info.event.id;
@@ -370,7 +505,7 @@ var TreatmentCalendar = function() {
             if (id !== 'availableForMeeting') {
 
                 let left = event.pageX - $('#treatment_calendar').offset().left + 320;
-                let top = event.pageY - $('#treatment_calendar').offset().top + 500;
+                let top = event.pageY - $('#treatment_calendar').offset().top + 400;
 
                 $(".modal_consultancy_popup").css({top: top,left: left}).show();
 
@@ -411,7 +546,9 @@ function setTreatmentDetailData(response) {
         $("#treatment_comment_appointment_id").val(appointment?.id ?? 0);
         $("#treatment_patient_name").text(patient?.name ?? 'N/A');
         $("#treatment_patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
-        $("#treatment_patient_email").text(patient?.email ?? 'N/A');
+        if ( patient?.id) {
+            $("#treatment_customer_id").text("C-" + patient?.id ?? 'N/A');
+        }
         $("#treatment_patient_gender").text(getGender(patient?.gender));
         $("#treatment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
         $("#treatment_doctor_name").text(doctor?.name ?? 'N/A');
@@ -431,13 +568,11 @@ function setCreateTreatment(response, start) {
 
     try {
 
-        patientSearch('patient_search_id');
+        patientSearch('treatment_patient_search_id');
 
         $("#modal_create_treatment").modal("show");
 
         $("#modal_create_treatment_form")[0].reset();
-      /*  $('.patient_search_id').val(null).trigger('change');
-        $('.new_patient_text').hide();*/
 
         let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
@@ -458,13 +593,12 @@ function setCreateTreatment(response, start) {
         $("#treatment_location_id").val(location_id);
         $("#treatment_doctor_id").val(doctor_id);
         $("#treatment_start").val(start);
-        $("#treatment_resource_id").val();
-        $("#treatment_appointment_type").val();
-        $("#treatment_cnic").val();
+        $("#treatment_resource_id").val($("#treatment_resource_filter").val());
+        /*$("#treatment_cnic").val();
         $("#treatment_email").val();
         $("#treatment_dob").val();
         $("#treatment_address").val();
-        $("#treatment_town_id").val();
+        $("#treatment_town_id").val();*/
 
         let type_options = '<option value="">Select Consultancy Type</option>';
         if (consultancy_types) {

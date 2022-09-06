@@ -36,6 +36,7 @@
             <input type="hidden" id="end_time">
             <input type="hidden" id="scheduled_date_old">
             <input type="hidden" id="scheduled_time_old">
+            <input type="hidden" name="appointment_type_id" id="consultancy_appointment_type">
 
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_appointment_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
@@ -80,17 +81,18 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Phone <span class="text text-danger">*</span> </label>
-                            <input oninput="phoneField(this);" type="text" name="phone" id="edit_patient_phone" class="form-control">
+                            <input readonly oninput="phoneField(this);" type="text" name="phone" id="edit_patient_phone" class="form-control">
+                            <input  type="hidden" name="old_phone" id="edit_old_patient_phone">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input type="text" name="name" id="edit_patient_name" class="form-control">
+                            <input readonly type="text" name="name" id="edit_patient_name" class="form-control">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
-                            <select id="edit_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
+                            <select  id="edit_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
                             </select>
                         </div>
 

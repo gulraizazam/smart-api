@@ -16,7 +16,7 @@
 						<!--begin::Login Header-->
 						<div class="d-flex flex-center mb-15">
 							<a href="#">
-								<img src="{{asset('assets/media/logos/cutera-logo.svg')}}" width="240px" class="max-h-75px" alt="" />
+								<img src="{{asset('assets/media/logos/smart.svg')}}" width="240px" class="max-h-75px" alt="" />
 							</a>
 						</div>
 						

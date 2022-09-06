@@ -286,7 +286,7 @@ class Packages extends BaseModal
 
         $where = self::filters( $request , $account_id , $id , $apply_filter , $filename );
 
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'id', 'DESC');
 
         return self::when(count($where), fn ($query) => $query->where($where))->whereIn('location_id', ACL::getUserCentres())->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
     }
@@ -310,11 +310,11 @@ class Packages extends BaseModal
                 Filters::forget(Auth::user()->id,$filename,'patient_id');
             } else {
                 if (Filters::get(Auth::user()->id,$filename,'patient_id')){
-                    $where[] = array(
+                    /*$where[] = array(
                         'patient_id',
                         '=',
                         Filters::get(Auth::user()->id,$filename,'patient_id')
-                    );
+                    );*/
                 }
             }
         }
@@ -353,11 +353,11 @@ class Packages extends BaseModal
                 Filters::forget(Auth::User()->id, $filename, 'patient_id');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'patient_id')) {
-                    $where[] = array(
+                    /*$where[] = array(
                         'patient_id',
                         '=',
                         Filters::get(Auth::User()->id, $filename, 'patient_id')
-                    );
+                    );*/
                 }
             }
         }
@@ -374,11 +374,11 @@ class Packages extends BaseModal
                 Filters::forget(Auth::User()->id, $filename, 'id');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'id')) {
-                    $where[] = array(
+                    /*$where[] = array(
                         'patient_id',
                         '=',
                         Filters::get(Auth::User()->id, $filename, 'id')
-                    );
+                    );*/
                 }
             }
         }

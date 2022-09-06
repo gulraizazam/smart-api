@@ -84,6 +84,8 @@ class LeadStatusesController extends Controller
 
             $LeadStatuses = LeadStatuses::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
+            $parentLeadStatuses = LeadStatuses::getParentRecords(false, Auth::User()->account_id, false, true);
+
             if ($LeadStatuses) {
                 foreach ($LeadStatuses as $lead_status) {
                     $lead_status->parent_id = ($lead_status->parent_id && array_key_exists($lead_status->parent_id, $allLeadStatuses)) ? $allLeadStatuses[$lead_status->parent_id]->name : '-';
@@ -101,10 +103,11 @@ class LeadStatusesController extends Controller
                 'active' => Gate::allows('lead_sources_active'),
                 'inactive' => Gate::allows('lead_sources_inactive'),
             ];
+
             $filters = Filters::all(Auth::User()->id, 'lead_statuses');
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
-                'parents' => $allLeadStatuses,
+                'parents' => $parentLeadStatuses,
                 'status' => config('constants.status')
             ];
             $records["meta"] = [

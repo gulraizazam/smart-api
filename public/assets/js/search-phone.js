@@ -48,7 +48,112 @@ $(document).ready( function () {
         }
     });
 
+    $("#add_service_id").change( function () {
+
+        loadLead(patient)
+    });
+
+    $("#edit_service_id").change( function () {
+
+        loadLead(patient, 'edit_')
+    });
+
 });
+
+var patient;
+
+function loadLeadData(value) {
+
+    $.ajax({
+        type: 'get',
+        url: route('admin.users.get_patient_number'),
+        data: {
+            'patient_id': value
+        },
+        success: function (resposne) {
+            if (resposne.status) {
+                patient = resposne.data.patient;
+
+                $('#add_old_phone').val(patient?.phone);
+                if (permissions.contact) {
+                    $('#add_phone').val(patient?.phone).prop("readonly", true);
+                } else {
+                    $('#add_phone').val("***********").prop("readonly", true);
+                }
+                $('#add_full_name').val(patient?.name).prop("readonly", true);
+
+                if (patient?.gender) {
+                    $('#add_gender_id').val(patient?.gender).change();
+                }
+                if (patient?.referred_by) {
+                    $('#add_referred_by_id').val(patient?.referred_by).change();
+                }
+
+                if ($("#create_consultancy_service").val() != '') {
+                    loadLead(patient);
+                }
+            }
+
+        },
+    });
+}
+
+function loadEditLeadData(value) {
+
+    $.ajax({
+        type: 'get',
+        url: route('admin.users.get_patient_number'),
+        data: {
+            'patient_id': value
+        },
+        success: function (resposne) {
+            if (resposne.status) {
+                patient = resposne.data.patient;
+                $('#edit_phone').val(patient?.phone);
+                $('#edit_full_name').val(patient?.name);
+                $('#edit_gender_id').val(patient?.gender).change();
+
+                if(patient?.referred_by) {
+                    $('#edit_referred_by_id').val(patient?.referred_by).change();
+                }
+
+                if ($("#edit_service_id").val() != '') {
+                    loadLead(patient, 'edit_');
+                }
+            }
+
+        },
+    });
+}
+
+function loadLead(patient, type = 'add_') {
+
+    if (typeof patient !== "undefined" && patient !== null) {
+
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'post',
+            url: route('admin.appointments.load_lead'),
+            data: {
+                'referred_by': patient.referred_by,
+                'service_id': $("#"+type+"service_id").val(),
+                'patient_id': patient.id,
+                'phone': patient.phone,
+            },
+            success: function (resposne) {
+                if (resposne.status) {
+                    let lead_source_id = resposne.data.lead_source_id;
+                    if (lead_source_id) {
+                        $('#'+type+'lead_source_id').val(lead_source_id).change();
+                    }
+                }
+
+            },
+        });
+    }
+}
 
 function selectPatient(phone, patient_id, form_type) {
 
@@ -82,7 +187,9 @@ function selectPatient(phone, patient_id, form_type) {
             $('#' +form_type+ 'full_name').val(response.name);
             $('#' +form_type+ 'city_id').val(response.city_id).select2().trigger('change');
             $('#' +form_type+ 'lead_source_id').val(response.lead_source_id).select2().trigger('change');
-            $('#' +form_type+ 'lead_status_id').val(response.lead_status_id).select2().trigger('change');
+            if (response.lead_status_id) {
+                $('#' +form_type+ 'lead_status_id').val(response.lead_status_id).select2().trigger('change');
+            }
             $('#' +form_type+ 'patient_id').val(response.patient_id);
             $('#' +form_type+ 'referred_by_id').val(response.referred_by);
         }
