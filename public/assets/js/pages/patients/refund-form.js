@@ -1,57 +1,112 @@
 
 var table_url = route('admin.refundpatient.datatable', {id: patientCardID});
 
-var table_columns = [
-    {
-        field: 'name',
-        title: 'Patient',
-        sortable: false,
-        width: 40,
-    },{
-        field: 'phone',
-        title: 'Phone',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'package_id',
-        title: 'Plans',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'location_id',
-        title: 'Centre',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'session_count',
-        title: 'Session count',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'total',
-        title: 'Total',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'cash_receive',
-        title: 'Cash receive',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'created_at',
-        title: 'Created at',
-        width: 'auto',
-    }, {
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 80,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
-        }
-    }];
+var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+if (width > 1280) {
+    var table_columns = [
+        {
+            field: 'name',
+            title: 'Patient',
+            sortable: false,
+            width: 80,
+        }, {
+            field: 'phone',
+            title: 'Phone',
+            sortable: false,
+            width: 70,
+        }, {
+            field: 'package_id',
+            title: 'Plans',
+            sortable: false,
+            width: 60,
+        }, {
+            field: 'location_id',
+            title: 'Centre',
+            sortable: false,
+            width: 'auto',
+        }, {
+            field: 'session_count',
+            title: 'Session count',
+            sortable: false,
+            width: 100,
+        }, {
+            field: 'total',
+            title: 'Total',
+            sortable: false,
+            width: 70,
+        }, {
+            field: 'cash_receive',
+            title: 'Cash receive',
+            sortable: false,
+            width: 'auto',
+        }, {
+            field: 'created_at',
+            title: 'Created at',
+            width: 'auto',
+        }, {
+            field: 'actions',
+            title: 'Actions',
+            sortable: false,
+            width: 80,
+            overflow: 'visible',
+            autoHide: false,
+            template: function (data) {
+                return actions(data);
+            }
+        }];
+} else {
+    var table_columns = [
+        {
+            field: 'name',
+            title: 'Patient',
+            sortable: false,
+            width: 90,
+        }, {
+            field: 'phone',
+            title: 'Phone',
+            sortable: false,
+            width: 80,
+        }, {
+            field: 'package_id',
+            title: 'Plans',
+            sortable: false,
+            width: 60,
+        }, {
+            field: 'location_id',
+            title: 'Centre',
+            sortable: false,
+            width: 'auto',
+        }, {
+            field: 'session_count',
+            title: 'Session count',
+            sortable: false,
+            width: 'auto',
+        }, {
+            field: 'total',
+            title: 'Total',
+            sortable: false,
+            width: 'auto',
+        }, {
+            field: 'cash_receive',
+            title: 'Cash receive',
+            sortable: false,
+            width: 'auto',
+        }, {
+            field: 'created_at',
+            title: 'Created at',
+            width: 'auto',
+        }, {
+            field: 'actions',
+            title: 'Actions',
+            sortable: false,
+            width: 80,
+            overflow: 'visible',
+            autoHide: false,
+            template: function (data) {
+                return actions(data);
+            }
+        }];
+}
 
 
 function actions(data) {

@@ -237,12 +237,13 @@ class PackageAdvancesController extends Controller
         // Get Total Records
         $iTotalRecords = PackageAdvances::getTotalRecords( $request, Auth::user()->account_id, $patient_id , $apply_filter,$jason_var );
 
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC');
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $packagesadvances = PackageAdvances::getRecords( $request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $patient_id, $apply_filter,$jason_var );
 
         $records = $this->getFilterData($records, $jason_var);
+
 
         if ($packagesadvances) {
             $balance = 0;
@@ -256,56 +257,51 @@ class PackageAdvancesController extends Controller
                         $balance = $balance - $packagesadvances->cash_amount;
                         break;
                     default:
+                        $balance = $balance - $packagesadvances->cash_amount;
                         break;
                 }
-                if ($packagesadvances->cash_amount != 0) {
-
-                    if ($packagesadvances->package_id) {
-                        $transtype = Config::get('constants.trans_type.advance_in');
-                    }
-
-                    if ($packagesadvances->invoice_id && $packagesadvances->cash_flow == 'in') {
-                        $transtype = Config::get('constants.trans_type.advance_in');
-                    }
-
-                    if ($packagesadvances->is_adjustment == '1') {
-                        $transtype = Config::get('constants.trans_type.adjustment');
-                    }
-
-                    if ($packagesadvances->is_cancel == '1') {
-                        $transtype = Config::get('constants.trans_type.invoice_cancel');
-                    }
-                    if ($packagesadvances->invoice_id && $packagesadvances->cash_flow == 'out') {
-                        $transtype = Config::get('constants.trans_type.invoice_create');
-                    }
-                    if ($packagesadvances->is_refund == '1') {
-                        $transtype = Config::get('constants.trans_type.refund_in');
-                    }
-                    if ($packagesadvances->is_tax == '1') {
-                        $transtype = Config::get('constants.trans_type.tax_out');
-                    }
-                    if ($packagesadvances->cash_flow == 'in') {
-                        $cash_in = number_format($packagesadvances->cash_amount);
-                        $cash_out = '-';
-                    } else {
-                        $cash_out = number_format($packagesadvances->cash_amount);
-                        $cash_in = '-';
-                    }
-                    $records["data"][] = array(
-                        'patient_id' => GeneralFunctions::patientSearchStringAdd($packagesadvances->user->id),
-                        'patient' => $packagesadvances->user->name,
-                        'phone' => GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
-                        'transtype' => $transtype,
-                        'cash_in' => $cash_in,
-                        'cash_out' => $cash_out,
-                        'balance' => number_format($balance),
-                        'cash_amount' => '1',
-                        'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A'),
-                        //'actions' => view('admin.packagesadvances.actions', compact('packagesadvances'))->render(),
-                    );
-                } else {
-                    $iTotalRecords--;
+                if ($packagesadvances->package_id) {
+                    $transtype = Config::get('constants.trans_type.advance_in');
                 }
+
+                if ($packagesadvances->invoice_id && $packagesadvances->cash_flow == 'in') {
+                    $transtype = Config::get('constants.trans_type.advance_in');
+                }
+
+                if ($packagesadvances->is_adjustment == '1') {
+                    $transtype = Config::get('constants.trans_type.adjustment');
+                }
+
+                if ($packagesadvances->is_cancel == '1') {
+                    $transtype = Config::get('constants.trans_type.invoice_cancel');
+                }
+                if ($packagesadvances->invoice_id && $packagesadvances->cash_flow == 'out') {
+                    $transtype = Config::get('constants.trans_type.invoice_create');
+                }
+                if ($packagesadvances->is_refund == '1') {
+                    $transtype = Config::get('constants.trans_type.refund_in');
+                }
+                if ($packagesadvances->is_tax == '1') {
+                    $transtype = Config::get('constants.trans_type.tax_out');
+                }
+                if ($packagesadvances->cash_flow == 'in') {
+                    $cash_in = number_format($packagesadvances->cash_amount);
+                    $cash_out = '-';
+                } else {
+                    $cash_out = number_format($packagesadvances->cash_amount);
+                    $cash_in = '-';
+                }
+                $records["data"][] = array(
+                    'patient_id' => GeneralFunctions::patientSearchStringAdd($packagesadvances->user->id),
+                    'patient' => $packagesadvances->user->name,
+                    'phone' => GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
+                    'transtype' => $transtype,
+                    'cash_in' => $cash_in,
+                    'cash_out' => $cash_out,
+                    'balance' => number_format($balance),
+                    'cash_amount' => '1',
+                    'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A'),
+                );
             }
 
             $records["meta"] = [

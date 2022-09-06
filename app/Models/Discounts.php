@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\HelperModule\ApiHelper;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use DB;
@@ -173,8 +174,9 @@ class Discounts extends BaseModal
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Discounts::isChildExists($id, Auth::User()->account_id)) {
 
-            flash('Child records exist, unable to delete resource')->error()->important();
-            return redirect()->route('admin.discounts.index');
+            //flash('Child records exist, unable to delete resource')->error()->important();
+            //return redirect()->route('admin.discounts.index');
+            return 'Child records exist, unable to delete resource.';//ApiHelper::apiResponse(200, 'Child records exist, unable to delete resource.');
         }
 
         $record = $discount->delete();
@@ -185,7 +187,7 @@ class Discounts extends BaseModal
 
         flash('Record has been deleted successfully.')->success()->important();
 
-        return $record;
+        return 'Record has been deleted successfully';$record;
     }
     /**
      * IChild Exists or not

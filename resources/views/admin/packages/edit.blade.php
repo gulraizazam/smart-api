@@ -90,7 +90,7 @@
                         <div class="fv-row col-md-3 mt-5">
                             <div class="checkbox-inline mt-12">
                                 <span>Is Exclusive </span> &nbsp;
-                                <label for="is_exclusive" class="checkbox checkbox-rounded">
+                                <label for="edit_is_exclusive" class="checkbox checkbox-rounded">
                                     <input id="edit_is_exclusive" value="1" type="checkbox" checked="checked" name="is_exclusive">
                                     <span></span>
                                 </label>
@@ -128,7 +128,7 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="number" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1">
+                            <input type="text" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1">
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
@@ -167,7 +167,7 @@
                             <th>Discount Price</th>
                             <th>Amount</th>
                             <th>Tax %</th>
-                            <th>Tax Amt.</th>
+                            <th>Total Amount.</th>
                             <th>Action</th>
                         </tr>
                         </thead>
@@ -194,7 +194,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="number" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount">
+                            <input type="text" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount">
                         </div>
 
 
@@ -233,6 +233,7 @@
                         <th>Cash Flow</th>
                         <th>Cash Amount</th>
                         <th>Created At</th>
+                        <th>Action</th>
                     </tr>
                     </thead>
 
@@ -242,6 +243,7 @@
                         <td id="edit_cash_flow"></td>
                         <td id="edit_cash_amount"></td>
                         <td id="edit_Created_at"></td>
+                        <td id="edit_action"></td>
                     </tr>
                     </tbody>
 

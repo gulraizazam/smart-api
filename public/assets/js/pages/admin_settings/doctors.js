@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -18,14 +18,15 @@ var table_columns = [
     }, {
         field: 'email',
         title: 'Email',
+        width: 160,
     }, {
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 100,
     }, {
         field: 'gender',
         title: 'Gender',
-        width: 'auto',
+        width: 60,
     }, {
         field: 'roles',
         title: 'roles',
@@ -45,17 +46,17 @@ var table_columns = [
             return roles;
         }
     }, {
-        field: 'created',
-        title: 'Created At',
-        width: 'auto',
-    }, {
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 60,
         template: function (data) {
             let status_url = route('admin.doctors.status');
             return statuses(data, status_url);
         }
+    },{
+        field: 'created',
+        title: 'Created At',
+        width: 'auto',
     },  {
         field: 'actions',
         title: 'Actions',
@@ -136,7 +137,7 @@ function editRow(id) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.users.edit', {id: id}),
+        url: route('admin.doctors.edit', {id: id}),
         type: "GET",
         cache: false,
         success: function (response) {
@@ -367,9 +368,12 @@ function setCreateData(response) {
     let roles = response.data.roles;
     let roles_options = '<option value="">Select</option>';
 
-    for (let i = 0; i< roles.length; i++) {
+    /*for (let i = 0; i< roles.length; i++) {
         roles_options += '<option value="'+roles[i].id+'">'+roles[i].name+'</option>';
-    }
+    }*/
+    Object.entries(roles).forEach( function (role) {
+        roles_options += '<option value="'+role[0]+'">'+role[1]+'</option>';
+    })
     $("#add_user_roles").html(roles_options);
 }
 
@@ -389,10 +393,17 @@ function setEditData(response) {
 
     $("#edit_user_name").val(user.name);
     $("#edit_user_email").val(user.email);
-    $("#edit_user_phone").val(user.phone);
     $("#edit_user_gender").val(user.gender);
     $("#edit_user_commission").val(user.commission);
     $('#edit_user_roles').val(user_roles).change();
+
+    $("#edit_old_user_phone").val(user.phone);
+
+    if (permissions.contact) {
+        $("#edit_user_phone").val(user.phone);
+    } else {
+        $("#edit_user_phone").val("***********").attr("readonly", true);
+    }
 }
 
 function applyFilters(datatable) {

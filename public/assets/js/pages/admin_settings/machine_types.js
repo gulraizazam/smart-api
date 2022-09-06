@@ -4,7 +4,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -19,7 +19,7 @@ var table_columns = [
     {
         field: 'services',
         sortable: false,
-        width: 'auto',
+        width: 450,
         title: 'Services',
         template: function (data) {
             let badge='';
@@ -39,7 +39,7 @@ var table_columns = [
     {
         field: 'status',
         title: 'Status',
-        width: 'auto',
+        width: 60,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.machine_types.status');
@@ -66,7 +66,7 @@ function actions(data) {
     let url = route('admin.machine_types.edit', {id: id});
     let delete_url = route('admin.machine_types.destroy', {id: id});
 
-    if (permissions.edit && permissions.delete) {
+    if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -123,6 +123,7 @@ function editRow(url) {
 }
 
 function setEditData(response) {
+
     let machine_type = response.data.machine_type;
     let services = response.data.services;
     let service_machine_type = response.data.service_machine_type;
@@ -145,10 +146,25 @@ function setEditData(response) {
     $("#edit_machine_types_services").html(service_options);
     $("#edit_machine_types_services").val(service_machine_type).change();
 
+    setServiceScroll();
+
+}
+
+function setServiceScroll() {
+
+    setTimeout( function () {
+        let elem = $("#modal_edit_machine_types_form").find(".selection").find("ul");
+        height = elem.height();
+        if (height > 28.57) {
+            elem.css("height", "150px");
+            elem.css("overflow-y", "scroll");
+        }
+    }, 400);
 
 }
 
 function applyFilters(datatable) {
+
     $('#apply-filters').on('click', function () {
         let filters = {
             delete: '',
@@ -164,6 +180,7 @@ function applyFilters(datatable) {
 }
 
 function resetAllFilters(datatable) {
+
     $('#reset-filters').on('click', function () {
         let filters = {
             delete: '',
@@ -179,14 +196,18 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
+
     let status = filter_values.status;
     let status_options = '<option value="">All</option>';
     let services = filter_values.services;
     let services_options = '';
+
     Object.entries(status).forEach(function (value, index) {
         status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
-    let service_value;
+
+    let service_value = '';
+
     Object.entries(services).forEach(function (value, index) {
         if(value[1].parent_id == 0){
             service_value=value[1].name;
@@ -194,7 +215,11 @@ function setFilters(filter_values, active_filters) {
         else{
             service_value='\t&nbsp; \t&nbsp; \t&nbsp;'+value[1].name;
         }
-        services_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
+        if (service_value == 'All Services') {
+            services_options += '<option value="">' + service_value + '</option>';
+        } else {
+            services_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
+        }
     });
 
     $("#search_status").html(status_options);

@@ -5,7 +5,7 @@ $(document).ready(function () {
     $('.select2').select2();
 
     /*Consultancy section*/
-    $("#is_exclusive_consultancy").change(function () {
+    $(document).on("change", "#is_exclusive_consultancy", function () {
         if ($(this).is(":checked")) {
             $('#is_exclusive_consultancy').val('1');
         }
@@ -33,7 +33,7 @@ $(document).ready(function () {
         }
     });
 
-    $('#discount_id').on('change', function () {
+    $(document).on('change', '#discount_id', function () {
 
         var is_exclusive_consultancy = $('#is_exclusive_consultancy').val();
         var location_id = $('#id_location').val();
@@ -59,15 +59,23 @@ $(document).ready(function () {
             },
             success: function (response) {
                 if (response.status) {
+
+                    $(".discount_type_section").show();
+                    $(".discount_value_section").show();
                     $("#discount_type").val(response.discount_type).change();
                     $("#discount_type").prop("disabled", true);
                     $("#discount_value").val(response.discount_price);
                     $("#discount_value").prop("disabled", true);
-                    $("#amount").val(response.price);
-                    $("#tax").val(response.tax);
-                    $("#tax_amt").val(response.tax_amt);
-                    $('#settle').val(response.settleamount);
-                    $('#outstand').val(response.outstanding);
+                    $("#amount").text(response.price);
+                    $(".amount").val(response.price);
+                    $("#tax").text(response.tax);
+                    $(".tax").val(response.tax);
+                    $("#tax_amt").text(response.tax_amt);
+                    $(".tax_amt").val(response.tax_amt);
+                    $('#settle').text(response.settleamount);
+                    $('.settle').val(response.settleamount);
+                    $('#outstand').text(response.outstanding);
+                    $('.outstand').val(response.outstanding);
 
                     $('#settleamount_cash').val(response.settleamount);
                     $('#outstanding_cash').val(response.outstanding);
@@ -78,11 +86,16 @@ $(document).ready(function () {
                         $("#discount_type").prop("disabled", false);
                         $("#discount_value").val('0');
                         $("#discount_value").prop("disabled", false);
-                        $("#amount").val(response.price);
-                        $("#tax").val(response.tax);
-                        $("#tax_amt").val(response.tax_amt);
-                        $('#settle').val(response.settleamount);
-                        $('#outstand').val(response.outstanding);
+                        $("#amount").text(response.price);
+                        $(".amount").val(response.price);
+                        $("#tax").text(response.tax);
+                        $(".tax").val(response.tax);
+                        $("#tax_amt").text(response.tax_amt);
+                        $(".tax_amt").val(response.tax_amt);
+                        $('#settle').text(response.settleamount);
+                        $('.settle').val(response.settleamount);
+                        $('#outstand').text(response.outstanding);
+                        $('.outstand').val(response.outstanding);
 
                         $('#settleamount_cash').val(response.settleamount);
                         $('#outstanding_cash').val(response.outstanding);
@@ -92,11 +105,16 @@ $(document).ready(function () {
                         $("#discount_type").prop("disabled", true);
                         $("#discount_value").val('0');
                         $("#discount_value").prop("disabled", true);
-                        $("#amount").val(response.price);
-                        $("#tax").val(response.tax);
-                        $("#tax_amt").val(response.tax_amt);
-                        $('#settle').val(response.settleamount);
-                        $('#outstand').val(response.outstanding);
+                        $("#amount").text(response.price);
+                        $(".amount").val(response.price);
+                        $("#tax").text(response.tax);
+                        $(".tax").val(response.tax);
+                        $("#tax_amt").text(response.tax_amt);
+                        $(".tax_amt").val(response.tax_amt);
+                        $('#settle').text(response.settleamount);
+                        $('.settle').val(response.settleamount);
+                        $('#outstand').text(response.outstanding);
+                        $('.outstand').val(response.outstanding);
 
                         $('#settleamount_cash').val(response.settleamount);
                         $('#outstanding_cash').val(response.outstanding);
@@ -106,11 +124,11 @@ $(document).ready(function () {
         });
     });
 
-    $("#discount_value").keyup(function () {
+    $(document).on("keyup", "#discount_value", function () {
         keyfunction_custom();
     });
 
-    $("#discount_value").blur(function () {
+    $(document).on("blur", "#discount_value", function () {
         keyfunction_custom();
     });
 
@@ -118,15 +136,15 @@ $(document).ready(function () {
         keyfunction_custom();
     });
 
-    $("#cash").keyup(function () {
+    $(document).on("keyup", "#cash", function () {
         keyfunction_cash();
     });
 
-    $("#cash").blur(function () {
+    $(document).on("blur", "#cash", function () {
         keyfunction_cash();
     });
 
-    $('#amount_type').on('change', function () {
+    $(document).on('change', '#amount_type', function () {
         if (this.value == "") {
             $("#addinvoice").hide();
         } else {
@@ -135,7 +153,7 @@ $(document).ready(function () {
     });
 
     /*Invoice Save and also package advances*/
-    $("#savepackageinformation").click(function () {
+    $(document).on("click", "#savepackageinformation", function () {
 
         $(this).attr("disabled", true);
         showSpinner();
@@ -148,12 +166,12 @@ $(document).ready(function () {
         var status = true;
 
         var appointment_id = $('#invoice_appointment_id').val();
-        var amount_create = $('#amount').val();
-        var tax_create = $('#tax').val();
-        if ($('#amount_type').val() == 1) {
+        var amount_create = $('.amount').val();
+        var tax_create = $('.tax').val();
+        /*if ($('#amount_type').val() == 1) {
             if ($('#cash').val() == 0) {
                 $('#customfield').show();
-                toastr.error("Cash must be greater than zero.")
+                toastr.warning("Cash must be greater than zero.")
                 status = false;
                 $(this).attr("disabled", false);
                 hideSpinner();
@@ -163,11 +181,16 @@ $(document).ready(function () {
             var settle = 0;
             var outstand = 0;
         } else {
-            var price = $('#tax_amt').val();
-            var settle = $('#settle').val();
-            var outstand = $('#outstand').val();
-        }
-        var balance = $('#balance').val();
+            var price = $('.tax_amt').val();
+            var settle = $('.settle').val();
+            var outstand = $('.outstand').val();
+        }*/
+
+        var price = $('#cash').val();
+        var settle = 0;
+        var outstand = 0;
+
+        var balance = $('.balance').val();
         var cash = $('#cash').val();
         var payment_mode_id = $('#payment_mode_id').val();
         var is_exclusive = $('#is_exclusive_consultancy').val();
@@ -215,12 +238,15 @@ $(document).ready(function () {
                     'tax_treatment_type_id': tax_treatment_type_id,
                 },
                 success: function (resposne) {
-                    if (resposne.status == '1') {
+                    if (resposne.status) {
+                        let invoice_id = resposne.data.invoice_id;
                         $('#successMessage').show();
                         toastr.success("Invoice successfully created");
-                        reInitTable();
+                        reInitTable('consultancy');
                         closeAllPopup('.modal-dialog')
                         $("#consultancy-invoice-create").remove();
+                       // window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
+                        displayInvoice(route('admin.appointments.InvoiceDisplay', {id: invoice_id}), invoice_id);
                     } else {
                         $('#wrongMessage').show();
                         toastr.error(" Something Went Wrong!");
@@ -248,22 +274,25 @@ $(document).ready(function () {
 
 
     /*Start Treatment*/
-    $('#package_id_create').on('change', function () {
+    $(document).on('change', '#package_id_create',  function () {
 
-        $('#price_create').val('0');
+        $('#price_create').text('0');
+        $('.price_create').val('0');
         $('#balance_create').val('0');
         $('#cash_create').val('0');
-        $('#settle_create').val('0');
-        $('#outstand_create').val('0');
+        $('#settle_create').text('0');
+        $('.settle_create').val('0');
+        $('#outstand_create').text('0');
+        $('.outstand_create').val('0');
 
         var package_id_create = $('#package_id_create').val();
         var appointment_id_create = $('#appointment_id_create').val();
-        var price_create = $('#price_create').val();
+        var price_create = $('.price_create').val();
 
         if (price_create == 0) {
-            $("#addinvoice").hide();
+            $("#treatment_addinvoice").hide();
         } else {
-            $("#addinvoice").show();
+            $("#treatment_addinvoice").show();
         }
         if (package_id_create) {
             $.ajax({
@@ -276,7 +305,7 @@ $(document).ready(function () {
                 success: function (resposne) {
 
                     if (resposne.status == '1') {
-                        $('#table_1').find('tbody').remove();
+                        $('#table_1').find('tbody').html('');
                         jQuery.each(resposne.packagebundles, function (i, packagebundles) {
 
                             if (packagebundles.discount_id == null) {
@@ -294,7 +323,7 @@ $(document).ready(function () {
                             } else {
                                 var discountprice = packagebundles.discount_price;
                             }
-                            $('#table_1').append("<tr id='table_1' class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
+                            $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
 
                             jQuery.each(resposne.packageservices, function (i, packageservices) {
 
@@ -315,7 +344,7 @@ $(document).ready(function () {
                             $(this).prop('checked', true);
                             /*Here I need to set the bundle id so I can Checked on save exclusive*/
                             $('#checked_bundle_id').val($(this).val());
-                            calculateInvoice(id = $(this).val());
+                            calculateInvoice($(this).val(), 'treatment_');
                         });
                     }
                 }
@@ -326,9 +355,10 @@ $(document).ready(function () {
     $('#package_id_create').change();
 
     /*Invoice Save and also package advances*/
-    $("#treatmne_savepackageinformation").click(function () {
+    $(document).on("click", "#treatment_savepackageinformation", function () {
 
         $(this).attr("disabled", true);
+
         showSpinner();
 
         $('#wrongMessage').hide();
@@ -339,13 +369,13 @@ $(document).ready(function () {
         var appointment_id = $('#appointment_id_create').val();
         var appointment_id_consultancy = $('#appointment_link_cons').val();
         var package_id = $('#package_id_create').val();
-        var amount_create = $('#amount_create').val();
-        var tax_create = $('#tax_create').val();
-        var price = $('#price_create').val();
-        var balance = $('#balance_create').val();
+        var amount_create = $('.amount_create').val();
+        var tax_create = $('.tax_create').val();
+        var price = $('.price_create').val();
+        var balance = $('.balance_create').val();
         var cash = $('#cash_create').val();
-        var settle = $('#settle_create').val();
-        var outstand = $('#outstand_create').val();
+        var settle = $('.settle_create').val();
+        var outstand = $('.outstand_create').val();
         var package_service_id = $('#package_service_id').val();
         var package_mode_id = $('#payment_mode_id').val();
         var checked_treatment = $('#checked_treatment').val();
@@ -367,12 +397,14 @@ $(document).ready(function () {
         var status = true;
 
         if (cash > 0) {
-            if(package_mode_id=='') {
+            if(package_mode_id=='' || package_mode_id== '0') {
                 status = false;
             }
         }
         if(status_checked_treatment){
+
             if(status){
+                console.log( settle, outstand)
                 if (appointment_id && price && balance && cash && settle && outstand) {
                     $.ajax({
                         type: 'get',
@@ -397,12 +429,14 @@ $(document).ready(function () {
                             'remaining':remaining
                         },
                         success: function (resposne) {
-                            if (resposne.status == '1') {
+                            if (resposne.status) {
+                                let invoice_id = resposne.data.invoice_id;
                                 $('#successMessage').show();
                                 toastr.success("Invoice successfully created");
-                                reInitTable();
+                                reInitTable('treatment');
                                 closeAllPopup('.modal-dialog')
                                 $("#treatment-invoice-create").remove();
+                                window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
                             } else {
                                 $('#wrongMessage').show();
                                 toastr.error(" Something Went Wrong!")
@@ -411,10 +445,14 @@ $(document).ready(function () {
                             hideSpinner();
                         }
                     });
+                } else {
+                    hideSpinner();
+                    toastr.error("Request is not valid");
                 }
             } else {
                 $('#definefield').show();
-                toastr.error("Kindly define payment mode")
+                //toastr.error("Kindly define payment mode");
+                hideSpinner();
             }
         } else {
             $('#definetreatment').show();
@@ -426,20 +464,17 @@ $(document).ready(function () {
     });
 
     /*keyup function trigger whan we enter cash amount*/
-    $("#cash_create").keyup(function () {
-        keyfunction();
+    $(document).on("keyup", "#cash_create", function () {
+        keyfunction('treatment_');
     });
 
     /*blur function trigger whan we enter cash value*/
-    $("#cash_create").blur(function () {
-        keyfunction();
+    $(document).on("blur", "#cash_create", function () {
+        keyfunction('treatment_');
     });
 
-    /*Trigger function when popup load*/
-    $("#cash_create").blur();
-
     /*Make functional exclusive checked box*/
-    $("#is_exclusive").change(function () {
+    $(document).on("change", "#is_exclusive", function () {
         if ($(this).is(":checked")) {
             $('#is_exclusive').val('1');
         }
@@ -462,12 +497,16 @@ $(document).ready(function () {
                 },
                 success: function (resposne) {
                     if (resposne.status) {
-                        $('#amount_create').val(resposne.amount_create);
-                        $('#tax_create').val(resposne.tax_create);
-                        $('#price_create').val(resposne.price);
+                        $('#amount_create').text(resposne.amount_create);
+                        $('.amount_create').val(resposne.amount_create);
+                        $('#tax_create').text(resposne.tax_create);
+                        $('.tax_create').val(resposne.tax_create);
+                        $('#price_create').text(resposne.price);
+                        $('.price_create').val(resposne.price);
                         $('#cash_create').val('0');
-                        $("#outstand_create").val(resposne.outstdanding);
-                        $("#addinvoice").hide();
+                        $("#outstand_create").text(resposne.outstdanding);
+                        $(".outstand_create").val(resposne.outstdanding);
+                        $("#treatment_addinvoice").hide();
                     }
                 },
             });
@@ -481,7 +520,8 @@ $(document).ready(function () {
 
 
 /*key function for net amount of service*/
-function keyfunction_custom() {
+function keyfunction_custom(type = '') {
+
     $('#percentageMessage').hide();
     var is_exclusive_consultancy = $('#is_exclusive_consultancy').val();
     var price = $('#price_for_calculation').val();
@@ -491,7 +531,6 @@ function keyfunction_custom() {
     var location_id = $('#id_location').val();
     var tax_treatment_type_id = $('#tax_treatment_type_id').val();
 
-    var div = $(this).parents();
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
@@ -524,25 +563,38 @@ function keyfunction_custom() {
                         },
                         success: function (response) {
                             if (response.status) {
-                                $("#amount").val(response.price);
-                                $("#tax").val(response.tax);
-                                $("#tax_amt").val(response.tax_amt);
-                                $('#settle').val(response.settleamount);
-                                $('#outstand').val(response.outstanding);
+                                $(".discount_type_section").show();
+                                $(".discount_value_section").show();
+                                $("#amount").text(response.price);
+                                $(".amount").val(response.price);
+                                if (type == '') {
+                                    $("#tax").text(response.tax);
+                                    $(".tax").val(response.tax);
+                                } else {
+                                    $("#tax_create").text(response.tax);
+                                    $(".tax_create").val(response.tax);
+                                }
+                                $("#tax_amt").text(response.tax_amt);
+                                $(".tax_amt").val(response.tax_amt);
+                                $('#settle').text(response.settleamount);
+                                $('.settle').val(response.settleamount);
+                                $('#outstand').text(response.outstanding);
+                                $('.outstand').val(response.outstanding);
 
                                 $('#settleamount_cash').val(response.settleamount);
                                 $('#outstanding_cash').val(response.outstanding);
 
                                 if (response.outstanding == '0') {
-                                    $("#addinvoice").show();
+                                    $("#"+type+"addinvoice").show();
                                 } else {
-                                    $("#addinvoice").hide();
+                                    $("#"+type+"addinvoice").hide();
                                 }
 
                             } else {
                                 $('#percentageMessage').show();
                                 toastr.error("Your discount limit exceeded.");
-                                $("#amount").val('');
+                                $("#amount").text('0');
+                                $(".amount").val('');
                             }
                         },
                     });
@@ -555,14 +607,14 @@ function keyfunction_custom() {
 /*End*/
 
 /*function to check cash is equal to amt amount or not*/
-function keyfunction_cash() {
+function keyfunction_cash(type = '') {
 
-    var price = $('#tax_amt').val();
+    var price = $('.tax_amt').val();
     /*tax amt. amount*/
-    var balance = $('#balance').val();
+   // var balance = $('.balance').val();
     var cash = $('#cash').val();
-    var settleamount = $('#settle').val();
-    var outstanding = $('#outstand').val();
+   // var settleamount = $('.settle').val();
+   // var outstanding = $('.outstand').val();
     var amount_type = $('#amount_type').val();
 
     if (cash == 0 || cash == '') {
@@ -574,16 +626,23 @@ function keyfunction_cash() {
     if (!cash && cash == 0) {
         var settle_cash = $("#settleamount_cash").val();
         var outstand_cash = $("#outstanding_cash").val();
-        $("#settle").val(settle_cash);
-        $("#outstand").val(outstand_cash);
+        if (type == '') {
+            $("#settle").text(settle_cash);
+            //$(".settle").val(settle_cash);
+        } else {
+            $("#settle_create").text(settle_cash);
+            //$(".settle_create").val(settle_cash);
+        }
+        $("#outstand").text(outstand_cash);
+       // $(".outstand").val(outstand_cash);
     }
-    var div = $(this).parents();
+
     if (price && balance && cash) {
         $.ajax({
             type: 'get',
             url: route('admin.appointments.getfinalcalculation'),
             data: {
-                'price': price,
+                'price': cash,
                 'balance': balance,
                 'cash': cash,
                 'settleamount': settleamount,
@@ -591,14 +650,27 @@ function keyfunction_cash() {
                 'amount_type': amount_type
             },
             success: function (resposne) {
-                if (resposne.status == '1') {
-                    $("#settle").val(resposne.settleamount);
-                    $("#outstand").val(resposne.outstdanding);
-                    if (resposne.outstdanding == '0') {
-                        $("#addinvoice").show();
+                if (resposne.status) {
+                    if (type == '') {
+                        $("#settle").text(resposne.settleamount);
+                        $(".settle").val(resposne.settleamount);
+
+                        $("#outstand").text(resposne.outstdanding);
+                        $(".outstand").val(resposne.outstdanding);
                     } else {
-                        $("#addinvoice").hide();
+                        $("#settle_create").text(resposne.settleamount);
+                        $(".settle_create").val(resposne.settleamount);
                     }
+
+                   /* if (resposne.outstdanding == '0') {
+                        $("#"+type+"addinvoice").show();
+                    } else {
+                        $("#"+type+"addinvoice").hide();
+                    }
+
+                    if ((cash == 0 || cash == '') && amount_type == 0) {
+                        $('#addinvoice').show();
+                    }*/
                 }
             },
         });
@@ -607,9 +679,10 @@ function keyfunction_cash() {
 
 
 /*keyup function for $net_amount*/
-function keyfunction() {
-    var price_create = $('#price_create').val();
-    var balance_create = $('#balance_create').val();
+function keyfunction(type = '') {
+
+    var price_create = $('.price_create').val();
+    var balance_create = $('.balance_create').val();
     var cash_create = $('#cash_create').val();
     var settleamount_for_zero = $('#settleamount_for_zero').val();
     var outstanding_for_zero = $('#outstanding_for_zero').val();
@@ -620,12 +693,15 @@ function keyfunction() {
         $('#paymentmode').show();
     }
 
-    if (!cash_create) {
-        $("#settle_create").val(settleamount_for_zero);
-        $("#outstand_create").val(outstanding_for_zero);
-    }
-    var div = $(this).parents();
+    // if (!cash_create) {
+    //     $("#settle_create").text(settleamount_for_zero);
+    //     $(".settle_create").val(settleamount_for_zero);
+    //     $("#outstand_create").text(outstanding_for_zero);
+    //     $(".outstand_create").val(outstanding_for_zero);
+    // }
+
     if (price_create && balance_create && cash_create) {
+
         $.ajax({
             type: 'get',
             url: route('admin.appointments.getinvoicecalculation'),
@@ -637,14 +713,16 @@ function keyfunction() {
                 'outstanding_for_zero': outstanding_for_zero
             },
             success: function (resposne) {
-                if (resposne.status == '1') {
+                if (resposne.status) {
 
-                    $("#settle_create").val(resposne.settleamount);
-                    $("#outstand_create").val(resposne.outstdanding);
+                    $("#settle_create").text(resposne.settleamount);
+                    $(".settle_create").val(resposne.settleamount);
+                    $("#outstand_create").text(resposne.outstdanding);
+                    $(".outstand_create").val(resposne.outstdanding);
                     if (resposne.outstdanding == '0') {
-                        $("#addinvoice").show();
+                        $("#"+type+"addinvoice").show();
                     } else {
-                        $("#addinvoice").hide();
+                        $("#"+type+"addinvoice").hide();
                     }
                 }
             },
@@ -653,7 +731,7 @@ function keyfunction() {
 }
 
 /*Calcuate invoice data and return data according to price*/
-function calculateInvoice(id) {
+function calculateInvoice(id, type = '') {
     $('#wrongMessage').hide();
     $('#definetreatment').hide();
 
@@ -671,21 +749,26 @@ function calculateInvoice(id) {
         success: function (resposne) {
             if (resposne.status == '1') {
 
-                $('#amount_create').val(resposne.amount);
-                $('#tax_create').val(resposne.tax_price);
-                $('#price_create').val(resposne.serviceprice);
+                $('#amount_create').text(resposne.amount);
+                $('.amount_create').val(resposne.amount);
+                $('#tax_create').text(resposne.tax_price);
+                $('.tax_create').val(resposne.tax_price);
+                $('#price_create').text(resposne.serviceprice);
+                $('.price_create').val(resposne.serviceprice);
                 $('#remaining').val(resposne.remaining);
                 $('#balance_create').val(resposne.balance);
-                $('#settle_create').val(resposne.settleamount);
-                $('#outstand_create').val(resposne.outstanding);
+                $('#settle_create').text(resposne.settleamount);
+                $('.settle_create').val(resposne.settleamount);
+                $('#outstand_create').text(resposne.outstanding);
+                $('.outstand_create').val(resposne.outstanding);
                 $('#settleamount_for_zero').val(resposne.settleamount);
                 $('#outstanding_for_zero').val(resposne.outstanding);
                 $('#package_service_id').val(id);
 
                 if (resposne.outstanding == '0') {
-                    $("#addinvoice").show();
+                    $("#"+type+"addinvoice").show();
                 } else {
-                    $("#addinvoice").hide();
+                    $("#"+type+"addinvoice").hide();
                 }
 
             } else {
@@ -702,3 +785,19 @@ function toggle(id) {
 }
 
 
+function triggerDate($class) {
+
+    $("." + $class ).trigger("click");
+
+    $(".custom_field").click(function(){
+        $('.custom_field').datepicker("show");
+    });
+
+}
+
+function showHideDiscount($this) {
+
+    if ($this.val() != '') {
+
+    }
+}

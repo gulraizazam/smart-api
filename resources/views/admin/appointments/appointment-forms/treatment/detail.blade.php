@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder rota-title">Detail</h2>
+        <h2 class="fw-bolder rota-title">Details</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -31,45 +31,51 @@
 
                     <div class="table-responsive">
 
-                        <table class="table">
-                            <tbody>
-                            <tr class="treatment-detail-actions"></tr>
-                            <tr>
-                                <th>Patient Name</th>
-                                <td id="treatment_patient_name"></td>
-                                <th>Patient Phone</th>
-                                <td id="treatment_patient_phone"></td>
-                            </tr>
-                            <tr>
-                                <th>Email</th>
-                                <td id="treatment_patient_email"></td>
-                                <th>Gender</th>
-                                <td id="treatment_patient_gender"></td>
-                            </tr>
-                            <tr>
-                                <th>Appointment Time</th>
-                                <td id="treatment_patient_scheduled_time"></td>
-                                <th>Doctor</th>
-                                <td id="treatment_doctor_name"></td>
-                            </tr>
-                            <tr>
-                                <th>City</th>
-                                <td id="treatment_city_name"></td>
-                                <th>Centre</th>
-                                <td id="treatment_center_name"></td>
-                            </tr>
-                            <tr>
-                                <th>Appointment Status</th>
-                                <td id="treatment_appointment_status"></td>
-                                <th>Service/Consultancy</th>
-                                <td id="treatment_service_consultancy_name"></td>
-                            </tr>
-                            <tr>
-                            </tr>
-                            </tbody>
-                        </table>
+                        <div class="row" style="margin-right: 0;">
+                            <div class="col-md-3">
+                                <ul class="calendar-left-menu list-unstyled treatment-detail-actions"></ul>
+                            </div>
 
-                        <form id="treatment_cment" style="margin-top: 35px;max-width: 95%;">
+                            <div class="col-md-9">
+
+                                <table class="table">
+                                    <tbody>
+
+                                    <tr>
+                                        <th>Patient Name</th>
+                                        <td id="treatment_patient_name"></td>
+                                        <th>Patient Phone</th>
+                                        <td id="treatment_patient_phone"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Patient ID</th>
+                                        <td id="treatment_customer_id"></td>
+                                        <th>Gender</th>
+                                        <td id="treatment_patient_gender"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Appointment Time</th>
+                                        <td id="treatment_patient_scheduled_time"></td>
+                                        <th>Doctor</th>
+                                        <td id="treatment_doctor_name"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>City</th>
+                                        <td id="treatment_city_name"></td>
+                                        <th>Centre</th>
+                                        <td id="treatment_center_name"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Appointment Status</th>
+                                        <td id="treatment_appointment_status"></td>
+                                        <th>Service/Consultancy</th>
+                                        <td id="treatment_service_consultancy_name"></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+
+                                <form id="treatment_cment" style="margin-top: 35px;max-width: 95%;">
+
 
                             <h3 class="box-title">Comment</h3>
 
@@ -84,7 +90,7 @@
 
 
                             <div class="form-group">
-                            <div class="row">
+                                <div class="row">
 
                                 <div class="col-md-12">
                                     <label>Comment</label>
@@ -96,9 +102,12 @@
                                 </div>
 
                             </div>
-                        </div>
+                            </div>
 
                         </form>
+
+                            </div>
+                        </div>
 
                     </div>
 

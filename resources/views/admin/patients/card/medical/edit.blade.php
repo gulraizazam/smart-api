@@ -10,7 +10,7 @@
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
-            <div class="container">
+            <div class="container" id="custom-form-container">
 
                 <!--begin::Card-->
                 <div class="card card-custom">

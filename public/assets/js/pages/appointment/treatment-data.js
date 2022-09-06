@@ -1,3 +1,70 @@
+jQuery(document).ready(function() {
+
+    var result = get_query();
+
+    if (typeof result.tab !== 'undefined') {
+        $("." + result.tab+ '-tab').click();
+    } else {
+        $(".appointment-tab").addClass("nav-bar-active")
+    }
+
+    if (typeof result.city_id !== "undefined"
+        && typeof result.location_id !== "undefined"
+        && typeof result.doctor_id !== "undefined"
+        && typeof result.machine_id !== "undefined"
+        && typeof result.tab !== 'undefined' && result.tab == 'treatment') {
+
+        setTimeout( function () {
+            $("#treatment_city_filter").val(result.city_id).change();
+        }, 200);
+        setTimeout( function () {
+            $("#treatment_location_filter").val(result.location_id).change();
+        },300);
+
+        setTimeout( function () {
+            $("#treatment_doctor_filter").val(result.doctor_id).change();
+        },900);
+
+        setTimeout( function () {
+            $("#treatment_resource_filter").val(result.machine_id).change();
+        },1200);
+
+    }
+
+    $("#Add_comment").click(function () {
+
+        if ($('#consultancy_comment').val() !== '') {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'get',
+                url: route('admin.appointments.storecomment'),
+                data: {
+                    'comment': $('#consultancy_comment').val(),
+                    'appointment_id': $('#comment_appointment_id').val(),
+                },
+                success: function (data) {
+                    $('#commentsection').prepend(commentData(data.username, data.appointmentCommentDate, data.appointment.comment));
+                },
+
+            });
+        } else {
+            toastr.error("Please fill out the comment field");
+        }
+        $('#cment')[0].reset();
+    });
+
+    patientSearch('appointment_patient_id');
+
+    $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
+        $('.appointment_patient_id').val(null).trigger('change');
+    });
+
+});
+
+
 var counter = 0;
 var treatmentDoctorListener = function (doctorId) {
 
@@ -42,7 +109,7 @@ let loadMachine = function(locationId) {
                    // $("#treatment_resource_filter").val(result.machine_id).change();
                 }
 
-                $('.select2').select2({ width: '100%' });
+              //  $('.select2').select2({ width: '100%' });
             } else {
                 resetDoctors();
             }
@@ -110,7 +177,7 @@ var loadEndServices = function (baseServiceId) {
             success: function(response) {
                 if(response.status) {
                     let services = response.data.services;
-                    let service_option = '<option value="">Select Service</option>';
+                    let service_option = '<option value="">Select a Child Service</option>';
 
                     Object.entries(services).forEach( function (service) {
                         service_option += '<option value="'+service[0]+'">'+service[1]+'</option>';
@@ -131,6 +198,10 @@ var loadEndServices = function (baseServiceId) {
 
 function getTreatmentPatientDetail($this) {
 
+    if ($this.val() != '') {
+        $this.parent("div").find(".select2-selection").removeClass("select2-is-invalid");
+        $this.parent("div").find(".fv-help-block").text("");
+    }
     $.ajax({
         type: 'get',
         url: route('admin.users.get_patient_number'),
@@ -138,11 +209,31 @@ function getTreatmentPatientDetail($this) {
             'patient_id': $this.val()
         },
         success: function (resposne) {
-            if (resposne.status) {
+            if (resposne.status && resposne.data.patient) {
                 let patient = resposne.data.patient;
-                $('#create_treatment_phone').val(patient?.phone);
+
+                $('#create_old_treatment_phone').val(patient?.phone);
+                if (permissions.contact) {
+                    $('#create_treatment_phone').val(patient?.phone);
+                } else {
+                    $('#create_treatment_phone').val("***********");
+                }
+
                 $('#create_treatment_patient_name').val(patient?.name);
-                $('#create_treatment_gender').val(patient?.gender).change();
+                if (patient?.id) {
+                    $('#create_treatment_c_id').val(makePatientId(patient?.id));
+                }
+                $('#create_treatment_gender').val(patient?.gender).trigger("change");
+
+                if (patient?.phone != '') {
+                    $("#create_treatment_phone").removeClass("is-invalid")
+                    $("#create_treatment_phone").parent("div").find(".fv-help-block").remove();
+                }
+
+                if (patient?.name != '') {
+                    $("#create_treatment_patient_name").removeClass("is-invalid")
+                    $("#create_treatment_patient_name").parent("div").find(".fv-help-block").remove();
+                }
             }
 
         },
@@ -157,6 +248,7 @@ function setResourceValue(value) {
 
 
 jQuery(document).ready(function () {
+
     $("#Add_treatment_comment").click(function () {
         if ($('#treatment_comment').val() !== '') {
             $.ajax({
@@ -178,5 +270,15 @@ jQuery(document).ready(function () {
             toastr.error("Please fill out the comment field");
         }
         $('#treatment_cment')[0].reset();
+    });
+
+
+
+    $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
+        $('.treatment_patient_search_id').val(null).trigger('change');
+
+        $("#create_treatment_patient_search").parent("div").find(".select2-selection").addClass("select2-is-invalid");
+        $("#create_treatment_patient_search").parent("div").find(".fv-help-block").text("The patient field is required");
     });
 })

@@ -37,6 +37,7 @@ var ConsultancyCalendar = function() {
                 aspectRatio: 3,
                 minTime: "09:00:00",
                 maxTime: "23:00:00",
+                displayEventTime: true,
 
                 nowIndicator: true,
                 now: TODAY,
@@ -250,6 +251,8 @@ var ConsultancyCalendar = function() {
             if (typeof maxTime !== "undefined") {
                 calendar.setOption('maxTime', maxTime);
             }
+
+            rotaTimeTitle();
         },
         checkAndUpdateAppointment: function(info) {
 
@@ -271,13 +274,14 @@ var ConsultancyCalendar = function() {
                 cache: false,
                 success: function(response) {
                     if (response.status) {
-                       toastr.success(response.message)
+                       toastr.success(response.message);
                     } else {
-                        toastr.error(response.message)
+                        toastr.error(response.message);
+                        reInitCalendar(start_date, calendar, ConsultancyCalendar);
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.success("unabled to process the request, please try again.")
+                    toastr.success("unable to process the request, please try again.")
                 }
             });
         },
@@ -312,7 +316,7 @@ var ConsultancyCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error("Unabled to process the request");
+                    toastr.error("Unable to process the request");
                 }
             });
 
@@ -344,7 +348,7 @@ function clickEvent(info, jsEvent, view) {
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                toastr.error("Unabled to process the request.")
+                toastr.error("Unable to process the request.")
             }
         });
 
@@ -374,7 +378,9 @@ function setDetailData(response) {
         $("#comment_appointment_id").val(appointment?.id ?? 0);
         $("#patient_name").text(patient?.name ?? 'N/A');
         $("#patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
-        $("#patient_email").text(patient?.email ?? 'N/A');
+        if (patient?.id) {
+            $("#patient_c_id").text(makePatientId(patient?.id));
+        }
         $("#patient_gender").text(getGender(patient?.gender));
         $("#patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
         $("#doctor_name").text(doctor?.name ?? 'N/A');
@@ -389,110 +395,6 @@ function setDetailData(response) {
     }
 }
 
-function detailActions(appointment, invoice, invoiceid, permissions, $class = 'detail-actions') {
-
-    let id = appointment.id;
-
-    let edit_url = route('admin.appointments.edit', {id: appointment.id});
-    let edit_service_url = route('admin.appointments.edit_service', {id: appointment.id});
-    let detail_url = route('admin.appointments.detail', {id: appointment.id});
-    let sms_logs_url = route('admin.appointments.sms_logs', {id: appointment.id});
-    let patient_url = route('admin.patients.preview', {id: appointment.id});
-    let service_invoice_url = route('admin.appointments.invoicecreate', {id: appointment.id});
-    let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: appointment.id, type: 'appointment'});
-    let image_url = route('admin.appointmentsimage.imageindex', {id: appointment.id});
-    let measurement_url = route('admin.appointmentsmeasurement.measurements', {id: appointment.id});
-    let medical_url = route('admin.appointmentsmedical.medicals', {id: appointment.id});
-    let plan_create_url = route('admin.appointmentplans.create', {id: appointment.id});
-    let log_url = route('admin.appointments.loadPage', {id: appointment.id, type: 'web'});
-
-    let buttons = '<td colspan="4" style="text-align: right;">';
-
-    if (permissions.edit) {
-        if (appointment.appointment_type_id == 1) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" >\
-            <i class="la la-edit"></i>Edit\
-            </a>';
-        } else {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `' + $class + '`);" >\
-            <i class="la la-edit"></i>Edit\
-            </a>';
-        }
-    }
-
-    buttons += '<a href="javascript:void(0);" onclick="viewSmsLogs(`' + sms_logs_url + '`);" class="btn btn-sm btn-info mr-2" >\
-        <i class="la la-sms" data-toggle="tooltip" title="SMS Logs"></i>SMS Logs\
-        </a>';
-    if (permissions.invoice) {
-        if (!invoice) {
-            if (appointment.appointment_type_id == 2) {
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + service_invoice_url + '`);">\
-                <i class="la la-file-invoice" title="Generate Invoice"></i>Generate Invoice\
-                </a>';
-            }
-
-            if (appointment.appointment_type_id == 1) {
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" >\
-                <i class="la la-file-invoice" title="Generate Invoice"></i>Generate Invoice\
-                </a>';
-            }
-        }
-        if (permissions.invoice_display) {
-            if (invoice) {
-                let invoice_url = route('admin.appointments.InvoiceDisplay', {id: invoiceid});
-                buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_url + '`);" >\
-                <i class="la la-file-invoice-dollar" title="Invoice Display"></i>Invoice Display\
-                </a>';
-            }
-        }
-    }
-
-    if (appointment.appointment_type_id == 2) {
-        if (permissions.image_manage) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+image_url+'" target="_blank">\
-        <i class="la la-images" title="Images"></i>Images\
-        </a>';
-        }
-
-        if (permissions.measurement_manage) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+measurement_url+'"  target="_blank">\
-        <i class="la la-stethoscope" title="Measurement"></i>Measurement\
-        </a>';
-        }
-    }
-
-    if (appointment.appointment_type_id == 1) {
-
-        if(permissions.medical_form_manage) {
-            buttons += '<a class="btn btn-sm btn-info mr-2" href="'+medical_url+'" target="_blank">\
-            <i class="la la-medkit" title="Medical History Form"></i>Medical Form\
-            </a>';
-        }
-    }
-
-    if (permissions.plans_create) {
-        buttons += '<a class="btn btn-sm btn-info mr-2" href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_create_url+'`);">\
-            <i class="la la-clipboard" title="Create Plan"></i>Create Plan\
-            </a>';
-    }
-
-    if(permissions.patient_card) {
-        buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="'+patient_url+'">\
-        <i class="la la-users" title="Patient Card"></i>Patient Card\
-        </a>';
-    }
-
-    if (permissions.log) {
-        buttons += '<a class="btn btn-sm btn-info mr-2" target="_blank" href="'+log_url+'">\
-        <i class="la la-history" title="Log"></i>Log\
-        </a>';
-    }
-
-    buttons += '</td>';
-
-    $("." + $class).html(buttons);
-
-}
 
 function setComments(appointment) {
 
@@ -506,34 +408,14 @@ function setComments(appointment) {
     $("#commentsection").html(comment_html);
 }
 
-function commentData(user_name, created_at, comment) {
 
-    let comment_html = '';
-
-    comment_html = '<div class="tab-content" id="itemComment">' +
-        ' <div class="tab-pane active" id="portlet_comments_1"> ' +
-        '<div class="mt-comments"> ' +
-        '<div class="mt-comment">' +
-        ' <div class="mt-comment-img" id="imgContainer"> ' +
-        '<img src="'+asset_url+'assets/media/avatar.jpg" alt="Avatar"> ' +
-        '</div><div class="mt-comment-body"> ' +
-        '<div class="mt-comment-info"> ' +
-        '<span class="mt-comment-author" id="creat_by">';
-    comment_html += user_name ?? 'N/A';
-    comment_html += '</span> <span class="mt-comment-date" id="datetime">';
-    comment_html += formatDate(created_at, 'ddd MMM, mm yyyy HH:mm A');
-    comment_html += '</span> </div>' +
-        '<div class="mt-comment-text" id="message">';
-    comment_html += comment ?? 'N/A';
-    comment_html += '</div><div class="mt-comment-details"> </div>' +
-        '</div></div></div></div></div>';
-
-    return comment_html;
-}
 
 function setCreateConsultancy(response, start) {
 
     try {
+
+        $("#create_patient_search").parent("div").find(".selection").remove();
+
         patientSearch('patient_search_id')
 
         $("#modal_create_consultancy").modal("show");
@@ -569,7 +451,7 @@ function setCreateConsultancy(response, start) {
         $("#consultancy_address").val();
         $("#consultancy_town_id").val();
 
-        let type_options = '<option value="">Select Consultancy Type</option>';
+        let type_options = '';
         if (consultancy_types) {
             Object.entries(consultancy_types).forEach(function (consultancy_type) {
                 type_options += '<option value="'+consultancy_type[0]+'">'+consultancy_type[1]+'</option>';
@@ -590,7 +472,7 @@ function setCreateConsultancy(response, start) {
             });
         }
 
-        let source_options = '<option value="">Select a Gender</option>';
+        let source_options = '<option value="">Select a Source</option>';
         if (lead_sources) {
             Object.entries(lead_sources).forEach(function (source) {
                 source_options += '<option value="'+source[0]+'">'+source[1]+'</option>';
@@ -620,6 +502,12 @@ function setCreateConsultancy(response, start) {
             $(".consult-type").hide();
         }
 
+        setTimeout( function () {
+            $(".select2-selection").removeClass("select2-is-invalid");
+        }, 200);
+
+
+
     } catch (e) {
         showException(e);
     }
@@ -633,8 +521,11 @@ function hoverPopup(info) {
 
     if (id !== 'availableForMeeting') {
 
-       let left = event.pageX - $('#consultancy_calendar').offset().left + 320;
-       let top = event.pageY - $('#consultancy_calendar').offset().top + 500;
+       /*let left = event.pageX - $(info.el).position().left;
+       let top = event.pageY - $(info.el).position().top;*/
+
+        let left = event.pageX - $('#consultancy_calendar').offset().left + 320;
+        let top = event.pageY - $('#consultancy_calendar').offset().top + 400;
 
         $(".modal_consultancy_popup").css({top: top,left: left}).show();
 

@@ -58,7 +58,7 @@
 
 <div class="modal fade" id="modal_create_consultancy_invoice" tabindex="-1" aria-hidden="true" style="z-index: 9999">
     <!--begin::Modal dialog-->
-    <div class="modal-dialog modal-dialog-centered big-modal" id="create_consultancy_invoice">
+    <div class="modal-dialog modal-dialog-centered mediam-modal" id="create_consultancy_invoice">
         {{--consultancy invoice create here--}}
     </div>
 </div>

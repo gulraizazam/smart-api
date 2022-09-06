@@ -2,10 +2,10 @@
 <html lang="en">
 <!--begin::Head-->
 <head>
-    <title>Cutera</title>
+    <title>Smart</title>
     <meta charset="utf-8" />
-    <meta name="description" content="Cutera Aesthetic" />
-    <meta name="keywords" content="Cutera Aesthetic" />
+    <meta name="description" content="Smart Aesthetic" />
+    <meta name="keywords" content="Smart Aesthetic" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" href="{{asset('favicon.ico')}}" />
     <!--begin::Fonts-->

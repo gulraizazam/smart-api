@@ -36,6 +36,13 @@ var ConvertValidation = function () {
                             }
                         }
                     },
+                    service_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The service field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {
@@ -56,7 +63,14 @@ var ConvertValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    //reInitTable();
+                    console.log(response)
+                    window.location.href =  route('admin.appointments.index', {
+                        tab: response.data.appointment_type,
+                        city_id: response.data.city_id,
+                        location_id: response.data.location_id,
+                        doctor_id: response.data.doctor_id,
+                    });
                 } else {
                     toastr.error(response.message);
                 }

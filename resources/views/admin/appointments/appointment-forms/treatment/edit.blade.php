@@ -27,7 +27,6 @@
             @method('put')
 
             <input type="hidden" id="appointment_manager" value="{{Config::get('constants.appointment_type_service_string')}}">
-            <input type="hidden" id="treatment_old_phone" name="old_phone">
 
             <input type="hidden" name="lead_id" id="treatment_leadId">
             <input type="hidden" id="treatment_appointment_id" >
@@ -69,7 +68,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="fw-bold fs-6 mb-2 pl-0">Scheduled Date <span class="text text-danger">*</span> </label>
-                            <input readonly id="edit_treatment_scheduled_date" class="form-control" name="scheduled_date">
+                            <input readonly id="edit_treatment_scheduled_date" class="form-control current-datepicker" name="scheduled_date">
 
                             <input type="hidden" id="edit_treatment_scheduled_date_old">
 
@@ -83,12 +82,13 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Phone <span class="text text-danger">*</span> </label>
-                            <input id="edit_treatment_patient_phone" class="form-control" name="phone">
+                            <input readonly id="edit_treatment_patient_phone" class="form-control" name="phone">
+                            <input id="edit_old_treatment_patient_phone" name="old_phone" type="hidden">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input id="edit_treatment_patient_name" class="form-control" name="name">
+                            <input readonly id="edit_treatment_patient_name" class="form-control" name="name">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">

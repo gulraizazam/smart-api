@@ -9,7 +9,7 @@ var table_columns = [
     },{
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 90,
     },{
         field: 'scheduled_date',
         title: 'Scheduled',
@@ -17,11 +17,11 @@ var table_columns = [
     },{
         field: 'doctor_id',
         title: 'Doctor',
-        width: 'auto',
+        width: 100,
     },{
         field: 'city_id',
         title: 'City',
-        width: 'auto',
+        width: 80,
     },{
         field: 'location_id',
         title: 'Centre',
@@ -187,7 +187,7 @@ function setFilters(filter_values, active_filters) {
         $("#appoint_search_consultancy_type").html(consultancy_type_options);
 
         $("#appoint_search_patient").val(active_filters?.name);
-        $("#appoint_search_phone").val(active_filters?.phone);
+       // $("#appoint_search_phone").val(active_filters?.phone);
         $("#appoint_search_start").val(active_filters?.date_from);
         $("#appoint_search_end").val(active_filters?.date_to);
         $("#appoint_search_created_from").val(active_filters?.created_from);

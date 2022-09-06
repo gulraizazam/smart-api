@@ -55,7 +55,7 @@
 
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">FDO Phone <span class="text text-danger">*</span></label>
-                            <input type="number" id="edit_fdo_phone" name="fdo_phone" class="form-control form-control-lg form-control-solid mb-2" />
+                            <input type="text" id="edit_fdo_phone" name="fdo_phone" style="margin-right: 13px;" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-12">

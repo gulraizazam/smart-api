@@ -195,9 +195,14 @@ class PackagesController extends Controller
         $status = true;
 
         $service_data = Bundles::find($request->bundle_id);
-
         /*Total belongs to total Amount that increase when we enter new bundle*/
-        $total = filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+        $total = str_replace( ',', '', $request->package_total);//filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+        if($total == ""){
+            $total = 0;
+        }
+        if($request->is_exclusive == ""){
+            $request->merge([ 'is_exclusive' => 1]);
+        }
         if ($request->get('package_bundles')) {
             $package_bundles = PackageBundles::whereIn('id', $request->get('package_bundles'))->get();
             if ($package_bundles) {
@@ -219,6 +224,7 @@ class PackagesController extends Controller
             /*First we need to make the data to save in package bundle*/
             $data = $request->all();
             $location_information = Locations::find($request->location_id);
+
             $discount_info = Discounts::find($request->discount_id);
 
             $data['qty'] = '1';
@@ -254,14 +260,14 @@ class PackagesController extends Controller
                 $data['is_exclusive'] = 1;
             } else {
                 $data['tax_including_price'] = $request->net_amount;
-                $data['tax_percenatage'] = $location_information->tax_percentage;
+                $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
                 $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
                 $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
                 $data['is_exclusive'] = 0;
             }
             /*In case If you not select any discount*/
-            if ($request->discount_id == '0') {
+            if ($request->discount_id == '0' || $request->discount_id == "") {
                 $data['discount_id'] = null;
             }
             /*date is develop to save package bundle*/
@@ -328,7 +334,7 @@ class PackagesController extends Controller
                 $packageservice = PackageService::createPackageService($data_service);
             }
             /*calculate package value to return*/
-            $total = number_format($total + $packagesbundly->tax_including_price);
+            $total = number_format((float) $total + (float) $packagesbundly->tax_including_price);
 
             /*Set variables for return to show information*/
             $net_amount = $packagesbundly->net_amount;
@@ -450,13 +456,15 @@ class PackagesController extends Controller
         ])->first();
         if ($status) {
 
-            return ApiHelper::apiResponse($this->success, 'Record not found', false);
+            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false);
 
         } else {
 
             $packageService = PackageBundles::find($request->id);
-
-            $package_total = filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+            if($request->package_total == ''){
+                $request->merge([ 'package_total' => 0]);
+            }
+            $package_total = str_replace( ',', '', $request->package_total);//filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
 
             $total = $package_total - $packageService->tax_including_price;
 
@@ -471,7 +479,7 @@ class PackagesController extends Controller
                 }
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record not found', true, [
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'total' => $total,
                 'id' => $request->id
             ]);
@@ -576,6 +584,7 @@ class PackagesController extends Controller
                 ));
             }
         } catch (\Exception $e) {
+            dd($e);
             // Rollback Transaction
             DB::rollback();
 
@@ -720,13 +729,20 @@ class PackagesController extends Controller
                         }
                     }
                     $discounts = $discounts->toArray();
-                     $select_discount = ["discount_type" => "Percentage","discount_price" => 0.0,"id" => 0,"net_amount" => 0.0];
-                    return response()->json(array(
-                        'status' => true,
+                    // $select_discount = ["discount_type" => "Percentage","discount_price" => 0.0,"id" => 0,"net_amount" => 0.0];
+                    // return response()->json(array(
+                    //     'status' => true,
+                    //     'discounts' => $discounts,
+                    //     'checked_custom' => '0',
+                    //     'dis_price_info' => $select_discount,
+                    // ));
+                    $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
+                    return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '0',
                         'dis_price_info' => $select_discount,
-                    ));
+                        'net_amount' => $service_data->price
+                    ]);
                 } else {
                     $discounts = $discounts->toArray();
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
@@ -741,7 +757,7 @@ class PackagesController extends Controller
         }
 
         return ApiHelper::apiResponse($this->success, 'Records found.', false, [
-            'net_amount' => isset($service_data) ? $service_data->price : 0
+            'net_amount' => isset($bundle) ? $bundle->price : 0
         ]);
     }
 
@@ -776,7 +792,7 @@ class PackagesController extends Controller
      */
     public function getgrandtotal(Request $request)
     {
-        $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_total = str_replace( ',', '', $request->total);//filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $grand_total = number_format($package_total - $request->cash_amount);
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -826,7 +842,8 @@ class PackagesController extends Controller
         // Get Total Records
         $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
 
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'id', 'DESC');
+
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
@@ -897,6 +914,13 @@ class PackagesController extends Controller
             'create' => Gate::allows('plans_create'),
             'log' => Gate::allows('plans_log'),
             'sms_log' => Gate::allows('plans_sms_log'),
+            'plans_cash_edit' => Gate::allows('plans_cash_edit'),
+            'plans_cash_delete' => Gate::allows('plans_cash_delete'),
+            'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
+            'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
+            'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
+            'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
+            'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
         ];
 
         if ($id) {
@@ -909,6 +933,13 @@ class PackagesController extends Controller
                 'create' => Gate::allows('patients_plan_create'),
                 'log' => Gate::allows('patients_plan_log'),
                 'sms_log' => Gate::allows('patients_plan_sms_log'),
+                'plans_cash_edit' => Gate::allows('plans_cash_edit'),
+                'plans_cash_delete' => Gate::allows('plans_cash_delete'),
+                'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
+                'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
+                'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
+                'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
+                'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
             ];
         }
 
@@ -1060,7 +1091,7 @@ class PackagesController extends Controller
             $grand_total = number_format($total_price - $cash_amount_in);
 
             $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
-            $paymentmodes->prepend('Select Payment Mode', '');
+            //$paymentmodes->prepend('Select Payment Mode', '');
 
             $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();
 
@@ -1130,8 +1161,11 @@ class PackagesController extends Controller
         ])->sum('cash_amount');
         /*We discuss in future what happen next*/
         $package_advances_cash_amount = $package_advances_cash_amount_1;
+        
 
-        $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        //$package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_total = str_replace( ',', '', $request->total );
+
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
 
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
@@ -1176,7 +1210,7 @@ class PackagesController extends Controller
             /*save Package information and also update random id in package service table*/
 
             $data_package = $request->all();
-            $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+            $data_package['total_price'] = str_replace( ',', '', $request->total );//filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
             $data_package['sessioncount'] = '1';
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['appointment_id'] = $appointment_id;
@@ -1386,7 +1420,7 @@ class PackagesController extends Controller
         $content = view('admin.packages.packagepdf', compact('package', 'packagebundles', 'packageservices', 'packageadvances', 'services', 'discount', 'paymentmodes', 'grand_total', 'location_info', 'account_info', 'company_phone_number'));
         $pdf = App::make('dompdf.wrapper');
         $pdf->loadHTML($content);
-        return $pdf->stream('Treatment Plans Invoice');
+        return $pdf->stream('treatment-plans-invoice.pdf');
 
     }
 
@@ -1399,7 +1433,12 @@ class PackagesController extends Controller
 
         $paymentmodes = PaymentModes::where('type', '=', 'application')->get();
 
-        return view('admin.packages.finance_edit.create', compact('pack_adv_info', 'package_id', 'paymentmodes'));
+        return ApiHelper::apiResponse($this->success, 'data found', true, [
+            'pack_adv_info' => $pack_adv_info,
+            'package_id' => $package_id,
+            'paymentmodes' => $paymentmodes
+        ]);
+      //  return view('admin.packages.finance_edit.create', compact('pack_adv_info', 'package_id', 'paymentmodes'));
     }
 
     /*
@@ -1438,15 +1477,13 @@ class PackagesController extends Controller
         }
 
         if ($record) {
-            return response()->json(array(
-                'status' => true,
+            return ApiHelper::apiResponse($this->success, 'Data Updated successfully.',  true, [
                 'amount_status' => $amount_status
-            ));
-        } else {
-            return response()->json(array(
-                'status' => false,
-            ));
+            ]);
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'Your amount is exceeding.', false );
     }
 
     /*
@@ -1467,21 +1504,18 @@ class PackagesController extends Controller
         ])->sum('cash_amount');
         if ($get_package_use_amount <= $get_package_unused_amount_except_edit) {
 
-            $status = true;
             $record = PackageAdvances::deletefinaceRecord($request);
             $cash_receveive_remain = number_format(filter_var($request->cash_receveive_remain, FILTER_SANITIZE_NUMBER_INT) + $packageadvanceinfo->cash_amount);
 
-            return response()->json(array(
-                'status' => $status,
+            return ApiHelper::apiResponse($this->success, 'Record deleted successfully.', true, [
                 'id' => $request->package_advance_id,
                 'cash_receveive_remain' => $cash_receveive_remain
-            ));
+            ]);
 
-        } else {
-            return response()->json(array(
-                'status' => $status = false,
-            ));
+
         }
+
+        return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false);
     }
 
     /*

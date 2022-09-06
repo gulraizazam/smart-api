@@ -1,4 +1,4 @@
-var table_url = route('admin.appointments.datatable');
+var table_url = route('admin.consultancy.datatable');
 
 var table_columns = [
 
@@ -7,23 +7,31 @@ var table_columns = [
         title: 'ID',
         width: 60,
         sortable: false,
+        template: function (data) {
+            let detail_url = route('admin.appointments.detail', {id: data.id});
+            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.Patient_ID+'</a>';
+        }
     },{
         field: 'name',
         title: 'Patient',
-        width: 100,
+        width: 80
     },{
         field: 'phone',
         title: 'Phone',
-        width: 100,
+        width: 90,
         template: function (data) {
             return phoneClip(data);
         }
     },{
         field: 'scheduled_date',
         title: 'Scheduled',
-        width: 'auto',
+        width: 80,
         template: function (data) {
-            return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+            if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
+                return '<span>'+data.scheduled_date+'</span>';
+            } else {
+                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+            }
         }
     },{
         field: 'service_id',
@@ -32,23 +40,23 @@ var table_columns = [
     },{
         field: 'appointment_type_id',
         title: 'Type',
-        width: 100,
+        width: 85,
     },{
         field: 'doctor_id',
         title: 'Doctor',
-        width: 'auto',
+        width: 90,
     },{
         field: 'appointment_status_id',
         title: 'Status',
-        width: 100,
+        width: 80,
         template: function (data) {
 
             let unscheduled_appointment_status = data.unscheduled_appointment_status;
             let appointment_status = data.appointment_status;
 
             if (permissions.status) {
-                if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
-                    return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
+                if (data.scheduled_date == '-') {
+                    return '<span>Un-Scheduled</span>';
                 } else {
                     return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
                 }
@@ -57,16 +65,16 @@ var table_columns = [
             }
         }
     },{
-        field: 'region_id',
-        title: 'Region',
+        field: 'location_id',
+        title: 'Centre',
         width: 'auto',
     },{
         field: 'city_id',
         title: 'City',
         width: 'auto',
     },{
-        field: 'location_id',
-        title: 'Centre',
+        field: 'region_id',
+        title: 'Region',
         width: 'auto',
     },{
         field: 'consultancy_type',
@@ -95,7 +103,7 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 'auto',
+        width: 210,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
@@ -158,6 +166,11 @@ function setStatusData(response, id) {
         $("#base_appointment_status_id").html(base_status_option);
         $("#appointment_status_id").html(appoint_status_option);
 
+        $("#appointment_id").val(id);
+        $("#appointment_status_not_show").val(appointment_status_not_show);
+        $("#cancellation_reason_other_reason").val(cancellation_reason_other_reason);
+
+
         if (appointments?.appointment_status?.parent_id != 0) {
             $("#base_appointment_status_id").val(appointments?.appointment_status?.parent_id);
         } else {
@@ -180,18 +193,23 @@ function setStatusData(response, id) {
                 $("#reason").val(appointments?.reason);
             }
         } else {
-        if(base_appointments[appointments.appointment_status.parent_id].is_comment == 0
-            && appointments?.appointment_status?.is_comment == 0) {
+            if(base_appointments[appointments.appointment_status?.parent_id]?.is_comment == 0
+                && appointments?.appointment_status?.is_comment == 0) {
+            } else {
+                $("#appointment_reason").hide();
+                $("#appointment_status_id_section").hide();
+
+            }
+            if(base_appointments[appointments.appointment_status.parent_id].is_comment == 0
+                && appointments?.appointment_status?.is_comment == 0) {
                 $("#appointment_reason").hide();
             } else {
-            $("#appointment_reason").show();
-            $("#reason").val(appointments?.reason);
+                $("#appointment_reason").show();
+                $("#appointment_status_id_section").show();
+                $("#reason").val(appointments?.reason);
+                $("#appointment_status_id").val(appointments?.appointment_status?.id);
+            }
         }
-        }
-
-        $("#appointment_id").val(id);
-        $("#appointment_status_not_show").val(appointment_status_not_show);
-        $("#cancellation_reason_other_reason").val(cancellation_reason_other_reason);
 
     } catch (error) {
         showException(error);
@@ -215,8 +233,8 @@ function editSchedule(id) {
         success: function(response) {
             if (response.status) {
                 let appointment = response.data.appointment;
-               $("#schedule_date").val(appointment?.scheduled_date);
-               $("#schedule_time").val(appointment?.scheduled_time);
+                $("#schedule_date").val(appointment?.scheduled_date);
+                $("#schedule_time").val(appointment?.scheduled_time);
             }
         },
         error: function(xhr, ajaxOptions, thrownError) {
@@ -236,6 +254,10 @@ const extraValidate = {
 
 let loadChildStatuses = function (appointmentStatusId) {
 
+    statusValidate.addField('appointment_status_id', extraValidate);
+    statusValidate.addField('reason', extraValidate);
+    statusValidate.removeField('appointment_status_id', '');
+    statusValidate.removeField('reason', '');
     if(appointmentStatusId != '') {
         resetDropdowns();
         $("input[type=submit]").attr('disabled', true);
@@ -258,7 +280,8 @@ let loadChildStatuses = function (appointmentStatusId) {
                     } else {
                         $('.appointment_status_id').hide();
                         $('#appointment_status_id').html('');
-                        statusValidate.addField('appointment_status_id', '');
+                        statusValidate.addField('appointment_status_id', extraValidate);
+                        statusValidate.removeField('appointment_status_id', '');
                     }
                 } else {
                     resetDropdowns();
@@ -271,6 +294,7 @@ let loadChildStatuses = function (appointmentStatusId) {
                     statusValidate.addField('reason', extraValidate);
                 } else {
                     resetReason();
+                    statusValidate.addField('reason', extraValidate);
                     statusValidate.removeField('reason', '');
                 }
                 $("input[type=submit]").removeAttr('disabled');
@@ -314,6 +338,9 @@ var resetChildStatuses = function () {
 }
 
 let statusListener = function (appointmentStatusId) {
+
+    statusValidate.addField('reason', extraValidate);
+    statusValidate.removeField('reason', '');
     if(appointmentStatusId != '') {
         $("input[type=submit]").attr('disabled', true);
         $.ajax({
@@ -364,7 +391,7 @@ function actions(data) {
     let medicals_url = route('admin.appointmentsmedical.medicals', {id: id});
     let plan_url = route('admin.appointmentplans.create', {id: id});
     let delete_url = route('admin.appointments.destroy', {id: id});
-    let patient_url = route('admin.patients.preview', {id: data.Patient_ID});
+    let patient_url = route('admin.patients.preview', {id: data.patient_id});
     let viewlog_url = route('admin.appointments.loadPage', {id: id, type: 'web'});
 
     if (
@@ -382,16 +409,44 @@ function actions(data) {
         || permissions.plans_create
         || permissions.patient_card
     ) {
-        let actions = '<div class="dropdown dropdown-inline action-dots">\
-            <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
-                <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
-            </a>\
-            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="overflow-y: scroll; height: 200px">\
+        let actions = '<div class="dropdown dropdown-inline action-dots">';
+
+        if (permissions.invoice) {
+            if(!data.invoice) {
+                if (data.appointment_type == 2) {
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                            <!--<span class="navi-text">Create Invoice</span>-->\
+                        </a>';
+                }
+
+                if(data.appointment_type == 1) {
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                        </a>';
+                }
+            }
+
+        }
+
+        if (permissions.invoice_display) {
+            if(data.invoice) {
+                actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="btn btn-icon btn-info btn-sm">\
+                            <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
+                        </a>';
+            }
+        }
+
+        actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+                        <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+                    </a>';
+
+        actions += '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right" style="overflow-y: scroll; height: 200px">\
                 <ul class="navi flex-column navi-hover py-2">\
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-            actions += '<li class="navi-item">\
+        actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-eye"></i></span>\
                             <span class="navi-text">Detail</span>\
@@ -400,18 +455,39 @@ function actions(data) {
         if (permissions.edit) {
             if(data.appointment_type==1) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`, `detail-actions`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
             } else if(data.appointment_type==2) {
                 actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `treatment-detail-actions`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
+            }
+        }
+        if(data.appointment_type==1) {
+            if (permissions.consultancy) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
+                        <span class="navi-text">Consultancy</span>\
+                    </a>\
+                </li>';
+            }
+        }
+
+        if(data.appointment_type==2) {
+            if (permissions.treatment) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-medkit"></i></span>\
+                        <span class="navi-text">Treatment</span>\
+                    </a>\
+                </li>';
             }
         }
 
@@ -447,40 +523,6 @@ function actions(data) {
             }
         }
 
-        if (permissions.invoice) {
-            if(!data.invoice) {
-                if (data.appointment_type == 2) {
-                    actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-file-invoice"></i></span>\
-                            <span class="navi-text">Create Invoice</span>\
-                        </a>\
-                    </li>';
-            }
-
-                if(data.appointment_type == 1) {
-                    actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
-                            <span class="navi-text">Create Invoice</span>\
-                        </a>\
-                    </li>';
-                }
-            }
-
-        }
-
-        if (permissions.invoice_display) {
-            if(data.invoice) {
-                actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-file"></i></span>\
-                            <span class="navi-text">View Invoice</span>\
-                        </a>\
-                    </li>';
-            }
-        }
-
         if(data.appointment_type==2) {
             if (permissions.image_manage) {
                 actions += '<li class="navi-item">\
@@ -505,7 +547,7 @@ function actions(data) {
             if (permissions.medical_form_manage) {
                 actions += '<li class="navi-item">\
                         <a href="'+medicals_url+'" target="_blank" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-plus-square"></i></span>\
+                            <span class="navi-icon"><i class="la la-medkit"></i></span>\
                             <span class="navi-text">Medical</span>\
                         </a>\
                     </li>';
@@ -525,7 +567,7 @@ function actions(data) {
             actions += '<li class="navi-item">\
                         <a target="_blank" href="'+patient_url+'" class="navi-link">\
                             <span class="navi-icon"><i class="la la-user"></i></span>\
-                            <span class="navi-text">Patient</span>\
+                            <span class="navi-text">Patient Card</span>\
                         </a>\
                     </li>';
         }
@@ -544,13 +586,13 @@ function actions(data) {
                 (data?.unscheduled_appointment_status?.id == data?.appointment_status_id) &&
                 (!data?.scheduled_date && !data?.scheduled_time)
             ) {*/
-                actions += '<li class="navi-item">\
+            actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-trash"></i></span>\
                             <span class="navi-text">Delete</span>\
                             </a>\
                         </li>';
-            }
+        }
         //}
 
         actions += '</ul>\
@@ -563,14 +605,6 @@ function actions(data) {
 }
 
 function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
-
-    /*setQueryStringParameter('city_id');
-    setQueryStringParameter('location_id');
-    setQueryStringParameter('doctor_id');
-
-    $("#consultancy_city_filter").val('').trigger("change")
-    $("#consultancy_location_filter").val('').trigger("change")
-    $("#consultancy_doctor_filter").val('').trigger("change")*/
 
     if (type == 'appointment') {
         $(".export-appointments").show();
@@ -601,11 +635,11 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
 
         setTimeout( function () {
             $("#treatment_resource_filter").val(resource_id).trigger("change");
-        },700);
+        },1100);
 
         setTimeout( function () {
             $("#treatment_doctor_filter").val(doctor_id).trigger("change");
-        },800);
+        },1200);
 
 
     }
@@ -655,7 +689,7 @@ function setAppointmentDetailData(response) {
         $("#appointment_comment_appointment_id").val(appointment?.id ?? 0);
         $("#appointment_patient_name").text(patient?.name ?? 'N/A');
         $("#appointment_patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
-        $("#appointment_patient_email").text(patient?.email ?? 'N/A');
+        $("#appointment_patient_c_id").text(makePatientId(patient?.id));
         $("#appointment_patient_gender").text(getGender(patient?.gender));
         $("#appointment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
         $("#appointment_doctor_name").text(doctor?.name ?? 'N/A');
@@ -702,12 +736,12 @@ function editRow(url, id, $class = 'detail-actions') {
         type: "GET",
         cache: false,
         success: function (response) {
+
             if ($class === 'detail-actions') {
                 setEditData(response);
             } else {
                 setTreatmentEditData(response);
             }
-
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -774,7 +808,15 @@ function setEditData(response) {
         $("#edit_scheduled_time").val(appointment.scheduled_time);
         $("#scheduled_time_old").val(appointment.scheduled_time);
         $("#edit_patient_name").val(appointment?.patient?.name);
-        $("#edit_patient_phone").val(appointment?.patient?.phone);
+
+        $("#edit_old_patient_phone").val(appointment?.patient?.phone);
+
+        if (permissions.contact) {
+            $("#edit_patient_phone").val(appointment?.patient?.phone);
+        } else {
+            $("#edit_patient_phone").val("***********").attr("readonly", true);
+        }
+
         $("#back-date").val(back_date_config.data);
         $("#old_phone").val(appointment?.lead?.patient?.phone);
         $("#lead_id").val(appointment?.lead_id);
@@ -782,10 +824,12 @@ function setEditData(response) {
         $("#resourceRotaDayID").val(resourceHadRotaDay?.id);
         $("#start_time").val(resourceHadRotaDay?.start_time);
         $("#end_time").val(resourceHadRotaDay?.end_time);
+        $("#consultancy_appointment_type").val(appointment?.appointment_type_id);
+
 
 
     } catch (error) {
-       showException(error);
+        showException(error);
     }
 
 }
@@ -851,9 +895,15 @@ function setTreatmentEditData(response) {
         $("#scheduled_treatment_time_old").val(appointment.scheduled_time);
 
         $("#edit_treatment_patient_name").val(appointment?.patient?.name);
-        $("#edit_treatment_patient_phone").val(appointment?.patient?.phone);
 
-        $("#treatment_old_phone").val(appointment?.lead?.patient?.phone);
+        if (permissions.contact) {
+            $("#edit_treatment_patient_phone").val(appointment?.patient?.phone);
+        } else {
+            $("#edit_treatment_patient_phone").val("***********").attr("readonly", true);
+        }
+
+        $("#edit_old_treatment_patient_phone").val(appointment?.lead?.patient?.phone);
+
         $("#treatment_leadId").val(appointment?.lead_id);
         $("#treatment_appointment_id").val(appointment?.id);
         $("#treatment_resourceRotaDayID").val(resourceHadRotaDay?.id);
@@ -861,9 +911,10 @@ function setTreatmentEditData(response) {
         $("#treatment_start_time").val(resourceHadRotaDay?.start_time);
         $("#treatment_end_time").val(resourceHadRotaDay?.end_time);
 
+        $("#treatment_appointment_type").val(appointment?.appointment_type_id);
 
     } catch (error) {
-       showException(error);
+        showException(error);
     }
 
 }
@@ -915,14 +966,14 @@ function setSmsLogs(response) {
                     rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
                     rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
                     rows += '<span class="full_text" style="display: none; text-underline: none;">' + smsLog.text + '</span>';
-                        '</a></td>';
+                    '</a></td>';
 
                     if(smsLog.status) {
                         rows += '<td id="smsRow{'+smsLog.id+'">Yes</td>';
                     } else {
                         rows += '<td><span class="text-center" id="spanRow'+smsLog.id+'">No</span>\
                         <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+', `'+sent_url+'`);" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
-                        '<i class="la la-send-o"></i></a></td>';
+                            '<i class="la la-send-o"></i></a></td>';
                     }
 
                     if(smsLog.is_refund == "Yes") {
@@ -958,11 +1009,11 @@ function applyFilters(datatable) {
 
         let filters =  {
             delete: '',
-            patient_id: $("#appoint_search_id").val(),
-            name: $("#appoint_search_patient").val(),
-            phone: $("#appoint_search_phone").val(),
+            patient_id: $("#appointment_patient_id").val(),
+          /*  name: $("#appoint_search_patient").val(),
+            phone: $("#appoint_search_phone").val(),*/
             date_from: $("#appoint_search_start").val(),
-            date_to: $("#appoint_search_end").val(),
+            date_to: $("#appoint_appoint_end").val(),
             appointment_type_id: $("#appoint_search_type").val(),
             service_id: $("#appoint_search_service").val(),
             region_id: $("#appoint_search_region").val(),
@@ -978,6 +1029,7 @@ function applyFilters(datatable) {
             updated_by: $("#appoint_search_rescheduled_by").val(),
             filter: 'filter',
         }
+
         datatable.search(filters, 'search');
     });
 
@@ -1037,7 +1089,7 @@ function setFilters(filter_values, active_filters) {
             appoint_type_options += '<option value="' + appointment_type[0] + '">' + appointment_type[1] + '</option>';
         });
 
-        let city_options = '<option value="">All</option>';
+        let city_options = '<option value="">Select City</option>';
         Object.entries(cities).forEach(function (city, index) {
             city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
         });
@@ -1072,23 +1124,65 @@ function setFilters(filter_values, active_filters) {
             consultancy_type_options += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
         });
 
-        $("#appoint_search_created_by").html(user_options);
-        $("#appoint_search_updated_by").html(user_options);
-        $("#appoint_search_rescheduled_by").html(user_options);
-        $("#appoint_search_type").html(appoint_type_options);
-        $("#appoint_search_status").html(appoint_status_options);
-        $("#appoint_search_doctor").html(doctor_options);
-        $("#appoint_search_centre").html(location_options);
-        $("#appoint_search_city").html(city_options);
-        $("#appoint_search_region").html(region_options);
-        $("#appoint_search_service").html(service_options);
-        $("#appoint_search_consultancy_type").html(consultancy_type_options);
+        let created_by = $("#appoint_search_created_by").val();
+        if (created_by == null || created_by == '') {
+            $("#appoint_search_created_by").html(user_options);
+        }
+
+        let updated_by = $("#appoint_search_updated_by").val();
+        if (updated_by == null || updated_by == '') {
+            $("#appoint_search_updated_by").html(user_options);
+        }
+
+        let rescheduled_by = $("#appoint_search_rescheduled_by").val();
+        if (rescheduled_by == null || rescheduled_by == '') {
+            $("#appoint_search_rescheduled_by").html(user_options);
+        }
+
+        let search_type = $("#appoint_search_type").val();
+        if (search_type == null || search_type == '') {
+            $("#appoint_search_type").html(appoint_type_options);
+        }
+
+        let status = $("#appoint_search_status").val();
+        if (status == null || status == '') {
+            $("#appoint_search_status").html(appoint_status_options);
+        }
+
+        let doctor = $("#appoint_search_doctor").val();
+        if (doctor == null || doctor == '') {
+            $("#appoint_search_doctor").html(doctor_options);
+        }
+
+        let centre = $("#appoint_search_centre").val();
+        if (centre == null || centre == '') {
+            $("#appoint_search_centre").html(location_options);
+        }
+
+        let city = $("#appoint_search_city").val();
+        if (city == null || city == '') {
+            $("#appoint_search_city").html(city_options);
+        }
+
+        let region = $("#appoint_search_region").val();
+        if (region == null || region == '') {
+            $("#appoint_search_region").html(region_options);
+        }
+
+        let service = $("#appoint_search_service").val();
+        if (service == null || service == '') {
+            $("#appoint_search_service").html(service_options);
+        }
+        let consultancy_type = $("#appoint_search_consultancy_type").val();
+        if (consultancy_type == null || consultancy_type == '') {
+            $("#appoint_search_consultancy_type").html(consultancy_type_options);
+        }
 
         $("#appoint_search_created_by").val(active_filters.created_by);
         $("#appoint_search_updated_by").val(active_filters.converted_by);
         $("#appoint_search_rescheduled_by").val(active_filters.updated_by);
         $("#appoint_search_type").val(active_filters.appointment_type_id);
-        $("#appoint_search_status").val(active_filters.appointment_status);
+        $("#appoint_search_status").val(active_filters.appointment_status_id);
         $("#appoint_search_doctor").val(active_filters.doctor_id);
         $("#appoint_search_centre").val(active_filters.location_id);
         $("#appoint_search_city").val(active_filters.city_id);
@@ -1097,8 +1191,15 @@ function setFilters(filter_values, active_filters) {
         $("#appoint_search_consultancy_type").val(active_filters.consultancy_type);
 
         /*For Consultancy filter*/
-        $("#consultancy_city_filter").html(city_options);
-        $("#treatment_city_filter").html(city_options);
+        let city_value = $("#consultancy_city_filter").val();
+
+        if (city_value == null) {
+            $("#consultancy_city_filter").html(city_options);
+        }
+
+        //$("#treatment_city_filter").html(city_options);
+
+        getUserCity();
 
     } catch (error) {
         showException(error);
@@ -1107,12 +1208,16 @@ function setFilters(filter_values, active_filters) {
 
 function resetCustomFilters() {
 
+    $('.appointment_patient_id').val(null).trigger('change');
     $(".filter-field").val('');
-    addUsers();
-    $('.select2').val(null).trigger('change');
+   // $('.select2').val(null).trigger('change');
 
-   /* $(".advance-filters").slideUp();
-    $(".advance-arrow").addsClass("fa-caret-right").removeClass("fa-caret-down")*/
+    setQueryStringParameter('type');
+    setQueryStringParameter('from');
+    setQueryStringParameter('to');
+    setQueryStringParameter('center_id');
+    /* $(".advance-filters").slideUp();
+     $(".advance-arrow").addsClass("fa-caret-right").removeClass("fa-caret-down")*/
 }
 
 jQuery(document).ready(function () {
@@ -1157,6 +1262,8 @@ function createConsultancyInvoice(url) {
             $("#create_consultancy_invoice").html(response)
 
             $("#modal_create_consultancy_invoice").modal("show");
+            $("#addinvoice").show();
+            customDatePicker();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
@@ -1179,6 +1286,7 @@ function createTreatmentInvoice(url) {
             $("#create_treatment_invoice").html(response)
 
             $("#modal_create_treatment_invoice").modal("show");
+            customDatePicker();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
@@ -1253,7 +1361,7 @@ var AppointScheduleValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                   reInitTable();
+                    reInitTable('consultancy');
                 } else {
                     toastr.error(response.message);
                 }

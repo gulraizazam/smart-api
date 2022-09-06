@@ -35,7 +35,8 @@ class LocationsWidget
     {
         $regions = Regions::where(array(
             'account_id' => $account_id,
-        ))->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
+            'active' => 1,
+        ))->whereIn('slug',['custom','all'])->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
 
         $dropdown_array = array();
 
@@ -66,6 +67,7 @@ class LocationsWidget
                     'account_id' => $account_id,
                     'region_id' => $region->id,
                     'slug' => 'region',
+                    'active' => 1,
                 ))->select('id', 'name', 'slug')->first();
 
                 if ($first_child) {
@@ -199,6 +201,7 @@ class LocationsWidget
                 $region_centres = Locations::where(array(
                     'account_id' => $account_id,
                     'slug' => 'region',
+                    'active' => 1,
                 ))->select('id', 'name', 'region_id')->get();
                 if ($region_centres) {
 
@@ -751,14 +754,26 @@ class LocationsWidget
         } else {
             // 2. Find All Regions
             $singleLocation = Locations::find($location_id);
-            $regionlocation = DoctorHasLocations::where([
-                'location_id' => Locations::where(array(
-                    'slug' => 'region',
-                    'account_id' => $account_id,
-                    'region_id' => $singleLocation->region_id,
-                ))->select('id')->first()->id,
-                'user_id' => $doctor_id
-            ])->get();
+            $location_count=Locations::where(array('slug' => 'region', 'account_id' => $account_id,'region_id' => $singleLocation->region_id))->count();
+            if($location_count){
+                $regionlocation = DoctorHasLocations::where([
+                    'location_id' => Locations::where(array(
+                        'slug' => 'region',
+                        'account_id' => $account_id,
+                        'region_id' => $singleLocation->region_id,
+                    ))->select('id')->first()->id,
+                    'user_id' => $doctor_id
+                ])->get();
+            }else{
+                $regionlocation = DoctorHasLocations::where([
+                    'location_id' => Locations::where(array(
+                        'slug' => 'region',
+                        'account_id' => $account_id,
+                        'region_id' => null,
+                    ))->select('id')->first(),
+                    'user_id' => $doctor_id
+                ])->get();
+            }
 
             if ($regionlocation->count()) {
                 //      Find All Services
@@ -1002,6 +1017,7 @@ class LocationsWidget
         //      Find All Services
 
         $resoruce_info = Resources::find($resource_id);
+
         $machinetype = MachineType::find($resoruce_info->machine_type_id);
 
         $rootservice = MachineTypeHasServices

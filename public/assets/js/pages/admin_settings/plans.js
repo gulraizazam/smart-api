@@ -64,7 +64,7 @@ $(document).ready( function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-
+                    let  consume = 'NO';
                     if (resposne.status == '1') {
 
                         $('#table_1').append("" +
@@ -85,9 +85,9 @@ $(document).ready( function () {
 
                         jQuery.each(resposne.myarray.record_detail, function (i, record_detail) {
                             if (record_detail.is_consumed == '0') {
-                                var consume = 'NO';
+                                consume = 'NO';
                             } else {
-                                var consume = 'YES';
+                                consume = 'YES';
                             }
                             $('#table_1').append("<tr class='inner_records_hr HR_" + resposne.myarray.record.id + " " + resposne.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Tax Amt. : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
@@ -217,7 +217,7 @@ function actions(data) {
         let sms_log_url = route('admin.packages.sms_logs', {id: id});
         let log_url = route('admin.packages.log', {id: id, type:  'web'});
 
-        if (permissions.create && permissions.log && permissions.sms_log && permissions.edit) {
+        if (permissions.create || permissions.log || permissions.sms_log || permissions.edit) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -563,12 +563,12 @@ function setEditData(response) {
 
 
                     Object.values(packageservices).forEach(function (packageservice) {
-
+                        let consume = 'NO';
                         if(packageservice.package_bundle_id == packagebundle.id ) {
                             if (packageservice.is_consumed == '0') {
-                                let consume = 'NO';
+                                consume = 'NO';
                             } else {
-                                let consume = 'YES';
+                                consume = 'YES';
                             }
 
                             service_options += '<tr class="'+packagebundle.id+'" style="display: none">';
@@ -749,12 +749,12 @@ function displayData(response) {
 
 
                     Object.values(packageservices).forEach(function (packageservice) {
-
+                        let consume = 'NO';
                         if(packageservice.package_bundle_id == packagebundle.id ) {
                             if (packageservice.is_consumed == '0') {
-                                let consume = 'NO';
+                                consume = 'NO';
                             } else {
-                                let consume = 'YES';
+                                consume = 'YES';
                             }
 
                             service_options += '<tr class="'+packagebundle.id+'" style="display: none">';

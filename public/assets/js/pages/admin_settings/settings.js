@@ -26,6 +26,7 @@ validate.on('core.form.invalid', function (e) {
     select2Validation();
 });
 validate.on('core.form.valid', function (event) {
+
     submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
         if (response.status == true) {
             toastr.success(response.message);
@@ -117,6 +118,9 @@ const dataValidators = {
 };
 
 function editRow(id, modal) {
+
+    $("#min-msg").hide();
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -159,13 +163,13 @@ function editRow(id, modal) {
                     data = data + '</select>';
                 } else if (response.data.field_type === 'minmax') {
                     data = data + '<div class="row">' +
-                        '<div class="col-md-6"><input placeholder="Min" type="text"  name="min" id="min" value="' + response.data.min + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2"></div>' +
-                        '<div class="col-md-6"><input placeholder="Max" type="text" name="max" id="max" value="' + response.data.max + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2"></div>' +
+                        '<div class="col-md-6"><input oninput="phoneField(this);"  placeholder="Min" type="text"  name="min" id="min" value="' + response.data.min + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2"><span style="display: none;" id="min-msg" class="text text-danger"></span></div>' +
+                        '<div class="col-md-6"><input oninput="phoneField(this);"  placeholder="Max" type="text" name="max" id="max" value="' + response.data.max + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2"></div>' +
                         '</div>';
                 } else if (response.data.field_type === 'prepost') {
                     data = data + '<div class="row">' +
-                        '<div class="col-md-6"><input placeholder="Pre" type="text" name="pre" value="' + response.data.pre + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2 mr-1"></div>' +
-                        '<div class="col-md-6"><input placeholder="Post" type="text" name="post" value="' + response.data.post + '" id="form_data" required class=" form-control form-control-lg form-control-solid mb-2 ml-1"></div>' +
+                        '<div class="col-md-6"><input oninput="phoneField(this);"  placeholder="Pre" type="text" name="pre" value="' + response.data.pre + '" id="form_data" required class="form-control form-control-lg form-control-solid mb-2 mr-1"></div>' +
+                        '<div class="col-md-6"><input oninput="phoneField(this);"  placeholder="Post" type="text" name="post" value="' + response.data.post + '" id="form_data" required class=" form-control form-control-lg form-control-solid mb-2 ml-1"></div>' +
                         '</div>';
                 }
                 $('#modal_settings_form').attr('action', route('admin.settings.update', response.data.id));
@@ -174,7 +178,6 @@ function editRow(id, modal) {
                 $('#field_data').html(data);
                 validate.addField('data', dataValidators);
                 if (response.data.field_type === 'minmax') {
-                    validate.addField('min', minValidators);
                     validate.addField('max', maxValidators);
                 } else if (response.data.field_type === 'prepost') {
                     validate.addField('pre', preValidators);
@@ -192,12 +195,12 @@ function editRow(id, modal) {
 }
 
 $(document).on('keydown', '#min', function () {
-    setMinValidation();
+  //  setMinValidation();
 
 });
 
 $(document).on('keyup', '#max', function () {
-    setMinValidation();
+   // setMinValidation();
     validate.revalidateField('min');
 });
 
@@ -254,11 +257,13 @@ function submitForm(action, method, data, callback) {
         cache: false,
         success: function (response) {
             if (response.status == true) {
+                $("#min-msg").hide();
                 callback({
                     'status': response.status,
                     'message': response.message,
                 });
             } else {
+                $("#min-msg").text(response.message).show();
                 callback({
                     'status': response.status,
                     'message': response.message,

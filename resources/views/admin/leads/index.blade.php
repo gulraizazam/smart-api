@@ -31,7 +31,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Leads</h3>
+                            <h3 class="card-label">{{\Illuminate\Support\Str::title(request('type'))}} Leads</h3>
 
                         </div>
 
@@ -62,20 +62,26 @@
                                     </a>
                                     <ul class="dropdown-menu pull-right export_leads" id="datatable_ajax_tools">
                                         <li>
-                                            <a href="{{route('admin.leads.export.pdf', ['type' => request('type')])}}" data-action="0" class="tool-action"><i class="la la-file-pdf"></i> PDF</a>
+                                            <a href="#" title="Max pdf export limit is 100 records" id="export-pdf-leads" data-href="{{route('admin.leads.export.pdf')}}" data-action="0" class="tool-action"><i class="la la-file-pdf"></i>
+                                                PDF
+                                                <!-- <span class="export-pdf-limit">(1 to {{config('constants.export-lead-pdf-limit')}})</span></a> -->
+                                            </a>
                                         </li>
                                         <li>
-                                            <a href="{{route('admin.leads.export.excel')}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i> Excel</a>
+                                            <a href="#" title="Max export limit is 1000 records" id="export-leads" data-href="{{route('admin.leads.export.excel')}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i>
+                                                Excel
+                                                <!-- <span class="export-excel-limit">(1 to {{config('constants.export-lead-excel-limit')}})</span> -->
+                                            </a>
                                         </li>
                                         <li>
-                                            <a href="{{route('admin.leads.export.excel', ['type' => 'csv'])}}" data-action="2" class="tool-action"><i class="la la-file-csv"></i> CSV</a>
+                                            <a href="#" data-href="{{route('admin.leads.export.excel')}}" id="csv-leads" data-action="2" class="tool-action"><i class="la la-file-csv"></i> CSV</a>
                                         </li>
                                     </ul>
                                 </div>
                             @endif
                             &nbsp;&nbsp;
                             @if(Gate::allows('leads_create'))
-                                <a href="javascript:void(0);" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
+                                <a href="javascript:void(0);" id="create_lead" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
@@ -174,9 +180,95 @@
 
     @push('datatable-js')
         <script>
+
             let lead_type = '{{request('type')}}';
+            let junk = '{{config('constants.lead_status_junk')}}';
+
+            var limit = '{{config('constants.export-lead-excel-limit')}}';
+            var offset = 0;
+
+            var pdf_limit = '{{config('constants.export-lead-pdf-limit')}}';
+            var pdf_offset = 0;
+
+            $(document).ready(function () {
+                //$("#export-leads").attr('href', route('admin.leads.export.excel', [limit, offset]));
+
+                //$("#export-pdf-leads").attr('href', route('admin.leads.export.pdf', [pdf_limit, pdf_offset]));
+            });
+
+            function setExportLimit($this) {
+
+                let previousLimit = limit;
+                let next = {{config('constants.export-lead-excel-limit')}};
+                limit = parseInt(limit) + parseInt(next);
+                offset = parseInt(offset) + parseInt(next);
+
+                setTimeout( function () {
+                    $this.attr('href', route('admin.leads.export.excel', [limit, offset]));
+
+                    $(".export-excel-limit").text("("+previousLimit+" to "+limit+")")
+                },1000);
+            }
+
+            function setPdfLimit($this) {
+
+                let pdf_previousLimit = pdf_limit;
+                let next = {{config('constants.export-lead-pdf-limit')}};
+
+                pdf_limit = parseInt(pdf_limit) + parseInt(next);
+                pdf_offset = parseInt(pdf_offset) + parseInt(next);
+
+                setTimeout( function () {
+                    //$this.attr('href', route('admin.leads.export.pdf', [pdf_limit, pdf_offset]));
+
+                    $(".export-pdf-limit").text("("+pdf_previousLimit+" to "+pdf_limit+")")
+                },1000);
+            }
         </script>
         <script src="{{asset('assets/js/pages/leads/leads.js')}}"></script>
+
+        <script>
+            jQuery(document).ready( function () {
+                @if(request('create') != '' && request('create') !== null)
+                    $("#create_lead").click()
+                @endif
+
+                @if(request('from') != '' && request('to') != '')
+                    setTimeout( function () {
+
+                        $("#search_created_from").val("{{request('from')}}");
+                        $("#search_created_to").val("{{request('to')}}");
+                        $("#apply-filters").click();
+
+                    }, 800);
+
+                @endif
+            });
+
+            function getUserCity() {
+
+                <?php if(auth()->id() != 1): ?>
+
+                $.ajax({
+                    url: '<?php echo e(route('admin.users.get_cities')); ?>',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.status) {
+                            $("#search_city_id").val(response.data.city).change();
+                            $("#add_city_id").val(response.data.city).change();
+                        }
+                    },
+                    error: function () {
+
+                    }
+                });
+
+                <?php endif; ?>
+
+            }
+
+        </script>
     @endpush
 
 @endsection

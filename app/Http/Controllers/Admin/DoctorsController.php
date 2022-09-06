@@ -64,7 +64,7 @@ class DoctorsController extends Controller
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('lead_sources_manage')) {
+            if (!Gate::allows('doctors_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
 
@@ -149,6 +149,7 @@ class DoctorsController extends Controller
                 'inactive' => Gate::allows('doctors_inactive'),
                 'delete' => Gate::allows('doctors_destroy'),
                 'allocate' => Gate::allows('doctors_allocate'),
+                'contact' => Gate::allows('contact'),
             ];
 
             $filters = Filters::all(Auth::User()->id, 'doctors');
@@ -228,7 +229,7 @@ class DoctorsController extends Controller
                 $where[] = [
                     'users.phone',
                     'like',
-                    '%' . GeneralFunctions::cleanNumber($request->get('phone')) . '%',
+                    '%' . GeneralFunctions::cleanNumber($filters['phone']) . '%',
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'phone', $filters['phone']);
             } else {
@@ -371,7 +372,7 @@ class DoctorsController extends Controller
     /**
      * Show the form for creating new User As Doctors.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function create()
     {
@@ -400,9 +401,17 @@ class DoctorsController extends Controller
 
         $DoctorServices = [];
 
-        $roles = Role::get()->pluck('name', 'name');
+        $roles = Role::get()->pluck('name', 'id');
 
-        return view('admin.doctors.create', compact('locations', 'userstype', 'userstype', 'doctor', 'Services', 'DoctorServices', 'roles'));
+        return ApiHelper::apiResponse($this->success, 'Data found', true, [
+            'locations' => $locations,
+            'userstype' => $userstype,
+            'user' => $doctor,
+            'Services' => $Services,
+            'DoctorServices' => $DoctorServices,
+            'roles'  => $roles
+        ]);
+
     }
 
 
@@ -552,7 +561,7 @@ class DoctorsController extends Controller
      *
      * @param int $id
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
@@ -592,9 +601,28 @@ class DoctorsController extends Controller
                 ['active', '=', '1'],
             ])->get()->pluck('full_address', 'id');
 
-            $roles = Role::get()->pluck('name', 'name');
+            $roles = Role::get()->pluck('name', 'id');
+            $user_roles = $doctor->user_roles()->pluck('id');
 
-            return view('admin.doctors.edit', compact('doctor', 'user_has_locations', 'locations', 'userstype', 'DoctorServices', 'Services', 'roles'));
+            return ApiHelper::apiResponse($this->success, 'Data found', true, [
+                'user' => $doctor,
+                'user_has_locations' => $user_has_locations,
+                'locations' => $locations,
+                'userstype' => $userstype,
+                'DoctorServices' => $DoctorServices,
+                'Services' => $Services,
+                'roles' => $roles,
+                'user_roles' => $user_roles
+            ]);
+
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'roles' => $roles,
+                'user' => $doctor,
+                'locations' => $locations,
+                'roles_commissions' => $roles_commissions,
+                'user_has_locations' => $user_has_locations,
+                'user_roles' => $user_roles
+            ]);
         }
     }
 
@@ -647,6 +675,18 @@ class DoctorsController extends Controller
                     }
                 }
                 $resource_doctor = Resources::where('external_id', '=', $user->id)->first();
+                if (!$resource_doctor) {
+
+                    $resourcetype_id = ResourceTypes::where('name', '=', 'doctor')->first();
+
+                    Resources::create([
+                        'name' => $user->name ?? '',
+                        'account_id' => Auth::User()->account_id ?? '',
+                        'resource_type_id' => $resourcetype_id->id ?? '',
+                        'external_id' => $user->id ?? '',
+                        'active' => 1,
+                    ]);
+                }
                 if ($resource_doctor) {
                     $resource_doctor->name = $request->name;
                     $resource_doctor->save();

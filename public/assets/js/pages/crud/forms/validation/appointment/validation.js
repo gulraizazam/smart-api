@@ -33,7 +33,13 @@ var UpdateStatusValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    let query = get_query();
+                    if (query.type == 1) {
+                        var appointment = 'consultancy';
+                    } else {
+                        var appointment = 'treatment';
+                    }
+                    reInitTable(appointment);
                 } else {
                     toastr.error(response.message);
                 }
@@ -141,7 +147,7 @@ var EditAppointmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitCalendar(start_date, calendar, ConsultancyCalendar);
+                  reInitTable('consultancy');
                 } else {
                     toastr.error(response.message);
                 }
@@ -176,21 +182,28 @@ var CreateConsultancytValidation = function () {
                     service_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The city field is required'
+                                message: 'The consultancy field is required'
                             }
                         }
                     },
                     phone: {
                         validators: {
                             notEmpty: {
-                                message: 'The location field is required'
+                                message: 'The phone  field is required'
                             }
                         }
                     },
                     name: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
+                                message: 'The patient name field is required'
+                            }
+                        }
+                    },
+                    gender: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The gender field is required'
                             }
                         }
                     }
@@ -243,28 +256,35 @@ var CreateTreatmentValidation = function () {
                     base_service_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The consultancy type field is required'
+                                message: 'The service field is required'
                             }
                         }
                     },
                     service_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The city field is required'
+                                message: 'The child service field is required'
+                            }
+                        }
+                    },
+                    patient_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The patient field is required'
                             }
                         }
                     },
                     phone: {
                         validators: {
                             notEmpty: {
-                                message: 'The location field is required'
+                                message: 'The phone field is required'
                             }
                         }
                     },
                     name: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
+                                message: 'The patient name field is required'
                             }
                         }
                     },
@@ -405,7 +425,7 @@ var EditTreatmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
+                    reInitTable('treatment');
                 } else {
                     toastr.error(response.message);
                 }

@@ -1,9 +1,9 @@
 <!--begin::Modal content-->
-<div class="modal-content">
+<div class="modal-content rota-section">
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder rota-title">Add Rota</h2>
+        <h2 class="fw-bolder rota-title">Edit Rota</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -25,8 +25,7 @@
         <form id="modal_edit_resourcerotas_form" method="post" action="">
             <!--begin::Scroll-->
 
-            @method('put')
-
+            <input type="hidden" name="_method" value="put">
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resourcerotas_scroll">
 
                 <div class="form-group">
@@ -312,7 +311,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <a href="" class="btn btn-light me-3 popup-close" >Cancel</a>
                 <button type="submit" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>

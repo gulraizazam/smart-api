@@ -24,12 +24,12 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Full Name:</label>
-            <input class="form-control filter-field" id="search_full_name" placeholder="enter name">
+            <input class="form-control filter-field" id="search_full_name" placeholder="Enter Name">
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Phone:</label>
-            <input type="number" oninput="phoneField(this);" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
+            <input type="text" oninput="phoneField(this);" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
@@ -47,10 +47,12 @@
             <select class="form-control filter-field select2" id="search_region_id"></select>
         </div>
 
+        @if(request('type') == '')
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Lead Status:</label>
             <select class="form-control filter-field select2" id="search_status_id"></select>
         </div>
+        @endif
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Service:</label>
@@ -70,12 +72,14 @@
             </div>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mt-6">
+    </div>
+
+    <div class="row mb-8 advance-filters" style="display: none;">
+        <div class="col-lg-3 mb-lg-0">
             <label>Created By:</label>
             <select class="form-control filter-field select2" id="search_created_by">
             </select>
         </div>
-
     </div>
 
     <div class="row">

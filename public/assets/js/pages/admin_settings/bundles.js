@@ -4,7 +4,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -13,23 +13,23 @@ var table_columns = [
     {
         field: 'name',
         title: 'Name',
-        width: 'auto',
+        width: 190,
     },
     {
         field: 'price',
         title: 'Price',
-        width: 'auto',
+        width: 90,
     },
     {
         field: 'total_services',
         title: 'Total Services',
-        width: 'auto',
+        width: 100,
     },
 
     {
         field: 'apply_discount',
         title: 'Apply Discount',
-        width: 'auto',
+        width: 100,
     },
     {
         field: 'start',
@@ -40,22 +40,16 @@ var table_columns = [
         field: 'end',
         title: 'Valid To',
         width: 'auto',
-    },
-    {
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-    },
-    {
+    },{
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 130,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.bundles.status');
             return statuses(data, status_url);
         }
-    }, {
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -65,6 +59,10 @@ var table_columns = [
         template: function (data) {
             return actions(data);
         }
+    }, {
+        field: 'created_at',
+        title: 'Created At',
+        width: 'auto',
     }];
 
 
@@ -90,7 +88,7 @@ function actions(data) {
             actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="detailRow(`' + url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                            <span class="navi-text">Detals</span>\
+                            <span class="navi-text">Detail</span>\
                         </a>\
                     </li>';
         }
@@ -163,13 +161,14 @@ function detailRow(url) {
 function setDetailData(response) {
     let bundle = response.data.bundle;
     let bundle_services =response.data.bundle_services;
+    let relationships =response.data.relationships;
     $('#detail_name').html(bundle.name);
     $('#detail_price').html(bundle.price);
     $('#detail_total_services').html(bundle.total_services);
     $('#detail_services_price').html(bundle.services_price);
     $('.DETAIL_SERVICES').remove();
-    Object.entries(bundle_services).forEach(function (value, index) {
-        $("#detail-service-body").append(setDetailService(value[1].name, value[1].price));
+    Object.entries(relationships).forEach(function (value, index) {
+        $("#detail-service-body").append(setDetailService(bundle_services[value[1].service_id].name, bundle_services[value[1].service_id].price));
     });
 }
 
@@ -177,6 +176,7 @@ function setEditData(response) {
     $('#model-title').html('Edit Package');
     let bundle = response.data.bundle;
     let bundle_services =response.data.bundle_services;
+    let relationships =response.data.relationships;
     let action = route('admin.bundles.update', {id: bundle.id});
     $("#modal_bundles_form").attr("action", action);
     $('#put_input').html('<input type="hidden" name="_method" value="put">');
@@ -191,8 +191,9 @@ function setEditData(response) {
 
     $('.HR_SERVICES').remove();
 
-    Object.entries(bundle_services).forEach(function (value, index) {
-        $('#service_body').append(setService(value[1].id, value[1].name, value[1].price));
+    Object.entries(relationships).forEach(function (value, index) {
+        
+        $('#service_body').append(setService(index+1,value[1].service_id,bundle_services[value[1].service_id].name, bundle_services[value[1].service_id].price));
     });
 
     calculateServicesTotal();
@@ -255,8 +256,12 @@ function setFilters(filter_values, active_filters) {
         discount_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
-    Object.entries(taxs).forEach(function (value, index) {
-        tax_options += '<label class="radio"><input name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
+    Object.entries(taxs).forEach(function (value, i, index) {
+        if (i === 0) {
+            tax_options += '<label class="radio"><input checked name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
+        } else {
+            tax_options += '<label class="radio"><input name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
+        }
     });
 
     Object.entries(services).forEach(function (value, index) {
@@ -289,8 +294,8 @@ function addRow() {
         let service_id = $('#services').find(':selected').attr('data-id');
         let service_name = $('#services').find(':selected').attr('data-name');
         let service_price = $('#services').find(':selected').attr('data-price');
-
-        $('#service_body').append(setService(service_id, service_name, service_price));
+        console.log("1st "+service_id);
+        $('#service_body').append(setService($("#service_body tr").length+1,service_id, service_name, service_price));
         calculateServicesTotal();
     }
 }
@@ -310,8 +315,9 @@ function setDetailService(service_name, price) {
     return '<tr class="DETAIL_SERVICES">  <td>' + service_name + '</td><td>' + price + '</td></tr>';
 }
 
-function setService(id, service_name, price) {
-    return '<tr id="HR_" class="HR_SERVICES HR_' + id + '"> <input type="hidden" name="service_id[]" value="' + id + '"> <input type="hidden" name="service_price[]" value="' + price + '"> <input type="hidden" class="servicePriceValue" value="' + price + '"> <td>' + service_name + '</td><td>' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
+function setService(id, service_id,service_name, price) {
+    console.log("2nd "+id);
+    return '<tr id="HR_" class="HR_SERVICES HR_' + id + '"> <input type="hidden" name="service_id[]" value="' + service_id + '"> <input type="hidden" name="service_price[]" value="' + price + '"> <input type="hidden" class="servicePriceValue" value="' + price + '"> <td>' + service_name + '</td><td>' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
 }
 
 function deleteIcon(id) {

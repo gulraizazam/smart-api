@@ -77,7 +77,7 @@ class ResourceHasRota extends BaseModal
             if ($request->resource_doctor || $request->resource_machine) {
                 if ($request->resource_doctor) {
                     $resourcedoctor = Resources::where('external_id', '=', $request->resource_doctor)->first();
-                    $data['resource_id'] = $resourcedoctor->id;
+                    $data['resource_id'] = $resourcedoctor?->id;
                 } else {
                     $data['resource_id'] = $request->resource_machine;
                     $data['is_consultancy'] = '0';
@@ -154,6 +154,7 @@ class ResourceHasRota extends BaseModal
                 if (isset($data['city_id']) && $data['city_id']) {
                     $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
                 }
+
                 $resourcerota = ResourceHasRota::create($data);
                 AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $resourcerota);
 
@@ -225,7 +226,7 @@ class ResourceHasRota extends BaseModal
 
                 AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $resourcerota);
             }
-
+           // dd($data);
             ResourceHasRotaDays::createRotaDaysRecord($request, $resourcerota, $week, $data);
 
             return array(
@@ -423,7 +424,7 @@ class ResourceHasRota extends BaseModal
                         if ($request->get('time_f_monday') == $request->get('time_to_monday')) {
                             return array(
                                 'status' => 0,
-                                'message' => array('Time range must be different, Kindly define again'),
+                                'message' => 'Time range must be different, Kindly define again',
                             );
                         } else {
                             $data[$day] = implode(',', array(Carbon::parse($request->time_f_monday)->format('H:i'), Carbon::parse($request->time_to_monday)->format('H:i')));
@@ -431,14 +432,14 @@ class ResourceHasRota extends BaseModal
                     } else {
                         return array(
                             'status' => 0,
-                            'message' => array('From or To require, kindly define again'),
+                            'message' => 'From or To require, kindly define again',
                         );
                     }
                     if($request->get('break_from_monday') && $request->get('break_to_monday')) {
                         if($request->get('break_from_monday') == $request->get('break_to_monday')) {
                             return array(
                                 'status' => 0,
-                                'message' => array('Time range must be different, Kindly define again'),
+                                'message' => 'Time range must be different, Kindly define again',
                             );
                         } else {
                             if (
@@ -449,7 +450,7 @@ class ResourceHasRota extends BaseModal
                             } else {
                                 return array(
                                     'status' => 0,
-                                    'message' => array('Break time must be between From and To, Kindly Define again'),
+                                    'message' => 'Break time must be between From and To, Kindly Define again',
                                 );
                             }
                         }
@@ -460,7 +461,7 @@ class ResourceHasRota extends BaseModal
                         if($request->get('break_from_monday') || $request->get('break_to_monday')){
                             return array(
                                 'status' => 0,
-                                'message' => array('From Break or To Break require, kindly define again'),
+                                'message' => 'From Break or To Break require, kindly define again',
                             );
                         }
                     }
@@ -478,7 +479,7 @@ class ResourceHasRota extends BaseModal
                             if($request->get('time_f_' . $day) == $request->get('time_to_' . $day)){
                                 return array(
                                     'status' => 0,
-                                    'message' => array('Time range must be different, Kindly define again'),
+                                    'message' => 'Time range must be different, Kindly define again',
                                 );
                             } else {
                                 $data[$day] = implode(',', array(Carbon::parse($request->get('time_f_' . $day))->format('H:i'), Carbon::parse($request->get('time_to_' . $day))->format('H:i')));
@@ -486,7 +487,7 @@ class ResourceHasRota extends BaseModal
                         } else {
                             return array(
                                 'status' => 0,
-                                'message' => array('From or To require, kindly define again'),
+                                'message' => 'From or To require, kindly define again',
                             );
                         }
                         if ($request->get('break_from_' . $day) == null && $request->get('break_to_' . $day) == null){
@@ -496,7 +497,7 @@ class ResourceHasRota extends BaseModal
                                 if($request->get('break_from_' . $day) == $request->get('break_to_' . $day)){
                                     return array(
                                         'status' => 0,
-                                        'message' => array('Time range must be different, Kindly define again'),
+                                        'message' => 'Time range must be different, Kindly define again',
                                     );
                                 } else {
                                     if (
@@ -507,7 +508,7 @@ class ResourceHasRota extends BaseModal
                                     } else {
                                         return array(
                                             'status' => 0,
-                                            'message' => array('Break time must be between From and To, Kindly Define again'),
+                                            'message' => 'Break time must be between From and To, Kindly Define again',
                                         );
                                     }
                                 }
@@ -518,7 +519,7 @@ class ResourceHasRota extends BaseModal
                                 if($request->get('break_from_' . $day) || $request->get('break_to_' . $day)){
                                     return array(
                                         'status' => 0,
-                                        'message' => array('From Break or To Break require, kindly define again'),
+                                        'message' => 'From Break or To Break require, kindly define again',
                                     );
                                 }
                             }
@@ -589,7 +590,7 @@ class ResourceHasRota extends BaseModal
             if ($rota_overlap_status == 'true') {
                 return array(
                     'status' => 0,
-                    'message' => array('Date range overlap, Kindly define again'),
+                    'message' => 'Date range overlap, Kindly define again',
                 );
             } else {
                 $resourcerota->update($data);

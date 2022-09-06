@@ -45,7 +45,7 @@
                             @endif
 
                             @if(Gate::allows('doctors_create'))
-                                <a href="javascript:void(0);" class="btn btn-primary" onclick="createUsers('{{ route('admin.users.create') }}');" data-toggle="modal" data-target="#modal_add_user">
+                                <a href="javascript:void(0);" class="btn btn-primary" onclick="createUsers('{{ route('admin.doctors.create') }}');" data-toggle="modal" data-target="#modal_add_user">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                     <i class="la la-plus"></i>
                                     Add New

@@ -30,7 +30,7 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
                             <input id="edit_user_name" type="text" name="name"  class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
@@ -40,12 +40,13 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <i onclick="phoneReset('phone-field')" class="fa fa-edit"></i>
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone</label>
-                            <input id="edit_user_phone" type="number" name="phone" class="form-control phone-field form-control-lg form-control-solid mb-2" />
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
+                            <input id="edit_user_phone" type="text" name="phone" class="form-control phone-field form-control-lg form-control-solid mb-2" />
+                            <input id="edit_old_user_phone" type="hidden" name="old_phone" class="form-control phone-field form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Email</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Email <span class="text text-danger">*</span></label>
                             <input id="edit_user_email" type="email" name="email" class="form-control form-control-lg form-control-solid" />
                         </div>
 
@@ -56,7 +57,7 @@
                     <div class="row">
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
                             <select id="edit_user_gender" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
 {{--                                <option value="">Select</option>--}}
 {{--                                <option value="1">Male</option>--}}
@@ -65,9 +66,9 @@
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Commission</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Commission <span class="text text-danger">*</span></label>
                             <div class="input-group">
-                                <input id="edit_user_commission" type="number" min="0" maxlength="100" name="commission" class="form-control commission-field form-control-lg form-control-solid mb-2"/>
+                                <input id="edit_user_commission" type="number" min="0" maxlength="100" name="commission" class="form-control commission-field form-control-lg form-control-solid mb-2" style="padding-right: 5px;">
                                 <div class="input-group-append popup-percentage">
                                     <span class="input-group-text">%</span>
                                 </div>

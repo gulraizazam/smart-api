@@ -19,12 +19,12 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Patient:</label>
-            <input type="text" class="form-control filter-field" placeholder="Enter ID" id="appoint_search_patient" />
+            <input type="text" class="form-control filter-field" placeholder="Enter Name" id="appoint_search_patient" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Phone:</label>
-            <input type="number" id="appoint_search_phone" class="form-control filter-field">
+            <input type="text" oninput="phoneField(this);" placeholder="e.g: 0300XXXXXXX" id="appoint_search_phone" class="form-control filter-field">
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">

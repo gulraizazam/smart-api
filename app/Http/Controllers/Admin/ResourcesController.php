@@ -66,7 +66,6 @@ class ResourcesController extends Controller
         try {
 
             $resource_types = ResourceTypes::getallresource();
-            $resource_types->prepend('Select a Resource Type', '');
 
             $locations = Locations::where([
                 ['active', '=', '1'],

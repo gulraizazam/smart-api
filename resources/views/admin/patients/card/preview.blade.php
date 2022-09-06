@@ -49,8 +49,9 @@
                         <!--end::Profile Card-->
                     </div>
                     <!--end::Aside-->
+
                     <!--begin::Content-->
-                    <div class="flex-row-fluid ml-lg-8">
+                    <div class="flex-row-fluid ml-lg-8 main-patient-section">
                         <!--begin::Card-->
                         <div class="card card-custom">
 

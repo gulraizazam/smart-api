@@ -48,7 +48,7 @@ use App\Http\Controllers\Admin\OrdersController;
 
 
 /*
-|--------------------------------------------------------------------------
+|-----------------------------------------viewDetail---------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |
@@ -195,7 +195,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('doctors/password/{id}', [DoctorsController::class, 'changePassword'])->name('doctors.change_password');
     Route::patch('doctors/password', [DoctorsController::class, 'savePassword'])->name('doctors.save_password');
     Route::post('doctors/status', [DoctorsController::class, 'status'])->name('doctors.status');
-    Route::resource('doctors', DoctorsController::class)->except(['index', 'create', 'show']);
+    Route::resource('doctors', DoctorsController::class)->except(['index', 'show']);
     Route::get('doctors/locations/{id}', [DoctorsController::class, 'displaylocation'])->name('doctors.location_manage');
     Route::get('doctors/get-service', [DoctorsController::class, 'getservices'])->name('doctors.get_service');
     Route::post('doctors/save_service', [DoctorsController::class, 'saveservices'])->name('doctors.save_service');
@@ -257,7 +257,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('resourcerotas', ResourceRotasController::class)->except('index');
 
     //Invoice Management route start
-    Route::post('invoices/datatable', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
+    Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
 
     Route::post('invoices/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoices.cancel');
 
@@ -274,6 +274,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
     Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
     Route::get('users/get_patient_number', [UsersController::class, 'getpatientnumber'])->name('users.get_patient_number');
+    Route::get('users/get_cities', [UsersController::class, 'getUserCities'])->name('users.get_cities');
+    Route::get('users/get_centers', [UsersController::class, 'getUserCenters'])->name('users.get_centers');
 
     /*packages*/
     Route::post('plans/planDatatable/{id}', [PackagesController::class, 'planDatatable'])->name('packages.planDatatable');
@@ -314,7 +316,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Routes for editing the cash in treatment plan*/
     Route::get('packages/edit_cash/{id}/{package_id}',[PackagesController::class, 'editpackageadvancescashindex'])->name('packages.edit_cash');
 
-    Route::post('packages/delete_cash',[PackagesController::class, 'deletepackageadvancescash'])->name('packages.delete_cash');
+    Route::post('packages/delete/cash',[PackagesController::class, 'deletepackageadvancescash'])->name('packages.delete_cash');
 
     Route::put('packages/edit_cash/store',[PackagesController::class, 'storepackageadvancescash'])->name('packages.edit_cash.store');
     /*End*/
@@ -376,6 +378,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointments/update/schedule', [AppointmentsController::class, 'updateSchedule'])->name('appointments.updateSchedule');
     Route::get('appointments/schedule/get', [AppointmentsController::class, 'getSchedule'])->name('appointments.get_schedule');
     Route::resource('appointments', AppointmentsController::class);
+    Route::post('appointments/load/lead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
     // Patients routes start
     Route::post('patients/{id}/appointments-datatable', [PatientsController::class, 'appointmentsDatatable'])->name('patients.appointmentsDatatable');
@@ -434,7 +437,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::post('plans/status', [PackagesController::class, 'status'])->name('plans.status');
 
-    Route::post('plans/destroy/{id}',[PackagesController::class, 'destroy'])->name('plans.destroy');
+    Route::any('plans/destroy/{id}',[PackagesController::class, 'destroy'])->name('plans.destroy');
 
     Route::get('plans/display/{id}',[PackagesController::class, 'display'])->name('plans.display');
 
@@ -470,7 +473,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
 
     /*Appointment routes*/
-    Route::post('appointments/datatable', [AppointmentsController::class, 'datatable'])->name('appointments.datatable');
+    Route::post('consultancy/datatable', [AppointmentsController::class, 'datatable'])->name('consultancy.datatable');
+    Route::post('treatment/datatable', [AppointmentsController::class, 'treatmentDatatable'])->name('treatment.datatable');
     Route::get('appointments/show/status', [AppointmentsController::class, 'showAppointmentStatuses'])->name('appointments.showappointmentstatus');
     Route::post('appointments/load-child-appointment-statuses', [AppointmentsController::class, 'loadAppointmentStatuses'])->name('appointments.load_child_appointment_statuses');
     Route::put('appointments/store/appointmentstatus', [AppointmentsController::class, 'storeAppointmentStatuses'])->name('appointments.storeappointmentstatus');
@@ -481,7 +485,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::put('appointments/send/logged_sms', [AppointmentsController::class, 'sendLogSMS'])->name('appointments.resend_sms');
 
-    Route::resource('appointments', AppointmentsController::class)->except('index');
+    Route::resource('consultancy', AppointmentsController::class)->except('index');
 
 
     Route::post('appointments/load-doctor-rota', [AppointmentsController::class, 'loadRotaByDoctor'])->name('appointments.load_doctor_rota');

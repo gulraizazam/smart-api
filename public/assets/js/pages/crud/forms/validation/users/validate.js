@@ -60,7 +60,7 @@ var AddUserValidation = function () {
                     'centers[]': {
                         validators: {
                             notEmpty: {
-                                message: 'The commission field is required'
+                                message: 'The centre field is required'
                             }
                         }
                     },
@@ -86,6 +86,8 @@ var AddUserValidation = function () {
                     closePopup(modal_id);
                     reInitTable();
                 } else {
+                    $("#validate-msg").html('<div class="fv-help-block pass-msg">'+response.message+'</div>');
+                    $("#add_user_password").addClass("is-invalid");
                     toastr.error(response.message);
                 }
             }, form);
@@ -161,7 +163,7 @@ var EditUserValidation = function () {
                     'centers[]': {
                         validators: {
                             notEmpty: {
-                                message: 'The commission field is required'
+                                message: 'The centre field is required'
                             }
                         }
                     },

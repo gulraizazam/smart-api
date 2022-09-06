@@ -140,12 +140,11 @@ class Invoices extends Model
      *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false,$id = false, $apply_filter = false, $filename )
+    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false, $apply_filter = false, $filename )
     {
         $where = self::filters_invoices( $request, $account_id , $id , $apply_filter, $filename );
 
-
-        list($orderBy, $order) = getSortBy($request);
+        list($orderBy, $order) = getSortBy($request, 'created_at', 'DESC');
 
 
         if (count($where)) {
@@ -165,7 +164,7 @@ class Invoices extends Model
                 ->whereIn('invoices.location_id',ACL::getUserCentres())
                 ->whereNull('invoices.deleted_at')
                 ->select('invoices.*', 'invoice_details.service_id','appointments.appointment_type_id')
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
         }
     }
 
@@ -293,12 +292,13 @@ class Invoices extends Model
             if ($apply_filter){
                 Filters::forget(Auth::user()->id ,$filename, 'id');
             } else {
-                if (Filters::get(Auth::user()->id, $filename, 'id')){
-                    $where[] = array(
+                if ( ! is_null(Filters::get(Auth::user()->id, $filename, 'id'))){
+
+                   /* $where[] = array(
                         'invoices.patient_id',
                         '=',
                         Filters::get(Auth::user()->id ,$filename, 'id')
-                    );
+                    );*/
                 }
             }
         }

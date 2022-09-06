@@ -51,7 +51,7 @@ function actions(data) {
         let delete_url = route('admin.custom_form_feedbacks.destroy', {id: internal_id});
         let preview_url = route('admin.custom_form_feedbacks.filled_preview', {id: internal_id});
 
-        if (permissions.edit && permissions.preview) {
+        if (permissions.edit || permissions.preview) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\

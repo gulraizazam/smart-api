@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
@@ -70,7 +71,7 @@ class UsersController extends Controller
         $records = [];
         $records['data'] = [];
 
-        if(count($filters) > 0 &&  hasFilter($filters, 'delete')) {
+        if(hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $Users = User::whereIn('id', $ids);
             if ($Users) {
@@ -105,7 +106,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'name')) {
+        if (hasFilter($filters, 'name')) {
             $where[] = [
                 'users.name',
                 'like',
@@ -125,7 +126,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'email')) {
+        if (hasFilter($filters, 'email')) {
             $where[] = [
                 'users.email',
                 'like',
@@ -146,7 +147,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'phone')) {
+        if (hasFilter($filters, 'phone')) {
             $where[] = [
                 'users.phone',
                 'like',
@@ -168,7 +169,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'gender')) {
+        if (hasFilter($filters, 'gender')) {
             $where[] = [
                 'users.gender',
                 '=',
@@ -189,7 +190,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'commission')) {
+        if (hasFilter($filters, 'commission')) {
             $where[] = [
                 'commission',
                 '=',
@@ -209,7 +210,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'location_id')) {
+        if (hasFilter($filters, 'location_id')) {
             $where[] = [
                 'user_has_locations.location_id',
                 '=',
@@ -229,7 +230,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'role_id')) {
+        if (hasFilter($filters, 'role_id')) {
             $where[] = [
                 'role_has_users.role_id',
                 '=',
@@ -249,7 +250,7 @@ class UsersController extends Controller
                 }
             }
         }
-        if (count($filters) > 0 && hasFilter($filters, 'created_from')) {
+        if (hasFilter($filters, 'created_from')) {
             $where[] = [
                 'users.created_at',
                 '>=',
@@ -270,7 +271,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'created_to')) {
+        if (hasFilter($filters, 'created_to')) {
             $where[] = [
                 'users.created_at',
                 '<=',
@@ -291,7 +292,7 @@ class UsersController extends Controller
             }
         }
 
-        if (count($filters) > 0 && hasFilter($filters, 'status') || hasFilter($filters, 'status') && $filters['status'] == 0 && $filters['status'] != null) {
+        if (hasFilter($filters, 'status')) {
             $where[] = [
                 'users.active',
                 '=',
@@ -313,25 +314,25 @@ class UsersController extends Controller
                 }
             }
         }
+
         if (count($where)) {
-            $iTotalRecords = count(DB::table('users')->leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id', 'users.id')
-                ->select('users.id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where([
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
-                ])->get());
+                ])->get(['users.id']));
         } else {
-            $iTotalRecords = count(DB::table('users')->leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id', 'users.id')
-                ->select('users.id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where([
+                    [$where],
                     ['account_id', '=', Auth::User()->account_id],
-                ])->get());
+                ])->get(['users.id']));
         }
 
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
@@ -357,7 +358,7 @@ class UsersController extends Controller
 
         $records = $this->getExtraData($records);
 
-        if ($Users) {
+        if ($Users->count()) {
 
             $index = 0;
             $loc = Locations::select('*')->get()->getDictionary();
@@ -368,10 +369,12 @@ class UsersController extends Controller
                 if ($user_has_locations) {
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
-                        if ($locationchecked->slug == 'custom') {
-                            $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
-                        } else {
-                            $locations[] = $loc[$location]->name ?? '';
+                        if($locationchecked != null){
+                            if ($locationchecked->slug == 'custom') {
+                                $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
+                            } else {
+                                $locations[] = $loc[$location]->name ?? '';
+                            }
                         }
                     }
                 }
@@ -397,6 +400,7 @@ class UsersController extends Controller
                 'active' => Gate::allows('users_active'),
                 'inactive' => Gate::allows('users_inactive'),
                 'delete' => Gate::allows('users_destroy'),
+                'contact' => Gate::allows('contact'),
             ];
 
             $records["meta"] = [
@@ -417,10 +421,8 @@ class UsersController extends Controller
 
 
         $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
-        $locations->prepend('All', '');
 
         $roles = Role::get()->pluck('name', 'id');
-        $roles->prepend('All', '');
 
         $filters = Filters::all(Auth::User()->id, 'users');
 
@@ -837,7 +839,7 @@ class UsersController extends Controller
      * */
     public function getpatientid(Request $request)
     {
-        $patients = Patients::getPatientidAjax($request->q, Auth::User()->account_id);
+        $patients = Patients::getPatientidAjax($request->search, Auth::User()->account_id);
 
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'patients' => $patients
@@ -864,5 +866,25 @@ class UsersController extends Controller
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'patient' => $patient
         ]);
+    }
+
+    public function getUserCities() {
+       $cities =  ACL::getUserCities();
+       if (count($cities) == 1) {
+           return ApiHelper::apiResponse($this->success, 'City found', true, [
+               'city' => $cities[0]
+           ]);
+       }
+        return ApiHelper::apiResponse($this->success, 'City not found', false);
+    }
+
+    public function getUserCenters() {
+       $centers =  ACL::getUserCentres();
+       if (count($centers) == 1) {
+           return ApiHelper::apiResponse($this->success, 'Center found', true, [
+               'center' => $centers[0]
+           ]);
+       }
+        return ApiHelper::apiResponse($this->success, 'Center not found', false);
     }
 }

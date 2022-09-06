@@ -184,19 +184,19 @@ $(document).ready(function () {
             $('#tuesdayOperation_1').find("input").prop('disabled', true);
             $('#tuesdayElement_1').prop('checked', true);
 
-            $('.wednesdayOperation_1 :input').prop('disabled', true);
+            $('#wednesdayOperation_1').find("input").prop('disabled', true);
             $('#wednesdayElement_1').prop('checked', true);
 
-            $('.thursdayOperation_1 :input').attr('disabled', true);
+            $('#thursdayOperation_1').find("input").attr('disabled', true);
             $('#thursdayElement_1').prop('checked', true);
 
-            $('.fridayOperation_1 :input').attr('disabled', true);
+            $('#fridayOperation_1').find("input").attr('disabled', true);
             $('#fridayElement_1').prop('checked', true);
 
-            $('.saturdayOperation_1 :input').attr('disabled', true);
+            $('#saturdayOperation_1').find("input").attr('disabled', true);
             $('#saturdayElement_1').prop('checked', true);
 
-            $('.sundayOperation_1 :input').attr('disabled', true);
+            $('#sundayOperation_1').find("input").attr('disabled', true);
             $('#sundayElement_1').prop('checked', true);
 
             $('.check_final_1').hide();
@@ -220,13 +220,13 @@ $(document).ready(function () {
         else {
             $('.check_final_1').show();
             $('#copy_all_1').val('0');
-            $('#mondayOperation_1 :input').attr('disabled', false);
-            $('#tuesdayOperation_1 :input').attr('disabled', false);
-            $('#wednesdayOperation_1 :input').attr('disabled', false);
-            $('#thursdayOperation_1 :input').attr('disabled', false);
-            $('#fridayOperation_1 :input').attr('disabled', false);
-            $('#saturdayOperation_1 :input').attr('disabled', false);
-            $('#sundayOperation_1 :input').attr('disabled', false);
+            $('#mondayOperation_1').find("input").attr('disabled', false);
+            $('#tuesdayOperation_1').find("input").attr('disabled', false);
+            $('#wednesdayOperation_1').find("input").attr('disabled', false);
+            $('#thursdayOperation_1').find("input").attr('disabled', false);
+            $('#fridayOperation_1').find("input").attr('disabled', false);
+            $('#saturdayOperation_1').find("input").attr('disabled', false);
+            $('#sundayOperation_1').find("input").attr('disabled', false);
             $(".ftime_1").timepicker('setTime', new Date());
             $(".ttime_1").timepicker('setTime', new Date());
             $(".f_time_break").timepicker('setTime', null);
@@ -368,7 +368,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -377,58 +377,58 @@ var table_columns = [
         field: 'name',
         title: 'Resource Name',
         sortable: false,
-        width: 300,
+        width: 130,
     },{
         field: 'type',
         title: 'Type',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'region',
         title: 'Regions',
         sortable: false,
-        width: 'auto',
+        width: 90,
     },{
         field: 'city',
         title: 'City',
         sortable: false,
-        width: 'auto',
-    },{
-        field: 'location',
-        title: 'Centre',
-        sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'from',
         title: 'From',
         sortable: false,
-        width: 'auto',
+        width: 120,
     },{
         field: 'to',
         title: 'To',
         sortable: false,
-        width: 'auto',
+        width: 120,
     },{
-        field: 'created_at',
-        title: 'Created at',
-        width: 'auto',
-    },{
-        field: 'status',
+        field: 'active',
         title: 'Status',
-        width: 'auto',
+        width: 70,
         template: function (data) {
             return statuses(data, route('admin.resourcerotas.status'));
         }
+    },{
+        field: 'created_at',
+        title: 'Created at',
+        width: 140,
     }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 80,
+        width: 140,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
             return actions(data);
         }
+    },{
+        field: 'location',
+        title: 'Centre',
+        sortable: false,
+        width: 'auto',
     }];
 
 function actions(data) {
@@ -440,7 +440,7 @@ function actions(data) {
         let delete_url = route('admin.resourcerotas.destroy', {id: id});
         let calender_url = route('admin.resourcerotas.calender-view', {id: id});
 
-        if (permissions.edit && permissions.delete) {
+        if (permissions.edit || permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -500,6 +500,14 @@ function createRota($route) {
 
             setCreateData(response);
             setCreateEditData(response);
+
+            $("#mondayElement_1").val('on');
+            $("#tuesdayElement_1").val('on');
+            $("#wednesdayElement_1").val('on');
+            $("#thursdayElement_1").val('on');
+            $("#fridayElement_1").val('on');
+            $("#saturdayElement_1").val('on');
+            $("#sundayElement_1").val('on');
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -571,7 +579,13 @@ function getLocations($this) {
         cache: false,
         success: function (response) {
 
-            setLocations(response);
+            if(response.status != false){
+                setLocations(response);
+            }else{
+                let location_options = '<option>Select a Centre</option>';
+                $("#location_id").html(location_options);
+            }
+            
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -610,8 +624,14 @@ function getResource($this) {
         data: { location_id: $this.val() },
         cache: false,
         success: function (response) {
-
-            setResources(response);
+            if(response.status != false){
+                setResources(response);
+            }else{
+                let doctors_options = '<option value="">Select a Doctor</option>';
+                let machine_options = '<option value="">Select a Machine</option>';
+                $("#machine_id").html(machine_options);
+                $("#doctor_id").html(doctors_options);
+            }
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -658,6 +678,11 @@ function toggleResource($this) {
         $("#doctor_field").removeClass("d-none");
         $("#Rota_type_operation").removeClass("d-none");
     }
+    $("#is_consultancy_name").val(0);
+    $("#is_consultancy_1").val(1);
+
+    $("#is_treatment_name").val(0);
+    $("#is_treatment_1").val(1);
 }
 
 function editRow(url) {
@@ -722,18 +747,15 @@ function setEditData(response) {
         }
 
         if (resourceRota.is_treatment == 1) {
-            $("#edit_is_consultancy_1").attr("checked", false);
             $("#edit_is_treatment_1").attr("checked", true);
+        } else {
+            $("#edit_is_treatment_1").attr("checked", false);
         }
 
         if (resourceRota.is_consultancy == 1) {
-            $("#edit_is_treatment_1").attr("checked", false);
             $("#edit_is_consultancy_1").attr("checked", true);
-        }
-
-        if (resourceRota.is_treatment == 1 && resourceRota.is_consultancy == 1) {
-            $("#edit_is_consultancy_1").attr("checked", true);
-            $("#edit_is_treatment_1").attr("checked", true);
+        } else {
+            $("#edit_is_consultancy_1").attr("checked", false);
         }
 
         /*Monday*/
@@ -922,6 +944,8 @@ function setFilters(filter_values, active_filters) {
 
         hideShowAdvanceFilters(active_filters);
 
+        getUserCity();
+
     } catch (error) {
         showException(error);
     }
@@ -929,7 +953,7 @@ function setFilters(filter_values, active_filters) {
 
 function hideShowAdvanceFilters(active_filters) {
 
-    if ((typeof active_filters.location_id !== 'undefined' && active_filters.location_id != '')
+    if ((typeof active_filters.region_id !== 'undefined' && active_filters.region_id != '')
         || (typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
         || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
         || (typeof active_filters.startdate !== 'undefined' && active_filters.startdate != '')
@@ -942,4 +966,28 @@ function hideShowAdvanceFilters(active_filters) {
     }
 
 }
+
+
+/*Define query for define rota type for consultancy*/
+$('#is_consultancy_1').change(function () {
+    if ($(this).is(":checked")) {
+        $('#is_consultancy_1').val('1');
+    }
+    else {
+        $('#is_consultancy_1').val('0');
+    }
+});
+$('#is_consultancy_1').change();
+/*End*/
+/*Define query for define rota type for treatment*/
+$('#is_treatment_1').change(function () {
+    if ($(this).is(":checked")) {
+        $('#is_treatment_1').val('1');
+    }
+    else {
+        $('#is_treatment_1').val('0');
+    }
+});
+$('#is_treatment_1').change();
+/*End*/
 

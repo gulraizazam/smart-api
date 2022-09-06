@@ -56,7 +56,14 @@
 
                         <div class="fv-row col-md-12 mt-5" id="patient_id">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <select id="create_patient_search" onchange="getPatientDetail($(this))" class="form-control patient_search_id" name="patient_id"></select>
+                            <input class="form-control patient_search_id">
+
+                            <input type="hidden" onchange="getPatientDetail($(this))"  name="patient_id" class="filter-field search_field" id="create_patient_search">
+                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+
                         </div>
 
                         <div class="fv-row col-md-12 new_patient_text mt-10" style="display: none;">
@@ -66,6 +73,7 @@
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
                             <input readonly id="create_consultancy_phone" class="form-control" name="phone">
+                            <input type="hidden" id="create_old_consultancy_phone" class="form-control" name="old_phone">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
@@ -74,12 +82,12 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender </label>
-                            <select id="create_consultancy_gender" class="form-control select2" name="gender"></select>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
+                            <select id="create_consultancy_gender" class="form-control" name="gender"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source </label>
                             <select id="create_consultancy_lead" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source">
                             </select>
                         </div>

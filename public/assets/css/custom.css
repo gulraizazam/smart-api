@@ -1,3 +1,6 @@
+#treatment-invoice-create select.select2 {
+    opacity: 1;
+}
 .font-icon {
     font-size: 18px;
 }
@@ -5,12 +8,12 @@
     color: #3699FF;
 }
 .user-popup {
-
     z-index: 105;
     position: fixed;
     inset: 0px 0px auto auto;
     margin: 0px;
     transform: translate(-30px, 65px);
+    width: auto !important;
 
 }
 
@@ -130,7 +133,7 @@
 .form-popup {
     max-width: 700px;
 }
-.select2-container{
+.select2{
     width: 100% !important;
 }
 
@@ -327,6 +330,10 @@ div > input {
     padding: 0.65rem 0rem 0.65rem 1rem;
 }
 
+.search_input .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0.65rem 0rem 0.65rem 1rem;
+}
+
 .select2-search .select2-container--default .select2-selection--single .select2-selection__rendered {
     padding: 0.65rem 0rem 0.65rem 1rem;
 }
@@ -347,7 +354,7 @@ div > input {
     border: 2px solid lightgray;
 }
 .city-select {
-    width: 70%;
+    width: 65%;
     margin-top: 15px;
 }
 .city-edit-btn .btn-success {
@@ -358,7 +365,7 @@ div > input {
     width: 35px;
 }
 .city-edit-btn {
-    width: 30%;
+    width: 35%;
     margin-top: -35px;
 }
 .arrow {
@@ -540,13 +547,17 @@ div > input {
 }
 
 .horizontal-nav-bar-li a:hover {
-    background-color: #1e1e2d;
+    background-color: #043464;
     color: #fff;
 }
 
 .nav-bar-active{
-    background-color: #1e1e2d;
+    background-color: #043464;
     color: #fff !important;
+}
+
+.horizontal-nav-bar-li a.change-tab.nav-bar-active span.text-muted i{
+    color: white !important;
 }
 .fa_icon i{
     font-size: 23px;
@@ -592,7 +603,6 @@ div > input {
     font-style: normal;
     font-weight: 400;
     line-height: 1.5;
-    text-align: left;
     text-align: start;
     text-decoration: none;
     text-shadow: none;
@@ -702,4 +712,113 @@ div > input {
     background-color: #35a1d4;
     color: #fff;
     padding: 10px 15px;
+}
+
+#custom-form-container .form-group{
+    display: grid;
+}
+
+.suggestion-list {
+    max-height: 275px;
+    overflow: auto;
+}
+/*.colored-text {
+    color: #006dab;
+}*/
+.switch_custom span{
+    width: 13px !important;
+}
+.custom_field {
+    padding-left: 47px;
+    width: 50%;
+    border: none !important;
+    font-weight: 600;
+    height: 25px;
+}
+.modal-body {
+    padding-top: 0px;
+}
+
+.rota-section .row {
+    margin-top: 1.5rem !important;
+}
+.dashboard-counter {
+    font-size: 14px;
+    font-weight: 600;
+    /*padding-left: 20px;*/
+    float: right;
+}
+[data-field="session_count"] {
+    text-align: center;
+}
+#kt_content {
+    margin-top: -70px;
+}
+
+.menu_section {
+    margin-top: 00px;
+}
+.plan-filters .select2 {
+    width: 109% !important;
+}
+.calendar-left-menu {
+    border-right: 1px solid lightgrey;
+    margin-top: -11px;
+    padding-top: 10px;
+    height: 100%;
+}
+.calendar-left-menu > li {
+    margin-top: 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    background-color: #043464;
+    padding: 5px 5px 5px 5px;
+    width: 90%;
+    border-radius: 5px;
+}
+
+.calendar-left-menu > li:hover a{
+    color: #0073e9 !important;
+}
+
+.calendar-left-menu > li > a, .calendar-left-menu > li > a > i {
+    color: #fff !important;
+    display: flex;
+    margin-right: 5px;
+}
+.fc-time-grid-event {
+    cursor: pointer !important;
+}
+
+
+.horizontal-nav-bar-li a.change-tab:hover span.text-muted i{
+    color: white;
+}
+#personal_info .form-group strong{
+    width: 85px;
+    display: inline-block;
+}
+.fc-timeGridWeek-view .fc-day-grid, .fc-timeGridDay-view .fc-day-grid {
+    display: none;
+}
+.invoice_btn{
+    float:right;
+}
+.invoice_btn span {
+    text-align: center;
+    font-size:18px;
+    font-weight:lighter;
+    background:#1d1d1b;
+    padding:6px 26px;
+    color:#fff;
+    display: inline-block;
+    vertical-align:middle;
+    text-transform:capitalize;
+    letter-spacing:4px;
+}
+.section-states{
+    display: flex;
+    flex-wrap: wrap;
 }

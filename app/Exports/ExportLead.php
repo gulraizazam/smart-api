@@ -9,6 +9,7 @@ use App\Models\LeadStatuses;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -17,31 +18,56 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
+    private $request;
+
+    public function __construct($request)
+    {
+        $this->request = $request;
+    }
 
     public function collection()
     {
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
-            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
-            ->where(function ($query) {
-                $query->whereIn('leads.city_id', ACL::getUserCities());
-                $query->orWhereNull('leads.city_id');
-            });
+            ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
 
-        $junk_lead_statuses = LeadStatuses::where(array(
-            'account_id' => Auth::User()->account_id,
-            'is_junk' => 1,
-        ))->first();
+        if($this->request->id != null || $this->request->id != ''){
+            $resultQuery->where('leads.patient_id', $this->request->id);
+        }
 
-        if (request()->has('type')) {
+        if($this->request->service_id != null || $this->request->service_id != ''){
+            $resultQuery->where('leads.service_id', $this->request->service_id);
+        }
 
-            $resultQuery->where('leads.lead_status_id', $junk_lead_statuses->id ?? 0);
+        if($this->request->lead_status_id != null || $this->request->lead_status_id != ''){
+            $resultQuery->where('leads.lead_status_id', $this->request->lead_status_id);
+        }
 
-        } else {
-            $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
+        if($this->request->city_id != null || $this->request->city_id != ''){
+            $resultQuery->where('leads.city_id', $this->request->city_id);
+        }
+
+        if($this->request->region_id != null || $this->request->region_id != ''){
+            $resultQuery->where('leads.region_id', $this->request->region_id);
+        }
+
+        if($this->request->created_by != null || $this->request->created_by != ''){
+            $resultQuery->where('leads.created_by', $this->request->created_by);
+        }
+
+        if($this->request->name != null || $this->request->name != ''){
+            $resultQuery->where('users.name','like', $this->request->name.'%');
+        }
+
+        if($this->request->name != null || $this->request->name != ''){
+            $resultQuery->where('users.name','like', $this->request->name.'%');
+        }
+
+        if($this->request->start_date != null || $this->request->start_date != ''){
+            $resultQuery->whereBetween('leads.created_at', [$this->request->start_date, $this->request->end_date]);
         }
 
        return $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
-            ->get();
+            ->orderBy("leads.created_at", "DESC")->get();
     }
 
     public function headings(): array
@@ -61,10 +87,15 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function map($lead): array
     {
+        if (!Gate::allows('contact')) {
+            $phone = '***********';
+        } else {
+            $phone = $lead->phone ?? 'N/A';
+        }
         return [
             GeneralFunctions::patientSearchStringAdd($lead->id),
             $lead->name ?? 'N/A',
-            $lead->phone ?? 'N/A',
+            $phone,
             $lead->city->name ?? 'N/A',
             $lead->region->name ?? 'N/A',
             $lead->lead_status->name ?? 'N/A',

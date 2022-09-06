@@ -4,7 +4,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 30,
         title: renderCheckbox(),
         template: function (data) {
             let id = data.id;
@@ -20,12 +20,12 @@ var table_columns = [
         field: 'fdo_name',
         title: 'FDO Name',
         sortable: false,
-        width: 'auto',
+        width: 80,
     },{
         field: 'fdo_phone',
         title: 'FDO Phone',
         sortable: false,
-        width: 'auto',
+        width: 100,
     },{
         field: 'address',
         title: 'Address',
@@ -35,25 +35,25 @@ var table_columns = [
         field: 'city',
         title: 'City',
         sortable: false,
-        width: 'auto',
-    },{
-        field: 'region',
-        title: 'Region',
-         sortable: false,
-        width: 'auto',
-    },{
+        width: 60,
+    }, {
         field: 'created_at',
         title: 'Created At',
-        width: 'auto',
-    }, {
+        width: 120,
+    },{
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 60,
         template: function (data) {
             let status_url = route('admin.locations.status');
             return statuses(data, status_url);
         }
     }, {
+        field: 'region',
+        title: 'Region',
+        sortable: false,
+        width: 120,
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -74,7 +74,7 @@ function actions(data) {
         let url = route('admin.locations.edit', {id: id});
         let delete_url = route('admin.locations.destroy', {id: id});
 
-        if (permissions.edit && permissions.delete) {
+        if (permissions.edit || permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -169,7 +169,7 @@ function setEditData(response) {
     $("#edit_ntn").val(location.ntn);
     $("#edit_stn").val(location.stn);
 
-    let image = asset_url +'assets/media/logos/logo.svg';
+    let image = asset_url +'assets/media/logos/smart.svg';
     if (location.image_src != '') {
         image = asset_url +'storage/centre_logo/'+ location.image_src;
     }
@@ -275,6 +275,8 @@ function setFilters(filter_values, active_filters) {
     $("#search_region").val(active_filters.region_id);
 
     hideShowAdvanceFilters(active_filters);
+
+    getUserCity();
 }
 
 function createCentre($route) {
@@ -315,7 +317,7 @@ function setCreateData(response) {
 
     $("#add_location_services").html(service_options);
 
-    let image = asset_url +'assets/media/logos/logo.svg';
+    let image = asset_url +'assets/media/logos/smart.svg';
 
     $("#add_center_image").css('background-image', "url(" + image + ")");
 }

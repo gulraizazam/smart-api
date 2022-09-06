@@ -125,12 +125,12 @@
 
                     <div class="row">
 
-                        <div class="fv-row col-md-6 mt-5 input-daterange custom-datepicker">
+                        <div class="fv-row col-md-6 mt-5 input-daterange current-datepicker">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">From <span class="text text-danger">*</span></label>
                             <input type="text" id="edit_start" class="form-control datatable-input" name="start">
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5 input-daterange custom-datepicker">
+                        <div class="fv-row col-md-6 mt-5 input-daterange current-datepicker">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
                             <input type="text" id="edit_end" class="form-control datatable-input" name="end">
                         </div>

@@ -1,6 +1,13 @@
 @extends('admin.layouts.master')
 
 @section('content')
+    @push('css')
+        <style>
+            .datatable-pager {
+                display: none !important;
+            }
+        </style>
+    @endpush
 
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">

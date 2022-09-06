@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: 80,
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -21,19 +21,15 @@ var table_columns = [
     }, {
         field: 'phone',
         title: 'Phone',
-        width: 'auto',
+        width: 90,
     }, {
         field: 'gender',
         title: 'Gender',
-        width: 'auto',
+        width: 80,
     }, {
         field: 'commission',
         title: 'Commission',
-        width: 'auto',
-    },{
-        field: 'commission',
-        title: 'Commission',
-        width: 'auto',
+        width: 100,
     },{
         field: 'locations',
         title: 'centre',
@@ -199,6 +195,9 @@ function changePassword(id) {
 
 function createUsers($route) {
 
+    $(".pass-msg").remove();
+    $("#add_user_password").removeClass("is-invalid");
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -285,9 +284,16 @@ function setEditData(response) {
 
     $("#edit_user_name").val(user.name);
     $("#edit_user_email").val(user.email);
-    $("#edit_user_phone").val(user.phone);
     $("#edit_user_gender").val(user.gender);
     $("#edit_user_commission").val(user.commission);
+
+    $("#edit_old_user_phone").val(user.phone);
+
+    if (permissions.contact) {
+        $("#edit_user_phone").val(user.phone);
+    } else {
+        $("#edit_user_phone").val("***********").attr("readonly", true);
+    }
 
     $('#edit_user_roles').val(user_roles).change();
 
@@ -347,7 +353,7 @@ function setFilters(filter_values, active_filters) {
     let status = filter_values.status;
 
     let location_options = '<option value="">Select</option>';
-    let role_options = '<option value="">Select</option>';
+    let role_options = '<option value="">All</option>';
     let status_options = '<option value="">All</option>';
 
     Object.entries(status).forEach(function(value, index) {
@@ -381,6 +387,8 @@ function setFilters(filter_values, active_filters) {
     $("#search_status").val(active_filters.status);
 
     hideShowAdvanceFilters(active_filters);
+
+    getUserCentre();
 }
 
 function hideShowAdvanceFilters(active_filters) {
@@ -396,3 +404,11 @@ function hideShowAdvanceFilters(active_filters) {
         $(".advance-arrow").addClass("fa fa-caret-down");
     }
 }
+
+jQuery(document).ready( function () {
+
+    $("#add_user_password").keyup( function () {
+        $(".pass-msg").remove();
+        $("#add_user_password").removeClass("is-invalid");
+    });
+})

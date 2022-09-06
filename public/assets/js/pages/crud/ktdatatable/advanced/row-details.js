@@ -10,6 +10,7 @@ if (typeof changePages !== 'undefined') {
 }
 let row_ids = [];
 let permissions = [];
+let metaData = [];
 let active_filters = [];
 let filter_values = [];
 var datatable;
@@ -41,6 +42,14 @@ var KTDatatable = function() {
                            if (typeof data.status !== 'undefined') {
                                deleteSuccessAndReset(data, datatable);
                            }
+                            if (typeof data.meta !== 'undefined') {
+                                metaData = data.meta;
+                            }
+
+                            if (typeof setTotal === 'function') {
+                                setTotal(metaData);
+                            }
+
                             var response = data;
                             if (typeof response.data !== 'undefined') {
                                 response = response.data;
@@ -265,7 +274,7 @@ jQuery(document).ready(function() {
         if ($(".table-checkboxes:checked").length == $(".table-checkboxes").length) {
             $(".select-all-checkboxes").prop('checked', true);
         } else {
-            $(".select-all-checkboxes").prop('checked', true);
+            $(".select-all-checkboxes").prop('checked', false);
         }
 
         setRowIds($(".table-checkboxes:checked"));
