@@ -153,16 +153,6 @@
 
                     <li class="menu-item menu-item-submenu {{openMenu(['admin.leads.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
 
-<<<<<<< HEAD
-                        <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <span class="svg-icon menu-icon">
-                            <i class="fas fa-briefcase"></i>
-                            </span>
-                            <span class="menu-text">Leads</span>
-                            <i class="menu-arrow"></i>
-                        </a>
-                        <div class="menu-submenu">
-=======
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <span class="svg-icon menu-icon">
                                 <i class="font-icon la la-briefcase"></i>
@@ -171,7 +161,6 @@
                                 <i class="menu-arrow"></i>
                             </a>
                             <div class="menu-submenu">
->>>>>>> d8f515537365551d329ab060fbb35afda7b358c5
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
 
