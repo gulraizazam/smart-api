@@ -441,7 +441,7 @@
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
                                 <ul class="menu-subnav">
-                                    <li class="menu-item {{openMenu(['admin.payment_modes.index','admin.payment_modes.sort'])}}" aria-haspopup="true">
+                                    <li class="menu-item {{openMenu(['admin.payment_modes.index','admin.payment_modes.sort'],'menu-item-active')}}" aria-haspopup="true">
                                         <a href="{{route('admin.payment_modes.index')}}" class="menu-link">
                                             <i class="menu-bullet menu-bullet-dot">
                                                 <span></span>
@@ -458,7 +458,7 @@
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
                                 <ul class="menu-subnav">
-                                    <li class="menu-item {{openMenu(['admin.regions.index','admin.regions.sort'])}}" aria-haspopup="true">
+                                    <li class="menu-item {{openMenu(['admin.regions.index','admin.regions.sort'],'menu-item-active')}}" aria-haspopup="true">
                                         <a href="{{route('admin.regions.index')}}" class="menu-link">
                                             <i class="menu-bullet menu-bullet-dot">
                                                 <span></span>
