@@ -309,3 +309,133 @@ jQuery(document).ready(function() {
 
     AppointScheduleValidation.init();
 });
+
+const extraValidate = {
+    validators: {
+        notEmpty: {
+            message: 'This field is required'
+        }
+    },
+};
+
+let loadChildStatuses = function (appointmentStatusId) {
+
+    statusValidate.addField('appointment_status_id', extraValidate);
+    statusValidate.addField('reason', extraValidate);
+    statusValidate.removeField('appointment_status_id', '');
+    statusValidate.removeField('reason', '');
+    if(appointmentStatusId != '') {
+        resetDropdowns();
+        $("input[type=submit]").attr('disabled', true);
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_child_appointment_statuses'),
+            type: 'POST',
+            data: {
+                appointment_status_id: appointmentStatusId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    if (response.data.dropdown) {
+                        setChildStatusData(response);
+                        $('.appointment_status_id').show();
+                        statusValidate.addField('appointment_status_id', extraValidate);
+                    } else {
+                        $('.appointment_status_id').hide();
+                        $('#appointment_status_id').html('');
+                        statusValidate.addField('appointment_status_id', extraValidate);
+                        statusValidate.removeField('appointment_status_id', '');
+                    }
+                } else {
+                    resetDropdowns();
+                }
+                if(parseInt(response.count) > 1) {
+                    $('.appointment_status_id').show();
+                }
+                if(response.status && response.data.appointment_status.is_comment == '1') {
+                    $('.reason').show();
+                    statusValidate.addField('reason', extraValidate);
+                } else {
+                    resetReason();
+                    statusValidate.addField('reason', extraValidate);
+                    statusValidate.removeField('reason', '');
+                }
+                $("input[type=submit]").removeAttr('disabled');
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                $("input[type=submit]").removeAttr('disabled');
+                resetDropdowns();
+            }
+        });
+    } else {
+        resetDropdowns();
+    }
+}
+
+function setChildStatusData(response) {
+
+    let dropdowns = response.data.dropdown;
+    let  child_options = '<option value="">Select Child Status</option>';
+    if (dropdowns) {
+        Object.entries(dropdowns).forEach(function (dropdown) {
+            child_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+        });
+    }
+    $('#appointment_status_id').html(child_options);
+}
+
+var resetDropdowns = function() {
+    resetReason();
+    resetChildStatuses();
+}
+
+var resetReason = function () {
+    $('.reason').hide();
+    $('#reason').val('');
+}
+
+var resetChildStatuses = function () {
+    $('.appointment_status_id').hide();
+    $('#appointment_status_id').val('');
+    //statusValidate.removeField('appointment_status_id', '');
+}
+
+let statusListener = function (appointmentStatusId) {
+
+    statusValidate.addField('reason', extraValidate);
+    statusValidate.removeField('reason', '');
+    if(appointmentStatusId != '') {
+        $("input[type=submit]").attr('disabled', true);
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_child_appointment_status_data'),
+            type: 'POST',
+            data: {
+                appointment_status_id: appointmentStatusId,
+                base_appointment_status_id: $('#base_appointment_status_id').val()
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status && (response.data.appointment_status.is_comment == '1' || response.data.base_appointment_status.is_comment == '1')) {
+                    $('.reason').show();
+                    statusValidate.addField('reason', extraValidate);
+                } else {
+                    resetReason();
+                    statusValidate.removeField('reason', '');
+                }
+                $("input[type=submit]").removeAttr('disabled');
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetReason();
+                $("input[type=submit]").removeAttr('disabled');
+            }
+        });
+    } else {
+        resetReason();
+    }
+}
