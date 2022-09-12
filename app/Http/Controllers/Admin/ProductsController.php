@@ -96,7 +96,7 @@ class ProductsController extends Controller
                 'active' => Gate::allows('product_active'),
                 'edit' => Gate::allows('product_edit'),
                 'manage' => Gate::allows('product_manage'),
-                'delete' => Gate::allows('productdestroy'),
+                'delete' => Gate::allows('product_destroy'),
                 'create' => Gate::allows('product_create'),
                 'sale_price' => Gate::allows('product_sale_price'),
                 'add_stock' => Gate::allows('product_add_stock'),
