@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Auth;
+use DB;
 
 class Brand extends BaseModal
 {
@@ -156,7 +157,9 @@ class Brand extends BaseModal
      */
     static public function isChildExists($id, $account_id)
     {
-        return false;
+        if (DB::table('products')->where('brand_id','=',$id)->count()) {
+            return true;
+        }
     }
 
     /**
