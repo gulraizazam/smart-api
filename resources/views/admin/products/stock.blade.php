@@ -30,11 +30,11 @@
                     <div class="row">
                         <div class="fv-row col-md-4">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Quantity</label>
-                            <input type="number" id="add_stock_quantity" name="quantity" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="add_stock_quantity" name="quantity" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-4">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Purchase Price</label>
-                            <input type="number" id="add_stock_purchase_price" name="purchase_price" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="add_stock_purchase_price" name="purchase_price" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-4">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total Purchase Price</label>
