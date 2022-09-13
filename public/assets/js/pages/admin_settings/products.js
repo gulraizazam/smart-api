@@ -297,7 +297,7 @@ $("#purchase_price, #quantity").on('keyup',function(){
     getTotalPurchase('add');
 });
 
-$("#edit_purchase_price, edit_quantity").on('keyup',function(){
+$("#edit_purchase_price, #edit_quantity").on('keyup',function(){
     getTotalPurchase('edit');
 });
 

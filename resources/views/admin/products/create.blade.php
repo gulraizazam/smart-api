@@ -41,17 +41,17 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Sale Price<small> (per unit)</small></label>
-                            <input type="number" id="sale_price" name="sale_price" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="sale_price" name="sale_price" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Purchase Price<small> (per unit)</small></label>
-                            <input type="number" id="purchase_price" name="purchase_price" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="purchase_price" name="purchase_price" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Quantity</label>
-                            <input type="number" id="quantity" name="quantity" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="quantity" name="quantity" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total Purchase Price</label>
