@@ -19,7 +19,7 @@ $(document).ready( function () {
 
                 try {
                     let data = response.data.products;
-
+                   
                     params.page = params.page || 1;
                     return {
                         results: $.map(data, function (item) {
@@ -63,6 +63,7 @@ $(document).ready( function () {
             $("#add_quantity").val(1); 
             $("#add_unit_price").val(item.price);
             $("#available_quantity").val(item.quantity);
+            $('#add_disccount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             return item.text + " <button onclick='removeProducts()' class='croxcli' style='float: right;border: 0; background: none;padding: 0 0 0;'><i class='fa fa-times' aria-hidden='true'></i></button>";
         } else {
             return 'Select Product';
@@ -139,10 +140,13 @@ $(document).ready( function () {
         displayProductTableHTML();        
     });
     /*End*/
-
+    patientSearch('search_patient',0);
 });
 
 function getDiscounts(){
+    $("#inputEmptyMessage").hide();
+    $("#inputExistMessage").hide();
+    $("#inputfieldMessage").hide();
     var url = route('admin.orders.getdiscounts');
     $.ajax({
         headers: {
@@ -161,6 +165,7 @@ function getDiscounts(){
                     discount_options += '<option data-amount="'+discount[1].amount+'" value="'+discount[1].id+'">'+discount[1].name+'</option>';
                 });
             }
+
             $("#add_disccount_id").html(discount_options);
             tempOrdersSaveArr=[];
             $('.patient_id').val(null).trigger('change');
@@ -168,6 +173,8 @@ function getDiscounts(){
             $('#add_disccount_id').val(null).trigger('change');
             $("#add_price").val('');
             $("#add_quantity").val('');
+            $('#add_product_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+            $('#add_disccount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             $(".plan_services").html('<tr class="text-center"><td colspan="8">No record found</td></tr>');
 
         },
@@ -336,7 +343,7 @@ function displayProducts(orders){
 }
 
 function sumProductsQuantity(orders){
-    let quantitySum = '';
+    let quantitySum = 0;
     if(orders != null){
         for(let order=0; order<orders.length;order++){
             quantitySum+= orders[order].quantity;
@@ -375,4 +382,10 @@ function resetAllFilters(datatable) {
     });
 
 }
-
+function addUsers(){
+    $(".filter-field").val('');
+}
+function resetFilterOrder(){
+    addUsers();
+    removeProducts();
+}

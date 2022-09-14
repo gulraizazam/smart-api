@@ -45,10 +45,13 @@
                     <div class="row">
 
                         <div class="fv-row col-md-12 mt-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Customer <span class="text text-danger">*</span></label>
-                            <select  id="add_patient_id" class="patient_id form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_id">
-                                <option value="">Select Patient</option>
-                            </select>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient <span class="text text-danger">*</span></label>
+                            <input class="form-control filter-field search_patient">
+                            <input type="hidden" class="filter-field search_field" id="add_patient_id">
+                            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -67,7 +67,7 @@ $(document).ready( function () {
         }
     }
     /*End*/
-
+    patientSearch('search_patient',0);
 });
 
 
@@ -245,4 +245,18 @@ function resetAllFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
+}
+
+function removeProducts() {
+    $('.product_id').val(null).trigger('change');
+    $("#add_price").val('');
+    $("#add_quantity").val('');
+}
+
+function addUsers(){
+    $(".filter-field").val('');
+}
+function resetFilterOrder(){
+    addUsers();
+    removeProducts();
 }

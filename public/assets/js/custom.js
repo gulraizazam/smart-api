@@ -837,7 +837,7 @@ function get_query(){
     return result;
 }
 
-function patientSearch(search_id = 'patient_id') {
+function patientSearch(search_id = 'patient_id',flag=1) {
 
     $("." + search_id).keyup(function() {
         $(".suggestion-list").html('<li>Searching...</li>');
@@ -866,7 +866,7 @@ function patientSearch(search_id = 'patient_id') {
 
                     if (patients.length) {
                         Object.values(patients).forEach(function (patient) {
-                            html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
+                            html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
                         });
 
                         $(".suggestion-list").html(html);
@@ -931,7 +931,7 @@ function patientSearch(search_id = 'patient_id') {
 
 }
 
-function selectUser(name, user_id,  search_id) {
+function selectUser(name, user_id,  search_id,flag=1) {
 
 
     $("." + search_id).parent('div').find('.search_field').val(user_id).change();
@@ -940,8 +940,9 @@ function selectUser(name, user_id,  search_id) {
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
-    getServices('add');
-
+    if(flag == 1){
+        getServices('add');
+    }
 }
 
 function formatRepo(item) {
