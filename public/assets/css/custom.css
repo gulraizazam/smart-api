@@ -484,6 +484,27 @@ div > input {
     cursor: pointer;
 }
 
+.suggestion-list-order{
+    float:left;
+    list-style:none;
+    margin-top:-3px;
+    padding:0;
+    position: absolute;
+    width: 96%;
+    z-index: 99;
+    /*box-shadow: 1px 2px 6px 1px lightgrey;*/
+    box-shadow: 0px 1px 2px 1px lightgrey;
+    border: 1px solid lightgray;
+}
+.suggestion-list-order li{
+    background: #fff;
+    padding: 5px 5px 5px 10px;
+}
+.suggestion-list-order li:hover{
+    background: #EBEDF3;
+    cursor: pointer;
+}
+
 .card-toolbar >.active {
     border-bottom: 4px solid #35a1d4 !important;
     position: relative  !important;
@@ -719,6 +740,11 @@ div > input {
 }
 
 .suggestion-list {
+    max-height: 275px;
+    overflow: auto;
+}
+
+.suggestion-list-order {
     max-height: 275px;
     overflow: auto;
 }

@@ -4,11 +4,11 @@
 
        <div class="col-lg-6 mb-lg-0 mb-6">
             <label>Patient:</label>
-            <input class="form-control filter-field search_patient">
+            <input class="form-control filter-field search_patient_order">
             <input type="hidden" class="filter-field search_field" id="search_patient_id">
             <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
-            <div class="suggesstion-box" style="display: none;">
-                <ul class="suggestion-list"></ul>
+            <div class="suggesstion-box-order" style="display: none;">
+                <ul class="suggestion-list-order"></ul>
             </div>
         </div>
 
