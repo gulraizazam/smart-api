@@ -67,7 +67,7 @@ $(document).ready( function () {
         }
     }
     /*End*/
-    patientSearch('search_patient',0);
+    patientSearchOrder('search_patient_order',0);
 });
 
 
@@ -251,6 +251,67 @@ function removeProducts() {
     $('.product_id').val(null).trigger('change');
     $("#add_price").val('');
     $("#add_quantity").val('');
+}
+
+function patientSearchOrder(search_id = 'patient_id',flag=1) {
+
+    $("." + search_id).keyup(function() {
+        $(".suggestion-list-order").html('<li>Searching...</li>');
+        $(".suggesstion-box-order").show();
+
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box-order").hide();
+            return false;
+        }
+
+        if ($(this).val() != '') {
+
+            let form_type = $(this).parents("form").find('.form_type').val();
+
+            $.ajax({
+                type: "GET",
+                url: route('admin.users.getpatient.id'),
+                dataType: 'json',
+                delay: 250,
+                data: {search: $(this).val()},
+
+                success: function (response) {
+
+                    let html = '';
+                    let patients = response.data.patients;
+
+                    if (patients.length) {
+                        Object.values(patients).forEach(function (patient) {
+                            html += '<li onClick="selectUserOrder(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
+                        });
+
+                        $(".suggestion-list-order").html(html);
+
+                        $(".suggesstion-box-order").show();
+                    } else {
+                        $(".suggesstion-box-order").hide();
+                    }
+
+                }
+            });
+
+        } else {
+            $(".suggesstion-box-order").hide();
+        }
+    });
+
+    return false;
+}
+
+function selectUserOrder(name, user_id,  search_id,flag=1) {
+
+
+    $("." + search_id).parent('div').find('.search_field').val(user_id).change();
+    $("#add_patient_id").val(user_id);
+   // $(".search_field").val(user_id).change();
+    $("." + search_id).val(name);
+    $(".suggesstion-box-order").hide();
+    $("." + search_id).focus();
 }
 
 function addUsers(){
