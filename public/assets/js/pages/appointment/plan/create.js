@@ -182,7 +182,14 @@ function getServiceDiscount($this) {
     var patient_id = $('#client_id').val();
     var location_id = $('#add_location_id').val();
 
-    $("#add_discount_id").val('0').trigger('change');
+    //$("#add_discount_id").val('0').trigger('change');
+    setTimeout(function() { 
+        $('#discount_value_1').val('');
+        $("#discount_value_1").attr('disabled',true);
+        $("#add_discount_type").val('').change();
+        $("#add_discount_type").attr('disabled',true);
+        $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    },500)
 
     if (service_id && patient_id) {
         $.ajax({
@@ -194,7 +201,7 @@ function getServiceDiscount($this) {
                 'patient_id': patient_id
             },
             success: function (resposne) {
-
+                $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
                 if (resposne.status) {
 
                     let discounts = resposne.data.discounts;
@@ -222,6 +229,19 @@ function getServiceDiscount($this) {
                 }
             },
         });
+    }
+    if((service_id == null || service_id == '') && patient_id != ''){
+        $("#add_discount_id").html('<option value="">Select Discount</option>');
+        $("#add_discount_type").attr('disabled',true);
+        setTimeout(function() { 
+            $('#discount_value_1').val('');
+            $("#add_discount_type").val('').change();
+            $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+            $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+            $("#net_amount_1").val('');
+            return false;
+        },500)
+        return false;
     }
 
 }
@@ -256,6 +276,8 @@ function getDiscountInfo($this) {
             $('#add_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
             if($("#net_amount_1").val() == ''){
                 $("#add_service_id").val($("#add_service_id").val()).change();
+            }else{
+                getServiceDiscount($("#add_service_id"));
             }
         }, 100);
 
@@ -331,7 +353,7 @@ function getDiscountInfo($this) {
 
 function getDiscountValue($this) {
 
-    inputSpinner(true, 'AddPackage')
+    //inputSpinner(true, 'AddPackage')
     hideMessages();
 
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
@@ -363,12 +385,13 @@ function getDiscountValue($this) {
             },
             success: function (resposne) {
                 if (resposne.status) {
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true, 'AddPackage');
                     inputSpinner(false)
                 } else {
+                    $("#AddPackage").attr("disabled",true);	
                     $('#DiscountRange').show();
-                    inputSpinner(false, 'AddPackage')
+                    //inputSpinner(false, 'AddPackage')
                 }
             },
             error: function () {
@@ -439,7 +462,11 @@ function keyfunction_grandtotal() {
             },
             success: function (resposne) {
                 if (resposne.status) {
-                    $("#grand_total_1").val(resposne?.data?.grand_total ?? 0);
+                    if(resposne?.data?.grand_total == 1 || resposne?.data?.grand_total == 0){	
+                        $("#grand_total_1").val(0);	
+                    }else{	
+                        $("#grand_total_1").val(resposne?.data?.grand_total ?? 0);	
+                    }
                 } else {
                     $('#wrongMessage').show();
                 }
@@ -549,10 +576,10 @@ jQuery(document).ready( function () {
 
             showSpinner("-add");
 
-            if (discount_slug == 'custom') {
+            if (discount_slug == 'custom' && discount_id != '') {
                 if (discount_price == '') {
                     hideSpinner("-add");
-                    $('#inputfieldMessage').show();
+                    toastr.error("Please add discount value");	
                     return false;
                 }
                 if (discount_type == 'Percentage') {
@@ -586,7 +613,7 @@ jQuery(document).ready( function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-
+                    let consume = 'NO';
                     if (resposne.status) {
 
                         $("#package_total_1").val(resposne?.data?.myarray?.total ?? 0);
@@ -609,11 +636,11 @@ jQuery(document).ready( function () {
 
                         jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
                             if (record_detail.is_consumed == '0') {
-                                var consume = 'NO';
+                                 consume = 'NO';
                             } else {
-                                var consume = 'YES';
+                                 consume = 'YES';
                             }
-                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Tax Amt. : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount. : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
 
                        // toggle(resposne.data.myarray.record.id);
@@ -683,6 +710,15 @@ jQuery(document).ready( function () {
         var status = 0;
         if(cash_amount > 0){
             var status = 1;
+        }
+
+        if(payment_mode_id == '' && cash_amount > 0){	
+            toastr.error("Please select the payment mode");	
+            return false;	
+        }	
+        if(total <= 0){	
+            toastr.error("Please add atleast one session");	
+            return false;	
         }
 
         if (random_id && (patient_id > 0) && total && status==1?payment_mode_id:true && cash_amount >= 0 && grand_total && location_id) {
