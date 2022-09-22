@@ -66,14 +66,14 @@
     @endcan
 
     @can("patients_plan_manage")
-        <div class="navi-item mb-2">
+        <!--div class="navi-item mb-2">
             <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'plan-form');" class="change-tab plan-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
                      <i class="la la-paper-plane-o"></i>
                 </span>
                 <span class="navi-text">Plans</span>
             </a>
-        </div>
+        </div-->
     @endcan
 
     @can("patients_finance_manage")
@@ -196,14 +196,14 @@
             @endcan
 
             @can("patients_plan_manage")
-                <li class="horizontal-nav-bar-li">
+                <!--li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'plan-form');" class="change-tab plan-form-tab navi-link py-4">
                         <span class="text-muted mb-2 fa_icon">
                              <i class="la la-paper-plane-o"></i>
                         </span>
                         <p class="navi-text">Plans</p>
                     </a>
-                </li>
+                </li-->
             @endcan
 
             @can("patients_finance_manage")
