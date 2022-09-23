@@ -724,6 +724,10 @@ class LeadsController extends Controller
                 $data['created_by'] = Auth::User()->id;
                 $data['updated_by'] = Auth::User()->id;
                 $patient = Patients::createRecord($data,1);
+                if($patient == 'Patient is already exist'){
+                    return ApiHelper::apiResponse($this->error, $patient);
+                }
+                
             } else {
                 $logLevelPatient = Patients::where(array(
 //                    'id' => $request->patient_id,
@@ -1051,6 +1055,9 @@ class LeadsController extends Controller
             $data['user_type_id'] = Config::get('constants.patient_id');
             $data['patient_id'] = $request->patient_id;
             $patient = Patients::createRecord($data,1);
+            if($patient == 'Patient is already exist'){
+                return ApiHelper::apiResponse($this->error, $patient);
+            }
         } else {
             if ($logLevelPatient) {
                 $data['updated_by'] = Auth::User()->id;
