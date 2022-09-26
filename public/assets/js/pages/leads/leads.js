@@ -295,6 +295,12 @@ function createLead(url) {
             $("#modal_edit_regions").modal("show");
 
             setLeadData(response);
+            
+            setTimeout(function(){
+                $("#add_phone").attr("readonly",true);
+                $("#add_full_name").attr("readonly",true);
+                $("#add_gender_id").attr("readonly",true);
+            },500)
 
         },
         error: function(xhr, ajaxOptions, thrownError) {
@@ -875,6 +881,9 @@ function newPatient() {
                 $("input").val('');
             }
 
+            $("#add_phone").attr("readonly",false);
+            $("#add_full_name").attr("readonly",false);
+            $("#add_gender_id").attr("readonly",false);
 
            /* $("#modal_add_leads_form").find('input').val('');
             $("#modal_edit_leads_form").find('input').val('');
@@ -884,8 +893,13 @@ function newPatient() {
             $('.new_patient').val('0');
             $('.msg_new_patient').hide();
 
+            $("#add_phone").val("");
+            $("#add_full_name").val("");
+            $("#add_gender_id").val("");
+
             $("#add_phone").prop("readonly", true);
             $("#add_full_name").prop("readonly", true);
+            $("#add_gender_id").attr("readonly",true);
         }
     });
 }
