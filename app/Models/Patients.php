@@ -201,7 +201,11 @@
 				AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 				return $record;
 			}else{
-				return $patient;
+				if($flag == 1){
+					return 'Patient is already exist';
+				}else{
+				  return $patient;
+				}
 			}
 		}else{
 			$record = Patients::create($data);
