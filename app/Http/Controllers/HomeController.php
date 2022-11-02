@@ -498,7 +498,6 @@ class HomeController extends Controller
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
            list($start_date, $end_date) =  $this->getDates($request);
-
             $todayRecords = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
                 ->whereIn('location_id', ACL::getUserCentres())
@@ -622,6 +621,49 @@ class HomeController extends Controller
             ])->get();
 
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+            if ($request->type == '') {
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                   
+                if ($request->get('performance')) {
+                    $todayRecords->where('invoices.created_by', Auth::User()->id);
+                }
+
+                $todayRecords = $todayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+                    
+
+                if ($services) {
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $today[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($todayRecords) {
+                            foreach ($todayRecords as $todayRecord) {
+                                if ($todayRecord->service_id == $service->id) {
+                                    $today[$service->id] = [
+                                        $service->name,
+                                        $todayRecord->total_price
+                                    ];
+                                    $colors[] = $service->color;
+
+                                    $total += $todayRecord->total_price;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($today)) {
+                    foreach ($today as $record) {
+                        $data['today'][] = $record;
+                    }
+                }
+            }
             if ($request->type == 'today') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
@@ -827,6 +869,49 @@ class HomeController extends Controller
             ])->get();
 
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+            if ($request->type == '') {
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+
+                if ($request->get('performance')) {
+                    $todayRecords->where('invoices.created_by', Auth::User()->id);
+                }
+
+                $todayRecords = $todayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+
+
+                if ($services) {
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $today[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($todayRecords) {
+                            foreach ($todayRecords as $todayRecord) {
+                                if ($todayRecord->service_id == $service->id) {
+                                    $today[$service->id] = [
+                                        $service->name,
+                                        $todayRecord->total_price
+                                    ];
+                                    $colors[] = $service->color;
+
+                                    $total += $todayRecord->total_price;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($today)) {
+                    foreach ($today as $record) {
+                        $data['today'][] = $record;
+                    }
+                }
+            }
             if ($request->type == 'today') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
