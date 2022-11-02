@@ -188,7 +188,6 @@ class LocationsWidget
             ))->select('id', 'name')->first();
 
             if ($first_child && $collection->search($first_child->id)) {
-
                 $location_array = $user->user_has_locations->where('location_id', '=', $first_child->id)->pluck('location_id')->toArray();
 
                 return $location_array;
@@ -207,12 +206,9 @@ class LocationsWidget
 
                     foreach ($region_centres as $region_centre) {
 
-                        if ($collection->search($region_centre->id) && count($regions_mapping[$region_centre->region_id]['children'])) {
-
+                        if ($collection->search($region_centre->id) && isset($regions_mapping[$region_centre->region_id]['children'])) {
                             foreach ($regions_mapping[$region_centre->region_id]['children'] as $child) {
-
                                 $region_id = Locations::find($child['id']);
-
                                 $location_array_1[] = $region_id->id;
 
                                 $array1[] = $region_id->region_id;

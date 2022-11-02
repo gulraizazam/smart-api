@@ -16,7 +16,12 @@
     width: auto !important;
 
 }
-
+th.fc-axis.fc-widget-header{
+    width: 45.5469px !important;
+}
+td.fc-axis.fc-widget-content{
+    width: 45.5469px !important;
+}
 .menu-sub-dropdown.menu.show, .menu-sub-dropdown.show[data-popper-placement], .show.menu-dropdown>.menu-sub-dropdown {
     display: flex;
     animation: menu-sub-dropdown-animation-fade-in .3s ease 1,menu-sub-dropdown-animation-move-up .3s ease 1;

@@ -570,7 +570,7 @@
 
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
-                                            <span class="text-muted font-weight-bold mt-2 service-title">Weekly Income</span>
+                                            <span class="text-muted font-weight-bold mt-2 service-title"></span>
                                         </div>
                                     </div>
 
@@ -644,7 +644,7 @@
 
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-service"></span>
-                                            <span class="text-muted font-weight-bold mt-2 my-service-title">Weekly Income</span>
+                                            <span class="text-muted font-weight-bold mt-2 my-service-title"></span>
                                         </div>
                                     </div>
 
@@ -882,7 +882,9 @@
                 @if(request('type') == 'month')
                     $(".my-revenue-centre-title").text('Monthly Income')
                 @endif
-
+                @if(request('type') == '')
+                    $(".my-revenue-centre-title").text('Today Revenue')
+                @endif
                 myRevenueCentreChart(pie);
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -919,7 +921,7 @@
                 @endif
 
                 @if(request('type') == '')
-                    $(".pie-income-title").text('Today Income')
+                    $(".service-title").text('Today Income')
                     var pie = response.data.pie.today;
                 @endif
 
