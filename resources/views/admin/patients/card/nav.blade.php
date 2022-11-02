@@ -109,7 +109,7 @@
     </div>
     @endcan
 
-    @can("patients_refund_manage")
+    <!-- @can("patients_refund_manage")
         <div class="navi-item mb-2">
             <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'no-plan-refund-form');" class="change-tab no-plan-refund-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
@@ -120,7 +120,7 @@
         </div>
     @endcan
 
-</div>--}}
+</div>--}} -->
 <!--end::Nav-->
 
 {{--Menu--}}
@@ -239,7 +239,7 @@
                 </li>
             @endcan
 
-            @can("patients_refund_manage")
+            <!-- @can("patients_refund_manage")
                 <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'no-plan-refund-form');" class="change-tab no-plan-refund-form-tab navi-link py-4">
                         <span class="text-muted mb-2 fa_icon">
@@ -248,7 +248,7 @@
                         <p class="navi-text">Non Plans Refunds</p>
                     </a>
                 </li>
-            @endcan
+            @endcan -->
 
         </ul>
     </div>
