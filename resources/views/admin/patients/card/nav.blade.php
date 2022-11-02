@@ -120,8 +120,8 @@
         </div>
     @endcan
 
-</div>--}} -->
-<!--end::Nav-->
+</div>--}} 
+end::Nav-->
 
 {{--Menu--}}
 <div class="card mb-8 menu_section" style="width: 100%">
