@@ -1147,13 +1147,13 @@ class HomeController extends Controller
     private function consultancies($data, $start_date, $end_date) {
 
         if (!Gate::allows('dashboard_states')) {
-            dd('here');
+           
             $data['all_consultancies'] = null;
             $data['done_consultancies'] = null;
 
             return $data;
         }
-dd('no');
+
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->whereIn('location_id', ACL::getUserCentres());
