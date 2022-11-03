@@ -228,7 +228,7 @@
                         <div class="text-center">
                             @if($Invoiceinfo->appointment_type_id == 1)
 
-                                <a style="width: 200px;" class="btn btn-success blue hidden-print margin-bottom-5" target="_blank"
+                                <a class="btn btn-success blue hidden-print margin-bottom-5" target="_blank"
                                 href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id,'download',1]) }}">Print Invoice
                                     <i class="fa fa-print"></i>
                                 </a>
@@ -241,11 +241,11 @@
                             @else
 
                                 <a style="width: 200px;" class="btn btn-success blue hidden-print margin-bottom-5" target="_blank"
-                                href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id]) }}">Print
+                                href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id]) }}">Print Invoice
                                     <i class="fa fa-print"></i>
                                 </a>
 
-                                <a class="btn btn-sm btn-primary blue hidden-print margin-bottom-5" target="_blank"
+                                <a class="btn  btn-primary blue hidden-print margin-bottom-5" target="_blank"
                                 href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id, 'download']) }}">Download
                                     <i class="fa fa-download"></i>
                                 </a>
