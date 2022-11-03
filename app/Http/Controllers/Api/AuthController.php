@@ -42,6 +42,7 @@ class AuthController extends Controller
                 return ApiHelper::apiResponse($this->error, $validate->errors()->first(), $validate->errors());
 
             if (Auth::attempt($request->only(['email', 'password']))) {
+                dd('here');
                 $user = auth()->user();
                 $user->api_token = auth()->user()->createToken('login')->plainTextToken;
                 return ApiHelper::apiResponse($this->success, 'Success', $user);
