@@ -44,6 +44,7 @@ class HomeController extends Controller
      */
     public function __construct()
     {
+        dd(Auth::user());
         $this->middleware('auth');
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
