@@ -36,7 +36,7 @@
                                     </div>
                                 </div>
                             </div>
-                            {{dd($revenue)}}
+                           
                             <!--end::Header-->
                             <!--begin::Body-->
                             <div class="card-body p-0 position-relative overflow-hidden">
