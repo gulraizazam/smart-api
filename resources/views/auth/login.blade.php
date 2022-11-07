@@ -58,7 +58,7 @@
                     <div class="text-center">
                         <!--begin::Submit button-->
                         <button id="kt_sign_in_submit" class="btn btn-lg btn-primary w-100 mb-5">
-                            <span class="indicator-label">Continue</span>
+                            <span class="indicator-label">Login</span>
                         </button>
 
                     </div>
