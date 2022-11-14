@@ -54,6 +54,7 @@ class FinanceReportController extends Controller
             return abort(401);
         }
         $allserviceslug = Services::where('slug', '=', 'all')->isActive()->first();
+        dd($allserviceslug);
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
         $parentGroups->build(0, Auth::User()->account_id);
