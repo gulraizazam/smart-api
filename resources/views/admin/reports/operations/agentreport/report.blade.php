@@ -65,11 +65,11 @@
     </div>
 </div>
 
-<div class="card mb-8 menu_section" style="width: 100%">
+<!-- <div class="card mb-8 menu_section" style="width: 100%">
 
-    @include('admin.reports.common.tab')
+    <!-- @include('admin.reports.common.tab') -->
 
-</div>
+</div> -->
 
 <div class="panel-body sn-table-body">
     <div class="bordered">
@@ -93,9 +93,49 @@
                     </table>
                 </div>
             </div>
+            <div class="pt-4 border-top  all-sections section-states" >
 
+@if(isset($locationData) && count($locationData) > 0)
+    @foreach($locationData as $key => $location)
+
+        <div class="col-md-6 mb-3">
+            <h3 class="">{{$key}}</h3>
+
+            <table class="table border">
+                <thead>
+                <tr class="">
+                    <td class="bg-light">Consultation Booked</td>
+                    <td class="bg-light" style="text-align:right;">{{$location['consultantbooked'] ?? 0}}</td>
+                </tr>
+                <tr class="">
+                    <td class="border-top bg-light" style="">Consultation Arrived</td>
+                    <td class="border-top bg-light" style="text-align:right;">{{$location['consultantarrived'] ?? 0}}</td>
+                </tr>
+
+                @if(isset($location['consultantbooked']) && $location['consultantbooked'] > 0)
+                    <tr class="">
+                        <td class="border-top bg-light" style="">Consultation Arrival Ratio</td>
+                        <td class="border-top bg-light" style="text-align:right;">
+                            <?php
+                            if (isset($location['consultantarrived']) && isset($location['consultantbooked'])) {
+                                echo number_format(($location['consultantarrived'] / $location['consultantbooked']) * 100, 2) . '%';
+                            } else {
+                                echo '00.00 %';
+                            }
+                            ?>
+                        </td>
+                    </tr>
+                @endif
+                </thead>
+            </table>
+
+        </div>
+
+    @endforeach
+@endif
+</div>
             <div class="table-wrapper all-sections section-detail" id="topscroll">
-                <table class="table">
+                <table class="table" id="test">
                     <thead>
                     <tr>
                         <th>Sr#</th>
@@ -134,47 +174,7 @@
 
         </div>
 
-        <div class="pt-4 border-top  all-sections section-states" style="display: none;">
-
-            @if(isset($locationData) && count($locationData) > 0)
-                @foreach($locationData as $key => $location)
-
-                    <div class="col-md-6 mb-3">
-                        <h3 class="">{{$key}}</h3>
-
-                        <table class="table border">
-                            <thead>
-                            <tr class="">
-                                <td class="bg-light">Consultation Booked</td>
-                                <td class="bg-light" style="text-align:right;">{{$location['consultantbooked'] ?? 0}}</td>
-                            </tr>
-                            <tr class="">
-                                <td class="border-top bg-light" style="">Consultation Arrived</td>
-                                <td class="border-top bg-light" style="text-align:right;">{{$location['consultantarrived'] ?? 0}}</td>
-                            </tr>
-
-                            @if(isset($location['consultantbooked']) && $location['consultantbooked'] > 0)
-                                <tr class="">
-                                    <td class="border-top bg-light" style="">Consultation Arrival Ratio</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                        <?php
-                                        if (isset($location['consultantarrived']) && isset($location['consultantbooked'])) {
-                                            echo number_format(($location['consultantarrived'] / $location['consultantbooked']) * 100, 2) . '%';
-                                        } else {
-                                            echo '00.00 %';
-                                        }
-                                        ?>
-                                    </td>
-                                </tr>
-                            @endif
-                            </thead>
-                        </table>
-
-                    </div>
-
-                @endforeach
-            @endif
-        </div>
+        
 
     </div>
     <div class="clear clearfix"></div>
