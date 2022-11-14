@@ -45,7 +45,7 @@
 <div class="sn-table-holder">
     <div class="sn-report-head">
         <div class="sn-title">
-            <h1>{{ 'Walkin Report' }}</h1>
+            <h1>{{ 'DAR Report' }}</h1>
         </div>
         <div class="sn-buttons">
             @if($request->get('medium_type') == 'web')
@@ -65,16 +65,16 @@
     </div>
 </div>
 
-<!-- <div class="card mb-8 menu_section" style="width: 100%">
+<div class="card mb-8 menu_section" style="width: 100%">
 
-    @include('admin.reports.common.tab') 
+    <!-- @include('admin.reports.common.tab') -->
 
-</div>  -->
+</div>
 
 <div class="panel-body sn-table-body">
     <div class="bordered">
-
         <div class="sn-table-head">
+
             <div class="row">
                 <div class="col-md-2">
                     <img style="width: 145px;" src="{{ asset('assets/media/logos/smart.svg') }}" height="80">
@@ -94,30 +94,54 @@
                 </div>
             </div>
             <div class="pt-4 border-top  all-sections section-states" >
+                @if(isset($locationData) && count($locationData) > 0)
+                    @foreach($locationData as $key => $location)
 
-@if(isset($locationData) && count($locationData) > 0)
-    @foreach($locationData as $key => $location)
+                        <div class="col-md-6 mb-3">
+                            <h3 class="">{{$key}}</h3>
 
-        <div class="col-md-6 mb-3">
-            <h3 class="">{{$key}}</h3>
+                            <table class="table border">
+                        <thead>
+                    <tr class="">
+                        <td class="bg-light">Consultation Booked</td>
+                        <td class="bg-light" style="text-align:right;">{{$location['consultantbooked']}}</td>
+                    </tr>
+                    <tr class="">
+                        <td class="border-top bg-light" style="">Consultation Arrived</td>
+                        <td class="border-top bg-light" style="text-align:right;">{{$location['consultantarrived']}}</td>
+                    </tr>
+                    <tr class="">
+                        <td class="border-top bg-light" style="">Total Walkin</td>
+                        <td class="border-top bg-light" style="text-align:right;">{{$location['walking']}}</td>
+                    </tr>
 
-            <table class="table border">
-                <thead>
-                <tr class="">
-                    <td class="bg-light">Total Walkin</td>
-                    <td class="bg-light" style="text-align:right;">{{$location['walkin'] ?? 0}}</td>
-                </tr>
+                    @if(isset($location['consultantbooked']) && $location['consultantbooked'] > 0)
+                        <tr class="">
+                            <td class="border-top bg-light" style="">Consultation Arrival Ratio</td>
+                            <td class="border-top bg-light" style="text-align:right;">
+                                <?php
+                                if (isset($location['consultantbooked']) && isset($location['consultantarrived'])) {
+                                    $booking_without_walkin = $location['consultantbooked'] - $location['walking'];
+                                    $arrived_without_walkin = $location['consultantarrived'] - $location['walking'];
+                                    echo number_format(($arrived_without_walkin / $booking_without_walkin) * 100, 2) . '%';
+                                } else {
+                                    echo '00.00 %';
+                                }
 
-                </thead>
-            </table>
+                                ?>
+                            </td>
+                        </tr>
+                    @endif
+                        </thead>
+                    </table>
 
-        </div>
+                        </div>
 
-    @endforeach
-@endif
-</div>
+                    @endforeach
+                @endif
+            </div>
             <div class="table-wrapper all-sections section-detail" id="topscroll">
-                <table class="table" id="table">
+                <table class="table">
                     <thead>
                     <tr>
                         <th>Sr#</th>
@@ -127,14 +151,17 @@
                         <th>Appointment Type</th>
                         <th>Practitioner</th>
                         <th>Service</th>
-                        <th>Appointment Status</th>
+                        <th>Appointment Status Parent</th>
+                        {{--<th>Appointment Status Child</th>--}}
                     </tr>
                     </thead>
-                    @php $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
+                    @php $walkin = 0; $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
                     @if(count($reportData))
                         @foreach($reportData as $reportsingle)
 
                             <tr>
+                                @if($reportsingle['appointment_slug'] == 'consultancy')
+
                                 <td>{{$count++}}</td>
                                 <td>{{$reportsingle['schedule_date']}}</td>
                                 <td>{{$reportsingle['id']}}</td>
@@ -143,7 +170,9 @@
                                 <td>{{$reportsingle['doctor_name']}}</td>
                                 <td>{{$reportsingle['service']}}</td>
                                 <td>{{$reportsingle['appointment_status_parent']}}</td>
+                                {{--<td>{{$reportsingle['appointment_status_child']}}</td>--}}
                             </tr>
+                            @endif
                         @endforeach
 
                     @else
@@ -154,10 +183,10 @@
                 </table>
             </div>
 
+           
+
+
         </div>
-
-       
-
     </div>
     <div class="clear clearfix"></div>
     <!-- Liabilities and Assets -->

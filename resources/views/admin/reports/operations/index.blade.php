@@ -1,7 +1,7 @@
 @extends('admin.layouts.master')
 
 @section('content')
-
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
     @push('css')
         <style>
             .table-wrapper {
@@ -210,6 +210,9 @@
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/settings.js')}}"></script>
+        
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+   
     @endpush
 
     @push('js')
@@ -271,6 +274,9 @@
                         $('#content').html('');
                         if($('#medium_type').val() == 'web') {
                             $('#content').html(response);
+                            
+                            $('#test').DataTable();
+
                         } else {
                             return false;
                         }
