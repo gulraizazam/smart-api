@@ -62,7 +62,7 @@ class FinanceReportController extends Controller
 
         foreach ($services as $key => $ser) {
             if ($key) {
-                if ($ser['name'] == $allserviceslug->name) {
+                if (isset($ser['name']) && $ser['name']== $allserviceslug->name) {
                     unset($services[$key]);
                 }
             }
