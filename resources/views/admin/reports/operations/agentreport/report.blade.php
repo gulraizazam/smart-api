@@ -65,11 +65,11 @@
     </div>
 </div>
 
-<!-- <div class="card mb-8 menu_section" style="width: 100%">
+ <!-- <div class="card mb-8 menu_section" style="width: 100%">
 
-    <!-- @include('admin.reports.common.tab') -->
+    @include('admin.reports.common.tab')
 
-</div> -->
+</div>  -->
 
 <div class="panel-body sn-table-body">
     <div class="bordered">
