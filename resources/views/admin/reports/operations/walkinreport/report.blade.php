@@ -117,7 +117,7 @@
 @endif
 </div>
             <div class="table-wrapper all-sections section-detail" id="topscroll">
-                <table class="table" id="table">
+                <table class="table" id="test">
                     <thead>
                     <tr>
                         <th>Sr#</th>
