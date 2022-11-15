@@ -159,7 +159,8 @@
                     </thead>
                     @php $walkin = 0; $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
                 <tbody>
-                    @if(count($reportData))
+                    
+                    @if($reportData)
                         @foreach($reportData as $reportsingle)
 
                             <tr>
@@ -178,10 +179,7 @@
                             @endif
                         @endforeach
 
-                    @else
-                        <tr>
-                            <td colspan="12" align="center">No record round.</td>
-                        </tr>
+                    
                     @endif
                 </tbody>
                 </table>
