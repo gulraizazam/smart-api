@@ -176,11 +176,7 @@ class Discounts extends BaseModal
 
             //flash('Child records exist, unable to delete resource')->error()->important();
             //return redirect()->route('admin.discounts.index');
-            //return 'Child records exist, unable to delete resource.';//ApiHelper::apiResponse(200, 'Child records exist, unable to delete resource.');
-            return [
-                'status' => false,
-                'message' => 'Child records exist, unable to delete resource',
-            ];
+            return 'Child records exist, unable to delete resource.';//ApiHelper::apiResponse(200, 'Child records exist, unable to delete resource.');
         }
 
         $record = $discount->delete();
