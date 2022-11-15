@@ -164,10 +164,7 @@
                             </tr>
                         @endforeach
 
-                    @else
-                        <tr>
-                            <td colspan="12" align="center">No record round.</td>
-                        </tr>
+                    
                     @endif
                 </table>
             </div>
