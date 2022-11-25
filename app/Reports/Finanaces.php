@@ -1233,7 +1233,7 @@ class Finanaces
             $start_date = null;
             $end_date = null;
         }
-        if ($data['region_id']) {
+        if (isset($data['region_id'])) {
             $location_information = Locations::generalrevenuegetActiveSorted(ACL::getUserCentres(), $data['region_id']);
         } else {
             $location_information = Locations::getActiveSorted(ACL::getUserCentres());

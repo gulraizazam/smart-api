@@ -2328,6 +2328,7 @@ class FinanceReportController extends Controller
      */
     public function collectionbyservice(Request $request)
     {
+       
         if (!Gate::allows('finance_general_revenue_reports_collection_by_service')) {
             return abort(401);
         }
@@ -2342,7 +2343,7 @@ class FinanceReportController extends Controller
         }
 
         $reportData = \App\Reports\Invoices::collectionbyservice($request->all(), Auth::User()->account_id);
-
+        
         switch ($request->get('medium_type')) {
             case 'web':
                 return view('admin.reports.collectionbyservice.report', compact('reportData', 'start_date', 'end_date'));
