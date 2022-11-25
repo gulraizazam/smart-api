@@ -49,6 +49,7 @@ use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\OrdersController;
+use App\Http\Controllers\DashboardReportsController;
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
 
     /*
@@ -515,4 +516,14 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
         Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
         //Route end for Operations reports
 
+        /////////////////Dashboard Stats//////
+        Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenter'])->name('dashboardreport.revenue_by_centre');
+        Route::get('dashboard/collection-by-centre/{medium_type}/{performance}/{period}', [DashboardReportsController::class,'getCollectionByCenter'])->name('dashboadReport.collectionrevenuereport');
+        Route::get('dashboard/revenue-by-service/{medium_type}/{performance}/{period}', [DashboardReportsController::class,'getRevenueByService'])->name('dashboadReport.revenuebyservicereport');
+        Route::get('dashboard/collection-by-centre', [DashboardReportsController::class,'collectionByCentre'])->name('dashboard.collection_by_centre');
+        Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
+        Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
+        Route::get('dashboard/my-revenue-by-centre', [DashboardReportsController::class, 'myRevenueByCentre'])->name('dashboard.myRevenueByCentre');
+        Route::get('dashboard/revenue-by-service', [DashboardReportsController::class, 'revenueByService'])->name('dashboard.revenueByService');
+        Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
     });
