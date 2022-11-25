@@ -688,61 +688,59 @@ class Invoices
                                         $packageids[] = $packagesadvance->package_id;
 
                                         $packageinfo = Packages::find($packagesadvance->package_id);
-
-                                        $total_consume_service = PackageService::whereDate('package_services.updated_at', '>=', $start_date)
+                                        if($packageinfo){
+                                            $total_consume_service = PackageService::whereDate('package_services.updated_at', '>=', $start_date)
                                             ->whereDate('package_services.updated_at', '<=', $end_date)
                                             ->where([
                                                 ['is_consumed', '=', '1'],
                                                 ['package_id', '=', $packageinfo->id]
                                             ])->whereNotNull('package_services.package_id')->get();
-
-                                        if (count($total_consume_service) > 0) {
-                                            $total_consume_packageservice_ids = PackageService::whereDate('updated_at', '>=', $start_date)
-                                                ->whereDate('updated_at', '<=', $end_date)
-                                                ->where([
-                                                    ['is_consumed', '=', '1'],
-                                                    ['package_id', '=', $packageinfo->id]
-                                                ])->whereNotNull('package_id')->get()->pluck('id')->toArray();
-
-                                            $total_consume = PackageService::whereDate('updated_at', '>=', $start_date)
-                                                ->whereDate('updated_at', '<=', $end_date)
-                                                ->where([
-                                                    ['is_consumed', '=', '1'],
-                                                    ['package_id', '=', $packageinfo->id]
-                                                ])->whereNotNull('package_id')->sum('tax_including_price');
-                                        } else {
-                                            $total_consume_packageservice_ids = array();
-                                            $total_consume = 0;
-                                        }
-
-                                        if (count($total_consume_service) > 0) {
-
-                                            $package_services = PackageService::whereIn('id',$total_consume_packageservice_ids)
-                                                ->where('package_id', '=', $packageinfo->id)->whereNotNull('package_id')->get();
-
-                                            foreach ($package_services as $package_service) {
-
-                                                $packagebundle = PackageBundles::find($package_service->package_bundle_id);
-
-                                                $bundle_info = Bundles::find($packagebundle->bundle_id);
-
-                                                $divide_amount = $package_service->tax_including_price;
-
-                                                if (!in_array($bundle_info->id, $bundles)) {
-
-                                                    $report_data[$bundle_info->id] = array(
-                                                        'package_bundle_id' => $package_service->package_bundle_id,
-                                                        'id' => $bundle_info->id,
-                                                        'name' => $bundle_info->name,
-                                                        'amount' => 0,
-                                                    );
-                                                    $bundles[] = $bundle_info->id;
-                                                }
-                                                $report_data[$bundle_info->id]['amount'] += $divide_amount;
+                                            if (count($total_consume_service) > 0) {
+                                                $total_consume_packageservice_ids = PackageService::whereDate('updated_at', '>=', $start_date)
+                                                    ->whereDate('updated_at', '<=', $end_date)
+                                                    ->where([
+                                                        ['is_consumed', '=', '1'],
+                                                        ['package_id', '=', $packageinfo->id]
+                                                    ])->whereNotNull('package_id')->get()->pluck('id')->toArray();
+    
+                                                $total_consume = PackageService::whereDate('updated_at', '>=', $start_date)
+                                                    ->whereDate('updated_at', '<=', $end_date)
+                                                    ->where([
+                                                        ['is_consumed', '=', '1'],
+                                                        ['package_id', '=', $packageinfo->id]
+                                                    ])->whereNotNull('package_id')->sum('tax_including_price');
+                                            } else {
+                                                $total_consume_packageservice_ids = array();
+                                                $total_consume = 0;
                                             }
-                                        }
-
-                                        $cash_receive = PackageAdvances::whereDate('created_at', '>=', $start_date)
+    
+                                            if (count($total_consume_service) > 0) {
+    
+                                                $package_services = PackageService::whereIn('id',$total_consume_packageservice_ids)
+                                                    ->where('package_id', '=', $packageinfo->id)->whereNotNull('package_id')->get();
+    
+                                                foreach ($package_services as $package_service) {
+    
+                                                    $packagebundle = PackageBundles::find($package_service->package_bundle_id);
+    
+                                                    $bundle_info = Bundles::find($packagebundle->bundle_id);
+    
+                                                    $divide_amount = $package_service->tax_including_price;
+    
+                                                    if (!in_array($bundle_info->id, $bundles)) {
+    
+                                                        $report_data[$bundle_info->id] = array(
+                                                            'package_bundle_id' => $package_service->package_bundle_id,
+                                                            'id' => $bundle_info->id,
+                                                            'name' => $bundle_info->name,
+                                                            'amount' => 0,
+                                                        );
+                                                        $bundles[] = $bundle_info->id;
+                                                    }
+                                                    $report_data[$bundle_info->id]['amount'] += $divide_amount;
+                                                }
+                                            }
+                                            $cash_receive = PackageAdvances::whereDate('created_at', '>=', $start_date)
                                             ->whereDate('created_at', '<=', $end_date)
                                             ->where([
                                                 ['package_id', '=', $packageinfo->id],
@@ -779,6 +777,12 @@ class Invoices
 
                                             $report_data[$bundle_info->id]['amount'] += $divide_amount;
                                         }
+                                        }
+                                        
+
+                                        
+
+                                        
                                     }
                                 }
                             } else {
