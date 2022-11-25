@@ -1,7 +1,93 @@
 @extends('admin.layouts.master')
 
 @section('content')
+<style>
+    .nav-tabs {
+    background: 0 0;
+    margin: 1px 0 0;
+    float: right;
+    display: inline-block;
+    border: 0;
+}
+.nav:before {
+    content: " ";
+    display: table;
+}
+.nav-tabs>li {
+    margin: 0;
+    padding: 0;
+    background: 0 0;
+    border: 0;
+    float: left;
+    display: block;
+    position: relative;
+}
+.nav-tabs>li>a {
+    margin: 0;
+    padding: 12px 13px 13px;
+    font-size: 13px;
+    color: #666;
+    border: 0;
+    background: 0 0;
 
+}
+.nav-tabs>li a.active {
+    background: 0 0;
+    border-bottom: 4px solid #35a1d4;
+    position: relative;
+}
+.hover-effect {
+    border-color: #3598dc !important;
+    color: #FFF !important;
+    background-color: #3598dc !important;
+    border-radius: 25px!important;
+    overflow: hidden;
+}
+.dropdown-menu {
+    box-shadow: 5px 5px rgb(102 102 102 / 10%);
+    left: 0;
+    min-width: 175px;
+    position: absolute;
+    z-index: 1000;
+    display: none;
+    float: left;
+    list-style: none;
+    text-shadow: none;
+    padding: 0;
+    background-color: #fff;
+    margin: 10px 0 0;
+    border: 1px solid #eee;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    -ms-border-radius: 4px;
+    -o-border-radius: 4px;
+    border-radius: 4px;
+}
+.btn-group>.dropdown-menu:before, .dropdown-toggle>.dropdown-menu:before, .dropdown>.dropdown-menu:before {
+    position: absolute;
+    top: -8px;
+    left: 9px;
+    right: auto;
+    display: inline-block!important;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #e0e0e0;
+    border-left: 8px solid transparent;
+    content: '';
+    right: auto;
+    left: 9px;
+}
+.dropdown-menu>li>a {
+    padding: 8px 16px;
+    color: #6f6f6f;
+    text-decoration: none;
+    display: block;
+    clear: both;
+    font-weight: 300;
+    line-height: 18px;
+    white-space: nowrap;
+}
+</style>
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
@@ -248,7 +334,7 @@
                     </div>
 
                     {{--Collections by centers--}}
-                    <div class="col-lg-6 col-xxl-6">
+                    <div class="col-lg-12 col-xxl-12">
                         <!--begin::Stats Widget 11-->
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
 
@@ -257,23 +343,57 @@
                             <!--begin::Body-->
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                    <span class="symbol symbol-50 symbol-light-success mr-2">
-                                        <span class="symbol-label">
-                                            <span class="svg-icon svg-icon-xl svg-icon-success">
-                                                <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
-                                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                        <rect x="0" y="0" width="24" height="24" />
-                                                        <rect fill="#000000" x="4" y="4" width="7" height="7" rx="1.5" />
-                                                        <path d="M5.5,13 L9.5,13 C10.3284271,13 11,13.6715729 11,14.5 L11,18.5 C11,19.3284271 10.3284271,20 9.5,20 L5.5,20 C4.67157288,20 4,19.3284271 4,18.5 L4,14.5 C4,13.6715729 4.67157288,13 5.5,13 Z M14.5,4 L18.5,4 C19.3284271,4 20,4.67157288 20,5.5 L20,9.5 C20,10.3284271 19.3284271,11 18.5,11 L14.5,11 C13.6715729,11 13,10.3284271 13,9.5 L13,5.5 C13,4.67157288 13.6715729,4 14.5,4 Z M14.5,13 L18.5,13 C19.3284271,13 20,13.6715729 20,14.5 L20,18.5 C20,19.3284271 19.3284271,20 18.5,20 L14.5,20 C13.6715729,20 13,19.3284271 13,18.5 L13,14.5 C13,13.6715729 13.6715729,13 14.5,13 Z" fill="#000000" opacity="0.3" />
-                                                    </g>
-                                                </svg>
-                                                <!--end::Svg Icon-->
-                                            </span>
-                                        </span>
-                                    </span>
+                                <ul class="nav nav-tabs">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style">
+                                            <div class="btn-group">
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                data-close-others="true" aria-expanded="false"> Report
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>
+                                                <ul class="dropdown-menu pull-right">
+                                                    <li>
+                                                        <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','today']) }}"
+                                                        target="_blank">Today</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','yesterday']) }}"
+                                                        target="_blank">Yesterday</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','last7days']) }}"
+                                                        target="_blank">Last 7 Days</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','thismonth']) }}"
+                                                        target="_blank">This Month</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="active">
+                                        <a href="#location_collection_1" data-toggle="tab"
+                                        onclick="initCollectionByCentre('today', '', '', '');">Today</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_collection_2" data-toggle="tab"
+                                        onclick="initCollectionByCentre('', 'yesterday', '', '');">Yesterday</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_collection_3" data-toggle="tab"
+                                        onclick="initCollectionByCentre('', '', 'last7days', '');">Last 7 Days</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_collection_4" data-toggle="tab"
+                                        onclick="initCollectionByCentre('', '', '', 'thismonth');">This Month</a>
+                                    </li>
+                                </ul>
+                                        
+                                    
 
-                                    <span class="dashboard-counter" style="margin-left: -40px;">Collection by Centre</span>
+                                    <span class="dashboard-counter" style="margin-left: -250px;">Collection by Centre</span>
 
                                     <div class="d-flex flex-column text-right">
                                         <span class="text-dark-75 font-weight-bolder font-size-h3 total-pie-chart"></span>
@@ -325,30 +445,62 @@
                     </div>
 
                     {{--My Collections by centers--}}
-                    <div class="col-lg-6 col-xxl-6">
+                    <div class="col-lg-12 col-xxl-12">
                         <!--My Collection by centre-->
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <!--begin::Body-->
                             @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_collection_by_centre'))
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                        <span class="symbol symbol-50 symbol-light-success mr-2">
-                                            <span class="symbol-label">
-                                                <span class="svg-icon svg-icon-xl svg-icon-success">
-                                                    <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
-                                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                            <rect x="0" y="0" width="24" height="24" />
-                                                            <rect fill="#000000" x="4" y="4" width="7" height="7" rx="1.5" />
-                                                            <path d="M5.5,13 L9.5,13 C10.3284271,13 11,13.6715729 11,14.5 L11,18.5 C11,19.3284271 10.3284271,20 9.5,20 L5.5,20 C4.67157288,20 4,19.3284271 4,18.5 L4,14.5 C4,13.6715729 4.67157288,13 5.5,13 Z M14.5,4 L18.5,4 C19.3284271,4 20,4.67157288 20,5.5 L20,9.5 C20,10.3284271 19.3284271,11 18.5,11 L14.5,11 C13.6715729,11 13,10.3284271 13,9.5 L13,5.5 C13,4.67157288 13.6715729,4 14.5,4 Z M14.5,13 L18.5,13 C19.3284271,13 20,13.6715729 20,14.5 L20,18.5 C20,19.3284271 19.3284271,20 18.5,20 L14.5,20 C13.6715729,20 13,19.3284271 13,18.5 L13,14.5 C13,13.6715729 13.6715729,13 14.5,13 Z" fill="#000000" opacity="0.3" />
-                                                        </g>
-                                                    </svg>
-                                                    <!--end::Svg Icon-->
-                                                </span>
-                                            </span>
-                                        </span>
+                                    <ul class="nav nav-tabs">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style">
+                                            <div class="btn-group">
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                data-close-others="true" aria-expanded="false"> Report
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>
+                                                <ul class="dropdown-menu pull-right">
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Today</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Yesterday</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Last 7 Days</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">This Month</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="active">
+                                        <a href="#location_my_collection_1" data-toggle="tab"
+                                        onclick="initMyCollectionByCentre('today', '', '', '');">Today</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_my_collection_2" data-toggle="tab"
+                                        onclick="initMyCollectionByCentre('', 'yesterday', '', '');">Yesterday</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_my_collection_3" data-toggle="tab"
+                                        onclick="initMyCollectionByCentre('', '', 'last7days', '');">Last 7 Days</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_my_collection_4" data-toggle="tab"
+                                        onclick="initMyCollectionByCentre('', '', '', 'thismonth');">This Month</a>
+                                    </li>
+                                </ul>
 
-                                        <span class="dashboard-counter" style="margin-left: -30px;">My Collection by Centre</span>
+                                        <span class="dashboard-counter" style="margin-left: -250px;">My Collection by Centre</span>
 
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-collection-center"></span>
@@ -363,23 +515,9 @@
 
                                 <div class="card-body p-0 " style="height: 400px;">
                                     <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                                <span class="symbol symbol-50 symbol-light-success mr-2">
-                                                    <span class="symbol-label">
-                                                        <span class="svg-icon svg-icon-xl svg-icon-success">
-                                                            <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
-                                                            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                                                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                                    <rect x="0" y="0" width="24" height="24" />
-                                                                    <rect fill="#000000" x="4" y="4" width="7" height="7" rx="1.5" />
-                                                                    <path d="M5.5,13 L9.5,13 C10.3284271,13 11,13.6715729 11,14.5 L11,18.5 C11,19.3284271 10.3284271,20 9.5,20 L5.5,20 C4.67157288,20 4,19.3284271 4,18.5 L4,14.5 C4,13.6715729 4.67157288,13 5.5,13 Z M14.5,4 L18.5,4 C19.3284271,4 20,4.67157288 20,5.5 L20,9.5 C20,10.3284271 19.3284271,11 18.5,11 L14.5,11 C13.6715729,11 13,10.3284271 13,9.5 L13,5.5 C13,4.67157288 13.6715729,4 14.5,4 Z M14.5,13 L18.5,13 C19.3284271,13 20,13.6715729 20,14.5 L20,18.5 C20,19.3284271 19.3284271,20 18.5,20 L14.5,20 C13.6715729,20 13,19.3284271 13,18.5 L13,14.5 C13,13.6715729 13.6715729,13 14.5,13 Z" fill="#000000" opacity="0.3" />
-                                                                </g>
-                                                            </svg>
-                                                            <!--end::Svg Icon-->
-                                                        </span>
-                                                    </span>
-                                                </span>
+                                    
 
-                                        <span class="dashboard-counter" style="margin-left: -30px;">My Collection by Centre</span>
+                                        <span class="dashboard-counter" style="margin-left: -250px;">My Collection by Centre</span>
 
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3">N/A</span>
@@ -397,29 +535,61 @@
                         <!--end::My Collection by centre-->
                     </div>
 
-                    <div class="col-lg-6 col-xxl-6">
+                    <div class="col-lg-12 col-xxl-12">
                         <!--begin::Revenue by center-->
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <!--begin::Body-->
                             @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                            <span class="symbol symbol-50 symbol-light-primary mr-2">
-                                                <span class="symbol-label">
-                                                    <span class="svg-icon svg-icon-xl svg-icon-primary">
-                                                        <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Communication/Group.svg-->
-                                                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                                <polygon points="0 0 24 0 24 24 0 24" />
-                                                                <path d="M18,14 C16.3431458,14 15,12.6568542 15,11 C15,9.34314575 16.3431458,8 18,8 C19.6568542,8 21,9.34314575 21,11 C21,12.6568542 19.6568542,14 18,14 Z M9,11 C6.790861,11 5,9.209139 5,7 C5,4.790861 6.790861,3 9,3 C11.209139,3 13,4.790861 13,7 C13,9.209139 11.209139,11 9,11 Z" fill="#000000" fill-rule="nonzero" opacity="0.3" />
-                                                                <path d="M17.6011961,15.0006174 C21.0077043,15.0378534 23.7891749,16.7601418 23.9984937,20.4 C24.0069246,20.5466056 23.9984937,21 23.4559499,21 L19.6,21 C19.6,18.7490654 18.8562935,16.6718327 17.6011961,15.0006174 Z M0.00065168429,20.1992055 C0.388258525,15.4265159 4.26191235,13 8.98334134,13 C13.7712164,13 17.7048837,15.2931929 17.9979143,20.2 C18.0095879,20.3954741 17.9979143,21 17.2466999,21 C13.541124,21 8.03472472,21 0.727502227,21 C0.476712155,21 -0.0204617505,20.45918 0.00065168429,20.1992055 Z" fill="#000000" fill-rule="nonzero" />
-                                                            </g>
-                                                        </svg>
-                                                        <!--end::Svg Icon-->
-                                                    </span>
-                                                </span>
-                                            </span>
-                                        <span class="dashboard-counter" style="margin-left: -40px;">Revenue by Centre</span>
+                                    <ul class="nav nav-tabs">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style">
+                                            <div class="btn-group">
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                data-close-others="true" aria-expanded="false"> Report
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>
+                                                <ul class="dropdown-menu pull-right">
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Today</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Yesterday</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Last 7 Days</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">This Month</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="active">
+                                        <a href="#location_revenue_4" data-toggle="tab"
+                                        onclick="initRevenueByCentre('today');">Today</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_revenue_1" data-toggle="tab"
+                                        onclick="initRevenueByCentre('yesterday');">Yesterday</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_revenue_2" data-toggle="tab"
+                                        onclick="initRevenueByCentre('last7days');">Last 7 Days</a>
+                                    </li>
+                                    <li>
+                                        <a href="#location_revenue_3" data-toggle="tab"
+                                        onclick="initRevenueByCentre('thismonth');">This Month</a>
+                                    </li>
+                                </ul>
+                                        <span class="dashboard-counter" style="margin-left: -250px;">Revenue by Centre</span>
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-centre"></span>
                                             <span class="text-muted font-weight-bold mt-2 revenue-centre-title">Today Revenue</span>
@@ -466,7 +636,7 @@
                         <!--end::Revenue by center2-->
                     </div>
 
-                    <div class="col-lg-6 col-xxl-6">
+                    <div class="col-lg-12 col-xxl-12">
 
                         <!--begin::My Revenue by center-->
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
@@ -474,23 +644,55 @@
                             @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_revenue_by_centre'))
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                    <span class="symbol symbol-50 symbol-light-success mr-2">
-                                        <span class="symbol-label">
-                                            <span class="svg-icon svg-icon-xl svg-icon-success">
-                                                <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
-                                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                        <rect x="0" y="0" width="24" height="24" />
-                                                        <rect fill="#000000" x="4" y="4" width="7" height="7" rx="1.5" />
-                                                        <path d="M5.5,13 L9.5,13 C10.3284271,13 11,13.6715729 11,14.5 L11,18.5 C11,19.3284271 10.3284271,20 9.5,20 L5.5,20 C4.67157288,20 4,19.3284271 4,18.5 L4,14.5 C4,13.6715729 4.67157288,13 5.5,13 Z M14.5,4 L18.5,4 C19.3284271,4 20,4.67157288 20,5.5 L20,9.5 C20,10.3284271 19.3284271,11 18.5,11 L14.5,11 C13.6715729,11 13,10.3284271 13,9.5 L13,5.5 C13,4.67157288 13.6715729,4 14.5,4 Z M14.5,13 L18.5,13 C19.3284271,13 20,13.6715729 20,14.5 L20,18.5 C20,19.3284271 19.3284271,20 18.5,20 L14.5,20 C13.6715729,20 13,19.3284271 13,18.5 L13,14.5 C13,13.6715729 13.6715729,13 14.5,13 Z" fill="#000000" opacity="0.3" />
-                                                    </g>
-                                                </svg>
-                                                <!--end::Svg Icon-->
-                                            </span>
-                                        </span>
-                                    </span>
+                                <ul class="nav nav-tabs">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style">
+                                            <div class="btn-group">
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                data-close-others="true" aria-expanded="false"> Report
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>
+                                                <ul class="dropdown-menu pull-right">
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Today</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Yesterday</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Last 7 Days</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">This Month</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="active">
+                                        <a href="#my_location_revenue_4" data-toggle="tab"
+                                        onclick="initMyRevenueByCentre('today');">Today</a>
+                                    </li>
+                                    <li>
+                                        <a href="#my_location_revenue_1" data-toggle="tab"
+                                        onclick="initMyRevenueByCentre('yesterday');">Yesterday</a>
+                                    </li>
+                                    <li>
+                                        <a href="#my_location_revenue_2" data-toggle="tab"
+                                        onclick="initMyRevenueByCentre('last7days');">Last 7 Days</a>
+                                    </li>
+                                    <li>
+                                        <a href="#my_location_revenue_3" data-toggle="tab"
+                                        onclick="initMyRevenueByCentre('thismonth');">This Month</a>
+                                    </li>
+                                </ul>
 
-                                    <span class="dashboard-counter" style="margin-left: -40px;">My Revenue by Centre</span>
+                                    <span class="dashboard-counter" style="margin-left: -250px;">My Revenue by Centre</span>
 
                                     <div class="d-flex flex-column text-right">
                                         <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-revenue-centre"></span>
@@ -542,7 +744,7 @@
                     </div>
 
 
-                    <div class="col-lg-6 col-xxl-6">
+                    <div class="col-lg-12 col-xxl-12">
 
                         <!--begin::REVENUE BY SERVICE-->
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
@@ -550,23 +752,55 @@
                             @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                            <span class="symbol symbol-50 symbol-light-success mr-2">
-                                                <span class="symbol-label">
-                                                    <span class="svg-icon svg-icon-xl svg-icon-success">
-                                                        <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
-                                                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                                <rect x="0" y="0" width="24" height="24" />
-                                                                <rect fill="#000000" x="4" y="4" width="7" height="7" rx="1.5" />
-                                                                <path d="M5.5,13 L9.5,13 C10.3284271,13 11,13.6715729 11,14.5 L11,18.5 C11,19.3284271 10.3284271,20 9.5,20 L5.5,20 C4.67157288,20 4,19.3284271 4,18.5 L4,14.5 C4,13.6715729 4.67157288,13 5.5,13 Z M14.5,4 L18.5,4 C19.3284271,4 20,4.67157288 20,5.5 L20,9.5 C20,10.3284271 19.3284271,11 18.5,11 L14.5,11 C13.6715729,11 13,10.3284271 13,9.5 L13,5.5 C13,4.67157288 13.6715729,4 14.5,4 Z M14.5,13 L18.5,13 C19.3284271,13 20,13.6715729 20,14.5 L20,18.5 C20,19.3284271 19.3284271,20 18.5,20 L14.5,20 C13.6715729,20 13,19.3284271 13,18.5 L13,14.5 C13,13.6715729 13.6715729,13 14.5,13 Z" fill="#000000" opacity="0.3" />
-                                                            </g>
-                                                        </svg>
-                                                        <!--end::Svg Icon-->
-                                                    </span>
-                                                </span>
-                                            </span>
+                                    <ul class="nav nav-tabs">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style">
+                                            <div class="btn-group">
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                data-close-others="true" aria-expanded="false"> Report
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>
+                                                <ul class="dropdown-menu pull-right">
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Today</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Yesterday</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Last 7 Days</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">This Month</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="active">
+                                        <a href="#service_revenue_4" data-toggle="tab"
+                                        onclick="initRevenueByService('today', '', '', '');">Today</a>
+                                    </li>
+                                    <li>
+                                        <a href="#service_revenue_1" data-toggle="tab"
+                                        onclick="initRevenueByService('', 'yesterday', '', '');">Yesterday</a>
+                                    </li>
+                                    <li>
+                                        <a href="#service_revenue_2" data-toggle="tab"
+                                        onclick="initRevenueByService('', '', 'last7days', '');">Last 7 Days</a>
+                                    </li>
+                                    <li>
+                                        <a href="#service_revenue_3" data-toggle="tab"
+                                        onclick="initRevenueByService('', '', '', 'thismonth');">This Month</a>
+                                    </li>
+                                </ul>
 
-                                        <span class="dashboard-counter" style="margin-left: -40px;">Revenue by Service</span>
+                                        <span class="dashboard-counter" style="margin-left: -250px;">Revenue by Service</span>
 
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
@@ -617,30 +851,62 @@
 
                     </div>
 
-                    <div class="col-lg-6 col-xxl-6">
+                    <div class="col-lg-12 col-xxl-12">
                         <!--begin::MY REVENUE BY SERVICE-->
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <!--begin::Body-->
                             @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_revenue_by_service'))
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                            <span class="symbol symbol-50 symbol-light-success mr-2">
-                                                <span class="symbol-label">
-                                                    <span class="svg-icon svg-icon-xl svg-icon-success">
-                                                        <!--begin::Svg Icon | path:/metronic/theme/html/demo1/dist/assets/media/svg/icons/Layout/Layout-4-blocks.svg-->
-                                                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                                <rect x="0" y="0" width="24" height="24" />
-                                                                <rect fill="#000000" x="4" y="4" width="7" height="7" rx="1.5" />
-                                                                <path d="M5.5,13 L9.5,13 C10.3284271,13 11,13.6715729 11,14.5 L11,18.5 C11,19.3284271 10.3284271,20 9.5,20 L5.5,20 C4.67157288,20 4,19.3284271 4,18.5 L4,14.5 C4,13.6715729 4.67157288,13 5.5,13 Z M14.5,4 L18.5,4 C19.3284271,4 20,4.67157288 20,5.5 L20,9.5 C20,10.3284271 19.3284271,11 18.5,11 L14.5,11 C13.6715729,11 13,10.3284271 13,9.5 L13,5.5 C13,4.67157288 13.6715729,4 14.5,4 Z M14.5,13 L18.5,13 C19.3284271,13 20,13.6715729 20,14.5 L20,18.5 C20,19.3284271 19.3284271,20 18.5,20 L14.5,20 C13.6715729,20 13,19.3284271 13,18.5 L13,14.5 C13,13.6715729 13.6715729,13 14.5,13 Z" fill="#000000" opacity="0.3" />
-                                                            </g>
-                                                        </svg>
-                                                        <!--end::Svg Icon-->
-                                                    </span>
-                                                </span>
-                                            </span>
+                                    <ul class="nav nav-tabs">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style">
+                                            <div class="btn-group">
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                data-close-others="true" aria-expanded="false"> Report
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>
+                                                <ul class="dropdown-menu pull-right">
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Today</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Yesterday</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">Last 7 Days</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href=""
+                                                        target="_blank">This Month</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="active">
+                                        <a href="#my_service_revenue_4" data-toggle="tab"
+                                        onclick="initMyRevenueByService('today', '', '', '');">Today</a>
+                                    </li>
+                                    <li>
+                                        <a href="#my_service_revenue_1" data-toggle="tab"
+                                        onclick="initMyRevenueByService('', 'yesterday', '', '');">Yesterday</a>
+                                    </li>
+                                    <li>
+                                        <a href="#my_service_revenue_2" data-toggle="tab"
+                                        onclick="initMyRevenueByService('', '', 'last7days', '');">Last 7 Days</a>
+                                    </li>
+                                    <li>
+                                        <a href="#my_service_revenue_3" data-toggle="tab"
+                                        onclick="initMyRevenueByService('', '', '', 'thismonth');">This Month</a>
+                                    </li>
+                                </ul>
 
-                                        <span class="dashboard-counter" style="margin-left: -40px;">My Revenue by Service</span>
+                                        <span class="dashboard-counter" style="margin-left: -250px;">My Revenue by Service</span>
 
                                         <div class="d-flex flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-service"></span>
@@ -735,7 +1001,7 @@
 <!--end::Entry-->
 </div>
 <!--end::Content-->
-
+<script src="{{asset('assets/js/home.js')}}"></script>
 @push('datatable-js')
 <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
 <script src="{{asset('assets/js/pages/dashboard/datatable.js')}}"></script>
@@ -747,6 +1013,7 @@
 <script>
 
     $(document).ready( function () {
+        
 
         /*collection by center*/
         $.ajax({
