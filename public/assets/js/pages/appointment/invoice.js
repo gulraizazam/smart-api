@@ -406,45 +406,50 @@ $(document).ready(function () {
             if(status){
                 console.log( settle, outstand)
                 if (appointment_id && price && balance && cash && settle && outstand) {
-                    $.ajax({
-                        type: 'get',
-                        url: route('admin.appointments.saveinvoice'),
-                        data: {
-                            'appointment_id': appointment_id,
-                            'package_id': package_id,
-                            'amount_create':amount_create,
-                            'tax_create':tax_create,
-                            'price': price,
-                            'balance': balance,
-                            'cash': cash,
-                            'settle': settle,
-                            'outstand': outstand,
-                            'package_service_id': package_service_id,
-                            'package_mode_id': package_mode_id,
-                            'checked_treatment':checked_treatment,
-                            'exclusive_or_bundle':exclusive_or_bundle,
-                            'created_at':created_at,
-                            'appointment_id_consultancy':appointment_id_consultancy,
-                            'tax_treatment_type_id':tax_treatment_type_id,
-                            'remaining':remaining
-                        },
-                        success: function (resposne) {
-                            if (resposne.status) {
-                                let invoice_id = resposne.data.invoice_id;
-                                $('#successMessage').show();
-                                toastr.success("Invoice successfully created");
-                                reInitTable('treatment');
-                                closeAllPopup('.modal-dialog')
-                                $("#treatment-invoice-create").remove();
-                                window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
-                            } else {
-                                $('#wrongMessage').show();
-                                toastr.error(" Something Went Wrong!")
+                    if(appointment_id_consultancy =="" && package_service_id==""){
+                        $("#noconsultancy").show();
+                    }else{
+                        $.ajax({
+                            type: 'get',
+                            url: route('admin.appointments.saveinvoice'),
+                            data: {
+                                'appointment_id': appointment_id,
+                                'package_id': package_id,
+                                'amount_create':amount_create,
+                                'tax_create':tax_create,
+                                'price': price,
+                                'balance': balance,
+                                'cash': cash,
+                                'settle': settle,
+                                'outstand': outstand,
+                                'package_service_id': package_service_id,
+                                'package_mode_id': package_mode_id,
+                                'checked_treatment':checked_treatment,
+                                'exclusive_or_bundle':exclusive_or_bundle,
+                                'created_at':created_at,
+                                'appointment_id_consultancy':appointment_id_consultancy,
+                                'tax_treatment_type_id':tax_treatment_type_id,
+                                'remaining':remaining
+                            },
+                            success: function (resposne) {
+                                if (resposne.status) {
+                                    let invoice_id = resposne.data.invoice_id;
+                                    $('#successMessage').show();
+                                    toastr.success("Invoice successfully created");
+                                    reInitTable('treatment');
+                                    closeAllPopup('.modal-dialog')
+                                    $("#treatment-invoice-create").remove();
+                                    window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
+                                } else {
+                                    $('#wrongMessage').show();
+                                    toastr.error(" Something Went Wrong!")
+                                }
+    
+                                hideSpinner();
                             }
-
-                            hideSpinner();
-                        }
-                    });
+                        });
+                    }
+                    
                 } else {
                     hideSpinner();
                     toastr.error("Request is not valid");

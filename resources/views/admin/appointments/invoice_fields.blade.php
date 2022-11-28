@@ -8,6 +8,10 @@
         <button class="close" data-close="alert"></button>
         Something Went Wrong!
     </div>
+    <div id="noconsultancy" class="alert alert-danger display-hide" style="display: none;">
+        <button class="close" data-close="alert"></button>
+        Please select consultancy from appointment dropdown (Only arrived consultancies will be displayed). 
+    </div>
     <div id="definefield" class="alert alert-warning display-hide" style="display: none;">
         <button class="close" data-close="alert"></button>
         Kindly define payment mode
@@ -238,7 +242,7 @@
 
 
                 <div class="col-md-10 mt-5 mb-10">
-                    <div id="treatment_addinvoice" style="display: none;">
+                    <div id="treatment_addinvoice" >
                         <button class="btn btn-primary spinner-button" name="savepackageinformation" id="treatment_savepackageinformation"
                                 style="float: right;margin-top:20px;"><i class="la la-paper-plane-o"></i> Save & Print Invoice
                         </button>
