@@ -229,7 +229,24 @@ function setTotal(meta) {
 }
 
 function changeDate() {
-    $('#dashboard-states').submit();
+   
+    var period = $("#recordfilter").val();
+    $.ajax({
+        url: route('admin.home.getstats'),
+        type: "GET",
+        data: {'type': period},
+        cache: false,
+        success: function (response) {
+            $("#allrevenue").text(response.data.revenue);
+            $("#allconsult").text(response.data.done_consultancies+'/'+response.data.all_consultancies);
+            $("#alltreat").text(response.data.done_treatments+'/'+response.data.all_treatments);
+            $("#allleads").text(response.data.leads+'/'+response.data.totalLeads);
+            
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
 }
 
 

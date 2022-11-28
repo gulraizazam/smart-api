@@ -115,16 +115,16 @@
                                 <h3 class="card-title font-weight-bolder text-white">Stats</h3>
                                 <div class="card-toolbar">
                                     <div class="dropdown dropdown-inline">
-                                        <form id="dashboard-states" method="get" action="{{route('admin.home')}}">
+                                        <!-- <form id="dashboard-states" method="get" action="{{route('admin.home')}}"> -->
 
-                                           <select class="form-control" name="type" onchange="changeDate();">
+                                           <select class="form-control" name="type" onchange="changeDate();" id="recordfilter">
                                                <option value="today"  {{request('type') == 'today' ? 'selected' : ''}}>Today</option>
                                                <option value="yesterday" {{request('type') == 'yesterday' ? 'selected' : ''}}>Yesterday</option>
                                                <option value="week" {{request('type') == 'week' ? 'selected' : ''}}>This Week</option>
                                                <option value="month" {{request('type') == 'month' ? 'selected' : ''}}>This Month</option>
                                            </select>
 
-                                        </form>
+                                        <!-- </form> -->
 
                                     </div>
                                 </div>
@@ -153,7 +153,7 @@
                                                         </svg>
                                                         <!--end::Svg Icon-->
 
-                                                          <span class="dashboard-counter">{{!is_null($revenue) ? number_format($revenue) : 'Your are not authorized'}}</span>
+                                                          <span class="dashboard-counter" id="allrevenue">{{!is_null($revenue) ? number_format($revenue) : 'Your are not authorized'}}</span>
                                                     </span>
                                             <a href="javascript:void(0);" style="cursor: pointer;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
@@ -162,7 +162,7 @@
 
                                                     <i class="la la-stethoscope" style="font-size: 40px;"></i>
 
-                                                      <span class="dashboard-counter">{{!is_null($done_consultancies) && !is_null($all_consultancies) ? $done_consultancies .'/'.$all_consultancies : 'Your are not authorized'}}</span>
+                                                      <span class="dashboard-counter" id="allconsult">{{!is_null($done_consultancies) && !is_null($all_consultancies) ? $done_consultancies .'/'.$all_consultancies : 'Your are not authorized'}}</span>
                                                 </span>
                                             @if(!is_null($done_consultancies) && !is_null($all_consultancies))
                                                 <a href="{{route('admin.consultancy.index', ['type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => implode(',', $location_id)])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
@@ -178,7 +178,7 @@
                                         <div class="col bg-light-danger px-6 py-8 rounded-xl mr-7">
                                                     <span class="svg-icon svg-icon-3x svg-icon-danger d-block my-2">
                                                        <i class="la la-medkit" style="font-size: 40px;"></i>
-                                                         <span class="dashboard-counter">{{!is_null($done_treatments) && !is_null($all_treatments) ? $done_treatments .'/'. $all_treatments : 'Your are not authorized'}}</span>
+                                                         <span class="dashboard-counter" id="alltreat">{{!is_null($done_treatments) && !is_null($all_treatments) ? $done_treatments .'/'. $all_treatments : 'Your are not authorized'}}</span>
                                                     </span>
                                             @if(!is_null($done_treatments) && !is_null($all_treatments))
                                                 <a href="{{route('admin.treatment.index', ['type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => implode(',', $location_id)])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
@@ -197,7 +197,7 @@
                                                             </g>
                                                         </svg>
                                                       <!--end::Svg Icon-->
-                                                      <span class="dashboard-counter">{{$leads !== false && $totalLeads !== false ? $leads .'/'. $totalLeads : 'Your are not authorized'}}</span>
+                                                      <span class="dashboard-counter" id="allleads">{{$leads !== false && $totalLeads !== false ? $leads .'/'. $totalLeads : 'Your are not authorized'}}</span>
                                                     </span>
 
                                             <a href="{{route('admin.leads.index', ['from' => $start_date, 'to' => $end_date])}}" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
