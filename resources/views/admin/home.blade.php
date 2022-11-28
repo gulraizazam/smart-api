@@ -761,19 +761,19 @@
                                     </li>
                                     <li class="active">
                                         <a href="#my_service_revenue_4" data-toggle="tab"
-                                        onclick="initMyRevenueByService('today', '', '', '');">Today</a>
+                                        onclick="initMyRevenueByService('today');">Today</a>
                                     </li>
                                     <li>
                                         <a href="#my_service_revenue_1" data-toggle="tab"
-                                        onclick="initMyRevenueByService('', 'yesterday', '', '');">Yesterday</a>
+                                        onclick="initMyRevenueByService('yesterday');">Yesterday</a>
                                     </li>
                                     <li>
                                         <a href="#my_service_revenue_2" data-toggle="tab"
-                                        onclick="initMyRevenueByService('', '', 'last7days', '');">Last 7 Days</a>
+                                        onclick="initMyRevenueByService('last7days');">Last 7 Days</a>
                                     </li>
                                     <li>
                                         <a href="#my_service_revenue_3" data-toggle="tab"
-                                        onclick="initMyRevenueByService('', '', '', 'thismonth');">This Month</a>
+                                        onclick="initMyRevenueByService('thismonth');">This Month</a>
                                     </li>
                                 </ul>
 

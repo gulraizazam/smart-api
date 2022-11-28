@@ -516,7 +516,7 @@ class DashboardReportsController extends Controller
             ])->get();
 
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-            if ($request->type == '') {
+            if ($request->period == '') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -559,7 +559,7 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('today')) {
+            if ($request->period=='today') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -603,7 +603,7 @@ class DashboardReportsController extends Controller
                 }
             }
 
-            if ($request->get('yesterday')) {
+            if ($request->period=='yesterday') {
                 $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
@@ -649,7 +649,7 @@ class DashboardReportsController extends Controller
 
             }
 
-            if ($request->get('week')) {
+            if ($request->period=='week') {
 
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
@@ -695,7 +695,7 @@ class DashboardReportsController extends Controller
                 }
             }
 
-            if ($request->get('month')) {
+            if ($request->period=='month') {
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))

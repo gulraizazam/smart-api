@@ -5,7 +5,7 @@
         <div class="brand flex-column-auto" id="kt_brand">
             <!--begin::Logo-->
             <a href="{{route('admin.home')}}" class="brand-logo">
-                <img style="width: 150px;" alt="Logo" src="{{asset('logo.png')}}" />
+                <img style="width: 120px;margin-left:25px" alt="Logo" src="{{asset('logo.png')}}" />
             </a>
             <!--end::Logo-->
             <!--begin::Toggle-->

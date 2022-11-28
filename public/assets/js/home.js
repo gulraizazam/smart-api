@@ -359,7 +359,7 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
             $("#revenue-service").css("height", "500px");
         }
     }
-    function initMyRevenueByService(today, yesterday, last7days, thismonth) {
+    function initMyRevenueByService(period) {
         
         $.ajax({
             headers: {
@@ -368,12 +368,8 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
             url: route('admin.dashboard.myRevenueByService'),
             type: 'GET',
             data: {
-                'today': today,
-                'yesterday': yesterday,
-                'last7days': last7days,
-                'thismonth': thismonth,
-                'performance': '1',
-
+                'period': period,
+                performance: '1'
             },
             cache: false,
             success: function (response) {
