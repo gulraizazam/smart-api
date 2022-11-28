@@ -408,7 +408,7 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
             
         });
     }
-    function myrevenueByService(service, colors) {
+    function myrevenueByService(pie, colors) {
 
         google.load('visualization', '1', {
             packages: ['corechart', 'bar', 'line']
@@ -416,7 +416,7 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
        
         google.setOnLoadCallback(function () {
 
-            var data = google.visualization.arrayToDataTable(service);
+            var data = google.visualization.arrayToDataTable(pie);
 
             var options = {
                 title: 'My Revenue',
@@ -429,7 +429,7 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
         
        
 
-        if (typeof service !== 'undefined' && service.length > 1) {
+        if (typeof pie !== 'undefined' && pie.length > 1) {
             $("#my-revenue-service").css("height", "500px");
         }
     }

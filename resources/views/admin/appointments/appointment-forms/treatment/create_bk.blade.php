@@ -54,30 +54,32 @@
                             <select id="create_treatment_service" class="form-control select2" name="service_id"></select>
                         </div>
 
-                        <div style="display:none;">
-                            <input type="hidden" id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))"  name="patient_id" class="filter-field search_field">
-                        </div>
-
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <select id="patient_search_selector" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_search_selector">     
-                            </select>
+                            <input  class="form-control treatment_patient_search_id">
+
+                            <input type="hidden" id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))"  name="patient_id" class="filter-field search_field">
+                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
-                            <input  id="create_treatment_phone" class="form-control" name="phone">
+                            <input readonly id="create_treatment_phone" class="form-control" name="phone">
                             <input type="hidden" id="create_old_treatment_phone" class="form-control" name="old_phone">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input  id="create_treatment_patient_name" class="form-control" name="name">
+                            <input readonly id="create_treatment_patient_name" class="form-control" name="name">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Customer ID <span class="text text-danger">*</span> </label>
-                            <input  id="create_treatment_c_id" class="form-control" name="client_id">
+                            <input readonly id="create_treatment_c_id" class="form-control" name="client_id">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
@@ -117,3 +119,6 @@
     <!--end::Modal body-->
 </div>
 <!--end::Modal content-->
+
+
+
