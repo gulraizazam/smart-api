@@ -377,23 +377,23 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
                 let colors = response.data.colors;
                 let total = response.data.total;
                 $(".total-my-service").text(total)
-                if (today != '') {
+                if (period == 'today') {
                     $(".my-service-title").text('Today Income')
                     var pie = response.data.pie.today;
                     
                 }
-                if (yesterday != '') {
+                if (period == 'yesterday') {
                     $(".my-service-title").text('Yesterday Income')
                     var pie = response.data.pie.yesterday;
                     
                 }
 
-                if (last7days != '') {
+                if (period == 'last7days') {
                     $(".my-service-title").text('Weekly Income')
                     var pie = response.data.pie.last7days;
                     
                 }
-                if (thismonth != '') {
+                if (period == 'thismonth') {
                     $(".my-service-title").text('Monthly Income')
                     var pie = response.data.pie.thismonth;
                     
