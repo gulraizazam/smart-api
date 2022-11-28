@@ -60,17 +60,24 @@ class GeneralFunctions
 
     public static function prepareNumber4Call($phoneNumber, $type = 0)
     {
+        
         if (!Gate::allows('contact')) {
             return '***********';
         } else {
-            // Adjust Country Code for Pakistan
-            if ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 0) {
-                return '+92' . $phoneNumber;
-            } elseif ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 1) {
-                return '0' . $phoneNumber;
-            } else {
+           
+            if(isset($phoneNumber) && $phoneNumber != ""){
+                if ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 0) {
+                    return '+92' . $phoneNumber;
+                } elseif ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 1) {
+                    return '0' . $phoneNumber;
+                } else {
+                    return $phoneNumber;
+                }
+            }else{
                 return $phoneNumber;
             }
+            // Adjust Country Code for Pakistan
+            
         }
     }
 

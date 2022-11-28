@@ -1906,6 +1906,7 @@ class AppointmentsController extends Controller
      */
     public function store(Request $request)
     {
+        
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -1955,7 +1956,7 @@ class AppointmentsController extends Controller
                 $appointmentData['base_appointment_status_id'] = null;
                 $appointmentData['appointment_status_allow_message'] = 0;
             }
-
+            
             $appointmentData['appointment_type_id'] = Config::get('constants.appointment_type_consultancy');
 
             // Get Location object to retrieve City
@@ -1971,12 +1972,14 @@ class AppointmentsController extends Controller
              * and assign this lead to current appointment.
              */
             if (!$request->get('lead_id')) {
+               
                 /*
                  * If Patient is from database
                  * - if appointment already exists then do not update info
                  * - if appointment already exists then update info
                  */
                 if (isset($appointmentData['patient_id']) && $appointmentData['patient_id'] != '') {
+                  
                     /*
                     * If appointment is for the first time then
                     * update user information, otherwise not
@@ -1989,12 +1992,31 @@ class AppointmentsController extends Controller
                     $patientData = $appointmentData;
 
                     if ($request->new_patient == '1') {
+                        
                         $patientData['user_type_id'] = Config::get('constants.patient_id');
                         $patient = Patients::createRecord($patientData);
                     } else {
+                        
                         $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
                     }
+                }else{
+                    if ($request->new_patient == '1') {
+                        $logLevelPatient = Patients::where(array(
+                            'phone' => $appointmentData['phone'],
+                            'user_type_id' => Config::get('constants.patient_id'),
+                            'account_id' => Auth::User()->account_id
+                        ))->first();
+                        if ($logLevelPatient) {
+                            $patient = Patients::updateRecord($logLevelPatient->id, $appointmentData);
+                            Appointments::where('patient_id', '=', $logLevelPatient->id)->update(['name' => $appointmentData['name']]);
+                
+                        } else {
+                            $patient = Patients::createRecord($appointmentData);
+                        }
+                        
+                    } 
                 }
+               
                 if ($request->get("start")) {
                     $start = $request->get("start");
                     $service_duration = Services::find($request->get('service_id'))->value("duration");
@@ -2020,8 +2042,12 @@ class AppointmentsController extends Controller
                     }
                 }
                 $leadObj = $appointmentData;
+                
                 unset($leadObj['lead_id']); // Remove Lead ID index
-                $leadObj['patient_id'] = $patient->id;
+                if(isset($patient)){
+                    $leadObj['patient_id'] = $patient->id;
+                }
+                
                 // Convert Lead status to Converted
                 $DefaultConvertedLeadStatus = LeadStatuses::where(array(
                     'account_id' => Auth::User()->account_id,

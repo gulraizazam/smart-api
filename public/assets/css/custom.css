@@ -373,6 +373,27 @@ div > input {
     width: 35%;
     margin-top: -35px;
 }
+.btn-sm, .btn-group-sm > .btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+}
+.btn_Report.btn-sm i{
+    display: inline-block;
+    width: 1.25em;
+    text-align: center;
+    line-height: 14px;
+    -webkit-font-smoothing: antialiased;
+    font-size: inherit;
+    color: inherit;
+    padding: 0;
+}
+.card-spacer2{
+    border-bottom: 1px solid #e7ecf1!important;
+    margin: 12px 20px 0px;
+    background-color: #fff;
+}
 .arrow {
     position: absolute;
     margin-top: 18px;
@@ -774,7 +795,7 @@ div > input {
     margin-top: 1.5rem !important;
 }
 .dashboard-counter {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     /*padding-left: 20px;*/
     float: right;

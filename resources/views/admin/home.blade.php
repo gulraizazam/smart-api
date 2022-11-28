@@ -64,6 +64,9 @@
     -o-border-radius: 4px;
     border-radius: 4px;
 }
+.btn-group>.dropdown-menu,.dropdown-toggle>.dropdown-menu, .dropdown>.dropdown-menu{
+    margin-top: 10px;
+}
 .btn-group>.dropdown-menu:before, .dropdown-toggle>.dropdown-menu:before, .dropdown>.dropdown-menu:before {
     position: absolute;
     top: -8px;
@@ -76,6 +79,10 @@
     content: '';
     right: auto;
     left: 9px;
+}
+.btn-group>.dropdown-menu.dropdown-menu-right:before, .dropdown-toggle>.dropdown-menu.dropdown-menu-right:before, .dropdown>.dropdown-menu.dropdown-menu-right:before{
+    left: auto;
+    right: 9px;
 }
 .dropdown-menu>li>a {
     padding: 8px 16px;
@@ -343,60 +350,56 @@
 
                             <!--begin::Body-->
                             <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                <ul class="nav nav-tabs">
-                                    <li style="border-bottom: none;">
-                                        <div class="actions action-style">
-                                            <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
-                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                data-close-others="true" aria-expanded="false"> Report
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                <ul class="dropdown-menu pull-right">
-                                                    <li>
-                                                        <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','today']) }}"
-                                                        target="_blank">Today</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','yesterday']) }}"
-                                                        target="_blank">Yesterday</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','last7days']) }}"
-                                                        target="_blank">Last 7 Days</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','thismonth']) }}"
-                                                        target="_blank">This Month</a>
-                                                    </li>
-                                                </ul>
+                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase" >Collection by Centre</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center">
+                                        <li style="border-bottom: none;">
+                                            <div class="actions action-style p-3 mr-3">
+                                                <div class="btn-group">
+                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                    data-close-others="true" aria-expanded="false"> Report
+                                                        <i class="fa fa-angle-down"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu dropdown-menu-right">
+                                                        <li>
+                                                            <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','today']) }}"
+                                                            target="_blank">Today</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','yesterday']) }}"
+                                                            target="_blank">Yesterday</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','last7days']) }}"
+                                                            target="_blank">Last 7 Days</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','thismonth']) }}"
+                                                            target="_blank">This Month</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                    <li class="active">
-                                        <a href="#location_collection_1" data-toggle="tab"
-                                        onclick="initCollectionByCentre('today', '', '', '');">Today</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_collection_2" data-toggle="tab"
-                                        onclick="initCollectionByCentre('', 'yesterday', '', '');">Yesterday</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_collection_3" data-toggle="tab"
-                                        onclick="initCollectionByCentre('', '', 'last7days', '');">Last 7 Days</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_collection_4" data-toggle="tab"
-                                        onclick="initCollectionByCentre('', '', '', 'thismonth');">This Month</a>
-                                    </li>
-                                </ul>
-                                        
-                                    
-
-                                    <span class="dashboard-counter" style="margin-left: -250px;">Collection by Centre</span>
-
-                                    <div class="d-flex flex-column text-right">
+                                        </li>
+                                        <li >
+                                            <a class="active" href="#location_collection_1" data-toggle="tab"
+                                            onclick="initCollectionByCentre('today', '', '', '');">Today</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_collection_2" data-toggle="tab"
+                                            onclick="initCollectionByCentre('', 'yesterday', '', '');">Yesterday</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_collection_3" data-toggle="tab"
+                                            onclick="initCollectionByCentre('', '', 'last7days', '');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_collection_4" data-toggle="tab"
+                                            onclick="initCollectionByCentre('', '', '', 'thismonth');">This Month</a>
+                                        </li>
+                                    </ul>
+                                    <div class=" flex-column text-right d-none">
                                         <span class="text-dark-75 font-weight-bolder font-size-h3 total-pie-chart"></span>
                                         <span class="text-muted font-weight-bold mt-2 pie-income-title">Weekly Income</span>
                                     </div>
@@ -422,58 +425,59 @@
                             <!--begin::Body-->
                             
                                 <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                    <ul class="nav nav-tabs">
-                                    <li style="border-bottom: none;">
-                                        <div class="actions action-style">
-                                            <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
-                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                data-close-others="true" aria-expanded="false"> Report
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                <ul class="dropdown-menu pull-right">
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Today</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Yesterday</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Last 7 Days</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">This Month</a>
-                                                    </li>
-                                                </ul>
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase">My Collection by Centre</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center">
+                                        <li style="border-bottom: none;">
+                                            <div class="actions action-style p-3 mr-3">
+                                                <div class="btn-group">
+                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                    data-close-others="true" aria-expanded="false"> Report
+                                                        <i class="fa fa-angle-down"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu dropdown-menu-right">
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Today</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Yesterday</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Last 7 Days</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">This Month</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                    <li class="active">
-                                        <a href="#location_my_collection_1" data-toggle="tab"
-                                        onclick="initMyCollectionByCentre('today', '', '', '');">Today</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_my_collection_2" data-toggle="tab"
-                                        onclick="initMyCollectionByCentre('', 'yesterday', '', '');">Yesterday</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_my_collection_3" data-toggle="tab"
-                                        onclick="initMyCollectionByCentre('', '', 'last7days', '');">Last 7 Days</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_my_collection_4" data-toggle="tab"
-                                        onclick="initMyCollectionByCentre('', '', '', 'thismonth');">This Month</a>
-                                    </li>
-                                </ul>
+                                        </li>
+                                        <li >
+                                            <a class="active" href="#location_my_collection_1" data-toggle="tab"
+                                            onclick="initMyCollectionByCentre('today', '', '', '');">Today</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_my_collection_2" data-toggle="tab"
+                                            onclick="initMyCollectionByCentre('', 'yesterday', '', '');">Yesterday</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_my_collection_3" data-toggle="tab"
+                                            onclick="initMyCollectionByCentre('', '', 'last7days', '');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_my_collection_4" data-toggle="tab"
+                                            onclick="initMyCollectionByCentre('', '', '', 'thismonth');">This Month</a>
+                                        </li>
+                                    </ul>
 
-                                        <span class="dashboard-counter" style="margin-left: -250px;">My Collection by Centre</span>
+                                   
 
-                                        <div class="d-flex flex-column text-right">
+                                        <div class="d-none flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-collection-center"></span>
                                             <span class="text-muted font-weight-bold mt-2 my-collection-title"></span>
                                         </div>
@@ -497,17 +501,18 @@
                             <!--begin::Body-->
                             
                                 <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                    <ul class="nav nav-tabs">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase">Revenue by Centre</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center">
                                     <li style="border-bottom: none;">
-                                        <div class="actions action-style">
+                                        <div class="actions action-style p-3 mr-3">
                                             <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
                                                 href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                 data-close-others="true" aria-expanded="false"> Report
                                                     <i class="fa fa-angle-down"></i>
                                                 </a>
-                                                <ul class="dropdown-menu pull-right">
+                                                <ul class="dropdown-menu dropdown-menu-right">
                                                     <li>
                                                         <a href=""
                                                         target="_blank">Today</a>
@@ -528,8 +533,8 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li class="active">
-                                        <a href="#location_revenue_4" data-toggle="tab"
+                                    <li >
+                                        <a class="active" href="#location_revenue_4" data-toggle="tab"
                                         onclick="initRevenueByCentre('today');">Today</a>
                                     </li>
                                     <li>
@@ -545,8 +550,8 @@
                                         onclick="initRevenueByCentre('thismonth');">This Month</a>
                                     </li>
                                 </ul>
-                                        <span class="dashboard-counter" style="margin-left: -250px;">Revenue by Centre</span>
-                                        <div class="d-flex flex-column text-right">
+                                      
+                                        <div class="d-none flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-centre"></span>
                                             <span class="text-muted font-weight-bold mt-2 revenue-centre-title">Today Revenue</span>
                                         </div>
@@ -573,17 +578,18 @@
                             <!--begin::Body-->
                             
                             <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                <ul class="nav nav-tabs">
+                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                <span class="dashboard-counter text-uppercase">My Revenue by Centre</span>
+                                <ul class="nav nav-tabs d-flex align-items-center">
                                     <li style="border-bottom: none;">
-                                        <div class="actions action-style">
+                                        <div class="actions action-style p-3 mr-3">
                                             <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
                                                 href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                 data-close-others="true" aria-expanded="false"> Report
                                                     <i class="fa fa-angle-down"></i>
                                                 </a>
-                                                <ul class="dropdown-menu pull-right">
+                                                <ul class="dropdown-menu dropdown-menu-right">
                                                     <li>
                                                         <a href=""
                                                         target="_blank">Today</a>
@@ -604,8 +610,8 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li class="active">
-                                        <a href="#my_location_revenue_4" data-toggle="tab"
+                                    <li >
+                                        <a class="active" href="#my_location_revenue_4" data-toggle="tab"
                                         onclick="initMyRevenueByCentre('today');">Today</a>
                                     </li>
                                     <li>
@@ -622,9 +628,8 @@
                                     </li>
                                 </ul>
 
-                                    <span class="dashboard-counter" style="margin-left: -250px;">My Revenue by Centre</span>
-
-                                    <div class="d-flex flex-column text-right">
+                                   
+                                    <div class="d-none flex-column text-right">
                                         <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-revenue-centre"></span>
                                         <span class="text-muted font-weight-bold mt-2 my-revenue-centre-title">Weekly Income</span>
                                     </div>
@@ -651,17 +656,18 @@
                             <!--begin::Body-->
                             
                                 <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                    <ul class="nav nav-tabs">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase" >Revenue by Service</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center">
                                     <li style="border-bottom: none;">
-                                        <div class="actions action-style">
+                                        <div class="actions action-style p-3 mr-3">
                                             <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
                                                 href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                 data-close-others="true" aria-expanded="false"> Report
                                                     <i class="fa fa-angle-down"></i>
                                                 </a>
-                                                <ul class="dropdown-menu pull-right">
+                                                <ul class="dropdown-menu dropdown-menu-right">
                                                     <li>
                                                         <a href=""
                                                         target="_blank">Today</a>
@@ -682,8 +688,8 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li class="active">
-                                        <a href="#service_revenue_4" data-toggle="tab"
+                                    <li >
+                                        <a class="active" href="#service_revenue_4" data-toggle="tab"
                                         onclick="initRevenueByService('today', '', '', '');">Today</a>
                                     </li>
                                     <li>
@@ -700,9 +706,9 @@
                                     </li>
                                 </ul>
 
-                                        <span class="dashboard-counter" style="margin-left: -250px;">Revenue by Service</span>
+                                      
 
-                                        <div class="d-flex flex-column text-right">
+                                        <div class="d-none flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
                                             <span class="text-muted font-weight-bold mt-2 service-title"></span>
                                         </div>
@@ -728,17 +734,18 @@
                             <!--begin::Body-->
                             
                                 <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer flex-grow-1">
-                                    <ul class="nav nav-tabs">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase">My Revenue by Service</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center">
                                     <li style="border-bottom: none;">
-                                        <div class="actions action-style">
+                                        <div class="actions action-style p-3 mr-3">
                                             <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect"
+                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
                                                 href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                 data-close-others="true" aria-expanded="false"> Report
                                                     <i class="fa fa-angle-down"></i>
                                                 </a>
-                                                <ul class="dropdown-menu pull-right">
+                                                <ul class="dropdown-menu dropdown-menu-right">
                                                     <li>
                                                         <a href=""
                                                         target="_blank">Today</a>
@@ -759,8 +766,8 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li class="active">
-                                        <a href="#my_service_revenue_4" data-toggle="tab"
+                                    <li >
+                                        <a class="active" href="#my_service_revenue_4" data-toggle="tab"
                                         onclick="initMyRevenueByService('today');">Today</a>
                                     </li>
                                     <li>
@@ -777,9 +784,9 @@
                                     </li>
                                 </ul>
 
-                                        <span class="dashboard-counter" style="margin-left: -250px;">My Revenue by Service</span>
+                                      
 
-                                        <div class="d-flex flex-column text-right">
+                                        <div class="d-none flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-service"></span>
                                             <span class="text-muted font-weight-bold mt-2 my-service-title"></span>
                                         </div>
@@ -801,38 +808,40 @@
                 </div>
                 
                 @can('dashboard_upcomings')
-                    <div class="col-lg-12 col-xxl-12">
-                    <div class="card card-custom card-stretch gutter-b">
-                        <!--begin::Header-->
-                        <div class="card-header border-0 pt-5">
-                            <h3 class="card-title align-items-start flex-column">
-                                <span class="card-label font-weight-bolder text-dark">Upcomings</span>
-                                <span class="text-muted mt-3 font-weight-bold font-size-sm">Total <span class=" badge badge-circle badge-info total-members"></span> Upcomings</span>
-                            </h3>
-                            <div class="card-toolbar">
-                                <div class="dropdown dropdown-inline" data-toggle="tooltip" title="Quick actions" data-placement="left">
-                                    <div class="btn-location">
-                                        <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$month}}', '{{$currentTime}}', 'month');">Month</button>
-                                        <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$startWeek}}', '{{$currentTime}}', 'week');">Week</button>
-                                        <button class="arrival-btn btn btn-primary" onclick="getArrivalsByDate($(this), '{{$today}}', '{{$currentTime}}', 'today');">Today</button>
+                    <div class="row">
+                        <div class="col-lg-12 col-xxl-12">
+                            <div class="card card-custom card-stretch gutter-b">
+                                <!--begin::Header-->
+                                <div class="card-header border-0 pt-5">
+                                    <h3 class="card-title align-items-start flex-column">
+                                        <span class="card-label font-weight-bolder text-dark">Upcomings</span>
+                                        <span class="text-muted mt-3 font-weight-bold font-size-sm">Total <span class=" badge badge-circle badge-info total-members"></span> Upcomings</span>
+                                    </h3>
+                                    <div class="card-toolbar">
+                                        <div class="dropdown dropdown-inline" data-toggle="tooltip" title="Quick actions" data-placement="left">
+                                            <div class="btn-location">
+                                                <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$month}}', '{{$currentTime}}', 'month');">Month</button>
+                                                <button class="arrival-btn btn btn-default" onclick="getArrivalsByDate($(this), '{{$startWeek}}', '{{$currentTime}}', 'week');">Week</button>
+                                                <button class="arrival-btn btn btn-primary" onclick="getArrivalsByDate($(this), '{{$today}}', '{{$currentTime}}', 'today');">Today</button>
+                                            </div>
+
+
+                                        </div>
                                     </div>
-
-
                                 </div>
+
+                                <div class="card-body">
+
+                                    <!--begin: Datatable-->
+                                    <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
+                                    <!--end: Datatable-->
+                                </div>
+
                             </div>
+                        <!--end::List Widget 1-->
+                            {{--end datatable--}}
                         </div>
-
-                        <div class="card-body">
-
-                            <!--begin: Datatable-->
-                            <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
-                            <!--end: Datatable-->
-                        </div>
-
                     </div>
-                    <!--end::List Widget 1-->
-                    {{--end datatable--}}
-                </div>
                 @endcan
 
 
@@ -1096,7 +1105,6 @@
         var data = google.visualization.arrayToDataTable(pie);
 
         var options = {
-            title: 'Collections',
             colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
         };
 
@@ -1121,7 +1129,7 @@
         var data = google.visualization.arrayToDataTable(pie);
 
         var options = {
-            title: 'My Collections',
+         
             colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
         };
 
@@ -1146,7 +1154,7 @@
         var data = google.visualization.arrayToDataTable(centerRevenue);
 
         var options = {
-            title: 'Revenue',
+         
             colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
         };
 
@@ -1172,7 +1180,6 @@
         var data = google.visualization.arrayToDataTable(centerRevenue);
 
         var options = {
-            title: 'My Revenue',
             colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
         };
 
@@ -1198,7 +1205,6 @@
         var data = google.visualization.arrayToDataTable(service);
 
         var options = {
-            title: 'Revenue',
             colors: colors
         };
 
@@ -1222,7 +1228,7 @@
         var data = google.visualization.arrayToDataTable(service);
 
         var options = {
-            title: 'My Revenue',
+            // title: 'My Revenue',
             colors: colors
         };
 
