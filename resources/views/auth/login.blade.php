@@ -9,7 +9,7 @@
         <div class="d-flex flex-center flex-column flex-column-fluid p-10 pb-lg-20">
             <!--begin::Logo-->
             <a href="/" class="mb-12">
-                <img alt="Logo" src="{{asset('assets/media/logos/smart.svg')}}" style="height: 80px; width: 269px;" />
+                <img alt="Logo" src="{{asset('logo_final.png')}}"  />
             </a>
             <!--end::Logo-->
             <!--begin::Wrapper-->

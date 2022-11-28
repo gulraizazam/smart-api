@@ -560,7 +560,6 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('today')) {
-               
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -650,7 +649,7 @@ class DashboardReportsController extends Controller
 
             }
 
-            if ($request->get( 'last7days' )) {
+            if ($request->get('week')) {
 
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
@@ -696,7 +695,7 @@ class DashboardReportsController extends Controller
                 }
             }
 
-            if ($request->get('thismonth')) {
+            if ($request->get('month')) {
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))

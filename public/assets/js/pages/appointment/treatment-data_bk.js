@@ -133,62 +133,8 @@ let machineListener = function (machineId) {
 
 }
 
-
-function checkingtest() {
-    $("#patient_search_selector").select2({
-       
-        ajax: { 
-        type: "GET",
-        url: route('admin.users.getpatient.id'),
-        dataType: 'json',
-        delay: 250,
-        data: function (params) {            
-        return {
-            search: params.term // search term
-        };
-        },         
-        processResults: function (response) {           
-        return {
-            results: response.data.patients,
-        };
-        },
-        cache: true
-        },
-        placeholder: 'Search for a repository',
-        templateResult:  formatRepo,
-        templateSelection: formatRepoSelection
-        
-    });
-    
-    $("#patient_search_selector").on("select2:select", function (e) { 
-        var thisID = $(this).val();
-        $(this).parent().parent('div').find('.search_field').val(thisID).change();
-    });
-
-    function formatRepo (repo) {
-        var $container, search_id = 'patient_search_selector', flag = 1;
-        if (repo.loading) {
-            $container = $(
-                "<div class='select2-result-repository__avatar'>Searching</div>"
-            );
-        } else{   
-            $container = $(
-                '<div class="select2-result-repository__avatar tst">' + repo.name + " - C " + repo.id +"</div>"
-            );
-        }
-        return $container;
-    }
-    
-    function formatRepoSelection (repo) {
-        return repo.name || repo.text;
-    }
-    
-    
-   
-}
-
 function loadCalendar() {
-     checkingtest();
+
     if (typeof treatment_calendar !== "undefined") { /*if already initiate then destroy first*/
         treatment_calendar.destroy();
 
