@@ -390,12 +390,12 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
 
                 if (period == 'last7days') {
                     $(".my-service-title").text('Weekly Income')
-                    var pie = response.data.pie.last7days;
+                    var pie = response.data.pie.week;
                     
                 }
                 if (period == 'thismonth') {
                     $(".my-service-title").text('Monthly Income')
-                    var pie = response.data.pie.thismonth;
+                    var pie = response.data.pie.month;
                     
                 }
 
