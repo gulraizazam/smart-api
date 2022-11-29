@@ -182,13 +182,12 @@ function checkingtest() {
     function formatRepoSelection (repo) {
         return repo.name || repo.text;
     }
-    
-    
-   
 }
 
+
+
 function loadCalendar() {
-     checkingtest();
+     checkingtest();     
     if (typeof treatment_calendar !== "undefined") { /*if already initiate then destroy first*/
         treatment_calendar.destroy();
 
