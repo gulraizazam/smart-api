@@ -67,7 +67,7 @@
 
 <div class="card mb-8 menu_section" style="width: 100%">
 
-    <!-- @include('admin.reports.common.tab') -->
+    @include('admin.reports.common.tab')
 
 </div>
 
@@ -93,7 +93,51 @@
                     </table>
                 </div>
             </div>
-            <div class="pt-4 border-top  all-sections section-states" >
+
+            <div class="table-wrapper all-sections section-detail" id="topscroll">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Sr#</th>
+                        <th>Scheduled Date</th>
+                        <th>Client id</th>
+                        <th>Client Name</th>
+                        <th>Appointment Type</th>
+                        <th>Practitioner</th>
+                        <th>Service</th>
+                        <th>Appointment Status Parent</th>
+                        {{--<th>Appointment Status Child</th>--}}
+                    </tr>
+                    </thead>
+                    @php $walkin = 0; $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
+                    @if(count($reportData))
+                        @foreach($reportData as $reportsingle)
+
+                            <tr>
+                                @if($reportsingle['appointment_slug'] == 'consultancy')
+
+                                <td>{{$count++}}</td>
+                                <td>{{$reportsingle['schedule_date']}}</td>
+                                <td>{{$reportsingle['id']}}</td>
+                                <td>{{$reportsingle['client_name']}}</td>
+                                <td>{{$reportsingle['appointment_type']}}</td>
+                                <td>{{$reportsingle['doctor_name']}}</td>
+                                <td>{{$reportsingle['service']}}</td>
+                                <td>{{$reportsingle['appointment_status_parent']}}</td>
+                                {{--<td>{{$reportsingle['appointment_status_child']}}</td>--}}
+                            </tr>
+                            @endif
+                        @endforeach
+
+                    @else
+                        <tr>
+                            <td colspan="12" align="center">No record round.</td>
+                        </tr>
+                    @endif
+                </table>
+            </div>
+
+            <div class="pt-4 border-top  all-sections section-states" style="display: none;">
                 @if(isset($locationData) && count($locationData) > 0)
                     @foreach($locationData as $key => $location)
 
@@ -140,50 +184,6 @@
                     @endforeach
                 @endif
             </div>
-            <div class="table-wrapper all-sections section-detail" id="topscroll">
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th>Sr#</th>
-                        <th>Scheduled Date</th>
-                        <th>Client id</th>
-                        <th>Client Name</th>
-                        <th>Appointment Type</th>
-                        <th>Practitioner</th>
-                        <th>Service</th>
-                        <th>Appointment Status Parent</th>
-                        {{--<th>Appointment Status Child</th>--}}
-                    </tr>
-                    </thead>
-                    @php $walkin = 0; $count = 1;$consultantbooked = 0;$treatmentbooked = 0;$consultantarrived = 0;$treatmentarrived = 0; @endphp
-                    @if(count($reportData))
-                        @foreach($reportData as $reportsingle)
-
-                            <tr>
-                                @if($reportsingle['appointment_slug'] == 'consultancy')
-
-                                <td>{{$count++}}</td>
-                                <td>{{$reportsingle['schedule_date']}}</td>
-                                <td>{{$reportsingle['id']}}</td>
-                                <td>{{$reportsingle['client_name']}}</td>
-                                <td>{{$reportsingle['appointment_type']}}</td>
-                                <td>{{$reportsingle['doctor_name']}}</td>
-                                <td>{{$reportsingle['service']}}</td>
-                                <td>{{$reportsingle['appointment_status_parent']}}</td>
-                                {{--<td>{{$reportsingle['appointment_status_child']}}</td>--}}
-                            </tr>
-                            @endif
-                        @endforeach
-
-                    @else
-                        <tr>
-                            <td colspan="12" align="center">No record round.</td>
-                        </tr>
-                    @endif
-                </table>
-            </div>
-
-           
 
 
         </div>
