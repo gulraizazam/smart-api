@@ -330,7 +330,17 @@ div > input {
 .full-page-view {
     max-width: 100%;
 }
-
+select2-container--default .select2-selection--single .select2-selection__rendered{
+        line-height: normal !important;
+    }
+    .select2-container .select2-selection--single{
+       height: 36px !important;
+        overflow: hidden;
+       border: 1px solid #E4E6EF !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow{
+        height: 36px !important;
+    }
 #patient_id .select2-container--default .select2-selection--single .select2-selection__rendered {
     padding: 0.65rem 0rem 0.65rem 1rem;
 }
