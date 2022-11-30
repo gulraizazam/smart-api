@@ -86,6 +86,12 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     /*After authentication*/
     Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
+        Route::get('attchrole',function(){
+            $user = \App\Models\User::whereEmail("test@redsignal.biz")->first();
+            dd($user->assignRole(5));
+        });
+
+
         Route::get('error-logs', [LogViewerController::class, 'index']);
 
         Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
@@ -526,4 +532,6 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
         Route::get('dashboard/my-revenue-by-centre', [DashboardReportsController::class, 'myRevenueByCentre'])->name('dashboard.myRevenueByCentre');
         Route::get('dashboard/revenue-by-service', [DashboardReportsController::class, 'revenueByService'])->name('dashboard.revenueByService');
         Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
+        Route::get('dashboard/appointment-by-status', [DashboardReportsController::class, 'AppointmentByStatus'])->name('dashboard.appointment_by_status');
+        Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
     });
