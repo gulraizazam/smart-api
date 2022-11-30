@@ -429,6 +429,210 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
             $("#my-revenue-service").css("height", "500px");
         }
     }
+    function initAppointmentsByStatus( period ) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.dashboard.appointment_by_status'),
+            type: 'GET',
+            data:{ 'period':period },
+            cache: false,
+            success: function (response) {
+                let colors = response.data.colors;
+            if(period=="today"){
+                var pie = response.data.pie.today;
+            }
+            if(period=="yesterday"){
+                var pie = response.data.pie.yesterday;
+            }   
+            if(period=="last7days"){
+                var pie = response.data.pie.last7days;
+            }
+            if(period=="thismonth"){
+                var pie = response.data.pie.thismonth;
+            }
+            AppointmentByStatus(pie, colors);
+
+            },
+            
+        });
+    }
+    function AppointmentByStatus(pie, colors) {
+
+        google.load('visualization', '1', {
+            packages: ['corechart', 'bar', 'line']
+        });
+       
+        google.setOnLoadCallback(function () {
+
+            var data = google.visualization.arrayToDataTable(pie);
+
+            var options = {
+                
+                colors: colors
+            };
+            
+            var chart = new google.visualization.PieChart(document.getElementById('appointment_status_today'));
+                chart.draw(data, options);
+        });
+        if (typeof pie !== 'undefined' && pie.length > 1) {
+            $("#appointment_status_today").css("height", "500px");
+        }
+    }
+    function initMyAppointmentsByStatus( period ) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.dashboard.appointment_by_status'),
+            type: 'GET',
+            data:{ 'period':period ,performance:'1'},
+            cache: false,
+            success: function (response) {
+                let colors = response.data.colors;
+            if(period=="today"){
+                var pie = response.data.pie.today;
+            }
+            if(period=="yesterday"){
+                var pie = response.data.pie.yesterday;
+            }   
+            if(period=="last7days"){
+                var pie = response.data.pie.last7days;
+            }
+            if(period=="thismonth"){
+                var pie = response.data.pie.thismonth;
+            }
+            MyAppointmentByStatus(pie, colors);
+
+            },
+            
+        });
+    }
+    function MyAppointmentByStatus(pie, colors) {
+
+        google.load('visualization', '1', {
+            packages: ['corechart', 'bar', 'line']
+        });
+       
+        google.setOnLoadCallback(function () {
+
+            var data = google.visualization.arrayToDataTable(pie);
+
+            var options = {
+                
+                colors: colors
+            };
+            
+            var chart = new google.visualization.PieChart(document.getElementById('my_appointment_status_today'));
+                chart.draw(data, options);
+        });
+        if (typeof pie !== 'undefined' && pie.length > 1) {
+            $("#my_appointment_status_today").css("height", "500px");
+        }
+    }
+    function initAppointmentsByType( period ) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.dashboard.appointment_by_type'),
+            type: 'GET',
+            data:{ 'period':period},
+            cache: false,
+            success: function (response) {
+                let colors = response.data.colors;
+            if(period=="today"){
+                var pie = response.data.pie.today;
+            }
+            if(period=="yesterday"){
+                var pie = response.data.pie.yesterday;
+            }   
+            if(period=="last7days"){
+                var pie = response.data.pie.last7days;
+            }
+            if(period=="thismonth"){
+                var pie = response.data.pie.thismonth;
+            }
+            AppointmentByType(pie, colors);
+
+            },
+            
+        });
+    }
+    function AppointmentByType(pie, colors) {
+
+        google.load('visualization', '1', {
+            packages: ['corechart', 'bar', 'line']
+        });
+       
+        google.setOnLoadCallback(function () {
+
+            var data = google.visualization.arrayToDataTable(pie);
+
+            var options = {
+                
+                colors: colors
+            };
+            
+            var chart = new google.visualization.PieChart(document.getElementById('appointment_type_today'));
+                chart.draw(data, options);
+        });
+        if (typeof pie !== 'undefined' && pie.length > 1) {
+            $("#appointment_type_today").css("height", "500px");
+        }
+    }
+    function initMyAppointmentsByType( period ) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.dashboard.appointment_by_type'),
+            type: 'GET',
+            data:{ 'period':period,performance:"1"},
+            cache: false,
+            success: function (response) {
+                let colors = response.data.colors;
+            if(period=="today"){
+                var pie = response.data.pie.today;
+            }
+            if(period=="yesterday"){
+                var pie = response.data.pie.yesterday;
+            }   
+            if(period=="last7days"){
+                var pie = response.data.pie.last7days;
+            }
+            if(period=="thismonth"){
+                var pie = response.data.pie.thismonth;
+            }
+            MyAppointmentByType(pie, colors);
+
+            },
+            
+        });
+    }
+    function MyAppointmentByType(pie, colors) {
+
+        google.load('visualization', '1', {
+            packages: ['corechart', 'bar', 'line']
+        });
+       
+        google.setOnLoadCallback(function () {
+
+            var data = google.visualization.arrayToDataTable(pie);
+
+            var options = {
+                
+                colors: colors
+            };
+            
+            var chart = new google.visualization.PieChart(document.getElementById('my_appointment_type_today'));
+                chart.draw(data, options);
+        });
+        if (typeof pie !== 'undefined' && pie.length > 1) {
+            $("#my_appointment_type_today").css("height", "500px");
+        }
+    }
     
 
 
