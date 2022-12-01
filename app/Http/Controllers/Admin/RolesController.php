@@ -360,7 +360,10 @@ class RolesController extends Controller
             'states' => 'States',
             'recent_activities' => 'Recent Activities',
             'upcomings' => 'Upcomings',
-            //'my_appointment_by_type' => 'My Appointments by Type',
+            'my_appointment_by_type' => 'My Appointments by Type',
+            'appointment_by_type' => 'Appointments by Type',
+            'appointment_by_status' => 'Appointments by Status',
+            'my_appointment_by_status' => 'My Appointments by Status',
         );
     }
 

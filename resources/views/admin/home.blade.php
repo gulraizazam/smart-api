@@ -802,297 +802,302 @@
                         <!--end::MY REVENUE BY SERVICE-->
                     </div>
                     @endif
-                    <div class="col-lg-12 col-xxl-12">
-                        <!--begin::MY REVENUE BY SERVICE-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <!--begin::Body-->
-                            
-                                <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Appointments by Status</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                        data-close-others="true" aria-expanded="false"> Report
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right">
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Last 7 Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">This Month</a>
-                                                            </li>
-                                                        </ul>
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
+                        <div class="col-lg-12 col-xxl-12">
+                            <!--begin::MY REVENUE BY SERVICE-->
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <!--begin::Body-->
+                                
+                                    <div class="card-body p-0">
+                                        <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                            <span class="dashboard-counter text-uppercase">Appointments by Status</span>
+                                            <ul class="nav nav-tabs d-flex align-items-center">
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right">
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Today</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Yesterday</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Last 7 Days</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">This Month</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
-                                            <li >
-                                                <a class="active" href="#appointment_by_status_4" data-toggle="tab"
-                                                onclick="initAppointmentsByStatus('today');">Today</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                onclick="initAppointmentsByStatus('yesterday');">Yesterday</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initAppointmentsByStatus('last7days');">Last 7 Days</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initAppointmentsByStatus('thismonth');">This Month</a>
-                                            </li>
-                                        </ul>
-                                        <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
-                                            <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                                </li>
+                                                <li >
+                                                    <a class="active" href="#appointment_by_status_4" data-toggle="tab"
+                                                    onclick="initAppointmentsByStatus('today');">Today</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_1" data-toggle="tab"
+                                                    onclick="initAppointmentsByStatus('yesterday');">Yesterday</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_2" data-toggle="tab"
+                                                    onclick="initAppointmentsByStatus('last7days');">Last 7 Days</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initAppointmentsByStatus('thismonth');">This Month</a>
+                                                </li>
+                                            </ul>
+                                            <div class="d-none flex-column text-right">
+                                                <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                                <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                            </div>
                                         </div>
+
+                                        <div id="appointment_status_today"></div>
+
                                     </div>
 
-                                    <div id="appointment_status_today"></div>
-
-                                </div>
+                                
 
                             
-
-                        
-                        <!--end::Body-->
+                            <!--end::Body-->
+                            </div>
+                            <!--end::MY REVENUE BY SERVICE-->
                         </div>
-                        <!--end::MY REVENUE BY SERVICE-->
-                    </div>
-                    
-                   
-                    <div class="col-lg-12 col-xxl-12">
-                        <!--begin::MY REVENUE BY SERVICE-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <!--begin::Body-->
-                            
-                                <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">My Appointments by Status</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                        data-close-others="true" aria-expanded="false"> Report
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right">
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Last 7 Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">This Month</a>
-                                                            </li>
-                                                        </ul>
+                    @endif
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_appointment_by_status'))
+                        <div class="col-lg-12 col-xxl-12">
+                            <!--begin::MY REVENUE BY SERVICE-->
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <!--begin::Body-->
+                                
+                                    <div class="card-body p-0">
+                                        <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                            <span class="dashboard-counter text-uppercase">My Appointments by Status</span>
+                                            <ul class="nav nav-tabs d-flex align-items-center">
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right">
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Today</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Yesterday</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Last 7 Days</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">This Month</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
-                                            <li >
-                                                <a class="active" href="#appointment_by_status_4" data-toggle="tab"
-                                                onclick="initMyAppointmentsByStatus('today');">Today</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                onclick="initMyAppointmentsByStatus('yesterday');">Yesterday</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initMyAppointmentsByStatus('last7days');">Last 7 Days</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initMyAppointmentsByStatus('thismonth');">This Month</a>
-                                            </li>
-                                        </ul>
-                                        <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-appointment-by-status"></span>
-                                            <span class="text-muted font-weight-bold mt-2 my-appointment-by-status-title"></span>
+                                                </li>
+                                                <li >
+                                                    <a class="active" href="#appointment_by_status_4" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByStatus('today');">Today</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_1" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByStatus('yesterday');">Yesterday</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_2" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByStatus('last7days');">Last 7 Days</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByStatus('thismonth');">This Month</a>
+                                                </li>
+                                            </ul>
+                                            <div class="d-none flex-column text-right">
+                                                <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-appointment-by-status"></span>
+                                                <span class="text-muted font-weight-bold mt-2 my-appointment-by-status-title"></span>
+                                            </div>
                                         </div>
+
+                                        <div id="my_appointment_status_today"></div>
+
                                     </div>
 
-                                    <div id="my_appointment_status_today"></div>
-
-                                </div>
+                                
 
                             
-
-                        
-                        <!--end::Body-->
+                            <!--end::Body-->
+                            </div>
+                            <!--end::MY REVENUE BY SERVICE-->
                         </div>
-                        <!--end::MY REVENUE BY SERVICE-->
-                    </div>
-                    <div class="col-lg-12 col-xxl-12">
-                        <!--begin::MY REVENUE BY SERVICE-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <!--begin::Body-->
-                            
-                                <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Appointments by Type</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                        data-close-others="true" aria-expanded="false"> Report
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right">
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Last 7 Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">This Month</a>
-                                                            </li>
-                                                        </ul>
+                    @endif
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
+                        <div class="col-lg-12 col-xxl-12">
+                            <!--begin::MY REVENUE BY SERVICE-->
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <!--begin::Body-->
+                                
+                                    <div class="card-body p-0">
+                                        <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                            <span class="dashboard-counter text-uppercase">Appointments by Type</span>
+                                            <ul class="nav nav-tabs d-flex align-items-center">
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right">
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Today</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Yesterday</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Last 7 Days</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">This Month</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
-                                            <li >
-                                                <a class="active" href="#appointment_by_status_4" data-toggle="tab"
-                                                onclick="initAppointmentsByType('today');">Today</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                onclick="initAppointmentsByType('yesterday');">Yesterday</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initAppointmentsByType('last7days');">Last 7 Days</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initAppointmentsByType('thismonth');">This Month</a>
-                                            </li>
-                                        </ul>
-                                        <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-type"></span>
-                                            <span class="text-muted font-weight-bold mt-2 appointment-by-type-title"></span>
+                                                </li>
+                                                <li >
+                                                    <a class="active" href="#appointment_by_status_4" data-toggle="tab"
+                                                    onclick="initAppointmentsByType('today');">Today</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_1" data-toggle="tab"
+                                                    onclick="initAppointmentsByType('yesterday');">Yesterday</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_2" data-toggle="tab"
+                                                    onclick="initAppointmentsByType('last7days');">Last 7 Days</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initAppointmentsByType('thismonth');">This Month</a>
+                                                </li>
+                                            </ul>
+                                            <div class="d-none flex-column text-right">
+                                                <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-type"></span>
+                                                <span class="text-muted font-weight-bold mt-2 appointment-by-type-title"></span>
+                                            </div>
                                         </div>
+
+                                        <div id="appointment_type_today"></div>
+
                                     </div>
 
-                                    <div id="appointment_type_today"></div>
-
-                                </div>
+                                
 
                             
-
-                        
-                        <!--end::Body-->
+                            <!--end::Body-->
+                            </div>
+                            <!--end::MY REVENUE BY SERVICE-->
                         </div>
-                        <!--end::MY REVENUE BY SERVICE-->
-                    </div>
-                    <div class="col-lg-12 col-xxl-12">
-                        <!--begin::MY REVENUE BY SERVICE-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <!--begin::Body-->
-                            
-                                <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">My Appointments by Type</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                        data-close-others="true" aria-expanded="false"> Report
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right">
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">Last 7 Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href=""
-                                                                target="_blank">This Month</a>
-                                                            </li>
-                                                        </ul>
+                    @endif
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_appointment_by_type'))
+                        <div class="col-lg-12 col-xxl-12">
+                            <!--begin::MY REVENUE BY SERVICE-->
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <!--begin::Body-->
+                                
+                                    <div class="card-body p-0">
+                                        <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                            <span class="dashboard-counter text-uppercase">My Appointments by Type</span>
+                                            <ul class="nav nav-tabs d-flex align-items-center">
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right">
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Today</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Yesterday</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Last 7 Days</a>
+                                                                </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">This Month</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
-                                            <li >
-                                                <a class="active" href="#appointment_by_status_4" data-toggle="tab"
-                                                onclick="initMyAppointmentsByType('today');">Today</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                onclick="initMyAppointmentsByType('yesterday');">Yesterday</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initMyAppointmentsByType('last7days');">Last 7 Days</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initMyAppointmentsByType('thismonth');">This Month</a>
-                                            </li>
-                                        </ul>
-                                        <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-appointment-by-type"></span>
-                                            <span class="text-muted font-weight-bold mt-2 my-appointment-by-type-title"></span>
+                                                </li>
+                                                <li >
+                                                    <a class="active" href="#appointment_by_status_4" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByType('today');">Today</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_1" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByType('yesterday');">Yesterday</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_2" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByType('last7days');">Last 7 Days</a>
+                                                </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByType('thismonth');">This Month</a>
+                                                </li>
+                                            </ul>
+                                            <div class="d-none flex-column text-right">
+                                                <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-appointment-by-type"></span>
+                                                <span class="text-muted font-weight-bold mt-2 my-appointment-by-type-title"></span>
+                                            </div>
                                         </div>
+
+                                        <div id="my_appointment_type_today"></div>
+
                                     </div>
 
-                                    <div id="my_appointment_type_today"></div>
-
-                                </div>
+                                
 
                             
-
-                        
-                        <!--end::Body-->
+                            <!--end::Body-->
+                            </div>
+                            <!--end::MY REVENUE BY SERVICE-->
                         </div>
-                        <!--end::MY REVENUE BY SERVICE-->
-                    </div>
-                    
+                    @endif
                 </div>
                 
                 @can('dashboard_upcomings')
