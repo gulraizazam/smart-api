@@ -154,7 +154,7 @@
                                                         </svg>
                                                         <!--end::Svg Icon-->
 
-                                                          <span class="dashboard-counter" id="allrevenue">{{!is_null($revenue) ? number_format($revenue) : 'Your are not authorized'}}</span>
+                                                          <span class="dashboard-counter" id="allrevenue">{{!is_null($revenue) ? 'PKR: ' . number_format($revenue) : 'Your are not authorized'}}</span>
                                                     </span>
                                             <a href="javascript:void(0);" style="cursor: pointer;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>

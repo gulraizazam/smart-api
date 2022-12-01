@@ -88,35 +88,35 @@ class HomeController extends Controller
 
         return view('admin.home', $data);
     }
-public function getStats(Request $request){
-    $data=[];
-    $timeZone = "Asia/Karachi";
+    public function getStats(Request $request){
+        $data=[];
+        $timeZone = "Asia/Karachi";
 
-    $location_id = $this->getUserLocation();
-    list($start_date, $end_date) = $this->getDates($request);
+        $location_id = $this->getUserLocation();
+        list($start_date, $end_date) = $this->getDates($request);
 
-    $data = $this->recentActivities($data);
-    $data = $this->consultancies($data, $start_date, $end_date);
-    $data = $this->treatments($data, $start_date, $end_date);
-    $data = $this->leads($data, $location_id, $start_date, $end_date);
-    $data = $this->salesByCentre($request, $data);
+        $data = $this->recentActivities($data);
+        $data = $this->consultancies($data, $start_date, $end_date);
+        $data = $this->treatments($data, $start_date, $end_date);
+        $data = $this->leads($data, $location_id, $start_date, $end_date);
+        $data = $this->salesByCentre($request, $data);
 
-    $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
-    $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
-    $data['month'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
-    $data['currentTime'] = Carbon::now()->timezone($timeZone)->format("H:i:s");
+        $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
+        $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
+        $data['month'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
+        $data['currentTime'] = Carbon::now()->timezone($timeZone)->format("H:i:s");
 
-    if (auth()->id() == 1) {
-        $data['location_id'] = [];
-    } else {
-        $data['location_id'] = ACL::getUserCentres();
+        if (auth()->id() == 1) {
+            $data['location_id'] = [];
+        } else {
+            $data['location_id'] = ACL::getUserCentres();
+        }
+        $data['start_date'] = $start_date;
+        $data['end_date'] = $end_date;
+        $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+        return response()->json(['status'=>200,'msg'=>"All stats",'data'=>$data]);
+    
     }
-    $data['start_date'] = $start_date;
-    $data['end_date'] = $end_date;
-    $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
-    return response()->json(['status'=>200,'msg'=>"All stats",'data'=>$data]);
-   
-}
     public function datatable(Request $request)
     {
         if (!Gate::allows('dashboard_upcomings')) {
@@ -1151,6 +1151,7 @@ public function getStats(Request $request){
                 break;
 
             case 'month':
+             
                 $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
                 $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
                 break;
@@ -1159,7 +1160,7 @@ public function getStats(Request $request){
                 $end_date = Carbon::now()->format('Y-m-d');
                 break;
         }
-
+        
         return [
             $start_date,
             $end_date
