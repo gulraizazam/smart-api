@@ -241,7 +241,7 @@ class PackageAdvancesController extends Controller
         list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         $packagesadvances = PackageAdvances::getRecords( $request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $patient_id, $apply_filter,$jason_var );
-
+dd($packagesadvances->count());
         $records = $this->getFilterData($records, $jason_var);
         
 
@@ -303,7 +303,7 @@ class PackageAdvancesController extends Controller
                     'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A'),
                 );
             }
-            dd($records->count());
+           
             $records["meta"] = [
                 'field' => $orderBy,
                 'page' => $page,
