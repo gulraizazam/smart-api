@@ -2297,7 +2297,7 @@ class AppointmentsController extends Controller
     {
         // SEND SMS for Appointment Booked
         $SMSTemplate = SMSTemplates::getBySlug('promotion-sms', Auth::User()->account_id);
-dd($SMSTemplate);
+
         if (!$SMSTemplate) {
             // SMS Promotion is disabled
             return array(
@@ -2308,7 +2308,7 @@ dd($SMSTemplate);
         }
 
         $preparedText = Appointments::prepareSMSContent($appointmentId, $SMSTemplate->content);
-
+        dd($preparedText);
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
         $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::User()->account_id, $setting->data);
