@@ -2242,16 +2242,71 @@ class AppointmentsController extends Controller
 
 
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
+            ////////////////////
+            $SMSTemplate = SMSTemplates::getBySlug('promotion-sms', Auth::User()->account_id);
 
+            if (!$SMSTemplate) {
+                // SMS Promotion is disabled
+                return array(
+                    'status' => true,
+                    'sms_data' => 'SMS Promotion is disabled',
+                    'error_msg' => '',
+                );
+            }
+    
+            $preparedText = Appointments::prepareSMSContent($appointment->id, $SMSTemplate->content);
+            
+            $setting = Settings::whereSlug('sys-current-sms-operator')->first();
+    
+            $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::User()->account_id, $setting->data);
+    
+            if ($setting->data == 1) {
+    
+                $SMSObj = array(
+                    'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
+                    'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
+                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointmentData['phone'])),
+                    'text' => $preparedText,
+                    'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
+                    'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
+                );
+                $response = TelenorSMSAPI::SendSMS($SMSObj);
+            } else {
+                $SMSObj = array(
+                    'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
+                    'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
+                    'from' => $UserOperatorSettings->mask,
+                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointmentData['phone'])),
+                    'text' => $preparedText,
+                    'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
+                );
+                $response = JazzSMSAPI::SendSMS($SMSObj);
+            }
+    
+    //        $response = TelenorSMSAPI::SendSMS($SMSObj);
+    
+            $SMSLog = array_merge($SMSObj, $response);
+            $SMSLog['appointment_id'] = $appointment->id;
+            $SMSLog['created_by'] = Auth::user()->id;
+            if ($setting->data == 2) {
+                $SMSLog['mask'] = $SMSObj['from'];
+            }
+            SMSLogs::create($SMSLog);
+            // SEND SMS for Appointment Booked End
+            
+           // return $response;
+
+
+            ///////////////
             /**
              * Dispatch Elastic Search Index
              */
-            $this->dispatch(
-                new IndexSingleAppointmentJob([
-                    'account_id' => Auth::User()->account_id,
-                    'appointment_id' => $appointment->id
-                ])
-            );
+            // $this->dispatch(
+            //     new IndexSingleAppointmentJob([
+            //         'account_id' => Auth::User()->account_id,
+            //         'appointment_id' => $appointment->id
+            //     ])
+            // );
 
             return ApiHelper::apiResponse($this->success, $message, true, [
                 'id' => $appointment->id,
