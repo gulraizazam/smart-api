@@ -1,5 +1,5 @@
 
-<!-- @if(Gate::allows('roles_edit') || Gate::allows('roles_destroy')) -->
+@if(Gate::allows('roles_edit') || Gate::allows('roles_destroy'))
     <div class="dropdown dropdown-inline action-dots">
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>
@@ -10,14 +10,14 @@
                     Choose an action:
                 </li>
 
-                <!-- @if(Gate::allows('roles_edit')) -->
+                @if(Gate::allows('roles_edit'))
                     <li class="navi-item">
                         <a href="{{ route('admin.roles.edit', $role) }}" class="navi-link">
                             <span class="navi-icon"><i class="la la-pencil"></i></span>
                             <span class="navi-text">Edit</span>
                         </a>
                     </li>
-                <!-- @endif -->
+                @endif
                 @if(Gate::allows('roles_destroy'))
                     <li class="navi-item">
                         <a href="javascript:void(0);" onclick="deleteRow('{{$role->id}}');" class="navi-link">
@@ -34,4 +34,4 @@
             </ul>
         </div>
     </div>
-<!-- @endif -->
+@endif
