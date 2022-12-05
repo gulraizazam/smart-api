@@ -38,7 +38,7 @@ use DB;
 use Validator;
 use App\Models\Appointments;
 use Barryvdh\DomPDF\Facade\Pdf;
-
+use Illuminate\Support\Facades\DB as FacadesDB;
 
 class LeadsController extends Controller
 {
@@ -494,7 +494,14 @@ class LeadsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
-
+    public function status(Request $request){
+        
+        $lead = Leads::where('patient_id',$request->id)->first();
+       
+        $lead->update(['active'=>$request->status]);
+        
+        return ApiHelper::apiResponse($this->success, 'Status Changed Successfully');
+    }
     private function getFiltersData($records, $fileName) {
 
         $filters = Filters::all(Auth::User()->id, $fileName);
