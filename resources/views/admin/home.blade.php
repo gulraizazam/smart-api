@@ -364,19 +364,19 @@
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
                                                         <li>
-                                                            <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','today']) }}"
+                                                            <a href="#"
                                                             target="_blank">Today</a>
                                                         </li>
                                                         <li>
-                                                            <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','yesterday']) }}"
+                                                            <a href="#"
                                                             target="_blank">Yesterday</a>
                                                         </li>
                                                         <li>
-                                                            <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','last7days']) }}"
+                                                            <a href="#"
                                                             target="_blank">Last 7 Days</a>
                                                         </li>
                                                         <li>
-                                                            <a href="{{ route('admin.dashboadReport.collectionrevenuereport',['web','false','thismonth']) }}"
+                                                            <a href="#"
                                                             target="_blank">This Month</a>
                                                         </li>
                                                     </ul>
