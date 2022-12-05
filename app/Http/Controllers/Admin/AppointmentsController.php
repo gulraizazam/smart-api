@@ -2244,7 +2244,7 @@ class AppointmentsController extends Controller
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
             ////////////////////
             $SMSTemplate = SMSTemplates::getBySlug('on-appointment', Auth::User()->account_id);
-dd($SMSTemplate);
+
             if (!$SMSTemplate) {
                 // SMS Promotion is disabled
                 return array(
@@ -2257,7 +2257,7 @@ dd($SMSTemplate);
             $preparedText = Appointments::prepareSMSContent($appointment->id, $SMSTemplate->content);
             
             $setting = Settings::whereSlug('sys-current-sms-operator')->first();
-    
+    dd($setting);
             $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::User()->account_id, $setting->data);
     
             if ($setting->data == 1) {
