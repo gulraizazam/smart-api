@@ -243,7 +243,7 @@ class PackageAdvancesController extends Controller
         $packagesadvances = PackageAdvances::getRecords( $request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $patient_id, $apply_filter,$jason_var );
 
         $records = $this->getFilterData($records, $jason_var);
-
+        dd($packagesadvances);
 
         if ($packagesadvances) {
             $balance = 0;
