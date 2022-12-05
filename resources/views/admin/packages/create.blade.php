@@ -74,7 +74,7 @@
                             </select>
                         </div>
 
-                        <!-- <div class="fv-row col-md-3 mt-5">
+                        <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
 
                             <label>Patient Search:</label>
@@ -85,8 +85,8 @@
                                 <ul class="suggestion-list"></ul>
                             </div>
 
-                        </div> -->
-                        <div style="display: none;">
+                        </div>
+                        <!-- <div style="display: none;">
                             <input type="hidden" class="filter-field search_field" id="add_patient_id">
                         </div>
                         <div class="fv-row col-md-3 mt-5">
@@ -94,7 +94,7 @@
                             <label>Patient Search:</label>
                             <select id="add_patient_id_selector" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="add_patient_id_selector">     
                             </select>
-                        </div>
+                        </div> -->
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>

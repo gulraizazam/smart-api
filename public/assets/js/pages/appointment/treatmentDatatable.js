@@ -678,6 +678,7 @@ function setAppointmentDetailData(response) {
     try {
 
         let appointment = response.data.appointment;
+        console.log(appointment);
         let permissions = response.data.permissions;
         let patient = appointment.patient;
         let doctor = appointment.doctor;
@@ -691,7 +692,7 @@ function setAppointmentDetailData(response) {
         $("#appointment_patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
         $("#appointment_patient_c_id").text(makePatientId(patient?.id));
         $("#appointment_patient_gender").text(getGender(patient?.gender));
-        $("#appointment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
+        $("#appointment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YYYY') + " at " + appointment.scheduled_time);
         $("#appointment_doctor_name").text(doctor?.name ?? 'N/A');
         $("#appointment_city_name").text(city?.name ?? 'N/A');
         $("#appointment_center_name").text(location?.name ?? 'N/A');
