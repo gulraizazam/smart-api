@@ -243,7 +243,7 @@ class PackageAdvancesController extends Controller
         $packagesadvances = PackageAdvances::getRecords( $request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $patient_id, $apply_filter,$jason_var );
 
         $records = $this->getFilterData($records, $jason_var);
-        dd($packagesadvances);
+        
 
         if ($packagesadvances) {
             $balance = 0;
@@ -303,7 +303,7 @@ class PackageAdvancesController extends Controller
                     'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A'),
                 );
             }
-
+            dd($records->count());
             $records["meta"] = [
                 'field' => $orderBy,
                 'page' => $page,
