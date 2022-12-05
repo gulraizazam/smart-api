@@ -1245,7 +1245,7 @@
 
                 let total = response.data.total;
                 let pie = response.data.pie;
-                $(".total-centre").text(total)
+                //$(".total-centre").text(total)
                 @if(request('type') == 'today')
                     $(".revenue-centre-title").text('Today Income')
                 @endif
@@ -1275,9 +1275,9 @@
             cache: false,
             success: function (response) {
 
-                let total = response.data.total;
+                //let total = response.data.total;
                 let pie = response.data.pie;
-                $(".total-my-revenue-centre").text(total)
+                //$(".total-my-revenue-centre").text(total)
                 @if(request('type') == 'today')
                     $(".my-revenue-centre-title").text('Today Income')
                 @endif
