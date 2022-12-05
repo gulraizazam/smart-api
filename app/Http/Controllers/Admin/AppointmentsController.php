@@ -3341,7 +3341,7 @@ class AppointmentsController extends Controller
     public function showSMSLogs($id)
     {
         $SMSLogs = SMSLogs::whereAppointmentId($id)->orderBy('created_at', 'desc')->get();
-
+        dd($SMSLogs);
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'SMSLogs' => $SMSLogs,
             'sms_statuses' => config('constants.sms_array'),
