@@ -2257,7 +2257,7 @@ class AppointmentsController extends Controller
             $preparedText = Appointments::prepareSMSContent($appointment->id, $SMSTemplate->content);
             
             $setting = Settings::whereSlug('sys-current-sms-operator')->first();
-    dd($setting);
+
             $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::User()->account_id, $setting->data);
     
             if ($setting->data == 1) {
