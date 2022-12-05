@@ -2243,8 +2243,8 @@ class AppointmentsController extends Controller
 
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
             ////////////////////
-            $SMSTemplate = SMSTemplates::getBySlug('promotion-sms', Auth::User()->account_id);
-
+            $SMSTemplate = SMSTemplates::getBySlug('on-appointment', Auth::User()->account_id);
+dd($SMSTemplate);
             if (!$SMSTemplate) {
                 // SMS Promotion is disabled
                 return array(
