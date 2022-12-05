@@ -362,9 +362,11 @@
 		{
 
 			$where = self::filters_packageAdvances( $request , $account_id , $id , $apply_filter,$filename ) ;
-dd($where);
+
 			if (count($where)) {
-				return self::where($where)->where('cash_amount', '!=', 0)->count();
+				return self::where($where)
+				//->where('cash_amount', '!=', 0)
+				->count();
 			} else {
 				return self::where('cash_amount', '!=', 0)->count();
 			}
