@@ -54,7 +54,7 @@
                             <select id="create_consultancy_service" class="form-control select2" name="service_id"></select>
                         </div>
 
-                        <!-- <div class="fv-row col-md-12 mt-5" id="patient_id">
+                        <div class="fv-row col-md-12 mt-5" id="patient_id">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
                             <input class="form-control patient_search_id">
 
@@ -63,8 +63,8 @@
                             <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
-                        </div> -->
-                        <div style="display:none;">
+                        </div>
+                        <!-- <div style="display:none;">
                         <input type="hidden" onchange="getPatientDetail($(this))"  name="patient_id" class="filter-field search_field" id="create_patient_search">
                         </div>
 
@@ -72,7 +72,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
                             <select id="patient_search_id_selector" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_search_id_selector">     
                             </select>
-                        </div>
+                        </div> -->
 
                         <div class="fv-row col-md-12 new_patient_text mt-10" style="display: none;">
                             <h3 style="color: red; text-align: center;">You are going to create new patient</h3>

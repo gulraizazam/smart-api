@@ -685,13 +685,15 @@ function setAppointmentDetailData(response) {
         let location = appointment.location;
         let appointment_status = appointment.appointment_status;
         let service = appointment.service;
-
+        const [hourString, minute] = appointment.scheduled_time.split(":");
+        const hour = +hourString % 24;
+        var test = (hour % 12 || 12) + ":" + minute + (hour < 12 ? "AM" : "PM");
         $("#appointment_comment_appointment_id").val(appointment?.id ?? 0);
         $("#appointment_patient_name").text(patient?.name ?? 'N/A');
         $("#appointment_patient_phone").text(makePhoneNumber(patient?.phone, permissions.contact, 1));
         $("#appointment_patient_c_id").text(makePatientId(patient?.id));
         $("#appointment_patient_gender").text(getGender(patient?.gender));
-        $("#appointment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
+        $("#appointment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YYYY ') + " at " + test);
         $("#appointment_doctor_name").text(doctor?.name ?? 'N/A');
         $("#appointment_city_name").text(city?.name ?? 'N/A');
         $("#appointment_center_name").text(location?.name ?? 'N/A');
