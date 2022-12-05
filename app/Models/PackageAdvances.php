@@ -394,7 +394,7 @@
 
 		static public function filters_packageAdvances( $request , $account_id , $id = false , $apply_filter = false,$filename ){
 
-
+dd($request);
             $where = array();
 
             $filters = getFilters($request->all());
