@@ -1,5 +1,5 @@
 
-@if(Gate::allows('roles_edit') || Gate::allows('roles_destroy'))
+<!-- @if(Gate::allows('roles_edit') || Gate::allows('roles_destroy')) -->
     <div class="dropdown dropdown-inline action-dots">
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>
@@ -34,4 +34,4 @@
             </ul>
         </div>
     </div>
-@endif
+<!-- @endif -->
