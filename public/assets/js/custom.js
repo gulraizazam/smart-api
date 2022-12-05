@@ -263,6 +263,9 @@ function addUsers() {
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
     $('.search_field').val('').change();
+   
+    $(".suggesstion-box").hide(); 
+    
 }
 
 // not working
