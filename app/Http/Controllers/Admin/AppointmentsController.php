@@ -2291,7 +2291,7 @@ class AppointmentsController extends Controller
             if ($setting->data == 2) {
                 $SMSLog['mask'] = $SMSObj['from'];
             }
-            dd($SMSLog);
+            
             SMSLogs::create($SMSLog);
             // SEND SMS for Appointment Booked End
             
