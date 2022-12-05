@@ -2346,6 +2346,7 @@ class AppointmentsController extends Controller
         }
         SMSLogs::create($SMSLog);
         // SEND SMS for Appointment Booked End
+        dd($response);
         return $response;
     }
 
