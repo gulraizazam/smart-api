@@ -2297,7 +2297,7 @@ class AppointmentsController extends Controller
     {
         // SEND SMS for Appointment Booked
         $SMSTemplate = SMSTemplates::getBySlug('promotion-sms', Auth::User()->account_id);
-
+dd($SMSTemplate);
         if (!$SMSTemplate) {
             // SMS Promotion is disabled
             return array(
@@ -2346,7 +2346,7 @@ class AppointmentsController extends Controller
         }
         SMSLogs::create($SMSLog);
         // SEND SMS for Appointment Booked End
-        dd($response);
+        
         return $response;
     }
 
@@ -2993,7 +2993,7 @@ class AppointmentsController extends Controller
          */
         if($appointmentData['appointment_status_id'] == 1){
             $appointmentData['lead_status_id'] = 4;
-        }else if($appointmentDat['appointment_status_id'] == 3){
+        }else if($appointmentData['appointment_status_id'] == 3){
             $appointmentData['lead_status_id'] = 1;
         }
         $lead = Leads::find($appointmentData['lead_id']);
