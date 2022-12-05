@@ -413,13 +413,13 @@ class LeadsController extends Controller
                 $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
             }
 
-            $Leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+            $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->orderBy($orderBy, $order)
                 ->get();
 
-
+            
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $lead_status = LeadStatuses::getAllRecordsDictionary(Auth::User()->account_id);
@@ -436,10 +436,11 @@ class LeadsController extends Controller
             }
 
             $records = $this->getFiltersData($records, $filename);
-
+            
             if ($Leads->count()) {
                 $index = 0;
                 foreach ($Leads as $lead) {
+                    
                     //check lead s lead status has parent or not if yes than get parent data and if no than get simple that row data
                     if (array_key_exists($lead->lead_status_id, $lead_status)) {
                         if ($lead_status[$lead->lead_status_id]->parent_id == 0) {
@@ -495,12 +496,12 @@ class LeadsController extends Controller
         }
     }
     public function status(Request $request){
-        
-        $lead = Leads::where('patient_id',$request->id)->first();
+  
+        $lead = Leads::findOrFail($request->id);
        
         $lead->update(['active'=>$request->status]);
         
-        return ApiHelper::apiResponse($this->success, 'Status Changed Successfully');
+        return ApiHelper::apiResponse($this->success, 'Status Changed Successfully',true,["lead"=>$lead]);
     }
     private function getFiltersData($records, $fileName) {
 

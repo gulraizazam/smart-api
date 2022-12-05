@@ -65,6 +65,7 @@ var table_columns = [{
     sortable: false,
     width: 60,
     template: function(data) {
+        console.log(data);
         let status_url = route('admin.leads.status');
         let id = data.id;
         let active = data.active;
@@ -74,7 +75,7 @@ var table_columns = [{
             if (permissions.update_status) {
                 status += '<span class="switch switch-icon">\
             <label>\
-                <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" checked="checked" name="select">\
+                <input value="1" onchange="updateStatus(`'+status_url+'`, `'+data.lead_id+'`, $(this));" type="checkbox" checked="checked" name="select">\
                 <span></span>\
             </label>\
             </span>';
@@ -91,7 +92,7 @@ var table_columns = [{
 
             status += '<span class="switch switch-icon">\
         <label>\
-            <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" name="select">\
+            <input value="1" onchange="updateStatus(`'+status_url+'`, `'+data.lead_id+'`, $(this));" type="checkbox" name="select">\
             <span></span>\
         </label>\
         </span>';

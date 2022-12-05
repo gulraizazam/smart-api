@@ -125,6 +125,7 @@ $(document).ready( function () {
     planeEditValidation.init();
 
     $("#add_patient_id_selector").on("select2:select", function (e) {
+        $("#add_appointment_id").empty();
         $('#add_appointment_id').val(null).trigger('change');
         getAppointments($(this).val());
     });
