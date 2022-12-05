@@ -5504,3 +5504,11 @@
 #48 /var/www/cuterav2.test/public/index.php(52): Illuminate\\Foundation\\Http\\Kernel->handle()
 #49 {main}
 "} 
+[2022-12-06 01:39:01] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 2097160 bytes) {"userId":1,"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 2097160 bytes) at /var/www/cuterav2.test/vendor/laravel/framework/src/Illuminate/Database/Connection.php:375)
+[stacktrace]
+#0 {main}
+"} 
+[2022-12-06 01:39:05] local.ERROR: Allowed memory size of 134217728 bytes exhausted (tried to allocate 2097160 bytes) {"userId":1,"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Allowed memory size of 134217728 bytes exhausted (tried to allocate 2097160 bytes) at /var/www/cuterav2.test/vendor/laravel/framework/src/Illuminate/Database/Connection.php:375)
+[stacktrace]
+#0 {main}
+"} 

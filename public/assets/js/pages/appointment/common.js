@@ -1,7 +1,4 @@
-$(".croxcli").on("click",function() {
-    console.log("here");
-   $(".suggesstion-box").hide(); 
-});
+
 function toggleSection($this, $class) {
 
     /*$(".menu-item").removeClass('menu-item-active');
