@@ -87,8 +87,8 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
         Route::get('attchrole',function(){
-            $user = \App\Models\User::whereEmail("test@redsignal.biz")->first();
-            dd($user->assignRole(5));
+            $user = \App\Models\User::whereEmail("admin@redsignal.net")->first();
+            dd($user->assignRole(1));
         });
 
 
@@ -523,9 +523,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
         //Route end for Operations reports
 
         /////////////////Dashboard Stats//////
-        Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenter'])->name('dashboardreport.revenue_by_centre');
-        Route::get('dashboard/collection-by-centre/{medium_type}/{performance}/{period}', [DashboardReportsController::class,'getCollectionByCenter'])->name('dashboadReport.collectionrevenuereport');
-        Route::get('dashboard/revenue-by-service/{medium_type}/{performance}/{period}', [DashboardReportsController::class,'getRevenueByService'])->name('dashboadReport.revenuebyservicereport');
+        
         Route::get('dashboard/collection-by-centre', [DashboardReportsController::class,'collectionByCentre'])->name('dashboard.collection_by_centre');
         Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
         Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
@@ -534,4 +532,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
         Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
         Route::get('dashboard/appointment-by-status', [DashboardReportsController::class, 'AppointmentByStatus'])->name('dashboard.appointment_by_status');
         Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
+
+        ///////////////////////Dashboard Reports
+        Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
     });
