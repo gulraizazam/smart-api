@@ -34,7 +34,7 @@ class dashboardreport
         $wherecondtion = array();
 
         $counter = 0;
-        dd($location_information);
+      
         foreach ($location_information as $key => $location_infomation) {
             if ($where == 'today') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
@@ -161,6 +161,7 @@ class dashboardreport
                 }
             }
             $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
+            dd($total_revenue);
             $In_hand_balance = $total_revenue - $total_refund_out;
 
             if ($counter == 0) {
