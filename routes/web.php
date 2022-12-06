@@ -72,7 +72,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
 // Authentication Routes...
     Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
-    Route::get('/sendmessage', function () {
+    Route::get('/deliver-on-appointment-book', function () {
         \Artisan::call('appointment:deliver-on-appointment-book');
     });
 // Check Session
