@@ -54,10 +54,6 @@
                             <select id="create_treatment_service" class="form-control select2" name="service_id"></select>
                         </div>
 
-                        <div style="display:none;">
-                            <input type="hidden" id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))"  name="patient_id" class="filter-field search_field">
-                        </div>
-
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
                             <input  class="form-control treatment_patient_search_id">
