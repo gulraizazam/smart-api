@@ -40,9 +40,11 @@ class AppointmentsElastic
                 ],
             ];
 
-            self::$elastic_client = ClientBuilder::create()           // Instantiate a new ClientBuilder
+            dd(self::$elastic_client = ClientBuilder::create()           // Instantiate a new ClientBuilder
             ->setHosts($hosts)      // Set the hosts
-            ->build();              // Build the client object
+            ->build());   
+                  // Build the client object
+                  
         } catch (\Exception $e) {
             self::$elastic_client = null;
         }
