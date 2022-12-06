@@ -2723,7 +2723,7 @@ class LeadsController extends Controller
     }
 
     public function exportPdf(Request $request) {
-
+        ini_set('memory_limit', '-1');
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
 
@@ -2777,13 +2777,14 @@ class LeadsController extends Controller
         // }
 
         $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
-            ->get();
-
+        ->get();
+           
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'));
         return $pdf->download('leads.pdf');
     }
 
     public function exportDocs(Request $request) {
+        ini_set('memory_limit', '-1');
         return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
     }
 }
