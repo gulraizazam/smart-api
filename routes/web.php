@@ -77,7 +77,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     });
     Route::get('/2nd-message-on-appointment-day', function () {
         \Artisan::call('appointment:2nd-message-on-appointment-day');
-        
+
     });
     Route::get('/3rd-message-before-appointment', function () {
         \Artisan::call('appointment:3rd-message-before-appointment');
@@ -97,8 +97,8 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
         Route::get('attchrole',function(){
-            $user = \App\Models\User::whereEmail("zeeshan.jahangir@cutera.pk")->first();
-            dd($user->assignRole(13));
+            $user = \App\Models\User::whereEmail("saba@redsignal.biz")->first();
+            dd($user->assignRole(3));
         });
 
 
