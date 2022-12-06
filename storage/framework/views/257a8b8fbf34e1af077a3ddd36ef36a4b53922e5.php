@@ -73,8 +73,9 @@
     <div class="row">
         <div class="col-md-10">
 
-            @include('admin.partials.filter-buttons', ['custom_reset', $custom_reset])
+            <?php echo $__env->make('admin.partials.filter-buttons', ['custom_reset', $custom_reset], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
         </div>
     </div>
 </div>
+<?php /**PATH /var/www/cuterav2.test/resources/views/admin/invoices/filters.blade.php ENDPATH**/ ?>

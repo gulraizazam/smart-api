@@ -1,0 +1,12 @@
+<div class="popover popover_popup modal_consultancy_popup bs-popover-start" role="tooltip"
+     id="popover880538" data-popper-placement="left" style="width: 200px;position: absolute; inset: 0px 0px auto auto; margin: 0px; display: none;">
+    <div class="popover-arrow" style="position: absolute; top: 0px; transform: translate(0px, 89px);"></div>
+    <span class="popover-dismiss btn btn-icon"></span>
+    <h3 class="popover-header full-time"></h3>
+    <div class="popover-body">
+        <div class="fw-bolder mb-2 event-name"></div>
+
+        
+    </div>
+</div>
+<?php /**PATH /var/www/cuterav2.test/resources/views/admin/appointments/appointment-forms/popup.blade.php ENDPATH**/ ?>

@@ -428,7 +428,7 @@ function applyFilters(datatable) {
             delete: '',
             id: $("#search_id").val(),
             patient_id: $("#search_patient_id").val(),
-            patient_name: $("#search_patient_id").text(),
+            patient_name: $("#search_name").text(),
             location_id: $("#search_location_id").val(),
             service_id: $("#search_service_id").val(),
             invoice_status_id: $("#search_invoice_status_id").val(),
@@ -512,8 +512,8 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_id").val(active_filters.id);
         if (typeof active_filters.patient_id !== 'undefined') {
-            $("#search_patient_id").html('<option value="'+active_filters.patient_id+'">'+active_filters.patient_name+'</option>');
-            $("#search_patient_id").val(active_filters.patient_id);
+            $("#search_name").html('<option value="'+active_filters.patient_id+'">'+active_filters.patient_name+'</option>');
+            $("#search_name").val(active_filters.patient_id);
         }
         $("#search_location_id").val(active_filters.location_id);
         $("#search_appointment_type_id").val(active_filters.appointment_type_id);
