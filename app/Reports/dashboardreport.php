@@ -34,6 +34,7 @@ class dashboardreport
         $wherecondtion = array();
 
         $counter = 0;
+        dd($location_information);
         foreach ($location_information as $key => $location_infomation) {
             if ($where == 'today') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
@@ -67,7 +68,7 @@ class dashboardreport
             }
 
             $location_single_info = Locations::find($key);
-
+            
             if ($packagesadvances) {
                 $balance = 0;
                 $total_balance = 0;
