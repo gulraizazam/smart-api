@@ -18,41 +18,45 @@
     <div class="row mb-6">
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Patient Id:</label>
+            <label>ID:</label>
             <input type="text" class="form-control filter-field" placeholder="Enter ID" id="search_id" />
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6" id="patient_id">
-            <label>Patient Name:</label>
-            <input class="form-control filter-field" id="search_name" placeholder="Enter Name">
+        <div class="col-lg-3 mb-lg-0 mb-6">
+            <label>Full Name:</label>
+            <input class="form-control filter-field" id="search_full_name" placeholder="Enter Name">
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Centre:</label>
-            <select class="form-control filter-field select2" id="search_location_id">
-            </select>
+            <label>Phone:</label>
+            <input type="text" oninput="phoneField(this);" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Consultancy/Service:</label>
-            <select class="form-control filter-field select2" id="search_service_id">
-            </select>
+            <label>City:</label>
+            <select class="form-control filter-field select2" id="search_city_id"></select>
         </div>
+
 
     </div>
 
     <div class="row mb-8 advance-filters" style="display: none;">
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Invoice Status:</label>
-            <select class="form-control filter-field select2" id="search_invoice_status_id">
-            </select>
+            <label>Region:</label>
+            <select class="form-control filter-field select2" id="search_region_id"></select>
         </div>
 
+        <?php if(request('type') == ''): ?>
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Type:</label>
-            <select class="form-control filter-field select2" id="search_appointment_type_id">
-            </select>
+            <label>Lead Status:</label>
+            <select class="form-control filter-field select2" id="search_status_id"></select>
+        </div>
+        <?php endif; ?>
+
+        <div class="col-lg-3 mb-lg-0 mb-6">
+            <label>Service:</label>
+            <select class="form-control filter-field select2" id="search_service_id"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
@@ -70,11 +74,20 @@
 
     </div>
 
+    <div class="row mb-8 advance-filters" style="display: none;">
+        <div class="col-lg-3 mb-lg-0">
+            <label>Created By:</label>
+            <select class="form-control filter-field select2" id="search_created_by">
+            </select>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-md-10">
 
-            @include('admin.partials.filter-buttons', ['custom_reset', $custom_reset])
+            <?php echo $__env->make('admin.partials.filter-buttons', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
         </div>
     </div>
 </div>
+<?php /**PATH /var/www/cuterav2.test/resources/views/admin/leads/filters.blade.php ENDPATH**/ ?>

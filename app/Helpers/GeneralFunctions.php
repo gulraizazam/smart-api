@@ -223,27 +223,7 @@ class GeneralFunctions
     
             return $mergedServices; 
         }
-        if(hasFilter($filters, 'status')){
-            $query = Services::with('children')
-            ->where('active',
-            '=',
-            $filters['status']);
-            $services = $query->get();
-        
-            $mergedServices = [];
-            foreach ($services as $key => $service) {
-                $children = collect($service->children)->flatten();
-                unset($service->children);
-                $mergedServices[] = $service->toArray();
-                $children = $children->toArray();
-                foreach ($children as $child) {
-                    $mergedServices[] = $child;
-                }
-    
-            }
-    
-            return $mergedServices; 
-        }
+       
         $allService = Services::where('parent_id', 0)
             ->where('slug', 'all')
             ->first();

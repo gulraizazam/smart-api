@@ -18,40 +18,34 @@
     <div class="row mb-6">
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Patient Id:</label>
-            <input type="text" class="form-control filter-field" placeholder="Enter ID" id="search_id" />
+            <label>Patient ID:</label>
+            <input type="text" class="form-control filter-field" placeholder="Enter Patient ID" id="search_patient_id" />
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6" id="patient_id">
-            <label>Patient Name:</label>
+        <div class="col-lg-3 mb-lg-0 mb-6">
+            <label>Name:</label>
             <input class="form-control filter-field" id="search_name" placeholder="Enter Name">
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Centre:</label>
-            <select class="form-control filter-field select2" id="search_location_id">
-            </select>
+            <label>Email:</label>
+            <input class="form-control filter-field" id="search_email" placeholder="Enter Email">
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Consultancy/Service:</label>
-            <select class="form-control filter-field select2" id="search_service_id">
-            </select>
+            <label>Phone:</label>
+            <input type="text" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
         </div>
+
 
     </div>
 
     <div class="row mb-8 advance-filters" style="display: none;">
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Invoice Status:</label>
-            <select class="form-control filter-field select2" id="search_invoice_status_id">
-            </select>
-        </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Type:</label>
-            <select class="form-control filter-field select2" id="search_appointment_type_id">
+            <label>Gender:</label>
+            <select class="form-control filter-field select2" id="search_gender">
             </select>
         </div>
 
@@ -68,13 +62,20 @@
             </div>
         </div>
 
+        <div class="col-lg-3 mb-lg-0">
+            <label>Status:</label>
+            <select class="form-control filter-field select2" id="search_status">
+            </select>
+        </div>
+
     </div>
 
     <div class="row">
         <div class="col-md-10">
 
-            @include('admin.partials.filter-buttons', ['custom_reset', $custom_reset])
+            <?php echo $__env->make('admin.partials.filter-buttons', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
         </div>
     </div>
 </div>
+<?php /**PATH /var/www/cuterav2.test/resources/views/admin/patients/filters.blade.php ENDPATH**/ ?>
