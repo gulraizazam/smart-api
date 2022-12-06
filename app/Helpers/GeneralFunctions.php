@@ -158,7 +158,7 @@ class GeneralFunctions
             $filename = 'services';
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
-
+           
             if (hasFilter($filters, 'name')) {
                 $where[] = [
                     'name',
@@ -210,14 +210,14 @@ class GeneralFunctions
         if (count($where) > 0) {
             $allService = null;
         }
-
+      
         $query = Services::with('children')
             ->where('parent_id', 0)
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
-
+       
         $services = $query->get();
-
+        
         $mergedServices = [];
         foreach ($services as $key => $service) {
 
