@@ -3,7 +3,7 @@
 /public/storage
 /storage/app
 /storage/settings
-
+/storage/framework
 /bootstrap/cache
 /storage/*.key
 /vendor
