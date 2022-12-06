@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\DeliverOnAppointmentBook;
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentMedicalController;
@@ -71,7 +72,9 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
 // Authentication Routes...
     Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
-
+    Route::get('/sendmessage', function () {
+        \Artisan::call('appointment:deliver-on-appointment-book');
+    });
 // Check Session
     Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
