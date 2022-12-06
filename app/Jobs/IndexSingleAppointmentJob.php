@@ -42,12 +42,14 @@ class IndexSingleAppointmentJob implements ShouldQueue
     public function handle()
     {
         try {
-            $appointment = Appointments::where([
-                'account_id' => $this->payload['account_id'],
-                'id' => $this->payload['appointment_id'],
-            ])->first();
+            dd($this->payload);
+            // $appointment = Appointments::where([
+            //     'account_id' => $this->payload['account_id'],
+            //     'id' => $this->payload['appointment_id'],
+            // ])->first();
 
-            AppointmentsElastic::indexObject($appointment);
+            // AppointmentsElastic::indexObject($appointment);
+            
 
         } catch (\Exception $exception) {
 
