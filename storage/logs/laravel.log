@@ -650,3 +650,7 @@
 #59 /var/www/cuterav2.test/public/index.php(52): Illuminate\\Foundation\\Http\\Kernel->handle()
 #60 {main}
 "} 
+[2022-12-07 02:38:44] local.ERROR: Maximum execution time of 230 seconds exceeded {"userId":1,"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Maximum execution time of 230 seconds exceeded at /var/www/cuterav2.test/vendor/dompdf/dompdf/src/Dompdf.php:570)
+[stacktrace]
+#0 {main}
+"} 

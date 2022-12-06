@@ -2724,6 +2724,7 @@ class LeadsController extends Controller
 
     public function exportPdf(Request $request) {
         ini_set('memory_limit', '-1');
+        set_time_limit(0);
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
 
@@ -2784,6 +2785,7 @@ class LeadsController extends Controller
     }
 
     public function exportDocs(Request $request) {
+        set_time_limit(0);
         ini_set('memory_limit', '-1');
         return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
     }
