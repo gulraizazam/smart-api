@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Smart</title>
+    <title>Cutera Aesthetics</title>
     <meta content="Cutera Aesthetics is a Medical Spa offering more than 60 treatment for skin rejuvenation and body contouring" name="description" />
     <meta content="Red Signal" name="author"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
