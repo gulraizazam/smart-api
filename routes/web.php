@@ -77,6 +77,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     });
     Route::get('/2nd-message-on-appointment-day', function () {
         \Artisan::call('appointment:2nd-message-on-appointment-day');
+        
     });
     Route::get('/3rd-message-before-appointment', function () {
         \Artisan::call('appointment:3rd-message-before-appointment');
