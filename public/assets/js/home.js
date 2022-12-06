@@ -17,7 +17,7 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth) {
             
             cache: false,
             success: function (response) {
-                
+                console.log(response.data);
                 if (today != '') {
                     
                     $(".pie-income-title").text('Today Income');
