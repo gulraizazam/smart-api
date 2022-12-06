@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <title>Smart</title>
-    <meta content="Smart Aesthetic is a Medical Spa offering more than 60 treatment for skin rejuvenation and body contouring" name="description" />
+    <meta content="Cutera Aesthetics is a Medical Spa offering more than 60 treatment for skin rejuvenation and body contouring" name="description" />
     <meta content="Red Signal" name="author"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <style>
@@ -192,9 +192,9 @@
     <table>
         <tr>
             <td>
-                <img class="img-responsive logo" src="{{asset('assets/media/logos/smart-invoice-logo.png')}}" alt=""/>
+                <img class="img-responsive logo" src="https://crm.cutera.pk/centre_logo/new_logo.png" alt=""/>
                 <p class="logo_caption">{{$location_info->address}}.</p>
-                <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}}  &nbsp; |  &nbsp; Email. {{$account->email}}  &nbsp; | &nbsp;  www.smartaesthetics.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
+                <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}}  &nbsp; |  &nbsp; Email. {{$account->email}}  &nbsp; | &nbsp;  www.cutera.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
             </td>
             <td style="padding:0px !important; float:right; width:120px; text-align:right;">
                 <div class="invoice_btn" style="width:120px; float:right; text-align:right;">
