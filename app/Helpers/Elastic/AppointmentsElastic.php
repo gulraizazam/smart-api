@@ -68,11 +68,13 @@ class AppointmentsElastic
         );
 
         try {
+            
             if (self::$elastic_client) {
                 self::$elastic_client->index($data);
             }
             return true;
         } catch (\Exception $e) {
+            dd($e->getMessage());
             return false;
         }
     }
