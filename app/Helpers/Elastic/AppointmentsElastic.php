@@ -40,9 +40,9 @@ class AppointmentsElastic
                 ],
             ];
 
-            dd(self::$elastic_client = ClientBuilder::create()           // Instantiate a new ClientBuilder
+            self::$elastic_client = ClientBuilder::create()           // Instantiate a new ClientBuilder
             ->setHosts($hosts)      // Set the hosts
-            ->build());   
+            ->build();   
                   // Build the client object
                   
         } catch (\Exception $e) {
@@ -61,7 +61,7 @@ class AppointmentsElastic
         self::__init();
 
         $elastic_object = self::prepareObject($appointment);
-
+dd($elastic_object);
         $data = array(
             'index' => env('ELASTICSEARCH_INDEX'),
             'type' => 'appointments',
