@@ -75,6 +75,12 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     Route::get('/deliver-on-appointment-book', function () {
         \Artisan::call('appointment:deliver-on-appointment-book');
     });
+    Route::get('/2nd-message-on-appointment-day', function () {
+        \Artisan::call('appointment:2nd-message-on-appointment-day');
+    });
+    Route::get('/3rd-message-before-appointment', function () {
+        \Artisan::call('appointment:3rd-message-before-appointment');
+    });
 // Check Session
     Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
