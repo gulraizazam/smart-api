@@ -61,7 +61,7 @@ class AppointmentsElastic
         self::__init();
 
         $elastic_object = self::prepareObject($appointment);
-dd($elastic_object);
+
         $data = array(
             'index' => env('ELASTICSEARCH_INDEX'),
             'type' => 'appointments',
@@ -75,6 +75,7 @@ dd($elastic_object);
             }
             return true;
         } catch (\Exception $e) {
+            dd($e->getMessage());
             return false;
         }
     }
