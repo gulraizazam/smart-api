@@ -100,7 +100,7 @@ class DeliverOnAppointmentBook extends Command
             // SEND SMS for Appointment Booked
             $SMSTemplate = SMSTemplates::getBySlug('treatment-on-appointment', $account_id); // 'on-appointment' for Appointment SMS
         }
-
+dd( $SMSTemplate);
         if (!$SMSTemplate) {
             // SMS Promotion is disabled
             return array(
