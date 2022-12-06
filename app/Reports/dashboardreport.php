@@ -68,7 +68,7 @@ class dashboardreport
             }
 
             $location_single_info = Locations::find($key);
-            dd($location_single_info);
+           
             if ($packagesadvances) {
                 $balance = 0;
                 $total_balance = 0;
