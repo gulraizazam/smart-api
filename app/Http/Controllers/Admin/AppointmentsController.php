@@ -2249,7 +2249,8 @@ class AppointmentsController extends Controller
             $this->dispatch(
                 new IndexSingleAppointmentJob([
                     'account_id' => Auth::User()->account_id,
-                    'appointment_id' => $appointment->id
+                    'appointment_id' => $appointment->id,
+                    'patient_phone'=>$appointmentData['phone']
                 ])
             );
 
