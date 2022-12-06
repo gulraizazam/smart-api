@@ -97,8 +97,8 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
         Route::get('attchrole',function(){
-            $user = \App\Models\User::whereEmail("dha.lhr@cutera.pk")->first();
-            dd($user->assignRole(4));
+            $user = \App\Models\User::whereEmail("kanwal.saba0528@gmail.com")->first();
+            dd($user->assignRole(20));
         });
 
 
