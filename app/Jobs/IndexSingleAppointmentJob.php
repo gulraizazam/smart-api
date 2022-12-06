@@ -47,7 +47,7 @@ class IndexSingleAppointmentJob implements ShouldQueue
                 'id' => $this->payload['appointment_id'],
             ])->first();
 
-            AppointmentsElastic::indexObject($appointment);
+            //AppointmentsElastic::indexObject($appointment);
 
         } catch (\Exception $exception) {
 
