@@ -111,7 +111,7 @@
             <div class="sn-table-head">
                 <div class="row">
                     <div class="col-md-2">
-                        <img src="{{ asset('centre_logo/logo_final.png') }}" height="80">
+                        <img src="{{asset('logo_final.png')}}" style="width:180px ;">
                     </div>
                     <div class="col-md-6">&nbsp;</div>
                     <div class="col-md-4">
