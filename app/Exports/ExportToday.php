@@ -39,6 +39,7 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
             ->limit($this->limit)->offset($this->offset)
             ->orderBy('appointments.id', 'DESC')
             ->get();
+            
     }
 
     public function headings(): array
