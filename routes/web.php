@@ -503,7 +503,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
 
         Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
         Route::get('appointments/export/{limit}/{offset}', [AppointmentsController::class, 'export'])->name('appointments.export');
-
+        Route::get('download-today-appointment', [AppointmentsController::class, 'todayexport']);
         Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
 
          /*Inventory Routes*/
