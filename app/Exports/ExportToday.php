@@ -30,12 +30,14 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
 
     public function collection()
     {
+        
         return Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
             ->whereDate('appointments.scheduled_date',Carbon::today())
+            ->where('appointment_type_id',2)
             ->limit($this->limit)->offset($this->offset)
             ->orderBy('appointments.id', 'DESC')
             ->get();
