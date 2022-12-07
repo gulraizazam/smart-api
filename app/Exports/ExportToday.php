@@ -37,7 +37,8 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
         })->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
             ->whereDate('appointments.scheduled_date',Carbon::today())
-            ->where('appointment_type_id',2)
+            ->where('appointment_type_id',1)
+            
             ->limit($this->limit)->offset($this->offset)
             ->orderBy('appointments.id', 'DESC')
             ->get();
