@@ -61,7 +61,7 @@
         <div class="sn-table-head">
             <div class="row">
                 <div class="col-md-2">
-                    <img src="{{ asset('assets/media/logos/smart.svg') }}" height="80">
+                    <img src="{{asset('logo_final.png')}}" style="height: 180px;">
                 </div>
                 <div class="col-md-6">&nbsp;</div>
                 <div class="col-md-4">

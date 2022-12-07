@@ -13,8 +13,8 @@
                 <table>
                     <tr>
                         <td>
-                            <img class="logo" src="{{ asset('assets/media/logos/smart.svg') }}"
-                                 class="img-responsive" alt=""/>
+                            <img class="logo" src="{{ asset('assets/media/new_logo.png') }}"
+                                 class="img-responsive" alt="" style="width:235px"/>
                         </td>
                     </tr>
                 </table>
