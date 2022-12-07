@@ -2785,8 +2785,9 @@ class LeadsController extends Controller
     }
 
     public function exportDocs(Request $request) {
-        // set_time_limit(0);
-        // ini_set('memory_limit', '-1');
+        dd($request->all());
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
         return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
     }
 }
