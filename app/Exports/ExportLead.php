@@ -9,6 +9,7 @@ use App\Models\LeadStatuses;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -27,7 +28,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function collection()
     {
-        dd($this->request);
+        DB::enableQueryLog();
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
 
@@ -67,9 +68,11 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
            
             $resultQuery->whereBetween('leads.created_at', [$this->request->start_date, $this->request->end_date]);
         }
-
-       return $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+        
+        $result = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
             ->orderBy("leads.created_at", "DESC")->get();
+       
+        return $result;
     }
 
     public function headings(): array
