@@ -65,8 +65,8 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         }
 
         if($this->request->start_date != null || $this->request->start_date != ''){
-           
-            $resultQuery->whereBetween('leads.created_at', [$this->request->start_date, $this->request->end_date]);
+            
+            $resultQuery->whereBetween('leads.created_at', [$this->request->start_date. ' 00:00:00', $this->request->end_date. ' 00:00:00']);
         }
         
         $result = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
