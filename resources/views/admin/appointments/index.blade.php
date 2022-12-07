@@ -52,7 +52,7 @@
                             @endif
                             @if(Gate::allows('appointments_export_today'))
                                 <div class="export-appointments">
-                                    <a id="today_consultancies"  href="download-today-appointment" class="btn btn-info font-weight-bolder">
+                                    <a href="download-today-appointment" class="btn btn-info font-weight-bolder">
                                         Today Consultancies
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
