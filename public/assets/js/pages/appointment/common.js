@@ -433,7 +433,14 @@ function loadTodayAppointments(today, appointment) {
 
     $("#treatment_search_start").val(today);
     $("#treatment_appoint_end").val(today);
-
+    $.ajax({
+        type: "GET",
+        url: 'download-today-appointment',
+        
+        success: function( msg ) {
+            console.log(msg);
+        }
+    });
     if (typeof datatable !== 'undefined') {
         reInitTable(appointment);
     }

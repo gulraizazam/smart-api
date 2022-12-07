@@ -66,6 +66,7 @@ use App\Models\Discounts;
 use App\Models\Settings;
 use Maatwebsite\Excel\Facades\Excel;
 use App;
+use App\Exports\ExportToday;
 use App\Helpers\JazzSMSAPI;
 use App\Helpers\Widgets\AppointmentEditWidget;
 use App\Models\MachineType;
@@ -148,7 +149,15 @@ class AppointmentsController extends Controller
                 break;
         }
     }
-
+    public function todayexport()
+    {
+        ini_set('memory_limit', '1024M');
+        ini_set('max_execution_time', '0'); // for infinite time of execution
+        $limit=1000;
+        $offset=0;
+        return Excel::download(new ExportToday($limit, $offset), 'todayappointments.xlsx');
+           
+    }
     /**
      * Get Elastic Listing for Appointments
      *
