@@ -27,6 +27,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function collection()
     {
+        dd($this->request);
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
 
@@ -63,6 +64,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         }
 
         if($this->request->start_date != null || $this->request->start_date != ''){
+           
             $resultQuery->whereBetween('leads.created_at', [$this->request->start_date, $this->request->end_date]);
         }
 
