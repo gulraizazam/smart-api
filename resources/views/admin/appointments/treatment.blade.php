@@ -59,8 +59,13 @@
                             @endif
 
                             @if(Gate::allows('appointments_export'))
-                                <div class="delete-records export-appointments">
+                                <!-- <div class="delete-records export-appointments">
                                     <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{route('admin.appointments.export', [1000, 0])}}" class="btn btn-primary font-weight-bolder">
+                                        <i class="la la-file-export"></i> Export
+                                    </a>
+                                </div> -->
+                                <div class="delete-records export-appointments">
+                                    <a  title="click to download today's records" href="download-today-treatments" class="btn btn-primary font-weight-bolder">
                                         <i class="la la-file-export"></i> Export
                                     </a>
                                 </div>

@@ -427,20 +427,20 @@ function commentData(user_name, created_at, comment) {
 }
 
 function loadTodayAppointments(today, appointment) {
+    //$("#appoint_search_doctor").reset();
+    $('.appointment_patient_id').val(null).trigger('change');
+    $(".filter-field").val('');
 
+    setQueryStringParameter('type');
+    setQueryStringParameter('from');
+    setQueryStringParameter('to');
+    setQueryStringParameter('center_id');
     $("#appoint_search_start").val(today);
     $("#appoint_appoint_end").val(today);
 
     $("#treatment_search_start").val(today);
     $("#treatment_appoint_end").val(today);
-    $.ajax({
-        type: "GET",
-        url: 'download-today-appointment',
-        
-        success: function( msg ) {
-            console.log(msg);
-        }
-    });
+
     if (typeof datatable !== 'undefined') {
         reInitTable(appointment);
     }
