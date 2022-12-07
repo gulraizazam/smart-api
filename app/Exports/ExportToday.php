@@ -35,11 +35,11 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
-            ->whereDate('appointments.created_at',Carbon::today())
+            ->whereDate('appointments.scheduled_date',Carbon::today())
             ->limit($this->limit)->offset($this->offset)
             ->orderBy('appointments.id', 'DESC')
             ->get();
-            
+
     }
 
     public function headings(): array
