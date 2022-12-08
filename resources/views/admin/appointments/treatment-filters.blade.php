@@ -137,7 +137,7 @@
             <select class="form-control filter-field select2" id="treatment_search_created_by" onchange="SetCreated()"> 
             </select>
         </div>
-        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
+        <!-- <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Create At:</label>
             <div class="input-daterange input-group to-from-datepicker" >
                 <input type="text" id="treatment_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" onchange="SetAdvanceFromdate()">
@@ -148,7 +148,7 @@
                 </div>
                 <input type="text" id="treatment_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" onchange="SetAdvanceTodate()">
             </div>
-        </div>
+        </div> -->
 
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
             <label>Updated By:</label>
