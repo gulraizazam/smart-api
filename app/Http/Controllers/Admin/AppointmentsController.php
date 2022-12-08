@@ -1240,7 +1240,7 @@ class AppointmentsController extends Controller
 
     private function getDefaultTreatmentListing(Request $request)
     {
-
+        
         $where = array();
 
         /*

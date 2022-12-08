@@ -97,8 +97,8 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
         Route::get('attchrole',function(){
-            $user = \App\Models\User::whereEmail("zeeshan.jahangir@cutera.pk")->first();
-            dd($user->assignRole(13));
+            $user = \App\Models\User::whereEmail("dha.lhr@cutera.pk")->first();
+            dd($user->assignRole(4));
         });
 
 
@@ -506,7 +506,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
         Route::get('download-today-consultancies', [AppointmentsController::class, 'todayexport']);
         Route::get('download-today-treatments', [AppointmentsController::class, 'todaytreatments']);
         Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
-
+        Route::post('download-filter-data',[AppointmentsController::class, 'downloadExportdata']);
          /*Inventory Routes*/
 
         Route::get('brands',[BrandsController::class,'index'])->name('brands.index');
