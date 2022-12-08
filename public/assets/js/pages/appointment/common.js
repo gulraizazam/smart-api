@@ -437,7 +437,8 @@ function loadTodayAppointments(today, appointment) {
     setQueryStringParameter('center_id');
     $("#appoint_search_start").val(today);
     $("#appoint_appoint_end").val(today);
-
+    $("#filter_date_to").val(today);
+    $("#filter_date_from").val(today);
     $("#treatment_search_start").val(today);
     $("#treatment_appoint_end").val(today);
 

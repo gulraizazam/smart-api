@@ -1015,6 +1015,7 @@ function applyFilters(datatable) {
             date_to: $("#treatment_appoint_end").val(),
             region_id: $("#treatment_search_region").val(),
             city_id: $("#treatment_search_city").val(),
+            service_id: $("#treatment_search_service").val(),
             location_id: $("#treatment_search_centre").val(),
             doctor_id: $("#treatment_search_doctor").val(),
             appointment_status_id: $("#treatment_search_status").val(),
@@ -1171,6 +1172,7 @@ function setFilters(filter_values, active_filters) {
 
         $("#treatment_search_created_by").val(active_filters.created_by);
         $("#treatment_search_updated_by").val(active_filters.converted_by);
+       
         $("#treatment_search_rescheduled_by").val(active_filters.updated_by);
         $("#treatment_search_type").val(active_filters.appointment_type_id);
         $("#treatment_search_status").val(active_filters.appointment_status_id);
@@ -1183,8 +1185,12 @@ function setFilters(filter_values, active_filters) {
 
         /*For Consultancy filter*/
        // $("#consultancy_city_filter").html(city_options);
-        let city_value = $("#treatment_city_filter").val();
-
+        let city_value = $("#treatment_search_service").val();
+        let service_value = $("#treatment_city_filter").val();
+        if(service_value==null){
+            $("#treatment_search_service").html(service_options);
+        }
+        
         if (city_value == null) {
             $("#treatment_city_filter").html(city_options);
         }

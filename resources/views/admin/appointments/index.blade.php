@@ -59,16 +59,37 @@
                             @endif
 
                             @if(Gate::allows('appointments_export'))
-                                <!-- <div class="delete-records export-appointments">
-                                    <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{route('admin.appointments.export', [1000, 0])}}" class="btn btn-primary font-weight-bolder">
+                                <div class="delete-records export-appointments">
+                                    <form method="POST" action="download-filter-data" id="filtersform">
+                                        @csrf
+                                        <input type="hidden" id="filter_patient_id" name="filter_patient_id">
+                                        <input type="hidden" id="filter_date_from" name="filter_date_from">
+                                        <input type="hidden" name="appointmenttype" value="1">
+                                        <input type="hidden" id="filter_date_to" name="filter_date_to">
+                                        <input type="hidden" id="filter_doctor_id" name="filter_doctor_id">
+                                        <input type="hidden" id="filter_center_id" name="filter_center_id">
+                                        <input type="hidden" id="filter_status_id" name="filter_status_id">
+                                        <input type="hidden" id="filter_city_id" name="filter_city_id">
+                                        <input type="hidden" id="filter_service_id" name="filter_service_id">
+                                        <input type="hidden" id="filter_region_id" name="filter_region_id">
+                                        <input type="hidden" id="filter_consultancytype_id" name="filter_consultancytype_id">
+                                        <input type="hidden" id="filter_updated_by_id" name="filter_updated_by_id">
+                                        <input type="hidden" id="filter_created_from_id" name="filter_created_from_id">
+                                        <input type="hidden" id="filter_created_to_id" name="filter_created_to_id">
+                                        <input type="hidden" id="filter_rescheduled_by_id" name="filter_rescheduled_by_id">
+                                        <a onclick="submitFilters()"  id="appointment_exports_submit" class="btn btn-primary font-weight-bolder">
                                         <i class="la la-file-export"></i> Export
                                     </a>
-                                </div> -->
-                                <div class="delete-records export-appointments">
+                                    </form>
+                                    <!-- <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{route('admin.appointments.export', [1000, 0])}}" class="btn btn-primary font-weight-bolder">
+                                        <i class="la la-file-export"></i> Export
+                                    </a> -->
+                                </div>
+                                <!-- <div class="delete-records export-appointments">
                                     <a  title="Download Today's Records."  href="download-today-consultancies" class="btn btn-primary font-weight-bolder">
                                         <i class="la la-file-export"></i> Export
                                     </a>
-                                </div>
+                                </div> -->
                             @endif
                         <!--end::Button-->
                         </div>
@@ -116,6 +137,7 @@
             <!--end::Container-->
         </div>
         <!--end::Entry-->
+        
     </div>
     <!--end::Content-->
 
@@ -149,6 +171,70 @@
                 },1500)
 
             });
+            ////////////////filters set//////////
+            function SetFromdate(){
+                $("#filter_date_from").val($("#appoint_search_start").val());
+            }
+            function SetTodate(){
+                $("#filter_date_to").val($("#appoint_appoint_end").val());
+            }
+            function submitFilters()
+            {
+                $("#filtersform").submit();
+               
+            }
+            function SetDocId()
+            {
+                $("#filter_doctor_id").val($("#appoint_search_doctor").val());
+               
+            }
+            function SetStatus()
+            {
+                $("#filter_status_id").val($("#appoint_search_status").val());
+               
+            }
+            function SetCreated()
+            {
+                $("#filter_created_by_id").val($("#appoint_search_created_by").val());
+               
+            }
+            function SetCenter()
+            {
+                $("#filter_center_id").val($("#appoint_search_centre").val());
+               
+            }
+            function SetPatient()
+            {
+                $("#filter_patient_id").val($("#appoint_search_patient").val());
+               
+            }
+            ///////advance filters////////
+            function SetCity(){
+                $("#filter_city_id").val($("#appoint_search_city").val());
+            }
+            function SetRegion(){
+                $("#filter_region_id").val($("#appoint_search_region").val());
+            }
+            function SetConsultancyType(){
+                $("#filter_consultancytype_id").val($("#appoint_search_consultancy_type").val());
+            }
+            function SetUpdatedBy(){
+                $("#filter_updated_by_id").val($("#appoint_search_updated_by").val());
+            }
+            function SetRescheduledBy(){
+                $("#filter_rescheduled_by_id").val($("#appoint_search_rescheduled_by").val());
+            }
+            function SetAdvanceFromdate(){
+                $("#filter_created_from_id").val($("#appoint_search_created_from").val());
+            }
+            function SetAdvanceTodate(){
+                $("#filter_created_to_id").val($("#appoint_search_created_to").val());
+            }
+             function SetService()
+             {
+                $("#filter_service_id").val($("#appoint_search_service").val());
+             }
+            ////////////
 
             function setDashboardFilters() {
 
