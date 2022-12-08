@@ -132,7 +132,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
         }
         if ($this->request->filter_rescheduled_by_id) {
             $where[] = array(
-                'updated_by',
+                'converted_by',
                 '=',
                 $this->request->filter_rescheduled_by_id
             );
@@ -158,6 +158,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_service_id
             );
         }
+        
         $resultQuery = Appointments::join('users', function ($join) {
                     $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
