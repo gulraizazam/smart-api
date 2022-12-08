@@ -66,6 +66,7 @@ use App\Models\Discounts;
 use App\Models\Settings;
 use Maatwebsite\Excel\Facades\Excel;
 use App;
+use App\Exports\ExportConsultancies;
 use App\Exports\ExportToday;
 use App\Exports\TodayTreatment;
 use App\Helpers\JazzSMSAPI;
@@ -167,6 +168,20 @@ class AppointmentsController extends Controller
         $limit=1000;
         $offset=0;
         return Excel::download(new TodayTreatment($limit, $offset), 'todaytreatments.xlsx');
+    }
+    public function downloadExportdata(Request $request)
+    {
+        
+        ini_set('memory_limit', '1024M');
+        ini_set('max_execution_time', '0'); // for infinite time of execution
+        $limit=1000;
+        $offset=0;
+        if($request->appointmenttype==1){
+            return Excel::download(new ExportConsultancies($limit, $offset,$request), 'consultancies.xlsx');
+        }else{
+            return Excel::download(new ExportConsultancies($limit, $offset,$request), 'appointments.xlsx');
+        }
+        
     }
     /**
      * Get Elastic Listing for Appointments
@@ -2030,6 +2045,9 @@ class AppointmentsController extends Controller
                             Appointments::where('patient_id', '=', $logLevelPatient->id)->update(['name' => $appointmentData['name']]);
                 
                         } else {
+
+                            $appointmentData['user_type_id'] = 3;
+                            
                             $patient = Patients::createRecord($appointmentData);
                         }
                         
@@ -6166,8 +6184,8 @@ class AppointmentsController extends Controller
     }
 
 
-    public function export($limit = 1000, $offset = 0) {
-
+    public function export(Request $request) {
+        
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
 
