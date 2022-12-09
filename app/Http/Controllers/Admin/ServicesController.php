@@ -48,6 +48,7 @@ class ServicesController extends Controller
 
     public function datatable(Request $request)
     {
+        
 
         try {
 
@@ -71,17 +72,17 @@ class ServicesController extends Controller
                 $records["status"] = true;
                 $records["message"] = "Records has been deleted successfully!";
             }
-
+            
             list($orderBy, $order) = getSortBy($request);
 
             // Get Total Records
             $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
-
+            
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
 
             $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
-
+            
             $records = $this->getExtraData($records);
 
             if (!empty($Services)) {
@@ -135,7 +136,7 @@ class ServicesController extends Controller
 
         return $records;
     }
-
+   
     /**
      * Show the form for creating new Permission.
      *

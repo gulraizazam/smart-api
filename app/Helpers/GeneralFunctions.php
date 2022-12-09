@@ -152,13 +152,14 @@ class GeneralFunctions
 
     public static function ServicesTree($request = null, $total = 0)
     {
+       
         $where = [];
-
+        
         if ($total > 0) {
             $filename = 'services';
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
-           
+            
             if (hasFilter($filters, 'name')) {
                 $where[] = [
                     'name',
@@ -202,62 +203,42 @@ class GeneralFunctions
                 }
             }
         }
-        if (hasFilter($filters, 'name')) {
-            $query = Services::with('children')
-            ->where('name',
-            'like',
-            '%' . $filters['name'] . '%');
-            $services = $query->get();
         
-            $mergedServices = [];
-            foreach ($services as $key => $service) {
-                $children = collect($service->children)->flatten();
-                unset($service->children);
-                $mergedServices[] = $service->toArray();
-                $children = $children->toArray();
-                foreach ($children as $child) {
-                    $mergedServices[] = $child;
-                }
-    
-            }
-    
-            return $mergedServices; 
-        }
-       
         $allService = Services::where('parent_id', 0)
             ->where('slug', 'all')
             ->first();
-
+        
         if (count($where) > 0) {
             $allService = null;
         }
-      
+     
         $query = Services::with('children')
-            ->where('parent_id', 0)
+            //->where('parent_id', 0)
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
-       
+           
         $services = $query->get();
-        
-        $mergedServices = [];
-        foreach ($services as $key => $service) {
+        // dd(DB::getQueryLog());
+        // $mergedServices = [];
+        // foreach ($services as $key => $service) {
 
-            $children = collect($service->children)->flatten();
-            unset($service->children);
+        //     $children = collect($service->children)->flatten();
+        //     unset($service->children);
 
-            if ($key === 0 && $allService) {
-                $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
-            }
+        //     if ($key === 0 && $allService) {
+        //         $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
+        //     }
 
-            $mergedServices[] = $service->toArray();
-            $children = $children->toArray();
-            foreach ($children as $child) {
-                $mergedServices[] = $child;
-            }
+        //     $mergedServices[] = $service->toArray();
+            
+        //     $children = $children->toArray();
+        //     foreach ($children as $child) {
+        //         $mergedServices[] = $child;
+        //     }
 
-        }
-
-        return $mergedServices;
+        // }
+       
+        return $services;
     }
 
 

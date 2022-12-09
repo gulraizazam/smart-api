@@ -754,7 +754,7 @@ function editRow(url, id, $class = 'detail-actions') {
 }
 
 function setEditData(response) {
-
+console.log(response);
     try {
 
         let appointment = response.data.appointment;
@@ -837,7 +837,7 @@ function setEditData(response) {
 }
 
 function setTreatmentEditData(response) {
-
+    console.log(response);
     try {
 
         let appointment = response.data.appointment;
@@ -947,7 +947,7 @@ function viewSmsLogs($route) {
 }
 
 function setSmsLogs(response) {
-
+   
     try {
 
         let SMSLogs = response.data.SMSLogs;
@@ -961,13 +961,14 @@ function setSmsLogs(response) {
             let sent_url = route('admin.appointments.resend_sms');
             rows = '';
             Object.values(SMSLogs).forEach(function (smsLog, index) {
-
+               
                 if(smsLog.invoice_id === null) {
                     rows += '<tr>';
                     rows += '<td>' + smsLog.to + '</td>';
                     rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
                     rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
-                    rows += '<span class="full_text" style="display: none; text-underline: none;">' + smsLog.text + '</span>';
+
+                    rows += '<span class="full_text" style="display:none; text-underline: none;"><pre>' + smsLog.text + '</pre></span>';
                     '</a></td>';
 
                     if(smsLog.status) {
@@ -1012,8 +1013,8 @@ function applyFilters(datatable) {
         let filters =  {
             delete: '',
             patient_id: $("#appointment_patient_id").val(),
-          /*  name: $("#appoint_search_patient").val(),
-            phone: $("#appoint_search_phone").val(),*/
+          /*  name: $("#appoint_search_patient").val(),*/
+            phone: $("#appoint_search_phone").val(),
             date_from: $("#appoint_search_start").val(),
             date_to: $("#appoint_appoint_end").val(),
             appointment_type_id: $("#appoint_search_type").val(),
@@ -1068,7 +1069,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
+   
     try {
 
         let appointment_statuses = filter_values.appointment_statuses;

@@ -122,8 +122,11 @@
 
     <hr class="advance-filters" style="display: none;">
     <div class="row mb-8 advance-filters" style="display: none;">
-
-        <div class="col-lg-2 mb-lg-0 mt-6">
+        <div class="col-lg-2 mb-lg-0 mt-6" >
+            <label>Phone:</label>
+            <input style="width: 65%;" type="text"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
+        </div>    
+        <div class="col-lg-2 mb-lg-0 mt-6" style="margin-left: -6%;">
             <label  style="width: 70%">City:</label>
             <select class="form-control filter-field select2" id="treatment_search_city" onchange="SetCity()"></select>
         </div>
@@ -150,13 +153,13 @@
             </div>
         </div> -->
 
-        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
+        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
             <label>Updated By:</label>
             <select class="form-control filter-field select2" id="treatment_search_updated_by" onchange="SetUpdatedBy()">
             </select>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
+        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
             <label>Rescheduled By:</label>
             <select class="form-control filter-field select2" id="treatment_search_rescheduled_by" onchange="SetRescheduledBy()">
             </select>

@@ -64,6 +64,7 @@
                                         <input type="hidden" id="filter_patient_id" name="filter_patient_id">
                                         <input type="hidden" id="filter_date_from" name="filter_date_from">
                                         <input type="hidden" name="appointmenttype" value="2">
+                                        <input type="hidden" name="filter_phone" id="filter_phone">
                                         <input type="hidden" id="filter_date_to" name="filter_date_to">
                                         <input type="hidden" id="filter_doctor_id" name="filter_doctor_id">
                                         <input type="hidden" id="filter_center_id" name="filter_center_id">
@@ -204,6 +205,10 @@
                 $("#filtersform").submit();
                
             }
+            function SetPhone()
+             {
+                $("#filter_phone").val($("#appoint_search_phone").val());
+             }
             function SetDocId()
             {
                 $("#filter_doctor_id").val($("#treatment_search_doctor").val());

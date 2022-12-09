@@ -791,7 +791,7 @@ class AppointmentsController extends Controller
         $filename = 'appointments';
 
         $filters = getFilters($request->all());
-
+       
         if ($request->has('sort')) {
 
             list($orderBy, $order) = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
@@ -969,7 +969,16 @@ class AppointmentsController extends Controller
 
             Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         }
+        if (hasFilter($filters, 'phone')) {
+            $phone = substr($filters['phone'],1);
+            $where[] = array(
+                'users.phone',
+                '=',
+                $phone
+            );
 
+            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
+        }
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
 
@@ -1337,7 +1346,16 @@ class AppointmentsController extends Controller
 
             Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
         }
+        if (hasFilter($filters, 'phone')) {
+            $phone = substr($filters['phone'],1);
+            $where[] = array(
+                'users.phone',
+                '=',
+                $phone
+            );
 
+            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
+        }
         if (hasFilter($filters, 'service_id')) {
             $where[] = array(
                 'service_id',

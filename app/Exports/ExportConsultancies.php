@@ -158,7 +158,14 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_service_id
             );
         }
-        
+        if ($this->request->filter_phone) {
+            $phone = substr($this->request->filter_phone, 1);
+            $where[] = array(
+                'users.phone',
+                '=',
+                $phone
+            );
+        }
         $resultQuery = Appointments::join('users', function ($join) {
                     $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
@@ -169,6 +176,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
         });
            
         $results = $resultQuery->where($where)->get();
+        
         return $results;
      }
 
