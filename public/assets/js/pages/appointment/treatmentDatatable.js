@@ -836,7 +836,7 @@ function setEditData(response) {
 }
 
 function setTreatmentEditData(response) {
-
+   
     try {
 
         let appointment = response.data.appointment;
@@ -891,9 +891,11 @@ function setTreatmentEditData(response) {
 
         $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
         $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
-
-        $("#edit_treatment_scheduled_time").val(appointment.scheduled_time);
-        $("#scheduled_treatment_time_old").val(appointment.scheduled_time);
+        const [hourString, minute] = appointment.scheduled_time.split(":");
+        const hour = +hourString % 24;
+        var test = (hour % 12 || 12) + ":" + minute + (hour < 12 ? " AM" : " PM");
+        $("#edit_treatment_scheduled_time").val(test);
+        $("#scheduled_treatment_time_old").val(test);
 
         $("#edit_treatment_patient_name").val(appointment?.patient?.name);
 
@@ -966,7 +968,8 @@ function setSmsLogs(response) {
                     rows += '<td>' + smsLog.to + '</td>';
                     rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
                     rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
-                    rows += '<span class="full_text" style="display: none; text-underline: none;">' + smsLog.text + '</span>';
+                   
+                    rows += '<span class="full_text" style="display:none; text-underline: none;"><pre>' + smsLog.text + '</pre></span>';
                     '</a></td>';
 
                     if(smsLog.status) {
@@ -1011,6 +1014,7 @@ function applyFilters(datatable) {
         let filters =  {
             delete: '',
             patient_id: $("#treatment_patient_id").val(),
+            phone: $("#appoint_search_phone").val(),
             date_from: $("#treatment_search_start").val(),
             date_to: $("#treatment_appoint_end").val(),
             region_id: $("#treatment_search_region").val(),

@@ -107,6 +107,21 @@
 
     @push('js')
         <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/services.js')}}"></script>
+        <script>
+            function SetName()
+            {
+                $("#filter_service_name").val($("#search_name").val());
+
+            }
+            function SetStatus()
+            {
+                $("#filter_active").val($("#search_status").val());
+            }
+            function SubmitSearch()
+            {
+                $("#search-service-form").submit();
+            }
+        </script>
     @endpush
 
 @endsection

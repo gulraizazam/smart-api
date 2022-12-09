@@ -93,9 +93,9 @@
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6 doctor-filter">
-            <label style="margin-left: -27%;">Doctor:</label>
+            <label style="margin-left: -27%;">Phone:</label>
             <br>
-            <select class="form-control filter-field select2" id="appoint_search_doctor" onchange="SetDocId()"></select>
+            <input style="width: 80%;margin-left: -30%;" type="text"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
         </div>
 
         <div class="col-lg-1 mb-lg-0 mb-6 center-filter">
@@ -121,13 +121,18 @@
 
     <hr class="advance-filters" style="display: none;">
     <div class="row mb-8 advance-filters" style="display: none;">
-
-        <div class="col-lg-3 mb-lg-0 mt-6">
+       
+        <div class="col-lg-2 mb-lg-0 mt-6">
+            <label >Doctor:</label>
+            <br>
+            <select class="form-control filter-field select2" id="appoint_search_doctor" onchange="SetDocId()"></select>
+        </div>
+        <div class="col-lg-2 mb-lg-0 mt-6" >
             <label>City:</label>
             <select class="form-control filter-field select2" id="appoint_search_city" onchange="SetCity()"></select>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mt-6">
+        <div class="col-lg-2 mb-lg-0 mt-6">
             <label>Region:</label>
             <select class="form-control filter-field select2" id="appoint_search_region" onchange="SetRegion()"></select>
         </div>

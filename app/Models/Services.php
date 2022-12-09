@@ -155,8 +155,10 @@ class Services extends BaseModal
      */
     static public function getTotalRecords(Request $request, $account_id = false)
     {
+        
         $where = array();
-
+        $filters = getFilters($request->all());
+        //dd($filters);
         if ($account_id) {
             $where[] = array(
                 'account_id',
@@ -164,7 +166,20 @@ class Services extends BaseModal
                 $account_id
             );
         }
-
+        if (hasFilter($filters, 'name')) {
+            $where[] = array(
+                'name',
+                'like',
+                '%' . $filters['name'] . '%'
+            );
+        }
+        if (hasFilter($filters, 'status')) {
+            $where[] = array(
+                'active',
+                '=',
+                $filters['status']
+            );
+        }
         if ($request->get('lead_status_name')) {
             $where[] = array(
                 'name',
@@ -172,7 +187,7 @@ class Services extends BaseModal
                 '%' . $request->get('lead_status_name') . '%'
             );
         }
-
+        
         if (count($where)) {
             return self::where($where)->count();
         } else {
