@@ -1924,7 +1924,7 @@ class AppointmentsController extends Controller
             'name' => 'required',
             'phone' => [
                 'required',
-                Rule::unique('users')->ignore($id),
+                //Rule::unique('users')->ignore($id),
             ],
         ]);
 
@@ -2047,10 +2047,11 @@ class AppointmentsController extends Controller
                         
                         $patientData['user_type_id'] = Config::get('constants.patient_id');
                         $patient = Patients::createRecord($patientData);
-                    } else {
+                     } 
+                     //else {
                         
-                        $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
-                    }
+                    //     $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
+                    // }
                 }else{
                     if ($request->new_patient == '1') {
                         $logLevelPatient = Patients::where(array(
@@ -2058,16 +2059,16 @@ class AppointmentsController extends Controller
                             'user_type_id' => Config::get('constants.patient_id'),
                             'account_id' => Auth::User()->account_id
                         ))->first();
-                        if ($logLevelPatient) {
-                            $patient = Patients::updateRecord($logLevelPatient->id, $appointmentData);
-                            Appointments::where('patient_id', '=', $logLevelPatient->id)->update(['name' => $appointmentData['name']]);
+                        // if ($logLevelPatient) {
+                        //     $patient = Patients::updateRecord($logLevelPatient->id, $appointmentData);
+                        //     Appointments::where('patient_id', '=', $logLevelPatient->id)->update(['name' => $appointmentData['name']]);
                 
-                        } else {
+                        // } else {
 
                             $appointmentData['user_type_id'] = 3;
                             
                             $patient = Patients::createRecord($appointmentData);
-                        }
+                        //}
                         
                     } 
                 }
