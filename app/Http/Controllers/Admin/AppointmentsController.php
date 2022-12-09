@@ -2047,11 +2047,10 @@ class AppointmentsController extends Controller
                         
                         $patientData['user_type_id'] = Config::get('constants.patient_id');
                         $patient = Patients::createRecord($patientData);
-                     } 
-                     //else {
+                    } else {
                         
-                    //     $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
-                    // }
+                        $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
+                    }
                 }else{
                     if ($request->new_patient == '1') {
                         $logLevelPatient = Patients::where(array(
