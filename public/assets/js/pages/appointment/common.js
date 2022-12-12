@@ -451,6 +451,6 @@ function loadTodayAppointments(today, appointment) {
 
 
 $(document).ready(function() { 
-    $("#treatment_search_service,#treatment_search_centre,#treatment_search_status").select2({dropdownCssClass : 'bigdrop'}); 
+    $("#treatment_search_service,#treatment_search_centre,#treatment_search_status,#appoint_search_service,#appoint_search_centre,#appoint_search_status").select2({dropdownCssClass : 'bigdrop'}); 
    
 });
