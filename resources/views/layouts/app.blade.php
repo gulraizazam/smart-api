@@ -1,82 +1,44 @@
 <!DOCTYPE html>
-<!--[if IE 8]> <html lang="en" class="ie8 no-js"> <![endif]-->
-<!--[if IE 9]> <html lang="en" class="ie9 no-js"> <![endif]-->
-<!--[if !IE]><!-->
 <html lang="en">
-<!--<![endif]-->
-<!-- BEGIN HEAD -->
+<!--begin::Head-->
 <head>
-    @include('partials.head')
+    <title>Cutera Aesthetics</title>
+    <meta charset="utf-8" />
+    <meta name="description" content="Smart Aesthetic" />
+    <meta name="keywords" content="Smart Aesthetic" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" href="{{asset('favicon.ico')}}" />
+    <link rel="shortcut icon" href="https://cuteraesthetics.com/wp-content/themes/cutera/assets/img/favicon.png" />
+    <!--begin::Fonts-->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
+    <!--end::Fonts-->
+    <!--begin::Global Stylesheets Bundle(used by all pages)-->
+    <link href="{{asset('assets/css/auth/plugins.bundle.css')}}" rel="stylesheet" type="text/css" />
+    <link href="{{asset('assets/css/auth/style.bundle.css')}}" rel="stylesheet" type="text/css" />
+    <!--end::Global Stylesheets Bundle-->
 </head>
-<!-- END HEAD -->
+<!--end::Head-->
+<!--begin::Body-->
+<body id="kt_body" class="bg-body">
+<!--begin::Main-->
 
-<body class="page-header-fixed page-sidebar-closed-hide-logo page-container-bg-solid">
-<div class="page-wrapper">
-    <!-- BEGIN HEADER -->
-    @include('partials.topbar')
-    <!-- END HEADER -->
-    <!-- BEGIN HEADER & CONTENT DIVIDER -->
-    <div class="clearfix"> </div>
-    <!-- END HEADER & CONTENT DIVIDER -->
-    <!-- BEGIN CONTAINER -->
-    <div class="page-container">
-        <!-- BEGIN SIDEBAR -->
-        @include('partials.sidebar')
-        <!-- END SIDEBAR -->
-        <!-- BEGIN CONTENT -->
-        <div class="page-content-wrapper">
-            @if(session('success'))
-                <div class="alert alert-success display-hide"><button class="close" data-close="alert"></button> {{ session('success') }}</div>
-            @endif
-            <!-- BEGIN CONTENT BODY -->
-            <div class="page-content">
-                @yield('title')
+@yield('content')
 
-                @if (count($errors) > 0)
-                    <div class="alert alert-danger">
-                        <button class="close" data-close="alert"></button> <strong>Whoops!</strong> There were problems with input:
-                        <ul>
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
+<!--end::Main-->
 
-                @include('flash::message')
+<!--begin::Javascript-->
+<!--begin::Global Javascript Bundle(used by all pages)-->
+<script src="{{asset('assets/js/auth/plugins.bundle.js')}}"></script>
+<script src="{{asset('assets/js/auth/scripts.bundle.js')}}"></script>
+<!--end::Global Javascript Bundle-->
+<!--begin::Page Custom Javascript(used by this page)-->
+<script src="{{asset('assets/js/auth/general.js')}}"></script>
+<script src="{{asset('assets/js/auth/password-reset.js')}}"></script>
+<!--end::Page Custom Javascript-->
+<!--end::Javascript-->
 
-                @yield('content')
-            </div>
-            <!-- END CONTENT BODY -->
-        </div>
-        <!-- END CONTENT -->
-    </div>
-    <!-- END CONTAINER -->
-    <!-- BEGIN FOOTER -->
-    @include('partials.footer')
-    <!-- END FOOTER -->
-</div>
-<div class="quick-nav-overlay"></div>
-<!-- END QUICK NAV -->
-    @include('partials.javascripts')
-<script type="text/javascript">
-    $(document).ready(function () {
-        setTimeout(function() {
-            $('.alert-success').slideUp('fast');
-        }, 2000);
-
-        setTimeout(function() {
-            $('.alert-warning').slideUp('fast');
-
-        }, 15000);
-    });
-function phoneReset(sel){
-    $("#"+sel).val('')
-    $("#"+sel).attr("type","number");
-    $("#"+sel).attr("readonly",false);
-}
-</script>
+@include('admin.partials.messages', ['toaster' => true])
 
 </body>
-
+<!--end::Body-->
 </html>

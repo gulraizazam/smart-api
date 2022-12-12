@@ -1,0 +1,1 @@
+{!! Form::select('appointment_status_id', $appointment_statuses, null, ['onchange' => 'FormValidation.statusListener($(this).val())', 'id' => 'appointment_status_id', 'class' => 'form-control select2']) !!}

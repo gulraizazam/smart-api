@@ -1,16 +1,16 @@
 /node_modules
 /public/hot
 /public/storage
-/public/leadsdata
-/public/towndata
-/public/pabaodata
-/public/towndata
-/database/backups/*
+
+/storage/app
+/storage/settings
+
 /storage/framework
 /bootstrap/cache
 /storage/*.key
 /storage/settings/
 /vendor
+
 /.idea
 /.vagrant
 Homestead.json
@@ -26,3 +26,4 @@ public/pdf_download/
 /public/audit2020_consultancy
 /public/audit2020_treatment
 /phpMyAdmin
+

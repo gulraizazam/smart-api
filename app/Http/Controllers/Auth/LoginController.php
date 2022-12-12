@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Auth;
-use DB;
-use Response;
-use Session;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Session;
 
 class LoginController extends Controller
 {
@@ -58,6 +61,7 @@ class LoginController extends Controller
     }
 
     public function login(\Illuminate\Http\Request $request) {
+
         $this->validateLogin($request);
 
         // If the class is using the ThrottlesLogins trait, we can automatically throttle
@@ -83,7 +87,7 @@ class LoginController extends Controller
                 return redirect()
                     ->back()
                     ->withInput($request->only($this->username(), 'remember'))
-                    ->withErrors(['active' => 'Your account has been deactivated, please contact administrator.']);
+                    ->with(['error' => 'Your account has been deactivated, please contact administrator.']);
             }
         }
 
@@ -92,7 +96,12 @@ class LoginController extends Controller
         // user surpasses their maximum number of attempts they will get locked out.
         $this->incrementLoginAttempts($request);
 
-        return $this->sendFailedLoginResponse($request);
+        //return $this->sendFailedLoginResponse($request);
+
+        return redirect()
+            ->back()
+            ->withInput()
+            ->with(['error' => 'Your credentials did not match with our record.']);
     }
 
     /**
@@ -104,4 +113,30 @@ class LoginController extends Controller
     {
         return Response::json(['guest' => Auth::guest()]);
     }
+
+    /**
+     * Log the user out of the application.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
+    public function logout(Request $request)
+    {
+        Filters::remove_filters();
+
+        $this->guard()->logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        if ($response = $this->loggedOut($request)) {
+            return $response;
+        }
+
+        return $request->wantsJson()
+            ? new JsonResponse([], 204)
+            : redirect('/');
+    }
+
 }

@@ -1,0 +1,120 @@
+jQuery(document).ready(function() {
+
+    var result = get_query();
+
+    if (typeof result.tab !== 'undefined') {
+        $("." + result.tab+ '-tab').click();
+    } else {
+        $(".appointment-tab").addClass("nav-bar-active")
+    }
+
+    if (typeof result.city_id !== "undefined"
+        && typeof result.location_id !== "undefined"
+        && typeof result.doctor_id !== "undefined"
+        && typeof result.tab !== 'undefined') {
+
+        loadDoctors(result.location_id, result.tab);
+
+        setTimeout( function () {
+            $("#consultancy_city_filter").val(result.city_id).change();
+            $("#consultancy_doctor_filter").val(result.doctor_id).change();
+        }, 400);
+    }
+
+    $("#Add_comment").click(function () {
+
+        if ($('#consultancy_comment').val() !== '') {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'get',
+                url: route('admin.appointments.storecomment'),
+                data: {
+                    'comment': $('#consultancy_comment').val(),
+                    'appointment_id': $('#comment_appointment_id').val(),
+                },
+                success: function (data) {
+                    $('#commentsection').prepend(commentData(data.username, data.appointmentCommentDate, data.appointment.comment));
+                },
+
+            });
+        } else {
+            toastr.error("Please fill out the comment field");
+        }
+        $('#cment')[0].reset();
+    });
+
+    $("#create_consultancy_service").change( function () {
+        loadLead(patient);
+    });
+
+    patientSearch('appointment_patient_id');
+
+    $(document).on("click", ".croxcli", function () {
+        $(this).parent('div').find('.search_field').val('').change()
+       // $('.search_field').val('').change();
+        $('.appointment_patient_id').val(null).trigger('change');
+    });
+
+});
+
+var loadScheduledTime = '<input id="edit_scheduled_time" readonly="true" name="scheduled_time" class="form-control" type="text" class="required" placeholder="Schedule Time">';
+
+let doctorListener = function (doctorId) {
+
+    var scheduled_date = $('#edit_scheduled_date').val();
+
+    if (
+        (doctorId != '' && doctorId != null) &&
+        (scheduled_date != '' && scheduled_date != null)
+    ) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_doctor_rota'),
+            type: 'POST',
+            data: {
+                location_id: $('#edit_location').val(),
+                doctor_id: doctorId,
+                scheduled_date: scheduled_date,
+                appointment_id: $('#appointment_id').val(),
+                resourceRotaDayID: $('#resourceRotaDayID').val(),
+                form: 'EditFormValidation',
+                idPrefix: 'consultancty_'
+            },
+            cache: false,
+            success: function(response) {
+
+                if(response.status) {
+                    if(
+                        (response.resource_has_rota_day.start_time != '' && response.resource_has_rota_day.start_time != null) &&
+                        (response.resource_has_rota_day.end_time != '' && response.resource_has_rota_day.end_time != null)
+                    ) {
+                        resetScheduledTime();
+                        if(response.resource_has_rota_day.start_off){
+                            $('#edit_scheduled_time').val(response.selected);
+                            loadScheduledTime(response.resource_has_rota_day.start_time, response.resource_has_rota_day.end_time,response.resource_has_rota_day.start_off,response.resource_has_rota_day.end_off);
+                        } else {
+                            $('#edit_scheduled_time').val(response.selected);
+                            loadScheduledTime(response.resource_has_rota_day.start_time, response.resource_has_rota_day.end_time,false,false);
+                        }
+
+
+                    } else {
+                        $('#rotaError').show();
+                       // resetScheduledTime();
+                    }
+                } else {
+                    //resetScheduledTime();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+               // resetScheduledTime();
+            }
+        });
+    } else {
+       // resetScheduledTime();
+    }
+}
