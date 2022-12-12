@@ -16,12 +16,18 @@
     window._token = '{{ csrf_token() }}';
 </script>
 
-@yield('javascript')
+@stack('javascript')
 
 <script>
     $(document).ready(function () {
         $('#clickmewow').click(function () {
             $('#radio1003').attr('checked', 'checked');
+        });
+
+        $(".toggle-forms").click(function () {
+            $(".forgot-form").toggleClass('d-none');
+            $(".login-signin").toggleClass('d-none');
+            $(".fv-help-block").remove();
         });
     })
 </script>

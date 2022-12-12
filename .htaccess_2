@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+# Requested filename does NOT contain index.php, resources, or robots.txt
+RewriteCond $1 !^(index\.php|resources|phpMyAdmin|robots\.txt)
+# Requested file does NOT exist
+RewriteCond %{REQUEST_FILENAME} !-f
+# Requested directory does NOT exist
+RewriteCond %{REQUEST_FILENAME} !-d
+# If all the above rules are true, redirect to index.php/$1
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+
+</IfModule>
