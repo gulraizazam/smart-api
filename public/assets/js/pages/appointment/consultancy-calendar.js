@@ -417,7 +417,9 @@ function setDetailData(response) {
         let location = appointment.location;
         let appointment_status = appointment.appointment_status;
         let service = appointment.service;
-
+        const [hourString, minute] = appointment.scheduled_time.split(":");
+        const hour = +hourString % 24;
+        var test = (hour % 12 || 12) + ":" + minute + (hour < 12 ? "AM" : "PM");
         detailActions(appointment, invoice, invoiceid, permissions);
 
         $("#modal_consultancy_detail").modal("show");
@@ -429,7 +431,7 @@ function setDetailData(response) {
             $("#patient_c_id").text(makePatientId(patient?.id));
         }
         $("#patient_gender").text(getGender(patient?.gender));
-        $("#patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
+        $("#patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + test);
         $("#doctor_name").text(doctor?.name ?? 'N/A');
         $("#city_name").text(city?.name ?? 'N/A');
         $("#center_name").text(location?.name ?? 'N/A');
