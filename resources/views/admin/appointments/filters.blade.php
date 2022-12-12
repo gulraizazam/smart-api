@@ -1,31 +1,16 @@
 @push("css")
     <style>
-        .service-filter .select2 {
-            width: 135% !important;
+       
+       .position-relative{
+            position: relative;
         }
-        .type-filter .select2 {
-            margin-left: 4%;
-            width: 80% !important;
-        }
-
-        .doctor-filter .select2 {
-            margin-left: -27%;
-            width: 80% !important
-        }
-        .center-filter .select2 {
-            margin-left: -136%;
-            width: 195% !important;
-        }
-
-        .appoint_search_status .select2 {
-            width: 80% !important;
-        }
-        .appoint_search_city .select2 {
-            width: 70% !important;
-        }
-        .croxcli {
-            padding-left: 85% !important;
+      
+        .filterouterdiv .croxcli {
             position: absolute;
+            bottom: 0px;
+            right: 0;
+            padding-left: 11px !important;
+            padding: 9px 11px;
         }
 
     </style>
@@ -47,15 +32,15 @@
     </div>
 
 
-    <div class="row mb-6">
+    <div class="row mb-6 flex-column flex-sm-row">
 
-        <div class="col-lg-2 mb-lg-0 mb-6 position-relative">
+        <div class="filterouterdiv mb-6 position-relative">
             <label>Patient Search:</label>
             <input class="form-control filter-field appointment_patient_id" onchange="SetPatient()">
             <input type="hidden" class="filter-field search_field" id="appointment_patient_id">
-            <span onclick="addUsers()" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+            <span onclick="addUsers()" class="croxcli" ><i class="fa fa-times" aria-hidden="true"></i></span>
             <div class="suggesstion-box" style="display: none;">
-                <ul class="suggestion-list"></ul>
+                <ul class="suggestion-list w-100"></ul>
             </div>
         </div>
 
@@ -74,9 +59,9 @@
             <input style="width: 65%;" type="text" oninput="phoneField(this);" id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field">
         </div>--}}
 
-        <div class="col-lg-2 mb-lg-0 mb-6" style="margin-left: -1.7%; ">
+        <div class="filterouterdiv  mb-6" >
             <label>Scheduled:</label>
-            <div class="input-daterange input-group to-from-datepicker" style="width: 112%;">
+            <div class="input-daterange input-group to-from-datepicker datefromto" >
                 <input type="text" id="appoint_search_start" autocomplete="off" class="form-control filter-field datatable-input" name="created_start" placeholder="From" onchange="SetFromdate()">
                 <div class="input-group-append" style="width: 0;">
                     <span class="input-group-text">
@@ -87,31 +72,29 @@
             </div>
         </div>
 
-       <div class="col-lg-2 mb-lg-0 mb-6 appoint_search_status">
+       <div class="filterouterdiv  mb-6 appoint_search_status">
             <label>Service:</label>
             <select class="form-control filter-field select2" id="appoint_search_service" onchange="SetService()"></select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 doctor-filter">
-            <label style="margin-left: -27%;">Phone:</label>
-            <br>
-            <input style="width: 80%;margin-left: -30%;" type="text"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
+        <div class="filterouterdiv  mb-6 doctor-filter">
+            <label >Phone:</label>
+            <input  type="text"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
         </div>
 
-        <div class="col-lg-1 mb-lg-0 mb-6 center-filter">
-            <label style="margin-left: -136%;">Centre:</label>
-            <br>
+        <div class="filterouterdiv mb-6 center-filter">
+            <label >Centre:</label>
             <select class="form-control filter-field select2" id="appoint_search_centre" onchange="SetCenter()"></select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 appoint_search_status" style="margin-left: -4.2%;">
-            <label style="width: 80%">Status:</label>
+        <div class="filterouterdiv  mb-6 appoint_search_status" >
+            <label >Status:</label>
             <select class="form-control filter-field select2" id="appoint_search_status" onchange="SetStatus()"></select>
         </div>
 
        
 
-        <div class="col-lg-2 mb-lg-0 mt-8" style="margin-left: -4.5%;">
+        <div class="  mt-8" >
 
             @include('admin.partials.filter-buttons', ['custom_reset', $custom_reset])
 

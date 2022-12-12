@@ -86131,9 +86131,7 @@ body {
     .filterouterdiv .datefromto {
         width: 100%;
     }
-    .filterouterdiv .datefromto .form-control {
-        width: auto;
-    }
+   
     .filterouterdiv .select2 {
         width: 100% !important;
     }
