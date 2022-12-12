@@ -260,11 +260,12 @@ function customDatePicker() {
 }
 
 function addUsers() {
+    $(".suggesstion-box").hide(); 
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
     $('.search_field').val('').change();
    
-    $(".suggesstion-box").hide(); 
+    
     
 }
 
@@ -1046,3 +1047,6 @@ function toggleMenu($this, $class) {
 
     $(".section-" + $class).show();
 }
+
+
+

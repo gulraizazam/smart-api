@@ -86087,3 +86087,54 @@ body {
         left: 70px;
     }
 }
+
+.filterouterdiv{
+    margin-right: 15px;
+}
+.filterouterdiv label{
+    display: block;
+}
+.filterouterdiv input{
+    border-radius: 0.42rem;
+}
+.filterouterdiv .datefromto{
+    width: 240px;
+}
+.filterouterdiv .input-daterange input:first-child{
+    border-radius: 0.42rem  0 0 0.42rem;
+}
+.filterouterdiv .input-daterange input:last-child{
+    border-radius: 0 0.42rem 0.42rem 0;
+}
+.filterouterdiv .select2{
+  width: 120px !important; 
+}
+.filterouterdiv .form-control{
+    width: 170px;
+}
+.filterouterdiv .datefromto .form-control{
+    width: 120px;
+}
+
+@media (min-width: 576px) {
+    .select2-container--open .select2-dropdown--below.bigdrop{
+        width: 200px !important;
+    }
+}
+@media (max-width: 576px) {
+    .filterouterdiv {
+        margin-right: 0;
+    }
+    .filterouterdiv .form-control {
+        width: 100%;
+    }
+    .filterouterdiv .datefromto {
+        width: 100%;
+    }
+    .filterouterdiv .datefromto .form-control {
+        width: auto;
+    }
+    .filterouterdiv .select2 {
+        width: 100% !important;
+    }
+}

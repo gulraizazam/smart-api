@@ -64,9 +64,9 @@ td.fc-axis.fc-widget-content{
     width: 275px !important;
 }
 
-.flex-column {
+/* .flex-column {
     flex-direction: column !important;
-}
+} */
 .d-flex {
     display: flex !important;
 }

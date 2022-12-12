@@ -6,6 +6,7 @@
 /storage/framework
 /bootstrap/cache
 /storage/*.key
+/storage/settings/
 /vendor
 .env
 .env.backup
@@ -15,5 +16,6 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+composer.lock
 /.idea
 /.vscode

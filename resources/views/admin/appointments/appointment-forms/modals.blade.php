@@ -27,7 +27,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="modal_create_consultancy" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modal_create_consultancy"  aria-hidden="true">
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered form-popup" id="consultancy_edit">
 
@@ -83,7 +83,7 @@
 
 {{--treatment forms--}}
 
-<div class="modal fade" id="modal_create_treatment" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modal_create_treatment"  aria-hidden="true">
     <!--begin::Modal dialog-->
     <div class="modal-dialog modal-dialog-centered form-popup" id="treatment_edit">
 
