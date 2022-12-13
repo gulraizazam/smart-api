@@ -88,9 +88,9 @@ function editRow(url, id, $class = 'detail-actions') {
     }
 
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
+        // headers: {
+        //     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        // },
         url: url,
         type: "GET",
         cache: false,

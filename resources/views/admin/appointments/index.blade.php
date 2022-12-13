@@ -239,6 +239,29 @@
              {
                 $("#filter_phone").val($("#appoint_search_phone").val());
              }
+             function changeAppointmentStatus()
+             {
+                
+                var appointment_id = $("#appointment_id").val();
+                var appointment_status_not_show = $("#appointment_status_not_show").val();
+                var cancellation_reason_other_reason = $("#cancellation_reason_other_reason").val();
+                $.ajax({
+                    // headers: {
+                    //     'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                    // },
+                    url: route('admin.appointments.storeappointmentstatus'),
+                    type: "post",
+                    data: {id: appointment_id,appointment_status_not_show:appointment_status_not_show,cancellation_reason_other_reason:cancellation_reason_other_reason},
+                    cache: false,
+                    success: function(response) {
+                       console.log(response);
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
+                
+             }
             ////////////
 
             function setDashboardFilters() {
