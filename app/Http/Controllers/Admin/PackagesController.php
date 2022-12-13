@@ -192,9 +192,12 @@ class PackagesController extends Controller
      */
     public function savepackages_service(Request $request)
     {
+        
         $status = true;
 
         $service_data = Bundles::find($request->bundle_id);
+       
+        
         /*Total belongs to total Amount that increase when we enter new bundle*/
         $total = str_replace( ',', '', $request->package_total);//filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
         if($total == ""){
@@ -208,13 +211,15 @@ class PackagesController extends Controller
             if ($package_bundles) {
                 foreach ($package_bundles as $bundle) {
                     if ($service_data->tax_treatment_type_id == 1) {
+                        
                         if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int)$request->is_exclusive)) {
+                            
                             $status = false;
                         }
-                    } else { /*this is commented because we want to add services with different prices*/
-                        /*if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
+                    }else { /*this is commented because we want to add services with different prices*/
+                        if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
                             $status = false;
-                        }*/
+                        }
                     }
                 }
             }
