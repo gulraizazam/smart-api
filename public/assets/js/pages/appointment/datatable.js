@@ -118,9 +118,9 @@ function editStatus(id) {
 
 
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
+        // headers: {
+        //     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        // },
         url: route('admin.appointments.showappointmentstatus'),
         type: "GET",
         data: {id: id},
