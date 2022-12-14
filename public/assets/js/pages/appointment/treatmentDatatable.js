@@ -103,7 +103,7 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 210,
+        width: 125,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
@@ -417,12 +417,18 @@ function actions(data) {
                     actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                             <!--<span class="navi-text">Create Invoice</span>-->\
+                        </a>\
+                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm">\
+                        <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
                 }
 
                 if(data.appointment_type == 1) {
                     actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
+                        </a>\
+                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm">\
+                        <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
                 }
             }
@@ -433,6 +439,9 @@ function actions(data) {
             if(data.invoice) {
                 actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="btn btn-icon btn-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
+                        </a>\
+                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm">\
+                        <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
             }
         }
