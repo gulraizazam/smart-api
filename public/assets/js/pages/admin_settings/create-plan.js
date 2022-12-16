@@ -336,10 +336,9 @@ var table_columns = [
             return statuses(data, status_url);
         }
     },{
-        field: 'refund',
-        title: 'Refund',
-        sortable: false,
-        width: 60,
+        field: 'created_at',
+        title: 'Created at',
+        width: 'auto',
     },{
         field: 'actions',
         title: 'Actions',
@@ -351,9 +350,10 @@ var table_columns = [
             return actions(data);
         }
     },{
-        field: 'created_at',
-        title: 'Created at',
-        width: 'auto',
+        field: 'refund',
+        title: 'Refund',
+        sortable: false,
+        width: 60,
     }];
 
 function actions(data) {
@@ -982,9 +982,9 @@ function displayData(response) {
 }
 
 function applyFilters(datatable) {
-
+   
     $('#apply-filters').on('click', function() {
-
+       
         let filters =  {
             delete: '',
             id: $("#search_id").val(),
@@ -993,6 +993,8 @@ function applyFilters(datatable) {
             package_id: $("#search_plan_id").val(),
             location_id: $("#search_location_id").val(),
             status: $("#search_status").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
             filter: 'filter',
         }
 
