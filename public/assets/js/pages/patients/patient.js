@@ -137,9 +137,9 @@ function editRow(url, id) {
     $("#modal_edit_patients_form").attr("action", route('admin.patients.update', {id: id}));
 
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
+        // headers: {
+        //     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        // },
         url: url,
         type: "GET",
         cache: false,

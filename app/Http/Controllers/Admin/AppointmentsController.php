@@ -120,6 +120,8 @@ class AppointmentsController extends Controller
      */
     public function datatable(Request $request)
     {
+        
+       
         $listing_setting = Settings::where([
             'account_id' => Auth::User()->account_id,
             'slug' => 'sys-list-mode'
@@ -136,7 +138,7 @@ class AppointmentsController extends Controller
     }
 
     public function treatmentDatatable(Request $request)
-    {
+    { 
         $listing_setting = Settings::where([
             'account_id' => Auth::User()->account_id,
             'slug' => 'sys-list-mode'
@@ -782,7 +784,7 @@ class AppointmentsController extends Controller
      */
     private function getDefaultListing(Request $request)
     {
-
+       
         $where = array();
 
         /*
@@ -1133,7 +1135,8 @@ class AppointmentsController extends Controller
         $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
-            ->orderBy("appointments.scheduled_date", "DESC")
+            ->orderBy("appointments.created_at", "DESC")
+            //->orderBy("appointments.scheduled_date", "DESC")
             //->orderBy("appointments.scheduled_time", "DESC")
             ->get();
 
@@ -1203,7 +1206,7 @@ class AppointmentsController extends Controller
 
                 $index++;
             }
-
+            
             $records["meta"] = [
                 'field' => $orderBy,
                 'page' => $page,
@@ -1261,16 +1264,17 @@ class AppointmentsController extends Controller
 
         if ($request->has('sort')) {
 
-            list($orderBy, $order) = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
-
+            //list($orderBy, $order) = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
+            list($orderBy, $order) = getSortBy($request, 'appointments.created_at', 'DESC', 'appointments');
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'appointments', 'order', $order);
         } else {
 
-            $orderBy = 'scheduled_date';
+            //$orderBy = 'scheduled_date';
+            $orderBy = 'created_at';
             $order = 'desc';
-            if ($orderBy == 'scheduled_date') {
-                $orderBy = 'appointments.scheduled_date';
+            if ($orderBy == 'created_at') {
+                $orderBy = 'appointments.created_at';
 
                 Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
                 Filters::put(Auth::User()->id, 'appointments', 'order', $order);
@@ -1601,7 +1605,8 @@ class AppointmentsController extends Controller
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             //->orderBy($orderBy, $order)
-            ->orderBy("appointments.scheduled_date", "DESC")
+            //->orderBy("appointments.scheduled_date", "DESC")
+            ->orderBy("appointments.created_at", "DESC")
             ->get();
 
         $invoicearray = array();
@@ -3276,7 +3281,7 @@ class AppointmentsController extends Controller
     public function storeAppointmentStatuses(Request $request)
     {
         $data = $request->all();
-
+        
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointment = Appointments::find($request->get('id'));
         if (!$appointment) {
@@ -3378,10 +3383,10 @@ class AppointmentsController extends Controller
             $lead->lead_status_id = 1;
             $lead->save();
         }if($data['base_appointment_status_id'] == 1){
-        $lead = Leads::findOrFail($appointment->lead_id);
-        $lead->lead_status_id = 4;
-        $lead->save();
-    }
+            $lead = Leads::findOrFail($appointment->lead_id);
+            $lead->lead_status_id = 4;
+            $lead->save();
+        }
         /**
          * Dispatch Elastic Search Index
          */
@@ -3392,7 +3397,7 @@ class AppointmentsController extends Controller
             ])
         );
 
-        return ApiHelper::apiResponse($this->success, 'Status has been change successfully!');
+        return ApiHelper::apiResponse($this->success, 'Status has been change successfully!',true,['appontment_type_id'=>$request->appointment_type_id]);
         //return response()->json(['status' => 1, 'base_appointment_status_name' => $appointment_status_name->name]);
     }
 
