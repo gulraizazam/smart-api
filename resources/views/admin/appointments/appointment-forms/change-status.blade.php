@@ -29,6 +29,7 @@
                 @method('put')
 
                 <input type="hidden" name="id" id="appointment_id">
+                <input type="hidden" name="appointment_type_id" id="appointment_type_id">
                 <input type="hidden" name="appointment_status_not_show" value="" id="appointment_status_not_show">
                 <input type="hidden" name="cancellation_reason_other_reason" value="" id="cancellation_reason_other_reason">
 

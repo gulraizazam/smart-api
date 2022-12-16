@@ -148,7 +148,7 @@ function setStatusData(response, id) {
         let base_appointments = response.data.base_appointments;
         let appointment_status_not_show = response.data.appointment_status_not_show;
         let cancellation_reason_other_reason = response.data.cancellation_reason_other_reason;
-
+        let appointment_type_id = response.data.appointment.appointment_type_id;
         let base_status_option = '<option value="">Select Status</option>';
         if (base_appointment_statuses) {
             Object.entries(base_appointment_statuses).forEach(function (base_status) {
@@ -162,7 +162,7 @@ function setStatusData(response, id) {
                 appoint_status_option += '<option value="'+appointment_status[0]+'">'+appointment_status[1]+'</option>';
             });
         }
-
+        $("#appointment_type_id").val(appointment_type_id);
         $("#base_appointment_status_id").html(base_status_option);
         $("#appointment_status_id").html(appoint_status_option);
 
@@ -1079,7 +1079,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
+    
     try {
 
         let appointment_statuses = filter_values.appointment_statuses;

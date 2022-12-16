@@ -166,12 +166,7 @@
                 },1000);
             }
 
-            $(document).ready(function () {
-                setTimeout( function () {
-                    setDashboardFilters();
-                },1500)
-
-            });
+            
             ////////////////filters set//////////
             function SetFromdate(){
                 $("#filter_date_from").val($("#appoint_search_start").val());
@@ -263,7 +258,12 @@
                 
              }
             ////////////
+            $(document).ready(function () {
+                setTimeout( function () {
+                    setDashboardFilters();
+                },1500)
 
+            });
             function setDashboardFilters() {
 
                 let result = get_query();
@@ -335,7 +335,8 @@
                     url: '{{route('admin.users.get_centers')}}',
                     type: 'GET',
                     dataType: 'json',
-                    success: function (response) {
+                    success: function (response) { 
+                        
                         if (response.status) {
                             $("#consultancy_location_filter").val(response.data.center).change();
                             $("#treatment_location_filter").val(response.data.center).change();
