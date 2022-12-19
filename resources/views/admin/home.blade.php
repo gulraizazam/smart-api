@@ -1156,7 +1156,7 @@
 <script>
 
     $(document).ready( function () {
-        
+        setTimeout(function() {
 
         /*collection by center*/
         $.ajax({
@@ -1525,6 +1525,7 @@
                 errorMessage(xhr);
             }
         });
+    }, 5000);
 
     });
     function AppointmentByType(pie,colors) {
