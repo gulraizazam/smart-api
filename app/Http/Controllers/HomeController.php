@@ -66,11 +66,11 @@ class HomeController extends Controller
 
         list($start_date, $end_date) = $this->getDates($request);
 
-         $data = $this->recentActivities($data);
-        // $data = $this->consultancies($data, $start_date, $end_date);
-        // $data = $this->treatments($data, $start_date, $end_date);
-        // $data = $this->leads($data, $location_id, $start_date, $end_date);
-        // $data = $this->salesByCentre($request, $data);
+        $data = $this->recentActivities($data);
+        $data = $this->consultancies($data, $start_date, $end_date);
+        $data = $this->treatments($data, $start_date, $end_date);
+        $data = $this->leads($data, $location_id, $start_date, $end_date);
+        $data = $this->salesByCentre($request, $data);
 
         $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
