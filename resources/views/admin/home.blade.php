@@ -1168,7 +1168,7 @@
     var ElevenCalled=false;
     var TwelveCalled=false;
     $(window).scroll(function(){
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.09) && !isAjaxCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.07) && !isAjaxCalled){
             isAjaxCalled= true; 
             $.ajax({
                 url: route('admin.home.collectionByCentre'),
@@ -1208,7 +1208,7 @@
             });
             
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.18) && !isSecCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.16) && !isSecCalled){
             isSecCalled= true; 
             $.ajax({
                 url: route('admin.home.myCollectionByCentre'),
@@ -1247,7 +1247,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.27) && !isThirdCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.25) && !isThirdCalled){
             isThirdCalled= true; 
             $.ajax({
                 url: route('admin.home.revenueByCentre'),
@@ -1281,7 +1281,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.36) && !isFourthCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.34) && !isFourthCalled){
             isFourthCalled= true; 
             $.ajax({
                 url: route('admin.home.myRevenueByCentre'),
@@ -1317,7 +1317,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.45) && !isFifthCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.43) && !isFifthCalled){
             isFifthCalled= true; 
             $.ajax({
                 url: route('admin.home.revenueByService'),
@@ -1358,7 +1358,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.54) && !isSixCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.52) && !isSixCalled){
             isSixCalled= true; 
             $.ajax({
                 url: route('admin.home.myRevenueByService'),
@@ -1401,7 +1401,7 @@
         }
         
         
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.62) && !isnineCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.60) && !isnineCalled){
             isnineCalled= true; 
             $.ajax({
                 url: route('admin.dashboard.appointment_by_status'),
@@ -1440,7 +1440,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.71) && !istenCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.68) && !istenCalled){
             istenCalled= true; 
             $.ajax({
                 url: route('admin.dashboard.appointment_by_status'),
@@ -1479,7 +1479,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.78) && !ElevenCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.75) && !ElevenCalled){
             ElevenCalled= true; 
             $.ajax({
                 url: route('admin.dashboard.appointment_by_type'),
@@ -1518,7 +1518,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.86) && !TwelveCalled){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.82) && !TwelveCalled){
             TwelveCalled= true; 
             $.ajax({
                 url: route('admin.dashboard.appointment_by_type'),
