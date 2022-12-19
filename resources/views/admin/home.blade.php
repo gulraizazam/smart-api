@@ -1525,7 +1525,7 @@
                 errorMessage(xhr);
             }
         });
-    }, 5000);
+    }, 3000);
 
     });
     function AppointmentByType(pie,colors) {
