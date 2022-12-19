@@ -154,7 +154,7 @@
                                                         </svg>
                                                         <!--end::Svg Icon-->
 
-                                                          <span class="dashboard-counter" id="allrevenue">0</span>
+                                                          <span class="dashboard-counter" id="allrevenue">{{!is_null($revenue) ? 'PKR: ' . number_format($revenue) : 'Your are not authorized'}}</span>
                                                     </span>
                                             <a href="javascript:void(0);" style="cursor: pointer;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
@@ -163,9 +163,14 @@
 
                                                     <i class="la la-stethoscope" style="font-size: 40px;"></i>
 
-                                                      <span class="dashboard-counter" id="allconsult">0</span>
+                                                      <span class="dashboard-counter" id="allconsult">{{!is_null($done_consultancies) && !is_null($all_consultancies) ? $done_consultancies .'/'.$all_consultancies : 'Your are not authorized'}}</span>
                                                 </span>
-                                            
+                                            @if(!is_null($done_consultancies) && !is_null($all_consultancies))
+                                                <a href="{{route('admin.consultancy.index', ['type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => implode(',', $location_id)])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            @else
+
+                                            <a href="javascript:void(0);" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            @endif
                                         </div>
                                     </div>
                                     <!--end::Row-->
@@ -174,9 +179,13 @@
                                         <div class="col bg-light-danger px-6 py-8 rounded-xl mr-7">
                                                     <span class="svg-icon svg-icon-3x svg-icon-danger d-block my-2">
                                                        <i class="la la-medkit" style="font-size: 40px;"></i>
-                                                         <span class="dashboard-counter" id="alltreat">0</span>
+                                                         <span class="dashboard-counter" id="alltreat">{{!is_null($done_treatments) && !is_null($all_treatments) ? $done_treatments .'/'. $all_treatments : 'Your are not authorized'}}</span>
                                                     </span>
-                                            
+                                            @if(!is_null($done_treatments) && !is_null($all_treatments))
+                                                <a href="{{route('admin.treatment.index', ['type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => implode(',', $location_id)])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            @else
+                                            <a href="javascript:void(0);" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            @endif
                                         </div>
                                         <div class="col bg-light-success px-6 py-8 rounded-xl">
                                                   <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
@@ -189,7 +198,7 @@
                                                             </g>
                                                         </svg>
                                                       <!--end::Svg Icon-->
-                                                      <span class="dashboard-counter" id="allleads">0</span>
+                                                      <span class="dashboard-counter" id="allleads">{{$leads !== false && $totalLeads !== false ? $leads .'/'. $totalLeads : 'Your are not authorized'}}</span>
                                                     </span>
 
                                             <a href="{{route('admin.leads.index', ['from' => $start_date, 'to' => $end_date])}}" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
@@ -231,14 +240,99 @@
                             <div class="card-header align-items-center border-0 mt-4">
                                 <h3 class="card-title align-items-start flex-column">
                                     <span class="font-weight-bolder text-dark">Recent Activity</span>
-                                    <span class="text-muted mt-3 font-weight-bold font-size-sm"> activities</span>
+                                    <span class="text-muted mt-3 font-weight-bold font-size-sm">{{count($finance_log) + count($appointment_log)}} activities</span>
                                 </h3>
                             </div>
                             <!--end::Header-->
                             <!--begin::Body-->
                             <div class="card-body pt-4">
                                 <!--begin::Timeline-->
-                               
+                                @if(isset($unauthorized))
+                                    <div class="text-center">
+                                        <span >Your are not authorized</span>
+                                    </div>
+                                @else
+
+                                @if(count($finance_log) + count($appointment_log) > 0)
+                                    <div class="timeline timeline-6 mt-3">
+
+
+                                        @foreach($appointment_log as $appoint_log)
+
+                                            <div class="timeline-item align-items-start">
+                                                    <!--begin::Label-->
+                                                    <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">{{\Illuminate\Support\Carbon::parse($appoint_log['time'])->format("h:i")}}</div>
+                                                    <!--end::Label-->
+                                                    <!--begin::Badge-->
+                                                    <div class="timeline-badge">
+                                                        <i class="fa fa-genderless text-success icon-xl"></i>
+                                                    </div>
+                                                    <!--end::Badge-->
+                                                    <!--begin::Content-->
+                                                    <div class="timeline-content d-flex">
+                                                   <span class="font-weight-bolder text-dark-75 pl-3 font-size-lg">
+                                                       @if($appoint_log['type'] == 'rescheduled')
+                                                           <span style="color: #056FBF;">{{$appoint_log['action_by'] ?? 'N/A'}}</span>
+                                                           {{$appoint_log['action'] ?? 'N/A'}} <span style="color: #F5B183;">{{$appoint_log['screen'] ?? 'N/A'}}</span>
+                                                           for <span style="color: #3E7FBB;">{{$appoint_log['action_for']}}</span>
+                                                           to {{\Illuminate\Support\Carbon::parse($appoint_log['date'])->format("d/m/Y") ?? 'N/A'}}
+                                                       @elseif($appoint_log['type'] == 'booked')
+
+                                                           <span style="color: #056FBF;">{{$appoint_log['action_by'] ?? 'N/A'}}</span>
+                                                           a {{$appoint_log['action'] ?? 'N/A'}}
+                                                           <span style="color: #F5B183;">{{$appoint_log['screen'] ?? 'N/A'}}</span>
+                                                           for <span style="color: #3E7FBB;">{{$appoint_log['action_for']}}</span>
+                                                           at <span style="color: #F5B183;">{{\Illuminate\Support\Carbon::parse($appoint_log['time'])->format("h:s A") ?? 'N/A'}} {{\Illuminate\Support\Carbon::parse($appoint_log['date'])->format("d/m/Y") ?? 'N/A'}} </span>
+                                                           in {{$appoint_log['address'] ?? 'N/A'}}
+
+                                                       @else
+                                                           <span style="color: #056FBF;">{{$appoint_log['action_by'] ?? 'N/A'}}</span>
+                                                           {{$appoint_log['action'] ?? 'N/A'}} <span style="color: #F5B183;">{{$appoint_log['screen'] ?? 'N/A'}}</span>
+                                                           for <span style="color: #3E7FBB;">{{$appoint_log['action_for']}}</span>
+                                                           in {{$appoint_log['address'] ?? 'N/A'}}
+                                                       @endif
+
+
+                                                   </span>
+                                                    </div>
+                                                    <!--end::Content-->
+                                                </div>
+
+                                        @endforeach
+
+                                        @foreach($finance_log as $log)
+
+                                        <div class="timeline-item align-items-start">
+                                            <!--begin::Label-->
+                                            <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">{{\Illuminate\Support\Carbon::parse($log['created_at'])->format("h:i")}}</div>
+                                            <!--end::Label-->
+                                            <!--begin::Badge-->
+                                            <div class="timeline-badge">
+                                                <i class="fa fa-genderless text-danger icon-xl"></i>
+                                            </div>
+                                            <!--end::Badge-->
+                                            <!--begin::Desc-->
+                                            <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
+                                                <span style="color: #056FBF;">{{$log['user_id'] ?? 'N/A'}}</span>
+                                                {{$log['action'] ?? 'N/A'}} a payment of
+                                                 <strong >{{ $log['cash_amount'] }}</strong> for
+                                                <span  style="color: #056FBF;"> {{$log['patient_id']}}</span> against
+                                                <span  style="color: #F5B183;">{{$log['appointment_type_id'] ?? 'Appointment'}}</span>
+                                                 In  {{$log['location_id']}} Centre
+                                            </div>
+                                            <!--end::Desc-->
+                                        </div>
+
+                                    @endforeach
+
+                                </div>
+
+                                @else
+                                    <div class="text-center">
+                                        <span >No Activity Found</span>
+                                    </div>
+                                @endif
+                                @endif
 
                             <!--end::Timeline-->
                             </div>
