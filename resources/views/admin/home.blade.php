@@ -154,7 +154,7 @@
                                                         </svg>
                                                         <!--end::Svg Icon-->
 
-                                                          <span class="dashboard-counter" id="allrevenue">PKR: 0</span>
+                                                          <span class="dashboard-counter" id="allrevenue">{{!is_null($revenue) ? 'PKR: ' . number_format($revenue) : 'Your are not authorized'}}</span>
                                                     </span>
                                             <a href="javascript:void(0);" style="cursor: pointer;" class="text-warning font-weight-bold font-size-h6">Sales</a>
                                         </div>
@@ -163,9 +163,14 @@
 
                                                     <i class="la la-stethoscope" style="font-size: 40px;"></i>
 
-                                                      <span class="dashboard-counter" id="allconsult">0</span>
+                                                      <span class="dashboard-counter" id="allconsult">{{!is_null($done_consultancies) && !is_null($all_consultancies) ? $done_consultancies .'/'.$all_consultancies : 'Your are not authorized'}}</span>
                                                 </span>
-                                            
+                                            @if(!is_null($done_consultancies) && !is_null($all_consultancies))
+                                                <a href="{{route('admin.consultancy.index', ['type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => implode(',', $location_id)])}}" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            @else
+
+                                            <a href="javascript:void(0);" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
+                                            @endif
                                         </div>
                                     </div>
                                     <!--end::Row-->
@@ -174,9 +179,13 @@
                                         <div class="col bg-light-danger px-6 py-8 rounded-xl mr-7">
                                                     <span class="svg-icon svg-icon-3x svg-icon-danger d-block my-2">
                                                        <i class="la la-medkit" style="font-size: 40px;"></i>
-                                                         <span class="dashboard-counter" id="alltreat">0</span>
+                                                         <span class="dashboard-counter" id="alltreat">{{!is_null($done_treatments) && !is_null($all_treatments) ? $done_treatments .'/'. $all_treatments : 'Your are not authorized'}}</span>
                                                     </span>
-                                           
+                                            @if(!is_null($done_treatments) && !is_null($all_treatments))
+                                                <a href="{{route('admin.treatment.index', ['type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => implode(',', $location_id)])}}" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            @else
+                                            <a href="javascript:void(0);" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
+                                            @endif
                                         </div>
                                         <div class="col bg-light-success px-6 py-8 rounded-xl">
                                                   <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
@@ -189,7 +198,7 @@
                                                             </g>
                                                         </svg>
                                                       <!--end::Svg Icon-->
-                                                      <span class="dashboard-counter" id="allleads">0</span>
+                                                      <span class="dashboard-counter" id="allleads">{{$leads !== false && $totalLeads !== false ? $leads .'/'. $totalLeads : 'Your are not authorized'}}</span>
                                                     </span>
 
                                             <a href="{{route('admin.leads.index', ['from' => $start_date, 'to' => $end_date])}}" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Leads</a>
