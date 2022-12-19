@@ -66,7 +66,7 @@ class HomeController extends Controller
 
         list($start_date, $end_date) = $this->getDates($request);
 
-        //$data = $this->recentActivities($data);
+        $data = $this->recentActivities($data);
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
         $data = $this->leads($data, $location_id, $start_date, $end_date);
