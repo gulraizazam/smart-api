@@ -240,7 +240,7 @@
                             <div class="card-header align-items-center border-0 mt-4">
                                 <h3 class="card-title align-items-start flex-column">
                                     <span class="font-weight-bolder text-dark">Recent Activity</span>
-                                    <span class="text-muted mt-3 font-weight-bold font-size-sm">0 activities</span>
+                                    <span class="text-muted mt-3 font-weight-bold font-size-sm">{{count($finance_log) + count($appointment_log)}} activities</span>
                                 </h3>
                             </div>
                             <!--end::Header-->
