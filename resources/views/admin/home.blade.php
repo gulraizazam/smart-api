@@ -345,7 +345,7 @@
                     @if(\Illuminate\Support\Facades\Gate::allows("dashboard_collection_by_centre"))
                     <div class="col-lg-12 col-xxl-12">
                         <!--begin::Stats Widget 11-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="collectionbycenter">
 
                            
 
@@ -1154,380 +1154,413 @@
 
 
 <script>
+    
+    var isAjaxCalled= false; 
+    var isSecCalled= false; 
+    var isThirdCalled= false;
+    var isFourthCalled=false;
+    var isFifthCalled=false;
+    var isSixCalled=false;
+    var isSevenCalled=false;
+    var isEightCalled=false;
+    var isnineCalled=false;
+    var istenCalled=false;
+    var ElevenCalled=false;
+    var TwelveCalled=false;
+    $(window).scroll(function(){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.09) && !isAjaxCalled){
+            isAjaxCalled= true; 
+            $.ajax({
+                url: route('admin.home.collectionByCentre'),
+                type: "GET",
+                data: {'type': '{{request('type')}}'},
+                cache: false,
+                success: function (response) {
+                    let total = response.data.total;
+                    $(".total-pie-chart").text(total)
+                    @if(request('type') == 'today')
+                        $(".pie-income-title").text('Today Income')
+                        var pie = response.data.pie.today;
+                    @endif
+                    @if(request('type') == 'yesterday')
+                    $(".pie-income-title").text('Yesterday Income')
+                        var pie = response.data.pie.yesterday;
+                    @endif
+                    @if(request('type') == 'week')
+                    $(".pie-income-title").text('Weekly Income')
+                        var pie = response.data.pie.week;
+                    @endif
+                    @if(request('type') == 'month')
+                    $(".pie-income-title").text('Monthly Income')
+                        var pie = response.data.pie.month;
+                    @endif
 
-    $(document).ready( function () {
-        setTimeout(function() {
+                    @if(request('type') == '')
+                        $(".pie-income-title").text('Today Income')
+                        var pie = response.data.pie.today;
+                    @endif
 
-        /*collection by center*/
-        $.ajax({
-            url: route('admin.home.collectionByCentre'),
-            type: "GET",
-            data: {'type': '{{request('type')}}'},
-            cache: false,
-            success: function (response) {
-                let total = response.data.total;
-                $(".total-pie-chart").text(total)
-                @if(request('type') == 'today')
-                    $(".pie-income-title").text('Today Income')
+                    collectionCentreChart(pie);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+            
+        }
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.18) && !isSecCalled){
+            isSecCalled= true; 
+            $.ajax({
+                url: route('admin.home.myCollectionByCentre'),
+                type: "GET",
+                data: {'type': '{{request('type')}}'},
+                cache: false,
+                success: function (response) {
+                    let total = response.data.total;
+                    $(".my-total-collection-center").text(total)
+                    @if(request('type') == 'today')
+                        $(".my-collection-title").text('Today Income')
+                        var pie = response.data.pie.today;
+                    @endif
+                    @if(request('type') == 'yesterday')
+                        $(".my-collection-title").text('Yesterday Income')
+                        var pie = response.data.pie.yesterday;
+                    @endif
+                    @if(request('type') == 'week')
+                        $(".my-collection-title").text('Weekly Income')
+                        var pie = response.data.pie.week;
+                    @endif
+                    @if(request('type') == 'month')
+                        $(".my-collection-title").text('Monthly Income')
+                        var pie = response.data.pie.month;
+                    @endif
+
+                    @if(request('type') == '')
+                        $(".my-collection-title").text('Today Income')
+                        var pie = response.data.pie.today;
+                    @endif
+
+                    myCollectionCentreChart(pie);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.27) && !isThirdCalled){
+            isThirdCalled= true; 
+            $.ajax({
+                url: route('admin.home.revenueByCentre'),
+                type: "GET",
+                data: {'type': '{{request('type')}}'},
+                cache: false,
+                success: function (response) {
+
+                    let total = response.data.total;
+                    let pie = response.data.pie;
+                    //$(".total-centre").text(total)
+                    @if(request('type') == 'today')
+                        $(".revenue-centre-title").text('Today Income')
+                    @endif
+                    @if(request('type') == 'yesterday')
+                        $(".revenue-centre-title").text('Yesterday Income')
+
+                    @endif
+                    @if(request('type') == 'week')
+                        $(".revenue-centre-title").text('Weekly Income')
+
+                    @endif
+                    @if(request('type') == 'month')
+                        $(".revenue-centre-title").text('Monthly Income')
+                    @endif
+
+                    revenueCentreChart(pie);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.36) && !isFourthCalled){
+            isFourthCalled= true; 
+            $.ajax({
+                url: route('admin.home.myRevenueByCentre'),
+                type: "GET",
+                data: {'type': '{{request('type')}}'},
+                cache: false,
+                success: function (response) {
+
+                    //let total = response.data.total;
+                    let pie = response.data.pie;
+                    //$(".total-my-revenue-centre").text(total)
+                    @if(request('type') == 'today')
+                        $(".my-revenue-centre-title").text('Today Income')
+                    @endif
+                    @if(request('type') == 'yesterday')
+                        $(".my-revenue-centre-title").text('Yesterday Income')
+
+                    @endif
+                    @if(request('type') == 'week')
+                        $(".my-revenue-centre-title").text('Weekly Income')
+
+                    @endif
+                    @if(request('type') == 'month')
+                        $(".my-revenue-centre-title").text('Monthly Income')
+                    @endif
+                    @if(request('type') == '')
+                        $(".my-revenue-centre-title").text('Today Revenue')
+                    @endif
+                    myRevenueCentreChart(pie);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.45) && !isFifthCalled){
+            isFifthCalled= true; 
+            $.ajax({
+                url: route('admin.home.revenueByService'),
+                type: "GET",
+                data: {'type': '{{request('type')}}'},
+                cache: false,
+                success: function (response) {
+
+                    let colors = response.data.colors;
+                    let total = response.data.total;
+                    $(".total-service").text(total)
+                    @if(request('type') == 'today')
+                        $(".service-title").text('Today Income')
                     var pie = response.data.pie.today;
-                @endif
-                @if(request('type') == 'yesterday')
-                $(".pie-income-title").text('Yesterday Income')
-                    var pie = response.data.pie.yesterday;
-                @endif
-                @if(request('type') == 'week')
-                $(".pie-income-title").text('Weekly Income')
-                    var pie = response.data.pie.week;
-                @endif
-                @if(request('type') == 'month')
-                $(".pie-income-title").text('Monthly Income')
-                    var pie = response.data.pie.month;
-                @endif
+                    @endif
+                    @if(request('type') == 'yesterday')
+                        $(".service-title").text('Yesterday Income')
+                        var pie = response.data.pie.yesterday;
+                    @endif
+                    @if(request('type') == 'week')
+                        $(".service-title").text('Weekly Income')
+                        var pie = response.data.pie.week;
+                    @endif
+                    @if(request('type') == 'month')
+                        $(".service-title").text('Monthly Income')
+                        var pie = response.data.pie.month;
+                    @endif
 
-                @if(request('type') == '')
-                    $(".pie-income-title").text('Today Income')
+                    @if(request('type') == '')
+                        $(".service-title").text('Today Income')
+                        var pie = response.data.pie.today;
+                    @endif
+
+                    revenueByService(pie, colors);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.54) && !isSixCalled){
+            isSixCalled= true; 
+            $.ajax({
+                url: route('admin.home.myRevenueByService'),
+                type: "GET",
+                data: {'type': '{{request('type')}}'},
+                cache: false,
+                success: function (response) {
+
+                    let colors = response.data.colors;
+                    let total = response.data.total;
+                    $(".total-my-service").text(total)
+                    @if(request('type') == 'today')
+                        $(".my-service-title").text('Today Income')
                     var pie = response.data.pie.today;
-                @endif
+                    @endif
+                    @if(request('type') == 'yesterday')
+                        $(".my-service-title").text('Yesterday Income')
+                        var pie = response.data.pie.yesterday;
+                    @endif
+                    @if(request('type') == 'week')
+                        $(".my-service-title").text('Weekly Income')
+                        var pie = response.data.pie.week;
+                    @endif
+                    @if(request('type') == 'month')
+                        $(".my-service-title").text('Monthly Income')
+                        var pie = response.data.pie.month;
+                    @endif
 
-                collectionCentreChart(pie);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
+                    @if(request('type') == '')
+                        $(".my-service-title").text('Today Income')
+                        var pie = response.data.pie.today;
+                    @endif
 
-        /*my collection by center*/
-        $.ajax({
-            url: route('admin.home.myCollectionByCentre'),
-            type: "GET",
-            data: {'type': '{{request('type')}}'},
-            cache: false,
-            success: function (response) {
-                let total = response.data.total;
-                $(".my-total-collection-center").text(total)
-                @if(request('type') == 'today')
-                    $(".my-collection-title").text('Today Income')
-                    var pie = response.data.pie.today;
-                @endif
-                @if(request('type') == 'yesterday')
-                    $(".my-collection-title").text('Yesterday Income')
-                    var pie = response.data.pie.yesterday;
-                @endif
-                @if(request('type') == 'week')
-                    $(".my-collection-title").text('Weekly Income')
-                    var pie = response.data.pie.week;
-                @endif
-                @if(request('type') == 'month')
-                    $(".my-collection-title").text('Monthly Income')
-                    var pie = response.data.pie.month;
-                @endif
+                    myrevenueByService(pie, colors);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+        
+        
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.62) && !isnineCalled){
+            isnineCalled= true; 
+            $.ajax({
+                url: route('admin.dashboard.appointment_by_status'),
+                type: "GET",
+                data: {'period': '{{request('type')}}'},
+                cache: false,
+                success: function (response) {
 
-                @if(request('type') == '')
-                    $(".my-collection-title").text('Today Income')
-                    var pie = response.data.pie.today;
-                @endif
-
-                myCollectionCentreChart(pie);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-        /*end pie chart*/
-
-        /*bar chart*/
-        $.ajax({
-            url: route('admin.home.revenueByCentre'),
-            type: "GET",
-            data: {'type': '{{request('type')}}'},
-            cache: false,
-            success: function (response) {
-
-                let total = response.data.total;
-                let pie = response.data.pie;
-                //$(".total-centre").text(total)
-                @if(request('type') == 'today')
-                    $(".revenue-centre-title").text('Today Income')
-                @endif
-                @if(request('type') == 'yesterday')
-                    $(".revenue-centre-title").text('Yesterday Income')
-
-                @endif
-                @if(request('type') == 'week')
-                    $(".revenue-centre-title").text('Weekly Income')
-
-                @endif
-                @if(request('type') == 'month')
-                    $(".revenue-centre-title").text('Monthly Income')
-                @endif
-
-                revenueCentreChart(pie);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-
-        $.ajax({
-            url: route('admin.home.myRevenueByCentre'),
-            type: "GET",
-            data: {'type': '{{request('type')}}'},
-            cache: false,
-            success: function (response) {
-
-                //let total = response.data.total;
-                let pie = response.data.pie;
-                //$(".total-my-revenue-centre").text(total)
-                @if(request('type') == 'today')
-                    $(".my-revenue-centre-title").text('Today Income')
-                @endif
-                @if(request('type') == 'yesterday')
-                    $(".my-revenue-centre-title").text('Yesterday Income')
-
-                @endif
-                @if(request('type') == 'week')
-                    $(".my-revenue-centre-title").text('Weekly Income')
-
-                @endif
-                @if(request('type') == 'month')
-                    $(".my-revenue-centre-title").text('Monthly Income')
-                @endif
-                @if(request('type') == '')
-                    $(".my-revenue-centre-title").text('Today Revenue')
-                @endif
-                myRevenueCentreChart(pie);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-
-        /*revenue by service*/
-        $.ajax({
-            url: route('admin.home.revenueByService'),
-            type: "GET",
-            data: {'type': '{{request('type')}}'},
-            cache: false,
-            success: function (response) {
-
-                let colors = response.data.colors;
-                let total = response.data.total;
-                $(".total-service").text(total)
-                @if(request('type') == 'today')
-                    $(".service-title").text('Today Income')
-                var pie = response.data.pie.today;
-                @endif
-                @if(request('type') == 'yesterday')
-                    $(".service-title").text('Yesterday Income')
-                    var pie = response.data.pie.yesterday;
-                @endif
-                @if(request('type') == 'week')
-                    $(".service-title").text('Weekly Income')
-                    var pie = response.data.pie.week;
-                @endif
-                @if(request('type') == 'month')
-                    $(".service-title").text('Monthly Income')
-                    var pie = response.data.pie.month;
-                @endif
-
-                @if(request('type') == '')
-                    $(".service-title").text('Today Income')
-                    var pie = response.data.pie.today;
-                @endif
-
-                revenueByService(pie, colors);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-
-       /*My revenue by service*/
-        $.ajax({
-            url: route('admin.home.myRevenueByService'),
-            type: "GET",
-            data: {'type': '{{request('type')}}'},
-            cache: false,
-            success: function (response) {
-
-                let colors = response.data.colors;
-                let total = response.data.total;
-                $(".total-my-service").text(total)
-                @if(request('type') == 'today')
-                    $(".my-service-title").text('Today Income')
-                var pie = response.data.pie.today;
-                @endif
-                @if(request('type') == 'yesterday')
-                    $(".my-service-title").text('Yesterday Income')
-                    var pie = response.data.pie.yesterday;
-                @endif
-                @if(request('type') == 'week')
-                    $(".my-service-title").text('Weekly Income')
-                    var pie = response.data.pie.week;
-                @endif
-                @if(request('type') == 'month')
-                    $(".my-service-title").text('Monthly Income')
-                    var pie = response.data.pie.month;
-                @endif
-
-                @if(request('type') == '')
-                    $(".my-service-title").text('Today Income')
-                    var pie = response.data.pie.today;
-                @endif
-
-                myrevenueByService(pie, colors);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-        $.ajax({
-            url: route('admin.dashboard.appointment_by_status'),
-            type: "GET",
-            data: {'period': '{{request('type')}}'},
-            cache: false,
-            success: function (response) {
-
-                let colors = response.data.colors;
-                @if(request('type') == 'today')
+                    let colors = response.data.colors;
+                    @if(request('type') == 'today')
+                        
+                        var pie = response.data.pie.today;
+                    @endif
+                    @if(request('type') == 'yesterday')
                     
-                    var pie = response.data.pie.today;
-                @endif
-                @if(request('type') == 'yesterday')
-                   
-                    var pie = response.data.pie.yesterday;
-                @endif
-                @if(request('type') == 'week')
+                        var pie = response.data.pie.yesterday;
+                    @endif
+                    @if(request('type') == 'week')
+                        
+                        var pie = response.data.pie.week;
+                    @endif
+                    @if(request('type') == 'month')
                     
-                    var pie = response.data.pie.week;
-                @endif
-                @if(request('type') == 'month')
-                   
-                    var pie = response.data.pie.month;
-                @endif
+                        var pie = response.data.pie.month;
+                    @endif
 
-                @if(request('type') == '')
+                    @if(request('type') == '')
+                        
+                        var pie = response.data.pie.today;
+                    @endif
+
+                    AppointmentByStatus(pie, colors);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.71) && !istenCalled){
+            istenCalled= true; 
+            $.ajax({
+                url: route('admin.dashboard.appointment_by_status'),
+                type: "GET",
+                data: {'period': '{{request('type')}}',performance:"1"},
+                cache: false,
+                success: function (response) {
+
+                    let colors = response.data.colors;
+                    @if(request('type') == 'today')
+                        
+                        var pie = response.data.pie.today;
+                    @endif
+                    @if(request('type') == 'yesterday')
                     
-                    var pie = response.data.pie.today;
-                @endif
-
-                AppointmentByStatus(pie, colors);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-        $.ajax({
-            url: route('admin.dashboard.appointment_by_status'),
-            type: "GET",
-            data: {'period': '{{request('type')}}',performance:"1"},
-            cache: false,
-            success: function (response) {
-
-                let colors = response.data.colors;
-                @if(request('type') == 'today')
+                        var pie = response.data.pie.yesterday;
+                    @endif
+                    @if(request('type') == 'week')
+                        
+                        var pie = response.data.pie.week;
+                    @endif
+                    @if(request('type') == 'month')
                     
-                    var pie = response.data.pie.today;
-                @endif
-                @if(request('type') == 'yesterday')
-                   
-                    var pie = response.data.pie.yesterday;
-                @endif
-                @if(request('type') == 'week')
+                        var pie = response.data.pie.month;
+                    @endif
+
+                    @if(request('type') == '')
+                        
+                        var pie = response.data.pie.today;
+                    @endif
+
+                    MyAppointmentByStatus(pie, colors);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.78) && !ElevenCalled){
+            ElevenCalled= true; 
+            $.ajax({
+                url: route('admin.dashboard.appointment_by_type'),
+                type: "GET",
+                data: {'period': '{{request('type')}}'},
+                cache: false,
+                success: function (response) {
+
+                    let colors = response.data.colors;
+                    @if(request('type') == 'today')
+                        
+                        var pie = response.data.pie.today;
+                    @endif
+                    @if(request('type') == 'yesterday')
                     
-                    var pie = response.data.pie.week;
-                @endif
-                @if(request('type') == 'month')
-                   
-                    var pie = response.data.pie.month;
-                @endif
-
-                @if(request('type') == '')
+                        var pie = response.data.pie.yesterday;
+                    @endif
+                    @if(request('type') == 'week')
+                        
+                        var pie = response.data.pie.week;
+                    @endif
+                    @if(request('type') == 'month')
                     
-                    var pie = response.data.pie.today;
-                @endif
+                        var pie = response.data.pie.month;
+                    @endif
 
-                MyAppointmentByStatus(pie, colors);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-        $.ajax({
-            url: route('admin.dashboard.appointment_by_type'),
-            type: "GET",
-            data: {'period': '{{request('type')}}'},
-            cache: false,
-            success: function (response) {
+                    @if(request('type') == '')
+                        
+                        var pie = response.data.pie.today;
+                    @endif
 
-                let colors = response.data.colors;
-                @if(request('type') == 'today')
+                    AppointmentByType(pie, colors);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.86) && !TwelveCalled){
+            TwelveCalled= true; 
+            $.ajax({
+                url: route('admin.dashboard.appointment_by_type'),
+                type: "GET",
+                data: {'period': '{{request('type')}}',performance:"1"},
+                cache: false,
+                success: function (response) {
+
+                    let colors = response.data.colors;
+                    @if(request('type') == 'today')
+                        
+                        var pie = response.data.pie.today;
+                    @endif
+                    @if(request('type') == 'yesterday')
                     
-                    var pie = response.data.pie.today;
-                @endif
-                @if(request('type') == 'yesterday')
-                   
-                    var pie = response.data.pie.yesterday;
-                @endif
-                @if(request('type') == 'week')
+                        var pie = response.data.pie.yesterday;
+                    @endif
+                    @if(request('type') == 'week')
+                        
+                        var pie = response.data.pie.week;
+                    @endif
+                    @if(request('type') == 'month')
                     
-                    var pie = response.data.pie.week;
-                @endif
-                @if(request('type') == 'month')
-                   
-                    var pie = response.data.pie.month;
-                @endif
+                        var pie = response.data.pie.month;
+                    @endif
 
-                @if(request('type') == '')
-                    
-                    var pie = response.data.pie.today;
-                @endif
+                    @if(request('type') == '')
+                        
+                        var pie = response.data.pie.today;
+                    @endif
 
-                AppointmentByType(pie, colors);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-        $.ajax({
-            url: route('admin.dashboard.appointment_by_type'),
-            type: "GET",
-            data: {'period': '{{request('type')}}',performance:"1"},
-            cache: false,
-            success: function (response) {
-
-                let colors = response.data.colors;
-                @if(request('type') == 'today')
-                    
-                    var pie = response.data.pie.today;
-                @endif
-                @if(request('type') == 'yesterday')
-                   
-                    var pie = response.data.pie.yesterday;
-                @endif
-                @if(request('type') == 'week')
-                    
-                    var pie = response.data.pie.week;
-                @endif
-                @if(request('type') == 'month')
-                   
-                    var pie = response.data.pie.month;
-                @endif
-
-                @if(request('type') == '')
-                    
-                    var pie = response.data.pie.today;
-                @endif
-
-                MyAppointmentByType(pie, colors);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-    }, 3000);
-
+                    MyAppointmentByType(pie, colors);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
     });
+    
+   
+    
     function AppointmentByType(pie,colors) {
 
         google.load('visualization', '1', {
