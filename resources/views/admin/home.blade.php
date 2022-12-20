@@ -234,7 +234,33 @@
 
                     {{--Activity--}}
                     <div class="col-lg-6 col-xxl-6" id="activitydiv">
-                        
+                    <div class="card card-custom card-stretch gutter-b" style="height: 600px; overflow-y: auto;">
+                    <!--begin::Header-->
+                    <div class="card-header align-items-center border-0 mt-4">
+                        <h3 class="card-title align-items-start flex-column">
+                            <span class="font-weight-bolder text-dark">Recent Activity</span>
+                            <span class="text-muted mt-3 font-weight-bold font-size-sm" id="totalactivities">0 activities</span>
+                        </h3>
+                    </div>
+                    <!--end::Header-->
+                    <!--begin::Body-->
+                    <div class="card-body pt-4">
+                        <!--begin::Timeline-->
+                        @if(isset($unauthorized))
+                            <div class="text-center">
+                                <span >Your are not authorized</span>
+                            </div>
+                    @else
+                            <div class="text-center">
+                                <span >No Activity Found</span>
+                            </div>
+                        @endif
+                
+
+                        <!--end::Timeline-->
+                        </div>
+                        <!--end: Card Body-->
+                    </div>
                     </div>
 
                     {{--Collections by centers--}}
