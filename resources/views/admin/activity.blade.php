@@ -75,39 +75,19 @@
                             </div>
                             <!--end::Badge-->
                             <!--begin::Desc-->
-                            @if(isset($log['package_id']))
-                            <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                                <span style="color: #056FBF;">{{$log['user_id'] ?? 'N/A'}}</span>
-                                {{$log['action'] ?? 'N/A'}} 
-                                    <strong >RS. {{ $log['cash_amount'] }}</strong> from
-                                <span  style="color: #056FBF;"> {{$log['patient_id']}}</span> for PlanID
-                                <span  style="color: #F5B183;">{{$log['package_id'] }}</span>
-                                    At  {{$log['location_id']}} Centre
-                            </div>
-                            @else
                             
-                                @if($log['appointment_type_id'] == "Treatment")
+                           
                                
                                 <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
                                     <span style="color: #056FBF;">{{$log['user_id'] ?? 'N/A'}}</span>
-                                    Consumed 
-                                        <strong >RS. {{ $log['cash_amount'] }}</strong> against
-                                    <span  style="color: #056FBF;"> {{$log['patient_id']}}</span> for
-                                    <span  style="color: #F5B183;">{{$log['appointment_type_id'] ?? 'Appointment'}}</span>
-                                        At  {{$log['location_id']}} Centre
-                                </div>
-                                @else
-                                    
-                                <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                                    <span style="color: #056FBF;">{{$log['user_id'] ?? 'N/A'}}</span>
-                                    {{$log['action'] ?? 'N/A'}} 
+                                    Received 
                                         <strong >RS. {{ $log['cash_amount'] }}</strong> from
                                     <span  style="color: #056FBF;"> {{$log['patient_id']}}</span> for
                                     <span  style="color: #F5B183;">{{$log['appointment_type_id'] ?? 'Appointment'}}</span>
-                                        At  {{$log['location_id']}} Centre
+                                        at  {{$log['location_id']}} Centre.
                                 </div>
-                            @endif
-                            @endif
+                                
+                            
                             <!--end::Desc-->
                         </div>
 
