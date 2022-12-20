@@ -237,7 +237,7 @@ function changeDate() {
         data: {'type': period},
         cache: false,
         success: function (response) {
-            console.log(response);
+            
             var collection = response.data.todaycollection;
             var sales = response.data.revenue.toFixed();
             $("#allrevenue").text('PKR: ' + sales);
