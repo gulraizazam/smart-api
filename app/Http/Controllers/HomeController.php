@@ -66,7 +66,7 @@ class HomeController extends Controller
 
         list($start_date, $end_date) = $this->getDates($request);
 
-        $data = $this->recentActivities($data);
+        //$data = $this->recentActivities($data);
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
         $data = $this->leads($data, $location_id, $start_date, $end_date);
@@ -95,7 +95,7 @@ class HomeController extends Controller
         $location_id = $this->getUserLocation();
         list($start_date, $end_date) = $this->getDates($request);
 
-        $data = $this->recentActivities($data);
+        //$data = $this->recentActivities($data);
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
         $data = $this->leads($data, $location_id, $start_date, $end_date);
@@ -116,6 +116,31 @@ class HomeController extends Controller
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
         return response()->json(['status'=>200,'msg'=>"All stats",'data'=>$data]);
     
+    }
+    public function getActivity(Request $request)
+    {
+        $data=[];
+        $timeZone = "Asia/Karachi";
+
+        $location_id = $this->getUserLocation();
+        list($start_date, $end_date) = $this->getDates($request);
+
+        $data = $this->recentActivities($data);
+        if (auth()->id() == 1) {
+            $data['location_id'] = [];
+        } else {
+            $data['location_id'] = ACL::getUserCentres();
+        }
+        $data['start_date'] = $start_date;
+        $data['end_date'] = $end_date;
+        $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+        return view('admin.activity',$data);
+        // return ApiHelper::apiResponse($this->success, 'activity', true, [
+        //     'pie' => $data,
+           
+        // ]);
+        
+        
     }
     public function datatable(Request $request)
     {

@@ -86147,3 +86147,12 @@ body {
 .appointment-section .datatable.datatable-default > .datatable-table{
     overflow: initial;
 }
+.datatable{
+    position:relative;
+    padding-top:65px;
+}
+.datatable .datatable-pager-info{
+    position:absolute;
+    top:0px;
+    right:0px;
+}
