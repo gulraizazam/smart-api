@@ -237,11 +237,13 @@ function changeDate() {
         data: {'type': period},
         cache: false,
         success: function (response) {
+            
+            var collection = response.data.todaycollection;
             var sales = response.data.revenue.toFixed();
             $("#allrevenue").text('PKR: ' + sales);
             $("#allconsult").text(response.data.done_consultancies+'/'+response.data.all_consultancies);
             $("#alltreat").text(response.data.done_treatments+'/'+response.data.all_treatments);
-            $("#allleads").text(response.data.leads+'/'+response.data.totalLeads);
+            $("#allleads").text('PKR: ' +collection);
             
         },
         error: function (xhr, ajaxOptions, thrownError) {
