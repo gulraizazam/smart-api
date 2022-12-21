@@ -188,12 +188,7 @@
                 },1000);
             }
 
-            $(document).ready(function () {
-                setTimeout( function () {
-                    setDashboardFilters();
-                },1500)
-
-            });
+            
             function SetFromdate(){
                 $("#filter_date_from").val($("#treatment_search_start").val());
             }
@@ -257,7 +252,14 @@
              {
                 $("#filter_service_id").val($("#treatment_search_service").val());
              }
+             $(document).ready(function () {
+                setTimeout( function () {
+                    setDashboardFilters();
+                },1500)
+
+            });
             function setDashboardFilters() {
+                
                 let result = get_query();
 
                 if(result?.type != null ) {

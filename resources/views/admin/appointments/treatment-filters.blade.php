@@ -19,7 +19,7 @@
     </style>
 @endpush
 
-<div class="mt-2 mb-15">
+<div class="mt-2 mb-7">
 
     <div class="row align-items-center">
         <div class="advance-search col-md-12 col-lg-12 col-xl-12">

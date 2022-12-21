@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
 use App\Models\Leads;
 use App\Models\LeadStatuses;
 use Illuminate\Support\Carbon;
@@ -68,11 +69,12 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             );
         }
         if ($this->request->filter_status_id) {
-            $where[] = array(
-                'appointment_status_id',
-                '=',
-                $this->request->filter_status_id
-            );
+            $where[] = [
+                'match' => [
+                    'base_appointment_status_id' => $this->request->filter_status_id
+                ]
+            ];
+           
         }
         if ($this->request->filter_created_by_id) {
             $where[] = array(
@@ -174,9 +176,9 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             $query->whereIn('appointments.location_id', ACL::getUserCentres());
            
         });
-           
+       
         $results = $resultQuery->where($where)->get();
-        
+       
         return $results;
      }
 

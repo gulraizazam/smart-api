@@ -514,5 +514,5 @@ class dashboardreport
            $total
         ];
     }
-
+    
 }

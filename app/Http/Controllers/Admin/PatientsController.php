@@ -247,7 +247,8 @@ class PatientsController extends Controller
         return Validator::make($data, [
             'email' => 'sometimes|nullable|email',
             'name' => 'required',
-            'phone' => 'required|unique:users,phone,' . $id,
+            //'phone' => 'required|unique:users,phone,' . $id,
+            'phone' => 'required',
             'gender' => 'required',
         ]);
     }
