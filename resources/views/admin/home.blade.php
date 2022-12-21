@@ -160,7 +160,7 @@
                                                 </g>
                                             </svg>
                                             <!--end::Svg Icon-->
-                                            <span class="dashboard-counter" id="allleads">{{$todaycollection[0] !== false && $todaycollection[0] !== false ? 'PKR:' . $todaycollection[0] : 'Your are not authorized'}}</span>
+                                            <span class="dashboard-counter" id="allleads">{{isset($todaycollection[0]) && $todaycollection[0] !== false ? 'PKR:' . $todaycollection[0] : 'Your are not authorized'}}</span>
                                         </span>
 
                                             <a href="{{route('admin.leads.index', ['from' => $start_date, 'to' => $end_date])}}" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Sales</a>
