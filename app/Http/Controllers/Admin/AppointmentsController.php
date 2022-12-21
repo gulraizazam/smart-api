@@ -120,6 +120,8 @@ class AppointmentsController extends Controller
      */
     public function datatable(Request $request)
     {
+        
+       
         $listing_setting = Settings::where([
             'account_id' => Auth::User()->account_id,
             'slug' => 'sys-list-mode'
@@ -136,7 +138,7 @@ class AppointmentsController extends Controller
     }
 
     public function treatmentDatatable(Request $request)
-    {
+    { 
         $listing_setting = Settings::where([
             'account_id' => Auth::User()->account_id,
             'slug' => 'sys-list-mode'
@@ -782,7 +784,7 @@ class AppointmentsController extends Controller
      */
     private function getDefaultListing(Request $request)
     {
-
+       
         $where = array();
 
         /*
@@ -1133,7 +1135,8 @@ class AppointmentsController extends Controller
         $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
-            ->orderBy("appointments.scheduled_date", "DESC")
+            ->orderBy("appointments.created_at", "DESC")
+            //->orderBy("appointments.scheduled_date", "DESC")
             //->orderBy("appointments.scheduled_time", "DESC")
             ->get();
 
@@ -1203,7 +1206,7 @@ class AppointmentsController extends Controller
 
                 $index++;
             }
-
+            
             $records["meta"] = [
                 'field' => $orderBy,
                 'page' => $page,
@@ -1261,16 +1264,17 @@ class AppointmentsController extends Controller
 
         if ($request->has('sort')) {
 
-            list($orderBy, $order) = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
-
+            //list($orderBy, $order) = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
+            list($orderBy, $order) = getSortBy($request, 'appointments.created_at', 'DESC', 'appointments');
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'appointments', 'order', $order);
         } else {
 
-            $orderBy = 'scheduled_date';
+            //$orderBy = 'scheduled_date';
+            $orderBy = 'created_at';
             $order = 'desc';
-            if ($orderBy == 'scheduled_date') {
-                $orderBy = 'appointments.scheduled_date';
+            if ($orderBy == 'created_at') {
+                $orderBy = 'appointments.created_at';
 
                 Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
                 Filters::put(Auth::User()->id, 'appointments', 'order', $order);
@@ -1601,7 +1605,8 @@ class AppointmentsController extends Controller
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             //->orderBy($orderBy, $order)
-            ->orderBy("appointments.scheduled_date", "DESC")
+            //->orderBy("appointments.scheduled_date", "DESC")
+            ->orderBy("appointments.created_at", "DESC")
             ->get();
 
         $invoicearray = array();
@@ -1974,6 +1979,7 @@ class AppointmentsController extends Controller
 
             // Store form data in a variable
             $appointmentData = $request->all();
+          
             $appointmentData['account_id'] = Auth::user()->account_id;
 
             $phone = $appointmentData['phone'];
@@ -1989,6 +1995,7 @@ class AppointmentsController extends Controller
             $appointmentData['converted_by'] = Auth::user()->id;
 
             if ($request->appointment_type_id = Config::get('constants.appointment_type_consultancy')) {
+         
                 $response = Resources::getDoctorRotaHasDay($request->get("start"), $request->doctor_id);
                 if (isset($response['resource_id']) && $response['resource_id']) {
                     $appointmentData['resource_id'] = $response['resource_id'];
@@ -1997,6 +2004,7 @@ class AppointmentsController extends Controller
                     $appointmentData['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
                 }
             }
+           
             // Set default appointment status i.e. 'pending'
             $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
             if ($appointment_status) {
@@ -2023,7 +2031,9 @@ class AppointmentsController extends Controller
              * Check if Lead ID not provided then create a new lead
              * and assign this lead to current appointment.
              */
+           
             if (!$request->get('lead_id')) {
+               
                
                 /*
                  * If Patient is from database
@@ -2031,7 +2041,7 @@ class AppointmentsController extends Controller
                  * - if appointment already exists then update info
                  */
                 if (isset($appointmentData['patient_id']) && $appointmentData['patient_id'] != '') {
-                  
+                 
                     /*
                     * If appointment is for the first time then
                     * update user information, otherwise not
@@ -2052,12 +2062,14 @@ class AppointmentsController extends Controller
                         $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
                     }
                 }else{
+                   
                     if ($request->new_patient == '1') {
                         $logLevelPatient = Patients::where(array(
                             'phone' => $appointmentData['phone'],
                             'user_type_id' => Config::get('constants.patient_id'),
                             'account_id' => Auth::User()->account_id
                         ))->first();
+                        
                         // if ($logLevelPatient) {
                         //     $patient = Patients::updateRecord($logLevelPatient->id, $appointmentData);
                         //     Appointments::where('patient_id', '=', $logLevelPatient->id)->update(['name' => $appointmentData['name']]);
@@ -2097,7 +2109,7 @@ class AppointmentsController extends Controller
                     }
                 }
                 $leadObj = $appointmentData;
-                
+              
                 unset($leadObj['lead_id']); // Remove Lead ID index
                 if(isset($patient)){
                     $leadObj['patient_id'] = $patient->id;
@@ -2116,6 +2128,7 @@ class AppointmentsController extends Controller
                 $leadObj['lead_status_id'] = $default_converted_lead_status_id;
                 $leadObj['base_service_id'] = $leadObj['service_id'];
                 $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
+                
                 if($lead){
                     $lead->lead_status_id = 4;
                     $lead->save();
@@ -2123,9 +2136,9 @@ class AppointmentsController extends Controller
                     $leadObj['lead_status_id'] = $default_converted_lead_status_id;
                     $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
                 }
-                
+               
             } else {
-
+                
                 if ($request->get("start")) {
                     $start = $request->get("start");
                     $service_duration = Services::find($request->get('service_id'))->value("duration");
@@ -2200,55 +2213,55 @@ class AppointmentsController extends Controller
 
             Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name']]);
 
-            if ($request->new_patient == '1') {
-                $leadObj = $appointmentData;
-                unset($leadObj['lead_id']); // Remove Lead ID index
-                $leadObj['patient_id'] = $patient->id;
-                // Convert Lead status to Converted
-                $DefaultConvertedLeadStatus = LeadStatuses::where(array(
-                    'account_id' => Auth::User()->account_id,
-                    'is_converted' => 1,
-                ))->first();
-                if ($DefaultConvertedLeadStatus) {
-                    $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
-                } else {
-                    $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
-                }
-                $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-                $leadObj['base_service_id'] = $leadObj['service_id'];
-                $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
-            } else {
+            // if ($request->new_patient == '1') {
+            //     $leadObj = $appointmentData;
+            //     unset($leadObj['lead_id']); // Remove Lead ID index
+            //     $leadObj['patient_id'] = $patient->id;
+            //     // Convert Lead status to Converted
+            //     $DefaultConvertedLeadStatus = LeadStatuses::where(array(
+            //         'account_id' => Auth::User()->account_id,
+            //         'is_converted' => 1,
+            //     ))->first();
+            //     if ($DefaultConvertedLeadStatus) {
+            //         $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
+            //     } else {
+            //         $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
+            //     }
+            //     $leadObj['lead_status_id'] = $default_converted_lead_status_id;
+            //     $leadObj['base_service_id'] = $leadObj['service_id'];
+            //     $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+            // } else {
 
-                // If Lead ID provided then change it's status to converted
-                if ($request->get('lead_id') && $request->get('lead_id')) {
-                    $lead = Leads::findOrFail($request->get('lead_id'));
-                    if ($lead) {
-                        // Convert Lead status to Converted
-                        $DefaultConvertedLeadStatus = LeadStatuses::where(array(
-                            'account_id' => Auth::User()->account_id,
-                            'is_converted' => 1,
-                        ))->first();
-                        if ($DefaultConvertedLeadStatus) {
-                            $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
-                        } else {
-                            $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
-                        }
-                        $data = array(
-                            'lead_status_id' => $default_converted_lead_status_id,
-                            'town_id' => $request->get('town_id')
-                        );
-                        $lead = Leads::updateRecord($lead->id, $data, $lead, $status = "Appointment");
-                    }
-                }
+            //     // If Lead ID provided then change it's status to converted
+            //     if ($request->get('lead_id') && $request->get('lead_id')) {
+            //         $lead = Leads::findOrFail($request->get('lead_id'));
+            //         if ($lead) {
+            //             // Convert Lead status to Converted
+            //             $DefaultConvertedLeadStatus = LeadStatuses::where(array(
+            //                 'account_id' => Auth::User()->account_id,
+            //                 'is_converted' => 1,
+            //             ))->first();
+            //             if ($DefaultConvertedLeadStatus) {
+            //                 $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
+            //             } else {
+            //                 $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
+            //             }
+            //             $data = array(
+            //                 'lead_status_id' => $default_converted_lead_status_id,
+            //                 'town_id' => $request->get('town_id')
+            //             );
+            //             $lead = Leads::updateRecord($lead->id, $data, $lead, $status = "Appointment");
+            //         }
+            //     }
 
-                // Update Treatment ID as well
-                if ($request->get('lead_id') && $request->get('lead_id')) {
-                    $lead = Leads::findOrFail($request->get('lead_id'));
-                    if ($lead) {
-                        $lead->update(['service_id' => $request->get('service_id')]);
-                    }
-                }
-            }
+            //     // Update Treatment ID as well
+            //     if ($request->get('lead_id') && $request->get('lead_id')) {
+            //         $lead = Leads::findOrFail($request->get('lead_id'));
+            //         if ($lead) {
+            //             $lead->update(['service_id' => $request->get('service_id')]);
+            //         }
+            //     }
+            // }
 
             // Based on allow message by status and scheduled date, allow send sms
             if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
@@ -3268,7 +3281,7 @@ class AppointmentsController extends Controller
     public function storeAppointmentStatuses(Request $request)
     {
         $data = $request->all();
-
+        
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointment = Appointments::find($request->get('id'));
         if (!$appointment) {
@@ -3370,10 +3383,10 @@ class AppointmentsController extends Controller
             $lead->lead_status_id = 1;
             $lead->save();
         }if($data['base_appointment_status_id'] == 1){
-        $lead = Leads::findOrFail($appointment->lead_id);
-        $lead->lead_status_id = 4;
-        $lead->save();
-    }
+            $lead = Leads::findOrFail($appointment->lead_id);
+            $lead->lead_status_id = 4;
+            $lead->save();
+        }
         /**
          * Dispatch Elastic Search Index
          */
@@ -3384,7 +3397,7 @@ class AppointmentsController extends Controller
             ])
         );
 
-        return ApiHelper::apiResponse($this->success, 'Status has been change successfully!');
+        return ApiHelper::apiResponse($this->success, 'Status has been change successfully!',true,['appontment_type_id'=>$request->appointment_type_id]);
         //return response()->json(['status' => 1, 'base_appointment_status_name' => $appointment_status_name->name]);
     }
 

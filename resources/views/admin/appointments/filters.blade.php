@@ -16,7 +16,7 @@
     </style>
 @endpush
 
-<div class="mt-2 mb-15">
+<div class="mt-2 mb-7">
 
     <div class="row align-items-center">
         <div class="advance-search col-md-12 col-lg-12 col-xl-12">
@@ -32,9 +32,9 @@
     </div>
 
 
-    <div class="row mb-6 flex-column flex-sm-row">
+    <div class="row mb-0 flex-column flex-sm-row">
 
-        <div class="filterouterdiv mb-6 position-relative">
+        <div class="filterouterdiv mb-0 position-relative">
             <label>Patient Search:</label>
             <input class="form-control filter-field appointment_patient_id" onchange="SetPatient()">
             <input type="hidden" class="filter-field search_field" id="appointment_patient_id">
@@ -44,22 +44,22 @@
             </div>
         </div>
 
-        {{--<div class="col-lg-1 mb-lg-0 mb-6" id="patient_id">
+        {{--<div class="col-lg-1 mb-lg-0 mb-0" id="patient_id">
             <label style="width: 127%">ID:</label>
             <input style="width: 127%" type="text" class="form-control filter-field " id="appoint_search_id" placeholder="Patient ID">
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6">
+        <div class="col-lg-2 mb-lg-0 mb-0">
             <label>Patient:</label>
             <input style="width: 70%;" type="text" class="form-control filter-field" id="appoint_search_patient" placeholder="Patient Name" onchange="SetPatient()">
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6" style="margin-left: -6%;">
+        <div class="col-lg-2 mb-lg-0 mb-0" style="margin-left: -6%;">
             <label>Phone:</label>
             <input style="width: 65%;" type="text" oninput="phoneField(this);" id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field">
         </div>--}}
 
-        <div class="filterouterdiv  mb-6" >
+        <div class="filterouterdiv  mb-0" >
             <label>Scheduled:</label>
             <div class="input-daterange input-group to-from-datepicker datefromto" >
                 <input type="text" id="appoint_search_start" autocomplete="off" class="form-control filter-field datatable-input" name="created_start" placeholder="From" onchange="SetFromdate()">
@@ -72,22 +72,22 @@
             </div>
         </div>
 
-       <div class="filterouterdiv  mb-6 appoint_search_status">
+       <div class="filterouterdiv  mb-0 appoint_search_status">
             <label>Service:</label>
             <select class="form-control filter-field select2" id="appoint_search_service" onchange="SetService()"></select>
         </div>
 
-        <div class="filterouterdiv  mb-6 doctor-filter">
+        <div class="filterouterdiv  mb-0 doctor-filter">
             <label >Phone:</label>
             <input  type="text"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
         </div>
 
-        <div class="filterouterdiv mb-6 center-filter">
+        <div class="filterouterdiv mb-0 center-filter">
             <label >Centre:</label>
             <select class="form-control filter-field select2" id="appoint_search_centre" onchange="SetCenter()"></select>
         </div>
 
-        <div class="filterouterdiv  mb-6 appoint_search_status" >
+        <div class="filterouterdiv  mb-0 appoint_search_status" >
             <label >Status:</label>
             <select class="form-control filter-field select2" id="appoint_search_status" onchange="SetStatus()"></select>
         </div>

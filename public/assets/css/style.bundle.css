@@ -625,7 +625,7 @@ pre code {
 }
 @media (min-width: 1400px) {
     .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
-        max-width: 1340px;
+        max-width: 1345px;
     }
 }
 .row {
@@ -83046,7 +83046,14 @@ body.swal2-height-auto {
     border: 0 !important;
 }
 .apexcharts-tooltip .apexcharts-tooltip-title {
+    display:none;
     padding: 0.5rem 1rem;
+}
+.apexcharts-tooltip .apexcharts-theme-light{
+    display: none;
+}
+.apexcharts-active{
+    display:none !important;
 }
 .apexcharts-xaxistooltip.apexcharts-theme-light {
     border-radius: 0.42rem !important;
@@ -84010,7 +84017,7 @@ body {
 }
 @media (min-width: 1400px) {
     .header-menu .menu-nav > .menu-item .menu-submenu.menu-submenu-fixed-xxl {
-        width: 1340px;
+        width: 1345px;
     }
 }
 @-webkit-keyframes header-menu-submenu-fade-out {
@@ -86135,4 +86142,24 @@ body {
     .filterouterdiv .select2 {
         width: 100% !important;
     }
+}
+.appointment-section .datatable.datatable-default > .datatable-table > .datatable-body .datatable-row > .datatable-cell:last-child,.appointment-section .datatable.datatable-default > .datatable-table > .datatable-head .datatable-row > .datatable-cell:last-child{
+    position:sticky;
+    right:0;
+    background-color: #fff;
+}
+.appointment-section .datatable.datatable-default.datatable-loaded{
+  overflow: auto;
+}
+.appointment-section .datatable.datatable-default > .datatable-table{
+    overflow: initial;
+}
+.datatable{
+    position:relative;
+    padding-top:65px;
+}
+.datatable .datatable-pager-info{
+    position:absolute;
+    top:0px;
+    right:0px;
 }
