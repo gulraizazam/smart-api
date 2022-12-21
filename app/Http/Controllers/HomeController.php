@@ -66,12 +66,13 @@ class HomeController extends Controller
 
         list($start_date, $end_date) = $this->getDates($request);
 
-        $data = $this->recentActivities($data);
+        //$data = $this->recentActivities($data);
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
-        $data = $this->leads($data, $location_id, $start_date, $end_date);
+       // $data = $this->leads($data, $location_id, $start_date, $end_date);
         $data = $this->salesByCentre($request, $data);
-
+        $data = $this->collection_by_center($request, $data);
+        
         $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
         $data['month'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
@@ -94,13 +95,16 @@ class HomeController extends Controller
 
         $location_id = $this->getUserLocation();
         list($start_date, $end_date) = $this->getDates($request);
-
-        $data = $this->recentActivities($data);
+        if($request->type=="lastmonth"){
+            $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
+            $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+        }
+        //$data = $this->recentActivities($data);
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
-        $data = $this->leads($data, $location_id, $start_date, $end_date);
+        //$data = $this->leads($data, $location_id, $start_date, $end_date);
         $data = $this->salesByCentre($request, $data);
-
+        $data = $this->collection_by_center($request, $data);
         $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
         $data['month'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
@@ -116,6 +120,31 @@ class HomeController extends Controller
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
         return response()->json(['status'=>200,'msg'=>"All stats",'data'=>$data]);
     
+    }
+    public function getActivity(Request $request)
+    {
+        $data=[];
+        $timeZone = "Asia/Karachi";
+
+        $location_id = $this->getUserLocation();
+        list($start_date, $end_date) = $this->getDates($request);
+
+        $data = $this->recentActivities($data);
+        if (auth()->id() == 1) {
+            $data['location_id'] = [];
+        } else {
+            $data['location_id'] = ACL::getUserCentres();
+        }
+        $data['start_date'] = $start_date;
+        $data['end_date'] = $end_date;
+        $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+        return view('admin.activity',$data);
+        // return ApiHelper::apiResponse($this->success, 'activity', true, [
+        //     'pie' => $data,
+           
+        // ]);
+        
+        
     }
     public function datatable(Request $request)
     {
@@ -374,7 +403,72 @@ class HomeController extends Controller
 
         return ApiHelper::apiDataTable($records);
     }
+    private function collection_by_center(Request $request, $data){
+        $data['collection'] = 0;
 
+        if (!Gate::allows('dashboard_states')) {
+
+            $data['collection'] = null;
+
+            return $data;
+        }
+        
+        $locations = Locations::where([
+            ['account_id', '=', Auth::User()->account_id],
+            ['active', '=', '1']
+        ])->pluck('name', 'id');
+
+        
+
+        list($start_date, $end_date) = $this->getDates($request);
+        switch ($request->type) {
+            case 'today':
+                list($total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'today', $request);
+                
+                        $data['todaycollection'][] = $total;
+                   
+                break;
+
+            case 'yesterday':
+                list($total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'yesterday', $request);
+               
+                        $data['todaycollection'][] = $total;
+                   
+                break;
+
+            case 'week':
+                list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'last7day', $request);
+                
+                        $data['todaycollection'][] = $total;
+                   
+                break;
+
+            case 'month':
+                list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'thisMonth', $request);
+               
+                        $data['todaycollection'][] = $total;
+                    
+                break;
+            case 'lastmonth':
+               
+                list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'lastmonth', $request);
+               
+                        $data['todaycollection'][] = $total;
+                    
+                break;
+            default:
+                list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'today', $request);
+               
+                    
+                        $data['todaycollection'][] = $total;
+                    
+                
+                break;
+        }
+        
+        
+        return $data;
+    }
     public function collectionByCentre(Request $request)
     {
         $data = array(
@@ -1266,6 +1360,7 @@ class HomeController extends Controller
 
     private function salesByCentre(Request $request, $data)
     {
+       
         $data['revenue'] = 0;
 
         if (!Gate::allows('dashboard_states')) {
@@ -1283,7 +1378,10 @@ class HomeController extends Controller
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
         list($start_date, $end_date) = $this->getDates($request);
-
+        if($request->type=="lastmonth"){
+            $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
+            $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+        }
         $where[] = array(
             'created_at',
             '>=',
