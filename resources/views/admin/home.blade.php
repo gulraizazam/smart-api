@@ -14,6 +14,12 @@
         content: " ";
         display: table;
     }
+    .loader-img{
+        height: 60px;
+    /* top: 180px; */
+        margin-top: 106px;
+        margin-left: 244px;
+    }
     .nav-tabs>li {
         margin: 0;
         padding: 0;
@@ -252,6 +258,7 @@
                     <!--begin::Body-->
                     <div class="card-body pt-4">
                         <!--begin::Timeline-->
+                        <img src="{{asset('assets/media/loader.gif')}}" class="loader-img">
                         @if(isset($unauthorized))
                             <div class="text-center">
                                 <span >Your are not authorized</span>
@@ -1091,6 +1098,7 @@
            data: {'type': period},
            cache: false,
            success: function (response) {
+            $('.loader-img').css('display',"none");
             //    var financelog = Object.keys(response.data.data.finance_log).length;
             //    var aptlog = Object.keys(response.data.data.appointment_log).length;
             //    var activitycount = (financelog+aptlog);

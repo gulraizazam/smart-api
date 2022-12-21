@@ -12714,6 +12714,7 @@ button.toast-close-button {
 }
 
 .apexcharts-tooltip {
+    display: none;
     border-radius: 5px;
     -webkit-box-shadow: 2px 2px 6px -4px #999;
     box-shadow: 2px 2px 6px -4px #999;
