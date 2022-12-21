@@ -1446,49 +1446,58 @@ class HomeController extends Controller
         );
         $finance_log = array();
 
-        $package_advances = PackageAdvances::whereDate('created_at', Carbon::now()->format('Y-m-d'))->orderBy('created_at','DESC')->get();
+        $finance_logs = Invoices::join('appointments','invoices.appointment_id','=','appointments.id')
+        ->join('invoice_details','invoice_details.invoice_id','=','invoices.id')
+        ->whereDate('invoices.created_at', Carbon::now()->format('Y-m-d'))->orderBy('invoices.created_at','DESC')->get();
 
-        foreach ($package_advances as $advance) {
+        
+        $planlog = PackageAdvances::whereDate('created_at', Carbon::now()->format('Y-m-d'))
+        ->where('cash_flow', 'in')->where('cash_amount','>',0)
+        ->where('package_id','!=',Null)
+        ->orderBy('created_at','DESC')->get();
+        
+        // foreach ($planlog as $advance) {
 
-            $query = AuditTrails::where([
-                ['table_record_id', '=', $advance->id],
-                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
-            ])->whereDate('created_at', Carbon::now()->format('Y-m-d'))->orderBy('created_at','DESC');
 
-            if (auth()->id() != 1) {
-                $query->where("user_id", auth()->id());
-            }
+        //     $query = AuditTrails::where([
+        //         ['table_record_id', '=', $advance->id],
+        //         ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
+        //     ])->whereDate('created_at', Carbon::now()->format('Y-m-d'))->orderBy('created_at','DESC');
 
-            $audit_info = $query->get();
+        //     if (auth()->id() != 1) {
+        //         $query->where("user_id", auth()->id());
+        //     }
 
-            foreach ($audit_info as $audit){
-                $finance_log[$audit->id] = array(
-                    'id' => $audit->id,
-                    'action' => $action_array[$audit->audit_trail_action_name],
-                    'table' => $table_array[$audit->audit_trail_table_name],
-                    'user_id' => $audit->user->name,
-                    'created_at' => $audit->created_at,
-                    'updated_at' => $audit->updated_at,
-                );
-                $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
+        //     $audit_info = $query->get();
 
-                foreach ($audit_info_detail as $audit_detail) {
-                    $result = Financelog::Calculate_Val_advance($audit_detail);
+        //     foreach ($audit_info as $audit){
+        //         $finance_log[$audit->id] = array(
+        //             'id' => $audit->id,
+        //             'action' => $action_array[$audit->audit_trail_action_name],
+        //             'table' => $table_array[$audit->audit_trail_table_name],
+        //             'user_id' => $audit->user->name,
+        //             'created_at' => $audit->created_at,
+        //             'updated_at' => $audit->updated_at,
+        //         );
+        //         $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
+               
+        //         foreach ($audit_info_detail as $audit_detail) {
+        //             $result = Financelog::Calculate_Val_advance($audit_detail);
 
-                    $finance_log[$audit->id][$audit_detail->field_name] = $result;
-                }
-            }
-        }
-
-        $finance_log = collect($finance_log)->where('cash_flow', 'in')->unique('appointment_id');
+        //             $finance_log[$audit->id][$audit_detail->field_name] = $result;
+        //         }
+        //     }
+        // }
+        //$finance_log = collect($finance_log)->where('cash_flow', 'in')->where('cash_amount','>',0)->unique('appointment_id');
 
 
         //$appointment_log = $this->viewLog();
         $appointment_log = $this->viewAppointmentLog();
 
         return $data['recent_activities'] = [
-            'finance_log' => $finance_log,
+            'finance_log' => $finance_logs,
             'appointment_log' => $appointment_log,
+            'plan_logs'=>$planlog
         ];
     }
 
