@@ -1,3 +1,11 @@
+ 
+ $(document).keydown(function(event) { 
+    if (event.keyCode == 27) { 
+      $('.modal').modal('hide');
+
+    }
+  });
+ 
  let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 $(document).ready(function () {
 
