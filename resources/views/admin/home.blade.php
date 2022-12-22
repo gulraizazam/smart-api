@@ -258,12 +258,13 @@
                     <!--begin::Body-->
                     <div class="card-body pt-4">
                         <!--begin::Timeline-->
-                        <img src="{{asset('assets/media/loader.gif')}}" class="loader-img">
+                        
                         @if(isset($unauthorized))
                             <div class="text-center">
                                 <span >Your are not authorized</span>
                             </div>
-                    @else
+                        @else
+                        <img src="{{asset('assets/media/loader.gif')}}" class="loader-img">
                             <div class="text-center">
                                 <span >No Activity Found</span>
                             </div>

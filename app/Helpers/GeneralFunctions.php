@@ -152,10 +152,10 @@ class GeneralFunctions
 
     public static function ServicesTree($request = null, $total = 0)
     {
-       DB::enableQueryLog();
+       
         $where = [];
         
-        if ($total > 0) {
+        if ($total >= 0) {
             $filename = 'services';
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
@@ -203,75 +203,43 @@ class GeneralFunctions
                 }
             }
         }
-        
-        $allService = Services::where('parent_id', 0)
-            ->where('slug', 'all')
-            ->first();
-        
-        if (count($where) > 0) {
-            $allService = null;
-        }
-        if(hasFilter($filters, 'status')){
-            
-            $query = Services::
-            //->where('parent_id', 0)
-            //->where('slug', '!=', 'all')
-            where('active',
-            '=',
-            $filters['status']);
-            $services = $query->get();
-            //dd($services);
-            $mergedServices = [];
-            foreach ($services as $key => $service) {
-
-                $children = collect($service->children)->flatten();
-                unset($service->children);
-
-                if ($key === 0 && $allService) {
-                    $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
-                }
-
-                $mergedServices[] = $service->toArray();
-                
-                $children = $children->toArray();
-                foreach ($children as $child) {
-                    $mergedServices[] = $child;
-                }
-
-            }
-       
+        if (hasFilter($filters, 'status') && $filters['status']==1 && !isset($filters['name'])) {
+            $services = Services::with('children')->where('active',1)->where('parent_id','!=',0)->get();
             return $services;
-        }
-        if(hasFilter($filters, 'name')){
-            $query = Services::with('children')
-            //->where('parent_id', 0)
-            //->where('slug', '!=', 'all')
+               
+           
+           
+        
+        }elseif(hasFilter($filters, 'status') && $filters['status']==0 && !isset($filters['name'])){
+            $services = Services::with('children')->where('active',0)->get();
+            return $services;
+        }elseif(hasFilter($filters, 'status') && $filters['status']==0 && hasFilter($filters, 'name')){
+            $services = Services::with('children')
+            ->where('active',0)
             ->where('name',
-            'Like',
-            '%' . $filters['name'] . '%');
-            $services = $query->get();
-         
-            $mergedServices = [];
-            foreach ($services as $key => $service) {
-
-                $children = collect($service->children)->flatten();
-                unset($service->children);
-
-                if ($key === 0 && $allService) {
-                    $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
-                }
-
-                $mergedServices[] = $service->toArray();
-                
-                $children = $children->toArray();
-                foreach ($children as $child) {
-                    $mergedServices[] = $child;
-                }
-
+            'like',
+            '%' . $filters['name'] . '%')
+            ->get();
+            return $services;
+        }elseif(hasFilter($filters, 'status') && $filters['status']==1 && hasFilter($filters, 'name')){
+            $services = Services::with('children')
+            ->where('active',1)
+            ->where('name',
+            'like',
+            '%' . $filters['name'] . '%')
+            ->get();
+            return $services;
+        }else{
+            $allService = Services::where('parent_id', 0)
+                ->where('slug', 'all')
+                ->first();
+            
+            if (count($where) > 0) {
+                $allService = null;
             }
        
-            return $mergedServices;
-        }
+      
+        
         $query = Services::with('children')
             ->where('parent_id', 0)
             ->where('slug', '!=', 'all')
@@ -299,6 +267,7 @@ class GeneralFunctions
         }
        
         return $mergedServices;
+    }
     }
 
 
