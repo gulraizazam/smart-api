@@ -32,7 +32,7 @@
                                 {{$log['action']}} 
                                     <strong >Rs. {{ $log['amount'] }}</strong> from
                                 <span  style="color: #056FBF;"> {{$log['patient']}}</span> for
-                                <span  style="color: #F5B183;">Plan Id: {{$log['planId']}}</span>
+                                <a href="{{route('admin.packages.index')}}"><span  style="color: #e55c00;">Plan Id: {{$log['planId']}}</span></a>
                                     at  {{$log['location']}} Centre.
                             </div>
                         </div>
