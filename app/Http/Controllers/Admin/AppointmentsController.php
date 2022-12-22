@@ -73,6 +73,8 @@ use App\Helpers\JazzSMSAPI;
 use App\Helpers\Widgets\AppointmentEditWidget;
 use App\Models\MachineType;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
+use App\Models\Activity;
+use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
 
 class AppointmentsController extends Controller
 {
@@ -4617,6 +4619,23 @@ class AppointmentsController extends Controller
             PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => $request->created_at . ' ' . Carbon::now()->toTimeString()]);
             $packagesservice = PackageService::find($request->package_service_id);
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);
+            if($request->cash > 0){
+                $patient = User::whereId($appointmentinfo->patient_id)->first();
+                $location = Locations::whereId($appointmentinfo->location_id)->first();
+                $servicename = Services::whereId($appointmentinfo->service_id)->first();
+                $activity = new Activity();
+                $activity->action = 'received';
+                $activity->patient = $patient->name;
+                $activity->appointment_type = 'Plan';
+                $activity->created_by = Auth::user()->name;
+                $activity->invoice_id = $invoice->id;
+                $activity->invoice_id = $invoice->id;
+                $activity->planId = $package_advances->package_id;
+                $activity->amount =$request->cash;
+                $activity->location = $location->name;
+                $activity->save();
+            }
+            
         }
         if ($request->package_id && $invoice && $invoice_detail) {
             Invoice_Plan_Refund_Sms_Functions::InvoiceCashReceived_SMS($invoice, $invoice_detail, $request->package_id);
@@ -4644,7 +4663,20 @@ class AppointmentsController extends Controller
         $appointment_data_status['converted_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
         // End
-
+        /////Save activity////
+        $patient = User::whereId($appointmentinfo->patient_id)->first();
+        $location = Locations::whereId($appointmentinfo->location_id)->first();
+        $servicename = Services::whereId($appointmentinfo->service_id)->first();
+        $activity = new Activity();
+        $activity->action = 'consumed';
+        $activity->patient = $patient->name;
+        $activity->appointment_type = $servicename->name . ' Treatment';
+        $activity->created_by = Auth::user()->name;
+        $activity->invoice_id = $invoice->id;
+        $activity->amount = $invoice_detail->net_amount;
+        $activity->location = $location->name;
+        $activity->save();
+        ////
         /**
          * Dispatch Elastic Search Index
          */

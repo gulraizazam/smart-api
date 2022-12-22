@@ -1178,6 +1178,7 @@ class FinanceReportController extends Controller
      */
     public function generalrevenuereportdetail(Request $request)
     {
+       
         if (!Gate::allows('finance_general_revenue_reports_general_revenue__detail_report')) {
             return abort(401);
         }
@@ -1189,22 +1190,23 @@ class FinanceReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
+        $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
+        
+        // if ($request->medium_type == 'web' && $request->location_id_com && count($request->location_id_com) > 0) {
 
-        if ($request->medium_type == 'web' && $request->location_id_com && count($request->location_id_com) > 0) {
+        //     $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
+            
+        // } else if ($request->medium_type != 'web' && $request->location_id_com) {
 
-            $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
+        //     $location_id_com = Explode_Multi_select::explode($request->location_id_com);
+        //     $request->merge([
+        //         'location_id_com' => $location_id_com,
+        //     ]);
+        //     $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
 
-        } else if ($request->medium_type != 'web' && $request->location_id_com) {
-
-            $location_id_com = Explode_Multi_select::explode($request->location_id_com);
-            $request->merge([
-                'location_id_com' => $location_id_com,
-            ]);
-            $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
-
-        } else {
-            $report_data = null;
-        }
+        // } else {
+        //     $report_data = null;
+        // }
 
         $total_revenue_cash_in = 0;
         $total_revenue_card_in = 0;
@@ -1248,6 +1250,7 @@ class FinanceReportController extends Controller
                 return $pdf->stream('General Revenue Report', 'landscape');
                 break;
             case 'excel':
+               
                 self::GeneralRevenueReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date);
                 break;
             default:
@@ -1396,7 +1399,7 @@ class FinanceReportController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function generalrevenuereportsummary(Request $request)
-    {
+    { 
         if (!Gate::allows('finance_general_revenue_reports_general_revenue__summary_report')) {
             return abort(401);
         }
@@ -1409,7 +1412,7 @@ class FinanceReportController extends Controller
             $end_date = null;
         }
         $report_data = Finanaces::generalrevenuereportsummary($request->all(), Auth::User()->account_id);
-
+       
         $total_revenue_cash_in = 0;
         $total_revenue_card_in = 0;
         $total_revenue_bank_in = 0;

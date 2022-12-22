@@ -1095,9 +1095,10 @@ class Finanaces
             '=',
             $account_id
         );
-
+        $location_information = ACL::getUserCentres();
+        //dd($location_information);
         $report_data = array();
-        foreach($data['location_id_com'] as $location){
+        foreach($location_information as $location){
 
             $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
@@ -1118,6 +1119,7 @@ class Finanaces
                     'region' => $location_information->region->name,
                     'revenue_data' => array()
                 );
+               
                 foreach ($packagesadvances as $packagesadvance) {
                     if (
                         (
@@ -1144,6 +1146,7 @@ class Finanaces
                                 break;
                         }
                         $total_balance = $balance;
+                       
                         if ($packagesadvance->cash_amount != 0) {
                             if ($packagesadvance->package_id) {
                                 $transtype = Config::get('constants.trans_type.advance_in');
@@ -1207,11 +1210,13 @@ class Finanaces
                                 'Balance' => $balance,
                                 'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A')
                             );
+                           
                         }
                     }
                 }
             }
         }
+
 
 
         return $report_data;
