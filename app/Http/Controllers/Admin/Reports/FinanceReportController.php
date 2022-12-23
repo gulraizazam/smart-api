@@ -1190,23 +1190,23 @@ class FinanceReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
+        //$report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
         
-        // if ($request->medium_type == 'web' && $request->location_id_com && count($request->location_id_com) > 0) {
+        if ($request->medium_type == 'web' && $request->location_id_com && count($request->location_id_com) > 0) {
 
-        //     $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
+            $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
             
-        // } else if ($request->medium_type != 'web' && $request->location_id_com) {
+        } else if ($request->medium_type != 'web' && $request->location_id_com) {
 
-        //     $location_id_com = Explode_Multi_select::explode($request->location_id_com);
-        //     $request->merge([
-        //         'location_id_com' => $location_id_com,
-        //     ]);
-        //     $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
+            $location_id_com = Explode_Multi_select::explode($request->location_id_com);
+            $request->merge([
+                'location_id_com' => $location_id_com,
+            ]);
+            $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
 
-        // } else {
-        //     $report_data = null;
-        // }
+        } else {
+            $report_data = null;
+        }
 
         $total_revenue_cash_in = 0;
         $total_revenue_card_in = 0;

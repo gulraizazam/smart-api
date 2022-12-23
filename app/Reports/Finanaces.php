@@ -1098,7 +1098,7 @@ class Finanaces
         $location_information = ACL::getUserCentres();
         //dd($location_information);
         $report_data = array();
-        foreach($location_information as $location){
+        foreach($data['location_id_com'] as $location){
 
             $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
