@@ -415,7 +415,7 @@
     </table>
     <table class="grand-tax" style="margin-top: 18px;">
         <tr>
-            <td style="font-size:15px;">Thank you for your business with Smart Aesthetics.</td>
+            <td style="font-size:15px;">Thank you for your business with Cutera Aesthetics.</td>
         </tr>
 
         <tr>
@@ -425,7 +425,7 @@
             <td style="font-size:15px;">
                 <strong>Note: </strong>For Privacy, Cancellation,
                 Late and Refund policies, please visit
-                <a href="http://smartaesthetics.pk" target="_blank">www.cutera.pk</a>
+                <a href="https://cuteraesthetics.com/" target="_blank">www.cutera.pk</a>
             </td>
         </tr>
 
