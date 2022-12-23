@@ -117,10 +117,7 @@
             {
                 $("#filter_active").val($("#search_status").val());
             }
-            function SubmitSearch()
-            {
-                $("#search-service-form").submit();
-            }
+            
         </script>
     @endpush
 
