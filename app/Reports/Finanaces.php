@@ -1099,7 +1099,6 @@ class Finanaces
         //dd($location_information);
         $report_data = array();
         foreach($data['location_id_com'] as $location){
-
             $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
                 ->where('location_id','=',$location)
