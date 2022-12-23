@@ -1,12 +1,12 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\Financelog;
 use App\Helpers\GeneralFunctions;
+use App\Models\Activity;
 use App\Models\AppointmentLog;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
@@ -44,8 +44,7 @@ class HomeController extends Controller
      */
     public function __construct()
     {
-       
-        $this->middleware('auth');
+       $this->middleware('auth');
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
@@ -58,26 +57,18 @@ class HomeController extends Controller
      */
     public function index(Request $request)
     {
-        
         $data = [];
         $timeZone = "Asia/Karachi";
-
         $location_id = $this->getUserLocation();
-
         list($start_date, $end_date) = $this->getDates($request);
-
-        //$data = $this->recentActivities($data);
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
-       // $data = $this->leads($data, $location_id, $start_date, $end_date);
         $data = $this->salesByCentre($request, $data);
         $data = $this->collection_by_center($request, $data);
-        
         $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
         $data['month'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['currentTime'] = Carbon::now()->timezone($timeZone)->format("H:i:s");
-
         if (auth()->id() == 1) {
             $data['location_id'] = [];
         } else {
@@ -86,30 +77,25 @@ class HomeController extends Controller
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
-
         return view('admin.home', $data);
     }
     public function getStats(Request $request){
         $data=[];
         $timeZone = "Asia/Karachi";
-
         $location_id = $this->getUserLocation();
         list($start_date, $end_date) = $this->getDates($request);
         if($request->type=="lastmonth"){
             $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
             $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
-        }
-        //$data = $this->recentActivities($data);
+        } 
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
-        //$data = $this->leads($data, $location_id, $start_date, $end_date);
         $data = $this->salesByCentre($request, $data);
         $data = $this->collection_by_center($request, $data);
         $data['today'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format("Y-m-d");
         $data['month'] = Carbon::now()->timezone($timeZone)->format("Y-m-d");
         $data['currentTime'] = Carbon::now()->timezone($timeZone)->format("H:i:s");
-
         if (auth()->id() == 1) {
             $data['location_id'] = [];
         } else {
@@ -119,16 +105,13 @@ class HomeController extends Controller
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
         return response()->json(['status'=>200,'msg'=>"All stats",'data'=>$data]);
-    
     }
     public function getActivity(Request $request)
     {
         $data=[];
         $timeZone = "Asia/Karachi";
-
         $location_id = $this->getUserLocation();
         list($start_date, $end_date) = $this->getDates($request);
-
         $data = $this->recentActivities($data);
         if (auth()->id() == 1) {
             $data['location_id'] = [];
@@ -139,19 +122,12 @@ class HomeController extends Controller
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
         return view('admin.activity',$data);
-        // return ApiHelper::apiResponse($this->success, 'activity', true, [
-        //     'pie' => $data,
-           
-        // ]);
-        
-        
     }
     public function datatable(Request $request)
     {
         if (!Gate::allows('dashboard_upcomings')) {
             return [];
         }
-
         $filter = $this->getTableFilter($request->all());
 
         $today = Carbon::now()->format("Y-m-d");
@@ -1428,67 +1404,10 @@ class HomeController extends Controller
                 'appointment_log' => [],
                 'unauthorized' => true,
             ];
-        }
-
-        $action_array = array(
-            1 => 'Received',
-            2 => 'Edited',
-            3 => 'Deleted',
-            4 => 'Inactivated',
-            5 => 'Activated',
-            6 => 'Cancelled',
-            7 => 'Received',
-        );
-        $table_array = array(
-            26 => 'Invoice',
-            27 => 'Invoice Detail',
-            25 => 'Finance',
-        );
-        $finance_log = array();
-
-        $package_advances = PackageAdvances::whereDate('created_at', Carbon::now()->format('Y-m-d'))->orderBy('created_at','DESC')->get();
-
-        foreach ($package_advances as $advance) {
-
-            $query = AuditTrails::where([
-                ['table_record_id', '=', $advance->id],
-                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
-            ])->whereDate('created_at', Carbon::now()->format('Y-m-d'))->orderBy('created_at','DESC');
-
-            if (auth()->id() != 1) {
-                $query->where("user_id", auth()->id());
-            }
-
-            $audit_info = $query->get();
-
-            foreach ($audit_info as $audit){
-                $finance_log[$audit->id] = array(
-                    'id' => $audit->id,
-                    'action' => $action_array[$audit->audit_trail_action_name],
-                    'table' => $table_array[$audit->audit_trail_table_name],
-                    'user_id' => $audit->user->name,
-                    'created_at' => $audit->created_at,
-                    'updated_at' => $audit->updated_at,
-                );
-                $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
-
-                foreach ($audit_info_detail as $audit_detail) {
-                    $result = Financelog::Calculate_Val_advance($audit_detail);
-
-                    $finance_log[$audit->id][$audit_detail->field_name] = $result;
-                }
-            }
-        }
-
-        $finance_log = collect($finance_log)->where('cash_flow', 'in')->unique('appointment_id');
-
-
-        //$appointment_log = $this->viewLog();
-        $appointment_log = $this->viewAppointmentLog();
-
+        }  
+        $activities = Activity::whereDate('created_at', Carbon::now()->format('Y-m-d'))->latest()->get();
         return $data['recent_activities'] = [
-            'finance_log' => $finance_log,
-            'appointment_log' => $appointment_log,
+            'finance_log' => $activities,
         ];
     }
 

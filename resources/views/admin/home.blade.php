@@ -160,7 +160,7 @@
                                                 </g>
                                             </svg>
                                             <!--end::Svg Icon-->
-                                            <span class="dashboard-counter" id="allleads">{{isset($todaycollection[0]) && $todaycollection[0] !== false? 'PKR:' . $todaycollection[0] : 'Your are not authorized'}}</span>
+                                            <span class="dashboard-counter" id="allleads">{{isset($todaycollection[0]) && $todaycollection[0] !== false ? 'PKR:' . $todaycollection[0] : 'Your are not authorized'}}</span>
                                         </span>
 
                                             <a href="{{route('admin.leads.index', ['from' => $start_date, 'to' => $end_date])}}" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Sales</a>
@@ -258,12 +258,13 @@
                     <!--begin::Body-->
                     <div class="card-body pt-4">
                         <!--begin::Timeline-->
-                        <img src="{{asset('assets/media/loader.gif')}}" class="loader-img">
+                        
                         @if(isset($unauthorized))
                             <div class="text-center">
                                 <span >Your are not authorized</span>
                             </div>
-                    @else
+                        @else
+                        <img src="{{asset('assets/media/loader.gif')}}" class="loader-img">
                             <div class="text-center">
                                 <span >No Activity Found</span>
                             </div>
