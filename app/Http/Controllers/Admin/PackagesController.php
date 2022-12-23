@@ -51,6 +51,7 @@ use Illuminate\Support\Collection;
 use App\Helpers\Financelog;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
 use App\Helpers\GeneralFunctions;
+use App\Models\Activity;
 use PHPUnit\Framework\MockObject\Api;
 
 class PackagesController extends Controller
@@ -578,7 +579,19 @@ class PackagesController extends Controller
                 $data_packageAdvances['location_id'] = $request->location_id;
                 /*End*/
                 $packageAdavances = PackageAdvances::createRecord($data_packageAdvances, $package);
-
+                /////Save activity////
+                $patient = User::whereId( $request->patient_id)->first();
+                $location = Locations::whereId($request->location_id)->first();
+                $activity = new Activity();
+                $activity->action = 'received';
+                $activity->patient = $patient->name;
+                $activity->appointment_type = 'Plan';
+                $activity->created_by = Auth::user()->name;
+                $activity->planId = $package->id;
+                $activity->amount = $request->cash_amount;
+                $activity->location = $location->name;
+                $activity->save();
+        ////
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
                 // Commit Transaction
@@ -1245,7 +1258,17 @@ class PackagesController extends Controller
                 /*End*/
 
                 $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
-
+                $patient = User::whereId( $request->patient_id)->first();
+                $location = Locations::whereId($request->location_id)->first();
+                $activity = new Activity();
+                $activity->action = 'received';
+                $activity->patient = $patient->name;
+                $activity->appointment_type = 'Plan';
+                $activity->created_by = Auth::user()->name;
+                $activity->planId = $package->id;
+                $activity->amount = $request->cash_amount;
+                $activity->location = $location->name;
+                $activity->save();
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
 

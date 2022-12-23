@@ -54,6 +54,7 @@ use App\Models\Discounts;
 use App\Models\Settings;
 use App\Helpers\Widgets\DiscountWidget;
 use App\Helpers\Widgets\ConsultancyPriceCalculationWidget;
+use App\Models\Activity;
 
 class ConsultancyInvoiceController extends Controller
 {
@@ -540,6 +541,20 @@ class ConsultancyInvoiceController extends Controller
         $appointment_data_status['converted_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
         // End
+        
+        /////Save activity////
+            $patient = User::whereId($appointmentinfo->patient_id)->first();
+            $location = Locations::whereId($appointmentinfo->location_id)->first();
+            $activity = new Activity();
+            $activity->action = 'received';
+            $activity->patient = $patient->name;
+            $activity->appointment_type = 'Consultancy';
+            $activity->created_by = Auth::user()->name;
+            $activity->invoice_id = $invoice->id;
+            $activity->amount = $request->price;
+            $activity->location = $location->name;
+            $activity->save();
+        ////
 
         /**
          * Dispatch Elastic Search Index

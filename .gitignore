@@ -4,6 +4,7 @@
 /storage/app
 /storage/settings
 /storage/framework
+/storage/logs
 /bootstrap/cache
 /storage/*.key
 /storage/settings/
