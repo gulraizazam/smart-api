@@ -1,11 +1,10 @@
- 
- $(document).keydown(function(event) { 
-    if (event.keyCode == 27) { 
-      $('.modal').modal('hide');
 
+ $(document).keydown(function(event) {
+    if (event.keyCode == 27) {
+      $('.modal').modal('hide');
     }
   });
- 
+
  let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 $(document).ready(function () {
 
@@ -268,13 +267,13 @@ function customDatePicker() {
 }
 
 function addUsers() {
-    $(".suggesstion-box").hide(); 
+    $(".suggesstion-box").hide();
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
     $('.search_field').val('').change();
-   
-    
-    
+
+
+
 }
 
 // not working
