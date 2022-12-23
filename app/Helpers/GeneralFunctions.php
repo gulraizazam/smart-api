@@ -226,7 +226,7 @@ class GeneralFunctions
                     $serv = Services::where('id',$service->id)->first();
                     if($serv->parent_id=="0"){
                        
-                        $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->get();
+                        $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                     }else{
                         $children = collect($service->children)->flatten();
                         unset($service->children);
@@ -275,7 +275,7 @@ class GeneralFunctions
                     $serv = Services::where('id',$service->id)->first();
                     
                     if($serv->parent_id=="0"){
-                        $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->get();
+                        $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                         
                         
                     }else{
@@ -319,7 +319,7 @@ class GeneralFunctions
             $mergedServices = [];
             foreach ($services as $key => $service) {
     
-                $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->get();
+                $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                 //unset($service->children);
     
                 if ($key === 0 && $allService) {
@@ -347,7 +347,7 @@ class GeneralFunctions
             $mergedServices = [];
             foreach ($services as $key => $service) {
     
-                $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->get();
+                $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                 //unset($service->children);
     
                 if ($key === 0 && $allService) {
@@ -377,8 +377,8 @@ class GeneralFunctions
         $mergedServices = [];
         foreach ($services as $key => $service) {
 
-            $children = collect($service->children)->flatten();
-            unset($service->children);
+            $children = Services::where('parent_id',$service->id)->orderBy('name')->get();;
+            //unset($service->children);
 
             if ($key === 0 && $allService) {
                 $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
