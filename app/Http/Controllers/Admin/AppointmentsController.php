@@ -5622,6 +5622,7 @@ class AppointmentsController extends Controller
         $location_info = Locations::find($Invoiceinfo->location_id);
 
         $package_service = PackageService::where('package_id','=',$Invoiceinfo->package_id)->where('service_id','=',$Invoiceinfo->service_id)->first();
+       
         if($package_service){
             if($package_service->package_bundle_id != null){
                 $package_bundle = PackageBundles::find($package_service->package_bundle_id);
@@ -5631,7 +5632,7 @@ class AppointmentsController extends Controller
         }else{
             $package_bundle = PackageBundles::where('package_id','=',$Invoiceinfo->package_id)->first();
         }
-        dd($package_bundle);
+        
         $bundle = Bundles::find($package_bundle->bundle_id);
         $invoicestatus = InvoiceStatuses::find($Invoiceinfo->invoice_status_id);
         if ($Invoiceinfo->discount_id) {
