@@ -4860,7 +4860,6 @@ class AppointmentsController extends Controller
      */
     public function storeService(Request $request)
     {
-      
         $messages = array();
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
@@ -5632,9 +5631,8 @@ class AppointmentsController extends Controller
         }else{
             $package_bundle = PackageBundles::where('package_id','=',$Invoiceinfo->package_id)->first();
         }
-        if($package_bundle){
-            $bundle = Bundles::find($package_bundle->bundle_id);
-        }
+        dd($package_bundle);
+        $bundle = Bundles::find($package_bundle->bundle_id);
         $invoicestatus = InvoiceStatuses::find($Invoiceinfo->invoice_status_id);
         if ($Invoiceinfo->discount_id) {
             $discount = Discounts::find($Invoiceinfo->discount_id);
@@ -5645,12 +5643,8 @@ class AppointmentsController extends Controller
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
-        if($bundle){
-            return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
-        }else{
-            return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info'));
-        }
-        
+
+        return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
     }
 
     /*
