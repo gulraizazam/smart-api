@@ -2,10 +2,10 @@
 
     <div class="row mb-6 plan-filters">
 
-        <div class="col-lg-1 mb-lg-0 mb-6">
+        <!-- <div class="col-lg-1 mb-lg-0 mb-6">
             <label style="width: 122%;">Patient Id:</label>
             <input style="width: 122%;" type="text" class="form-control filter-field" placeholder="Enter ID" id="search_id" />
-        </div>
+        </div> -->
 
         <div class="col-lg-2 mb-lg-0 mb-6" id="patient_id">
             <label>Patient Search:</label>

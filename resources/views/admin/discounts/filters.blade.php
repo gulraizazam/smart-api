@@ -6,7 +6,7 @@
             <input type="text" class="form-control filter-field" placeholder="Enter Name" id="search_name" />
         </div>
         <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>From:</label>
+            <label>Valid From:</label>
             <div class="input-daterange input-group to-from-datepicker" >
                 <input type="text" class="form-control filter-field datatable-input" autocomplete="off" placeholder="From" id="search_start" />
 
