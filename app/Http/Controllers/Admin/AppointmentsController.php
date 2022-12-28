@@ -5645,8 +5645,12 @@ class AppointmentsController extends Controller
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
-
-        return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
+        if($bundle){
+            return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle'));
+        }else{
+            return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info'));
+        }
+        
     }
 
     /*
