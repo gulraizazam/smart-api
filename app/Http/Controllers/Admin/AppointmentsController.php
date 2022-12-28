@@ -5632,7 +5632,9 @@ class AppointmentsController extends Controller
         }else{
             $package_bundle = PackageBundles::where('package_id','=',$Invoiceinfo->package_id)->first();
         }
-        $bundle = Bundles::find($package_bundle->bundle_id);
+        if($package_bundle->bundle_id){
+            $bundle = Bundles::find($package_bundle->bundle_id);
+        }
         $invoicestatus = InvoiceStatuses::find($Invoiceinfo->invoice_status_id);
         if ($Invoiceinfo->discount_id) {
             $discount = Discounts::find($Invoiceinfo->discount_id);
