@@ -6309,8 +6309,8 @@ class AppointmentsController extends Controller
             $object->start = $request->start;
         }
         $object->city_id = $appointment->city_id;
-        $object->doctor_id = $request->doctor_id;
-        $object->location_id = $request->location_id;
+        $object->doctor_id = $appointment->doctor_id;
+        $object->location_id = $appointment->location_id;
         $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
 
         if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy') ) {
