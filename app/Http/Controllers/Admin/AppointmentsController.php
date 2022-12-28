@@ -4942,7 +4942,7 @@ class AppointmentsController extends Controller
 
             if ($doctor_checking && $room_check_availability) {
                 $appointmentData['scheduled_date'] = Carbon::parse($request->get("start"))->format("Y-m-d");
-                $appointmentData['scheduled_time'] = Carbon::parse($request->get("start"))->format("h:i:s ");
+                $appointmentData['scheduled_time'] = Carbon::parse($request->get("start"))->format("H:i:s ");
 
                 $appointmentData['first_scheduled_date'] = Carbon::parse($request->get("start"))->format("Y-m-d");
                 $appointmentData['first_scheduled_time'] = Carbon::parse($request->get("start"))->format("H:i:s");
