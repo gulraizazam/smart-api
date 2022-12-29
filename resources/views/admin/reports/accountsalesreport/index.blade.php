@@ -197,7 +197,7 @@
                                             </div>
 
                                             <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
-                                                 style="display: none;" id="location_id_D">
+                                                 style="display: none;" id="location_id_D" onchange="SetLocation()">
                                                 {!! Form::label('location_id_com', 'Centres', ['class' => 'control-label']) !!}
                                                 {!! Form::select('location_id_com[]', $locations_com, null, ['id' => 'location_id_com','class' => 'form-control select2', 'multiple' => 'multiple']) !!}
                                                 <span id="location_id_handler"></span>
@@ -286,6 +286,10 @@
     @push('js')
 
         <script>
+            function SetLocation(){
+               
+                $("#location_id_com-report").val($("#location_id_com").val());
+            }
             $('#date_range').daterangepicker({
                 locale: {
                 },
