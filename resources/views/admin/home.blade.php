@@ -1,7 +1,7 @@
 @extends('admin.layouts.master')
 
 @section('content')
-{{dd(Auth::user()->hasRole('Super-Admin'))}}
+
 <style>
     .nav-tabs {
         background: 0 0;
