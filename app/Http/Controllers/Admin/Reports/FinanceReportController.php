@@ -1178,6 +1178,7 @@ class FinanceReportController extends Controller
      */
     public function generalrevenuereportdetail(Request $request)
     {
+        //$request->location_id_com
         if(is_array($request->location_id_com)){
             $location = implode(',',$request->location_id_com);
             $locations = explode(',',$location);
