@@ -333,7 +333,7 @@ class ResourceHasRotaDays extends Model
             } else {
                 $appointments = [];
             }
-            dd( $appointments);
+           
         }
 
         return $appointments;
