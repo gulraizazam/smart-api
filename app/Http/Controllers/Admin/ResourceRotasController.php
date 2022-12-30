@@ -679,8 +679,8 @@ class ResourceRotasController extends Controller
         if ($resourcerota->end <= $request->end) {
 
             $response = ResourceHasRota::updateRecord($id, $request, Auth::User()->account_id);
-            $message = "Record Updated Successfully";
-            return ApiHelper::apiResponse($this->success, $message, $response['status']);
+dd($response);
+            return ApiHelper::apiResponse($this->success, 'Record updated', $response['status']);
 
         }
 
