@@ -327,7 +327,7 @@ class ResourceHasRotaDays extends Model
                     ->select('id', 'scheduled_date', 'scheduled_time')
                     ->get();
             }
-           
+           dd($appointments);
             if($appointments->count()) {
                 $appointments = $appointments->toArray();
             } else {
