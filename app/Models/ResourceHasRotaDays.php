@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use DB;
 use App\Models\Resources;
 use App\Models\ResourceTypes;
+use Illuminate\Support\Facades\DB as FacadesDB;
 use Illuminate\Support\Facades\Input;
 
 class ResourceHasRotaDays extends Model
@@ -304,6 +305,7 @@ class ResourceHasRotaDays extends Model
      * function to grab the rota Days Appointment
      * */
     static public function grabRotaDaysAppointments($request, $rota_days,$resourcerota) {
+        FacadesDB::enableQuerylog();
         $ids = array();
         $appointments = [];
 
@@ -311,6 +313,7 @@ class ResourceHasRotaDays extends Model
             foreach($rota_days as $rota_day) {
                 $ids[] = $rota_day['id'];
             }
+           
             if($resourcerota->resource_type_id == 1){
                 $appointments = Appointments::whereNotNull('scheduled_date')
                     ->whereNotNull('scheduled_time')
@@ -324,7 +327,7 @@ class ResourceHasRotaDays extends Model
                     ->select('id', 'scheduled_date', 'scheduled_time')
                     ->get();
             }
-
+            dd($appointments );
             if($appointments->count()) {
                 $appointments = $appointments->toArray();
             } else {
