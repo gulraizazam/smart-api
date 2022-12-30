@@ -544,7 +544,7 @@ class ResourceHasRota extends BaseModal
                     foreach ($rota_appointments as $rota_appointment) {
                        
                         if ($rota_appointment['scheduled_time'] && $rota_days_record['start_time'] && $rota_days_record['end_time']) {
-                            
+                            print_r('<pre>'.$rota_appointment['scheduled_time']->format('H:i A').'</pre>');
                             if (!self::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('H:i A'), $rota_days_record['start_time'], $rota_days_record['end_time'])) {
                                 //$not_allow = true;
                                 $not_allow = true;
