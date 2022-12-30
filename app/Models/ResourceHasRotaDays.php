@@ -313,7 +313,7 @@ class ResourceHasRotaDays extends Model
             foreach($rota_days as $rota_day) {
                 $ids[] = $rota_day['id'];
             }
-            dd($ids);
+            
             if($resourcerota->resource_type_id == 1){
                 $appointments = Appointments::whereNotNull('scheduled_date')
                     ->whereNotNull('scheduled_time')
@@ -333,6 +333,7 @@ class ResourceHasRotaDays extends Model
             } else {
                 $appointments = [];
             }
+            dd( $appointments);
         }
 
         return $appointments;
