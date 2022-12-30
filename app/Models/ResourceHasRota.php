@@ -670,16 +670,20 @@ class ResourceHasRota extends BaseModal
         $date1 = \DateTime::createFromFormat('H:i a', $current_time);
         $date2 = \DateTime::createFromFormat('H:i a', $start);
         $date3 = \DateTime::createFromFormat('H:i a', $end);
-        dd($date3 );
+        
         if ($check_equal) {
+            dd("here1");
             if ($date1 == $date2 || $date1 == $date3) {
+                dd("here2");
                 return true;
             }
         }
 
         if ($date1 >= $date2 && $date1 < $date3) {
+            dd("here3");
             return true;
         } else {
+            dd("here4");
             return false;
         }
     }
