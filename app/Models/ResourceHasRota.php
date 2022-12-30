@@ -538,8 +538,11 @@ class ResourceHasRota extends BaseModal
             $not_allow = false;
             $not_allow_2 = false;
             if (count($rota_appointments) && count($rota_days_mapping['rota_days_records'])) {
+                
                 foreach ($rota_days_mapping['rota_days_array'] as $rota_days_record) {
+                    
                     foreach ($rota_appointments as $rota_appointment) {
+                       
                         if ($rota_appointment['scheduled_time'] && $rota_days_record['start_time'] && $rota_days_record['end_time']) {
                             if (!self::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('H:i A'), $rota_days_record['start_time'], $rota_days_record['end_time'])) {
                                 $not_allow = true;
@@ -663,6 +666,7 @@ class ResourceHasRota extends BaseModal
      * */
     static public function checkTime($current_time, $start, $end, $check_equal = false)
     {
+        dd($current_time);
         $date1 = \DateTime::createFromFormat('H:i a', $current_time);
         $date2 = \DateTime::createFromFormat('H:i a', $start);
         $date3 = \DateTime::createFromFormat('H:i a', $end);
