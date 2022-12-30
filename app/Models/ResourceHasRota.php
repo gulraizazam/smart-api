@@ -564,13 +564,13 @@ class ResourceHasRota extends BaseModal
             if ($not_allow) {
                 return array(
                     'status' => 0,
-                    'message' => array('Provided rota timings are conflicts with appointments. Unable to update rota.'),
+                    'message' => 'Provided rota timings are conflicts with appointments. Unable to update rota.',
                 );
             }
             if ($not_allow_2) {
                 return array(
                     'status' => 0,
-                    'message' => array('Provided rota break timings are conflicts with appointments. Unable to update rota.'),
+                    'message' => 'Provided rota break timings are conflicts with appointments. Unable to update rota.',
                 );
             }
             /*
