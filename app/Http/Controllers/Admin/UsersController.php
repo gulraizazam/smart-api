@@ -316,7 +316,9 @@ class UsersController extends Controller
         }
 
         if (count($where)) {
-            $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
@@ -324,8 +326,22 @@ class UsersController extends Controller
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
                 ])->get(['users.id']));
+            }else{
+                $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where('users.active',1)
+                ->where([
+                    [$where],
+                    ['account_id', '=', Auth::User()->account_id],
+                ])->get(['users.id']));
+            }
+            
         } else {
-            $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+           
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
@@ -333,12 +349,24 @@ class UsersController extends Controller
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
                 ])->get(['users.id']));
+            }else{
+                $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->where('users.active',1)
+                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where([
+                    [$where],
+                    ['account_id', '=', Auth::User()->account_id],
+                ])->get(['users.id']));
+            }
         }
 
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         if (count($where)) {
-            $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
@@ -346,14 +374,36 @@ class UsersController extends Controller
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            }else{
+                $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where('users.active',1)
+                ->where([
+                    [$where],
+                    ['account_id', '=', Auth::User()->account_id],
+                ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            }
         } else {
-            $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where([
                     ['account_id', '=', Auth::User()->account_id],
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            }else{
+                $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where('users.active',1)
+                ->where([
+                    ['account_id', '=', Auth::User()->account_id],
+                ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            }
         }
 
         $records = $this->getExtraData($records);
