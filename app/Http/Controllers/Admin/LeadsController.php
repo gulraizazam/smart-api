@@ -38,6 +38,7 @@ use DB;
 use Validator;
 use App\Models\Appointments;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Support\Facades\DB as FacadesDB;
 
 class LeadsController extends Controller
@@ -412,12 +413,21 @@ class LeadsController extends Controller
             } else {
                 $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
             }
-
-            $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->orderBy($orderBy, $order)
                 ->get();
+            }else{
+                $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+                ->where('leads.active',1)
+                ->limit($iDisplayLength)
+                ->offset($iDisplayStart)
+                ->orderBy($orderBy, $order)
+                ->get();
+            }
+            
 
             
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();

@@ -280,12 +280,22 @@ class Locations extends BaseModal
     {
         $where = Self::locations_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return count(DB::table('locations')
-                ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
-                ->where($where)
-                ->whereIn('id', ACL::getUserCentres())
-                ->groupBy('service_has_locations.location_id')
-                ->get());
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                return count(DB::table('locations')
+                    ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
+                    ->where($where)
+                    ->whereIn('id', ACL::getUserCentres())
+                    ->groupBy('service_has_locations.location_id')
+                    ->get());
+            }else{
+                return count(DB::table('locations')
+                    ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
+                    ->where($where)
+                    ->where('locations.active',1)
+                    ->whereIn('id', ACL::getUserCentres())
+                    ->groupBy('service_has_locations.location_id')
+                    ->get());
+            }
         }
     }
 
@@ -358,14 +368,26 @@ class Locations extends BaseModal
             }
         }
         if (count($where)) {
-            return DB::table('locations')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                return DB::table('locations')
+                    ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
+                    ->where($where)
+                    ->whereIn('id', ACL::getUserCentres())
+                    ->whereNull('deleted_at')
+                    ->groupBy('service_has_locations.location_id', 'locations.id')
+                    ->orderby('sort_no', 'asc')
+                    ->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            }else{
+                return DB::table('locations')
                 ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                 ->where($where)
+                ->where('active',1)
                 ->whereIn('id', ACL::getUserCentres())
                 ->whereNull('deleted_at')
                 ->groupBy('service_has_locations.location_id', 'locations.id')
                 ->orderby('sort_no', 'asc')
                 ->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            }
         }
     }
 
