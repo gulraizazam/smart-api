@@ -441,7 +441,19 @@ function loadTodayAppointments(today, appointment) {
     $("#filter_date_from").val(today);
     $("#treatment_search_start").val(today);
     $("#treatment_appoint_end").val(today);
-
+    $("#filter_patient_id").val('');
+    $("#filter_phone").val('');
+    $("#filter_doctor_id").val('');
+    $("#filter_center_id").val('');
+    $("#filter_status_id").val('');
+    $("#filter_city_id").val('');
+    $("#filter_service_id").val('');
+    $("#filter_region_id").val('');
+    $("#filter_consultancytype_id").val('');
+    $("#filter_updated_by_id").val('');
+    $("#filter_created_from_id").val('');
+    $("#filter_created_to_id").val('');
+    $("#filter_rescheduled_by_id").val('');
     if (typeof datatable !== 'undefined') {
         reInitTable(appointment);
     }
