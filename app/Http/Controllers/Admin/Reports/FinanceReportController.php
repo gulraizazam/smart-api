@@ -1179,11 +1179,12 @@ class FinanceReportController extends Controller
     public function generalrevenuereportdetail(Request $request)
     {
         //$request->location_id_com
-        if(is_array($request->location_id_com)){
-            $location = implode(',',$request->location_id_com);
-            $locations = explode(',',$location);
+        
+        if(is_array($request->location_id_com) && count($request->location_id_com) > 1){
+            $location[] = implode(',',$request->location_id_com);
+           
         }else{
-            $locations = $request->location_id_com;
+            $location = $request->location_id_com;
         }
         
         if (!Gate::allows('finance_general_revenue_reports_general_revenue__detail_report')) {
@@ -1199,13 +1200,13 @@ class FinanceReportController extends Controller
         }
         //$report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
         
-        if ($request->medium_type == 'web' &&  $locations && count($locations) > 0) {
+        if ($request->medium_type == 'web' &&  $location && count($location) > 0) {
 
             $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
             
-        } else if ($request->medium_type != 'web' && $locations) {
+        } else if ($request->medium_type != 'web' && $location) {
 
-            $location_id_com = Explode_Multi_select::explode($locations);
+            $location_id_com = Explode_Multi_select::explode($location);
             $request->merge([
                 'location_id_com' => $location_id_com,
             ]);
