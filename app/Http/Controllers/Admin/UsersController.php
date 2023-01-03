@@ -370,7 +370,7 @@ class UsersController extends Controller
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where('email','!=','superadmin@mail.com')
+               // ->where('email','!=','superadmin@mail.com')
                 ->where([
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
@@ -381,7 +381,7 @@ class UsersController extends Controller
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where('users.active',1)
-                ->where('email','!=','superadmin@mail.com')
+                //->where('email','!=','superadmin@mail.com')
                 ->where([
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
@@ -393,7 +393,7 @@ class UsersController extends Controller
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where('email','!=','superadmin@mail.com')
+                //->where('email','!=','superadmin@mail.com')
                 ->where([
                     ['account_id', '=', Auth::User()->account_id],
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
@@ -403,7 +403,7 @@ class UsersController extends Controller
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where('users.active',1)
-                ->where('email','!=','superadmin@mail.com')
+                //->where('email','!=','superadmin@mail.com')
                 ->where([
                     ['account_id', '=', Auth::User()->account_id],
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
