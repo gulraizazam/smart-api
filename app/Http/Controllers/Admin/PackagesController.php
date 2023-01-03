@@ -961,7 +961,7 @@ class PackagesController extends Controller
                 'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
             ];
         }
-
+dd($records);
         return ApiHelper::apiDataTable($records);
     }
 
