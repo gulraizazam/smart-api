@@ -280,7 +280,7 @@ class Locations extends BaseModal
     {
         $where = Self::locations_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_centres")){
                 return count(DB::table('locations')
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
@@ -368,7 +368,7 @@ class Locations extends BaseModal
             }
         }
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_centres")){
                 return DB::table('locations')
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
