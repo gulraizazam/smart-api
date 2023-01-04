@@ -317,7 +317,7 @@ class UsersController extends Controller
 
         if (count($where)) {
             
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
                 $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
@@ -340,7 +340,7 @@ class UsersController extends Controller
             
         } else {
            
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
                 $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
@@ -365,7 +365,7 @@ class UsersController extends Controller
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
                 $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
@@ -388,7 +388,7 @@ class UsersController extends Controller
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
                 $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')

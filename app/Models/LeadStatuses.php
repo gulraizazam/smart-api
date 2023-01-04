@@ -71,13 +71,13 @@ class LeadStatuses extends BaseModal
     {
         $where = Self::lead_statuses_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses")){
             return self::where($where)->count();
             }else{
                 return self::where($where)->where('active',1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses")){
                 return self::count();
             }else{
                 return self::where('active',1)->count();
@@ -99,13 +99,13 @@ class LeadStatuses extends BaseModal
     {
         $where = self::lead_statuses_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses")){
                 return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
             }else{
 
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses")){
             return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
             }else{
                 return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();

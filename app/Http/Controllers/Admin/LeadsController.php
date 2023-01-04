@@ -413,7 +413,7 @@ class LeadsController extends Controller
             } else {
                 $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
             }
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leads")){
                 $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)

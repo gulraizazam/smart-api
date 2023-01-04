@@ -98,7 +98,7 @@ class DoctorsController extends Controller
             }
 
             $where = $filterConditions->get('data');
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors")){
                 $iTotalRecords = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('role_has_users.user_id')
                 ->when(count($where), fn($q) => $q->where($where))->get();
@@ -135,7 +135,7 @@ class DoctorsController extends Controller
                     Filters::put(Auth::User()->id, 'doctors', 'order', $order);
                 }
             }
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors")){
                 $Users = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('role_has_users.user_id')
                 ->when(count($where), fn($q) => $q->where($where))->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();

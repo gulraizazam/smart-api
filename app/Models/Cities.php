@@ -173,13 +173,13 @@ class Cities extends BaseModal
         $where = Self::cities_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_cities")){
                 return self::where($where)->count();
             }else{
                 return self::where($where)->where('active',1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_cities")){
                 return self::count();
             }else{
                 return self::where('active',1)->count();
@@ -202,13 +202,13 @@ class Cities extends BaseModal
         $where = self::cities_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_cities")){
                 return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }else{
                 return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_cities")){
                 return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }else{
                 return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
