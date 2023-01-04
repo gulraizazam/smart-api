@@ -129,7 +129,7 @@ order:4;
                     </div-->
                     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 form-group">
                         {!! Form::label('gender', 'Gender', ['class' => 'control-label']) !!}
-                        {!! Form::select('gender', array('' => 'Select a Gender') + Config::get("constants.gender_array"),null, ['id' => 'gender', 'readonly' => 'readonly',  'class' => 'form-control treatment_patient_gender','required' => '']) !!}
+                        {!! Form::select('gender', array('' => 'Select a Gender') + Config::get("constants.gender_array"),null, ['id' => 'gender', 'disabled' => 'disabled',  'class' => 'form-control treatment_patient_gender','required' => '']) !!}
                         @if($errors->has('gender'))
                             <p class="help-block">
                                 {{ $errors->first('gender') }}
