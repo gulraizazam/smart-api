@@ -456,16 +456,29 @@ class ResourceRotasController extends Controller
             }
 
 
-            $total_query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')->whereNull('resource_has_rota.deleted_at')->where($wherename)->whereIn('resource_has_rota.location_id', ACL::getUserCentres())->select('resource_has_rota.id');
-
-            $total_query->when(count($where) > 0, fn($q) => $q->where($where));
+            $total_query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
+            ->whereNull('resource_has_rota.deleted_at')
+            ->where($wherename)->whereIn('resource_has_rota.location_id', ACL::getUserCentres())
+            ->select('resource_has_rota.id');
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_rotas")){
+                $total_query->when(count($where) > 0, fn($q) => $q->where($where));
+            }else{
+                $total_query->when(count($where) > 0, fn($q) => $q->where($where)->where('resource_has_rota.active',1));
+            }
+            
 
             $iTotalRecords = $total_query->count();
 
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
-            $query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')->where($wherename)->whereNull('resource_has_rota.deleted_at')->whereIn('resource_has_rota.location_id', ACL::getUserCentres())->select('resource_has_rota.*');
-
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_rotas")){
+                $query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')->where($wherename)
+                ->whereNull('resource_has_rota.deleted_at')->whereIn('resource_has_rota.location_id', ACL::getUserCentres())
+                ->select('resource_has_rota.*');
+            }else{
+                $query = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')->where($wherename)
+                ->whereNull('resource_has_rota.deleted_at')->where('resource_has_rota.active',1)->whereIn('resource_has_rota.location_id', ACL::getUserCentres())
+                ->select('resource_has_rota.*');
+            }
             $query->when(hasFilter($filters, 'startdate'), fn($q) => $q->whereDate('resource_has_rota.start', '>=', $filters['startdate'])
             );
 

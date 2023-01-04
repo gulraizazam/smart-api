@@ -154,7 +154,7 @@ class Regions extends BaseModal
     {
         $where = Self::regions_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_regions")){
                 return self::where([
                     [$where],
                     ['slug', '=', 'custom']
@@ -166,7 +166,7 @@ class Regions extends BaseModal
                     ])->where('active',1)->count();
                 }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_regions")){
                 return self::count();
             }else{
                 return self::where('active',1)->count();
@@ -188,7 +188,7 @@ class Regions extends BaseModal
     {
         $where = Self::regions_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_regions")){
                 return self::where([
                     [$where],
                     ['slug', '=', 'custom']
@@ -200,7 +200,7 @@ class Regions extends BaseModal
                     ])->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
                 }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_regions")){
                 return self::where('slug', '=', 'custom')->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }else{
                 return self::where('active',1)->where('slug', '=', 'custom')->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();

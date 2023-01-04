@@ -30,14 +30,16 @@
                 <option value="application" {{isset($filters['type']) && $filters['type'] == 'application' ? 'selected' : ''}}>Application</option>
             </select>
         </div>
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Status:</label>
-            <select class="form-control filter-field select2" name="status" id="search_status">
-                <option value="" {{isset($filters['status']) && $filters['status'] == '' ? 'selected' : ''}}>All</option>
-                <option value="1" {{isset($filters['status']) && $filters['status'] == '1' ? 'selected' : ''}}>Active</option>
-                <option value="0" {{isset($filters['status']) && $filters['status'] == '2' ? 'selected' : ''}}>Inactive</option>
-            </select>
-        </div>
+        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_paymentmodes"))
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                <label>Status:</label>
+                <select class="form-control filter-field select2" name="status" id="search_status">
+                    <option value="" {{isset($filters['status']) && $filters['status'] == '' ? 'selected' : ''}}>All</option>
+                    <option value="1" {{isset($filters['status']) && $filters['status'] == '1' ? 'selected' : ''}}>Active</option>
+                    <option value="0" {{isset($filters['status']) && $filters['status'] == '2' ? 'selected' : ''}}>Inactive</option>
+                </select>
+            </div>
+        @endif
     </div>
     <div class="row">
         <div class="col-md-10">

@@ -330,7 +330,8 @@ class RolesController extends Controller
             'cash_delete' => 'Plan Cash Delete',
             'log' => 'Log',
             'log_excel' => 'Excel Log',
-            'sms_log' => 'Sms Log'
+            'sms_log' => 'Sms Log',
+            'view_inactive_users'=>'Show Inactive Users',
         );
     }
 

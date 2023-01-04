@@ -21,16 +21,16 @@
             <label>Name:</label>
             <input type="text" class="form-control filter-field" placeholder="Enter Name" id="search_name" />
         </div>
-
-        <div class="col-lg-3 mb-lg-0 mb-6">
-                <label>Status:</label>
-            <select class="form-control filter-field select2" name="status" id="search_status">
-                <option value="" >All</option>
-                <option value="1" >Active</option>
-                <option value="0" >Inactive</option>
-            </select>
-        </div>
-
+        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users"))
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                    <label>Status:</label>
+                <select class="form-control filter-field select2" name="status" id="search_status">
+                    <option value="" >All</option>
+                    <option value="1" >Active</option>
+                    <option value="0" >Inactive</option>
+                </select>
+            </div>
+        @endif
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Phone:</label>
             <input type="text" class="form-control filter-field" placeholder="eg: 03000000000" id="search_phone" />
