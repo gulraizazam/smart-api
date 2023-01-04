@@ -99,7 +99,7 @@ class LeadStatuses extends BaseModal
     {
         $where = self::lead_statuses_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses ")){
                 return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
             }else{
 
