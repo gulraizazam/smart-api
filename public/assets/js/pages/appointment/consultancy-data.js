@@ -1,7 +1,7 @@
 jQuery(document).ready(function() {
 
     var result = get_query();
-console.log(result);
+
     if (typeof result.tab !== 'undefined') {
         $("." + result.tab+ '-tab').click();
     } else {
@@ -18,7 +18,7 @@ console.log(result);
         setTimeout( function () {
             $("#consultancy_city_filter").val(result.city_id).change();
             $("#consultancy_doctor_filter").val(result.doctor_id).change();
-        }, 400);
+        }, 500);
     }
 
     $("#Add_comment").click(function () {
