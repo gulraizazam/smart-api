@@ -409,6 +409,9 @@ function newPatient() {
         $('#create_patient_name').attr("readonly",true);
         $('#create_consultancy_phone').attr("readonly",true);
         $('#create_consultancy_gender').attr("disabled",true);
+        $('#create_patient_name').val("");
+        $('#create_consultancy_gender').val("");
+        $('#create_consultancy_phone').val("");
     }
 }
 function commentData(user_name, created_at, comment) {
