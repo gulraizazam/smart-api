@@ -384,10 +384,10 @@ var table_columns = [
         sortable: false,
         width: 70,
     },{
-        field: 'region',
-        title: 'Regions',
+        field: 'location',
+        title: 'Centre',
         sortable: false,
-        width: 90,
+        width: 'auto',
     },{
         field: 'city',
         title: 'City',
@@ -425,10 +425,10 @@ var table_columns = [
             return actions(data);
         }
     },{
-        field: 'location',
-        title: 'Centre',
+        field: 'region',
+        title: 'Regions',
         sortable: false,
-        width: 'auto',
+        width: 90,
     }];
 
 function actions(data) {
