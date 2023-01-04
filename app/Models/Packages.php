@@ -265,13 +265,13 @@ class Packages extends BaseModal
         $where = self::filters( $request , $account_id , $id , $apply_filter , $filename );
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_plans")){
                 return self::where($where)->whereIn('location_id', ACL::getUserCentres())->count();
             }else{
                 return self::where($where)->where('active',1)->whereIn('location_id', ACL::getUserCentres())->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_plans")){
                 return self::whereIn('location_id', ACL::getUserCentres())->count();
             }else{
                 return self::whereIn('location_id', ACL::getUserCentres())->where('active',1)->count();
@@ -295,7 +295,7 @@ class Packages extends BaseModal
         $where = self::filters( $request , $account_id , $id , $apply_filter , $filename );
 
         list($orderBy, $order) = getSortBy($request, 'id', 'DESC');
-        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_plans")){
             return self::when(count($where), fn ($query) => $query->where($where))->whereIn('location_id', ACL::getUserCentres())
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)

@@ -118,13 +118,13 @@ class Bundles extends BaseModal
 
         $where = self::bundles_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages")){
                 return self::where($where)->count();
             }else{
                 return self::where($where)->where('active',1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages")){
                 return self::count();
             }else{
                 return self::where('active',1)->count();
@@ -149,7 +149,7 @@ class Bundles extends BaseModal
 
         $where = self::bundles_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages")){
                 return self::where($where)
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
@@ -164,7 +164,7 @@ class Bundles extends BaseModal
                     ->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages")){
                 return self::limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->orderBy($orderBy, $order)

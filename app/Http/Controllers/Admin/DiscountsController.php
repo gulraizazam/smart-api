@@ -170,7 +170,7 @@ class DiscountsController extends Controller
 
             $total_query = Discounts::select('id');
             if (count($where)) {
-                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_discounts")){
                     $total_query->where($where);
                 }else{
                     $total_query->where($where)->where('active',1);
@@ -191,7 +191,7 @@ class DiscountsController extends Controller
             }
 
             if (count($where)) {
-                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_discounts")){
                     $query->where($where);
                 }else{
                     $query->where($where)->where('active',1);
