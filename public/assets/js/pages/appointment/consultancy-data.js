@@ -1,7 +1,7 @@
 jQuery(document).ready(function() {
 
     var result = get_query();
-
+console.log(result);
     if (typeof result.tab !== 'undefined') {
         $("." + result.tab+ '-tab').click();
     } else {
