@@ -30,6 +30,12 @@
                     <option value="0" >Inactive</option>
                 </select>
             </div>
+        @else
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                <label>Center:</label>
+                <select class="form-control filter-field select2" name="location_id" id="search_center" >
+                </select>
+            </div>
         @endif
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Phone:</label>
@@ -45,14 +51,14 @@
     </div>
 
     <div class="row mb-8 advance-filters" style="display: none;">
-
-        <div class="col-lg-3 mb-lg-0 mb-6">
+    @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users"))
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Center:</label>
             <select class="form-control filter-field select2" name="location_id" id="search_center" >
             </select>
         </div>
-
-        <div class="col-lg-3 mb-lg-0 mb-6">
+    @endif
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Gender:</label>
             <select class="form-control filter-field select2" id="search_gender" name="gender">
                 <option value="">All</option>
@@ -62,7 +68,7 @@
             </select>
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Commission:</label>
             <div class="input-group">
                 <input type="number" min="0" max="100" class="form-control filter-field" name="commission" placeholder="eg: 10" id="search_commission" >
@@ -76,10 +82,6 @@
             <label>Email:</label>
             <input type="text" class="form-control filter-field" placeholder="Email" id="search_email" />
         </div>
-
-    </div>
-
-    <div class="row mb-6 advance-filters" style="display: none;">
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Create at:</label>
             <div class="input-daterange input-group to-from-datepicker" >
@@ -92,8 +94,9 @@
                 <input type="text" id="search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5">
             </div>
         </div>
-
     </div>
+
+   
 
     <div class="row">
         <div class="col-md-10">
