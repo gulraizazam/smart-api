@@ -522,7 +522,7 @@ class RolesController extends Controller
         );
         $notInNamesArray = array(
             'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres', 'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors','view_inactive_lead_sources','view_inactive_leads','view_inactive_leadstatuses','view_inactive_machine_types','view_inactive_packages','view_inactive_patients','view_inactive_payment_modes','view_inactive_plans
-            ','view_inactive_products','view_inactive_regions','view_inactive_resources','view_inactive_rota','view_inactive_rotas','view_inactive_services','view_inactive_sms_templates',''
+            ','view_inactive_products','view_inactive_regions','view_inactive_custom_forms','view_inactive_towns','view_inactive_resources','view_inactive_rota','view_inactive_rotas','view_inactive_services','view_inactive_sms_templates',''
         );
         if(Auth::user()->hasRole('Super-Admin')){
             $GroupPermissions = Permission::where(['main_group' => 1, 'status' => 1])
