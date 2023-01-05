@@ -359,6 +359,7 @@ class UsersController extends Controller
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
                 ])->get(['users.id']));
+                
             }
         }
 
@@ -409,7 +410,7 @@ class UsersController extends Controller
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }
         }
-
+       
         $records = $this->getExtraData($records);
 
         if ($Users->count()) {
@@ -424,15 +425,10 @@ class UsersController extends Controller
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
                         if($locationchecked != null){
-                            if ($locationchecked->slug == 'custom') {
-                                $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
-                            } else {
-                                $locations[] = $loc[$location]->name ?? '';
-                            }
+                            $locations[] = $loc[$location]->name ?? '';
                         }
                     }
                 }
-
                 $records['data'][$index] = [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -475,7 +471,7 @@ class UsersController extends Controller
 
 
         $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
-
+        
         $roles = Role::get()->pluck('name', 'id');
 
         $filters = Filters::all(Auth::User()->id, 'users');
