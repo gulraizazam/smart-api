@@ -37,19 +37,27 @@
                 <select class="form-control filter-field select2" name="status" id="search_status">
                 </select>
             </div>
+            @else
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                <label>City:</label>
+                <select class="form-control filter-field select2" name="city" id="search_city" >
+                    <option value="">Select</option>
+
+                </select>
+            </div>
         @endif
     </div>
 
     <div class="row mb-8 advance-filters" style="display: none;">
+        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_centres"))
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                <label>City:</label>
+                <select class="form-control filter-field select2" name="city" id="search_city" >
+                    <option value="">Select</option>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>City:</label>
-            <select class="form-control filter-field select2" name="city" id="search_city" >
-                <option value="">Select</option>
-
-            </select>
-        </div>
-
+                </select>
+            </div>
+        @endif
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Region:</label>
             <select class="form-control filter-field select2" name="region" id="search_region" >
