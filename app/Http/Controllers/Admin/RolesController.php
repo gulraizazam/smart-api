@@ -73,6 +73,7 @@ class RolesController extends Controller
                     $role->delete();
               }
             }
+
             if($any_deleted){
                 $records["status"] = true;
                 $records["message"] = "Records has been deleted successfully!";
@@ -81,8 +82,11 @@ class RolesController extends Controller
                 $records["message"] = "One or more records are not deleted!";
             }
         }
+
         $where = array();
+
         list($orderBy, $order) = getSortBy($request);
+
         if(hasFilter($filters, 'name')) {
             $where[] = array(
                 'name',
@@ -103,6 +107,7 @@ class RolesController extends Controller
                 }
             }
         }
+
         if (hasFilter($filters, 'commission') && is_numeric($filters['commission'])) {
             $where[] = array(
                 'commission',
@@ -123,17 +128,21 @@ class RolesController extends Controller
                 }
             }
         }
+
         if(count($where)) {
             $iTotalRecords = Role::where($where)->count();
         } else {
             $iTotalRecords = Role::count();
         }
+
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
         if(count($where)) {
             $Roles = Role::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         } else {
             $Roles = Role::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         }
+
         if($Roles) {
             $records["data"] = $Roles;
             $records["permissions"] = [
@@ -149,8 +158,10 @@ class RolesController extends Controller
                 'sort' => $order,
             ];
         }
+
         return response()->json($records);
     }
+
     /**
      * Show the form for creating new Role.
      *
@@ -320,7 +331,6 @@ class RolesController extends Controller
             'log' => 'Log',
             'log_excel' => 'Excel Log',
             'sms_log' => 'Sms Log',
-            'view_inactive_users'=>'Show Inactive Users',
         );
     }
 
@@ -356,6 +366,9 @@ class RolesController extends Controller
             'my_appointment_by_status' => 'My Appointments by Status',
         );
     }
+
+
+
     /**
      * Prepare Reports Permissions to display in table
      *
@@ -436,6 +449,7 @@ class RolesController extends Controller
             'rescheduled_count_report' => 'Appointment Rescheduled Count Report'
         );
     }
+
     /**
      * Validate form fields
      *
@@ -448,6 +462,8 @@ class RolesController extends Controller
             'name' => 'required',
         ]);
     }
+
+
     /**
      * Show the form for editing Role.
      *
@@ -459,7 +475,9 @@ class RolesController extends Controller
         if (! Gate::allows('roles_edit')) {
             return abort(401);
         }
+
         $role = Role::findOrFail($id);
+
         // Get list of all allowed permissions for current role.
         $AllowedPermissions = Permission::join('role_has_permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
             ->where(['role_has_permissions.role_id' => $role->id])
@@ -467,13 +485,17 @@ class RolesController extends Controller
         if(!$AllowedPermissions) {
             $AllowedPermissions = [];
         }
+
         $mapping = $this->getAllPermissionsMapping();
+
         $Permissions = $mapping['Permissions'];
         $DashboardPermissions = $mapping['DashboardPermissions'];
         $ReportsPermissions = $mapping['ReportsPermissions'];
+
         $permissionsMapping = $mapping['permissionsMapping'];
         $dashboardPermissionsMapping = $mapping['dashboardPermissionsMapping'];
         $reportsPermissionsMapping = $mapping['reportsPermissionsMapping'];
+
         return ApiHelper::makeResponse([
             'role' => $role,
             'AllowedPermissions' => $AllowedPermissions,
@@ -484,7 +506,9 @@ class RolesController extends Controller
             "reportsPermissionsMapping" => $reportsPermissionsMapping,
             'ReportsPermissions' => $ReportsPermissions
         ], 'admin.roles.edit');
+
     }
+
     /**
      * Get All Permissions Mappings
      *
@@ -493,17 +517,27 @@ class RolesController extends Controller
      */
     protected function getAllPermissionsMapping()
     {
-        /*
-         * General Permissions
-         */
         $notInArray = array(
             'dashboard_manage', 'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage','finance_general_revenue_reports_manage','finance_revenue_breakup_reports_manage','finance_ledger_reports_manage','staff_listing_reports_manage','staff_revenue_reports_manage','marketing_reports_manage'
         );
-        $GroupPermissions = Permission::
-        where(['main_group' => 1, 'status' => 1])
+        $notInNamesArray = array(
+            'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres', 'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors','view_inactive_lead_sources','view_inactive_leads','view_inactive_leadstatuses','view_inactive_machine_types','view_inactive_packages','view_inactive_patients','view_inactive_payment_modes','view_inactive_plans
+            ','view_inactive_products','view_inactive_regions','view_inactive_resources','view_inactive_rota','view_inactive_rotas','view_inactive_services','view_inactive_sms_templates',''
+        );
+        if(Auth::user()->hasRole('Super-Admin')){
+            $GroupPermissions = Permission::where(['main_group' => 1, 'status' => 1])
             ->whereNotIn('name', $notInArray)
             ->get();
-        $SubPermissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereNotIn('name', $notInArray)->pluck('id', 'name'))->get()->keyBy('id');
+            $SubPermissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereNotIn('name', $notInArray)->pluck('id', 'name'))->get()->keyBy('id');
+        }else{
+            $GroupPermissions = Permission::where(['main_group' => 1, 'status' => 1])
+            ->whereNotIn('name', $notInArray)
+            ->whereNotIn('name', $notInNamesArray)
+            ->get();
+            $SubPermissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereNotIn('name', $notInArray)
+            ->whereNotIn('name', $notInNamesArray)
+            ->pluck('id', 'name'))->get()->keyBy('id');
+        }
         $Permissions = array();
         if($GroupPermissions) {
             foreach($GroupPermissions as $groupPermission) {
@@ -540,6 +574,7 @@ class RolesController extends Controller
         whereIn('name', $whereIn)
             ->get();
         $DashboardSubPermissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereIn('name', $whereIn)->pluck('id', 'name'))->get()->keyBy('id');
+
         $DashboardPermissions = array();
         if($DashboardGroupPermissions) {
             foreach($DashboardGroupPermissions as $groupPermission) {
@@ -566,6 +601,7 @@ class RolesController extends Controller
                 }
             }
         }
+
         /*
          * Reports Permissions
          */
@@ -577,6 +613,7 @@ class RolesController extends Controller
         whereIn('name', $whereIn)
             ->get();
         $ReportSubPermissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereIn('name', $whereIn)->pluck('id', 'name'))->get()->keyBy('id');
+
         $ReportsPermissions = array();
         if($ReportsGroupPermissions) {
             foreach($ReportsGroupPermissions as $groupPermission) {
@@ -588,6 +625,7 @@ class RolesController extends Controller
                     'children' => array(),
                     'key' => Str::replaceLast('manage', '', $groupPermission->name),
                 );
+
                 if($ReportSubPermissions) {
                     foreach($ReportSubPermissions as $SubPermission) {
                         if(array_key_exists($SubPermission->parent_id, $ReportsPermissions)) {
@@ -602,9 +640,11 @@ class RolesController extends Controller
                 }
             }
         }
+
         $permissionsMapping = $this->preparePermissionsMapping();
         $dashboardPermissionsMapping = $this->prepareDashboardPermissionsMapping();
         $reportsPermissionsMapping = $this->prepareReportsPermissionsMapping();
+
         return array(
             'Permissions' => $Permissions,
             'DashboardPermissions' => $DashboardPermissions,
@@ -614,6 +654,7 @@ class RolesController extends Controller
             'reportsPermissionsMapping' => $reportsPermissionsMapping,
         );
     }
+
     /**
      * Update Role in storage.
      *
@@ -626,22 +667,30 @@ class RolesController extends Controller
         if (! Gate::allows('roles_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
+
         try {
+
             $validator = $this->verifyFields($request);
+
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
+
             unset($request['DataTables_Table_0_length']);
             $role = Role::findOrFail($id);
             $role->update($request->except('permission'));
             $permissions = $request->input('permission') ? $request->input('permission') : [];
+
             $role->syncPermissions($permissions);
+
             session()->flash('success', 'Record has been updated successfully.');
+
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
+
 
     /**
      * Remove Role from storage.
@@ -654,18 +703,26 @@ class RolesController extends Controller
         if (! Gate::allows('roles_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
+
         $role = Role::findOrFail($id);
+
         if (!$role) {
+
             session()->flash('success', 'Resource not found.', false);
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
+
         // Check if child records exists or not, If exist then disallow to delete it.
         if (self::isChildExists($id, Auth::User()->account_id)) {
+
             session()->flash('success', 'Child records exist, unable to delete resource.');
             return ApiHelper::apiResponse($this->success, 'Child records exist, unable to delete resource.', false);
         }
+
         $role->delete();
+
         session()->flash('success', 'Record has been deleted successfully.');
+
         return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
     }
 
@@ -684,4 +741,6 @@ class RolesController extends Controller
         }
         return false;
     }
+
+
 }
