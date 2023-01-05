@@ -28,6 +28,11 @@
 
                 </select>
             </div>
+        @else
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                <label>Email:</label>
+                <input type="text" class="form-control filter-field" placeholder="Email" id="search_email" />
+            </div>
         @endif
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Phone:</label>
@@ -53,12 +58,12 @@
 
             </select>
         </div>
-
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Email:</label>
-            <input type="text" class="form-control filter-field" placeholder="Email" id="search_email" />
-        </div>
-
+        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors"))
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                <label>Email:</label>
+                <input type="text" class="form-control filter-field" placeholder="Email" id="search_email" />
+            </div>
+        @endif
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Create at:</label>
             <div class="input-daterange input-group to-from-datepicker" >
