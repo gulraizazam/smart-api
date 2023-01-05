@@ -280,12 +280,7 @@
                     {{--Collections by centers--}}
                     @if(\Illuminate\Support\Facades\Gate::allows("dashboard_collection_by_centre"))
                     <div class="col-lg-12 col-xxl-12">
-                        <!--begin::Stats Widget 11-->
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="collectionbycenter">
-
-                           
-
-                            <!--begin::Body-->
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                     <span class="dashboard-counter text-uppercase" >Collection by Centre</span>
@@ -315,43 +310,43 @@
                                                             <a href="#"
                                                             target="_blank">This Month</a>
                                                         </li>
+                                                        <li>
+                                                            <a href="#"
+                                                            target="_blank">Last Month</a>
+                                                        </li>
                                                     </ul>
                                                 </div>
                                             </div>
                                         </li>
                                         <li >
                                             <a class="active" href="#location_collection_1" data-toggle="tab"
-                                            onclick="initCollectionByCentre('today', '', '', '');">Today</a>
+                                            onclick="initCollectionByCentre('today', '', '', '','');">Today</a>
                                         </li>
                                         <li>
                                             <a href="#location_collection_2" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', 'yesterday', '', '');">Yesterday</a>
+                                            onclick="initCollectionByCentre('', 'yesterday', '', '','');">Yesterday</a>
                                         </li>
                                         <li>
                                             <a href="#location_collection_3" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '', 'last7days', '');">Last 7 Days</a>
+                                            onclick="initCollectionByCentre('', '', 'last7days', '','');">Last 7 Days</a>
                                         </li>
                                         <li>
                                             <a href="#location_collection_4" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '', '', 'thismonth');">This Month</a>
+                                            onclick="initCollectionByCentre('', '', '', 'thismonth','');">This Month</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_collection_4" data-toggle="tab"
+                                            onclick="initCollectionByCentre('', '', '','', 'lastmonth');">Last Month</a>
                                         </li>
                                     </ul>
                                     <div class=" flex-column text-right d-none">
                                         <span class="text-dark-75 font-weight-bolder font-size-h3 total-pie-chart"></span>
                                         <span class="text-muted font-weight-bold mt-2 pie-income-title">Weekly Income</span>
                                     </div>
-
                                 </div>
-
                                 <div id="collection-by-centre"></div>
-
                             </div>
-                            <!--end::Body-->
-                            
-                            
-
                         </div>
-                        <!--end::Stats Widget 11-->
                     </div>
                     @endif
                     {{--My Collections by centers--}}
@@ -390,296 +385,58 @@
                                                             <a href=""
                                                             target="_blank">This Month</a>
                                                         </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Last Month</a>
+                                                        </li>
                                                     </ul>
                                                 </div>
                                             </div>
                                         </li>
                                         <li >
                                             <a class="active" href="#location_my_collection_1" data-toggle="tab"
-                                            onclick="initMyCollectionByCentre('today', '', '', '');">Today</a>
+                                            onclick="initMyCollectionByCentre('today', '', '', '','');">Today</a>
                                         </li>
                                         <li>
                                             <a href="#location_my_collection_2" data-toggle="tab"
-                                            onclick="initMyCollectionByCentre('', 'yesterday', '', '');">Yesterday</a>
+                                            onclick="initMyCollectionByCentre('', 'yesterday', '', '','');">Yesterday</a>
                                         </li>
                                         <li>
                                             <a href="#location_my_collection_3" data-toggle="tab"
-                                            onclick="initMyCollectionByCentre('', '', 'last7days', '');">Last 7 Days</a>
+                                            onclick="initMyCollectionByCentre('', '', 'last7days', '','');">Last 7 Days</a>
                                         </li>
                                         <li>
                                             <a href="#location_my_collection_4" data-toggle="tab"
-                                            onclick="initMyCollectionByCentre('', '', '', 'thismonth');">This Month</a>
+                                            onclick="initMyCollectionByCentre('', '', '', 'thismonth','');">This Month</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_my_collection_4" data-toggle="tab"
+                                            onclick="initMyCollectionByCentre('', '', '','', 'lastmonth');">Last Month</a>
                                         </li>
                                     </ul>
-
-                                   
-
-                                        <div class="d-none flex-column text-right">
+                                    <div class="d-none flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-collection-center"></span>
                                             <span class="text-muted font-weight-bold mt-2 my-collection-title"></span>
                                         </div>
                                     </div>
-
                                     <div id="my-collection-by-centre"></div>
-
                                 </div>
-                            
-
-                        
-                        <!--end::Body-->
+                            </div>
                         </div>
-                        <!--end::My Collection by centre-->
-                    </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
-                    <div class="col-lg-12 col-xxl-12">
-                        <!--begin::Revenue by center-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <!--begin::Body-->
-                            
+                        <div class="col-lg-12 col-xxl-12">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase">Revenue by Centre</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center">
-                                    <li style="border-bottom: none;">
-                                        <div class="actions action-style p-3 mr-3">
-                                            <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                data-close-others="true" aria-expanded="false"> Report
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                <ul class="dropdown-menu dropdown-menu-right">
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Today</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Yesterday</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Last 7 Days</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">This Month</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li >
-                                        <a class="active" href="#location_revenue_4" data-toggle="tab"
-                                        onclick="initRevenueByCentre('today');">Today</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_revenue_1" data-toggle="tab"
-                                        onclick="initRevenueByCentre('yesterday');">Yesterday</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_revenue_2" data-toggle="tab"
-                                        onclick="initRevenueByCentre('last7days');">Last 7 Days</a>
-                                    </li>
-                                    <li>
-                                        <a href="#location_revenue_3" data-toggle="tab"
-                                        onclick="initRevenueByCentre('thismonth');">This Month</a>
-                                    </li>
-                                </ul>
-                                      
-                                        <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-centre"></span>
-                                            <span class="text-muted font-weight-bold mt-2 revenue-centre-title">Today Revenue</span>
-                                        </div>
-                                    </div>
-                                    <div id="revenue-centre"></div>
-
-                                </div>
-
-                            
-
-                        
-
-
-                        <!--end::Body-->
-                        </div>
-                        <!--end::Revenue by center2-->
-                    </div>
-                    @endif
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_revenue_by_centre'))
-                    <div class="col-lg-12 col-xxl-12">
-
-                        <!--begin::My Revenue by center-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <!--begin::Body-->
-                            
-                            <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                <span class="dashboard-counter text-uppercase">My Revenue by Centre</span>
-                                <ul class="nav nav-tabs d-flex align-items-center">
-                                    <li style="border-bottom: none;">
-                                        <div class="actions action-style p-3 mr-3">
-                                            <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                data-close-others="true" aria-expanded="false"> Report
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                <ul class="dropdown-menu dropdown-menu-right">
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Today</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Yesterday</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Last 7 Days</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">This Month</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li >
-                                        <a class="active" href="#my_location_revenue_4" data-toggle="tab"
-                                        onclick="initMyRevenueByCentre('today');">Today</a>
-                                    </li>
-                                    <li>
-                                        <a href="#my_location_revenue_1" data-toggle="tab"
-                                        onclick="initMyRevenueByCentre('yesterday');">Yesterday</a>
-                                    </li>
-                                    <li>
-                                        <a href="#my_location_revenue_2" data-toggle="tab"
-                                        onclick="initMyRevenueByCentre('last7days');">Last 7 Days</a>
-                                    </li>
-                                    <li>
-                                        <a href="#my_location_revenue_3" data-toggle="tab"
-                                        onclick="initMyRevenueByCentre('thismonth');">This Month</a>
-                                    </li>
-                                </ul>
-
-                                   
-                                    <div class="d-none flex-column text-right">
-                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-revenue-centre"></span>
-                                        <span class="text-muted font-weight-bold mt-2 my-revenue-centre-title">Weekly Income</span>
-                                    </div>
-                                </div>
-
-                                <div id="my-revenue-centre"></div>
-
-                            </div>
-
-                            
-
-                            
-                            <!--end::Body-->
-                        </div>
-                        <!--end::My Revenue by center-->
-
-                    </div>
-                    @endif
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
-                    <div class="col-lg-12 col-xxl-12">
-
-                        <!--begin::REVENUE BY SERVICE-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <!--begin::Body-->
-                            
-                                <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase" >Revenue by Service</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center">
-                                    <li style="border-bottom: none;">
-                                        <div class="actions action-style p-3 mr-3">
-                                            <div class="btn-group">
-                                                <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                data-close-others="true" aria-expanded="false"> Report
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                <ul class="dropdown-menu dropdown-menu-right">
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Today</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Yesterday</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">Last 7 Days</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href=""
-                                                        target="_blank">This Month</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li >
-                                        <a class="active" href="#service_revenue_4" data-toggle="tab"
-                                        onclick="initRevenueByService('today', '', '', '');">Today</a>
-                                    </li>
-                                    <li>
-                                        <a href="#service_revenue_1" data-toggle="tab"
-                                        onclick="initRevenueByService('', 'yesterday', '', '');">Yesterday</a>
-                                    </li>
-                                    <li>
-                                        <a href="#service_revenue_2" data-toggle="tab"
-                                        onclick="initRevenueByService('', '', 'last7days', '');">Last 7 Days</a>
-                                    </li>
-                                    <li>
-                                        <a href="#service_revenue_3" data-toggle="tab"
-                                        onclick="initRevenueByService('', '', '', 'thismonth');">This Month</a>
-                                    </li>
-                                </ul>
-
-                                      
-
-                                        <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
-                                            <span class="text-muted font-weight-bold mt-2 service-title"></span>
-                                        </div>
-                                    </div>
-
-                                    <div id="revenue-service"></div>
-
-                                </div>
-
-                            
-
-                        
-                        <!--end::Body-->
-                        </div>
-                        <!--end::REVENUE BY SERVICE-->
-
-                    </div>
-                    @endif
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_revenue_by_service'))
-                    <div class="col-lg-12 col-xxl-12">
-                        <!--begin::MY REVENUE BY SERVICE-->
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <!--begin::Body-->
-                            
-                                <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">My Revenue by Service</span>
+                                        <span class="dashboard-counter text-uppercase">Revenue by Centre</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
                                                         <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                        data-close-others="true" aria-expanded="false"> Report
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right">
@@ -699,52 +456,262 @@
                                                                 <a href=""
                                                                 target="_blank">This Month</a>
                                                             </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last Month</a>
+                                                            </li>
                                                         </ul>
                                                     </div>
                                                 </div>
                                             </li>
                                             <li >
-                                                <a class="active" href="#my_service_revenue_4" data-toggle="tab"
-                                                onclick="initMyRevenueByService('today');">Today</a>
+                                                <a class="active" href="#location_revenue_4" data-toggle="tab"
+                                                onclick="initRevenueByCentre('today');">Today</a>
                                             </li>
                                             <li>
-                                                <a href="#my_service_revenue_1" data-toggle="tab"
-                                                onclick="initMyRevenueByService('yesterday');">Yesterday</a>
+                                                <a href="#location_revenue_1" data-toggle="tab"
+                                                onclick="initRevenueByCentre('yesterday');">Yesterday</a>
                                             </li>
                                             <li>
-                                                <a href="#my_service_revenue_2" data-toggle="tab"
-                                                onclick="initMyRevenueByService('last7days');">Last 7 Days</a>
+                                                <a href="#location_revenue_2" data-toggle="tab"
+                                                onclick="initRevenueByCentre('last7days');">Last 7 Days</a>
                                             </li>
                                             <li>
-                                                <a href="#my_service_revenue_3" data-toggle="tab"
-                                                onclick="initMyRevenueByService('thismonth');">This Month</a>
+                                                <a href="#location_revenue_3" data-toggle="tab"
+                                                onclick="initRevenueByCentre('thismonth');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_revenue_3" data-toggle="tab"
+                                                onclick="initRevenueByCentre('lastmonth');">Last Month</a>
                                             </li>
                                         </ul>
                                         <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-service"></span>
-                                            <span class="text-muted font-weight-bold mt-2 my-service-title"></span>
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-centre"></span>
+                                            <span class="text-muted font-weight-bold mt-2 revenue-centre-title">Today Revenue</span>
                                         </div>
                                     </div>
-
-                                    <div id="my-revenue-service"></div>
-
+                                    <div id="revenue-centre"></div>
                                 </div>
-
-                            
-
-                        
-                        <!--end::Body-->
+                            </div>
                         </div>
-                        <!--end::MY REVENUE BY SERVICE-->
+                    @endif
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_revenue_by_centre'))
+                        <div class="col-lg-12 col-xxl-12">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">My Revenue by Centre</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#my_location_revenue_4" data-toggle="tab"
+                                                onclick="initMyRevenueByCentre('today');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#my_location_revenue_1" data-toggle="tab"
+                                                onclick="initMyRevenueByCentre('yesterday');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#my_location_revenue_2" data-toggle="tab"
+                                                onclick="initMyRevenueByCentre('last7days');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#my_location_revenue_3" data-toggle="tab"
+                                                onclick="initMyRevenueByCentre('thismonth');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#my_location_revenue_3" data-toggle="tab"
+                                                onclick="initMyRevenueByCentre('lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-revenue-centre"></span>
+                                            <span class="text-muted font-weight-bold mt-2 my-revenue-centre-title">Weekly Income</span>
+                                        </div>
+                                    </div>
+                                    <div id="my-revenue-centre"></div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
+                    <div class="col-lg-12 col-xxl-12">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                            <div class="card-body p-0">
+                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase" >Revenue by Service</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">LAst Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
+                                                onclick="initRevenueByService('today', '', '', '','');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_1" data-toggle="tab"
+                                                onclick="initRevenueByService('', 'yesterday', '', '','');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_2" data-toggle="tab"
+                                                onclick="initRevenueByService('', '', 'last7days', '','');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="initRevenueByService('', '', '', 'thismonth','');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="initRevenueByService('', '', '','', 'lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
+                                            <span class="text-muted font-weight-bold mt-2 service-title"></span>
+                                        </div>
+                                    </div>
+                                    <div id="revenue-service"></div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_revenue_by_service'))
+                    <div class="col-lg-12 col-xxl-12">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                            <div class="card-body p-0">
+                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase">My Revenue by Service</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center">
+                                        <li style="border-bottom: none;">
+                                            <div class="actions action-style p-3 mr-3">
+                                                <div class="btn-group">
+                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                    data-close-others="true" aria-expanded="false"> Report
+                                                        <i class="fa fa-angle-down"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu dropdown-menu-right">
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Today</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Yesterday</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Last 7 Days</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">This Month</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Last Month</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li >
+                                            <a class="active" href="#my_service_revenue_4" data-toggle="tab"
+                                            onclick="initMyRevenueByService('today');">Today</a>
+                                        </li>
+                                        <li>
+                                            <a href="#my_service_revenue_1" data-toggle="tab"
+                                            onclick="initMyRevenueByService('yesterday');">Yesterday</a>
+                                        </li>
+                                        <li>
+                                            <a href="#my_service_revenue_2" data-toggle="tab"
+                                            onclick="initMyRevenueByService('last7days');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#my_service_revenue_3" data-toggle="tab"
+                                            onclick="initMyRevenueByService('thismonth');">This Month</a>
+                                        </li>
+                                        <li>
+                                            <a href="#my_service_revenue_3" data-toggle="tab"
+                                            onclick="initMyRevenueByService('lastmonth');">Last Month</a>
+                                        </li>
+                                    </ul>
+                                    <div class="d-none flex-column text-right">
+                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-my-service"></span>
+                                        <span class="text-muted font-weight-bold mt-2 my-service-title"></span>
+                                    </div>
+                                </div>
+                                <div id="my-revenue-service"></div>
+                            </div>
+                        </div>
                     </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
                         <div class="col-lg-12 col-xxl-12">
-                            <!--begin::MY REVENUE BY SERVICE-->
                             <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                                <!--begin::Body-->
-                                
-                                    <div class="card-body p-0">
+                                <div class="card-body p-0">
                                         <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                             <span class="dashboard-counter text-uppercase">Appointments by Status</span>
                                             <ul class="nav nav-tabs d-flex align-items-center">
@@ -773,6 +740,10 @@
                                                                     <a href=""
                                                                     target="_blank">This Month</a>
                                                                 </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Last Month</a>
+                                                                </li>
                                                             </ul>
                                                         </div>
                                                     </div>
@@ -793,31 +764,24 @@
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
                                                     onclick="initAppointmentsByStatus('thismonth');">This Month</a>
                                                 </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initAppointmentsByStatus('lastmonth');">Last Month</a>
+                                                </li>
                                             </ul>
                                             <div class="d-none flex-column text-right">
                                                 <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
                                                 <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
                                             </div>
                                         </div>
-
                                         <div id="appointment_status_today"></div>
-
                                     </div>
-
-                                
-
-                            
-                            <!--end::Body-->
+                                </div>
                             </div>
-                            <!--end::MY REVENUE BY SERVICE-->
-                        </div>
-                    @endif
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_appointment_by_status'))
-                        <div class="col-lg-12 col-xxl-12">
-                            <!--begin::MY REVENUE BY SERVICE-->
-                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                                <!--begin::Body-->
-                                
+                        @endif
+                        @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_appointment_by_status'))
+                            <div class="col-lg-12 col-xxl-12">
+                                <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
                                         <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                             <span class="dashboard-counter text-uppercase">My Appointments by Status</span>
@@ -847,6 +811,10 @@
                                                                     <a href=""
                                                                     target="_blank">This Month</a>
                                                                 </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Last Month</a>
+                                                                </li>
                                                             </ul>
                                                         </div>
                                                     </div>
@@ -867,31 +835,25 @@
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
                                                     onclick="initMyAppointmentsByStatus('thismonth');">This Month</a>
                                                 </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByStatus('lastmonth');">Last Month</a>
+                                                </li>
                                             </ul>
                                             <div class="d-none flex-column text-right">
                                                 <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-appointment-by-status"></span>
                                                 <span class="text-muted font-weight-bold mt-2 my-appointment-by-status-title"></span>
                                             </div>
                                         </div>
-
                                         <div id="my_appointment_status_today"></div>
-
                                     </div>
-
-                                
-
-                            
-                            <!--end::Body-->
+                                </div>
+                           
                             </div>
-                            <!--end::MY REVENUE BY SERVICE-->
-                        </div>
-                    @endif
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
-                        <div class="col-lg-12 col-xxl-12">
-                            <!--begin::MY REVENUE BY SERVICE-->
-                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                                <!--begin::Body-->
-                                
+                        @endif
+                        @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
+                            <div class="col-lg-12 col-xxl-12">
+                                <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
                                         <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                             <span class="dashboard-counter text-uppercase">Appointments by Type</span>
@@ -921,6 +883,10 @@
                                                                     <a href=""
                                                                     target="_blank">This Month</a>
                                                                 </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Last Month</a>
+                                                                </li>
                                                             </ul>
                                                         </div>
                                                     </div>
@@ -941,31 +907,24 @@
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
                                                     onclick="initAppointmentsByType('thismonth');">This Month</a>
                                                 </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initAppointmentsByType('lastmonth');">Last Month</a>
+                                                </li>
                                             </ul>
                                             <div class="d-none flex-column text-right">
                                                 <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-type"></span>
                                                 <span class="text-muted font-weight-bold mt-2 appointment-by-type-title"></span>
                                             </div>
                                         </div>
-
                                         <div id="appointment_type_today"></div>
-
                                     </div>
-
-                                
-
-                            
-                            <!--end::Body-->
+                                </div>
                             </div>
-                            <!--end::MY REVENUE BY SERVICE-->
-                        </div>
-                    @endif
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_appointment_by_type'))
-                        <div class="col-lg-12 col-xxl-12">
-                            <!--begin::MY REVENUE BY SERVICE-->
-                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                                <!--begin::Body-->
-                                
+                        @endif
+                        @if(\Illuminate\Support\Facades\Gate::allows('dashboard_my_appointment_by_type'))
+                            <div class="col-lg-12 col-xxl-12">
+                                <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
                                         <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                             <span class="dashboard-counter text-uppercase">My Appointments by Type</span>
@@ -995,6 +954,10 @@
                                                                     <a href=""
                                                                     target="_blank">This Month</a>
                                                                 </li>
+                                                                <li>
+                                                                    <a href=""
+                                                                    target="_blank">Last Month</a>
+                                                                </li>
                                                             </ul>
                                                         </div>
                                                     </div>
@@ -1015,26 +978,22 @@
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
                                                     onclick="initMyAppointmentsByType('thismonth');">This Month</a>
                                                 </li>
+                                                <li>
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initMyAppointmentsByType('lastmonth');">Last Month</a>
+                                                </li>
                                             </ul>
                                             <div class="d-none flex-column text-right">
                                                 <span class="text-dark-75 font-weight-bolder font-size-h3 my-total-appointment-by-type"></span>
                                                 <span class="text-muted font-weight-bold mt-2 my-appointment-by-type-title"></span>
                                             </div>
                                         </div>
-
                                         <div id="my_appointment_type_today"></div>
-
                                     </div>
-
-                                
-
-                            
-                            <!--end::Body-->
+                                </div>
                             </div>
-                            <!--end::MY REVENUE BY SERVICE-->
-                        </div>
-                    @endif
-                </div>
+                        @endif
+                    </div>
                 
                 <!-- @can('dashboard_upcomings')
                     <div class="row">
