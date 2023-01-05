@@ -58,7 +58,7 @@ class DashboardReportsController extends Controller
         ])->pluck('name', 'id');
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
             if ($request->get('today') != '') {
-                list( $todayRecords, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
+                list( $todayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
                 if (count($todayRecords)) {
                     foreach ($todayRecords as $record) {
                         $data['today'][] = $record;
@@ -66,7 +66,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('yesterday') != '') {
-                list( $yesterdayRecords, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
+                list( $yesterdayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
                 if (count($yesterdayRecords)) {
                     foreach ($yesterdayRecords as $record) {
                         $data['yesterday'][] = $record;
@@ -74,7 +74,7 @@ class DashboardReportsController extends Controller
                 } 
             }
             if ($request->get('last7days') != '') {
-                list( $last7dayRecords, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'last7day', $request);
+                list( $last7dayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
                 if (count($last7dayRecords)) {
                     foreach ($last7dayRecords as $record) {
                         $data['last7days'][] = $record;
@@ -82,7 +82,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('thismonth') != '') {
-                list( $thisMonthRecords, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
+                list( $thisMonthRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
                 if (count($thisMonthRecords)) {
                     foreach ($thisMonthRecords as $record) {
                         $data['thismonth'][] = $record;
@@ -90,7 +90,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('lastmonth') != '') {
-                list( $thisMonthRecords, $total) = dashboardreport::collectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
+                list( $thisMonthRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
                 if (count($thisMonthRecords)) {
                     foreach ($thisMonthRecords as $record) {
                         $data['lastmonth'][] = $record;
@@ -111,11 +111,8 @@ class DashboardReportsController extends Controller
             'week' => array(),
             'month' => array(),
         );
-
         if (Gate::allows('dashboard_my_collection_by_centre')) {
-
             $location_information = Locations::getActiveSorted(ACL::getUserCentres());
-
             switch ($request->type) {
                 case 'today':
                     list( $report_data, $total) = dashboardreport::myCollectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
@@ -166,9 +163,7 @@ class DashboardReportsController extends Controller
                     }
                     break;
             }
-
         }
-
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
             'pie' => $data,
             'total' => number_format($total ?? 0, 2)
@@ -237,7 +232,6 @@ class DashboardReportsController extends Controller
                 ->whereDate('created_at', '<=', $end_date)
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->where('invoice_status_id', '=', $invoicestatus->id);
-
             if ($request->get('performance') == '1') {
                 $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
             }
@@ -495,7 +489,6 @@ class DashboardReportsController extends Controller
                 }
             }
         }
-
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
             'colors' => $colors,
@@ -1189,12 +1182,9 @@ class DashboardReportsController extends Controller
             if ($request->get('performance')) {
                 $weeklyRecords = $weeklyRecords->where('created_by', Auth::User()->id);
             }
-
             $weeklyRecords = $weeklyRecords->select('appointment_type_id', DB::raw("COUNT(id) AS total"))
                 ->groupBy('appointment_type_id')
                 ->get();
-
-            
             if ($appointment_types) {
                 $total = 0;
                 foreach ($appointment_types as $appointment_type) {
@@ -1309,7 +1299,5 @@ class DashboardReportsController extends Controller
             'colors' => $colors,
             'total' =>  0,
         ]);
-    
-        
     }
 }
