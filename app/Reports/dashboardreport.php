@@ -44,7 +44,6 @@ class dashboardreport
                         ['account_id', '=', $account_id],
                         ['location_id', '=', $key],
                     ])->get();
-                   
             }
             if ($where == 'yesterday') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
@@ -69,7 +68,14 @@ class dashboardreport
                         ['location_id', '=', $key],
                     ])->get();
             }
-            
+            if ($where == 'lastMonth') {
+                $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
+                    ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $key],
+                    ])->get();
+            }
             $location_single_info = Locations::find($key);
             
             if ($packagesadvances) {
@@ -191,6 +197,7 @@ class dashboardreport
 
     public static function myCollectionbyrevenuewidgets($location_information, $account_id, $where,$request)
     {
+        
         if (auth()->id() === 1) {
             return self::collectionbyrevenuewidgets($location_information, $account_id, $where, $request);
         }
@@ -242,7 +249,14 @@ class dashboardreport
                         ['location_id', '=', $key],
                     ])->where($wherecondtion)->get();
             }
-
+            if ($where == 'lastMonth') {
+                $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
+                    ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $key],
+                    ])->get();
+            }
             $location_single_info = Locations::find($key);
 
             if ($packagesadvances) {
