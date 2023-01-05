@@ -27,7 +27,7 @@ class dashboardreport
      * Collection by centre widgets calculation
      */
 
-    public static function collectionbyrevenuewidgets($location_informations, $account_id, $where,$request)
+    public static function CollectionByRevenueWidgets($location_informations, $account_id, $where,$request)
     {
         $total = 0;
         $report_data = array();
@@ -199,7 +199,7 @@ class dashboardreport
     {
         
         if (auth()->id() === 1) {
-            return self::collectionbyrevenuewidgets($location_information, $account_id, $where, $request);
+            return self::CollectionByRevenueWidgets($location_information, $account_id, $where, $request);
         }
 
         $total = 0;
