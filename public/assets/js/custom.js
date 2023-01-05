@@ -849,20 +849,15 @@ function get_query(){
 }
 
 function patientSearch(search_id = 'patient_id',flag=1) {
-
-    $("." + search_id).keyup(function() {
+    $("." + search_id).on("input",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
-
         if ($(this).val().length < 2) {
             $(".suggesstion-box").hide();
             return false;
         }
-
         if ($(this).val() != '') {
-
             let form_type = $(this).parents("form").find('.form_type').val();
-
             $.ajax({
                 type: "GET",
                 url: route('admin.users.getpatient.id'),
@@ -889,14 +884,11 @@ function patientSearch(search_id = 'patient_id',flag=1) {
 
                 }
             });
-
         } else {
             $(".suggesstion-box").hide();
         }
     });
-
     return false;
-
     $("." + search_id).select2({
         width: '100%',
         placeholder: 'Select Patient',
@@ -939,7 +931,6 @@ function patientSearch(search_id = 'patient_id',flag=1) {
         templateResult: formatRepo,
         templateSelection: formatRepoSelection
     });
-
 }
 
 function selectUser(name, user_id,  search_id,flag=1) {
