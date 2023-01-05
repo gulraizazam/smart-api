@@ -195,9 +195,18 @@ class CustomForms extends BaseModal
         $where = self::custom_forms_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            return self::where($where)->count();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_custom_forms")){
+                return self::where($where)->count();
+            }else{
+                return self::where('active',1)->where($where)->count();
+            }
         } else {
-            return self::count();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_custom_forms")){
+                return self::count();
+            }else{
+                return self::where('active',1)->count();
+            }
+                
         }
     }
 
@@ -244,9 +253,18 @@ class CustomForms extends BaseModal
             }
         }
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_custom_forms")){
+                return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            }else{
+                return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            }
+            
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_custom_forms")){
+                return self::limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            }else{
+                return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            }
         }
     }
 
