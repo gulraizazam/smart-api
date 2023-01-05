@@ -195,7 +195,7 @@ class dashboardreport
         ];
     }
 
-    public static function myCollectionbyrevenuewidgets($location_information, $account_id, $where,$request)
+    public static function MyCollectionByRevenueWidgets($location_information, $account_id, $where,$request)
     {
         
         if (auth()->id() === 1) {
