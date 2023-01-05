@@ -15,7 +15,7 @@
 
                     </select>
                 </div>
-
+                @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_towns"))
                 <div class="col-md-3">
                     <label>Status:</label>
                     <select class="form-controll filter-field select2" id="search_status">
@@ -25,7 +25,7 @@
 
                     </select>
                 </div>
-
+                @endif
 
                 <div class="col-md-3 mt-10">
 

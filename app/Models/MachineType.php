@@ -65,18 +65,37 @@ class MachineType extends BaseModal
         $where = Self::machinetype_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            return count(DB::table('machine_types')
-                ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
-                ->where($where)
-                ->whereNull('deleted_at')
-                ->groupBy('machine_type_has_services.machine_type_id')
-                ->get());
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_machine_types")){
+                return count(DB::table('machine_types')
+                    ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
+                    ->where($where)
+                    ->whereNull('deleted_at')
+                    ->groupBy('machine_type_has_services.machine_type_id')
+                    ->get());
+            }else{
+                return count(DB::table('machine_types')
+                    ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
+                    ->where($where)
+                    ->where('active',1)
+                    ->whereNull('deleted_at')
+                    ->groupBy('machine_type_has_services.machine_type_id')
+                    ->get());
+            }
         } else {
-            return count(DB::table('machine_types')
-                ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
-                ->whereNull('deleted_at')
-                ->groupBy('machine_type_has_services.machine_type_id')
-                ->get());
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_machine_types")){
+                return count(DB::table('machine_types')
+                    ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
+                    ->whereNull('deleted_at')
+                    ->groupBy('machine_type_has_services.machine_type_id')
+                    ->get());
+            }else{
+                return count(DB::table('machine_types')
+                    ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
+                    ->whereNull('deleted_at')
+                    ->where('active',1)
+                    ->groupBy('machine_type_has_services.machine_type_id')
+                    ->get());
+            }
         }
     }
 
@@ -95,11 +114,19 @@ class MachineType extends BaseModal
        // dd($request->all());
         $orderBy = 'created_at';
         $order = 'desc';
-        return self::with('services')->Filters($request,$account_id,$apply_filter)
-            ->limit($iDisplayLength)
-            ->offset($iDisplayStart)
-            ->orderby($orderBy, $order)
-            ->get();
+        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_machine_types")){
+            return self::with('services')->Filters($request,$account_id,$apply_filter)
+                ->limit($iDisplayLength)
+                ->offset($iDisplayStart)
+                ->orderby($orderBy, $order)
+                ->get();
+        }else{
+            return self::with('services')->where('machine_types.active',1)->Filters($request,$account_id,$apply_filter)
+                ->limit($iDisplayLength)
+                ->offset($iDisplayStart)
+                ->orderby($orderBy, $order)
+                ->get();
+        }
     }
 
     public function scopeFilters($query, $request, $account_id, $apply_filter){
