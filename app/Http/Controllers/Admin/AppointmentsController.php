@@ -4627,6 +4627,70 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
     /*For now that function not use anywhere*/
+    private function sendRescheduleSMS($appointmentId, $patient_phone, $log_type = 'sms', $account_id)
+    {
+        // Get Appointment
+        $appointment = Appointments::find($appointmentId);
+        if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
+            // SEND SMS for Appointment Booked
+            if($appointment->consultancy_type == 'virtual'){
+                $SMSTemplate = SMSTemplates::getBySlug('virtual-on-appointment', $account_id); // 'on-appointment' for virtual consultancy SMS
+            } else {
+                $SMSTemplate = SMSTemplates::getBySlug('on-appointment', $account_id); // 'on-appointment' for Appointment SMS
+            }
+        } else {
+            // SEND SMS for Appointment Booked
+            $SMSTemplate = SMSTemplates::getBySlug('treatment-on-appointment', $account_id); // 'on-appointment' for Appointment SMS
+        }
+
+        if (!$SMSTemplate) {
+            // SMS Promotion is disabled
+            return array(
+                'status' => true,
+                'sms_data' => 'SMS Promotion is disabled',
+                'error_msg' => '',
+            );
+        }
+
+        $preparedText = Appointments::prepareSMSContent($appointmentId, $SMSTemplate->content);
+
+        $setting = Settings::whereSlug('sys-current-sms-operator')->first();
+
+        $UserOperatorSettings = UserOperatorSettings::getRecord($account_id, $setting->data);
+
+        if ($setting->data == 1) {
+            $SMSObj = array(
+                'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
+                'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
+                'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
+                'text' => $preparedText,
+                'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
+                'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
+            );
+            $response = TelenorSMSAPI::SendSMS($SMSObj);
+        } else {
+            $SMSObj = array(
+                'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
+                'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
+                'from' => $UserOperatorSettings->mask,
+                'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
+                'text' => $preparedText,
+                'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
+            );
+            $response = JazzSMSAPI::SendSMS($SMSObj);
+        }
+        $SMSLog = array_merge($SMSObj, $response);
+        $SMSLog['appointment_id'] = $appointmentId;
+        $SMSLog['created_by'] = 1;
+        $SMSLog['log_type'] = $log_type;
+        if ($setting->data == 2) {
+            $SMSLog['mask'] = $SMSObj['from'];
+        }
+        SMSLogs::create($SMSLog);
+        // SEND SMS for Appointment Booked End
+
+        return $response;
+    }
     private function sendSMS($appointmentId, $patient_phone)
     {
         // Get Appointment
@@ -5345,12 +5409,8 @@ class AppointmentsController extends Controller
                 ]);
                 $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
-                $this->dispatch(
-                    new IndexSingleAppointmentJob([
-                        'account_id' => Auth::User()->account_id,
-                        'appointment_id' => $appointment->id
-                    ])
-                );
+                $log_type = 'sms';
+                $this->sendRescheduleSMS($appointment->appointment_id, $appointment->phone, $log_type, $appointment->account_id);
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
             return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
