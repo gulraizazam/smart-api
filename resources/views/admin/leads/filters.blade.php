@@ -17,7 +17,7 @@
 
     <div class="row mb-6">
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>ID:</label>
             <input type="text" class="form-control filter-field" placeholder="Enter ID" id="search_id" />
         </div>
@@ -32,29 +32,29 @@
             <input type="text" oninput="phoneField(this);" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>City:</label>
             <select class="form-control filter-field select2" id="search_city_id"></select>
         </div>
-
-
-    </div>
-
-    <div class="row mb-8 advance-filters" style="display: none;">
-
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Region:</label>
-            <select class="form-control filter-field select2" id="search_region_id"></select>
-        </div>
-
         @if(request('type') == '')
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Lead Status:</label>
             <select class="form-control filter-field select2" id="search_status_id"></select>
         </div>
         @endif
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+    </div>
+
+    <div class="row mb-8 advance-filters" style="display: none;">
+
+        <div class="col-lg-2 mb-lg-0 mb-6">
+            <label>Region:</label>
+            <select class="form-control filter-field select2" id="search_region_id"></select>
+        </div>
+
+        
+
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Service:</label>
             <select class="form-control filter-field select2" id="search_service_id"></select>
         </div>
@@ -71,16 +71,13 @@
                 <input type="text" id="search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5">
             </div>
         </div>
-
-    </div>
-
-    <div class="row mb-8 advance-filters" style="display: none;">
         <div class="col-lg-3 mb-lg-0">
             <label>Created By:</label>
             <select class="form-control filter-field select2" id="search_created_by">
             </select>
         </div>
     </div>
+
 
     <div class="row">
         <div class="col-md-10">
