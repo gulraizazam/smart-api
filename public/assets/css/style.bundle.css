@@ -86158,8 +86158,11 @@ body {
     position:relative;
     padding-top:65px;
 }
-.datatable .datatable-pager-info{
+.datatable .datatable-pager:not(:last-child) .datatable-pager-info{
     position:absolute;
     top:0px;
     right:0px;
+}
+.datatable .datatable-pager:not(:last-child) .datatable-pager-nav{
+    display:none;
 }

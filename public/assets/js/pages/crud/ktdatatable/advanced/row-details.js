@@ -35,6 +35,7 @@ var KTDatatable = function() {
                             filter_values = data.filter_values;
 
                             if (typeof setFilters === 'function') {
+                                
                                 setFilters(data.filter_values, data.active_filters);
                             }
 
@@ -45,16 +46,18 @@ var KTDatatable = function() {
                             if (typeof data.meta !== 'undefined') {
                                 metaData = data.meta;
                             }
-
+                            
                             if (typeof setTotal === 'function') {
+                                
                                 setTotal(metaData);
+                                
                             }
 
                             var response = data;
                             if (typeof response.data !== 'undefined') {
                                 response = response.data;
                             }
-
+                            
                             return response;
                         },
 					},
