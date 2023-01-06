@@ -5336,6 +5336,7 @@ class AppointmentsController extends Controller
             }
             $rota = $this->checkRota($appointment, $request);
             if ($rota['status']) {
+                dd("here");
                 $appointment->update([
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
