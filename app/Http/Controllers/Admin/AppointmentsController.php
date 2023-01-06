@@ -5347,7 +5347,7 @@ class AppointmentsController extends Controller
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
                 $log_type = 'sms';
                 $patient = Patients::findOrFail($appointment->patient_id);
-                $this->sendRescheduleSMS($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
             return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
@@ -5373,7 +5373,7 @@ class AppointmentsController extends Controller
         }
         return $rota;
     }
-    private function sendRescheduleSMS($appointmentId, $patient_phone, $log_type = 'sms', $account_id)
+    private function SendRescheduleSms($appointmentId, $patient_phone, $log_type = 'sms', $account_id)
     {
         $appointment = Appointments::find($appointmentId);
         if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
