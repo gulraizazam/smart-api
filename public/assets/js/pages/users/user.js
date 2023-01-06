@@ -1,6 +1,6 @@
 
 var table_url = route('admin.users.datatable');
-
+var Clonepager = "";
 var table_columns = [
     {
         field: 'id',
@@ -91,7 +91,8 @@ var table_columns = [
             return actions(data);
         }
     }];
-
+    
+    
 function actions(data) {
 
     let id = data.id;
