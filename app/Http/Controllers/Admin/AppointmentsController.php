@@ -5410,6 +5410,7 @@ class AppointmentsController extends Controller
                 $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
                 $log_type = 'sms';
+                dd($appointment);
                 $this->sendRescheduleSMS($request->appointment_id, $appointment->phone, $log_type, $appointment->account_id);
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
