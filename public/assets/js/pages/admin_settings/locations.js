@@ -317,9 +317,11 @@ function setCreateData(response) {
 
     $("#add_location_services").html(service_options);
 
-    let image = asset_url +'assets/media/logos/smart.svg';
+    let image = asset_url +'assets/media/new_logo.png';
 
     $("#add_center_image").css('background-image', "url(" + image + ")");
+    $("#add_center_image").css('height', "19px");
+    $("#add_center_image").css('width', "290px");
 }
 
 function makeServiceOptions(response) {

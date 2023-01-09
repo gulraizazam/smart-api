@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 Use App\Models\Patients;
 use App\Models\User;
 use Gate;
+use Config;
 use App\Helpers\ACL;
 use App;
 use App\Models\Appointments;
@@ -20,7 +21,9 @@ use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
+use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
 
 class DashboardReportsController extends Controller
 {
@@ -35,16 +38,13 @@ class DashboardReportsController extends Controller
      */
     public function __construct()
     {
-       
         $this->middleware('auth');
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
-    
     public function collectionByCentre(Request $request)
     {
-       
         $data = array(
             'today' => array(),
             'yesterday' => array(),
@@ -53,11 +53,11 @@ class DashboardReportsController extends Controller
             'lastmonth' => array(),
         );
         $location_information = Locations::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1']
+            'account_id'=> Auth::User()->account_id,
+            'active'=>'1'
         ])->pluck('name', 'id');
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-            if ($request->get('today') != '') {
+            if ($request->today) {
                 list( $todayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
                 if (count($todayRecords)) {
                     foreach ($todayRecords as $record) {
@@ -65,7 +65,7 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('yesterday') != '') {
+            if ($request->yesterday) {
                 list( $yesterdayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
                 if (count($yesterdayRecords)) {
                     foreach ($yesterdayRecords as $record) {
@@ -73,7 +73,7 @@ class DashboardReportsController extends Controller
                     }
                 } 
             }
-            if ($request->get('last7days') != '') {
+            if ($request->last7days) {
                 list( $last7dayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
                 if (count($last7dayRecords)) {
                     foreach ($last7dayRecords as $record) {
@@ -81,7 +81,7 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('thismonth') != '') {
+            if ($request->thismonth) {
                 list( $thisMonthRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
                 if (count($thisMonthRecords)) {
                     foreach ($thisMonthRecords as $record) {
@@ -89,7 +89,7 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('lastmonth') != '') {
+            if ($request->lastmonth) {
                 list( $thisMonthRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
                 if (count($thisMonthRecords)) {
                     foreach ($thisMonthRecords as $record) {
@@ -169,13 +169,639 @@ class DashboardReportsController extends Controller
             'total' => number_format($total ?? 0, 2)
         ]);
     }
+    public function CollectionByServiceCategory(Request $request)
+    {
+        $data = array(
+            'today' => array(),
+            'yesterday' => array(),
+            'last7days' => array(),
+            'thismonth' => array(),
+            'lastmonth' => array(),
+        );
+        $services = Services::where([
+            'account_id'=> Auth::User()->account_id,
+            'active'=>'1',
+            'parent_id'=>'0'
+        ])->get();
+        if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
+            if ($request->today) {
+                $total = 0;
+                $today[0] = array(
+                    'Task',
+                    'Hours per Day'
+                ); 
+                foreach ($services as $service) {
+                    $childServices = Services::where('parent_id',$service->id)->get();
+                    foreach($childServices as $child){
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->format('Y-m-d'))
+                        ->where([
+                            'package_advances.account_id'=> Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
+                        ])->get();
+                        if($packagesadvances ){
+                            $balance = 0;
+                            $total_revenue_cash_in = 0;
+                            $total_revenue_card_in = 0;
+                            $total_refund_out = 0;
+                            foreach ($packagesadvances as $packagesadvance) {
+                                if (
+                                    $packagesadvance->cash_flow == 'in' &&
+                                        $packagesadvance->is_adjustment == '0' &&
+                                        $packagesadvance->is_tax == '0' &&
+                                        $packagesadvance->is_cancel == '0'    
+                                ) {
+                                    switch ($packagesadvance->cash_flow) {
+                                        case 'in':
+                                            $balance = $balance + $packagesadvance->cash_amount;
+                                            break;
+                                        case 'out':
+                                            $balance = $balance - $packagesadvance->cash_amount;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    if ($packagesadvance->cash_amount != 0) {
+                                        if ($packagesadvance->package_id) {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->is_adjustment == '1') {
+                                            $transtype = Config::get('constants.trans_type.adjustment');
+                                        }
+                                        if ($packagesadvance->is_cancel == '1') {
+                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                                            $transtype = Config::get('constants.trans_type.invoice_create');
+                                        }
+                                        if ($packagesadvance->is_refund == '1') {
+                                            $transtype = Config::get('constants.trans_type.refund_in');
+                                        }
+                                        if ($packagesadvance->is_tax == '1') {
+                                            $transtype = Config::get('constants.trans_type.tax_out');
+                                        }
+                                        if ($packagesadvance->cash_flow == 'in') {
+                                            if ($packagesadvance->paymentmode->name == 'Cash') {
+                                                $revenue_cash_in = $packagesadvance->cash_amount;
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Card') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = $packagesadvance->cash_amount;
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = $packagesadvance->cash_amount;
+                                                $refund_out = '';
+                                            }
+                                        } else {
+                                            $revenue_cash_in = '';
+                                            $revenue_card_in = '';
+                                            $revenue_bank_in = '';
+                                            $refund_out = $packagesadvance->cash_amount;
+                                        }
+            
+                                        if ($revenue_cash_in) {
+                                            $total_revenue_cash_in += $revenue_cash_in;
+                                        }
+                                        if ($revenue_card_in) {
+                                            $total_revenue_card_in += $revenue_card_in;
+                                        }
+                                        if ($revenue_bank_in) {
+                                            $total_revenue_card_in += $revenue_bank_in;
+                                        }
+                                        if ($refund_out) {
+                                            $total_refund_out += $refund_out;
+                                        }
+                                       
+                                    }
+                                }
+                            }
+                        }
+                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
+                        $In_hand_balance = $total_revenue - $total_refund_out;
+                        if ($In_hand_balance > 0) {
+                            $today[$service->id] = array(
+                                $service->name,
+                                $In_hand_balance,
+                            );
+                            $colors[] = $service->color;
+                            $total += $In_hand_balance;
+                        }
+                    }
+                }
+                if (count($today)) {
+                    foreach ($today as $record) {
+                        $data['today'][] = $record;
+                    }
+                }
+            }
+            if ($request->yesterday) {
+                $total = 0;
+                $yesterday[0] = array(
+                    'Task',
+                    'Hours per Day'
+                ); 
+                foreach ($services as $service) {
+                    $childServices = Services::where('parent_id',$service->id)->get();
+                    foreach($childServices as $child){
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                        ->where([
+                            'package_advances.account_id'=> Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
+                        ])->get();
+                        if($packagesadvances ){
+                            $balance = 0;
+                            $total_revenue_cash_in = 0;
+                            $total_revenue_card_in = 0;
+                            $total_refund_out = 0;
+                            foreach ($packagesadvances as $packagesadvance) {
+                                if (
+                                    $packagesadvance->cash_flow == 'in' &&
+                                    $packagesadvance->is_adjustment == '0' &&
+                                    $packagesadvance->is_tax == '0' &&
+                                    $packagesadvance->is_cancel == '0'
+                                ) {
+                                    switch ($packagesadvance->cash_flow) {
+                                        case 'in':
+                                            $balance = $balance + $packagesadvance->cash_amount;
+                                            break;
+                                        case 'out':
+                                            $balance = $balance - $packagesadvance->cash_amount;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    if ($packagesadvance->cash_amount != 0) {
+                                        if ($packagesadvance->package_id) {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->is_adjustment == '1') {
+                                            $transtype = Config::get('constants.trans_type.adjustment');
+                                        }
+                                        if ($packagesadvance->is_cancel == '1') {
+                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                                            $transtype = Config::get('constants.trans_type.invoice_create');
+                                        }
+                                        if ($packagesadvance->is_refund == '1') {
+                                            $transtype = Config::get('constants.trans_type.refund_in');
+                                        }
+                                        if ($packagesadvance->is_tax == '1') {
+                                            $transtype = Config::get('constants.trans_type.tax_out');
+                                        }
+                                        if ($packagesadvance->cash_flow == 'in') {
+                                            if ($packagesadvance->paymentmode->name == 'Cash') {
+                                                $revenue_cash_in = $packagesadvance->cash_amount;
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Card') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = $packagesadvance->cash_amount;
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = $packagesadvance->cash_amount;
+                                                $refund_out = '';
+                                            }
+                                        } else {
+                                            $revenue_cash_in = '';
+                                            $revenue_card_in = '';
+                                            $revenue_bank_in = '';
+                                            $refund_out = $packagesadvance->cash_amount;
+                                        }
+            
+                                        if ($revenue_cash_in) {
+                                            $total_revenue_cash_in += $revenue_cash_in;
+                                        }
+                                        if ($revenue_card_in) {
+                                            $total_revenue_card_in += $revenue_card_in;
+                                        }
+                                        if ($revenue_bank_in) {
+                                            $total_revenue_card_in += $revenue_bank_in;
+                                        }
+                                        if ($refund_out) {
+                                            $total_refund_out += $refund_out;
+                                        }  
+                                    }
+                                }
+                            }
+                        }
+                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
+                        $In_hand_balance = $total_revenue - $total_refund_out;
+                        if ($In_hand_balance > 0) {
+                            $yesterday[$service->id] = array(
+                                $service->name,
+                                $In_hand_balance,
+                            );
+                            $colors[] = $service->color;
+                            $total += $In_hand_balance;
+                        }
+                    }
+                }
+                if (count($yesterday)) {
+                    foreach ($yesterday as $record) {
+                        $data['yesterday'][] = $record;
+                    }
+                }
+            }
+            if ($request->last7days) {
+                $total = 0;
+                $last7days[0] = array(
+                    'Task',
+                    'Hours per Day'
+                ); 
+                foreach ($services as $service) {
+                    $childServices = Services::where('parent_id',$service->id)->get();
+                    foreach($childServices as $child){
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                        ->whereDate('package_advances.created_at', '<=', Carbon::now()->format('Y-m-d'))
+                        ->where([
+                            'package_advances.account_id'=> Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
+                        ])->get();
+                        if($packagesadvances ){
+                            $balance = 0;
+                            $total_balance = 0;
+                            $total_revenue_cash_in = 0;
+                            $total_revenue_card_in = 0;
+                            $total_refund_out = 0;
+                            foreach ($packagesadvances as $packagesadvance) {
+                                if (
+                                    $packagesadvance->cash_flow == 'in' &&
+                                    $packagesadvance->is_adjustment == '0' &&
+                                    $packagesadvance->is_tax == '0' &&
+                                    $packagesadvance->is_cancel == '0'
+                                ) {
+                                    switch ($packagesadvance->cash_flow) {
+                                        case 'in':
+                                            $balance = $balance + $packagesadvance->cash_amount;
+                                            break;
+                                        case 'out':
+                                            $balance = $balance - $packagesadvance->cash_amount;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    if ($packagesadvance->cash_amount != 0) {
+                                        if ($packagesadvance->package_id) {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->is_adjustment == '1') {
+                                            $transtype = Config::get('constants.trans_type.adjustment');
+                                        }
+                                        if ($packagesadvance->is_cancel == '1') {
+                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                                            $transtype = Config::get('constants.trans_type.invoice_create');
+                                        }
+                                        if ($packagesadvance->is_refund == '1') {
+                                            $transtype = Config::get('constants.trans_type.refund_in');
+                                        }
+                                        if ($packagesadvance->is_tax == '1') {
+                                            $transtype = Config::get('constants.trans_type.tax_out');
+                                        }
+                                        if ($packagesadvance->cash_flow == 'in') {
+                                            if ($packagesadvance->paymentmode->name == 'Cash') {
+                                                $revenue_cash_in = $packagesadvance->cash_amount;
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Card') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = $packagesadvance->cash_amount;
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = $packagesadvance->cash_amount;
+                                                $refund_out = '';
+                                            }
+                                        } else {
+                                            $revenue_cash_in = '';
+                                            $revenue_card_in = '';
+                                            $revenue_bank_in = '';
+                                            $refund_out = $packagesadvance->cash_amount;
+                                        }
+            
+                                        if ($revenue_cash_in) {
+                                            $total_revenue_cash_in += $revenue_cash_in;
+                                        }
+                                        if ($revenue_card_in) {
+                                            $total_revenue_card_in += $revenue_card_in;
+                                        }
+                                        if ($revenue_bank_in) {
+                                            $total_revenue_card_in += $revenue_bank_in;
+                                        }
+                                        if ($refund_out) {
+                                            $total_refund_out += $refund_out;
+                                        }  
+                                    }
+                                }
+                            }
+                        }
+                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
+                        $In_hand_balance = $total_revenue - $total_refund_out;
+                        if ($In_hand_balance > 0) {
+                            $last7days[$service->id] = array(
+                                $service->name,
+                                $In_hand_balance,
+                            );
+                            $colors[] = $service->color;
+                            $total += $In_hand_balance;
+                        }
+                    }
+                }
+                if (count($last7days)) {
+                    foreach ($last7days as $record) {
+                        $data['last7days'][] = $record;
+                    }
+                }
+            }
+            if ($request->thismonth) {
+                $total = 0;
+                $thismonth[0] = array(
+                    'Task',
+                    'Hours per Day'
+                ); 
+                foreach ($services as $service) {
+                    $childServices = Services::where('parent_id',$service->id)->get();
+                    foreach($childServices as $child){
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                        ->whereDate('package_advances.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                        ->where([
+                            'package_advances.account_id'=>Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
+                        ])->get();
+                        if($packagesadvances ){
+                            $balance = 0;
+                            $total_balance = 0;
+                            $total_revenue_cash_in = 0;
+                            $total_revenue_card_in = 0;
+                            $total_refund_out = 0;
+                            foreach ($packagesadvances as $packagesadvance) {
+                                if (
+                                    $packagesadvance->cash_flow == 'in' &&
+                                    $packagesadvance->is_adjustment == '0' &&
+                                    $packagesadvance->is_tax == '0' &&
+                                    $packagesadvance->is_cancel == '0'
+                                ) {
+                                    switch ($packagesadvance->cash_flow) {
+                                        case 'in':
+                                            $balance = $balance + $packagesadvance->cash_amount;
+                                            break;
+                                        case 'out':
+                                            $balance = $balance - $packagesadvance->cash_amount;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    $total_balance = $balance;
+                                    if ($packagesadvance->cash_amount != 0) {
+                                        if ($packagesadvance->package_id) {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->is_adjustment == '1') {
+                                            $transtype = Config::get('constants.trans_type.adjustment');
+                                        }
+                                        if ($packagesadvance->is_cancel == '1') {
+                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                                            $transtype = Config::get('constants.trans_type.invoice_create');
+                                        }
+                                        if ($packagesadvance->is_refund == '1') {
+                                            $transtype = Config::get('constants.trans_type.refund_in');
+                                        }
+                                        if ($packagesadvance->is_tax == '1') {
+                                            $transtype = Config::get('constants.trans_type.tax_out');
+                                        }
+                                        if ($packagesadvance->cash_flow == 'in') {
+                                            if ($packagesadvance->paymentmode->name == 'Cash') {
+                                                $revenue_cash_in = $packagesadvance->cash_amount;
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Card') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = $packagesadvance->cash_amount;
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = $packagesadvance->cash_amount;
+                                                $refund_out = '';
+                                            }
+                                        } else {
+                                            $revenue_cash_in = '';
+                                            $revenue_card_in = '';
+                                            $revenue_bank_in = '';
+                                            $refund_out = $packagesadvance->cash_amount;
+                                        }
+            
+                                        if ($revenue_cash_in) {
+                                            $total_revenue_cash_in += $revenue_cash_in;
+                                        }
+                                        if ($revenue_card_in) {
+                                            $total_revenue_card_in += $revenue_card_in;
+                                        }
+                                        if ($revenue_bank_in) {
+                                            $total_revenue_card_in += $revenue_bank_in;
+                                        }
+                                        if ($refund_out) {
+                                            $total_refund_out += $refund_out;
+                                        }
+                                       
+                                    }
+                                }
+                            }
+                        }
+                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
+                        $In_hand_balance = $total_revenue - $total_refund_out;
+                        if ($In_hand_balance > 0) {
+                            $thismonth[$service->id] = array(
+                                $service->name,
+                                $In_hand_balance,
+                            );
+                            $colors[] = $service->color;
+                            $total += $In_hand_balance;
+                        }
+                    }
+                }
+                if (count($thismonth)) {
+                    foreach ($thismonth as $record) {
+                        $data['thismonth'][] = $record;
+                    }
+                }   
+            }
+            if ($request->lastmonth) {
+                $total = 0;
+                $lastmonth[0] = array(
+                    'Task',
+                    'Hours per Day'
+                ); 
+                foreach ($services as $service) {
+                    $childServices = Services::where('parent_id',$service->id)->get();
+                    foreach($childServices as $child){
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
+                        ->whereDate('package_advances.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                        ->where([
+                            'package_advances.account_id'=> Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
+                        ])->get();
+                        if($packagesadvances ){
+                            $balance = 0;
+                            $total_balance = 0;
+                            $total_revenue_cash_in = 0;
+                            $total_revenue_card_in = 0;
+                            $total_refund_out = 0;
+                            foreach ($packagesadvances as $packagesadvance) {
+                                if (
+                                    (
+                                        $packagesadvance->cash_flow == 'in' &&
+                                        $packagesadvance->is_adjustment == '0' &&
+                                        $packagesadvance->is_tax == '0' &&
+                                        $packagesadvance->is_cancel == '0'
+                                    )
+                                ) {
+                                    switch ($packagesadvance->cash_flow) {
+                                        case 'in':
+                                            $balance = $balance + $packagesadvance->cash_amount;
+                                            break;
+                                        case 'out':
+                                            $balance = $balance - $packagesadvance->cash_amount;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    $total_balance = $balance;
+                                    if ($packagesadvance->cash_amount != 0) {
+                                        if ($packagesadvance->package_id) {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                                            $transtype = Config::get('constants.trans_type.advance_in');
+                                        }
+                                        if ($packagesadvance->is_adjustment == '1') {
+                                            $transtype = Config::get('constants.trans_type.adjustment');
+                                        }
+                                        if ($packagesadvance->is_cancel == '1') {
+                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
+                                        }
+                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                                            $transtype = Config::get('constants.trans_type.invoice_create');
+                                        }
+                                        if ($packagesadvance->is_refund == '1') {
+                                            $transtype = Config::get('constants.trans_type.refund_in');
+                                        }
+                                        if ($packagesadvance->is_tax == '1') {
+                                            $transtype = Config::get('constants.trans_type.tax_out');
+                                        }
+                                        if ($packagesadvance->cash_flow == 'in') {
+                                            if ($packagesadvance->paymentmode->name == 'Cash') {
+                                                $revenue_cash_in = $packagesadvance->cash_amount;
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Card') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = $packagesadvance->cash_amount;
+                                                $revenue_bank_in = '';
+                                                $refund_out = '';
+                                            }
+                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
+                                                $revenue_cash_in = '';
+                                                $revenue_card_in = '';
+                                                $revenue_bank_in = $packagesadvance->cash_amount;
+                                                $refund_out = '';
+                                            }
+                                        } else {
+                                            $revenue_cash_in = '';
+                                            $revenue_card_in = '';
+                                            $revenue_bank_in = '';
+                                            $refund_out = $packagesadvance->cash_amount;
+                                        }
+            
+                                        if ($revenue_cash_in) {
+                                            $total_revenue_cash_in += $revenue_cash_in;
+                                        }
+                                        if ($revenue_card_in) {
+                                            $total_revenue_card_in += $revenue_card_in;
+                                        }
+                                        if ($revenue_bank_in) {
+                                            $total_revenue_card_in += $revenue_bank_in;
+                                        }
+                                        if ($refund_out) {
+                                            $total_refund_out += $refund_out;
+                                        }
+                                       
+                                    }
+                                }
+                            }
+                        }
+                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
+                        $In_hand_balance = $total_revenue - $total_refund_out;
+                        if ($In_hand_balance > 0) {
+                            $lastmonth[$service->id] = array(
+                                $service->name,
+                                $In_hand_balance,
+                                
+                            );
+                            $colors[] = $service->color;
+                            $total += $In_hand_balance;
+                        }
+                    }
+                }
+                if (count($lastmonth)) {
+                    foreach ($lastmonth as $record) {
+                        $data['lastmonth'][] = $record;
+                    }
+                }   
+            }
+        }
+        return ApiHelper::apiResponse($this->success, 'service data', true, [
+            'pie' => $data,
+            'colors' => $colors ?? '',
+            'total' =>  number_format($total ?? 0, 2),
+        ]);
+    }
     public function revenueByCentre(Request $request)
     {
         $data = array();
         if (Gate::allows('dashboard_revenue_by_centre')) {
             $locations = Locations::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
+                'account_id'=> Auth::User()->account_id,
+                'active'=> '1'
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             list($start_date, $end_date) =  $this->getDates($request);
@@ -278,12 +904,12 @@ class DashboardReportsController extends Controller
         $colors = array();
         if (Gate::allows('dashboard_revenue_by_service')) {
             $services = Services::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
+                'account_id'=> Auth::User()->account_id,
+                'active'=> '1'
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->get('today')) {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -323,7 +949,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('yesterday')) {
-                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -364,7 +990,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('last7days')) {
-                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -405,7 +1031,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('thismonth')) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -447,7 +1073,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('lastmonth')) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -503,12 +1129,12 @@ class DashboardReportsController extends Controller
         $colors = array();
         if (Gate::allows('dashboard_my_revenue_by_service')) {
             $services = Services::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
+                'account_id'=> Auth::User()->account_id,
+                'active'=> '1'
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->period == '') {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -548,7 +1174,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='today') {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -587,7 +1213,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='yesterday') {
-                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -629,7 +1255,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='last7days') {
-                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -670,7 +1296,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='thismonth') {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -713,7 +1339,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='thismonth') {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -744,6 +1370,242 @@ class DashboardReportsController extends Controller
                                     $colors[] = $service->color;
 
                                     $total += $thisMonthRecord->total_price;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($thisMonth)) {
+                    foreach ($thisMonth as $record) {
+                        $data['lastmonth'][] = $record;
+                    }
+                }
+            }
+        }
+        return ApiHelper::apiResponse($this->success, 'service data', true, [
+            'pie' => $data,
+            'colors' => $colors,
+            'total' =>  number_format($total ?? 0, 2),
+        ]);
+    }
+    public function RevenueByServiceCategory(Request $request)
+    {
+        $data = array();
+        $total = 0;
+        $today = array();
+        $colors = array();
+        if (Gate::allows('dashboard_revenue_by_service')) {
+            $services = Services::where([
+                'account_id'=>Auth::User()->account_id,
+                'active'=>'1',
+                'parent_id'=>'0'
+            ])->get();
+            $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+            if ($request->today) {
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+
+                if ($request->get('performance')) {
+                    $todayRecords->where('invoices.created_by', Auth::User()->id);
+                }
+                $todayRecords = $todayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+                if ($services) {
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $childServices = Services::where('parent_id',$service->id)->get();
+                        $today[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($todayRecords && $childServices) {
+                            foreach ($childServices as $child_services_today) {
+                                foreach ($todayRecords as $todayRecord) {
+                                  
+                                    if ($todayRecord->service_id == $child_services_today->id) {
+                                        $today[$service->id] = [
+                                            $service->name,
+                                            $todayRecord->total_price
+                                        ];
+                                        $colors[] = $service->color;
+                                        $total += $todayRecord->total_price;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($today)) {
+                    foreach ($today as $record) {
+                        $data['today'][] = $record;
+                    }
+                }
+            }
+            if ($request->yesterday) {
+                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                if ($request->get('performance')) {
+                    $yesterdayRecords->where('invoices.created_by', Auth::User()->id);
+                }
+                $yesterdayRecords = $yesterdayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+                $yesterday = array();
+                if ($services) {
+                    
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $childServices = Services::where('parent_id',$service->id)->get();
+                        $yesterday[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($yesterdayRecords) {
+                            foreach ($childServices as $child_services_yesterday) { 
+                                foreach ($yesterdayRecords as $yesterdayRecord) {   
+                                    if ($yesterdayRecord->service_id == $child_services_yesterday->id) {
+                                        $yesterday[$service->id] = [
+                                            $service->name,
+                                            $yesterdayRecord->total_price
+                                        ];
+                                        $colors[] = $service->color;
+                                        $total += $yesterdayRecord->total_price;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($yesterday)) {
+                    foreach ($yesterday as $record) {
+                        $data['yesterday'][] = $record;
+                    }
+                }
+            }
+            if ($request->last7days) {
+                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
+                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                if ($request->get('performance')) {
+                    $last7DaysRecords = $last7DaysRecords->where('invoices.created_by', Auth::User()->id);
+                }
+                $last7DaysRecords = $last7DaysRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+                $last7days = array();
+                if ($services) {
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $childServices = Services::where('parent_id',$service->id)->get();
+                        $last7days[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($last7DaysRecords) {
+                            foreach ($childServices as $child_services) {
+                                foreach ($last7DaysRecords as $last7DaysRecord) {
+                                    if ($last7DaysRecord->service_id == $child_services->id) {
+                                        $last7days[$service->id] = [
+                                            $service->name,
+                                            $last7DaysRecord->total_price
+                                        ];
+                                        $colors[] = $service->color;
+                                        $total += $last7DaysRecord->total_price;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($last7days)) {
+                    foreach ($last7days as $record) {
+                        $data['week'][] = $record;
+                    }
+                }
+            }
+            if ($request->thismonth) {
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                if ($request->get('performance')) {
+                    $thisMonthRecords = $thisMonthRecords->where('invoices.created_by', Auth::User()->id);
+                }
+                $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+                $thisMonth = array();
+                if ($services) {
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $childServices = Services::where('parent_id',$service->id)->get();
+                        $thisMonth[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($thisMonthRecords) {
+                            foreach ($childServices as $test) {
+                                foreach ($thisMonthRecords as $thisMonthRecord) {
+                                    if ($thisMonthRecord->service_id == $test->id) {
+                                        $thisMonth[$service->id] = [
+                                            $service->name,
+                                            $thisMonthRecord->total_price
+                                        ];
+                                        $colors[] = $service->color;
+                                        $total += $thisMonthRecord->total_price;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($thisMonth)) {
+                    foreach ($thisMonth as $record) {
+                        $data['month'][] = $record;
+                    }
+                }
+            }
+            if ($request->lastmonth) {
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                if ($request->get('performance')) {
+                    $thisMonthRecords = $thisMonthRecords->where('invoices.created_by', Auth::User()->id);
+                }
+                $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+                $thisMonth = array();
+                if ($services) {
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $childServices = Services::where('parent_id',$service->id)->get();
+                        $thisMonth[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($thisMonthRecords) {
+                            foreach ($childServices as $last_month_services) {
+                                foreach ($thisMonthRecords as $thisMonthRecord) {
+                                    if ($thisMonthRecord->service_id == $last_month_services->id) {
+                                        $thisMonth[$service->id] = [
+                                            $service->name,
+                                            $thisMonthRecord->total_price
+                                        ];
+                                        $colors[] = $service->color;
+                                        $total += $thisMonthRecord->total_price;
+                                    }
                                 }
                             }
                         }
@@ -804,9 +1666,9 @@ class DashboardReportsController extends Controller
         $colors = array();
         if (Gate::allows('dashboard_my_revenue_by_service')) {
            $appointment_statuses = AppointmentStatuses::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1'],
-                ['parent_id', '=', '0'],
+                'account_id'=> Auth::User()->account_id,
+                'active'=> '1',
+                'parent_id'=> '0',
             ])->get();
             if ($request->period == '') {
                 $todayRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->format('Y-m-d'))->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
@@ -1052,8 +1914,8 @@ class DashboardReportsController extends Controller
         $today = array();
         $colors = array();
         $appointment_types = AppointmentTypes::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1'],
+            'account_id'=> Auth::User()->account_id,
+            'active'=> '1',
         ])->get();
         if ($request->period == '') {
             $todayRecords = Appointments::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
