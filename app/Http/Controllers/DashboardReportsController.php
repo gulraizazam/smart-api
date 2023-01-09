@@ -57,7 +57,7 @@ class DashboardReportsController extends Controller
             ['active', '=', '1']
         ])->pluck('name', 'id');
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-            if ($request->get('today') != '') {
+            if ($request->today) {
                 list( $todayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
                 if (count($todayRecords)) {
                     foreach ($todayRecords as $record) {
@@ -65,7 +65,7 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('yesterday') != '') {
+            if ($request->yesterday) {
                 list( $yesterdayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
                 if (count($yesterdayRecords)) {
                     foreach ($yesterdayRecords as $record) {
@@ -73,7 +73,7 @@ class DashboardReportsController extends Controller
                     }
                 } 
             }
-            if ($request->get('last7days') != '') {
+            if ($request->last7days) {
                 list( $last7dayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
                 if (count($last7dayRecords)) {
                     foreach ($last7dayRecords as $record) {
@@ -81,7 +81,7 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('thismonth') != '') {
+            if ($request->thismonth) {
                 list( $thisMonthRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
                 if (count($thisMonthRecords)) {
                     foreach ($thisMonthRecords as $record) {
@@ -89,7 +89,7 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('lastmonth') != '') {
+            if ($request->lastmonth) {
                 list( $thisMonthRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
                 if (count($thisMonthRecords)) {
                     foreach ($thisMonthRecords as $record) {
@@ -184,10 +184,8 @@ class DashboardReportsController extends Controller
             ['parent_id','=','0']
         ])->get();
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-            if ($request->get('today') != '') {
+            if ($request->today) {
                 $total = 0;
-                $report_data = array();
-                $wherecondtion = array();
                 $today[0] = array(
                     'Task',
                     'Hours per Day'
@@ -195,7 +193,7 @@ class DashboardReportsController extends Controller
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id',$service->id)->get();
                     foreach($childServices as $child){
-                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','=','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->format('Y-m-d'))
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->format('Y-m-d'))
                         ->where([
                             ['package_advances.account_id', '=', Auth::User()->account_id],
                             ['appointments.service_id', '=',$child->id],
@@ -311,10 +309,8 @@ class DashboardReportsController extends Controller
                 }
                 
             }
-            if ($request->get('yesterday') != '') {
+            if ($request->yesterday) {
                 $total = 0;
-                $report_data = array();
-                $wherecondtion = array();
                 $yesterday[0] = array(
                     'Task',
                     'Hours per Day'
@@ -322,7 +318,7 @@ class DashboardReportsController extends Controller
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id',$service->id)->get();
                     foreach($childServices as $child){
-                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','=','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                         ->where([
                             ['package_advances.account_id', '=', Auth::User()->account_id],
                             ['appointments.service_id', '=',$child->id],
@@ -438,7 +434,7 @@ class DashboardReportsController extends Controller
                 }
                 
             }
-            if ($request->get('last7days') != '') {
+            if ($request->last7days) {
                 $total = 0;
                 $last7days[0] = array(
                     'Task',
@@ -447,7 +443,7 @@ class DashboardReportsController extends Controller
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id',$service->id)->get();
                     foreach($childServices as $child){
-                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','=','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                         ->whereDate('package_advances.created_at', '<=', Carbon::now()->format('Y-m-d'))
                         ->where([
                             ['package_advances.account_id', '=', Auth::User()->account_id],
@@ -564,7 +560,7 @@ class DashboardReportsController extends Controller
                 }
                 
             }
-            if ($request->get('thismonth') != '') {
+            if ($request->thismonth) {
                 $total = 0;
                 $thismonth[0] = array(
                     'Task',
@@ -573,7 +569,7 @@ class DashboardReportsController extends Controller
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id',$service->id)->get();
                     foreach($childServices as $child){
-                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','=','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                         ->whereDate('package_advances.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                         ->where([
                             ['package_advances.account_id', '=', Auth::User()->account_id],
@@ -690,7 +686,7 @@ class DashboardReportsController extends Controller
                 }
                 
             }
-            if ($request->get('lastmonth') != '') {
+            if ($request->lastmonth) {
                 $total = 0;
                 $lastmonth[0] = array(
                     'Task',
@@ -699,7 +695,7 @@ class DashboardReportsController extends Controller
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id',$service->id)->get();
                     foreach($childServices as $child){
-                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','=','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
+                        $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
                         ->whereDate('package_advances.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                         ->where([
                             ['package_advances.account_id', '=', Auth::User()->account_id],
@@ -936,7 +932,7 @@ class DashboardReportsController extends Controller
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->get('today')) {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -976,7 +972,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('yesterday')) {
-                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1017,7 +1013,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('last7days')) {
-                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1058,7 +1054,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('thismonth')) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1100,7 +1096,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->get('lastmonth')) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1161,7 +1157,7 @@ class DashboardReportsController extends Controller
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->period == '') {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -1201,7 +1197,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='today') {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -1240,7 +1236,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='yesterday') {
-                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1282,7 +1278,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='last7days') {
-                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1323,7 +1319,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='thismonth') {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1366,7 +1362,7 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='thismonth') {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1428,8 +1424,8 @@ class DashboardReportsController extends Controller
                 ['parent_id','=','0']
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-            if ($request->get('today')) {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            if ($request->today) {
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -1471,8 +1467,8 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('yesterday')) {
-                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            if ($request->yesterday) {
+                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1515,8 +1511,8 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('last7days')) {
-                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            if ($request->last7days) {
+                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1558,8 +1554,8 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('thismonth')) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            if ($request->thismonth) {
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1601,8 +1597,8 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
-            if ($request->get('lastmonth')) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            if ($request->lastmonth) {
+                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
