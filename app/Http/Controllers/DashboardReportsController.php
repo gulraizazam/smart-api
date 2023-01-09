@@ -53,8 +53,8 @@ class DashboardReportsController extends Controller
             'lastmonth' => array(),
         );
         $location_information = Locations::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1']
+            'account_id'=> Auth::User()->account_id,
+            'active'=>'1'
         ])->pluck('name', 'id');
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
             if ($request->today) {
@@ -179,9 +179,9 @@ class DashboardReportsController extends Controller
             'lastmonth' => array(),
         );
         $services = Services::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1'],
-            ['parent_id','=','0']
+            'account_id'=> Auth::User()->account_id,
+            'active'=>'1',
+            'parent_id'=>'0'
         ])->get();
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
             if ($request->today) {
@@ -195,23 +195,20 @@ class DashboardReportsController extends Controller
                     foreach($childServices as $child){
                         $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->format('Y-m-d'))
                         ->where([
-                            ['package_advances.account_id', '=', Auth::User()->account_id],
-                            ['appointments.service_id', '=',$child->id],
+                            'package_advances.account_id'=> Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
                         ])->get();
                         if($packagesadvances ){
                             $balance = 0;
-                            $total_balance = 0;
                             $total_revenue_cash_in = 0;
                             $total_revenue_card_in = 0;
                             $total_refund_out = 0;
                             foreach ($packagesadvances as $packagesadvance) {
                                 if (
-                                    (
-                                        $packagesadvance->cash_flow == 'in' &&
+                                    $packagesadvance->cash_flow == 'in' &&
                                         $packagesadvance->is_adjustment == '0' &&
                                         $packagesadvance->is_tax == '0' &&
-                                        $packagesadvance->is_cancel == '0'
-                                    )
+                                        $packagesadvance->is_cancel == '0'    
                                 ) {
                                     switch ($packagesadvance->cash_flow) {
                                         case 'in':
@@ -223,7 +220,6 @@ class DashboardReportsController extends Controller
                                         default:
                                             break;
                                     }
-                                    $total_balance = $balance;
                                     if ($packagesadvance->cash_amount != 0) {
                                         if ($packagesadvance->package_id) {
                                             $transtype = Config::get('constants.trans_type.advance_in');
@@ -295,7 +291,6 @@ class DashboardReportsController extends Controller
                             $today[$service->id] = array(
                                 $service->name,
                                 $In_hand_balance,
-                                
                             );
                             $colors[] = $service->color;
                             $total += $In_hand_balance;
@@ -307,7 +302,6 @@ class DashboardReportsController extends Controller
                         $data['today'][] = $record;
                     }
                 }
-                
             }
             if ($request->yesterday) {
                 $total = 0;
@@ -320,23 +314,20 @@ class DashboardReportsController extends Controller
                     foreach($childServices as $child){
                         $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                         ->where([
-                            ['package_advances.account_id', '=', Auth::User()->account_id],
-                            ['appointments.service_id', '=',$child->id],
+                            'package_advances.account_id'=> Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
                         ])->get();
                         if($packagesadvances ){
                             $balance = 0;
-                            $total_balance = 0;
                             $total_revenue_cash_in = 0;
                             $total_revenue_card_in = 0;
                             $total_refund_out = 0;
                             foreach ($packagesadvances as $packagesadvance) {
                                 if (
-                                    (
-                                        $packagesadvance->cash_flow == 'in' &&
-                                        $packagesadvance->is_adjustment == '0' &&
-                                        $packagesadvance->is_tax == '0' &&
-                                        $packagesadvance->is_cancel == '0'
-                                    )
+                                    $packagesadvance->cash_flow == 'in' &&
+                                    $packagesadvance->is_adjustment == '0' &&
+                                    $packagesadvance->is_tax == '0' &&
+                                    $packagesadvance->is_cancel == '0'
                                 ) {
                                     switch ($packagesadvance->cash_flow) {
                                         case 'in':
@@ -348,7 +339,6 @@ class DashboardReportsController extends Controller
                                         default:
                                             break;
                                     }
-                                    $total_balance = $balance;
                                     if ($packagesadvance->cash_amount != 0) {
                                         if ($packagesadvance->package_id) {
                                             $transtype = Config::get('constants.trans_type.advance_in');
@@ -408,8 +398,7 @@ class DashboardReportsController extends Controller
                                         }
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
-                                        }
-                                       
+                                        }  
                                     }
                                 }
                             }
@@ -420,7 +409,6 @@ class DashboardReportsController extends Controller
                             $yesterday[$service->id] = array(
                                 $service->name,
                                 $In_hand_balance,
-                                
                             );
                             $colors[] = $service->color;
                             $total += $In_hand_balance;
@@ -432,7 +420,6 @@ class DashboardReportsController extends Controller
                         $data['yesterday'][] = $record;
                     }
                 }
-                
             }
             if ($request->last7days) {
                 $total = 0;
@@ -446,8 +433,8 @@ class DashboardReportsController extends Controller
                         $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                         ->whereDate('package_advances.created_at', '<=', Carbon::now()->format('Y-m-d'))
                         ->where([
-                            ['package_advances.account_id', '=', Auth::User()->account_id],
-                            ['appointments.service_id', '=',$child->id],
+                            'package_advances.account_id'=> Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
                         ])->get();
                         if($packagesadvances ){
                             $balance = 0;
@@ -457,12 +444,10 @@ class DashboardReportsController extends Controller
                             $total_refund_out = 0;
                             foreach ($packagesadvances as $packagesadvance) {
                                 if (
-                                    (
-                                        $packagesadvance->cash_flow == 'in' &&
-                                        $packagesadvance->is_adjustment == '0' &&
-                                        $packagesadvance->is_tax == '0' &&
-                                        $packagesadvance->is_cancel == '0'
-                                    )
+                                    $packagesadvance->cash_flow == 'in' &&
+                                    $packagesadvance->is_adjustment == '0' &&
+                                    $packagesadvance->is_tax == '0' &&
+                                    $packagesadvance->is_cancel == '0'
                                 ) {
                                     switch ($packagesadvance->cash_flow) {
                                         case 'in':
@@ -474,7 +459,6 @@ class DashboardReportsController extends Controller
                                         default:
                                             break;
                                     }
-                                    $total_balance = $balance;
                                     if ($packagesadvance->cash_amount != 0) {
                                         if ($packagesadvance->package_id) {
                                             $transtype = Config::get('constants.trans_type.advance_in');
@@ -534,8 +518,7 @@ class DashboardReportsController extends Controller
                                         }
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
-                                        }
-                                       
+                                        }  
                                     }
                                 }
                             }
@@ -546,7 +529,6 @@ class DashboardReportsController extends Controller
                             $last7days[$service->id] = array(
                                 $service->name,
                                 $In_hand_balance,
-                                
                             );
                             $colors[] = $service->color;
                             $total += $In_hand_balance;
@@ -558,7 +540,6 @@ class DashboardReportsController extends Controller
                         $data['last7days'][] = $record;
                     }
                 }
-                
             }
             if ($request->thismonth) {
                 $total = 0;
@@ -572,8 +553,8 @@ class DashboardReportsController extends Controller
                         $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                         ->whereDate('package_advances.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                         ->where([
-                            ['package_advances.account_id', '=', Auth::User()->account_id],
-                            ['appointments.service_id', '=',$child->id],
+                            'package_advances.account_id'=>Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
                         ])->get();
                         if($packagesadvances ){
                             $balance = 0;
@@ -583,12 +564,10 @@ class DashboardReportsController extends Controller
                             $total_refund_out = 0;
                             foreach ($packagesadvances as $packagesadvance) {
                                 if (
-                                    (
-                                        $packagesadvance->cash_flow == 'in' &&
-                                        $packagesadvance->is_adjustment == '0' &&
-                                        $packagesadvance->is_tax == '0' &&
-                                        $packagesadvance->is_cancel == '0'
-                                    )
+                                    $packagesadvance->cash_flow == 'in' &&
+                                    $packagesadvance->is_adjustment == '0' &&
+                                    $packagesadvance->is_tax == '0' &&
+                                    $packagesadvance->is_cancel == '0'
                                 ) {
                                     switch ($packagesadvance->cash_flow) {
                                         case 'in':
@@ -672,7 +651,6 @@ class DashboardReportsController extends Controller
                             $thismonth[$service->id] = array(
                                 $service->name,
                                 $In_hand_balance,
-                                
                             );
                             $colors[] = $service->color;
                             $total += $In_hand_balance;
@@ -683,8 +661,7 @@ class DashboardReportsController extends Controller
                     foreach ($thismonth as $record) {
                         $data['thismonth'][] = $record;
                     }
-                }
-                
+                }   
             }
             if ($request->lastmonth) {
                 $total = 0;
@@ -698,8 +675,8 @@ class DashboardReportsController extends Controller
                         $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
                         ->whereDate('package_advances.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                         ->where([
-                            ['package_advances.account_id', '=', Auth::User()->account_id],
-                            ['appointments.service_id', '=',$child->id],
+                            'package_advances.account_id'=> Auth::User()->account_id,
+                            'appointments.service_id'=>$child->id,
                         ])->get();
                         if($packagesadvances ){
                             $balance = 0;
@@ -823,8 +800,8 @@ class DashboardReportsController extends Controller
         $data = array();
         if (Gate::allows('dashboard_revenue_by_centre')) {
             $locations = Locations::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
+                'account_id'=> Auth::User()->account_id,
+                'active'=> '1'
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             list($start_date, $end_date) =  $this->getDates($request);
@@ -927,8 +904,8 @@ class DashboardReportsController extends Controller
         $colors = array();
         if (Gate::allows('dashboard_revenue_by_service')) {
             $services = Services::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
+                'account_id'=> Auth::User()->account_id,
+                'active'=> '1'
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->get('today')) {
@@ -1152,8 +1129,8 @@ class DashboardReportsController extends Controller
         $colors = array();
         if (Gate::allows('dashboard_my_revenue_by_service')) {
             $services = Services::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
+                'account_id'=> Auth::User()->account_id,
+                'active'=> '1'
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->period == '') {
@@ -1419,9 +1396,9 @@ class DashboardReportsController extends Controller
         $colors = array();
         if (Gate::allows('dashboard_revenue_by_service')) {
             $services = Services::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1'],
-                ['parent_id','=','0']
+                'account_id'=>Auth::User()->account_id,
+                'active'=>'1',
+                'parent_id'=>'0'
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->today) {
@@ -1689,9 +1666,9 @@ class DashboardReportsController extends Controller
         $colors = array();
         if (Gate::allows('dashboard_my_revenue_by_service')) {
            $appointment_statuses = AppointmentStatuses::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1'],
-                ['parent_id', '=', '0'],
+                'account_id'=> Auth::User()->account_id,
+                'active'=> '1',
+                'parent_id'=> '0',
             ])->get();
             if ($request->period == '') {
                 $todayRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->format('Y-m-d'))->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
@@ -1937,8 +1914,8 @@ class DashboardReportsController extends Controller
         $today = array();
         $colors = array();
         $appointment_types = AppointmentTypes::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1'],
+            'account_id'=> Auth::User()->account_id,
+            'active'=> '1',
         ])->get();
         if ($request->period == '') {
             $todayRecords = Appointments::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
