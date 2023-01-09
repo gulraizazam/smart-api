@@ -425,7 +425,7 @@
             <td style="font-size:15px;">
                 <strong>Note: </strong>For Privacy, Cancellation,
                 Late and Refund policies, please visit
-                <a href="https://cuteraesthetics.com/" target="_blank">www.cuteraesthetics.cpm</a>
+                <a href="https://cuteraesthetics.com/" target="_blank">www.cuteraesthetics.com</a>
             </td>
         </tr>
 
