@@ -724,32 +724,33 @@ function InitCollectionByServiceCategory(today, yesterday, last7days, thismonth,
                 var pie = response.data.pie.yesterday;
             }
             if (last7days != '') {
-                var pie = response.data.pie.week;
+                var pie = response.data.pie.last7days;
             }
             if (thismonth != '') {
-                var pie = response.data.pie.month;
+                var pie = response.data.pie.thismonth;
             }
             if (lastmonth != '') {
                 var pie = response.data.pie.lastmonth;
             }
-            RevenueByServiceCategory(pie, colors);
+            CollectionByServiceCategory(pie, colors);
         },
     });
 }
-function RevenueByServiceCategory(service, colors) {
+function CollectionByServiceCategory(service, colors) {
     google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
     });
     google.setOnLoadCallback(function () {
     var data = google.visualization.arrayToDataTable(service);
     var options = {
-        colors: colors
+        colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
     };
-    var chart = new google.visualization.PieChart(document.getElementById('revenue-service-category'));
+    var chart = new google.visualization.PieChart(document.getElementById('revenue-service-collection'));
+
         chart.draw(data, options);
     });
     if (typeof service !== 'undefined' && service.length > 1) {
-        $("#revenue-service-category").css("height", "500px");
+        $("#revenue-service-collection").css("height", "500px");
     }
 }
 
