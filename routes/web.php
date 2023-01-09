@@ -540,6 +540,8 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
         Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
         Route::get('dashboard/my-revenue-by-centre', [DashboardReportsController::class, 'myRevenueByCentre'])->name('dashboard.myRevenueByCentre');
         Route::get('dashboard/revenue-by-service', [DashboardReportsController::class, 'revenueByService'])->name('dashboard.revenueByService');
+        Route::get('dashboard/revenue-by-service-category', [DashboardReportsController::class, 'RevenueByServiceCategory'])->name('dashboard.revenueByServiceCategory');
+        Route::get('dashboard/collection-by-service-category', [DashboardReportsController::class, 'CollectionByServiceCategory'])->name('dashboard.CollectionByServiceCategory');
         Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
         Route::get('dashboard/appointment-by-status', [DashboardReportsController::class, 'AppointmentByStatus'])->name('dashboard.appointment_by_status');
         Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
