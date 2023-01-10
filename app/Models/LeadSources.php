@@ -61,9 +61,17 @@ class LeadSources extends BaseModal
         $where = Self::lead_sources_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            return self::where($where)->count();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadsources")){
+                return self::where($where)->count();
+            }else{
+                return self::where($where)->where('active',1)->count();
+            }
         } else {
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadsources")){
             return self::count();
+            }else{
+                return self::where('active',1)->count();
+            }
         }
     }
 
@@ -81,9 +89,17 @@ class LeadSources extends BaseModal
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadsources")){
+                return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            }else{
+                return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            }
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadsources")){
+                return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            }else{
+                return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            }
         }
     }
 

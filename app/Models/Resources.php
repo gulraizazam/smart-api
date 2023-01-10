@@ -531,18 +531,37 @@ class Resources extends BaseModal
             }
         }
         if (count($where)) {
-            return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")){
+                return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
+                    ->whereIn('location_id', ACL::getUserCentres())
+                    ->limit($iDisplayLength)
+                    ->offset($iDisplayStart)
+                    ->orderby($orderBy, $order)
+                    ->get();
+            }else{
+                return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
+                    ->whereIn('location_id', ACL::getUserCentres())
+                    ->where('resources.active',1)
+                    ->limit($iDisplayLength)
+                    ->offset($iDisplayStart)
+                    ->orderby($orderBy, $order)
+                    ->get();
+            }
         } else {
-            return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")){
+                return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
+                    ->limit($iDisplayLength)
+                    ->offset($iDisplayStart)
+                    ->orderby($orderBy, $order)
+                    ->get();
+            }else{ 
+                return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
+                ->where('resources.active',1)
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->orderby($orderBy, $order)
                 ->get();
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 
 var table_url = route('admin.users.datatable');
-
+var Clonepager = "";
 var table_columns = [
     {
         field: 'id',
@@ -14,14 +14,15 @@ var table_columns = [
     {
         field: 'name',
         title: 'Name',
-        width: 'auto',
+        width: 80,
     }, {
         field: 'email',
         title: 'Email',
+        width: 80,
     }, {
         field: 'phone',
         title: 'Phone',
-        width: 90,
+        width: 80,
     }, {
         field: 'gender',
         title: 'Gender',
@@ -67,18 +68,18 @@ var table_columns = [
 
             return roles;
         }
-    }, {
-        field: 'created_at',
-        title: 'created at',
-        width: 'auto',
-    }, {
+    },{
         field: 'status',
         title: 'status',
-        width: 'auto',
+        width: 90,
         template: function (data) {
             let status_url = route('admin.users.status');
             return statuses(data, status_url);
         }
+    }, {
+        field: 'created_at',
+        title: 'created at',
+        width: 'auto',
     },  {
         field: 'actions',
         title: 'Actions',
@@ -90,7 +91,8 @@ var table_columns = [
             return actions(data);
         }
     }];
-
+    
+    
 function actions(data) {
 
     let id = data.id;

@@ -218,8 +218,11 @@ class GeneralFunctions
                         foreach ($services as $key => $service) {
                             $serv = Services::where('id',$service->id)->first();
                             if($serv->parent_id=="0"){
-                               
-                                $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
+                                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                                    $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
+                                }else{
+                                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+                                }
                             }else{
                                 $children = collect($service->children)->flatten();
                                 unset($service->children);
@@ -270,7 +273,11 @@ class GeneralFunctions
                             $serv = Services::where('id',$service->id)->first();
                             
                             if($serv->parent_id=="0"){
-                                $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
+                                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                                    $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
+                                }else{
+                                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+                                }
                                 
                                 
                             }else{
@@ -316,8 +323,11 @@ class GeneralFunctions
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
-            
-                        $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
+                        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                            $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
+                        }else{
+                            $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+                        }
                         //unset($service->children);
             
                         if ($key === 0 && $allService) {
@@ -347,9 +357,12 @@ class GeneralFunctions
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
-            
-                        $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
-                        //unset($service->children);
+                        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                            $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
+                        }else{
+                            $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+                        }
+                        
             
                         if ($key === 0 && $allService) {
                             $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
@@ -387,8 +400,11 @@ class GeneralFunctions
          
         $mergedServices = [];
         foreach ($services as $key => $service) {
-
-            $children = Services::where('parent_id',$service->id)->orderBy('name')->get();;
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                $children = Services::where('parent_id',$service->id)->orderBy('name')->get();
+            }else{
+                $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+            }
             //unset($service->children);
 
             if ($key === 0 && $allService) {

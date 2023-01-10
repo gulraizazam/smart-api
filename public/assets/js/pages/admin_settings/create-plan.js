@@ -717,6 +717,7 @@ function planeEdit(id, package_id) {
         cache: false,
         success: function (response) {
             setPlaneEditData(response);
+            
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -745,8 +746,10 @@ function setPlaneEditData(response) {
     } else {
         $("#plane_cash_payment_mode").remove();
 
-       let input = '<input type="hidden" id="payment_mode_id" name="payment_mode_id" value="'+pack_adv_info?.payment_mode_id+'">';
-       $(".append_payment_mode").append(input);
+       let input = '<label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label><input type="text" id="payment_mode_id" name="payment_mode_id" value="'+pack_adv_info?.payment_mode_id+'" readonly class="form-control">';
+       
+       $(".append_payment_mode").html(input);
+       
     }
 
     if (permissions.plans_cash_edit_amount) {
@@ -754,8 +757,10 @@ function setPlaneEditData(response) {
     } else {
         $("#plane_cash_amount").remove();
 
-        let input = '<input type="hidden" id="cash_amount" name="cash_amount" value="'+pack_adv_info?.cash_amount+'">';
-        $(".append_cash_amount").append(input);
+        let input = '<label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label><input type="text" id="cash_amount" name="cash_amount" value="'+pack_adv_info?.cash_amount+'" readonly class="form-control">';
+        
+        $(".append_cash_amount").html(input);
+        
     }
 
     if (permissions.plans_cash_edit_date) {
@@ -763,8 +768,10 @@ function setPlaneEditData(response) {
     } else {
         $("#plane_cash_date").remove();
 
-        let input = '<input type="hidden" id="created_at" name="created_at" value="'+formatDate(pack_adv_info.created_at, 'YYYY-MM-DD')+'">';
-        $(".append_cash_date").append(input);
+        let input = '<label class="required fw-bold fs-6 mb-2 pl-0">Date <span class="text text-danger">*</span></label><input type="text" id="created_at" name="created_at" value="'+formatDate(pack_adv_info.created_at, 'YYYY-MM-DD')+'" readonly class="form-control">';
+       
+        $(".append_cash_date").html(input);
+        
     }
 
     $("#edit_package_advances_id").val(pack_adv_info.id);

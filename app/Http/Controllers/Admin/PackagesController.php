@@ -826,6 +826,7 @@ class PackagesController extends Controller
      */
     public function datatable(Request $request, $id = false)
     {
+        
         $filename = 'packages';
 
         $filters = getFilters($request->all());

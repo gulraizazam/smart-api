@@ -414,7 +414,6 @@ function newPatient() {
         $('#create_consultancy_phone').val("");
     }
 }
-
 function commentData(user_name, created_at, comment) {
 
     let comment_html = '';
@@ -473,10 +472,15 @@ function loadTodayAppointments(today, appointment) {
     }
 
 }
-
-
-
+$("#modal_create_consultancy").on('hide.bs.modal', function(){
+    $('#create_patient_name').attr("readonly",true);
+    $('#create_consultancy_phone').attr("readonly",true);
+    $('#create_consultancy_gender').attr("disabled",true);
+});
 $(document).ready(function() { 
     $("#treatment_search_service,#treatment_search_centre,#treatment_search_status,#appoint_search_service,#appoint_search_centre,#appoint_search_status").select2({dropdownCssClass : 'bigdrop'}); 
    
 });
+
+    
+
