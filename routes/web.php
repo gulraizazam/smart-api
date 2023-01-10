@@ -116,6 +116,8 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
         Route::get('/home/revenue-by-centre', [App\Http\Controllers\HomeController::class, 'revenueByCentre'])->name('home.revenueByCentre');
         Route::get('/home/my-revenue-by-centre', [App\Http\Controllers\HomeController::class, 'myRevenueByCentre'])->name('home.myRevenueByCentre');
         Route::get('/home/revenue-by-service', [App\Http\Controllers\HomeController::class, 'revenueByService'])->name('home.revenueByService');
+        Route::get('/home/revenue-by-service-category', [App\Http\Controllers\HomeController::class, 'RevenueByServiceCategory'])->name('home.RevenueByServiceCategory');
+        Route::get('/home/collection-by-service-category', [App\Http\Controllers\HomeController::class, 'CollectionByServiceCategory'])->name('home.CollectionByServiceCategory');
         Route::get('/home/my-revenue-by-service', [App\Http\Controllers\HomeController::class, 'myRevenueByService'])->name('home.myRevenueByService');
         Route::get('/home/getstats', [App\Http\Controllers\HomeController::class, 'getStats'])->name('home.getstats');
         Route::get('/home/getactivity', [App\Http\Controllers\HomeController::class, 'getActivity'])->name('home.getactivity');
