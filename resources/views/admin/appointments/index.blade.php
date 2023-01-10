@@ -146,18 +146,29 @@
     @include('admin.appointments.appointment-forms.modals')
 
     @push('js')
-
         <script>
-
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
-
             var limit = '{{config('constants.export-appointment-limit')}}';
             var offset = 0;
-
             $(document).ready(function () {
                 $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
-            })
-
+                var result = get_query();
+                if (typeof result.tab !== 'undefined') {
+                    $("." + result.tab+ '-tab').click();
+                } else {
+                    $(".appointment-tab").addClass("nav-bar-active")
+                }
+                if (typeof result.city_id !== "undefined"
+                    && typeof result.location_id !== "undefined"
+                    && typeof result.doctor_id !== "undefined"
+                    && typeof result.tab !== 'undefined') {
+                    loadDoctors(result.location_id, result.tab);
+                    setTimeout( function () {
+                        $("#consultancy_city_filter").val(result.city_id).change();
+                        $("#consultancy_doctor_filter").val(result.doctor_id).change();
+                    }, 500);
+                }
+            });
             function changeLimitOffset($this) {
                 limit = parseInt(limit) + parseInt(appointment_limit);
                 offset = parseInt(offset) + parseInt(appointment_limit);
