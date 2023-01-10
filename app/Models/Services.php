@@ -189,9 +189,17 @@ class Services extends BaseModal
         }
         
         if (count($where)) {
-            return self::where($where)->count();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                return self::where($where)->count();
+            }else{
+                return self::where($where)->where('active',1)->count();
+            }
         } else {
-            return self::count();
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
+                return self::count();
+            }else{
+                return self::where('active',1)->count();
+            }
         }
     }
 
@@ -622,10 +630,10 @@ class Services extends BaseModal
             Appointments::where(['service_id' => $id])->count() ||
             StaffTargetServices::where(['service_id' => $id])->count()
         ) {
-            return true;
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     /**

@@ -170,7 +170,11 @@ class DiscountsController extends Controller
 
             $total_query = Discounts::select('id');
             if (count($where)) {
-                $total_query->where($where);
+                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_discounts")){
+                    $total_query->where($where);
+                }else{
+                    $total_query->where($where)->where('active',1);
+                }
             }
             $iTotalRecords = $total_query->count();
 
@@ -187,7 +191,11 @@ class DiscountsController extends Controller
             }
 
             if (count($where)) {
-                $query->where($where);
+                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_discounts")){
+                    $query->where($where);
+                }else{
+                    $query->where($where)->where('active',1);
+                }
             }
 
             $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();

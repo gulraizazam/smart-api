@@ -179,7 +179,7 @@ class dashboardreport
      * Collection by centre widgets calculation
      */
 
-    public static function collectionbyrevenuewidgets($location_information, $account_id, $where,$request)
+    public static function CollectionByRevenueWidgets($location_information, $account_id, $where,$request)
     {
         $report_data = array();
         $wherecondtion = array();

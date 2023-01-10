@@ -33,9 +33,17 @@ class SMSTemplates extends BaseModal
         $where = Self::sms_templates_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_smstemplates")){
             return self::where($where)->count();
+            }else{
+                return self::where($where)->where('active',1)->count();
+            }
         } else {
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_smstemplates")){
             return self::count();
+            }else{
+                return self::where('active',1)->count();
+            }
         }
     }
 
@@ -54,9 +62,17 @@ class SMSTemplates extends BaseModal
         $where = self::sms_templates_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_smstemplates")){
             return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            }else{
+                return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            }
         } else {
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_smstemplates")){
             return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
+            }else{
+                return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            }
         }
     }
 

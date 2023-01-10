@@ -18,7 +18,7 @@ jQuery(document).ready(function() {
         setTimeout( function () {
             $("#consultancy_city_filter").val(result.city_id).change();
             $("#consultancy_doctor_filter").val(result.doctor_id).change();
-        }, 400);
+        }, 500);
     }
 
     $("#Add_comment").click(function () {

@@ -26,13 +26,13 @@
             <label>Centre:</label>
             <select class="form-control filter-field select2" id="search_location_id"></select>
         </div>
-
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Status:</label>
-            <select class="form-control filter-field select2" id="search_status">
-            </select>
-        </div>
-
+        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_plans"))
+            <div class="col-lg-2 mb-lg-0 mb-6">
+                <label>Status:</label>
+                <select class="form-control filter-field select2" id="search_status">
+                </select>
+            </div>
+        @endif
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Create at:</label>
             <div class="input-daterange input-group to-from-datepicker" style="width: 158%;">

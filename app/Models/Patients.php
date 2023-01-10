@@ -11,7 +11,7 @@
 	use PHPUnit\Util\Filter;
 	use Config;
 	use DB;
-
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 
 	class Patients extends BaseModal
 	{
@@ -289,9 +289,17 @@
 			$where = self::filters_patients($request, $account_id, $apply_filter, $filename);
 
 			if (count($where)) {
-				return self::where($where)->count();
+				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
+					return self::where($where)->count();
+				}else{
+					return self::where($where)->where('active',1)->count();
+				}
 			} else {
-				return self::count();
+				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
+					return self::count();
+				}else{
+					return self::where('active',1)->count();
+				}
 			}
 		}
 
@@ -313,11 +321,20 @@
             list($orderBy, $order) = getSortBy($request);
 
 			if (count($where)) {
-				return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
+					return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+				}else{
+					return self::where('active',1)->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+				}
+				
 				//return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
 			} else {
 				//return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-				return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at", "DESC")->select('*', 'id as patient_id')->get();
+				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
+					return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at", "DESC")->select('*', 'id as patient_id')->get();
+				}else{
+					return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+				}
 			}
 		}
 

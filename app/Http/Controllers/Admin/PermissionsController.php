@@ -69,10 +69,17 @@ class PermissionsController extends Controller
         }
 
         list($orderBy, $order) = getSortBy($request);
-
-        $query = Permission::query()->with(['parent' => function ($query) {
-            $query->select('id', 'name');
-        }]);
+        $user= AUth::user();
+        if($user->hasRole('Super-Admin')){
+            $query = Permission::query()->with(['parent' => function ($query) {
+                $query->select('id', 'name');
+            }]);
+        }else{
+            $query = Permission::query()->with(['parent' => function ($query) {
+                $query->select('id', 'name');
+            }])->where('name','!=',"view_inactive_records");
+        }
+        
 
         $iTotalRecords = Permission::count();
 

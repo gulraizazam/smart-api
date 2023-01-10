@@ -21,14 +21,19 @@
             <label>Name:</label>
             <input type="text" class="form-control filter-field" placeholder="Enter Name" id="search_name" />
         </div>
+        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors"))
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                    <label>Status:</label>
+                <select class="form-control filter-field select2" name="status" id="search_status">
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
-                <label>Status:</label>
-            <select class="form-control filter-field select2" name="status" id="search_status">
-
-            </select>
-        </div>
-
+                </select>
+            </div>
+        @else
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                <label>Email:</label>
+                <input type="text" class="form-control filter-field" placeholder="Email" id="search_email" />
+            </div>
+        @endif
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Phone:</label>
             <input type="text" class="form-control filter-field" placeholder="eg: 03000000000" id="search_phone" />
@@ -53,12 +58,12 @@
 
             </select>
         </div>
-
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Email:</label>
-            <input type="text" class="form-control filter-field" placeholder="Email" id="search_email" />
-        </div>
-
+        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors"))
+            <div class="col-lg-3 mb-lg-0 mb-6">
+                <label>Email:</label>
+                <input type="text" class="form-control filter-field" placeholder="Email" id="search_email" />
+            </div>
+        @endif
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Create at:</label>
             <div class="input-daterange input-group to-from-datepicker" >

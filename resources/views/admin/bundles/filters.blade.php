@@ -32,12 +32,14 @@
             <input type="text" id="search_enddate" class="custom-datepicker form-control filter-field datatable-input"
                    placeholder="Valid To" data-col-index="5">
         </div>
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Status:</label>
-            <select class="form-control filter-field select2" name="status" id="search_status">
+        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages"))
+            <div class="col-lg-2 mb-lg-0 mb-6">
+                <label>Status:</label>
+                <select class="form-control filter-field select2" name="status" id="search_status">
 
-            </select>
-        </div>
+                </select>
+            </div>
+        @endif
         <div class="col-lg-2 mb-lg-0 mt-7">
             @include('admin.partials.filter-buttons')
         </div>

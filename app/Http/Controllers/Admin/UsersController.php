@@ -314,9 +314,9 @@ class UsersController extends Controller
                 }
             }
         }
-
         if (count($where)) {
-            $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
+                $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
@@ -324,8 +324,20 @@ class UsersController extends Controller
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
                 ])->get(['users.id']));
+            }else{
+                $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where('users.active',1)
+                ->where([
+                    [$where],
+                    ['account_id', '=', Auth::User()->account_id],
+                ])->get(['users.id']));
+            }
         } else {
-            $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
+                $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
@@ -333,33 +345,66 @@ class UsersController extends Controller
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
                 ])->get(['users.id']));
+            }else{
+                $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->where('users.active',1)
+                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where([
+                    [$where],
+                    ['account_id', '=', Auth::User()->account_id],
+                ])->get(['users.id']));
+            }
         }
-
         list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
         if (count($where)) {
-            $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
+                $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where('email','!=','superadmin@redsingal.net')
                 ->where([
                     [$where],
                     ['account_id', '=', Auth::User()->account_id],
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
-        } else {
-            $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+            }else{
+                $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where('users.active',1)
+                ->where('email','!=','superadmin@redsingal.net')
+                ->where([
+                    [$where],
+                    ['account_id', '=', Auth::User()->account_id],
+                ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            }
+        } else {
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
+                $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where('email','!=','superadmin@redsingal.net')
                 ->where([
                     ['account_id', '=', Auth::User()->account_id],
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            }else{
+                $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                ->where('users.active',1)
+                ->where('email','!=','superadmin@redsingal.net')
+                ->where([
+                    ['account_id', '=', Auth::User()->account_id],
+                ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            }
         }
-
         $records = $this->getExtraData($records);
-
         if ($Users->count()) {
-
             $index = 0;
             $loc = Locations::select('*')->get()->getDictionary();
             foreach ($Users as $user) {
@@ -370,15 +415,10 @@ class UsersController extends Controller
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
                         if($locationchecked != null){
-                            if ($locationchecked->slug == 'custom') {
-                                $locations[] = $loc[$location]->city->name ?? ''.'-'.$loc[$location]->name ?? '';
-                            } else {
-                                $locations[] = $loc[$location]->name ?? '';
-                            }
+                            $locations[] = $loc[$location]->name ?? '';
                         }
                     }
                 }
-
                 $records['data'][$index] = [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -393,7 +433,6 @@ class UsersController extends Controller
                 ];
                 ++$index;
             }
-
             $records["permissions"] = [
                 'edit' => Gate::allows('users_edit'),
                 'change_password' => Gate::allows('users_change_password'),
@@ -402,7 +441,6 @@ class UsersController extends Controller
                 'delete' => Gate::allows('users_destroy'),
                 'contact' => Gate::allows('contact'),
             ];
-
             $records["meta"] = [
                 'field' => $orderBy,
                 'page' => $page,
@@ -411,32 +449,21 @@ class UsersController extends Controller
                 'total' => $iTotalRecords,
                 'sort' => $order,
             ];
-
         }
-
         return ApiHelper::apiDataTable($records);
     }
-
     private function getExtraData($records = []) {
-
-
         $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
-
         $roles = Role::get()->pluck('name', 'id');
-
         $filters = Filters::all(Auth::User()->id, 'users');
-
         $records['filter_values'] = [
             'roles' => $roles,
             'locations' => $locations,
             'status' => config('constants.status')
         ];
-
         $records['active_filters'] = $filters;
-
         return $records;
     }
-
     /**
      * Show the form for creating new User.
      *
@@ -448,22 +475,17 @@ class UsersController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $user = new \stdClass();
-
         $user->gender = null;
         $user->phone = null;
-
         $roles = Role::get();
         $roles_commissions = Role::all();
-
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
-
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'roles' => $roles,
             'roles_commissions' => $roles_commissions,
             'locations' => $locations,
             'user' => $user
         ]);
-
     }
 
     /**
@@ -475,27 +497,18 @@ class UsersController extends Controller
         if (!Gate::allows('users_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
         $validator = $this->verifyCreateFields($request);
-
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
-
         $data = $request->all();
-
         $data['phone'] = GeneralFunctions::cleanNumber($request->phone);
-
         $data['account_id'] = Auth::User()->account_id;
-
         $data['main_account'] = '0';
-
         $data['user_type_id'] = Config::get('constants.application_user_id');
-
         if ($user = User::createRecord($data)) {
             $roles = $request->input('roles') ? $request->input('roles') : [];
             $user->assignRole($roles);
-
             // Check if role exist and are set then assign role to users
             if ($request->get('roles') && is_array($request->get('roles'))) {
                 $roles = $request->get('roles');
@@ -525,9 +538,7 @@ class UsersController extends Controller
                 }
             }
         }
-
         session()->flash('success', 'Record has been created successfully.');
-
         return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
     }
 
@@ -545,7 +556,6 @@ class UsersController extends Controller
             'roles' => 'required',
             'commission' => 'required',
         ];
-
         $messages = [
             'name.required' => 'Name field is required',
             'email.required' => 'Email field is required',
@@ -556,10 +566,8 @@ class UsersController extends Controller
             'roles.required' => 'Role must be unique',
             'commission.required' => 'Commission must be unique',
         ];
-
         return $validator = Validator::make($request->all(), $rules, $messages);
     }
-
     /**
      * Show the form for editing User.
      *
@@ -572,7 +580,6 @@ class UsersController extends Controller
         if (!Gate::allows('users_change_password')) {
             return abort(401);
         }
-
         $user = User::getData($id);
         if ($user == null) {
             return view('error');
@@ -593,33 +600,26 @@ class UsersController extends Controller
         if (!Gate::allows('users_change_password')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
         $data = [];
         $validator = $this->verifyPasswordFields($request);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => 0,
                 'message' => $validator->messages()->all(),
             ]);
         }
-
         try {
             $id = decrypt($request->get('id'));
         } catch (DecryptException $e) {
 
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
         }
-
         $data['password'] = bcrypt($request->get('password'));
-
         $result = User::updateRecord($data, $id);
-
         if ($result) {
 
             return ApiHelper::apiResponse($this->success, 'Password has been changed successfully.');
         }
-
         return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
     }
 
@@ -633,13 +633,11 @@ class UsersController extends Controller
         $rules = [
             'password' => 'required|confirmed|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/',
         ];
-
         $messages = [
             'password.required' => 'Password field is required',
             'password.min' => 'password must be at least 8 characters',
             'password.regex' => 'Password must be a combination of numbers, upper, lower, and special characters',
         ];
-
         return $validator = Validator::make($request->all(), $rules, $messages);
     }
 
@@ -657,29 +655,21 @@ class UsersController extends Controller
         }
         $roles = Role::get()->pluck('name', 'id');
         $roles_commissions = Role::all();
-
         $user = User::getData($id);
-
         $user_has_locations = $user->user_has_locations->pluck('location_id');
-
         $user_has_locations = LocationsWidget::generatelocationArrayEdit($user_has_locations, Auth::User()->account_id, $user);
         if ($user_has_locations) {
             //$user_has_locations = $user_has_locations->toArray();
         } else {
             $user_has_locations = [];
         }
-
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
-
         $user_roles = $user->user_roles()->pluck('id');
-
         if ($user_roles) {
             $user_roles = $user_roles->toArray();
         } else {
             $user_roles = array();
         }
-
-
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'roles' => $roles,
             'user' => $user,
@@ -688,8 +678,6 @@ class UsersController extends Controller
             'user_has_locations' => $user_has_locations,
             'user_roles' => $user_roles
         ]);
-
-        //return view('admin.users.edit', compact('user', 'roles', 'roles_commissions', 'user_has_locations', 'locations'));
     }
 
     /**
@@ -704,13 +692,9 @@ class UsersController extends Controller
         if (!Gate::allows('users_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
         $validator = $this->verifyUpdateFields($request);
-
         if ($validator->fails()) {
-
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
-
         }
         if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
@@ -721,12 +705,10 @@ class UsersController extends Controller
         if ($user = User::updateRecord($data, $id)) {
             $roles = $request->input('roles') ? $request->input('roles') : [];
             $user->syncRoles($roles);
-
             // Check if locations exist and are set then assign centres to User
             if ($request->get('roles') && is_array($request->get('roles'))) {
                 // Destroy if user has locations
                 $user->role_has_users()->forceDelete();
-
                 $roles = $request->get('roles');
                 $role_has_users = [];
                 foreach ($roles as $role) {
@@ -741,14 +723,11 @@ class UsersController extends Controller
                     }
                 }
             }
-
             // Check if locations exist and are set then assign centres to User
             if ($request->get('centers') && is_array($request->get('centers'))) {
                 // Destroy if user has locations
                 $user->user_has_locations()->forceDelete();
-
                 $centres = LocationsWidget::generatelocationArray($request->centers, Auth::User()->account_id, $user->id);
-
                 $user_has_locations = [];
                 foreach ($centres as $centre) {
                     $user_has_locations = [
@@ -761,12 +740,9 @@ class UsersController extends Controller
                 }
             }
         }
-
         session()->flash('success', 'Record has been updated successfully.');
-
         return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
-
     /**
      * Validate create form fields.
      *
@@ -793,9 +769,7 @@ class UsersController extends Controller
         if (!Gate::allows('users_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
         User::deleteRecord($id);
-
         return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
     }
 
@@ -811,15 +785,11 @@ class UsersController extends Controller
         if (!Gate::allows('users_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-
         $response = User::activeRecord($request->id, $request->status);
-
         if ($response) {
             return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
         }
-
         return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
-
     }
 
     /*
@@ -829,7 +799,6 @@ class UsersController extends Controller
     public function getpatient(Request $request)
     {
         $patient = Patients::getPatientAjax($request->q, Auth::User()->account_id);
-
         return response()->json($patient);
     }
 
@@ -840,7 +809,6 @@ class UsersController extends Controller
     public function getpatientid(Request $request)
     {
         $patients = Patients::getPatientidAjax($request->search, Auth::User()->account_id);
-
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'patients' => $patients
         ]);
@@ -849,7 +817,6 @@ class UsersController extends Controller
     public function phoneSearch(Request $request)
     {
         $patients = Patients::getPatientPhoneAjax($request->search, Auth::User()->account_id);
-
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'patients' => $patients
         ]);
@@ -862,7 +829,6 @@ class UsersController extends Controller
     public function getpatientnumber(Request $request)
     {
         $patient = Patients::find($request->patient_id);
-
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'patient' => $patient
         ]);

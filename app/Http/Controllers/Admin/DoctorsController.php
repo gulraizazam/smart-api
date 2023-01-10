@@ -98,12 +98,17 @@ class DoctorsController extends Controller
             }
 
             $where = $filterConditions->get('data');
-
-            $iTotalRecords = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors")){
+                $iTotalRecords = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('role_has_users.user_id')
                 ->when(count($where), fn($q) => $q->where($where))->get();
+            }else{
+                $iTotalRecords = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('role_has_users.user_id')
+                ->when(count($where), fn($q) => $q->where($where)->where('active',1))->get();
+            }
             $iTotalRecords = $iTotalRecords->count();
-
+                
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
             if ($orderBy != '') {
                 if ($orderBy == 'created_at') {
@@ -130,10 +135,15 @@ class DoctorsController extends Controller
                     Filters::put(Auth::User()->id, 'doctors', 'order', $order);
                 }
             }
-            $Users = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors")){
+                $Users = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
                 ->groupBy('role_has_users.user_id')
                 ->when(count($where), fn($q) => $q->where($where))->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
-
+            }else{
+                $Users = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                ->groupBy('role_has_users.user_id')
+                ->when(count($where), fn($q) => $q->where($where)->where('active',1))->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            }
             foreach ($Users as $user) {
                 $user->roles = $user->user_roles()->pluck('name');
                 $user->phone = GeneralFunctions::contactStatus($user->phone);
