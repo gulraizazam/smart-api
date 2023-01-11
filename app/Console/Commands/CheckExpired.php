@@ -15,14 +15,12 @@ class CheckExpired extends Command
      * @var string
      */
     protected $signature = 'check:expired';
-
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
-
+    protected $description = 'Set status to inactive when end date passed';
     /**
      * User model.
      *
