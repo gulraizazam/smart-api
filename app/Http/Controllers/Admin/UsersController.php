@@ -653,8 +653,8 @@ class UsersController extends Controller
         if (!Gate::allows('users_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $roles = Role::get()->pluck('name', 'id');
-        $roles_commissions = Role::all();
+        $roles = Role::where('name','!=','Super-Admin')->get()->pluck('name', 'id');
+        $roles_commissions = Role::where('name','!=','Super-Admin')->get();
         $user = User::getData($id);
         $user_has_locations = $user->user_has_locations->pluck('location_id');
         $user_has_locations = LocationsWidget::generatelocationArrayEdit($user_has_locations, Auth::User()->account_id, $user);
