@@ -82,6 +82,9 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
     Route::get('/3rd-message-before-appointment', function () {
         \Artisan::call('appointment:3rd-message-before-appointment');
     });
+    Route::get('/check-expired-records', function () {
+        \Artisan::call('check:expired');
+    });
 // Check Session
     Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
