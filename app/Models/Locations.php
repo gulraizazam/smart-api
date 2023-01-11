@@ -372,7 +372,6 @@ class Locations extends BaseModal
                 return DB::table('locations')
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
-                    //->whereIn('id', ACL::getUserCentres())
                     ->whereNull('deleted_at')
                     ->groupBy('service_has_locations.location_id', 'locations.id')
                     ->orderby('sort_no', 'asc')
