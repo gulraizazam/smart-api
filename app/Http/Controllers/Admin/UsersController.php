@@ -477,8 +477,8 @@ class UsersController extends Controller
         $user = new \stdClass();
         $user->gender = null;
         $user->phone = null;
-        $roles = Role::get();
-        $roles_commissions = Role::all();
+        $roles = Role::where('name','!=','Super-Admin')->get();
+        $roles_commissions = Role::where('name','!=','Super-Admin')->get();
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'roles' => $roles,
