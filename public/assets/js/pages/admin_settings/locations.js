@@ -70,34 +70,34 @@ function actions(data) {
         let url = route('admin.locations.edit', {id: id});
         let delete_url = route('admin.locations.destroy', {id: id});
         if (permissions.edit || permissions.delete) {
-            let actions = '<div class="dropdown dropdown-inline action-dots">\
-                <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
-                    <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
-                </a>\
-                <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
-                    <ul class="navi flex-column navi-hover py-2">\
-                        <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
-                            Choose an action: \
-                        </li>';
-                        if (permissions.edit) {
-                            actions += '<li class="navi-item">\
-                                <a href="javascript:void(0);" onclick="editRow(`' + url + '`);" class="navi-link">\
-                                    <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                                    <span class="navi-text">Edit</span>\
-                                </a>\
-                            </li>';
-                        }
-                        if (permissions.delete) {
-                            actions += '<li class="navi-item">\
-                                    <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
-                                    <span class="navi-icon"><i class="la la-trash"></i></span>\
-                                    <span class="navi-text">Delete</span>\
-                                    </a>\
-                                </li>';
-                        }
-                    actions += '</ul>\
-                </div>\
-            </div>';
+            let actions = `<div class="dropdown dropdown-inline action-dots">
+                    <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">
+                        <i class="ki ki-bold-more-hor" aria-hidden="true"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
+                        <ul class="navi flex-column navi-hover py-2">
+                            <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">
+                                Choose an action: 
+                            </li>`;
+                            if (permissions.edit) {
+                                actions += `<li class="navi-item">
+                                    <a href="javascript:void(0);" onclick="editRow(' + url + ');" class="navi-link">
+                                        <span class="navi-icon"><i class="la la-pencil"></i></span>
+                                        <span class="navi-text">Edit</span>
+                                    </a>
+                                </li>`;
+                            }
+                            if (permissions.delete) {
+                                actions += `<li class="navi-item">
+                                        <a href="javascript:void(0);" onclick="deleteRow(' + delete_url + ');" class="navi-link">
+                                            <span class="navi-icon"><i class="la la-trash"></i></span>
+                                            <span class="navi-text">Delete</span>
+                                        </a>
+                                    </li>`;
+                            }
+                        actions += `</ul>
+                    </div>
+                </div>`;
             return actions;
         }
     }
