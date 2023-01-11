@@ -389,7 +389,7 @@ class UsersController extends Controller
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where('email','!=','superadmin@redsingal.net')
                 ->where([
-                    ['account_id', '=', Auth::User()->account_id],
+                    'account_id'=>Auth::User()->account_id,
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }else{
                 $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
@@ -399,7 +399,7 @@ class UsersController extends Controller
                 ->where('users.active',1)
                 ->where('email','!=','superadmin@redsingal.net')
                 ->where([
-                    ['account_id', '=', Auth::User()->account_id],
+                    'account_id'=>Auth::User()->account_id,
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }
         }
