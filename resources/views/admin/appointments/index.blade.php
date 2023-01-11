@@ -176,9 +176,6 @@
                     $this.attr('href', route('admin.appointments.export', [limit, offset]));
                 },1000);
             }
-
-            
-            ////////////////filters set//////////
             function SetFromdate(){
                 $("#filter_date_from").val($("#appoint_search_start").val());
             }
