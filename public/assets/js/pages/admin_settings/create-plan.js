@@ -327,18 +327,14 @@ var table_columns = [
         sortable: false,
         width: 60,
     },{
-        field: 'status',
-        title: 'Status',
-        sortable: false,
-        width: 60,
-        template: function (data) {
-            let status_url = route('admin.packages.status');
-            return statuses(data, status_url);
-        }
-    },{
         field: 'created_at',
         title: 'Created at',
         width: 'auto',
+    },{
+        field: 'refund',
+        title: 'Refund',
+        sortable: false,
+        width: 60,
     },{
         field: 'actions',
         title: 'Actions',
@@ -350,10 +346,14 @@ var table_columns = [
             return actions(data);
         }
     },{
-        field: 'refund',
-        title: 'Refund',
+        field: 'status',
+        title: 'Status',
         sortable: false,
         width: 60,
+        template: function (data) {
+            let status_url = route('admin.packages.status');
+            return statuses(data, status_url);
+        }
     }];
 
 function actions(data) {
@@ -2136,7 +2136,7 @@ jQuery(document).ready( function () {
 
     /*function for final package information save*/
     $("#AddPackageFinal").click(function () {
-
+       
        hideMessages();
 
         var random_id = $('#random_id_1').val();
@@ -2149,7 +2149,7 @@ jQuery(document).ready( function () {
         var is_exclusive = $('#is_exclusive').val();
         var appointment_id = $('#add_appointment_id').val();
         var base_service_id = $('#add_plan_location_id').val();
-
+        var complimentary = $("#is_complimentary").val($('#net_amount_1').val());
         var formData = {
             'random_id': random_id,
             'patient_id': patient_id,
@@ -2176,12 +2176,6 @@ jQuery(document).ready( function () {
             toastr.error("Please select the payment mode");
             return false;
         }
-
-        if(total <= 0){
-            toastr.error("Please add atleast one session");
-            return false;
-        }
-
         if (random_id && (patient_id > 0) && total && status==1?payment_mode_id:true && cash_amount >= 0 && grand_total && location_id) {
 
             showSpinner("-save");
