@@ -327,18 +327,14 @@ var table_columns = [
         sortable: false,
         width: 60,
     },{
-        field: 'status',
-        title: 'Status',
-        sortable: false,
-        width: 60,
-        template: function (data) {
-            let status_url = route('admin.packages.status');
-            return statuses(data, status_url);
-        }
-    },{
         field: 'created_at',
         title: 'Created at',
         width: 'auto',
+    },{
+        field: 'refund',
+        title: 'Refund',
+        sortable: false,
+        width: 60,
     },{
         field: 'actions',
         title: 'Actions',
@@ -350,10 +346,14 @@ var table_columns = [
             return actions(data);
         }
     },{
-        field: 'refund',
-        title: 'Refund',
+        field: 'status',
+        title: 'Status',
         sortable: false,
         width: 60,
+        template: function (data) {
+            let status_url = route('admin.packages.status');
+            return statuses(data, status_url);
+        }
     }];
 
 function actions(data) {
