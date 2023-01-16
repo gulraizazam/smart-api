@@ -389,7 +389,7 @@ class UsersController extends Controller
                 ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
                 ->where('email','!=','superadmin@redsingal.net')
                 ->where([
-                    ['account_id', '=', Auth::User()->account_id],
+                    'account_id'=>Auth::User()->account_id,
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }else{
                 $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
@@ -399,7 +399,7 @@ class UsersController extends Controller
                 ->where('users.active',1)
                 ->where('email','!=','superadmin@redsingal.net')
                 ->where([
-                    ['account_id', '=', Auth::User()->account_id],
+                    'account_id'=>Auth::User()->account_id,
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }
         }
@@ -477,8 +477,8 @@ class UsersController extends Controller
         $user = new \stdClass();
         $user->gender = null;
         $user->phone = null;
-        $roles = Role::get();
-        $roles_commissions = Role::all();
+        $roles = Role::where('name','!=','Super-Admin')->get();
+        $roles_commissions = Role::where('name','!=','Super-Admin')->get();
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'roles' => $roles,
@@ -653,8 +653,8 @@ class UsersController extends Controller
         if (!Gate::allows('users_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $roles = Role::get()->pluck('name', 'id');
-        $roles_commissions = Role::all();
+        $roles = Role::where('name','!=','Super-Admin')->get()->pluck('name', 'id');
+        $roles_commissions = Role::where('name','!=','Super-Admin')->get();
         $user = User::getData($id);
         $user_has_locations = $user->user_has_locations->pluck('location_id');
         $user_has_locations = LocationsWidget::generatelocationArrayEdit($user_has_locations, Auth::User()->account_id, $user);

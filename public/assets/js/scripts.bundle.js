@@ -6781,7 +6781,7 @@ if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
 
 						var pageSizes = Plugin.getOption('toolbar.items.pagination.pageSizeSelect');
 						// default value here, to fix override option by user
-						if (pageSizes.length == 0) pageSizes = [20, 30, 100, 150];
+						if (pageSizes.length == 0) pageSizes = [30, 50, 100, 200];
 						$.each(pageSizes, function(i, size) {
 							var display = size;
 							if (size === -1) display = Plugin.getOption('translate.toolbar.pagination.items.default.all');

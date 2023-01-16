@@ -1,6 +1,6 @@
 "use strict";
 
-let perPage = 20;
+let perPage = 30;
 let paginate = true;
 if (typeof changePaginate !== 'undefined') {
     paginate = changePaginate;
