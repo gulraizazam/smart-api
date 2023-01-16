@@ -1,25 +1,6 @@
 jQuery(document).ready(function() {
 
-    var result = get_query();
-
-    if (typeof result.tab !== 'undefined') {
-        $("." + result.tab+ '-tab').click();
-    } else {
-        $(".appointment-tab").addClass("nav-bar-active")
-    }
-
-    if (typeof result.city_id !== "undefined"
-        && typeof result.location_id !== "undefined"
-        && typeof result.doctor_id !== "undefined"
-        && typeof result.tab !== 'undefined') {
-
-        loadDoctors(result.location_id, result.tab);
-
-        setTimeout( function () {
-            $("#consultancy_city_filter").val(result.city_id).change();
-            $("#consultancy_doctor_filter").val(result.doctor_id).change();
-        }, 500);
-    }
+    
 
     $("#Add_comment").click(function () {
 

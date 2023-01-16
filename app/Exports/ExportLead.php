@@ -31,50 +31,37 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         DB::enableQueryLog();
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
-
         if($this->request->id != null || $this->request->id != ''){
             $resultQuery->where('leads.patient_id', $this->request->id);
         }
-
         if($this->request->service_id != null || $this->request->service_id != ''){
             $resultQuery->where('leads.service_id', $this->request->service_id);
         }
-
         if($this->request->lead_status_id != null || $this->request->lead_status_id != ''){
             $resultQuery->where('leads.lead_status_id', $this->request->lead_status_id);
         }
-
         if($this->request->city_id != null || $this->request->city_id != ''){
             $resultQuery->where('leads.city_id', $this->request->city_id);
         }
-
         if($this->request->region_id != null || $this->request->region_id != ''){
             $resultQuery->where('leads.region_id', $this->request->region_id);
         }
-
         if($this->request->created_by != null || $this->request->created_by != ''){
             $resultQuery->where('leads.created_by', $this->request->created_by);
         }
-
+        if($this->request->phone != null || $this->request->phone != ''){
+            $resultQuery->where('users.phone', $this->request->phone);
+        }
         if($this->request->name != null || $this->request->name != ''){
             $resultQuery->where('users.name','like', $this->request->name.'%');
         }
-
-        if($this->request->name != null || $this->request->name != ''){
-            $resultQuery->where('users.name','like', $this->request->name.'%');
-        }
-
-        if($this->request->start_date != null || $this->request->start_date != ''){
-            
+        if($this->request->start_date != null || $this->request->start_date != ''){ 
             $resultQuery->whereBetween('leads.created_at', [$this->request->start_date. ' 00:00:00', $this->request->end_date. ' 00:00:00']);
         }
-        
         $result = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
             ->orderBy("leads.created_at", "DESC")->get();
-       
         return $result;
     }
-
     public function headings(): array
     {
         return [
