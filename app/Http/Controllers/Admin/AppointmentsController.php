@@ -3608,7 +3608,7 @@ class AppointmentsController extends Controller
         $package = Packages::find($request->package_id_create);
         /* Add new feature by Hasan*/
         $package_bundle = PackageBundles::find($package_service->package_bundle_id);
-        dd($package_bundle->net_amount);
+        
         $bundle = Bundles::where("id",'=',$package_bundle->bundle_id)->where("type", '=','multiple')->first();
         $service = Services::find($package_service->service_id);
         if($bundle){
