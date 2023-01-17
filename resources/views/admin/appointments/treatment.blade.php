@@ -266,11 +266,11 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
-                        $("#consultancy_city_filter").val(result.city_id).change();
+                        $("#treatment_city_filter").val(result.city_id).change();
                         $("#treatment_location_filter").val(result.location_id).change();
-                        $("#consultancy_doctor_filter").val(result.doctor_id).change();
+                        $("#treatment_doctor_filter").val(result.doctor_id).change();
                         
-                    }, 300);
+                    }, 500);
                 }
                 
 
