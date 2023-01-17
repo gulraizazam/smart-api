@@ -253,9 +253,26 @@
                 $("#filter_service_id").val($("#treatment_search_service").val());
              }
              $(document).ready(function () {
-                setTimeout( function () {
-                    setDashboardFilters();
-                },1500)
+                var result = get_query();
+                console.log(result);
+                if (typeof result.tab !== 'undefined') {
+                    $("." + result.tab+ '-tab').click();
+                } else {
+                    $(".appointment-tab").addClass("nav-bar-active")
+                }
+                if (typeof result.city_id !== "undefined"
+                    && typeof result.location_id !== "undefined"
+                    && typeof result.doctor_id !== "undefined"
+                    && typeof result.tab !== 'undefined') {
+                    loadDoctors(result.location_id, result.tab);
+                    setTimeout( function () {
+                        $("#consultancy_city_filter").val(result.city_id).change();
+                        $("#treatment_location_filter").val(result.location_id).change();
+                        $("#consultancy_doctor_filter").val(result.doctor_id).change();
+                        
+                    }, 300);
+                }
+                
 
             });
             function setDashboardFilters() {
