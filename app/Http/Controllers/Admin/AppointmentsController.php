@@ -3491,6 +3491,7 @@ class AppointmentsController extends Controller
                         $amount_create = $amount_create_is_inclusive = $serviceinfo->price;
                         $tax_create = ceil($serviceinfo->price * ($location_information->tax_percentage / 100));
                         $price = ceil($amount_create + (($amount_create * $location_information->tax_percentage) / 100));
+                        dd($price );
                     } else {
                         $price = $amount_create_is_inclusive = $serviceinfo->price;
                         $amount_create = ceil((100 * $price) / ($location_information->tax_percentage + 100));
@@ -3527,6 +3528,7 @@ class AppointmentsController extends Controller
             $location_id = null;
             $checked_treatment = null;
         }
+       
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
         $paymentmodes->prepend('Select', '0');
         return view('admin.appointments.invoice_create', compact('price', 'packages', 'appointment_type', 'status', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'invoice_status', 'paymentmodes', 'tax_create', 'amount_create', 'location_id', 'checked_treatment', 'appointmentArray', 'amount_create_is_inclusive'));
@@ -3650,6 +3652,7 @@ class AppointmentsController extends Controller
         if ($outstanding < 0) {
             $outstanding = 0;
         }
+       
         return response()->json(array(
             'status' => true,
             'amount' => $package_service->tax_exclusive_price,
