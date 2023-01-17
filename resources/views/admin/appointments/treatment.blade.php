@@ -278,69 +278,7 @@
                 
 
             });
-            let loadDoctors = function (locationId, appointment = null) {
-
-if (locationId != '' && locationId != null) {
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.appointments.load_doctors'),
-        type: 'POST',
-        data: {
-            location_id: locationId
-        },
-        cache: false,
-        success: function(response) {
-            if(response.status) {
-
-                let dropdowns =  response.data.dropdown;
-                let dropdown_options =  '<option value="">Select a Doctor</option>';
-
-                Object.entries(dropdowns).forEach(function (dropdown) {
-                    dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
-                });
-
-                let result = get_query();
-
-                if (appointment && appointment == 'consultancy') {
-                    $('#consultancy_doctor_filter').html(dropdown_options);
-                    setQueryStringParameter('location_id', locationId);
-
-                    if (typeof result.doctor_id !== "undefined") {
-                        $("#consultancy_doctor_filter").val(result.doctor_id).change();
-                    }
-
-                } else if (appointment && appointment == 'treatment') {
-                    $('#treatment_doctor_filter').html(dropdown_options);
-                    setQueryStringParameter('location_id', locationId);
-
-                    loadMachine(locationId);
-                    loadCalendar();
-
-                    if (typeof result.doctor_id !== "undefined" && typeof result.reload === "undefined") {
-                        //  $("#treatment_doctor_filter").val(result.doctor_id).change();
-                    }
-                } else {
-                    $('#edit_doctor').html(dropdown_options);
-                }
-
-                //$('.select2').select2({ width: '100%' });
-            } else {
-                resetDoctors();
-            }
-            setQueryStringParameter('reload');
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            resetDoctors();
-        }
-    });
-} else {
-    resetDoctors();
-}
-
-}
+            
             function setDashboardFilters() {
                 
                 let result = get_query();
