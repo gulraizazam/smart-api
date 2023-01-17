@@ -3596,7 +3596,7 @@ class AppointmentsController extends Controller
             ['package_id', '=', $request->package_id_create],
             ['cash_flow', '=', 'in']
         ])->sum('cash_amount');
-        dd($balance_patient_in);
+       
         $balance_patient_out = PackageAdvances::where([
             ['patient_id', '=', $appointmentinfo->patient_id],
             ['package_id', '=', $request->package_id_create],
@@ -3608,6 +3608,7 @@ class AppointmentsController extends Controller
         $package = Packages::find($request->package_id_create);
         /* Add new feature by Hasan*/
         $package_bundle = PackageBundles::find($package_service->package_bundle_id);
+        dd($package_bundle->net_amount);
         $bundle = Bundles::where("id",'=',$package_bundle->bundle_id)->where("type", '=','multiple')->first();
         $service = Services::find($package_service->service_id);
         if($bundle){
