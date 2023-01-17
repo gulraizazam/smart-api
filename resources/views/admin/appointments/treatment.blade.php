@@ -270,10 +270,10 @@
                       
                         $("#treatment_city_filter").val(result.city_id).change();
                         $("#treatment_location_filter").val(result.location_id).change();
-                        $("#treatment_doctor_filter").val(result.doctor_id).change();
+                        $("#treatment_doctor_filter").val(result.doctor_id);
                         $("#treatment_resource_filter").val(result.machine_id);
                         setDashboardFilters();
-                    }, 900);
+                    }, 1000);
                 }
                 
 
