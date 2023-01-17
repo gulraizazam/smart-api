@@ -21,7 +21,7 @@
         Kindly select the treatment
     </div>
     {{--End--}}
-{{dd($outstanding)}}
+
     {{--Some hidden Fields that helps us for saving invoice--}}
     <input type="hidden" value="{{$id}}" id="appointment_id_create">
     <input type="hidden" value="{{$settleamount}}" id="settleamount_for_zero" name="settleamount_for_zero">
