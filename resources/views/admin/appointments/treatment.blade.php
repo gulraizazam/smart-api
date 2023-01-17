@@ -263,12 +263,14 @@
                 if (typeof result.city_id !== "undefined"
                     && typeof result.location_id !== "undefined"
                     && typeof result.doctor_id !== "undefined"
+                    && typeof result.machine_id !== "undefined"
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
                         $("#treatment_city_filter").val(result.city_id).change();
                         $("#treatment_location_filter").val(result.location_id).change();
-                        $("#treatment_doctor_filter").val(result.doctor_id).change();
+                        $("#treatment_doctor_filter").val(result.doctor_id);
+                        $("#treatment_resource_filter").val(result.machine_id);
                         
                     }, 500);
                 }
