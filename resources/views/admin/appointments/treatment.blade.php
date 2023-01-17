@@ -166,11 +166,9 @@
 
     {{--All forms popups--}}
     @include('admin.appointments.appointment-forms.modals')
-
     @push('js')
-
         <script>
-$(document).ready(function () {
+            $(document).ready(function () {
                 var result = get_query();
                 console.log(result);
                 if (typeof result.tab !== 'undefined') {
@@ -193,18 +191,13 @@ $(document).ready(function () {
                         setDashboardFilters();
                     }, 300);
                 }
-                
-
             });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
-
             var limit = '{{config('constants.export-appointment-limit')}}';
             var offset = 0;
-
             $(document).ready(function () {
                 $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
             })
-
             function changeLimitOffset($this) {
                 limit = parseInt(limit) + parseInt(appointment_limit);
                 offset = parseInt(offset) + parseInt(appointment_limit);
@@ -212,8 +205,6 @@ $(document).ready(function () {
                     $this.attr('href', route('admin.appointments.export', [limit, offset]));
                 },1000);
             }
-
-            
             function SetFromdate(){
                 $("#filter_date_from").val($("#treatment_search_start").val());
             }
