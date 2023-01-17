@@ -273,7 +273,7 @@
                         $("#treatment_doctor_filter").val(result.doctor_id).change();
                         $("#treatment_resource_filter").val(result.machine_id).change();
                         
-                    }, 1000);
+                    }, 1500);
                 }
                 
 
