@@ -183,18 +183,8 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
-                        // alert('test');?
-                        $("#treatment_city_filter").val(result.city_id).change().select2();;
-                        $("#treatment_location_filter").val(result.location_id).change().select2();;
-                        // if($("#treatment_city_filter"))
-                        $("#treatment_doctor_filter").val(result.doctor_id).select2();;
-                        $("#treatment_resource_filter").val(result.machine_id).select2();;
-
-                        console.log('result.city_id', result.city_id);
-                        console.log('result.location_id', result.location_id);
-                        console.log('result.doctor_id', result.doctor_id);
-                        console.log('result.machine_id', result.machine_id);
-                        
+                        $("#treatment_city_filter").val(result.city_id).change().select2();
+                        $("#treatment_location_filter").val(result.location_id).change().select2();
                         setDashboardFilters();
                     }, 1000);
                 }
