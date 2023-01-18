@@ -180,14 +180,17 @@
                     && typeof result.location_id !== "undefined"
                     && typeof result.doctor_id !== "undefined"
                     && typeof result.machine_id !== "undefined"
-                    && typeof result.tab !== 'undefined') {
-                    loadDoctors(result.location_id, result.tab);
+                    && typeof result.tab !== 'undefined' && result.tab == "treatment") {
                     setTimeout( function () {
-                        $("#treatment_city_filter").val(result.city_id).change();
-                        $("#treatment_location_filter").val(result.location_id).change();
-                        // if($("#treatment_city_filter"))
-                        $("#treatment_doctor_filter").val(result.doctor_id);
-                        $("#treatment_resource_filter").val(result.machine_id);
+                        
+                        loadDoctors(result.location_id, result.tab);
+                        if($("#treatment_city_filter").length && $("#treatment_location_filter").length){
+                            // alert('test');
+                            $("#treatment_city_filter").val(result.city_id).change();
+                            $("#treatment_location_filter").val(result.location_id).change();
+                            $("#treatment_doctor_filter").val(result.doctor_id);
+                            $("#treatment_resource_filter").val(result.machine_id);
+                        }
 
                         // console.log('result.city_id', result.city_id);
                         // console.log('result.location_id', result.location_id);
@@ -195,9 +198,12 @@
                         // console.log('result.machine_id', result.machine_id);
                         
                         setDashboardFilters();
-                    }, 3000);
+                    }, 1000);
                 }
             });
+            // $(document).ajaxComplete(function(){
+            
+            // });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
             var limit = '{{config('constants.export-appointment-limit')}}';
             var offset = 0;
