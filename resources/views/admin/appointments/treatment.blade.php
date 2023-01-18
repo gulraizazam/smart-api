@@ -184,11 +184,11 @@
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
                         // alert('test');?
-                        $("#treatment_city_filter").val(result.city_id).change();
-                        $("#treatment_location_filter").val(result.location_id).change();
+                        $("#treatment_city_filter").val(result.city_id).change().select2();;
+                        $("#treatment_location_filter").val(result.location_id).change().select2();;
                         // if($("#treatment_city_filter"))
-                        $("#treatment_doctor_filter").val(result.doctor_id);
-                        $("#treatment_resource_filter").val(result.machine_id);
+                        $("#treatment_doctor_filter").val(result.doctor_id).select2();;
+                        $("#treatment_resource_filter").val(result.machine_id).select2();;
 
                         console.log('result.city_id', result.city_id);
                         console.log('result.location_id', result.location_id);
