@@ -173,10 +173,7 @@
                 console.log(result);
                 if (typeof result.tab !== 'undefined') {
                     $("." + result.tab+ '-tab').click();
-                } else {
-                    $(".appointment-tab").addClass("nav-bar-active")
-                }
-                if (typeof result.city_id !== "undefined"
+                    if (typeof result.city_id !== "undefined"
                     && typeof result.location_id !== "undefined"
                     && typeof result.doctor_id !== "undefined"
                     && typeof result.machine_id !== "undefined"
@@ -184,11 +181,14 @@
                     setTimeout( function () {
                         
                         loadDoctors(result.location_id, result.tab);
-                        if($("#treatment_city_filter").length && $("#treatment_location_filter").length){
+                        $("#treatment_city_filter").val(result.city_id).change();
+                        $("#treatment_location_filter").val(result.location_id).change();
+
+                        if($("#treatment_city_filter").length && $("#treatment_location_filter").length && $("#treatment_doctor_filter").length && $("#treatment_resource_filter").length){
                             // alert('test');
-                            $("#treatment_city_filter").val(result.city_id).change();
-                            $("#treatment_location_filter").val(result.location_id).change();
                             $("#treatment_doctor_filter").val(result.doctor_id);
+                            $("#treatment_doctor_filter").val(result.doctor_id).attr('selected', true);
+                            $("#treatment_doctor_filter").val(result.doctor_id).prop('selected', true);
                             $("#treatment_resource_filter").val(result.machine_id);
                         }
 
@@ -200,6 +200,10 @@
                         setDashboardFilters();
                     }, 1000);
                 }
+                } else {
+                    $(".appointment-tab").addClass("nav-bar-active")
+                }
+                
             });
             // $(document).ajaxComplete(function(){
             
