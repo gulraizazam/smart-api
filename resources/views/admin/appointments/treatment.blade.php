@@ -189,7 +189,7 @@
                         $("#treatment_doctor_filter").val(result.doctor_id);
                         $("#treatment_resource_filter").val(result.machine_id);
                         setDashboardFilters();
-                    }, 300);
+                    }, 1000);
                 }
             });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
