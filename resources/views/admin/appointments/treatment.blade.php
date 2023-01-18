@@ -183,13 +183,19 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
-                      
                         $("#treatment_city_filter").val(result.city_id).change();
                         $("#treatment_location_filter").val(result.location_id).change();
+                        // if($("#treatment_city_filter"))
                         $("#treatment_doctor_filter").val(result.doctor_id);
                         $("#treatment_resource_filter").val(result.machine_id);
+
+                        // console.log('result.city_id', result.city_id);
+                        // console.log('result.location_id', result.location_id);
+                        // console.log('result.doctor_id', result.doctor_id);
+                        // console.log('result.machine_id', result.machine_id);
+                        
                         setDashboardFilters();
-                    }, 1000);
+                    }, 3000);
                 }
             });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
