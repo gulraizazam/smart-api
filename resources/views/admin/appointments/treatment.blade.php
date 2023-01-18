@@ -169,40 +169,50 @@
     @push('js')
         <script>
             $(document).ready(function () {
-                var result = get_query();
-                console.log(result);
-                if (typeof result.tab !== 'undefined') {
-                    $("." + result.tab+ '-tab').click();
-                    if (typeof result.city_id !== "undefined"
-                    && typeof result.location_id !== "undefined"
-                    && typeof result.doctor_id !== "undefined"
-                    && typeof result.machine_id !== "undefined"
-                    && typeof result.tab !== 'undefined' && result.tab == "treatment") {
-                    setTimeout( function () {
-                        
-                        loadDoctors(result.location_id, result.tab);
-                        $("#treatment_city_filter").val(result.city_id).change();
-                        $("#treatment_location_filter").val(result.location_id).change();
-
-                        if($("#treatment_city_filter").length && $("#treatment_location_filter").length && $("#treatment_doctor_filter").length && $("#treatment_resource_filter").length){
-                            // alert('test');
-                            $("#treatment_doctor_filter").val(result.doctor_id);
-                            $("#treatment_doctor_filter").val(result.doctor_id).attr('selected', true);
-                            $("#treatment_doctor_filter").val(result.doctor_id).prop('selected', true);
-                            $("#treatment_resource_filter").val(result.machine_id);
+                // var result = get_query();
+                // console.log(result);
+                // if (typeof result.tab !== 'undefined') {
+                //     $("." + result.tab+ '-tab').click();
+                //     if (typeof result.city_id !== "undefined"
+                //     && typeof result.location_id !== "undefined"
+                //     && typeof result.doctor_id !== "undefined"
+                //     && typeof result.machine_id !== "undefined"
+                //     && typeof result.tab !== 'undefined' && result.tab == "treatment") {
+                    var geturl = window.location.href;
+                    if(geturl.includes('city_id')){
+                        geturl = geturl.split('city_id=')[1].split('&location_id')[0];
+                        if(geturl !== "undefined"){
+                            setTimeout(function(){
+                                $("#treatment_city_filter").val(geturl).change();
+                            },500);
                         }
 
-                        // console.log('result.city_id', result.city_id);
-                        // console.log('result.location_id', result.location_id);
-                        // console.log('result.doctor_id', result.doctor_id);
-                        // console.log('result.machine_id', result.machine_id);
+                    }
+                    // setTimeout( function () {
                         
-                        setDashboardFilters();
-                    }, 1000);
-                }
-                } else {
-                    $(".appointment-tab").addClass("nav-bar-active")
-                }
+                    //     loadDoctors(result.location_id, result.tab);
+                    //     $("#treatment_city_filter").val(result.city_id).change();
+                    //     $("#treatment_location_filter").val(result.location_id).change();
+
+                    //     if($("#treatment_city_filter").length && $("#treatment_location_filter").length && $("#treatment_doctor_filter").length && $("#treatment_resource_filter").length){
+                    //         // alert('test');
+                    //         $("#treatment_doctor_filter").val(result.doctor_id);
+                    //         $("#treatment_doctor_filter").val(result.doctor_id).attr('selected', true);
+                    //         $("#treatment_doctor_filter").val(result.doctor_id).prop('selected', true);
+                    //         $("#treatment_resource_filter").val(result.machine_id);
+                    //     }
+
+                    //     // console.log('result.city_id', result.city_id);
+                    //     // console.log('result.location_id', result.location_id);
+                    //     // console.log('result.doctor_id', result.doctor_id);
+                    //     // console.log('result.machine_id', result.machine_id);
+                        
+                    //     setDashboardFilters();
+                    // }, 1000);
+                // }
+                // } else {
+                //     $(".appointment-tab").addClass("nav-bar-active")
+                // }
                 
             });
             // $(document).ajaxComplete(function(){
