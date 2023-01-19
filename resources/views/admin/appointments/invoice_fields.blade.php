@@ -12,6 +12,10 @@
         <button class="close" data-close="alert"></button>
         Please select consultancy from appointment dropdown (Only arrived consultancies will be displayed). 
     </div>
+    <div id="outstandingbalance" class="alert alert-danger display-hide" style="display: none;">
+        <button class="close" data-close="alert"></button>
+        Please pay outstanding amount first. 
+    </div>
     <div id="definefield" class="alert alert-warning display-hide" style="display: none;">
         <button class="close" data-close="alert"></button>
         Kindly define payment mode
