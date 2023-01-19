@@ -109,6 +109,7 @@ use Illuminate\Support\Facades\DB;
         Route::get('getrecords',function(){
             $rr = \App\Models\Appointments::join('invoices','appointments.id','invoices.appointment_id')
             ->join('package_advances','invoices.id','package_advances.invoice_id')
+            ->select('appointments.name','appointments.appointment_type_id','invoices.total_price','package_advances.cash_amount','package_advances.cash_flow','appointments.created_at','appointments.location_id','appointments.service_id','appointments.doctor_id','appointments.scheduled_date','appointments.scheduled_time','package_advances.invoice_id','invoices.created_at as invoicecreated')
             ->where("appointments.appointment_type_id",2)
             ->where('total_price','>',0)
             ->where('cash_amount','<=',0)
@@ -117,7 +118,7 @@ use Illuminate\Support\Facades\DB;
             [Carbon::now()->subMonth(3), Carbon::now()]
         )
         ->get();
-       
+      
        return view('admin.records',compact('rr'));
 
         });
