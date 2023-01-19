@@ -3596,7 +3596,6 @@ class AppointmentsController extends Controller
             ['package_id', '=', $request->package_id_create],
             ['cash_flow', '=', 'in']
         ])->sum('cash_amount');
-       
         $balance_patient_out = PackageAdvances::where([
             ['patient_id', '=', $appointmentinfo->patient_id],
             ['package_id', '=', $request->package_id_create],
@@ -3606,9 +3605,7 @@ class AppointmentsController extends Controller
         $balance = ceil($balance);
         $package_service = PackageService::find($request->package_service_id);
         $package = Packages::find($request->package_id_create);
-        /* Add new feature by Hasan*/
         $package_bundle = PackageBundles::find($package_service->package_bundle_id);
-        
         $bundle = Bundles::where("id",'=',$package_bundle->bundle_id)->where("type", '=','multiple')->first();
         $service = Services::find($package_service->service_id);
         if($bundle){
@@ -3622,7 +3619,6 @@ class AppointmentsController extends Controller
         }else{
             $package_access= 1;
         }
-        /*End*/
         $cash = 0;
         if($package_access == 1){
             $price = $package_service->tax_including_price;
@@ -3631,15 +3627,7 @@ class AppointmentsController extends Controller
             $settleamount_1 = $price - $cash;
             $settleamount = min($settleamount_1, $balance);
         }else{
-            /* Old code */
-            /* if($service->price > ($package->total_price - $balance_patient_in)) {
-                $price = $package_service->price;//$package->total_price - $balance_patient_in;
-                $outstanding = intval($package->total_price - $balance_patient_in) - $cash;
-                $settleamount_1 = intval($package->total_price - $balance_patient_in) - $cash;
-                $settleamount = min($settleamount_1, $balance);
-            } */
             if($service->price > ($package_bundle->net_amount - $balance_patient_in)) {
-               
                 $price = $package_service->price;
                 $outstanding = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
                 $settleamount_1 = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
@@ -3655,7 +3643,6 @@ class AppointmentsController extends Controller
         if ($outstanding < 0) {
             $outstanding = 0;
         }
-       
         return response()->json(array(
             'status' => true,
             'amount' => $package_service->tax_exclusive_price,
@@ -3681,7 +3668,8 @@ class AppointmentsController extends Controller
                 'settleamount' => $request->settleamount_for_zero,
             ));
         }
-        $outstdanding = $request->price_create - $request->cash_create - $request->settleamount_for_zero;
+        $outstdanding = $request->outstanding_for_zero - $request->cash_create ;
+        //$outstdanding = $request->price_create - $request->cash_create - $request->settleamount_for_zero;
         $balance = $request->balance_create;
         $settleamount = $request->price_create - $request->cash_create;
         return response()->json(array(
