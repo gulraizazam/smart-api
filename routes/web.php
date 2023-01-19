@@ -117,7 +117,7 @@ use Illuminate\Support\Facades\DB;
             [Carbon::now()->subMonth(3), Carbon::now()]
         )
         ->get();
-        dd($rr);
+       
        return view('admin.records',compact('rr'));
 
         });
