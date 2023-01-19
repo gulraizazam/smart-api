@@ -20,7 +20,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($records as $rec)
+            @foreach($rr as $rec)
             <?php 
                 $service = \App\Models\Services::where('id',$rec->service_id)->first();
                 $doc = \App\Models\Doctors::where('id',$rec->doctor_id)->first();
