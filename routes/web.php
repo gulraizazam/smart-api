@@ -52,6 +52,8 @@ use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\DashboardReportsController;
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
     /*
     |--------------------------------------------------------------------------
@@ -72,6 +74,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
 // Authentication Routes...
     Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
+    
     Route::get('/deliver-on-appointment-book', function () {
         \Artisan::call('appointment:deliver-on-appointment-book');
     });
@@ -103,7 +106,22 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
             $user = \App\Models\User::whereEmail("amjad@redsignal.biz")->first();
             dd($user->assignRole(1));
         });
+        Route::get('getrecords',function(){
+            $rr = \App\Models\Appointments::where("appointment_type_id",2)->whereBetween('created_at', 
+            [Carbon::now()->subMonth(3), Carbon::now()]
+        )
+        ->pluck('id')->toArray();
+        $tt = DB::table('invoices')->whereIn('appointment_id',$rr)
+        ->where('total_price','>',0)
+        
+        ->pluck('id')->toArray();
+        $ttt = DB::table('package_advances')->whereIn('invoice_id',$tt) 
+        ->where('cash_amount','<=',0)
+        ->where('cash_flow','=','in')
+        ->get();
+        dd($ttt);
 
+        });
 
         Route::get('error-logs', [LogViewerController::class, 'index']);
 
