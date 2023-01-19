@@ -21,9 +21,9 @@ jQuery(document).ready(function() {
             $("#treatment_location_filter").val(result.location_id).change();
         },300);
 
-        setTimeout( function () {
-            $("#treatment_doctor_filter").val(result.doctor_id).change();
-        },900);
+        // setTimeout( function () {
+        //     $("#treatment_doctor_filter").val(result.doctor_id).change();
+        // },900);
 
         setTimeout( function () {
             $("#treatment_resource_filter").val(result.machine_id).change();
@@ -108,9 +108,9 @@ let loadMachine = function(locationId) {
                 if (typeof result.machine_id !== "undefined") {
                    // $("#treatment_resource_filter").val(result.machine_id).change();
                 }
-                if (typeof result.machine_id !== "undefined" && typeof result.doctor_id !== "undefined") {
+                if (typeof result.doctor_id !== "undefined" && $("#treatment_doctor_filter").val() === '') {
                     $("#treatment_doctor_filter").val(result.doctor_id).select2();
-                    $("#treatment_resource_filter").val(result.machine_id).select2();
+                    //$("#treatment_resource_filter").val(result.machine_id).select2();
                 }
 
               //  $('.select2').select2({ width: '100%' });
