@@ -409,6 +409,9 @@ $(document).ready(function () {
                     if(appointment_id_consultancy =="" && package_service_id==""){
                         $("#noconsultancy").show();
                     }else{
+                        if(outstand > 0){
+                            $('#outstandingbalance').show();
+                        }else{
                         $.ajax({
                             type: 'get',
                             url: route('admin.appointments.saveinvoice'),
@@ -448,6 +451,7 @@ $(document).ready(function () {
                                 hideSpinner();
                             }
                         });
+                    }
                     }
                     
                 } else {
