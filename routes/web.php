@@ -120,7 +120,7 @@ use Illuminate\Support\Facades\DB;
         
        return view('admin.records',compact('rr'));
 
-        });\
+        });
 
         Route::get('error-logs', [LogViewerController::class, 'index']);
 
