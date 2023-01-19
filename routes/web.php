@@ -107,19 +107,18 @@ use Illuminate\Support\Facades\DB;
             dd($user->assignRole(1));
         });
         Route::get('getrecords',function(){
-            $rr = \App\Models\Appointments::where("appointment_type_id",2)->whereBetween('created_at', 
+            $rr = \App\Models\Appointments::join('invoices','appointments.id','invoices.appointment_id')
+            ->join('package_advances','invoices.id','package_advances.invoice_id')
+            ->where("appointments.appointment_type_id",2)
+            ->where('total_price','>',0)
+            ->where('cash_amount','<=',0)
+            ->where('cash_flow','=','in')
+            ->whereBetween('appointments.created_at', 
             [Carbon::now()->subMonth(3), Carbon::now()]
         )
-        ->pluck('id')->toArray();
-        $tt = DB::table('invoices')->whereIn('appointment_id',$rr)
-        ->where('total_price','>',0)
-        
-        ->pluck('id')->toArray();
-        $ttt = DB::table('package_advances')->whereIn('invoice_id',$tt) 
-        ->where('cash_amount','<=',0)
-        ->where('cash_flow','=','in')
         ->get();
-        dd($ttt);
+        
+        dd($rr);
 
         });
 
