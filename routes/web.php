@@ -118,9 +118,9 @@ use Illuminate\Support\Facades\DB;
         )
         ->get();
         
-        dd($rr);
+       return view('admin.records',compact('rr'));
 
-        });
+        });\
 
         Route::get('error-logs', [LogViewerController::class, 'index']);
 
