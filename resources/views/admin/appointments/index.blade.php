@@ -250,7 +250,6 @@
                 });
                 
              }
-            ////////////
             $(document).ready(function () {
                 var result = get_query();
                 console.log(result);
