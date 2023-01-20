@@ -3669,7 +3669,6 @@ class AppointmentsController extends Controller
             ));
         }
         $outstdanding = $request->outstanding_for_zero - $request->cash_create ;
-        //$outstdanding = $request->price_create - $request->cash_create - $request->settleamount_for_zero;
         $balance = $request->balance_create;
         $settleamount = $request->price_create - $request->cash_create;
         return response()->json(array(
