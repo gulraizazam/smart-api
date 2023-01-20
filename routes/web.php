@@ -52,6 +52,8 @@ use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\DashboardReportsController;
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
     /*
     |--------------------------------------------------------------------------
@@ -72,6 +74,7 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
 // Authentication Routes...
     Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
+    
     Route::get('/deliver-on-appointment-book', function () {
         \Artisan::call('appointment:deliver-on-appointment-book');
     });
@@ -103,7 +106,22 @@ use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointme
             $user = \App\Models\User::whereEmail("amjad@redsignal.biz")->first();
             dd($user->assignRole(1));
         });
+        Route::get('getrecords',function(){
+            $rr = \App\Models\Appointments::join('invoices','appointments.id','invoices.appointment_id')
+            ->join('package_advances','invoices.id','package_advances.invoice_id')
+            ->select('appointments.name','appointments.appointment_type_id','invoices.total_price','package_advances.cash_amount','package_advances.cash_flow','appointments.created_at','appointments.location_id','appointments.service_id','appointments.doctor_id','appointments.scheduled_date','appointments.scheduled_time','package_advances.invoice_id','invoices.created_at as invoicecreated')
+            ->where("appointments.appointment_type_id",2)
+            ->where('total_price','>',0)
+            ->where('cash_amount','<=',0)
+            ->where('cash_flow','=','in')
+            ->whereBetween('appointments.created_at', 
+            [Carbon::now()->subMonth(3), Carbon::now()]
+        )
+        ->get();
+      
+       return view('admin.records',compact('rr'));
 
+        });
 
         Route::get('error-logs', [LogViewerController::class, 'index']);
 
