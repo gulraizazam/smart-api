@@ -499,14 +499,6 @@ function actions(data) {
                 </li>';
             }
         }
-
-        actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-sms"></i></span>\
-                            <span class="navi-text">Sms Log</span>\
-                        </a>\
-                    </li>';
-
         if(data.cancelled_appointment_status == null && (data.cancelled_appointment_status?.id != data.appointment_status_id))
         {
             if(data.appointment_type==1) {
