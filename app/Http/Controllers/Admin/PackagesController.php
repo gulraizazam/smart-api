@@ -219,7 +219,8 @@ class PackagesController extends Controller
                         }
                     }else { /*this is commented because we want to add services with different prices*/
                         if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
-                            $status = false;
+                            //$status = false;
+                            $status = true;
                         }
                     }
                 }
