@@ -522,20 +522,10 @@ class PackagesController extends Controller
      */
     public function savepackages(Request $request)
     {
-        if ($request->grand_total < 0) {
-            return response()->json(array(
-                'status' => false,
-            ));
-        }
-
-        // Begin Transaction
         DB::beginTransaction();
-
         try {
             if(isset($request->appointment_id)){
-                // Now we need to work our tag appointment for upselling
                 $tag_appoint = explode('.', $request->appointment_id);
-
                 if ($tag_appoint[1] == 'A') {
                     $appointment_id = $tag_appoint[0];
                 } else {
@@ -549,7 +539,6 @@ class PackagesController extends Controller
                 ));
             }
             /*save Package information and also update random id in package service table*/
-
             $data_package = $request->all();
             $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
             $data_package['sessioncount'] = '1';
@@ -1199,17 +1188,10 @@ class PackagesController extends Controller
      * */
     public function updatepackages(Request $request)
     {
-        if ($request->grand_total < 0) {
-            return ApiHelper::apiResponse($this->success, 'Grand total is less than 0', false);
-        }
-        // Begin Transaction
         DB::beginTransaction();
-
         try {
             if(isset($request->appointment_id)){
-                // Now we need to work our tag appointment for upselling
                 $tag_appoint = explode('.', $request->appointment_id);
-
                 if ($tag_appoint[1] == 'A') {
                     $appointment_id = $tag_appoint[0];
                 } else {
