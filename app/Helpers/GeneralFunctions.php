@@ -204,15 +204,11 @@ class GeneralFunctions
                     }
                 }
                 if(hasFilter($filters, 'status') && hasFilter($filters, 'name') && $filters['status']==1 ){
-                    $allService = Services::where('parent_id', 0)
-                    ->where('slug', 'all')
-                    ->first();
                     $query = Services::with('children')
                     ->where('parent_id', 0)
                     ->where('slug', '!=', 'all')
                     ->where($where);
                     $services = $query->get();
-                    
                     if(count($services)>0){
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
@@ -227,38 +223,21 @@ class GeneralFunctions
                                 $children = collect($service->children)->flatten();
                                 unset($service->children);
                             }
-                            
-        
-                            //unset($service->children);
-                
-                            if ($key === 0 && $allService) {
-                                $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
-                            }
-                
                             $mergedServices[] = $service->toArray();
-                            
                             $children = $children->toArray();
-                           
                             foreach ($children as $child) {
                                 $mergedServices[] = $child;
                             }
-                
                         }
-                       
                         return $mergedServices;
                     }else{
                         $children = Services::where('active',$filters['status'])->where( 'name',
                             'like',
                             '%' . $filters['name'] . '%')->get();
-                            
                             return $children;
                     }
-                    
                 }
                 if(hasFilter($filters, 'status') && hasFilter($filters, 'name') && $filters['status']==0 ){
-                    $allService = Services::where('parent_id', 0)
-                    ->where('slug', 'all')
-                    ->first();
                     $query = Services::with('children')
                     ->where('parent_id', 0)
                     ->where('slug', '!=', 'all')
@@ -266,56 +245,36 @@ class GeneralFunctions
                     'like',
                     '%' . $filters['name'] . '%');
                     $services = $query->get();
-                    
                     if(count($services)>0){
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
                             $serv = Services::where('id',$service->id)->first();
-                            
                             if($serv->parent_id=="0"){
                                 if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
                                     $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                                 }else{
                                     $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
-                                }
-                                
-                                
+                                }    
                             }else{
                                 $children = collect($service->children)->flatten();
                                 unset($service->children);
                                 
                             }
-                            
-                            //unset($service->children);
-                
-                            if ($key === 0 && $allService) {
-                                $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
-                            }
-                
                             $mergedServices[] = $service->toArray();
-                            
                             $children = $children->toArray();
-                            //dd($children);
                             foreach ($children as $child) {
                                 $mergedServices[] = $child;
                             }
-                
                         }
-                       
                         return $mergedServices;
                     }else{
                         $children = Services::where('active',$filters['status'])->where( 'name',
                             'like',
                             '%' . $filters['name'] . '%')->get();
-                            
                             return $children;
                     }
-                    
                 }
                 if(hasFilter($filters, 'status') && $filters['status']==1){
-                    $allService = Services::where('parent_id', 0)
-                    ->where('slug', 'all')
-                    ->first();
                     $query = Services::with('children')
                     ->where('parent_id', 0)
                     ->where('slug', '!=', 'all')
@@ -328,32 +287,18 @@ class GeneralFunctions
                         }else{
                             $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                         }
-                        //unset($service->children);
-            
-                        if ($key === 0 && $allService) {
-                            $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
-                        }
-            
                         $mergedServices[] = $service->toArray();
-                        
                         $children = $children->toArray();
-                        //dd($children);
                         foreach ($children as $child) {
                             $mergedServices[] = $child;
                         }
-            
                     }
-                   
                     return $mergedServices;
                 }
                 if(hasFilter($filters, 'status') && $filters['status']==0){
-                    $allService = Services::where('parent_id', 0)
-                    ->where('slug', 'all')
-                    ->first();
                     $query = Services::with('children')
                     ->where('parent_id', 0)
                     ->where('slug', '!=', 'all');
-                    //->where($where);
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
@@ -362,75 +307,36 @@ class GeneralFunctions
                         }else{
                             $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                         }
-                        
-            
-                        if ($key === 0 && $allService) {
-                            $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
-                        }
-            
                         $mergedServices[] = $service->toArray();
-                        
                         $children = $children->toArray();
-                        //dd($children);
                         foreach ($children as $child) {
                             $mergedServices[] = $child;
                         }
-            
                     }
-                   
                     return $mergedServices;
                 }
             }
-            $allService = Services::where('parent_id', 0)
-            ->where('slug', 'all')
-            ->first();
-        
-        if (count($where) > 0) {
-            $allService = null;
-        }
-       
-        
-        
-        $query = Services::with('children')
+            $query = Services::with('children')
             ->where('parent_id', 0)
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
-           
-        $services = $query->get();
-         
-        $mergedServices = [];
-        foreach ($services as $key => $service) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
-                $children = Services::where('parent_id',$service->id)->orderBy('name')->get();
-            }else{
-                $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+            $services = $query->get();
+            $mergedServices = [];
+            foreach ($services as $key => $service) {
+                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                    $children = Services::where('parent_id',$service->id)->orderBy('name')->get();
+                }else{
+                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+                }
+                $mergedServices[] = $service->toArray();
+                $children = $children->toArray();
+                foreach ($children as $child) {
+                    $mergedServices[] = $child;
+                }
             }
-            //unset($service->children);
-
-            if ($key === 0 && $allService) {
-                $mergedServices[] = !is_null($allService) ? $allService->toArray() : [];
-            }
-
-            $mergedServices[] = $service->toArray();
-            
-            $children = $children->toArray();
-            foreach ($children as $child) {
-                $mergedServices[] = $child;
-            }
-
+            return $mergedServices;   
         }
-       
-        return $mergedServices;
-            
-            
-            
-            
-        }
-        
-        
     }
-
-
     private static function appendAllService()
     {
         $allService = [];
