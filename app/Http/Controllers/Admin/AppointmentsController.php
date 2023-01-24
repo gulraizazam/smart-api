@@ -4478,7 +4478,7 @@ class AppointmentsController extends Controller
                         'overlap' => false,
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-                        'color' => ($request->get("doctor_id") == $appointment->doctor_id) ? $appointment->service->color : '#2C3642',
+                        'color' => ($request->get("doctor_id") == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
                         'resourceId' => $appointment->resource_id,
                     );
                 }
