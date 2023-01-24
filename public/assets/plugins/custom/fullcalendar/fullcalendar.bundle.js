@@ -7898,8 +7898,9 @@ Docs & License: https://fullcalendar.io/
         // Utility for generating event skin-related CSS properties
         FgEventRenderer.prototype.getSkinCss = function (ui) {
             return {
-                'background-color': ui.backgroundColor,
-                'border-color': ui.borderColor,
+                'background-color': ui.backgroundColor.replace('-', ''),
+                'border-color': ui.borderColor.replace('-', ''),
+                'opacity': ui.backgroundColor.includes('-') ? '.30' : '1',
                 color: ui.textColor
             };
         };
