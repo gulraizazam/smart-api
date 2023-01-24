@@ -1167,26 +1167,16 @@ class PackagesController extends Controller
     public function getgrandtotal_update(Request $request)
     {
         $package = Packages::where('random_id', '=', $request->random_id)->first();
-
-        $package_advances_cash_amount_1 = PackageAdvances::where([
+        $packageadvances_cash_amount = PackageAdvances::where([
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0']
         ])->sum('cash_amount');
-
-        $package_advances_cash_amount_2 = PackageAdvances::where([
-            ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'out']
-        ])->sum('cash_amount');
-        /*We discuss in future what happen next*/
-        $package_advances_cash_amount = $package_advances_cash_amount_1;
-        
-
-        //$package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_advances_cash_amount = $packageadvances_cash_amount;
         $package_total = str_replace( ',', '', $request->total );
-
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
-
+        $package_id =Packages::whereId($package->id)->first();
+        $package_id->update(['total_price'=>$request->total]);
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
             'grand_total' => $grand_total
         ]);
