@@ -266,7 +266,7 @@ class RolesController extends Controller
             'consultancy' => 'Manage Consultancy',
             'services' => 'Manage Treatments',
             'appointment_status' => 'Update Appointment Status',
-            'invoice' => 'Invoice',
+            'invoice' => 'Generate Invoice',
             'image_manage' => 'Images',
             'image_upload' => 'Image Upload',
             'image_destroy' => 'Image Delete',
