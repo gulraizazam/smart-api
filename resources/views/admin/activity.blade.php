@@ -8,7 +8,11 @@
     </div>
            
     <div class="card-body pt-4">
-        
+        @if(isset($unauthorized))
+            <div class="text-center">
+                <span >Your are not authorized</span>
+            </div>
+        @else
 
         @if(count($finance_log)   > 0)
             <div class="timeline timeline-6 mt-3">
@@ -73,8 +77,11 @@
             
         </div>
 
-        
+        @else
+            <div class="text-center">
+                <span >No Activity Found</span>
+            </div>
         @endif
-        
+        @endif
     </div>
 </div>
