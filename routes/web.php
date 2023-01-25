@@ -567,4 +567,5 @@ use Illuminate\Support\Facades\DB;
 
         ///////////////////////Dashboard Reports
         Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
+        Route::get('getcolor',[ServicesController::class,'GetColor'])->name('dashboard.getcolor');
     });

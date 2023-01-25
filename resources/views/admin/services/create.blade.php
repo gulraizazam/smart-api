@@ -32,7 +32,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Parent Services <span class="text text-danger">*</span></label>
-                            <select id="add_parent_service" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="parent_id">
+                            <select id="add_parent_service" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="parent_id" onchange="getColor()">
 
                             </select>
                         </div>
@@ -51,7 +51,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Color <span class="text text-danger">*</span></label>
-                            <input class="form-control" type="color" name="color" value="#000">
+                            <input class="form-control" type="color" name="color" value="#000" id="service_color">
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">
