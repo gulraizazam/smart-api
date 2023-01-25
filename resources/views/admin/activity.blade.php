@@ -8,6 +8,7 @@
     </div>
            
     <div class="card-body pt-4">
+        {{dd(isset($unauthorized))}}
         @if(isset($unauthorized))
             <div class="text-center">
                 <span >Your are not authorized</span>
