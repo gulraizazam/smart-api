@@ -73,10 +73,7 @@
             
         </div>
 
-        @else
-            <div class="text-center">
-                <span >No Activity Found</span>
-            </div>
+        
         @endif
         
     </div>
