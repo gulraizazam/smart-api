@@ -335,7 +335,7 @@ function setCreateData(response) {
         });
 
         Object.entries(services).forEach(function (value, index) {
-            services_options += '<option value="' + value[1].id + '">' + value[1].name + '</option>';
+            services_options += '<option value="' + value[1].name + '">' + value[1].name + '</option>';
         });
 
         Object.entries(durations).forEach(function (value, index) {

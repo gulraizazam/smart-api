@@ -117,7 +117,20 @@
             {
                 $("#filter_active").val($("#search_status").val());
             }
-            
+            function getColor()
+            {
+                var service = $('#add_parent_service').val();
+                $.ajax({
+                    type:'GET',
+                    url:"{{route('admin.dashboard.getcolor')}}",
+                    data:{'service':service},
+                    success:function(data) {
+                       
+                        $("#service_color").val(data.color);
+                       
+                    }
+                });
+            }
         </script>
     @endpush
 
