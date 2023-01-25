@@ -1409,7 +1409,6 @@ class HomeController extends Controller
        
         $center_names= Locations::whereIn('id',$centres)->pluck('name')->toArray();
         $activities = Activity::whereIn('location',$center_names)->whereDate('created_at', Carbon::now()->format('Y-m-d'))->latest()->get();
-        dd($activities);
         return $data['recent_activities'] = [
             'finance_log' => $activities,
         ];
