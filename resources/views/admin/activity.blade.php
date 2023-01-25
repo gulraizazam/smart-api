@@ -8,12 +8,7 @@
     </div>
            
     <div class="card-body pt-4">
-        {{dd(isset($unauthorized))}}
-        @if(isset($unauthorized))
-            <div class="text-center">
-                <span >Your are not authorized</span>
-            </div>
-        @else
+        
 
         @if(count($finance_log)   > 0)
             <div class="timeline timeline-6 mt-3">
@@ -83,6 +78,6 @@
                 <span >No Activity Found</span>
             </div>
         @endif
-        @endif
+        
     </div>
 </div>
