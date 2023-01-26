@@ -349,6 +349,5 @@ class ServicesController extends Controller
         }else{
             return response()->json(['color'=>"#000"]);
         }
-    }
-    
+    } 
 }
