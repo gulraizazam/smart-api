@@ -597,7 +597,6 @@
 
 		public function getCreatedAtFormatedAttribute()
 		{
-			// created_at_formated
-			return Carbon::now()->format('F j,Y H:i A');
+			return Carbon::parse($this->created_at)->format('F j,Y H:i A');
 		}
 	}
