@@ -1387,7 +1387,7 @@ class PackagesController extends Controller
 
                 $packageAdvancesCollection[] = $packageadvance;
             }
-dd($packageAdvancesCollection);
+
             return $packageAdvancesCollection;
         }
         
