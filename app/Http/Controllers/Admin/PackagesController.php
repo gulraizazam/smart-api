@@ -1450,42 +1450,25 @@ class PackagesController extends Controller
     public function storepackageadvancescash(Request $request)
     {
         $package_total_price = PackageBundles::where('package_id', '=', $request->package_id)->sum('tax_including_price');
-
         $get_package_use_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'out']
         ])->sum('cash_amount');
-
         $get_package_unused_amount_except_edit = PackageAdvances::where([
             ['id', '!=', $request->package_advances_id],
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0']
         ])->sum('cash_amount');
-
         $get_package_unused_amount_with_edit = $request->cash_amount;
-
         $get_package_unuse_amount = $get_package_unused_amount_except_edit + $get_package_unused_amount_with_edit;
-
-        if ($get_package_unuse_amount <= $package_total_price) {
-            if ($get_package_unuse_amount >= $get_package_use_amount) {
-                $amount_status = true;
-            } else {
-                $amount_status = false;
-            }
-            $record = PackageAdvances::updateRecordFinanceedit($request, Auth::User()->account_id, $amount_status);
-        } else {
-            $record = Null;
-        }
-
+        $amount_status = true;
+        $record = PackageAdvances::updateRecordFinanceedit($request, Auth::User()->account_id, $amount_status);
         if ($record) {
             return ApiHelper::apiResponse($this->success, 'Data Updated successfully.',  true, [
                 'amount_status' => $amount_status
             ]);
-
         }
-
-        return ApiHelper::apiResponse($this->success, 'Your amount is exceeding.', false );
     }
 
     /*
