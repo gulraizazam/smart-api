@@ -1383,8 +1383,7 @@ class PackagesController extends Controller
                 } else {
                     $packageadvance->package_refund_price = '00.00';
                 }
-                // $packageadvance->created_at_formated = Carbon::parse($packageadvance->created_at)->format('F j,Y H:i A');
-
+                
                 $packageAdvancesCollection[] = $packageadvance;
             }
 
