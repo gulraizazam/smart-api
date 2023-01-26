@@ -3491,6 +3491,7 @@ class AppointmentsController extends Controller
                         $amount_create = $amount_create_is_inclusive = $serviceinfo->price;
                         $tax_create = ceil($serviceinfo->price * ($location_information->tax_percentage / 100));
                         $price = ceil($amount_create + (($amount_create * $location_information->tax_percentage) / 100));
+                        
                     } else {
                         $price = $amount_create_is_inclusive = $serviceinfo->price;
                         $amount_create = ceil((100 * $price) / ($location_information->tax_percentage + 100));
@@ -3527,6 +3528,7 @@ class AppointmentsController extends Controller
             $location_id = null;
             $checked_treatment = null;
         }
+       
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
         $paymentmodes->prepend('Select', '0');
         return view('admin.appointments.invoice_create', compact('price', 'packages', 'appointment_type', 'status', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'invoice_status', 'paymentmodes', 'tax_create', 'amount_create', 'location_id', 'checked_treatment', 'appointmentArray', 'amount_create_is_inclusive'));
@@ -3603,7 +3605,6 @@ class AppointmentsController extends Controller
         $balance = ceil($balance);
         $package_service = PackageService::find($request->package_service_id);
         $package = Packages::find($request->package_id_create);
-        /* Add new feature by Hasan*/
         $package_bundle = PackageBundles::find($package_service->package_bundle_id);
         $bundle = Bundles::where("id",'=',$package_bundle->bundle_id)->where("type", '=','multiple')->first();
         $service = Services::find($package_service->service_id);
@@ -3618,7 +3619,6 @@ class AppointmentsController extends Controller
         }else{
             $package_access= 1;
         }
-        /*End*/
         $cash = 0;
         if($package_access == 1){
             $price = $package_service->tax_including_price;
@@ -3627,13 +3627,6 @@ class AppointmentsController extends Controller
             $settleamount_1 = $price - $cash;
             $settleamount = min($settleamount_1, $balance);
         }else{
-            /* Old code */
-            /* if($service->price > ($package->total_price - $balance_patient_in)) {
-                $price = $package_service->price;//$package->total_price - $balance_patient_in;
-                $outstanding = intval($package->total_price - $balance_patient_in) - $cash;
-                $settleamount_1 = intval($package->total_price - $balance_patient_in) - $cash;
-                $settleamount = min($settleamount_1, $balance);
-            } */
             if($service->price > ($package_bundle->net_amount - $balance_patient_in)) {
                 $price = $package_service->price;
                 $outstanding = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
@@ -3675,7 +3668,7 @@ class AppointmentsController extends Controller
                 'settleamount' => $request->settleamount_for_zero,
             ));
         }
-        $outstdanding = $request->price_create - $request->cash_create - $request->settleamount_for_zero;
+        $outstdanding = $request->outstanding_for_zero - $request->cash_create ;
         $balance = $request->balance_create;
         $settleamount = $request->price_create - $request->cash_create;
         return response()->json(array(
