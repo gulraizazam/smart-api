@@ -1369,7 +1369,7 @@ class PackagesController extends Controller
     private function appointmentPackage($packageadvances) {
 
         if ($packageadvances->count() > 0) {
-
+dd("here");
             $packageAdvancesCollection = [];
             foreach ($packageadvances as $packageadvance) {
                 if ($packageadvance->cash_flow == 'out' && $packageadvance->is_tax == 0) {
@@ -1393,7 +1393,7 @@ class PackagesController extends Controller
 
             return $packageAdvancesCollection;
         }
-
+        dd("hereq");
         return $packageadvances;
     }
 
