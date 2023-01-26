@@ -21,7 +21,7 @@
 
 		protected static $_table = 'package_advances';
 
-		protected $appends = ['created_at_formated'];
+		//protected $appends = ['created_at_formated'];
 		/*
 		 * get the payment modes
 		 * */
@@ -595,8 +595,8 @@
 			return $cash_amount;
 		}
 
-		public function getCreatedAtFormatedAttribute()
-		{
-			return date('F j,Y H:i A', strtotime($this->created_at));
-		}
+		// public function getCreatedAtFormatedAttribute()
+		// {
+		// 	return date('F j,Y H:i A', strtotime($this->created_at));
+		// }
 	}
