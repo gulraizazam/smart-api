@@ -678,7 +678,7 @@ function viewPlan($route) {
 }
 
 function displayData(response) {
-console.log(response);
+
     try {
 
         let packageadvances = response.data.packageadvances;
@@ -694,6 +694,7 @@ console.log(response);
             Object.values(packageadvances).forEach(function (packageadvance) {
 
                 if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                  
                     history_options += '<tr>';
                     history_options += '<td>'+packageadvance.paymentmode.name+'</td>';
                     history_options += '<td>'+packageadvance.cash_flow+'</td>';
