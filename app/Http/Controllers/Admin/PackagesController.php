@@ -1386,9 +1386,9 @@ class PackagesController extends Controller
                 $packageadvance->created_at_formated = Carbon::parse($packageadvance->created_at)->format('F j,Y H:i A');
 
                 $packageAdvancesCollection[] = $packageadvance;
-                dd($packageAdvancesCollection);
+                
             }
-
+            
             return $packageAdvancesCollection;
         }
         
