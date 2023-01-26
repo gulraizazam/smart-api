@@ -166,20 +166,35 @@
 
     {{--All forms popups--}}
     @include('admin.appointments.appointment-forms.modals')
-
     @push('js')
-
         <script>
-
+            $(document).ready(function () {
+                var result = get_query();
+                console.log(result);
+                if (typeof result.tab !== 'undefined') {
+                    $("." + result.tab+ '-tab').click();
+                } else {
+                    $(".appointment-tab").addClass("nav-bar-active")
+                }
+                if (typeof result.city_id !== "undefined"
+                    && typeof result.location_id !== "undefined"
+                    && typeof result.doctor_id !== "undefined"
+                    && typeof result.machine_id !== "undefined"
+                    && typeof result.tab !== 'undefined') {
+                    loadDoctors(result.location_id, result.tab);
+                    setTimeout( function () {
+                        $("#treatment_city_filter").val(result.city_id).change().select2();
+                        $("#treatment_location_filter").val(result.location_id).change().select2();
+                        setDashboardFilters();
+                    }, 1000);
+                }
+            });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
-
             var limit = '{{config('constants.export-appointment-limit')}}';
             var offset = 0;
-
             $(document).ready(function () {
                 $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
             })
-
             function changeLimitOffset($this) {
                 limit = parseInt(limit) + parseInt(appointment_limit);
                 offset = parseInt(offset) + parseInt(appointment_limit);
@@ -187,8 +202,6 @@
                     $this.attr('href', route('admin.appointments.export', [limit, offset]));
                 },1000);
             }
-
-            
             function SetFromdate(){
                 $("#filter_date_from").val($("#treatment_search_start").val());
             }
@@ -252,12 +265,8 @@
              {
                 $("#filter_service_id").val($("#treatment_search_service").val());
              }
-             $(document).ready(function () {
-                setTimeout( function () {
-                    setDashboardFilters();
-                },1500)
-
-            });
+             
+            
             function setDashboardFilters() {
                 
                 let result = get_query();
