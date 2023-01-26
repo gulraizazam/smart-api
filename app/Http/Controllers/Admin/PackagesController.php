@@ -1384,8 +1384,9 @@ class PackagesController extends Controller
                     $packageadvance->package_refund_price = '00.00';
                 }
                 $packageadvance->created_at_formated = Carbon::parse($packageadvance->created_at)->format('F j,Y H:i A');
-dd($packageadvance->created_at_formated);
+
                 $packageAdvancesCollection[] = $packageadvance;
+                dd($packageAdvancesCollection);
             }
 
             return $packageAdvancesCollection;
