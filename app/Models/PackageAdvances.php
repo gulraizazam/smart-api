@@ -21,7 +21,7 @@
 
 		protected static $_table = 'package_advances';
 
-		protected $append = ['created_at_formated'];
+		protected $appends = ['created_at_formated'];
 		/*
 		 * get the payment modes
 		 * */
@@ -597,6 +597,7 @@
 
 		public function getCreatedAtFormatedAttribute()
 		{
-			return Carbon::parse($this->created_at)->format('F j,Y H:i A');
+			// created_at_formated
+			return Carbon::now()->format('F j,Y H:i A');
 		}
 	}
