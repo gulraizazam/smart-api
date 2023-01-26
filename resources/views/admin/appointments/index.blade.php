@@ -152,22 +152,7 @@
             var offset = 0;
             $(document).ready(function () {
                 $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
-                var result = get_query();
-                if (typeof result.tab !== 'undefined') {
-                    $("." + result.tab+ '-tab').click();
-                } else {
-                    $(".appointment-tab").addClass("nav-bar-active")
-                }
-                if (typeof result.city_id !== "undefined"
-                    && typeof result.location_id !== "undefined"
-                    && typeof result.doctor_id !== "undefined"
-                    && typeof result.tab !== 'undefined') {
-                    loadDoctors(result.location_id, result.tab);
-                    setTimeout( function () {
-                        $("#consultancy_city_filter").val(result.city_id).change();
-                        $("#consultancy_doctor_filter").val(result.doctor_id).change();
-                    }, 500);
-                }
+                
             });
             function changeLimitOffset($this) {
                 limit = parseInt(limit) + parseInt(appointment_limit);
@@ -265,19 +250,30 @@
                 });
                 
              }
-            ////////////
             $(document).ready(function () {
-                setTimeout( function () {
-                    setDashboardFilters();
-                },1500)
-
+                var result = get_query();
+                console.log(result);
+                if (typeof result.tab !== 'undefined') {
+                    $("." + result.tab+ '-tab').click();
+                } else {
+                    $(".appointment-tab").addClass("nav-bar-active")
+                }
+                if (typeof result.city_id !== "undefined"
+                    && typeof result.location_id !== "undefined"
+                    && typeof result.doctor_id !== "undefined"
+                    && typeof result.tab !== 'undefined') {
+                    loadDoctors(result.location_id, result.tab);
+                    setTimeout( function () {
+                        $("#consultancy_city_filter").val(result.city_id).change();
+                        $("#consultancy_location_filter").val(result.location_id).change();
+                        $("#consultancy_doctor_filter").val(result.doctor_id);
+                        setDashboardFilters();
+                    }, 1000);
+                }   
             });
             function setDashboardFilters() {
-
                 let result = get_query();
-
                 if(result?.type != null ) {
-
                     $("#appoint_search_type").val('{{request('type')}}').change();
                     $("#appoint_search_start").val('{{request('from')}}');
                     $("#appoint_appoint_end").val('{{request('to')}}');
