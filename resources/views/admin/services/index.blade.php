@@ -125,13 +125,10 @@
                     url:"{{route('admin.dashboard.getcolor')}}",
                     data:{'service':service},
                     success:function(data) {
-                       
                         $("#service_color").val(data.color);
-                       
                     }
                 });
             }
         </script>
     @endpush
-
 @endsection
