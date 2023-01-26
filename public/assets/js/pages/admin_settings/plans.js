@@ -678,7 +678,7 @@ function viewPlan($route) {
 }
 
 function displayData(response) {
-
+console.log(response);
     try {
 
         let packageadvances = response.data.packageadvances;
