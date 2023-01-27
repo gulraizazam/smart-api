@@ -484,7 +484,7 @@ class InvoicesController extends Controller
                     'table' => $table_array[$audit->audit_trail_table_name],
                     'user_id' => $audit->user->name,
                     'created_at' => $audit->created_at,
-                    'updated_at' => now(),
+                    'updated_at' => date('Y-m-d H:i:s'),
                 );
                 $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
 
@@ -559,7 +559,7 @@ class InvoicesController extends Controller
                     'table' => $table_array[$audit->audit_trail_table_name],
                     'user_id' => $audit->user->name,
                     'created_at' => $audit->created_at,
-                    'updated_at' => now(),
+                    'updated_at' => date('Y-m-d H:i:s'),
                 );
                 $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
 
