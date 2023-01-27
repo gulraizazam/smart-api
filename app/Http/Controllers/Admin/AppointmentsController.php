@@ -1750,8 +1750,8 @@ class AppointmentsController extends Controller
             $appointmentData['city_id'] = $location->city_id;
             $appointmentData['region_id'] = $location->region_id;
             $appointmentData['account_id'] = Auth::User()->account_id;
-            $appointmentData['created_at']=now();
-            $appointmentData['updated_at']=now();
+            $appointmentData['created_at']=date('Y-m-d H:i:s');
+            $appointmentData['updated_at']=date('Y-m-d H:i:s');
             /*
              * Check if Lead ID not provided then create a new lead
              * and assign this lead to current appointment.
@@ -1828,8 +1828,8 @@ class AppointmentsController extends Controller
                 }
                 $leadObj['lead_status_id'] = $default_converted_lead_status_id;
                 $leadObj['base_service_id'] = $leadObj['service_id'];
-                $leadObj['created_at']=now();
-                $leadObj['updated_at']=now();
+                $leadObj['created_at']=date('Y-m-d H:i:s');
+                $leadObj['updated_at']=date('Y-m-d H:i:s');
                 $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
                 if($lead){
                     $lead->lead_status_id = 4;
@@ -1916,7 +1916,7 @@ class AppointmentsController extends Controller
                         'appointment_status_id' => $appointment_status->id,
                         'base_appointment_status_id' => $appointment_status->id,
                         'appointment_status_allow_message' => 0,
-                        'updated_at'=>now()
+                        'updated_at'=>date('Y-m-d H:i:s')
                     ));
                 } else {
                     // Set default appointment status i.e. 'pending'
@@ -1926,14 +1926,14 @@ class AppointmentsController extends Controller
                             'appointment_status_id' => $appointment_status->id,
                             'base_appointment_status_id' => $appointment_status->id,
                             'appointment_status_allow_message' => 0,
-                            'updated_at'=>now()
+                            'updated_at'=>date('Y-m-d H:i:s')
                         ));
                     } else {
                         $appointment->update(array(
                             'appointment_status_id' => null,
                             'base_appointment_status_id' => null,
                             'appointment_status_allow_message' => 0,
-                            'updated_at'=>now()
+                            'updated_at'=>date('Y-m-d H:i:s')
                         ));
                     }
                 }
@@ -2516,7 +2516,7 @@ class AppointmentsController extends Controller
         $appointmentData['region_id'] = $city_info->region_id;
         $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
         $appointmentData['updated_by'] = Auth::user()->id;
-        $appointmentData['updated_at'] = now();
+        $appointmentData['updated_at'] = date('Y-m-d H:i:s');
         $appointmentData['updated_by'] = Auth::User()->id;
         $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
         $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
@@ -2819,7 +2819,7 @@ class AppointmentsController extends Controller
         // Converted By
         $data['converted_by'] = Auth::User()->id;
         /*$data['updated_by'] = Auth::User()->id;*/
-        $data['updated_at'] = now();
+        $data['updated_at'] =date('Y-m-d H:i:s');
         if ($appointment_type->id == $appointment->appointment_type_id) {
             if ($data['base_appointment_status_id'] == Config::get('constants.appointment_status_not_show')) {
                 if ($appointment->counter == $counterglobal->data) {
@@ -3740,7 +3740,7 @@ class AppointmentsController extends Controller
                 $appointment_id_consultancy = $PlanAppointmentCalculation->storeAppointment($appointmentinfo->patient_id, $appointmentinfo->location_id, $appointmentinfo->service_id, $tag_appoint[0],true);
                 $PlanAppointmentCalculation->saveinvoice($appointment_id_consultancy);
             }
-            $appointmentinfo->update(['appointment_id' => $appointment_id_consultancy,'updated_at'=>now()]);
+            $appointmentinfo->update(['appointment_id' => $appointment_id_consultancy,'updated_at'=>date('Y-m-d H:i:s')]);
         }
         if ($request->package_mode_id == '0') {
             $paymemt = PaymentModes::first();
@@ -3781,8 +3781,8 @@ class AppointmentsController extends Controller
         $data['location_id'] = $appointmentinfo->location_id;
         $data['doctor_id'] = $appointmentinfo->doctor_id;
         $data['is_exclusive'] = $is_exclusive;
-        $data['created_at'] =now();
-        $data['updated_at'] = now();
+        $data['created_at'] =date('Y-m-d H:i:s');
+        $data['updated_at'] = date('Y-m-d H:i:s');
         $invoice = Invoices::CreateRecord($data);
         $data_detail['tax_exclusive_serviceprice'] = $request->amount_create;
         $data_detail['tax_percenatage'] = $appointmentinfo->location->tax_percentage;
@@ -3803,8 +3803,8 @@ class AppointmentsController extends Controller
         }
         $data_detail['service_id'] = $appointmentinfo->service_id;
         $data_detail['invoice_id'] = $invoice->id;
-        $data_detail['created_at'] = now();
-        $data_detail['updated_at'] = now();
+        $data_detail['created_at'] = date('Y-m-d H:i:s');
+        $data_detail['updated_at'] = date('Y-m-d H:i:s');
         if ($request->package_service_id) {
             $tax_info_package_service = PackageService::find($request->package_service_id);
             $data_detail['tax_percenatage'] = $tax_info_package_service->tax_percenatage;
@@ -3852,8 +3852,8 @@ class AppointmentsController extends Controller
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
         }
-        $data_package['created_at'] = now();
-        $data_package['updated_at'] =now();
+        $data_package['created_at'] = date('Y-m-d H:i:s');
+        $data_package['updated_at'] =date('Y-m-d H:i:s');
         $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
         if ($request->package_id && $request->cash > 0) {
             Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($request->package_id, $package_advances);
@@ -3885,8 +3885,8 @@ class AppointmentsController extends Controller
             $data_package['invoice_id'] = $invoice->id;
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
-            $data_package['created_at'] = now();
-            $data_package['updated_at'] = now();
+            $data_package['created_at'] = date('Y-m-d H:i:s');
+            $data_package['updated_at'] = date('Y-m-d H:i:s');
             if ($invoice_detail->package_id != null) {
                 $data_package['package_id'] = $invoice_detail->package_id;
             }
@@ -3894,7 +3894,7 @@ class AppointmentsController extends Controller
             $count++;
         }
         if ($package_advances->package_id != null) {
-            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => now()]);
+            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => date('Y-m-d H:i:s')]);
             $packagesservice = PackageService::find($request->package_service_id);
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);
             if($request->cash > 0){
@@ -3912,8 +3912,8 @@ class AppointmentsController extends Controller
                 $activity->planId = $package_advances->package_id;
                 $activity->amount =$request->cash;
                 $activity->location = $location->name;
-                $activity->created_at = now();
-                $activity->updated_at = now();
+                $activity->created_at =date('Y-m-d H:i:s');
+                $activity->updated_at = date('Y-m-d H:i:s');
                 $activity->save();
             }
         }
@@ -3927,12 +3927,12 @@ class AppointmentsController extends Controller
             if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->exists()) {
                 $appointmentStatus = AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->where('active', '=', 1)->first();
                 if ($appointmentStatus) {
-                    Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $appointmentStatus->id,'updated_at'=>now()]);
+                    Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $appointmentStatus->id,'updated_at'=>date('Y-m-d H:i:s')]);
                 } else {
-                    Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id,'updated_at'=>now()]);
+                    Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id,'updated_at'=>date('Y-m-d H:i:s')]);
                 }
             } else {
-                Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id,'updated_at'=>now()]);
+                Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $arrivedStatus->id,'updated_at'=>date('Y-m-d H:i:s')]);
             }
         }
         // In case of auto change status we need to update by so that s why we did
@@ -3952,8 +3952,8 @@ class AppointmentsController extends Controller
         $activity->invoice_id = $invoice->id;
         $activity->amount = $invoice_detail->net_amount;
         $activity->location = $location->name;
-        $activity->created_at = now();
-        $activity->updated_at = now();
+        $activity->created_at = date('Y-m-d H:i:s');
+        $activity->updated_at = date('Y-m-d H:i:s');
         $activity->save();
         ////
         /**
@@ -4270,11 +4270,11 @@ class AppointmentsController extends Controller
         /*
          * End Lead ID Process
          */
-        $appointmentData['created_at'] =now();
-        $appointmentData['updated_at'] =now();
+        $appointmentData['created_at'] =date('Y-m-d H:i:s');
+        $appointmentData['updated_at'] =date('Y-m-d H:i:s');
         $appointment = Appointments::create($appointmentData);
         /* Now We need to update name of all appointments that already in appointment table against patient*/
-        Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name'],'update_at'=> $appointmentData['updated_at']]);
+        Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name'],'updated_at'=> $appointmentData['updated_at']]);
         if ($request->new_patient == '1') {
             $leadObj = $appointmentData;
             unset($leadObj['lead_id']); // Remove Lead ID index
@@ -5347,7 +5347,7 @@ class AppointmentsController extends Controller
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
                     'updated_by' => auth()->id(),
                     'appointment_status_id' => config('constants.appointment_status_pending'),
-                    'updated_at'=>now()
+                    'updated_at'=>date('Y-m-d H:i:s')
                 ]);
                 $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
