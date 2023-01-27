@@ -277,6 +277,8 @@ class PackagesController extends Controller
             if ($request->discount_id == '0' || $request->discount_id == "") {
                 $data['discount_id'] = null;
             }
+            $data['created_at'] = now();
+            $data['updated_at'] = now();
             /*date is develop to save package bundle*/
 
             /*Save package bundle information*/
@@ -338,6 +340,8 @@ class PackagesController extends Controller
 
                     $data_service['is_exclusive'] = 0;
                 }
+                $data_service['created_at'] = now();
+                $data_service['updated_at'] = now();
                 $packageservice = PackageService::createPackageService($data_service);
             }
             /*calculate package value to return*/
@@ -482,7 +486,7 @@ class PackagesController extends Controller
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
                     $record = Packages::find($packageService->package_id);
-                    $record->update(['total_price' => $total]);
+                    $record->update(['total_price' => $total,'updated_at'=>now()]);
                 }
             }
 
@@ -546,7 +550,8 @@ class PackagesController extends Controller
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['is_exclusive'] = $request->is_exclusive;
             $data_package['appointment_id'] = $appointment_id;
-
+            $data_package['created_at'] = now();
+            $data_package['updated_at'] = now();
             $package = Packages::createRecord($data_package, $request);
             /*End*/
             if ($request->cash_amount == '0') {
@@ -567,6 +572,8 @@ class PackagesController extends Controller
                 $data_packageAdvances['updated_by'] = Auth::User()->id;
                 $data_packageAdvances['package_id'] = $package->id;
                 $data_packageAdvances['location_id'] = $request->location_id;
+                $data_packageAdvances['created_at'] = now();
+                $data_packageAdvances['updated_at'] = now();
                 /*End*/
                 $packageAdavances = PackageAdvances::createRecord($data_packageAdvances, $package);
                 /////Save activity////
@@ -580,6 +587,8 @@ class PackagesController extends Controller
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
                 $activity->location = $location->name;
+                $activity->created_at = now();
+                $activity->updated_at = now();
                 $activity->save();
         ////
                 /*Now sent message to user about cash received*/
@@ -1166,7 +1175,7 @@ class PackagesController extends Controller
         $package_total = str_replace( ',', '', $request->total );
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
         $package_id =Packages::whereId($package->id)->first();
-        $package_id->update(['total_price'=>$request->total]);
+        $package_id->update(['total_price'=>$request->total,'updated_at'=>now()]);
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
             'grand_total' => $grand_total
         ]);
@@ -1206,7 +1215,7 @@ class PackagesController extends Controller
             $data_package['sessioncount'] = '1';
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['appointment_id'] = $appointment_id;
-
+            $data_package['updated_at'] = now();
             $random_id = $request->random_id;
 
             $package = Packages::updateRecord($data_package, $random_id, $request);
@@ -1229,6 +1238,7 @@ class PackagesController extends Controller
                 $data_packageAdvances['updated_by'] = Auth::User()->id;
                 $data_packageAdvances['package_id'] = $package->id;
                 $data_packageAdvances['location_id'] = $request->location_id;
+                $data_packageAdvances['updated_at'] = now();
                 /*End*/
 
                 $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
@@ -1242,6 +1252,8 @@ class PackagesController extends Controller
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
                 $activity->location = $location->name;
+                $activity->created_at = now();
+                $activity->updated_at = now();
                 $activity->save();
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
