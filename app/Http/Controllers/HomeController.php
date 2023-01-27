@@ -1404,8 +1404,11 @@ class HomeController extends Controller
                 'appointment_log' => [],
                 'unauthorized' => true,
             ];
-        }  
-        $activities = Activity::whereDate('created_at', Carbon::now()->format('Y-m-d'))->latest()->get();
+        }
+        $centres=ACL::getUserCentres();
+       
+        $center_names= Locations::whereIn('id',$centres)->pluck('name')->toArray();
+        $activities = Activity::whereIn('location',$center_names)->whereDate('created_at', Carbon::now()->format('Y-m-d'))->latest()->get();
         return $data['recent_activities'] = [
             'finance_log' => $activities,
         ];
