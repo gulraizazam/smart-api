@@ -429,8 +429,8 @@ class ConsultancyInvoiceController extends Controller
         $data['location_id'] = $appointmentinfo->location_id;
         $data['doctor_id'] = $appointmentinfo->doctor_id;
         $data['is_exclusive'] = $is_exclusive;
-        $data['created_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
-        $data['updated_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
+        $data['created_at'] = date('Y-m-d H:i:s');
+        $data['updated_at'] = date('Y-m-d H:i:s');
 
 
         $invoice = Invoices::CreateRecord($data);
@@ -447,8 +447,8 @@ class ConsultancyInvoiceController extends Controller
         $data_detail['service_id'] = $appointmentinfo->service_id ?? 0;
         $data_detail['invoice_id'] = $invoice->id;
 
-        $data_detail['created_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
-        $data_detail['updated_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
+        $data_detail['created_at'] = date('Y-m-d H:i:s');
+        $data_detail['updated_at'] = date('Y-m-d H:i:s');
 
         $discount_info = Discounts::find($request->discount_id);
 
@@ -474,8 +474,8 @@ class ConsultancyInvoiceController extends Controller
         $data_package['created_by'] = Auth::User()->id;
         $data_package['updated_by'] = Auth::User()->id;
 
-        $data_package['created_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
-        $data_package['updated_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
+        $data_package['created_at'] = date('Y-m-d H:i:s');
+        $data_package['updated_at'] = date('Y-m-d H:i:s');
 
         $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
 
@@ -505,8 +505,8 @@ class ConsultancyInvoiceController extends Controller
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
 
-            $data_package['created_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
-            $data_package['updated_at'] = $request->created_at . ' ' . Carbon::now()->toTimeString();
+            $data_package['created_at'] = date('Y-m-d H:i:s');
+            $data_package['updated_at'] = date('Y-m-d H:i:s');
 
 
             if ($invoice_detail->package_id != null) {
@@ -553,8 +553,8 @@ class ConsultancyInvoiceController extends Controller
             $activity->invoice_id = $invoice->id;
             $activity->amount = $request->price;
             $activity->location = $location->name;
-            $activity->created_at = now();
-            $activity->updated_at = now();
+            $activity->created_at = date('Y-m-d H:i:s');
+            $activity->updated_at = date('Y-m-d H:i:s');
             $activity->save();
         ////
 
