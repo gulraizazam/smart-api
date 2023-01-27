@@ -7,6 +7,7 @@ use App\Jobs\IndexSingleAppointmentJob;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Helpers\ACL;
+use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\TelenorSMSAPI;
 use App\Helpers\Widgets\LocationsWidget;
@@ -429,8 +430,8 @@ class ConsultancyInvoiceController extends Controller
         $data['location_id'] = $appointmentinfo->location_id;
         $data['doctor_id'] = $appointmentinfo->doctor_id;
         $data['is_exclusive'] = $is_exclusive;
-        $data['created_at'] = date('Y-m-d H:i:s');
-        $data['updated_at'] = date('Y-m-d H:i:s');
+        $data['created_at'] = Filters::getCurrentTimeStamp();;
+        $data['updated_at'] = Filters::getCurrentTimeStamp();;
 
 
         $invoice = Invoices::CreateRecord($data);
@@ -447,8 +448,8 @@ class ConsultancyInvoiceController extends Controller
         $data_detail['service_id'] = $appointmentinfo->service_id ?? 0;
         $data_detail['invoice_id'] = $invoice->id;
 
-        $data_detail['created_at'] = date('Y-m-d H:i:s');
-        $data_detail['updated_at'] = date('Y-m-d H:i:s');
+        $data_detail['created_at'] = Filters::getCurrentTimeStamp();;
+        $data_detail['updated_at'] = Filters::getCurrentTimeStamp();;
 
         $discount_info = Discounts::find($request->discount_id);
 
@@ -474,8 +475,8 @@ class ConsultancyInvoiceController extends Controller
         $data_package['created_by'] = Auth::User()->id;
         $data_package['updated_by'] = Auth::User()->id;
 
-        $data_package['created_at'] = date('Y-m-d H:i:s');
-        $data_package['updated_at'] = date('Y-m-d H:i:s');
+        $data_package['created_at'] = Filters::getCurrentTimeStamp();;
+        $data_package['updated_at'] = Filters::getCurrentTimeStamp();;
 
         $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
 
@@ -505,8 +506,8 @@ class ConsultancyInvoiceController extends Controller
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
 
-            $data_package['created_at'] = date('Y-m-d H:i:s');
-            $data_package['updated_at'] = date('Y-m-d H:i:s');
+            $data_package['created_at'] = Filters::getCurrentTimeStamp();;
+            $data_package['updated_at'] = Filters::getCurrentTimeStamp();;
 
 
             if ($invoice_detail->package_id != null) {
@@ -553,8 +554,8 @@ class ConsultancyInvoiceController extends Controller
             $activity->invoice_id = $invoice->id;
             $activity->amount = $request->price;
             $activity->location = $location->name;
-            $activity->created_at = date('Y-m-d H:i:s');
-            $activity->updated_at = date('Y-m-d H:i:s');
+            $activity->created_at = Filters::getCurrentTimeStamp();;
+            $activity->updated_at = Filters::getCurrentTimeStamp();;
             $activity->save();
         ////
 
