@@ -553,6 +553,8 @@ class ConsultancyInvoiceController extends Controller
             $activity->invoice_id = $invoice->id;
             $activity->amount = $request->price;
             $activity->location = $location->name;
+            $activity->created_at = now();
+            $activity->updated_at = now();
             $activity->save();
         ////
 
