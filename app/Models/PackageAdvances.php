@@ -142,8 +142,8 @@
 				$data['cash_amount'] = $request->cash_amount;
 			}
 			$data['payment_mode_id'] = $request->payment_mode_id;
-			$data['created_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
-			$data['updated_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
+			//$data['created_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
+			$data['updated_at'] = now();
 
 			$record = self::where([
 				'id' => $request->package_advances_id,
