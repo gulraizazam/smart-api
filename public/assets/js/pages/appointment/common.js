@@ -67,7 +67,7 @@ let loadLocations = function (cityId, appointment = null) {
             cache: false,
             success: function(response) {
                 if(response.status) {
-                    console.log('response', response);
+
                     let dropdowns =  response.data.dropdown;
                     let dropdown_options =  '<option value="">Select a Location</option>';
 
