@@ -171,7 +171,6 @@ class DashboardReportsController extends Controller
     }
     public function revenueByCentre(Request $request)
     {
-        dd($request->all());
         $data = array();
         if (Gate::allows('dashboard_revenue_by_centre')) {
             $locations = Locations::where([
@@ -216,6 +215,7 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
+            dd($data);
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
                 'total' =>  number_format($total ?? 0, 2)
