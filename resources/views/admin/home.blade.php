@@ -1176,7 +1176,6 @@
                 cache: false,
                 success: function (response) {
                     let colors = response.data.colors;
-                    $(".total-service").text(total)
                     @if(request('type') == 'today')
                        var pie = response.data.pie.today;
                     @endif
