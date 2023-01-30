@@ -103,6 +103,7 @@ use Illuminate\Support\Facades\DB;
     Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
         Route::get('attchrole',function(){
+            dd(date_default_timezone_get());
             $user = \App\Models\User::whereEmail("amjad@redsignal.biz")->first();
             dd($user->assignRole(1));
         });
