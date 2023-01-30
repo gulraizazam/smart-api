@@ -22,14 +22,6 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    duration: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The duration field is required'
-                            }
-                        }
-                    },
-
                     color: {
                         validators: {
                             notEmpty: {
@@ -37,22 +29,7 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    price: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The price field is required'
-                            }
-                        }
-                    },
-                    // end_node: {
-                    //     validators: {
-                    //         notEmpty: {
-                    //             message: 'The end node field is required'
-                    //         }
-                    //     }
-                    // },
                 },
-
                 plugins: {
                     trigger: new FormValidation.plugins.Trigger(),
                     // Bootstrap Framework Integration
