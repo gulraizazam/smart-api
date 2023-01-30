@@ -183,8 +183,8 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
-                        $("#treatment_city_filter").val(result.city_id).change().select2();
-                        $("#treatment_location_filter").val(result.location_id).change().select2();
+                        $("#treatment_city_filter").val(result.city_id).change();
+                        $("#treatment_location_filter").val(result.location_id).change();
                         setDashboardFilters();
                     }, 1000);
                 }
