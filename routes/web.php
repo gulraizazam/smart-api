@@ -103,6 +103,7 @@ use Illuminate\Support\Facades\DB;
     Route::group(['middleware' => ['auth.common','checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 
         Route::get('attchrole',function(){
+            dd(date_default_timezone_get());
             $user = \App\Models\User::whereEmail("amjad@redsignal.biz")->first();
             dd($user->assignRole(1));
         });
@@ -564,7 +565,6 @@ use Illuminate\Support\Facades\DB;
         Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
         Route::get('dashboard/appointment-by-status', [DashboardReportsController::class, 'AppointmentByStatus'])->name('dashboard.appointment_by_status');
         Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
-
-        ///////////////////////Dashboard Reports
         Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
+        Route::get('getcolor',[ServicesController::class,'GetColor'])->name('dashboard.getcolor');
     });

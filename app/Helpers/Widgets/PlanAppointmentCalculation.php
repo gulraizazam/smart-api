@@ -252,8 +252,8 @@ class PlanAppointmentCalculation
         /*
          * End Lead ID Process
          */
-        $appointmentData['created_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        $appointmentData['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
+        $appointmentData['created_at'] = date('Y-m-d H:i:s');
+        $appointmentData['updated_at'] = date('Y-m-d H:i:s');
         $appointmentData['updated_by'] = Auth::User()->id;
 
         $appointment = Appointments::create($appointmentData);
@@ -552,7 +552,7 @@ class PlanAppointmentCalculation
         $appointmentData['region_id'] = $appointment->region_id;
         $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
         $appointmentData['updated_by'] = Auth::user()->id;
-        $appointmentData['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
+        $appointmentData['updated_at'] = date('Y-m-d H:i:s');
         $appointmentData['start'] = Carbon::parse(Carbon::now())->toDateTimeString();
 
         if ($appointmentData['start']) {
