@@ -380,63 +380,54 @@ class dashboardreport
             if ($where == 'today') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
-                    ])->get();
-                   
+                        'account_id' => $account_id,
+                        'location_id' => $location_infomation,
+                    ])->get();       
             }
             if ($where == 'yesterday') {
-                
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
-                    ])->get();
+                   ->where([
+                        'account_id' => $account_id,
+                        'location_id' => $location_infomation,
+                    ])->get(); 
             }
             if ($where == 'last7day') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
                     ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
-                    ])->get();
+                        'account_id' => $account_id,
+                        'location_id' => $location_infomation,
+                    ])->get(); 
             }
             if ($where == 'thisMonth') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                     ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
-                    ])->get();
+                        'account_id' => $account_id,
+                        'location_id' => $location_infomation,
+                    ])->get(); 
             }
             if ($where == 'lastmonth') {
-                
                 $packagesadvances = PackageAdvances::whereDate('created_at','>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d') )
                     ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
-                    ])->get();
-                    
+                        'account_id' => $account_id,
+                        'location_id' => $location_infomation,
+                    ])->get();     
             }
-            $location_single_info = Locations::find($key);
-            
+            $location_single_info = Locations::find($location_infomation);
             if ($packagesadvances) {
                 $balance = 0;
                 $total_balance = 0;
                 $total_revenue_cash_in = 0;
                 $total_revenue_card_in = 0;
                 $total_refund_out = 0;
-
                 foreach ($packagesadvances as $packagesadvance) {
-                    
-                    if (
-                        (
-                            $packagesadvance->cash_flow == 'in' &&
-                            $packagesadvance->is_adjustment == '0' &&
-                            $packagesadvance->is_tax == '0' &&
-                            $packagesadvance->is_cancel == '0'
-                        )
+                    if(
+                        $packagesadvance->cash_flow == 'in' &&
+                        $packagesadvance->is_adjustment == '0' &&
+                        $packagesadvance->is_tax == '0' &&
+                        $packagesadvance->is_cancel == '0'
                     ) {
                         switch ($packagesadvance->cash_flow) {
                             case 'in':
@@ -451,7 +442,6 @@ class dashboardreport
                                 break;
                         }
                         $total_balance = $balance;
-                       
                         if ($packagesadvance->cash_amount != 0) {
                             if ($packagesadvance->package_id) {
                                 $transtype = Config::get('constants.trans_type.advance_in');
@@ -517,13 +507,9 @@ class dashboardreport
                 }
             }
             $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-            
             $In_hand_balance = $total_revenue - $total_refund_out;
-            $total += $In_hand_balance;
-              
-               
+            $total += $In_hand_balance;   
         }
-        
         return [
            $total
         ];
