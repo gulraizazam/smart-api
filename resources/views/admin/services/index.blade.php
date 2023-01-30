@@ -117,8 +117,30 @@
             {
                 $("#filter_active").val($("#search_status").val());
             }
-            
+            function getColor()
+            {
+                var service = $('#add_parent_service').val();
+                if(service > 0){
+                    $.ajax({
+                        type:'GET',
+                        url:"{{route('admin.dashboard.getcolor')}}",
+                        data:{'service':service},
+                        success:function(data) {
+                            $("#service_color").val(data.color);
+                        }
+                    });
+                    $('#service_duration').css('display','block');
+                    $('#service_price').css('display','block');
+                    $('#service_endnode').css('display','block');
+                    $('#service_tax').css('display','block');
+                }else{
+                    $('#service_duration').css('display','none');
+                    $('#service_price').css('display','none');
+                    $('#service_endnode').css('display','none');
+                    $('#service_tax').css('display','none');
+                }
+                
+            }
         </script>
     @endpush
-
 @endsection
