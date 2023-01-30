@@ -224,6 +224,9 @@ class Filters
 
         return rmdir($dir);
     }
+    public static function getCurrentTimeStamp () {
+        return date('Y-m-d H:i:s');
+       }
 
 
 }
