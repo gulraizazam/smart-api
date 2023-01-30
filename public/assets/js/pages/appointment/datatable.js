@@ -427,9 +427,6 @@ function actions(data) {
                 if(data.appointment_type == 1) {
                     actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
-                        </a>\
-                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm">\
-                            <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
                 }
             }
@@ -500,12 +497,7 @@ function actions(data) {
             }
         }
 
-        actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-sms"></i></span>\
-                            <span class="navi-text">Sms Log</span>\
-                        </a>\
-                    </li>';
+        
 
         if(data.cancelled_appointment_status == null && (data.cancelled_appointment_status?.id != data.appointment_status_id))
         {
