@@ -42,14 +42,14 @@ class dashboardreport
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
+                        ['location_id', '=', $location_infomation],
                     ])->get();
             }
             if ($where == 'yesterday') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
+                        ['location_id', '=', $location_infomation],
                     ])->get();
             }
             if ($where == 'last7day') {
@@ -57,7 +57,7 @@ class dashboardreport
                     ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
+                        ['location_id', '=', $location_infomation],
                     ])->get();
             }
             if ($where == 'thisMonth') {
@@ -65,7 +65,7 @@ class dashboardreport
                     ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
+                        ['location_id', '=', $location_infomation],
                     ])->get();
             }
             if ($where == 'lastMonth') {
@@ -73,10 +73,10 @@ class dashboardreport
                     ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
+                        ['location_id', '=',$location_infomation],
                     ])->get();
             }
-            $location_single_info = Locations::find($key);
+            $location_single_info = Locations::find($location_infomation);
             
             if ($packagesadvances) {
                 $balance = 0;
@@ -179,7 +179,7 @@ class dashboardreport
             
 
                 if ($In_hand_balance > 0) {
-                    $report_data[$key] = array(
+                    $report_data[$location_infomation] = array(
                         $location_single_info->city->name . ' - ' . $location_single_info->name,
                         $In_hand_balance,
                     );

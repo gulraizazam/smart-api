@@ -52,10 +52,7 @@ class DashboardReportsController extends Controller
             'thismonth' => array(),
             'lastmonth' => array(),
         );
-        $location_information = Locations::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1']
-        ])->pluck('name', 'id');
+        $location_information = ACL::getUserCentres();
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
             if ($request->get('today') != '') {
                 list( $todayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
