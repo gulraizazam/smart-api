@@ -388,7 +388,11 @@ class HomeController extends Controller
 
             return $data;
         }
+        
         $locations = ACL::getUserCentres();
+
+        
+
         list($start_date, $end_date) = $this->getDates($request);
         switch ($request->type) {
             case 'today':
@@ -430,7 +434,6 @@ class HomeController extends Controller
         if (Gate::allows('dashboard_collection_by_centre')) {
 
             $location_information = ACL::getUserCentres();
-
             switch ($request->type) {
                 case 'today':
                     list( $report_data, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
