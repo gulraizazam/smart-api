@@ -171,6 +171,7 @@ class DashboardReportsController extends Controller
     }
     public function revenueByCentre(Request $request)
     {
+        dd($request->all());
         $data = array();
         if (Gate::allows('dashboard_revenue_by_centre')) {
             $locations = Locations::where([
