@@ -341,5 +341,13 @@ class ServicesController extends Controller
         }
 
     }
-    
+    public function GetColor(Request $request)
+    {
+        if($request->service != 0){
+            $service = Services::where('id',$request->service)->first();
+            return response()->json(['color'=>$service->color]);
+        }else{
+            return response()->json(['color'=>"#000"]);
+        }
+    } 
 }
