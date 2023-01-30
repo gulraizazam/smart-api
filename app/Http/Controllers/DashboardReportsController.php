@@ -52,10 +52,7 @@ class DashboardReportsController extends Controller
             'thismonth' => array(),
             'lastmonth' => array(),
         );
-        $location_information = Locations::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1']
-        ])->pluck('name', 'id');
+        $location_information = ACL::getUserCentres();
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
             if ($request->get('today') != '') {
                 list( $todayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
@@ -173,10 +170,8 @@ class DashboardReportsController extends Controller
     {
         $data = array();
         if (Gate::allows('dashboard_revenue_by_centre')) {
-            $locations = Locations::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1']
-            ])->get();
+            $locations = ACL::getUserCentres();
+           
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             list($start_date, $end_date) =  $this->getDates($request);
             $todayRecords = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
@@ -196,6 +191,7 @@ class DashboardReportsController extends Controller
             );
             if ($locations) {
                 foreach ($locations as $counter => $location) {
+                    $location_detail = Locations::find($location);
                     if ($counter == 0) {
                         $data[0] = array(
                             'Task',
@@ -204,9 +200,9 @@ class DashboardReportsController extends Controller
                     }
                     if ($todayRecords) {
                         foreach ($todayRecords as $todayRecord) {
-                            if ($todayRecord->location_id == $location->id) {
+                            if ($todayRecord->location_id == $location_detail->id) {
                                 $data[] = [
-                                    $location->city->name . ' - ' . $location->name,
+                                    $location_detail->city->name . ' - ' . $location_detail->name,
                                     $todayRecord->total_price
                                 ];
                                 $total += $todayRecord->total_price;
