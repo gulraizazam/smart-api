@@ -219,7 +219,8 @@ class PackagesController extends Controller
                         }
                     }else { /*this is commented because we want to add services with different prices*/
                         if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
-                            $status = false;
+                            //$status = false;
+                            $status = true;
                         }
                     }
                 }
@@ -276,6 +277,8 @@ class PackagesController extends Controller
             if ($request->discount_id == '0' || $request->discount_id == "") {
                 $data['discount_id'] = null;
             }
+            $data['created_at'] = Filters::getCurrentTimeStamp();
+            $data['updated_at'] = Filters::getCurrentTimeStamp();
             /*date is develop to save package bundle*/
 
             /*Save package bundle information*/
@@ -337,6 +340,8 @@ class PackagesController extends Controller
 
                     $data_service['is_exclusive'] = 0;
                 }
+                $data_service['created_at'] = Filters::getCurrentTimeStamp();
+                $data_service['updated_at'] = Filters::getCurrentTimeStamp();
                 $packageservice = PackageService::createPackageService($data_service);
             }
             /*calculate package value to return*/
@@ -481,7 +486,7 @@ class PackagesController extends Controller
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
                     $record = Packages::find($packageService->package_id);
-                    $record->update(['total_price' => $total]);
+                    $record->update(['total_price' => $total,'updated_at'=>Filters::getCurrentTimeStamp()]);
                 }
             }
 
@@ -522,20 +527,10 @@ class PackagesController extends Controller
      */
     public function savepackages(Request $request)
     {
-        if ($request->grand_total < 0) {
-            return response()->json(array(
-                'status' => false,
-            ));
-        }
-
-        // Begin Transaction
         DB::beginTransaction();
-
         try {
             if(isset($request->appointment_id)){
-                // Now we need to work our tag appointment for upselling
                 $tag_appoint = explode('.', $request->appointment_id);
-
                 if ($tag_appoint[1] == 'A') {
                     $appointment_id = $tag_appoint[0];
                 } else {
@@ -549,14 +544,14 @@ class PackagesController extends Controller
                 ));
             }
             /*save Package information and also update random id in package service table*/
-
             $data_package = $request->all();
             $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
             $data_package['sessioncount'] = '1';
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['is_exclusive'] = $request->is_exclusive;
             $data_package['appointment_id'] = $appointment_id;
-
+            $data_package['created_at'] =Filters::getCurrentTimeStamp();
+            $data_package['updated_at'] =Filters::getCurrentTimeStamp();
             $package = Packages::createRecord($data_package, $request);
             /*End*/
             if ($request->cash_amount == '0') {
@@ -577,6 +572,8 @@ class PackagesController extends Controller
                 $data_packageAdvances['updated_by'] = Auth::User()->id;
                 $data_packageAdvances['package_id'] = $package->id;
                 $data_packageAdvances['location_id'] = $request->location_id;
+                $data_packageAdvances['created_at'] = Filters::getCurrentTimeStamp();
+                $data_packageAdvances['updated_at'] = Filters::getCurrentTimeStamp();
                 /*End*/
                 $packageAdavances = PackageAdvances::createRecord($data_packageAdvances, $package);
                 /////Save activity////
@@ -590,6 +587,8 @@ class PackagesController extends Controller
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
                 $activity->location = $location->name;
+                $activity->created_at = Filters::getCurrentTimeStamp();
+                $activity->updated_at = Filters::getCurrentTimeStamp();
                 $activity->save();
         ////
                 /*Now sent message to user about cash received*/
@@ -1167,26 +1166,16 @@ class PackagesController extends Controller
     public function getgrandtotal_update(Request $request)
     {
         $package = Packages::where('random_id', '=', $request->random_id)->first();
-
-        $package_advances_cash_amount_1 = PackageAdvances::where([
+        $packageadvances_cash_amount = PackageAdvances::where([
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0']
         ])->sum('cash_amount');
-
-        $package_advances_cash_amount_2 = PackageAdvances::where([
-            ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'out']
-        ])->sum('cash_amount');
-        /*We discuss in future what happen next*/
-        $package_advances_cash_amount = $package_advances_cash_amount_1;
-        
-
-        //$package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_advances_cash_amount = $packageadvances_cash_amount;
         $package_total = str_replace( ',', '', $request->total );
-
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
-
+        $package_id =Packages::whereId($package->id)->first();
+        $package_id->update(['total_price'=>$request->total,'updated_at'=>Filters::getCurrentTimeStamp()]);
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
             'grand_total' => $grand_total
         ]);
@@ -1199,17 +1188,10 @@ class PackagesController extends Controller
      * */
     public function updatepackages(Request $request)
     {
-        if ($request->grand_total < 0) {
-            return ApiHelper::apiResponse($this->success, 'Grand total is less than 0', false);
-        }
-        // Begin Transaction
         DB::beginTransaction();
-
         try {
             if(isset($request->appointment_id)){
-                // Now we need to work our tag appointment for upselling
                 $tag_appoint = explode('.', $request->appointment_id);
-
                 if ($tag_appoint[1] == 'A') {
                     $appointment_id = $tag_appoint[0];
                 } else {
@@ -1233,7 +1215,7 @@ class PackagesController extends Controller
             $data_package['sessioncount'] = '1';
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['appointment_id'] = $appointment_id;
-
+            $data_package['updated_at'] = Filters::getCurrentTimeStamp();
             $random_id = $request->random_id;
 
             $package = Packages::updateRecord($data_package, $random_id, $request);
@@ -1256,6 +1238,7 @@ class PackagesController extends Controller
                 $data_packageAdvances['updated_by'] = Auth::User()->id;
                 $data_packageAdvances['package_id'] = $package->id;
                 $data_packageAdvances['location_id'] = $request->location_id;
+                $data_packageAdvances['updated_at'] = Filters::getCurrentTimeStamp();
                 /*End*/
 
                 $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
@@ -1269,6 +1252,8 @@ class PackagesController extends Controller
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
                 $activity->location = $location->name;
+                $activity->created_at = Filters::getCurrentTimeStamp();
+                $activity->updated_at = Filters::getCurrentTimeStamp();
                 $activity->save();
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
@@ -1477,42 +1462,25 @@ class PackagesController extends Controller
     public function storepackageadvancescash(Request $request)
     {
         $package_total_price = PackageBundles::where('package_id', '=', $request->package_id)->sum('tax_including_price');
-
         $get_package_use_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'out']
         ])->sum('cash_amount');
-
         $get_package_unused_amount_except_edit = PackageAdvances::where([
             ['id', '!=', $request->package_advances_id],
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0']
         ])->sum('cash_amount');
-
         $get_package_unused_amount_with_edit = $request->cash_amount;
-
         $get_package_unuse_amount = $get_package_unused_amount_except_edit + $get_package_unused_amount_with_edit;
-
-        if ($get_package_unuse_amount <= $package_total_price) {
-            if ($get_package_unuse_amount >= $get_package_use_amount) {
-                $amount_status = true;
-            } else {
-                $amount_status = false;
-            }
-            $record = PackageAdvances::updateRecordFinanceedit($request, Auth::User()->account_id, $amount_status);
-        } else {
-            $record = Null;
-        }
-
+        $amount_status = true;
+        $record = PackageAdvances::updateRecordFinanceedit($request, Auth::User()->account_id, $amount_status);
         if ($record) {
             return ApiHelper::apiResponse($this->success, 'Data Updated successfully.',  true, [
                 'amount_status' => $amount_status
             ]);
-
         }
-
-        return ApiHelper::apiResponse($this->success, 'Your amount is exceeding.', false );
     }
 
     /*
