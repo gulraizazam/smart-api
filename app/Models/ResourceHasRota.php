@@ -534,7 +534,7 @@ class ResourceHasRota extends BaseModal
 
             $rota_days_mapping = ResourceHasRotaDays::grabRotaDaysMapping($request, $week, $data, $resourcerota);
             $rota_appointments = ResourceHasRotaDays::grabRotaDaysAppointments($request, $rota_days_mapping['rota_days_records'], $resourcerota);
-            dd($rota_appointments);
+            
             $not_allow = false;
             $not_allow_2 = false;
             if (count($rota_appointments) && count($rota_days_mapping['rota_days_records'])) {
@@ -544,7 +544,7 @@ class ResourceHasRota extends BaseModal
                     foreach ($rota_appointments as $rota_appointment) {
                        
                         if ($rota_appointment['scheduled_time'] && $rota_days_record['start_time'] && $rota_days_record['end_time']) {
-                            
+                            dd(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'));
                             if (!self::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $rota_days_record['start_time'], $rota_days_record['end_time'])) {
                                 //$not_allow = true;
                                 $not_allow = true;
