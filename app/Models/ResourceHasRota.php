@@ -546,11 +546,13 @@ class ResourceHasRota extends BaseModal
                         if ($rota_appointment['scheduled_time'] && $rota_days_record['start_time'] && $rota_days_record['end_time']) {
                            
                             if (!self::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $rota_days_record['start_time'], $rota_days_record['end_time'])) {
-                                //$not_allow = true;
+                               
+                               dd("here");//$not_allow = true;
                                 $not_allow = true;
                                 break;
                             }
                             if (self::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $rota_days_record['start_off'], $rota_days_record['end_off'])) {
+                                dd("hereq");
                                 $not_allow_2 = true;
                                 break;
                             }
@@ -669,8 +671,8 @@ class ResourceHasRota extends BaseModal
     static public function checkTime($current_time, $start, $end, $check_equal = false)
     {
         
-        $date1 = \DateTime::createFromFormat('h:i a', $current_time);
-        $date2 = \DateTime::createFromFormat('h:i a', $start);
+        $date1 = \DateTime::createFromFormat('H:i a', $current_time);
+        $date2 = \DateTime::createFromFormat('H:i a', $start);
         $date3 = \DateTime::createFromFormat('H:i a', $end);
        
         if ($check_equal) {
@@ -680,7 +682,7 @@ class ResourceHasRota extends BaseModal
                 return true;
             }
         }
-dd($date1 < $date3 );
+
         if ($date1 >= $date2 && $date1 < $date3) {
             
             return true;
