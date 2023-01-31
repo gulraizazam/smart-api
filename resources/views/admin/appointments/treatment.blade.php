@@ -168,29 +168,28 @@
     @include('admin.appointments.appointment-forms.modals')
     @push('js')
         <script>
-             var result = get_query();
-            console.log(result);
-            if (typeof result.tab !== 'undefined') {
-                $("." + result.tab+ '-tab').click();
-            } else {
-                $(".appointment-tab").addClass("nav-bar-active")
-            }
-            if (typeof result.city_id !== "undefined"
-                && typeof result.location_id !== "undefined"
-                && typeof result.doctor_id !== "undefined"
-                && typeof result.machine_id !== "undefined"
-                && typeof result.tab !== 'undefined') {
-                loadDoctors(result.location_id, result.tab);
-                setTimeout( function () {
-                    $("#treatment_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
-                    $("#treatment_city_filter").val(result.city_id).change();
-                    $("#treatment_location_filter").val(result.location_id).change();
-                    setDashboardFilters();
-                }, 1000);
-            }
-            // $(document).ready(function () {
-               
-            // });
+            $(document).ready(function () {
+                var result = get_query();
+                console.log(result);
+                if (typeof result.tab !== 'undefined') {
+                    $("." + result.tab+ '-tab').click();
+                } else {
+                    $(".appointment-tab").addClass("nav-bar-active")
+                }
+                if (typeof result.city_id !== "undefined"
+                    && typeof result.location_id !== "undefined"
+                    && typeof result.doctor_id !== "undefined"
+                    && typeof result.machine_id !== "undefined"
+                    && typeof result.tab !== 'undefined') {
+                    loadDoctors(result.location_id, result.tab);
+                    setTimeout( function () {
+                        $("#treatment_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
+                        $("#treatment_city_filter").val(result.city_id).change();
+                        $("#treatment_location_filter").val(result.location_id).change();
+                        setDashboardFilters();
+                    }, 1500);
+                }
+            });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
             var limit = '{{config('constants.export-appointment-limit')}}';
             var offset = 0;
