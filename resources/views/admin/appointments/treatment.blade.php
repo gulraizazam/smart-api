@@ -183,6 +183,8 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
+                        console.log('result.city_id', result.city_id);
+                        console.log('result.location_id', result.location_id);
                         $("#treatment_city_filter").val(result.city_id).change().select2();
                         $("#treatment_location_filter").val(result.location_id).change().select2();
                         setDashboardFilters();
