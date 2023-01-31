@@ -183,8 +183,10 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
-                        $("#treatment_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
-                        $("#treatment_city_filter").val(result.city_id).change();
+                        if($("#treatment_city_filter").length){
+                            $("#treatment_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
+                            $("#treatment_city_filter").val(result.city_id).change();
+                        }
                         $("#treatment_location_filter").val(result.location_id).change();
                         setDashboardFilters();
                     }, 1000);
