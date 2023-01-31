@@ -401,7 +401,7 @@ function setEditData(response) {
 
                     history_options += '<td>' + packageadvance.cash_flow + '</td>';
                     history_options += '<td>' + packageadvance.cash_amount + '</td>';
-                    history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy HH:mm A') + '</td>';
+                    history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
 
 
                     history_options += '<td>';
