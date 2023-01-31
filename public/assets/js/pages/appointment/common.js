@@ -1,3 +1,16 @@
+jQuery('#treatment_city_filter').on('change', function(){
+    loadLocations($(this).val(), 'treatment');
+});
+jQuery('#treatment_location_filter').on('change', function(){
+    loadDoctors($(this).val(), 'treatment');
+});
+jQuery('#treatment_doctor_filter').on('change', function(){
+    treatmentDoctorListener($(this).val());
+});
+jQuery('#treatment_resource_filter').on('change', function(){
+    machineListener($(this).val());
+});
+
 
 function toggleSection($this, $class) {
 

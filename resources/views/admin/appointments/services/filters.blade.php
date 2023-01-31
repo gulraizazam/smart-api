@@ -9,17 +9,17 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Centre:</label>
-            <select onchange="loadDoctors($(this).val(), 'treatment');" class="form-control" id="treatment_location_filter"></select>
+            <select class="form-control" id="treatment_location_filter"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Doctor:</label>
-            <select onchange="treatmentDoctorListener($(this).val());" class="form-control" id="treatment_doctor_filter"></select>
+            <select class="form-control" id="treatment_doctor_filter"></select>
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Resource:</label>
-            <select onchange="machineListener($(this).val());" class="form-control" id="treatment_resource_filter"></select>
+            <select class="form-control" id="treatment_resource_filter"></select>
         </div>
 
     </div>
