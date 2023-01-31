@@ -68,18 +68,18 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
-                            <input disabled  id="create_treatment_phone" class="form-control" name="phone">
+                            <input readonly  id="create_treatment_phone" class="form-control" name="phone">
                             <input type="hidden" id="create_old_treatment_phone" class="form-control" name="old_phone">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input disabled  id="create_treatment_patient_name" class="form-control" name="name">
+                            <input readonly  id="create_treatment_patient_name" class="form-control" name="name">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Customer ID <span class="text text-danger">*</span> </label>
-                            <input disabled  id="create_treatment_c_id" class="form-control" name="client_id">
+                            <input readonly  id="create_treatment_c_id" class="form-control" name="client_id">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
