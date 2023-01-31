@@ -544,7 +544,7 @@ class ResourceHasRota extends BaseModal
                     foreach ($rota_appointments as $rota_appointment) {
                        
                         if ($rota_appointment['scheduled_time'] && $rota_days_record['start_time'] && $rota_days_record['end_time']) {
-                            dd($rota_days_record['end_time']);
+                           
                             if (!self::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $rota_days_record['start_time'], $rota_days_record['end_time'])) {
                                 //$not_allow = true;
                                 $not_allow = true;
@@ -672,7 +672,7 @@ class ResourceHasRota extends BaseModal
         $date1 = \DateTime::createFromFormat('H:i a', $current_time);
         $date2 = \DateTime::createFromFormat('H:i a', $start);
         $date3 = \DateTime::createFromFormat('H:i a', $end);
-        
+        dd($date1);
         if ($check_equal) {
             
             if ($date1 == $date2 || $date1 == $date3) {
