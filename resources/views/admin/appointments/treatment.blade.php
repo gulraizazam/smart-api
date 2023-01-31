@@ -167,7 +167,7 @@
     {{--All forms popups--}}
     @include('admin.appointments.appointment-forms.modals')
     @push('js')
-        <script>
+        <script defer>
             $(document).ready(function () {
                 var result = get_query();
                 console.log(result);
@@ -183,9 +183,10 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
+                        console.log('result.city_id', result.city_id);
                         $("#treatment_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
                         $("#treatment_city_filter").val(result.city_id).change();
-                        $("#treatment_location_filter").val(result.location_id).change();
+                        //$("#treatment_location_filter").val(result.location_id).change();
                         setDashboardFilters();
                     }, 1300);
                 }
@@ -309,7 +310,7 @@
                             if (response.status) {
                                 // $("#consultancy_city_filter").val(response.data.city).change();
                                 // $("#treatment_city_filter").val(response.data.city).change();
-                                $("#appoint_search_city").val(response.data.city).change();
+                                //$("#appoint_search_city").val(response.data.city).change();
                                setTimeout( function () {
                                    getUserCentre();
                                }, 400);
