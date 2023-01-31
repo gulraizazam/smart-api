@@ -318,6 +318,7 @@ class Services extends BaseModal
 
         $data = $request->all();
         $data['duration'] =  $data['duration'] ?? '00:00';
+        $data['price'] =  $data['price'] ?? '0.0';
         $data['account_id'] = $account_id;
         if (!isset($data['end_node']) || !$data['end_node']) {
             $data['end_node'] = 0;
