@@ -397,49 +397,29 @@ class HomeController extends Controller
         switch ($request->type) {
             case 'today':
                 list($total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'today', $request);
-                
-                        $data['todaycollection'][] = $total;
-                   
-                break;
-
+                    $data['todaycollection'][] = $total;
+            break;
             case 'yesterday':
                 list($total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'yesterday', $request);
-               
-                        $data['todaycollection'][] = $total;
-                   
-                break;
-
+                    $data['todaycollection'][] = $total;
+            break;
             case 'week':
                 list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'last7day', $request);
-                
-                        $data['todaycollection'][] = $total;
-                   
-                break;
-
+                    $data['todaycollection'][] = $total;
+            break;
             case 'month':
                 list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'thisMonth', $request);
-               
-                        $data['todaycollection'][] = $total;
-                    
-                break;
+                    $data['todaycollection'][] = $total; 
+            break;
             case 'lastmonth':
-               
                 list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'lastmonth', $request);
-               
-                        $data['todaycollection'][] = $total;
-                    
-                break;
+                $data['todaycollection'][] = $total;
+            break;
             default:
                 list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'today', $request);
-               
-                    
-                        $data['todaycollection'][] = $total;
-                    
-                
-                break;
+                $data['todaycollection'][] = $total;
+            break;
         }
-        
-        
         return $data;
     }
     public function collectionByCentre(Request $request)
@@ -1339,13 +1319,8 @@ class HomeController extends Controller
             return $data;
         }
 
-        $locations = Locations::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1']
-        ])->whereIn('id', ACL::getUserCentres())->get();
-
+        $locations = ACL::getUserCentres();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-
         list($start_date, $end_date) = $this->getDates($request);
         if($request->type=="lastmonth"){
             $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
@@ -1361,7 +1336,6 @@ class HomeController extends Controller
             '<=',
             $end_date . ' 23:59:59'
         );
-
         $todayRecords = \App\Models\Invoices::where($where)
             ->whereIn('location_id', ACL::getUserCentres())
             ->where('invoice_status_id', '=', $invoicestatus->id);
@@ -1369,16 +1343,14 @@ class HomeController extends Controller
         if ($request->get('performance') == '1') {
             $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
         }
-
         $todayRecords = $todayRecords->select('location_id', DB::raw("SUM(invoices.total_price) AS total_price"))
             ->groupBy('location_id')
             ->get();
-
         if ($locations) {
             foreach ($locations as $location) {
                 if ($todayRecords) {
                     foreach ($todayRecords as $todayRecord) {
-                        if ($todayRecord->location_id == $location->id) {
+                        if ($todayRecord->location_id == $location) {
                             $data['revenue'] += $todayRecord->total_price;
                         }
                     }
