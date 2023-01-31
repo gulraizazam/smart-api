@@ -669,9 +669,9 @@ class ResourceHasRota extends BaseModal
     static public function checkTime($current_time, $start, $end, $check_equal = false)
     {
         
-        $date1 = \DateTime::createFromFormat('h:i a', $current_time);
-        $date2 = \DateTime::createFromFormat('h:i a', $start);
-        $date3 = \DateTime::createFromFormat('h:i a', $end);
+        $date1 = \DateTime::createFromFormat('H:i a', $current_time);
+        $date2 = \DateTime::createFromFormat('H:i a', $start);
+        $date3 = \DateTime::createFromFormat('H:i a', $end);
         
         if ($check_equal) {
             
