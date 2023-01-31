@@ -35,7 +35,7 @@ var table_columns = [
         title: 'Created At',
         width: 'auto',
         template: function (data) {
-            return formatDate(data.date)
+            return formatDate(data.created_at,'MMM, DD yyyy hh:mm A')
         }
     }/*,{
         field: 'actions',
