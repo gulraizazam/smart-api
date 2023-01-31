@@ -680,7 +680,7 @@ class ResourceHasRota extends BaseModal
                 return true;
             }
         }
-dd($date1 >= $date2 );
+dd($date1 < $date3 );
         if ($date1 >= $date2 && $date1 < $date3) {
             
             return true;
