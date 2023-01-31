@@ -204,6 +204,8 @@
                     $this.attr('href', route('admin.appointments.export', [limit, offset]));
                 },1000);
             }
+        </script>
+        <script>
             function SetFromdate(){
                 $("#filter_date_from").val($("#treatment_search_start").val());
             }
@@ -308,9 +310,9 @@
                         dataType: 'json',
                         success: function (response) {
                             if (response.status) {
-                                // $("#consultancy_city_filter").val(response.data.city).change();
-                                // $("#treatment_city_filter").val(response.data.city).change();
-                                //$("#appoint_search_city").val(response.data.city).change();
+                                $("#consultancy_city_filter").val(response.data.city).change();
+                                $("#treatment_city_filter").val(response.data.city).change();
+                                $("#appoint_search_city").val(response.data.city).change();
                                setTimeout( function () {
                                    getUserCentre();
                                }, 400);
