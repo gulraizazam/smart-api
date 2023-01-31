@@ -833,7 +833,7 @@ class ResourceRotasController extends Controller
      */
     public function store_calender_edit(Request $request)
     {
-
+        dd("here");
         if (!Gate::allows('resourcerotas_manage')) {
 
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
