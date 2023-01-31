@@ -534,7 +534,7 @@ class ResourceHasRota extends BaseModal
 
             $rota_days_mapping = ResourceHasRotaDays::grabRotaDaysMapping($request, $week, $data, $resourcerota);
             $rota_appointments = ResourceHasRotaDays::grabRotaDaysAppointments($request, $rota_days_mapping['rota_days_records'], $resourcerota);
-dd($rota_appointments);
+
             $not_allow = false;
             $not_allow_2 = false;
             if (count($rota_appointments) && count($rota_days_mapping['rota_days_records'])) {
@@ -672,7 +672,7 @@ dd($rota_appointments);
         $date1 = \DateTime::createFromFormat('H:i a', $current_time);
         $date2 = \DateTime::createFromFormat('H:i a', $start);
         $date3 = \DateTime::createFromFormat('H:i a', $end);
-        
+        dd($date1);
         if ($check_equal) {
             
             if ($date1 == $date2 || $date1 == $date3) {
