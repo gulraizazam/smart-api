@@ -488,7 +488,6 @@ function actions(data) {
                 </li>';
             }
         }
-
         if(data.appointment_type==2) {
             if (permissions.treatment) {
                 actions += '<li class="navi-item">\
