@@ -534,7 +534,7 @@ class ResourceHasRota extends BaseModal
 
             $rota_days_mapping = ResourceHasRotaDays::grabRotaDaysMapping($request, $week, $data, $resourcerota);
             $rota_appointments = ResourceHasRotaDays::grabRotaDaysAppointments($request, $rota_days_mapping['rota_days_records'], $resourcerota);
-            dd($rota_appointments);
+            //dd($rota_appointments);
             $not_allow = false;
             $not_allow_2 = false;
             if (count($rota_appointments) && count($rota_days_mapping['rota_days_records'])) {
