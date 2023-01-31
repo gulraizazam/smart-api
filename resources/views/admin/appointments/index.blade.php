@@ -266,11 +266,12 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
+                        $("#consultancy_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
                         $("#consultancy_city_filter").val(result.city_id).change();
-                        $("#consultancy_location_filter").val(result.location_id).change();
-                        $("#consultancy_doctor_filter").val(result.doctor_id);
+                        //$("#consultancy_location_filter").val(result.location_id).change();
+                        //$("#consultancy_doctor_filter").val(result.doctor_id);
                         setDashboardFilters();
-                    }, 1000);
+                    }, 1300);
                 }   
             });
             </script>
