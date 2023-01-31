@@ -250,6 +250,8 @@
                 });
                 
              }
+             </script>
+             <script defer>
             $(document).ready(function () {
                 var result = get_query();
                 console.log(result);
@@ -271,6 +273,8 @@
                     }, 1000);
                 }   
             });
+            </script>
+            <script>
             function setDashboardFilters() {
                 let result = get_query();
                 if(result?.type != null ) {
