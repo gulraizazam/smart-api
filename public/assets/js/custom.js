@@ -765,7 +765,7 @@ function phoneField($this) {
    return $this.value = $this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 }
 
-function formatDate(date, format = 'ddd MMM, DD yyyy HH:mm A') {
+function formatDate(date, format = 'ddd MMM, DD yyyy hh:mm A') {
     return moment(date).format(format);
 }
 
