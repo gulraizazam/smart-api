@@ -2001,14 +2001,14 @@ class LeadsController extends Controller
                                 ))->count()) {
 
                                     if ($request->get("update_records") != '1') {
-                                        dd("here");
+                                        
                                         /*
                                          * update_records' is not checked
                                          * Skip this entire record
                                          */
                                         continue;
                                     } else {
-                                        dd("here1");
+                                       
                                         /*
                                          * update_records' is checked
                                          * update records nows
@@ -2046,7 +2046,7 @@ class LeadsController extends Controller
                                             'updated_at' => Carbon::now(),
                                             'account_id' => Auth::User()->account_id,
                                         );
-
+dd($update_lead);
                                         /*
                                          * 'skip_lead_statuses' is not checked
                                          * Update Lead Status as well
