@@ -4615,7 +4615,7 @@ class AppointmentsController extends Controller
      */
     public function loadEndServiceByBaseService(Request $request)
     {
-dd($request->all());
+
         if ($request->get("service_id")) {
             $services = Appointments::getNodeServices($request->get('service_id'), Auth::User()->account_id, true, true);
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
