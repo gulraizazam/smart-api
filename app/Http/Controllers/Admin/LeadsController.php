@@ -1652,7 +1652,7 @@ class LeadsController extends Controller
 
                 // Read File and dump data
                 $SheetData = $SpreadSheet->getActiveSheet(0)->toArray(null, true, true, true);
-
+dd($SheetData);
                 if (count($SheetData)) {
 
                     if (
