@@ -276,8 +276,9 @@ class ServicesController extends Controller
         $service = Services::findOrFail($id);
 
         if (
-            Services::isChildExists($id, Auth::User()->account_id) &&
-            ($service->parent_id != $request->get('parent_id') || $service->end_node != $request->get('end_node'))
+            Services::isChildExists($id, Auth::User()->account_id) 
+            //&&
+            //($service->parent_id != $request->get('parent_id') || $service->end_node != $request->get('end_node'))
         ) {
             return ApiHelper::apiResponse($this->success, 'Parent Service can not be changed due to one or more services are associated with it.', false);
         }
