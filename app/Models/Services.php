@@ -624,7 +624,8 @@ class Services extends BaseModal
             Appointments::where(['service_id' => $id])->count() ||
             StaffTargetServices::where(['service_id' => $id])->count()
         ) {
-            return false;
+            //return false;
+            return true;
         }
 
         return true;
