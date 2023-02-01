@@ -1992,7 +1992,7 @@ class LeadsController extends Controller
                             /*
                              * Check cases mentioned above
                              */
-                            dd($city_id);
+                           
                             if (array_key_exists($phone, $allLeadsMapping)) {
 
                                 if (Leads::where(array(
@@ -2001,12 +2001,14 @@ class LeadsController extends Controller
                                 ))->count()) {
 
                                     if ($request->get("update_records") != '1') {
+                                        dd("here");
                                         /*
                                          * update_records' is not checked
                                          * Skip this entire record
                                          */
                                         continue;
                                     } else {
+                                        dd("here1");
                                         /*
                                          * update_records' is checked
                                          * update records nows
