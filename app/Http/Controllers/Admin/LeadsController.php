@@ -2046,7 +2046,6 @@ class LeadsController extends Controller
                                             'updated_at' => Carbon::now(),
                                             'account_id' => Auth::User()->account_id,
                                         );
-dd($update_lead);
                                         /*
                                          * 'skip_lead_statuses' is not checked
                                          * Update Lead Status as well
