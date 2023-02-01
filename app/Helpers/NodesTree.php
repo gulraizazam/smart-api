@@ -58,7 +58,7 @@ class NodesTree
             if($only_active) {
                 $where['active'] = 1;
             }
-dd($where);
+
             $group = Services::where($where)->first()->toArray();
 
             $this->id = $group['id'];
