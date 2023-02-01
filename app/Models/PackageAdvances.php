@@ -146,19 +146,11 @@
 			$data['created_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
 			$data['updated_at'] = now();
 			$record = PackageAdvances::where(['id' => $request->package_advances_id,'account_id' => $account_id])->first();
-			// $record = self::where([
-			// 	'id' => $request->package_advances_id,
-			// 	'account_id' => $account_id
-			// ])->first();
-
 			if (!$record) {
 				return null;
 			}
-
 			$record->update($data);
-
 			AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $request->package_advances_id);
-
 			return true;
 		}
 
