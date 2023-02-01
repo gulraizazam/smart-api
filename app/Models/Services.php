@@ -624,10 +624,10 @@ class Services extends BaseModal
             Appointments::where(['service_id' => $id])->count() ||
             StaffTargetServices::where(['service_id' => $id])->count()
         ) {
-            dd("here");
+            
             return true;
         }
-        dd("here1");
+       
         return true;
     }
 
