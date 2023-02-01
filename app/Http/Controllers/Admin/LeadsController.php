@@ -2008,7 +2008,7 @@ class LeadsController extends Controller
                                          */
                                         continue;
                                     } else {
-                                       dd($region_id);
+                                       
                                         /*
                                          * update_records' is checked
                                          * update records nows
