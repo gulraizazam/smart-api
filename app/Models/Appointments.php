@@ -475,7 +475,7 @@ class Appointments extends Model
         $parentGroups->build(($serviceId) ? $serviceId : 0, $account_id, true, true);
         $parentGroups->toList($parentGroups, -1);
         $services = $parentGroups->nodeList;
-
+dd($services);
         $nodeList = array();
 
         if (count($services)) {
