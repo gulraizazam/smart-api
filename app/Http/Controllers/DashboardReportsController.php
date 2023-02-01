@@ -798,7 +798,7 @@ class DashboardReportsController extends Controller
         $total = 0;
         $today = array();
         $colors = array();
-        if (Gate::allows('dashboard_my_revenue_by_service')) {
+        if (Gate::allows('dashboard_appointment_by_status')) {
            $appointment_statuses = AppointmentStatuses::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
