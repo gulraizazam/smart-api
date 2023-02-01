@@ -1919,7 +1919,7 @@ class LeadsController extends Controller
                             $city_id = null;
                             $region_id = null;
                             $city = trim(strtolower($SingleRow['E']));
-                            dd($city);
+                           
                             if ($Cities && $city) {
                                 foreach ($Cities as $CityName => $CityId) {
                                     if ($city == trim(strtolower($CityName))) {
@@ -1992,6 +1992,7 @@ class LeadsController extends Controller
                             /*
                              * Check cases mentioned above
                              */
+                            dd($city_id);
                             if (array_key_exists($phone, $allLeadsMapping)) {
 
                                 if (Leads::where(array(
