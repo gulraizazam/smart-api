@@ -64,7 +64,7 @@
                                 <input name="complimentory" value="1" type="checkbox">&nbsp;<span></span>
                             </label>
                         </div>
-                        <div class="fv-row col-md-12 mt-5" id="service_tax" style="display: none;">
+                        <div class="fv-row col-md-12 mt-5" >
                             <label class="required fw-bold fs-6 mb-2 pl-0">Tax</label>
                             <div class="radio-inline tax-radios">
                                 <label class="radio">
