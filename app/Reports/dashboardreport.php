@@ -72,8 +72,8 @@ class dashboardreport
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
                     ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
+                        ['account_id'=> $account_id],
+                        ['location_id'=> $location_infomation],
                     ])->get();
             }
             $location_single_info = Locations::find($location_infomation);
