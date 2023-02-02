@@ -1109,36 +1109,6 @@
                 }
             });
         }
-        // if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.14) && !my_collection_by_center){
-        //     my_collection_by_center= true; 
-        //     $.ajax({
-        //         url: route('admin.home.myCollectionByCentre'),
-        //         type: "GET",
-        //         data: {'type': '{{request('type')}}'},
-        //         cache: false,
-        //         success: function (response) {
-        //             @if(request('type') == 'today')
-        //                 var pie = response.data.pie.today;
-        //             @endif
-        //             @if(request('type') == 'yesterday')
-        //                 var pie = response.data.pie.yesterday;
-        //             @endif
-        //             @if(request('type') == 'week')
-        //                 var pie = response.data.pie.week;
-        //             @endif
-        //             @if(request('type') == 'month')
-        //                 var pie = response.data.pie.month;
-        //             @endif
-        //             @if(request('type') == '')
-        //                 var pie = response.data.pie.today;
-        //             @endif
-        //             myCollectionCentreChart(pie);
-        //         },
-        //         error: function (xhr, ajaxOptions, thrownError) {
-        //             errorMessage(xhr);
-        //         }
-        //     });
-        // }
         if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.14) && !revenue_by_center){
             revenue_by_center= true; 
             $.ajax({
@@ -1156,22 +1126,6 @@
                 }
             });
         }
-        // if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !my_revenue_by_center){
-        //     my_revenue_by_center= true; 
-        //     $.ajax({
-        //         url: route('admin.home.myRevenueByCentre'),
-        //         type: "GET",
-        //         data: {'type': '{{request('type')}}'},
-        //         cache: false,
-        //         success: function (response) {
-        //             let pie = response.data.pie;
-        //             myRevenueCentreChart(pie);
-        //         },
-        //         error: function (xhr, ajaxOptions, thrownError) {
-        //             errorMessage(xhr);
-        //         }
-        //     });
-        // }
         if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !revenue_by_service){
             revenue_by_service= true; 
             $.ajax({
@@ -1203,37 +1157,6 @@
                 }
             });
         }
-        // if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !my_revenue_by_service){
-        //     my_revenue_by_service= true; 
-        //     $.ajax({
-        //         url: route('admin.home.myRevenueByService'),
-        //         type: "GET",
-        //         data: {'type': '{{request('type')}}'},
-        //         cache: false,
-        //         success: function (response) {
-        //             let colors = response.data.colors;
-        //             @if(request('type') == 'today')
-        //             var pie = response.data.pie.today;
-        //             @endif
-        //             @if(request('type') == 'yesterday')
-        //                 var pie = response.data.pie.yesterday;
-        //             @endif
-        //             @if(request('type') == 'week')
-        //                 var pie = response.data.pie.week;
-        //             @endif
-        //             @if(request('type') == 'month')
-        //                 var pie = response.data.pie.month;
-        //             @endif
-        //             @if(request('type') == '')
-        //                 var pie = response.data.pie.today;
-        //             @endif
-        //             myrevenueByService(pie, colors);
-        //         },
-        //         error: function (xhr, ajaxOptions, thrownError) {
-        //             errorMessage(xhr);
-        //         }
-        //     });
-        // }
         if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !appointment_by_status){
             appointment_by_status= true; 
             $.ajax({
@@ -1266,37 +1189,6 @@
                 }
             });
         }
-        // if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.66) && !my_appointment_by_status){
-        //     my_appointment_by_status= true; 
-        //     $.ajax({
-        //         url: route('admin.dashboard.appointment_by_status'),
-        //         type: "GET",
-        //         data: {'period': '{{request('type')}}',performance:"1"},
-        //         cache: false,
-        //         success: function (response) {
-        //             let colors = response.data.colors;
-        //             @if(request('type') == 'today')
-        //                 var pie = response.data.pie.today;
-        //             @endif
-        //             @if(request('type') == 'yesterday')
-        //                 var pie = response.data.pie.yesterday;
-        //             @endif
-        //             @if(request('type') == 'week')
-        //                 var pie = response.data.pie.week;
-        //             @endif
-        //             @if(request('type') == 'month')
-        //                 var pie = response.data.pie.month;
-        //             @endif
-        //             @if(request('type') == '')
-        //                 var pie = response.data.pie.today;
-        //             @endif
-        //             MyAppointmentByStatus(pie, colors);
-        //         },
-        //         error: function (xhr, ajaxOptions, thrownError) {
-        //             errorMessage(xhr);
-        //         }
-        //     });
-        // }
         if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.66) && !appointment_by_type){
             appointment_by_type= true; 
             $.ajax({
@@ -1328,37 +1220,6 @@
                 }
             });
         }
-        // if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.80) && !my_appointment_by_type){
-        //     my_appointment_by_type= true; 
-        //     $.ajax({
-        //         url: route('admin.dashboard.appointment_by_type'),
-        //         type: "GET",
-        //         data: {'period': '{{request('type')}}',performance:"1"},
-        //         cache: false,
-        //         success: function (response) {
-        //             let colors = response.data.colors;
-        //             @if(request('type') == 'today')
-        //                 var pie = response.data.pie.today;
-        //             @endif
-        //             @if(request('type') == 'yesterday')
-        //                 var pie = response.data.pie.yesterday;
-        //             @endif
-        //             @if(request('type') == 'week')
-        //                 var pie = response.data.pie.week;
-        //             @endif
-        //             @if(request('type') == 'month')
-        //                 var pie = response.data.pie.month;
-        //             @endif
-        //             @if(request('type') == '')
-        //                 var pie = response.data.pie.today;
-        //             @endif
-        //             MyAppointmentByType(pie, colors);
-        //         },
-        //         error: function (xhr, ajaxOptions, thrownError) {
-        //             errorMessage(xhr);
-        //         }
-        //     });
-        // }
     });
     function AppointmentByType(pie,colors) {
         google.load('visualization', '1', {
