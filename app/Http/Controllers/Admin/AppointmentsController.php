@@ -5340,7 +5340,7 @@ class AppointmentsController extends Controller
                 || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
                 return ApiHelper::apiResponse($this->success, 'Appointment has Invoice or has been canceled!', false);
             }
-            $rota = $this->checkRota($appointment, $request);
+            $rota = $this->checkRotaUpdate($appointment, $request);
             if ($rota['status']) {
                 $appointment->update([
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
@@ -5361,6 +5361,27 @@ class AppointmentsController extends Controller
         return ApiHelper::apiResponse($this->success, 'Appointment not found!', false);
     }
     private function checkRota($appointment, $request) {
+       
+        $object = new \stdClass();
+        if ($request->scheduled_date && $request->scheduled_time) {
+            $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
+        } else {
+            $object->start = $request->start;
+        }
+        $object->city_id = $appointment->city_id;
+        $object->doctor_id = $request->doctor_id;
+        $object->location_id = $appointment->location_id;
+        $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
+        if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy') ) {
+            $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
+        } else {
+            $object->machine_id = $appointment->resource_id;
+            $rota = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcalender($object);
+        }
+        return $rota;
+    }
+    private function checkRotaUpdate($appointment, $request) {
+       
         $object = new \stdClass();
         if ($request->scheduled_date && $request->scheduled_time) {
             $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
