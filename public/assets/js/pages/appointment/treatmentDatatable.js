@@ -417,18 +417,12 @@ function actions(data) {
                     actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                             <!--<span class="navi-text">Create Invoice</span>-->\
-                        </a>\
-                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm">\
-                        <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
                 }
 
                 if(data.appointment_type == 1) {
                     actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
-                        </a>\
-                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm">\
-                        <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
                 }
             }
@@ -442,7 +436,7 @@ function actions(data) {
                         </a>';
             }
         }
-        actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm">\
+        actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm ml-2">\
                         <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
