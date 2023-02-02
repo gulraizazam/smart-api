@@ -794,6 +794,7 @@ class DashboardReportsController extends Controller
     }
     public function AppointmentByStatus(Request $request)
     {
+       
         $data = array();
         $total = 0;
         $today = array();
@@ -805,7 +806,8 @@ class DashboardReportsController extends Controller
                 ['parent_id', '=', '0'],
             ])->get();
             if ($request->period == '') {
-                $todayRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->format('Y-m-d'))->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                $todayRecords = Appointments::whereDate('scheduled_date', '=', Carbon::now()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $todayRecords = $todayRecords->where('created_by', Auth::User()->id);
@@ -842,7 +844,9 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='today') {
-                $todayRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->format('Y-m-d'))->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                $todayRecords = Appointments::whereDate('scheduled_date', '=', Carbon::now()->format('Y-m-d'))
+
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $todayRecords = $todayRecords->where('created_by', Auth::User()->id);  
@@ -879,12 +883,9 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='yesterday') {
-                $yesterdayRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                $yesterdayRecords = Appointments::whereDate('scheduled_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $yesterdayRecords = $yesterdayRecords->where('created_by', Auth::User()->id);
-                }
                 $yesterdayRecords = $yesterdayRecords->select('base_appointment_status_id as appointment_status_id', DB::raw("COUNT(id) AS total"))
                 ->groupBy('base_appointment_status_id')
                 ->get();
@@ -919,8 +920,9 @@ class DashboardReportsController extends Controller
 
             }
             if ($request->period=='last7days') {
-                $last7DaysRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                $last7DaysRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $last7DaysRecords = $last7DaysRecords->where('created_by', Auth::User()->id); 
@@ -957,8 +959,9 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='thismonth') {
-                $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                $monthlyRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $monthlyRecords = $monthlyRecords->where('created_by', Auth::User()->id);
@@ -996,8 +999,9 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='lastmonth') {
-                $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                $monthlyRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $monthlyRecords = $monthlyRecords->where('created_by', Auth::User()->id);
