@@ -250,6 +250,8 @@
                 });
                 
              }
+             </script>
+             <script defer>
             $(document).ready(function () {
                 var result = get_query();
                 console.log(result);
@@ -264,13 +266,14 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
+                        $("#consultancy_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
                         $("#consultancy_city_filter").val(result.city_id).change();
-                        $("#consultancy_location_filter").val(result.location_id).change();
-                        $("#consultancy_doctor_filter").val(result.doctor_id);
                         setDashboardFilters();
-                    }, 1000);
+                    }, 1300);
                 }   
             });
+            </script>
+            <script>
             function setDashboardFilters() {
                 let result = get_query();
                 if(result?.type != null ) {
@@ -313,8 +316,6 @@
                             dataType: 'json',
                             success: function (response) {
                                 if (response.status) {
-                                    $("#consultancy_city_filter").val(response.data.city).change();
-                                    $("#treatment_city_filter").val(response.data.city).change();
                                     $("#appoint_search_city").val(response.data.city).change();
                                     setTimeout( function () {
                                         getUserCentre();

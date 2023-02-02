@@ -283,7 +283,12 @@
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="collectionbycenter">
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase" >Collection by Centre</span>
+                                    
+                                    @if(count(\App\Helpers\ACL::getUserCentres())> 1)
+                                        <span class="dashboard-counter text-uppercase" >Collection by Centre</span>
+                                    @else
+                                        <span class="dashboard-counter text-uppercase" >My Centre Collection</span>
+                                    @endif
                                     <ul class="nav nav-tabs d-flex align-items-center">
                                         <li style="border-bottom: none;">
                                             <div class="actions action-style p-3 mr-3">
@@ -429,7 +434,12 @@
                             <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Revenue by Centre</span>
+                                    @if(count(\App\Helpers\ACL::getUserCentres())> 1)
+                                        <span class="dashboard-counter text-uppercase" >Revenue by Centre</span>
+                                    @else
+                                        <span class="dashboard-counter text-uppercase" >My Centre Revenue</span>
+                                    @endif
+                                       
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
@@ -1059,24 +1069,15 @@
            cache: false,
            success: function (response) {
             $('.loader-img').css('display',"none");
-            //    var financelog = Object.keys(response.data.data.finance_log).length;
-            //    var aptlog = Object.keys(response.data.data.appointment_log).length;
-            //    var activitycount = (financelog+aptlog);
-               $("#activitydiv").html(response);
-               
+            $("#activitydiv").html(response);
            },
        });
    });
     var collection_by_center= false; 
-    var my_collection_by_center= false; 
     var revenue_by_center= false;
-    var my_revenue_by_center=false;
     var revenue_by_service=false;
-    var my_revenue_by_service=false;
     var appointment_by_status=false;
-    var my_appointment_by_status=false;
     var appointment_by_type=false;
-    var my_appointment_by_type=false;
     $(window).scroll(function(){
         if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.07) && !collection_by_center){
             collection_by_center= true; 
@@ -1086,78 +1087,29 @@
                 data: {'type': '{{request('type')}}'},
                 cache: false,
                 success: function (response) {
-                    let total = response.data.total;
-                    $(".total-pie-chart").text(total)
                     @if(request('type') == 'today')
-                        $(".pie-income-title").text('Today Income')
                         var pie = response.data.pie.today;
                     @endif
                     @if(request('type') == 'yesterday')
-                    $(".pie-income-title").text('Yesterday Income')
                         var pie = response.data.pie.yesterday;
                     @endif
                     @if(request('type') == 'week')
-                    $(".pie-income-title").text('Weekly Income')
                         var pie = response.data.pie.week;
                     @endif
                     @if(request('type') == 'month')
-                    $(".pie-income-title").text('Monthly Income')
                         var pie = response.data.pie.month;
                     @endif
-
                     @if(request('type') == '')
-                        $(".pie-income-title").text('Today Income')
                         var pie = response.data.pie.today;
                     @endif
-
                     collectionCentreChart(pie);
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
                     errorMessage(xhr);
                 }
             });
-            
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.14) && !my_collection_by_center){
-            my_collection_by_center= true; 
-            $.ajax({
-                url: route('admin.home.myCollectionByCentre'),
-                type: "GET",
-                data: {'type': '{{request('type')}}'},
-                cache: false,
-                success: function (response) {
-                    let total = response.data.total;
-                    $(".my-total-collection-center").text(total)
-                    @if(request('type') == 'today')
-                        $(".my-collection-title").text('Today Income')
-                        var pie = response.data.pie.today;
-                    @endif
-                    @if(request('type') == 'yesterday')
-                        $(".my-collection-title").text('Yesterday Income')
-                        var pie = response.data.pie.yesterday;
-                    @endif
-                    @if(request('type') == 'week')
-                        $(".my-collection-title").text('Weekly Income')
-                        var pie = response.data.pie.week;
-                    @endif
-                    @if(request('type') == 'month')
-                        $(".my-collection-title").text('Monthly Income')
-                        var pie = response.data.pie.month;
-                    @endif
-
-                    @if(request('type') == '')
-                        $(".my-collection-title").text('Today Income')
-                        var pie = response.data.pie.today;
-                    @endif
-
-                    myCollectionCentreChart(pie);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
-        }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.23) && !revenue_by_center){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.14) && !revenue_by_center){
             revenue_by_center= true; 
             $.ajax({
                 url: route('admin.home.revenueByCentre'),
@@ -1165,25 +1117,8 @@
                 data: {'type': '{{request('type')}}'},
                 cache: false,
                 success: function (response) {
-
-                    let total = response.data.total;
+                    console.log(response);
                     let pie = response.data.pie;
-                    //$(".total-centre").text(total)
-                    @if(request('type') == 'today')
-                        $(".revenue-centre-title").text('Today Income')
-                    @endif
-                    @if(request('type') == 'yesterday')
-                        $(".revenue-centre-title").text('Yesterday Income')
-
-                    @endif
-                    @if(request('type') == 'week')
-                        $(".revenue-centre-title").text('Weekly Income')
-
-                    @endif
-                    @if(request('type') == 'month')
-                        $(".revenue-centre-title").text('Monthly Income')
-                    @endif
-
                     revenueCentreChart(pie);
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
@@ -1191,43 +1126,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !my_revenue_by_center){
-            my_revenue_by_center= true; 
-            $.ajax({
-                url: route('admin.home.myRevenueByCentre'),
-                type: "GET",
-                data: {'type': '{{request('type')}}'},
-                cache: false,
-                success: function (response) {
-
-                    //let total = response.data.total;
-                    let pie = response.data.pie;
-                    //$(".total-my-revenue-centre").text(total)
-                    @if(request('type') == 'today')
-                        $(".my-revenue-centre-title").text('Today Income')
-                    @endif
-                    @if(request('type') == 'yesterday')
-                        $(".my-revenue-centre-title").text('Yesterday Income')
-
-                    @endif
-                    @if(request('type') == 'week')
-                        $(".my-revenue-centre-title").text('Weekly Income')
-
-                    @endif
-                    @if(request('type') == 'month')
-                        $(".my-revenue-centre-title").text('Monthly Income')
-                    @endif
-                    @if(request('type') == '')
-                        $(".my-revenue-centre-title").text('Today Revenue')
-                    @endif
-                    myRevenueCentreChart(pie);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
-        }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.41) && !revenue_by_service){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !revenue_by_service){
             revenue_by_service= true; 
             $.ajax({
                 url: route('admin.home.revenueByService'),
@@ -1235,32 +1134,22 @@
                 data: {'type': '{{request('type')}}'},
                 cache: false,
                 success: function (response) {
-
                     let colors = response.data.colors;
-                    let total = response.data.total;
-                    $(".total-service").text(total)
                     @if(request('type') == 'today')
-                        $(".service-title").text('Today Income')
-                    var pie = response.data.pie.today;
+                       var pie = response.data.pie.today;
                     @endif
                     @if(request('type') == 'yesterday')
-                        $(".service-title").text('Yesterday Income')
                         var pie = response.data.pie.yesterday;
                     @endif
                     @if(request('type') == 'week')
-                        $(".service-title").text('Weekly Income')
                         var pie = response.data.pie.week;
                     @endif
                     @if(request('type') == 'month')
-                        $(".service-title").text('Monthly Income')
                         var pie = response.data.pie.month;
                     @endif
-
                     @if(request('type') == '')
-                        $(".service-title").text('Today Income')
                         var pie = response.data.pie.today;
                     @endif
-
                     revenueByService(pie, colors);
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
@@ -1268,50 +1157,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !my_revenue_by_service){
-            my_revenue_by_service= true; 
-            $.ajax({
-                url: route('admin.home.myRevenueByService'),
-                type: "GET",
-                data: {'type': '{{request('type')}}'},
-                cache: false,
-                success: function (response) {
-
-                    let colors = response.data.colors;
-                    let total = response.data.total;
-                    $(".total-my-service").text(total)
-                    @if(request('type') == 'today')
-                        $(".my-service-title").text('Today Income')
-                    var pie = response.data.pie.today;
-                    @endif
-                    @if(request('type') == 'yesterday')
-                        $(".my-service-title").text('Yesterday Income')
-                        var pie = response.data.pie.yesterday;
-                    @endif
-                    @if(request('type') == 'week')
-                        $(".my-service-title").text('Weekly Income')
-                        var pie = response.data.pie.week;
-                    @endif
-                    @if(request('type') == 'month')
-                        $(".my-service-title").text('Monthly Income')
-                        var pie = response.data.pie.month;
-                    @endif
-
-                    @if(request('type') == '')
-                        $(".my-service-title").text('Today Income')
-                        var pie = response.data.pie.today;
-                    @endif
-
-                    myrevenueByService(pie, colors);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
-        }
-        
-        
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.58) && !appointment_by_status){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !appointment_by_status){
             appointment_by_status= true; 
             $.ajax({
                 url: route('admin.dashboard.appointment_by_status'),
@@ -1319,30 +1165,23 @@
                 data: {'period': '{{request('type')}}'},
                 cache: false,
                 success: function (response) {
-
+                    
                     let colors = response.data.colors;
                     @if(request('type') == 'today')
-                        
                         var pie = response.data.pie.today;
                     @endif
                     @if(request('type') == 'yesterday')
-                    
                         var pie = response.data.pie.yesterday;
                     @endif
                     @if(request('type') == 'week')
-                        
                         var pie = response.data.pie.week;
                     @endif
                     @if(request('type') == 'month')
-                    
                         var pie = response.data.pie.month;
                     @endif
-
                     @if(request('type') == '')
-                        
                         var pie = response.data.pie.today;
                     @endif
-
                     AppointmentByStatus(pie, colors);
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
@@ -1350,46 +1189,7 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.66) && !my_appointment_by_status){
-            my_appointment_by_status= true; 
-            $.ajax({
-                url: route('admin.dashboard.appointment_by_status'),
-                type: "GET",
-                data: {'period': '{{request('type')}}',performance:"1"},
-                cache: false,
-                success: function (response) {
-
-                    let colors = response.data.colors;
-                    @if(request('type') == 'today')
-                        
-                        var pie = response.data.pie.today;
-                    @endif
-                    @if(request('type') == 'yesterday')
-                    
-                        var pie = response.data.pie.yesterday;
-                    @endif
-                    @if(request('type') == 'week')
-                        
-                        var pie = response.data.pie.week;
-                    @endif
-                    @if(request('type') == 'month')
-                    
-                        var pie = response.data.pie.month;
-                    @endif
-
-                    @if(request('type') == '')
-                        
-                        var pie = response.data.pie.today;
-                    @endif
-
-                    MyAppointmentByStatus(pie, colors);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
-        }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.73) && !appointment_by_type){
+        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.66) && !appointment_by_type){
             appointment_by_type= true; 
             $.ajax({
                 url: route('admin.dashboard.appointment_by_type'),
@@ -1397,30 +1197,22 @@
                 data: {'period': '{{request('type')}}'},
                 cache: false,
                 success: function (response) {
-
                     let colors = response.data.colors;
                     @if(request('type') == 'today')
-                        
                         var pie = response.data.pie.today;
                     @endif
                     @if(request('type') == 'yesterday')
-                    
                         var pie = response.data.pie.yesterday;
                     @endif
                     @if(request('type') == 'week')
-                        
                         var pie = response.data.pie.week;
                     @endif
                     @if(request('type') == 'month')
-                    
                         var pie = response.data.pie.month;
                     @endif
-
                     @if(request('type') == '')
-                        
                         var pie = response.data.pie.today;
                     @endif
-
                     AppointmentByType(pie, colors);
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
@@ -1428,263 +1220,151 @@
                 }
             });
         }
-        if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.80) && !my_appointment_by_type){
-            my_appointment_by_type= true; 
-            $.ajax({
-                url: route('admin.dashboard.appointment_by_type'),
-                type: "GET",
-                data: {'period': '{{request('type')}}',performance:"1"},
-                cache: false,
-                success: function (response) {
-
-                    let colors = response.data.colors;
-                    @if(request('type') == 'today')
-                        
-                        var pie = response.data.pie.today;
-                    @endif
-                    @if(request('type') == 'yesterday')
-                    
-                        var pie = response.data.pie.yesterday;
-                    @endif
-                    @if(request('type') == 'week')
-                        
-                        var pie = response.data.pie.week;
-                    @endif
-                    @if(request('type') == 'month')
-                    
-                        var pie = response.data.pie.month;
-                    @endif
-
-                    @if(request('type') == '')
-                        
-                        var pie = response.data.pie.today;
-                    @endif
-
-                    MyAppointmentByType(pie, colors);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
-        }
     });
-    
-    
-    
     function AppointmentByType(pie,colors) {
-
         google.load('visualization', '1', {
             packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
-
         var options = {
             colors: colors
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('appointment_type_today'));
             chart.draw(data, options);
         });
-
         if (pie.length > 1) {
             $("#appointment_type_today").css("height", "500px");
         }
     }
     function MyAppointmentByType(pie,colors) {
-
         google.load('visualization', '1', {
             packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
-
         var options = {
             colors: colors
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('my_appointment_type_today'));
             chart.draw(data, options);
         });
-
         if (pie.length > 1) {
             $("#my_appointment_type_today").css("height", "500px");
         }
     }
     function MyAppointmentByStatus(pie,colors) {
-
         google.load('visualization', '1', {
             packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
-
         var options = {
             colors: colors
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('my_appointment_status_today'));
             chart.draw(data, options);
         });
-
         if (pie.length > 1) {
             $("#my_appointment_status_today").css("height", "500px");
         }
     }
-    /*Collection by cneter*/
     function collectionCentreChart(pie) {
-
         google.load('visualization', '1', {
             packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
-
         var options = {
             colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('collection-by-centre'));
             chart.draw(data, options);
         });
-
         if (pie.length > 1) {
             $("#collection-by-centre").css("height", "500px");
         }
     }
-
-    /*My Collection by cneter*/
     function myCollectionCentreChart(pie) {
-
         google.load('visualization', '1', {
             packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
-
         var options = {
-         
             colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('my-collection-by-centre'));
             chart.draw(data, options);
         });
-
         if (pie.length > 1) {
             $("#my-collection-by-centre").css("height", "500px");
         }
     }
-
-    /*revenue pie chart*/
     function revenueCentreChart(centerRevenue) {
-
         google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(centerRevenue);
-
         var options = {
-         
             colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('revenue-centre'));
             chart.draw(data, options);
         });
-
         if (centerRevenue.length > 1) {
             $("#revenue-centre").css("height", "500px");
         }
-
     }
-
-    /*my revenue pie chart*/
     function myRevenueCentreChart(centerRevenue) {
-
         google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(centerRevenue);
-
         var options = {
             colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('my-revenue-centre'));
             chart.draw(data, options);
         });
-
         if (centerRevenue.length > 1) {
             $("#my-revenue-centre").css("height", "500px");
         }
-
     }
-
-    /*Appointments*/
     function revenueByService(service, colors) {
-
         google.load('visualization', '1', {
             packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(service);
-
         var options = {
             colors: colors
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('revenue-service'));
             chart.draw(data, options);
         });
-
         if (typeof service !== 'undefined' && service.length > 1) {
             $("#revenue-service").css("height", "500px");
         }
     }
-
     function myrevenueByService(service, colors) {
-
         google.load('visualization', '1', {
             packages: ['corechart', 'bar', 'line']
         });
-
         google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(service);
-
         var options = {
-            // title: 'My Revenue',
             colors: colors
         };
-
         var chart = new google.visualization.PieChart(document.getElementById('my-revenue-service'));
             chart.draw(data, options);
         });
-
         if (typeof service !== 'undefined' && service.length > 1) {
             $("#my-revenue-service").css("height", "500px");
         }
     }
-
 </script>
 @endpush
 
