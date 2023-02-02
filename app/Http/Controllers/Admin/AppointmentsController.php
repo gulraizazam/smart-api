@@ -2949,6 +2949,7 @@ class AppointmentsController extends Controller
 
     public function loadLocationsByCity(Request $request)
     {
+      
         try {
             if ($request->get("city_id")) {
                 if ($request->get("machine_type_allocation")) {
@@ -2981,8 +2982,11 @@ class AppointmentsController extends Controller
                     'dropdown' => $locations
                 ]);
             }
-            return ApiHelper::apiResponse($this->success, 'No Record found', false, [
-                'dropdown' => null
+            $assigned_locations = ACL::getUserCentres();
+            $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
+            
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'dropdown' =>$locations->pluck("name", "id")
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -3259,19 +3263,24 @@ class AppointmentsController extends Controller
 
     public function getScheduledAppointments(Request $request)
     {
+        
         if (
-            $request->get("city_id") &&
-            $request->get("location_id") &&
-            $request->get("doctor_id")
+            //$request->get("city_id") &&
+            $request->get("location_id") 
+            //$request->get("doctor_id")
         ) {
             $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-            $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
+            if($request->get("doctor_id")){
+                $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
+            }
+            
             $location_id = $request->get("location_id");
             $doctor_id = $request->get("doctor_id");
             $machine_id = $request->get("machine_id");
             $start = $request->get("start");
             $end = $request->get("end");
             $minTime = Resources::getMinTimeWithDr($location_id, $doctor_id, $start, $end);
+           
             if ($appointments) {
                 $data = array();
                 foreach ($appointments as $appointment) {
@@ -3295,9 +3304,9 @@ class AppointmentsController extends Controller
                     'status' => 1,
                     'events' => $data,
                     'min_time' => $minTime,
-                    "rotas" => $doctor_rotas->toArray(),
-                    'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
-                    'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
+                    "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
+                    'start_time' => '09:00',
+                    'end_time' => '11:00',
                 ));
             } else {
                 return response()->json(array(
