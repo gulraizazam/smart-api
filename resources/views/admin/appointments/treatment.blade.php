@@ -167,7 +167,7 @@
     {{--All forms popups--}}
     @include('admin.appointments.appointment-forms.modals')
     @push('js')
-        <script>
+        <script defer>
             $(document).ready(function () {
                 var result = get_query();
                 console.log(result);
@@ -183,10 +183,11 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
-                        $("#treatment_city_filter").val(result.city_id).change().select2();
-                        $("#treatment_location_filter").val(result.location_id).change().select2();
+                        console.log('result.city_id', result.city_id);
+                        $("#treatment_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
+                        $("#treatment_city_filter").val(result.city_id).change();
                         setDashboardFilters();
-                    }, 1000);
+                    }, 1300);
                 }
             });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
@@ -202,6 +203,8 @@
                     $this.attr('href', route('admin.appointments.export', [limit, offset]));
                 },1000);
             }
+        </script>
+        <script>
             function SetFromdate(){
                 $("#filter_date_from").val($("#treatment_search_start").val());
             }
