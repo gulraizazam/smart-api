@@ -105,11 +105,8 @@ var ConsultancyCalendar = function() {
                     $('.appointment-loader-base').show();
                     start_date = event.start;
 
-                    if ($('#consultancy_city_filter').val() !== null
-                        && $('#consultancy_location_filter').val() !== null
-                        && $('#consultancy_doctor_filter').val() !== null
+                    if ($('#consultancy_doctor_filter').val() !== null
                     ) {
-
                         $.ajax({
                             headers: {
                                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -117,15 +114,15 @@ var ConsultancyCalendar = function() {
                             url: route('admin.appointments.load_scheduled_appointments'),
                             type: 'GET',
                             data: {
-                                city_id: $('#consultancy_city_filter').val(),
-                                location_id: $('#consultancy_location_filter').val(),
+                                // city_id: $('#consultancy_city_filter').val(),
+                                 location_id: $('#consultancy_location_filter').val(),
                                 doctor_id: $('#consultancy_doctor_filter').val(),
                                 start: formatDate(event.start, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(event.end, 'YYYY-MM-DDTHH:mm:ss'),
                             },
                             cache: false,
                             success: async function (response) {
-
+console.log(response);
                                 minxTime = response.start_time;
                                 maxTime = response.end_time;
 

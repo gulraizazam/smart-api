@@ -372,6 +372,7 @@ class Appointments extends Model
      */
     static function getScheduledAppointments(Request $request, $appointment_type_id = false, $account_id, $skip_doctor = false)
     {
+       
         $where = array();
         $where[] = ['account_id', '=', $account_id];
 
