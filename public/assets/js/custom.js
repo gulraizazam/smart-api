@@ -765,7 +765,7 @@ function phoneField($this) {
    return $this.value = $this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 }
 
-function formatDate(date, format = 'ddd MMM, DD yyyy HH:mm A') {
+function formatDate(date, format = 'ddd MMM, DD yyyy hh:mm A') {
     return moment(date).format(format);
 }
 
@@ -847,7 +847,6 @@ function get_query(){
     }
     return result;
 }
-
 function patientSearch(search_id = 'patient_id',flag=1) {
     $("." + search_id).on("input",function() {
         $(".suggestion-list").html('<li>Searching...</li>');

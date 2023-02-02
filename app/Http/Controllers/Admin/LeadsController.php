@@ -1919,6 +1919,7 @@ class LeadsController extends Controller
                             $city_id = null;
                             $region_id = null;
                             $city = trim(strtolower($SingleRow['E']));
+                           
                             if ($Cities && $city) {
                                 foreach ($Cities as $CityName => $CityId) {
                                     if ($city == trim(strtolower($CityName))) {
@@ -1991,6 +1992,7 @@ class LeadsController extends Controller
                             /*
                              * Check cases mentioned above
                              */
+                           
                             if (array_key_exists($phone, $allLeadsMapping)) {
 
                                 if (Leads::where(array(
@@ -1999,12 +2001,14 @@ class LeadsController extends Controller
                                 ))->count()) {
 
                                     if ($request->get("update_records") != '1') {
+                                        
                                         /*
                                          * update_records' is not checked
                                          * Skip this entire record
                                          */
                                         continue;
                                     } else {
+                                       
                                         /*
                                          * update_records' is checked
                                          * update records nows
@@ -2042,7 +2046,6 @@ class LeadsController extends Controller
                                             'updated_at' => Carbon::now(),
                                             'account_id' => Auth::User()->account_id,
                                         );
-
                                         /*
                                          * 'skip_lead_statuses' is not checked
                                          * Update Lead Status as well

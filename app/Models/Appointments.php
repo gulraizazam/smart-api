@@ -470,6 +470,7 @@ class Appointments extends Model
         /*
          * That function use Appointment Report (Appointment by status) and Treatment Management
          */
+        
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
         $parentGroups->build(($serviceId) ? $serviceId : 0, $account_id, true, true);

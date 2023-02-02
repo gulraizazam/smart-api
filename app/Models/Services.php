@@ -317,25 +317,20 @@ class Services extends BaseModal
     {
 
         $data = $request->all();
-
-        // Set Account ID
+        $data['duration'] =  $data['duration'] ?? '00:00';
+        $data['price'] =  $data['price'] ?? '0.0';
         $data['account_id'] = $account_id;
-
         if (!isset($data['end_node']) || !$data['end_node']) {
             $data['end_node'] = 0;
         }
-
         $record = self::create($data);
-
         $record->update(['sort_no' => $record->id]);
-
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
         // Create Package as well
         $bundle = Bundles::create(array(
             'name' => $record->name,
-            'price' => $record->price,
-            'services_price' => $record->price,
+            'price' => $record->price ?? 0.0,
+            'services_price' => $record->price ?? 0.0,
             'type' => 'single',
             'total_services' => 1,
             'account_id' => 1,
@@ -344,20 +339,19 @@ class Services extends BaseModal
         BundleHasServices::create(array(
             'bundle_id' => $bundle->id,
             'service_id' => $record->id,
-            'service_price' => $record->price,
-            'calculated_price' => $record->price,
+            'service_price' => $record->price ?? 0.0,
+            'calculated_price' => $record->price ?? 0.0,
             'end_node' => $record->end_node,
         ));
         BundleServicesPriceHistory::createRecord(array(
             'bundle_id' => $bundle->id,
-            'bundle_price' => $record->price,
+            'bundle_price' => $record->price ?? 0.0,
             'service_id' => $record->id,
-            'service_price' => $record->price,
+            'service_price' => $record->price ?? 0.0,
             'effective_from' => Carbon::now()->format('Y-m-d'),
             'created_by' => Auth::User()->id,
             'updated_by' => Auth::User()->id,
         ), $account_id);
-
         return $record;
     }
 
