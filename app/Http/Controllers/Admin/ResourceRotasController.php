@@ -590,7 +590,7 @@ class ResourceRotasController extends Controller
                 return ApiHelper::apiResponse($this->success, $response['message']);
             }
 
-            return ApiHelper::apiResponse($this->success, $response['message'], false);
+            return ApiHelper::apiResponse($this->error, $response['message'], false);
 
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
