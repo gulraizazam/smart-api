@@ -220,12 +220,7 @@
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="collectionbycenter">
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    
-                                    @if(count(\App\Helpers\ACL::getUserCentres())> 1)
-                                        <span class="dashboard-counter text-uppercase" >Collection by Centre</span>
-                                    @else
-                                        <span class="dashboard-counter text-uppercase" >My Centre Collection</span>
-                                    @endif
+                                    <span class="dashboard-counter text-uppercase" >Collection by Centre</span>
                                     <ul class="nav nav-tabs d-flex align-items-center">
                                         <li style="border-bottom: none;">
                                             <div class="actions action-style p-3 mr-3">
