@@ -627,7 +627,7 @@ class Services extends BaseModal
             return false;
         }
 
-        return true;
+        return false;
     }
 
     /**
