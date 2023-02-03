@@ -46,7 +46,7 @@ var table_columns = [
             return roles;
         }
     }, {
-        field: 'status',
+        field: 'active',
         title: 'status',
         width: 60,
         template: function (data) {
@@ -54,7 +54,7 @@ var table_columns = [
             return statuses(data, status_url);
         }
     },{
-        field: 'created',
+        field: 'created_at',
         title: 'Created At',
         width: 'auto',
     },  {
@@ -448,7 +448,6 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
     let genders = filter_values.gender_array;
     let roles = filter_values.roles;
     let status = filter_values.status;
