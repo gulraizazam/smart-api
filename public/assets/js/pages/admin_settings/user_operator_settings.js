@@ -84,7 +84,7 @@ function editRow(id, modal) {
                 $('#modal_user_operator_settings_form').attr('action', route('admin.user_operator_settings.update', response.data.id));
                 $('#form_url').val(response.data.url);
                 $('#form_username').val(response.data.username);
-                $('#form_password').val(response.data.password);
+                $('#form_password').val('********');
                 $('#form_mask').val(response.data.mask);
                 $('#form_test_mode').val(response.data.test_mode);
                 $('#form_string_1').val(response.data.string_1);

@@ -1,4 +1,4 @@
-function initCollectionByCentre(today, yesterday, last7days, thismonth,lastmonth) {
+function initCollectionByCentre(today, yesterday, last7days,week, thismonth,lastmonth) {
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -9,11 +9,13 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth,lastmonth
             'today': today,
             'yesterday': yesterday,
             'last7days': last7days,
+            'week': week,
             'thismonth': thismonth,
             'lastmonth': lastmonth,
         },
         cache: false,
         success: function (response) {
+           
             if (today != '') {
                 var pie = response.data.pie.today;
                 let total = response.data.total;
@@ -30,6 +32,12 @@ function initCollectionByCentre(today, yesterday, last7days, thismonth,lastmonth
             if (last7days != '') {
                 $(".pie-income-title").text('Weekly Income');
                 var pie = response.data.pie.last7days;
+                let total = response.data.total;
+                $(".total-pie-chart").text(total);  
+            }
+            if (week != '') {
+                $(".pie-income-title").text('Weekly Income');
+                var pie = response.data.pie.week;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);  
             }
@@ -104,6 +112,12 @@ function initRevenueByCentre(period) {
                 $(".total-centre").text(total);
                 var pie = response.data.pie;
             }
+            if(period=="week"){
+                let total = response.data.total;
+                $(".revenue-centre-title").text('Weekly Income');
+                $(".total-centre").text(total);
+                var pie = response.data.pie;
+            }
             if(period=="thismonth"){
                 $(".revenue-centre-title").text('Monthly Income');
                 let total = response.data.total;
@@ -144,7 +158,7 @@ function revenueCentreChart(pie) {
     }
 
 }
-function initRevenueByService(today, yesterday, last7days, thismonth,lastmonth) {
+function initRevenueByService(today, yesterday, last7days,week, thismonth,lastmonth) {
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -156,10 +170,12 @@ function initRevenueByService(today, yesterday, last7days, thismonth,lastmonth) 
             'today': today,
             'yesterday': yesterday,
             'last7days': last7days,
+            'week': week,
             'thismonth': thismonth,
             'lastmonth': lastmonth,
         },
         success: function (response) {
+            console.log(response);
             let colors = response.data.colors;
             if (today != '') {
                 $(".service-title").text('Today Income');
@@ -174,6 +190,12 @@ function initRevenueByService(today, yesterday, last7days, thismonth,lastmonth) 
                 var pie = response.data.pie.yesterday;
             }
             if (last7days != '') {
+                $(".service-title").text('Weekly Income');
+                let total = response.data.total;
+                $(".total-service").text(total);
+                var pie = response.data.pie.last7days;
+            }
+            if (week != '') {
                 $(".service-title").text('Weekly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
@@ -337,7 +359,7 @@ function initConsultancyByStatus( period,type) {
         data:{ 'period':period,'type':type },
         cache: false,
         success: function (response) {
-            console.log(response);
+            
             let colors = response.data.colors;
         if(period=="today"){
             var pie = response.data.pie.today;
@@ -347,6 +369,9 @@ function initConsultancyByStatus( period,type) {
         }   
         if(period=="last7days"){
             var pie = response.data.pie.last7days;
+        }
+        if(period=="week"){
+            var pie = response.data.pie.week;
         }
         if(period=="thismonth"){
             var pie = response.data.pie.thismonth;
@@ -379,6 +404,9 @@ function initTreatmentByStatus( period,type) {
         }   
         if(period=="last7days"){
             var pie = response.data.pie.last7days;
+        }
+        if(period=="week"){
+            var pie = response.data.pie.week;
         }
         if(period=="thismonth"){
             var pie = response.data.pie.thismonth;
