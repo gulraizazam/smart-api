@@ -113,6 +113,7 @@
                                         <select class="form-control" name="type" onchange="changeDate();" id="recordfilter">
                                             <option value="today"  {{request('type') == 'today' ? 'selected' : ''}}>Today</option>
                                             <option value="yesterday" {{request('type') == 'yesterday' ? 'selected' : ''}}>Yesterday</option>
+                                            <option value="last7days" {{request('type') == 'last7days' ? 'selected' : ''}}>Last 7 Days</option>
                                             <option value="week" {{request('type') == 'week' ? 'selected' : ''}}>This Week</option>
                                             <option value="month" {{request('type') == 'month' ? 'selected' : ''}}>This Month</option>
                                             <option value="lastmonth" {{request('type') == 'lastmonth' ? 'selected' : ''}}>Last Month</option>
@@ -245,6 +246,10 @@
                                                         </li>
                                                         <li>
                                                             <a href="#"
+                                                            target="_blank">This Week</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="#"
                                                             target="_blank">This Month</a>
                                                         </li>
                                                         <li>
@@ -257,23 +262,27 @@
                                         </li>
                                         <li >
                                             <a class="active" href="#location_collection_1" data-toggle="tab"
-                                            onclick="initCollectionByCentre('today', '', '', '','');">Today</a>
+                                            onclick="initCollectionByCentre('today', '', '','','','');">Today</a>
                                         </li>
                                         <li>
                                             <a href="#location_collection_2" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', 'yesterday', '', '','');">Yesterday</a>
+                                            onclick="initCollectionByCentre('', 'yesterday', '','','','');">Yesterday</a>
                                         </li>
                                         <li>
                                             <a href="#location_collection_3" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '', 'last7days', '','');">Last 7 Days</a>
+                                            onclick="initCollectionByCentre('', '', 'last7days','', '','');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_collection_3" data-toggle="tab"
+                                            onclick="initCollectionByCentre('', '','', 'week', '','');">This Week</a>
                                         </li>
                                         <li>
                                             <a href="#location_collection_4" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '', '', 'thismonth','');">This Month</a>
+                                            onclick="initCollectionByCentre('', '', '','', 'thismonth','');">This Month</a>
                                         </li>
                                         <li>
                                             <a href="#location_collection_4" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '', '','', 'lastmonth');">Last Month</a>
+                                            onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last Month</a>
                                         </li>
                                     </ul>
                                     <div class=" flex-column text-right d-none">
@@ -316,6 +325,10 @@
                                                         </li>
                                                         <li>
                                                             <a href=""
+                                                            target="_blank">This Week</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
                                                             target="_blank">This Month</a>
                                                         </li>
                                                         <li>
@@ -337,6 +350,10 @@
                                         <li>
                                             <a href="#location_revenue_2" data-toggle="tab"
                                             onclick="initRevenueByCentre('last7days');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#location_revenue_2" data-toggle="tab"
+                                            onclick="initRevenueByCentre('week');">This Week</a>
                                         </li>
                                         <li>
                                             <a href="#location_revenue_3" data-toggle="tab"
@@ -387,6 +404,10 @@
                                                         </li>
                                                         <li>
                                                             <a href=""
+                                                            target="_blank">This Week</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
                                                             target="_blank">This Month</a>
                                                         </li>
                                                         <li>
@@ -399,23 +420,27 @@
                                         </li>
                                         <li >
                                             <a class="active" href="#service_revenue_4" data-toggle="tab"
-                                            onclick="initRevenueByService('today', '', '', '','');">Today</a>
+                                            onclick="initRevenueByService('today', '', '','','','');">Today</a>
                                         </li>
                                         <li>
                                             <a href="#service_revenue_1" data-toggle="tab"
-                                            onclick="initRevenueByService('', 'yesterday', '', '','');">Yesterday</a>
+                                            onclick="initRevenueByService('', 'yesterday', '','', '','');">Yesterday</a>
                                         </li>
                                         <li>
                                             <a href="#service_revenue_2" data-toggle="tab"
-                                            onclick="initRevenueByService('', '', 'last7days', '','');">Last 7 Days</a>
+                                            onclick="initRevenueByService('', '', 'last7days','', '','');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#service_revenue_2" data-toggle="tab"
+                                            onclick="initRevenueByService('', '', '','week', '','');">This Week</a>
                                         </li>
                                         <li>
                                             <a href="#service_revenue_3" data-toggle="tab"
-                                            onclick="initRevenueByService('', '', '', 'thismonth','');">This Month</a>
+                                            onclick="initRevenueByService('', '', '','', 'thismonth','');">This Month</a>
                                         </li>
                                         <li>
                                             <a href="#service_revenue_3" data-toggle="tab"
-                                            onclick="initRevenueByService('', '', '','', 'lastmonth');">Last Month</a>
+                                            onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last Month</a>
                                         </li>
                                     </ul>
                                     <div class="d-none flex-column text-right">
@@ -458,6 +483,10 @@
                                                         </li>
                                                         <li>
                                                             <a href=""
+                                                            target="_blank">This Week</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
                                                             target="_blank">This Month</a>
                                                         </li>
                                                         <li>
@@ -481,6 +510,10 @@
                                             onclick="initConsultancyByStatus('last7days','1');">Last 7 Days</a>
                                         </li>
                                         <li>
+                                            <a href="#appointment_by_status_2" data-toggle="tab"
+                                            onclick="initConsultancyByStatus('week','1');">This Week</a>
+                                        </li>
+                                        <li>
                                             <a href="#appointment_by_status_3" data-toggle="tab"
                                             onclick="initConsultancyByStatus('thismonth','1');">This Month</a>
                                         </li>
@@ -499,7 +532,7 @@
                         </div>
                     </div>
                     @endif
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
                     <div class="col-lg-12 col-xxl-12">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
@@ -529,6 +562,10 @@
                                                         </li>
                                                         <li>
                                                             <a href=""
+                                                            target="_blank">This Week</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
                                                             target="_blank">This Month</a>
                                                         </li>
                                                         <li>
@@ -550,6 +587,10 @@
                                         <li>
                                             <a href="#appointment_by_status_2" data-toggle="tab"
                                             onclick="initTreatmentByStatus('last7days','2');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_2" data-toggle="tab"
+                                            onclick="initTreatmentByStatus('week','2');">This Week</a>
                                         </li>
                                         <li>
                                             <a href="#appointment_by_status_3" data-toggle="tab"
