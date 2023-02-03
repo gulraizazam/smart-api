@@ -73,7 +73,7 @@ class dashboardreport
                     ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where([
                         ['account_id'=> $account_id],
-                        ['location_id'=> $location_infomation],
+                        ['location_id'=> $location_infomation ],
                     ])->get();
             }
             $location_single_info = Locations::find($location_infomation);
