@@ -357,12 +357,12 @@ class RolesController extends Controller
             'my_revenue_by_centre' => 'My Revenue by Centre',
             'revenue_by_service' => 'Revenue by Service',
             'my_revenue_by_service' => 'My Revenue by Service',
-            'states' => 'States',
+            'states' => 'Stats',
             'recent_activities' => 'Recent Activities',
             'upcomings' => 'Upcomings',
             'my_appointment_by_type' => 'My Appointments by Type',
-            'appointment_by_type' => 'Appointments by Type',
-            'appointment_by_status' => 'Appointments by Status',
+            'appointment_by_type' => 'Treatment by Status',
+            'appointment_by_status' => 'Consultancy by Status',
             'my_appointment_by_status' => 'My Appointments by Status',
         );
     }
