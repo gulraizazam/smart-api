@@ -380,6 +380,7 @@ class HomeController extends Controller
         return ApiHelper::apiDataTable($records);
     }
     private function collection_by_center(Request $request, $data){
+        
         $data['collection'] = 0;
 
         if (!Gate::allows('dashboard_states')) {
@@ -403,8 +404,13 @@ class HomeController extends Controller
                 list($total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'yesterday', $request);
                     $data['todaycollection'][] = $total;
             break;
+            case 'last7days':
+                
+                list($total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'last7days', $request);
+                    $data['todaycollection'][] = $total;
+            break;
             case 'week':
-                list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'last7day', $request);
+                list( $total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'week', $request);
                     $data['todaycollection'][] = $total;
             break;
             case 'month':
@@ -1187,7 +1193,10 @@ class HomeController extends Controller
                 $start_date = Carbon::now()->subDay(1)->format('Y-m-d');
                 $end_date = Carbon::now()->subDay(1)->format('Y-m-d');
                 break;
-
+            case 'last7days':
+                $start_date = Carbon::now()->subDay(6)->format('Y-m-d');
+                $end_date = Carbon::now()->format('Y-m-d');
+                break;
             case 'week':
                 $start_date = Carbon::now()->startOfWeek()->format('Y-m-d');
                 $end_date = Carbon::now()->endOfWeek()->format('Y-m-d');
@@ -1220,25 +1229,18 @@ class HomeController extends Controller
     private function consultancies($data, $start_date, $end_date) {
 
         if (!Gate::allows('dashboard_states')) {
-           
             $data['all_consultancies'] = null;
             $data['done_consultancies'] = null;
-
             return $data;
         }
-
         $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->whereIn('location_id', ACL::getUserCentres());
-
         $data['all_consultancies'] = $query->count();
-
         $query->where('appointment_status_id', config('constants.appointment_status_arrived'));
         $data['done_consultancies'] = $query->count();
-
         return $data;
     }
-
     private function treatments($data, $start_date, $end_date) {
 
         if (!Gate::allows('dashboard_states')) {
