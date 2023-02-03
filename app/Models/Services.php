@@ -526,8 +526,9 @@ class Services extends BaseModal
      */
     static public function updateRecord($id, $request, $account_id)
     {
+       
         $old_data = (Services::find($id))->toArray();
-
+        
         $data = $request->all();
 
         // Set Account ID
@@ -536,7 +537,7 @@ class Services extends BaseModal
         if (!isset($data['end_node']) || !$data['end_node']) {
             $data['end_node'] = 0;
         }
-
+        $childservices = Services::where('parent_id',$id)->update(['color'=>$data['color']]);
         if (!isset($data['complimentory']) || !$data['complimentory']) {
             $data['complimentory'] = 0;
         }
@@ -549,7 +550,7 @@ class Services extends BaseModal
         if (!$record) {
             return null;
         }
-
+        
         $record->update($data);
 
         AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
