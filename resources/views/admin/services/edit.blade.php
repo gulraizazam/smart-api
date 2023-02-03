@@ -34,11 +34,11 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Parent Services <span class="text text-danger">*</span></label>
-                            <select id="edit_parent_service" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="parent_id">
+                            <select id="edit_parent_service" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="parent_id" onchange="getEditColor()">
 
                             </select>
                         </div>
-
+                        
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Service Name <span class="text text-danger">*</span></label>
                             <input id="edit_service_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
