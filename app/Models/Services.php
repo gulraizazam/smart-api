@@ -10,6 +10,7 @@ use App\Helpers\NodesTree;
 use App\Models\AuditTrails;
 use Auth;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
 
 class Services extends BaseModal
 {
@@ -528,12 +529,17 @@ class Services extends BaseModal
     {
        
         $old_data = (Services::find($id))->toArray();
-        
         $data = $request->all();
-
-        // Set Account ID
+        if($data['parent_id'] > 0){
+            $Parent_service = Services::where('parent_id',$data['parent_id'])->first();
+            if($Parent_service){
+                $data['color'] = $Parent_service->color;
+            }
+        }else{
+            $parent = Services::find($id);
+            Services::where('parent_id',$parent->id)->update(['color'=>$parent->color]);
+        }
         $data['account_id'] = $account_id;
-
         if (!isset($data['end_node']) || !$data['end_node']) {
             $data['end_node'] = 0;
         }
@@ -541,7 +547,6 @@ class Services extends BaseModal
         if (!isset($data['complimentory']) || !$data['complimentory']) {
             $data['complimentory'] = 0;
         }
-
         $record = self::where([
             'id' => $id,
             'account_id' => $account_id
