@@ -274,7 +274,7 @@ class ServicesController extends Controller
         }
 
         $service = Services::findOrFail($id);
-
+dd(Services::isChildExists($id, Auth::User()->account_id));
         if (
             Services::isChildExists($id, Auth::User()->account_id) &&
             ($service->parent_id != $request->get('parent_id') || $service->end_node != (int)$request->get('end_node'))
