@@ -2147,11 +2147,11 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         if (
-            $request->get("city_id") &&
+            //$request->get("city_id") &&
             $request->get("location_id") &&
             $request->get("doctor_id")
         ) {
-            $city_id = $request->get("city_id");
+            //$city_id = $request->get("city_id");
             $location_id = $request->get("location_id");
             $doctor_id = $request->get("doctor_id");
         } else {
@@ -2160,6 +2160,7 @@ class AppointmentsController extends Controller
             $doctor_id = 0;
             return response()->json(array("message" => "Invalid request"), 400);
         }
+        
         if ($request->start) {
             $appointment_checkes = AppointmentCheckesWidget::AppointmentConsultancyCheckes($request);
         } else {
@@ -2167,6 +2168,7 @@ class AppointmentsController extends Controller
                 'status' => true
             );
         }
+        
         if ($request->get('lead_id')) {
             $lead = Leads::where(['id' => $request->get('lead_id')])->first();
             if ($lead) {
@@ -2213,6 +2215,7 @@ class AppointmentsController extends Controller
         } else {
             $employees = array();
         }
+        
         $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->get("location_id"), $request->get("doctor_id"), Auth::User()->account_id);
         if (count($serviceIds)) {
             $services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
@@ -2225,7 +2228,8 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Data Found.', true, [
                 'lead_sources' => $lead_sources,
                 'services' => $services,
-                'city_id' => $city_id,
+                //'city_id' => $city_id,
+                'city_id' => '0',
                 'location_id' => $location_id,
                 'doctor_id' => $doctor_id,
                 'lead' => $lead,
@@ -2949,6 +2953,7 @@ class AppointmentsController extends Controller
 
     public function loadLocationsByCity(Request $request)
     {
+      
         try {
             if ($request->get("city_id")) {
                 if ($request->get("machine_type_allocation")) {
@@ -2981,8 +2986,11 @@ class AppointmentsController extends Controller
                     'dropdown' => $locations
                 ]);
             }
-            return ApiHelper::apiResponse($this->success, 'No Record found', false, [
-                'dropdown' => null
+            $assigned_locations = ACL::getUserCentres();
+            $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
+            
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'dropdown' =>$locations->pluck("name", "id")
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -3259,19 +3267,25 @@ class AppointmentsController extends Controller
 
     public function getScheduledAppointments(Request $request)
     {
+        
         if (
-            $request->get("city_id") &&
-            $request->get("location_id") &&
-            $request->get("doctor_id")
+            //$request->get("city_id") &&
+            $request->get("location_id") 
+            //$request->get("doctor_id")
         ) {
             $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-            $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
+            if($request->doctor_id){
+                $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
+                
+            }
+            
             $location_id = $request->get("location_id");
             $doctor_id = $request->get("doctor_id");
             $machine_id = $request->get("machine_id");
             $start = $request->get("start");
             $end = $request->get("end");
             $minTime = Resources::getMinTimeWithDr($location_id, $doctor_id, $start, $end);
+           
             if ($appointments) {
                 $data = array();
                 foreach ($appointments as $appointment) {
@@ -3291,14 +3305,26 @@ class AppointmentsController extends Controller
                             'resourceId' => $appointment->doctor_id,
                         );
 					}
-                return response()->json(array(
-                    'status' => 1,
-                    'events' => $data,
-                    'min_time' => $minTime,
-                    "rotas" => $doctor_rotas->toArray(),
-                    'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
-                    'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
-                ));
+                    if($request->doctor_id){
+                        return response()->json(array(
+                            'status' => 1,
+                            'events' => $data,
+                            'min_time' => $minTime,
+                            "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
+                            'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
+                            'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
+                        ));
+                    }else{
+                        return response()->json(array(
+                            'status' => 1,
+                            'events' => $data,
+                            'min_time' => $minTime,
+                            "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
+                            'start_time' => '10:00',
+                            'end_time' => '22:00',
+                        ));
+                    }
+                
             } else {
                 return response()->json(array(
                     'status' => 0,
