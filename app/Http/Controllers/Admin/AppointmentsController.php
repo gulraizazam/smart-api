@@ -3306,8 +3306,8 @@ class AppointmentsController extends Controller
                     'events' => $data,
                     'min_time' => $minTime,
                     "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
-                    'start_time' => '09:00',
-                    'end_time' => '23:00',
+                    'start_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))),
+                    'end_time' => date("H:i:s", strtotime($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))),
                 ));
             } else {
                 return response()->json(array(
