@@ -5347,6 +5347,7 @@ class AppointmentsController extends Controller
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
                     'updated_by' => auth()->id(),
                     'appointment_status_id' => config('constants.appointment_status_pending'),
+                    'base_appointment_status_id' => config('constants.appointment_status_pending'),
                     'updated_at'=>Filters::getCurrentTimeStamp()
                 ]);
                 $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
