@@ -626,14 +626,14 @@ select2-container--default .select2-selection--single .select2-selection__render
     }
 }
 @media screen and (max-width: 992px) {
-    .horizontal-nav-bar {
+    .horizontal-nav-bar:not(.horizontalnav_not) {
         display: block;
     }
-    .horizontal-nav-bar-li{
+    .horizontal-nav-bar:not(.horizontalnav_not) .horizontal-nav-bar-li{
         width: 100px;
         height: 100px
     }
-    .horizontal-nav-bar-li a {
+    .horizontal-nav-bar:not(.horizontalnav_not) .horizontal-nav-bar-li a {
         height: 100%;
         display: flex;
         width: 100%;
