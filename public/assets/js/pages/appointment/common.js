@@ -224,13 +224,12 @@ let ConsultancyDoctorListener = function (doctorId) {
         }
         var result = get_query();
 
-        if ($("#consultancy_city_filter").val() !== ""
-            && $("#consultancy_location_filter").val() !== ""
+        if ($("#consultancy_location_filter").val() !== ""
             && $("#consultancy_doctor_filter").val() !== ""
             && typeof result.tab !== 'undefined' && result.tab == 'consultancy') {
 
             window.eventData = {};
-            window.eventData.city_id = $("#consultancy_city_filter").val();
+            // window.eventData.city_id = $("#consultancy_city_filter").val();
             window.eventData.location_id = $("#consultancy_location_filter").val();
             window.eventData.doctor_id = $("#consultancy_doctor_filter").val();
             window.eventData.id = null;
