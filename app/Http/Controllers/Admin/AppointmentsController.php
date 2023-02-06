@@ -3270,8 +3270,9 @@ class AppointmentsController extends Controller
             //$request->get("doctor_id")
         ) {
             $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-            if($request->get("doctor_id")){
+            if($request->doctor_id){
                 $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
+                
             }
             
             $location_id = $request->get("location_id");
@@ -3306,7 +3307,7 @@ class AppointmentsController extends Controller
                     'min_time' => $minTime,
                     "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
                     'start_time' => '09:00',
-                    'end_time' => '11:00',
+                    'end_time' => '23:00',
                 ));
             } else {
                 return response()->json(array(

@@ -116,13 +116,14 @@ var ConsultancyCalendar = function() {
                             data: {
                                 // city_id: $('#consultancy_city_filter').val(),
                                  location_id: $('#consultancy_location_filter').val(),
-                                doctor_id: $('#consultancy_doctor_filter').val(),
+                                doctor_id: $('#consultancy_doctor_filter').val().length !== 'undefined' ? $('#consultancy_doctor_filter').val() : 
+                                '',
                                 start: formatDate(event.start, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(event.end, 'YYYY-MM-DDTHH:mm:ss'),
                             },
                             cache: false,
                             success: async function (response) {
-console.log(response);
+console.log('response cons', response);
                                 minxTime = response.start_time;
                                 maxTime = response.end_time;
 
@@ -183,9 +184,9 @@ console.log(response);
             patient_search_func();
             if (response.status) {
 
-                if (response.rotas[0].doctor_rotas.length == 0) {
-                    toastr.error("Doctor rotas not defined.")
-                }
+                // if (response.rotas[0].doctor_rotas.length == 0) {
+                //     toastr.error("Doctor rotas not defined.")
+                // }
 
                 var events = [];
                 //  var currentDate = null;
@@ -247,39 +248,40 @@ console.log(response);
                         }
                     }
                 });
+                if(jQuery('#consultancy_doctor_filter').val() !== ''){
+                    $.each(response.rotas[0].doctor_rotas, function(id, rota) {
 
-                $.each(response.rotas[0].doctor_rotas, function(id, rota) {
-
-                    if (rota.active == '1') {
-                        /**
-                         * Case 1: All times are added
-                         */
-                        if (rota.start_time && rota.start_off) {
-                            events.push({
-                                id: 'availableForMeeting',
-                                start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                end: formatDate(rota.date + " " + rota.start_off, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#consultancy_doctor_filter').val(),
-                                rendering: 'background'
-                            });
-                            events.push({
-                                id: 'availableForMeeting',
-                                start: formatDate(rota.date + " " + rota.end_off, 'YYYY-MM-DDTHH:mm:ss'),
-                                end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#consultancy_doctor_filter').val(),
-                                rendering: 'background'
-                            });
-                        } else if (rota.start_time && !rota.start_off) {
-                            events.push({
-                                id: 'availableForMeeting',
-                                start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                resourceId: $('#consultancy_doctor_filter').val(),
-                                rendering: 'background'
-                            });
+                        if (rota.active == '1') {
+                            /**
+                             * Case 1: All times are added
+                             */
+                            if (rota.start_time && rota.start_off) {
+                                events.push({
+                                    id: 'availableForMeeting',
+                                    start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                    end: formatDate(rota.date + " " + rota.start_off, 'YYYY-MM-DDTHH:mm:ss'),
+                                    resourceId: $('#consultancy_doctor_filter').val(),
+                                    rendering: 'background'
+                                });
+                                events.push({
+                                    id: 'availableForMeeting',
+                                    start: formatDate(rota.date + " " + rota.end_off, 'YYYY-MM-DDTHH:mm:ss'),
+                                    end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                    resourceId: $('#consultancy_doctor_filter').val(),
+                                    rendering: 'background'
+                                });
+                            } else if (rota.start_time && !rota.start_off) {
+                                events.push({
+                                    id: 'availableForMeeting',
+                                    start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                    end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                    resourceId: $('#consultancy_doctor_filter').val(),
+                                    rendering: 'background'
+                                });
+                            }
                         }
-                    }
-                });
+                    });
+                }
                 callback(events);
             } else {
                 var events = [];
@@ -374,7 +376,7 @@ function clickEvent(info, jsEvent, view) {
     let event = info.event.extendedProps;
     let eventApi = info.event._def;
     let id = eventApi.publicId;
-
+alert(id);
     if (id !== 'availableForMeeting') {
 
         $.ajax({
