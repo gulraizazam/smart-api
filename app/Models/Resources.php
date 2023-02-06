@@ -280,6 +280,7 @@ class Resources extends BaseModal
      */
     public static function getDoctorWithRotas($location_id, $doctor_id)
     {
+        
         $where = [];
         $where[] = array("external_id", "=", $doctor_id);
         $where[] = array("resource_type_id", "=", self::getResourceType("doctor"));
@@ -296,7 +297,7 @@ class Resources extends BaseModal
             $query->where("resource_has_rota.active", '1');
         }])->get();
 
-        return self::where($where)->with("doctor_rotas")->get();
+        //return self::where($where)->with("doctor_rotas")->get();
     }
 
     public static function getRoomsWithRotas()
