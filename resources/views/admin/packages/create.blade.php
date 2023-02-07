@@ -58,8 +58,7 @@
                         </div>
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                            <label>Patient Search:</label>
-                            <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient">
+                            <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient" placeholder="Patient Search">
                             <input type="hidden" class="filter-field search_field" id="add_patient_id">
                             <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
                             <div class="suggesstion-box" style="display: none;">
