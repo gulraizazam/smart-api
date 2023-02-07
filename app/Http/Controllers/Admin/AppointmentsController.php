@@ -2503,6 +2503,12 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
         }
         $appointment = Appointments::find($id);
+        if($appointment){
+            $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
+            if($check_invoice){
+                return ApiHelper::apiResponse($this->error, 'Invoice already generated. Appointment can not be rescheduled.', false);
+            }
+        }
         $rota = $this->checkRota($appointment, $request);
         if (!$rota['status']) {
             return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
