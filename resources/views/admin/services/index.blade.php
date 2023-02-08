@@ -129,6 +129,15 @@
                             $("#service_color").val(data.color);
                         }
                     });
+                    $('#service_duration').css('display','block');
+                    $('#service_price').css('display','block');
+                    $('#service_tax').css('display','block');
+                    $('#service_node').css('display','block');
+                }else{
+                    $('#service_duration').css('display','none');
+                    $('#service_price').css('display','none');
+                    $('#service_tax').css('display','none');
+                    $('#service_node').css('display','none');
                 }
                 
             }
@@ -144,7 +153,19 @@
                             $("#edit_color").val(data.color);
                         }
                     });
+                    $('#service_duration').css('display','block');
+                    $('#service_price').css('display','block');
+                    $('#service_tax').css('display','block');
+                    $('#service_node').css('display','block');
+                    $('#main_edit_complimentary').css('display','block');
+                }else{
+                    $('#service_duration').css('display','none');
+                    $('#service_price').css('display','none');
+                    $('#service_tax').css('display','none');
+                    $('#service_node').css('display','none');
+                    $('#main_edit_complimentary').css('display','none');
                 }
+                
                 
             }
         </script>
