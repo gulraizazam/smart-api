@@ -136,27 +136,21 @@
 
 		static public function updateRecordFinanceedit($request,$account_id,$amount_status)
 		{
+			
 			$old_data = (self::find($request->package_advances_id))->toArray();
 			if($amount_status){
 				$data['cash_amount'] = $request->cash_amount;
 			}
 			$data['payment_mode_id'] = $request->payment_mode_id;
-			//$data['created_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
+			$data['payment_mode_id'] = $request->payment_mode_id;
+			$data['created_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
 			$data['updated_at'] = now();
-
-			$record = self::where([
-				'id' => $request->package_advances_id,
-				'account_id' => $account_id
-			])->first();
-
+			$record = PackageAdvances::where(['id' => $request->package_advances_id,'account_id' => $account_id])->first();
 			if (!$record) {
 				return null;
 			}
-
 			$record->update($data);
-
 			AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $request->package_advances_id);
-
 			return true;
 		}
 
