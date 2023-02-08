@@ -845,7 +845,7 @@ function setTreatmentEditData(response) {
         let services = response.data.services;
         let setting = response.data.setting;
         let genders = response.data.genders;
-
+        console.log(machines);
 
         let service_option = '<option value="">All</option>';
         Object.entries(services).forEach(function (service) {
@@ -874,9 +874,10 @@ function setTreatmentEditData(response) {
 
         let machine_option = '<option value="">All</option>';
         Object.entries(machines).forEach(function (machine) {
-            machine_option  += '<option value="' + machine[0] + '">' + machine[1] + '</option>';
+            
+            machine_option  += '<option value="' + machine[1].id+ '">' + machine[1].name + '</option>';
         });
-
+        
         $("#edit_treatment_service_id").html(service_option).val(appointment.service_id);
         $("#edit_treatment_machine_id").html(machine_option).val(appointment.resource_id);
         $("#edit_treatment_city_id").html(city_option).val(appointment.city_id);
