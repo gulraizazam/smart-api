@@ -44,11 +44,11 @@ class DashboardReportsController extends Controller
     
     public function collectionByCentre(Request $request)
     {
-       
         $data = array(
             'today' => array(),
             'yesterday' => array(),
             'last7days' => array(),
+            'week' => array(),
             'thismonth' => array(),
             'lastmonth' => array(),
         );
@@ -75,6 +75,15 @@ class DashboardReportsController extends Controller
                 if (count($last7dayRecords)) {
                     foreach ($last7dayRecords as $record) {
                         $data['last7days'][] = $record;
+                    }
+                }
+               
+            }
+            if ($request->get('week') != '') {
+                list( $weekRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'week', $request);
+                if (count($weekRecords)) {
+                    foreach ($weekRecords as $record) {
+                        $data['week'][] = $record;
                     }
                 }
             }
@@ -363,6 +372,47 @@ class DashboardReportsController extends Controller
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
+                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                if ($request->get('performance')) {
+                    $last7DaysRecords = $last7DaysRecords->where('invoices.created_by', Auth::User()->id);
+                }
+                $last7DaysRecords = $last7DaysRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+                $last7days = array();
+                if ($services) {
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $last7days[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($last7DaysRecords) {
+                            foreach ($last7DaysRecords as $last7DaysRecord) {
+                                if ($last7DaysRecord->service_id == $service->id) {
+                                    $last7days[$service->id] = [
+                                        $service->name,
+                                        $last7DaysRecord->total_price
+                                    ];
+                                    $colors[] = $service->color;
+
+                                    $total += $last7DaysRecord->total_price;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($last7days)) {
+                    foreach ($last7days as $record) {
+                        $data['last7days'][] = $record;
+                    }
+                }
+            }
+            if ($request->get('week')) {
+                $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
@@ -770,6 +820,10 @@ class DashboardReportsController extends Controller
                 $end_date = Carbon::now()->subDay(1)->format('Y-m-d');
             break;
             case 'last7days':
+                $start_date = Carbon::now()->subDay(6)->format('Y-m-d');
+                $end_date = Carbon::now()->format('Y-m-d');
+                break;
+            case 'week':
                 $start_date = Carbon::now()->startOfWeek()->format('Y-m-d');
                 $end_date = Carbon::now()->endOfWeek()->format('Y-m-d');
             break;
@@ -794,18 +848,20 @@ class DashboardReportsController extends Controller
     }
     public function AppointmentByStatus(Request $request)
     {
+       
         $data = array();
         $total = 0;
         $today = array();
         $colors = array();
-        if (Gate::allows('dashboard_my_revenue_by_service')) {
+        if (Gate::allows('dashboard_appointment_by_status')) {
            $appointment_statuses = AppointmentStatuses::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
                 ['parent_id', '=', '0'],
             ])->get();
             if ($request->period == '') {
-                $todayRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->format('Y-m-d'))->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                $todayRecords = Appointments::whereDate('scheduled_date', '=', Carbon::now()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $todayRecords = $todayRecords->where('created_by', Auth::User()->id);
@@ -842,7 +898,9 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='today') {
-                $todayRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->format('Y-m-d'))->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                $todayRecords = Appointments::whereDate('scheduled_date', '=', Carbon::now()->format('Y-m-d'))
+
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $todayRecords = $todayRecords->where('created_by', Auth::User()->id);  
@@ -879,12 +937,9 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='yesterday') {
-                $yesterdayRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                $yesterdayRecords = Appointments::whereDate('scheduled_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $yesterdayRecords = $yesterdayRecords->where('created_by', Auth::User()->id);
-                }
                 $yesterdayRecords = $yesterdayRecords->select('base_appointment_status_id as appointment_status_id', DB::raw("COUNT(id) AS total"))
                 ->groupBy('base_appointment_status_id')
                 ->get();
@@ -919,8 +974,9 @@ class DashboardReportsController extends Controller
 
             }
             if ($request->period=='last7days') {
-                $last7DaysRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                $last7DaysRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $last7DaysRecords = $last7DaysRecords->where('created_by', Auth::User()->id); 
@@ -956,9 +1012,49 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
+            if ($request->period=='week') {
+                $last7DaysRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
+                ->whereIn('location_id', ACL::getUserCentres());
+                if ($request->get('performance')) {
+                    $last7DaysRecords = $last7DaysRecords->where('created_by', Auth::User()->id); 
+                }
+                $last7DaysRecords = $last7DaysRecords->select('base_appointment_status_id as appointment_status_id', DB::raw("COUNT(id) AS total"))
+                ->groupBy('base_appointment_status_id')
+                ->get();
+                if ($appointment_statuses) {
+                    $total = 0;
+                    foreach ($appointment_statuses as $appointment_status) {
+                        $last7days[0] = array(
+                            'Task',
+                            'Hours per Day'
+                        );
+                        if ($last7DaysRecords) {
+                            foreach ($last7DaysRecords as $last7DayRecord) {
+                                if ($last7DayRecord->appointment_status_id == $appointment_status->id) {
+                                    $last7days[$appointment_status->id]= [
+                                        $appointment_status->name,
+                                        $last7DayRecord->total
+                                        
+                                    ];
+                                    
+                                    $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                }
+                            }
+                        }
+                    }  
+                }
+                if (count($last7days)) {
+                    foreach ($last7days as $record) {
+                        $data['week'][] = $record;
+                    }
+                }
+            }
             if ($request->period=='thismonth') {
-                $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                $monthlyRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $monthlyRecords = $monthlyRecords->where('created_by', Auth::User()->id);
@@ -996,8 +1092,9 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='lastmonth') {
-                $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                $monthlyRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $monthlyRecords = $monthlyRecords->where('created_by', Auth::User()->id);

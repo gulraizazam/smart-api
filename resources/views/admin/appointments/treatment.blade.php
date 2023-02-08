@@ -186,7 +186,6 @@
                         console.log('result.city_id', result.city_id);
                         $("#treatment_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
                         $("#treatment_city_filter").val(result.city_id).change();
-                        //$("#treatment_location_filter").val(result.location_id).change();
                         setDashboardFilters();
                     }, 1300);
                 }

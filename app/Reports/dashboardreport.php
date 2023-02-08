@@ -59,6 +59,15 @@ class dashboardreport
                         ['account_id', '=', $account_id],
                         ['location_id', '=', $location_infomation],
                     ])->get();
+                    
+            }
+            if ($where == 'week') {
+                $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                    ->whereDate('created_at', '<=',Carbon::now()->endOfWeek()->format('Y-m-d'))
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $location_infomation],
+                    ])->get();
             }
             if ($where == 'thisMonth') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
@@ -73,7 +82,7 @@ class dashboardreport
                     ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
-                        ['location_id', '=', $key],
+                        ['location_id', '=', $location_infomation],
                     ])->get();
             }
             $location_single_info = Locations::find($location_infomation);
@@ -364,53 +373,56 @@ class dashboardreport
     }
     public static function collectionbycenter($location_informations, $account_id, $where,$request)
     {
-       
         $total = 0;
-        
         $wherecondtion = array();
         foreach ($location_informations as $key => $location_infomation) {
             if ($where == 'today') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $location_infomation],
-                    ])->get();
-                   
+                ->where([
+                    ['account_id', '=', $account_id],
+                    ['location_id', '=', $location_infomation],
+                ])->get();    
             }
             if ($where == 'yesterday') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $location_infomation],
-                    ])->get();
+                ->where([
+                    ['account_id', '=', $account_id],
+                    ['location_id', '=', $location_infomation],
+                ])->get();
             }
-            if ($where == 'last7day') {
+            if ($where == 'last7days') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                    ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
-                    ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $location_infomation],
-                    ])->get();
+                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                ->where([
+                    ['account_id', '=', $account_id],
+                    ['location_id', '=', $location_infomation],
+                ])->get();
+            }
+            if ($where == 'week') {
+                $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfWeek())
+                ->whereDate('created_at', '<=', Carbon::now()->endOfWeek())
+                ->where([
+                    ['account_id', '=', $account_id],
+                    ['location_id', '=', $location_infomation],
+                ])->get();
             }
             if ($where == 'thisMonth') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                    ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                    ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $location_infomation],
-                    ])->get();
+                ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->where([
+                    ['account_id', '=', $account_id],
+                    ['location_id', '=', $location_infomation],
+                ])->get();
             }
             if ($where == 'lastmonth') {
                 $packagesadvances = PackageAdvances::whereDate('created_at','>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d') )
-                    ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
-                    ->where([
-                        ['account_id', '=', $account_id],
-                        ['location_id', '=', $location_infomation],
-                    ])->get();
-                    
+                ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                ->where([
+                    ['account_id', '=', $account_id],
+                    ['location_id', '=', $location_infomation],
+                ])->get();   
             }
             $location_single_info = Locations::find($location_infomation);
-            
             if ($packagesadvances) {
                 $balance = 0;
                 $total_balance = 0;
@@ -508,6 +520,5 @@ class dashboardreport
         return [
            $total
         ];
-    }
-    
+    }  
 }
