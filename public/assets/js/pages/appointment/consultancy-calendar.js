@@ -123,7 +123,7 @@ var ConsultancyCalendar = function() {
                             },
                             cache: false,
                             success: async function (response) {
-console.log('response cons', response);
+
                                 minxTime = response.start_time;
                                 maxTime = response.end_time;
 
@@ -183,11 +183,11 @@ console.log('response cons', response);
         async loadEvents(response, callback) {
             patient_search_func();
             if (response.status) {
-
-                // if (response.rotas[0].doctor_rotas.length == 0) {
-                //     toastr.error("Doctor rotas not defined.")
-                // }
-
+                if($("#consultancy_doctor_filter").val() != ""){
+                    if (response.rotas[0].doctor_rotas.length == 0) {
+                        toastr.error("Doctor rotas not defined.")
+                    }
+                }
                 var events = [];
                 //  var currentDate = null;
                 $.each(response.events, function(id, appointmentObj) {
