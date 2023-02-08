@@ -372,6 +372,7 @@ class Appointments extends Model
      */
     static function getScheduledAppointments(Request $request, $appointment_type_id = false, $account_id, $skip_doctor = false)
     {
+       
         $where = array();
         $where[] = ['account_id', '=', $account_id];
 
@@ -470,6 +471,7 @@ class Appointments extends Model
         /*
          * That function use Appointment Report (Appointment by status) and Treatment Management
          */
+        
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
         $parentGroups->build(($serviceId) ? $serviceId : 0, $account_id, true, true);
