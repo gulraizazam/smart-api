@@ -30,7 +30,7 @@ var table_columns = [
     }, {
         field: 'roles',
         title: 'roles',
-        width: 'auto',
+        width: 120,
         sortable: false,
         template: function (data) {
             let roles = '';
@@ -46,18 +46,21 @@ var table_columns = [
             return roles;
         }
     }, {
-        field: 'status',
+        field: 'created_at',
+        title: 'Created At',
+        width: 'auto',
+        template: function (data) {
+            return formatDate(data.created_at);
+        }
+    },{
+        field: 'active',
         title: 'status',
-        width: 60,
+        width: 'auto',
         template: function (data) {
             let status_url = route('admin.doctors.status');
             return statuses(data, status_url);
         }
-    },{
-        field: 'created',
-        title: 'Created At',
-        width: 'auto',
-    },  {
+    }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -448,7 +451,6 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
     let genders = filter_values.gender_array;
     let roles = filter_values.roles;
     let status = filter_values.status;

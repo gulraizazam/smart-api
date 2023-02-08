@@ -897,7 +897,7 @@ function displayData(response) {
                     history_options += '<td>'+packageadvance.paymentmode.name+'</td>';
                     history_options += '<td>'+packageadvance.cash_flow+'</td>';
                     history_options += '<td>'+packageadvance.package_refund_price+'</td>';
-                    history_options += '<td>'+packageadvance.created_at_formated+'</td>';
+                    history_options += '<td>'+formatDate(packageadvance.created_at,'MMM, DD yyyy hh:mm A')+'</td>';
                     history_options += '<tr>';
                 }
             });

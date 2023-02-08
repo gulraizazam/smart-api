@@ -129,15 +129,21 @@
                             $("#service_color").val(data.color);
                         }
                     });
-                    $('#service_duration').css('display','block');
-                    $('#service_price').css('display','block');
-                    $('#service_endnode').css('display','block');
-                    $('#service_tax').css('display','block');
-                }else{
-                    $('#service_duration').css('display','none');
-                    $('#service_price').css('display','none');
-                    $('#service_endnode').css('display','none');
-                    $('#service_tax').css('display','none');
+                }
+                
+            }
+            function getEditColor()
+            {
+                var service = $('#edit_parent_service').val();
+                if(service > 0){
+                    $.ajax({
+                        type:'GET',
+                        url:"{{route('admin.dashboard.getcolor')}}",
+                        data:{'service':service},
+                        success:function(data) {
+                            $("#edit_color").val(data.color);
+                        }
+                    });
                 }
                 
             }
