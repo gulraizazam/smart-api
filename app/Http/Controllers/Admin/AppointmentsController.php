@@ -2400,6 +2400,7 @@ class AppointmentsController extends Controller
         if (! $appointment) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
+        
         $resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
         $machineHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id_for_machine);
         $biggerTime = ResourceHasRota::getBiggerTime($resourceHadRotaDay->start_time, $machineHadRotaDay->start_time);
@@ -2477,6 +2478,54 @@ class AppointmentsController extends Controller
             'machineHadRotaDay' => $machineHadRotaDay,
             'biggerTime' => $biggerTime,
             'smallerTime' => $smallerTime,
+            'back_date_config' => $back_date_config,
+            'genders' => config('constants.gender_array'),
+            'consultancy_type' => config('constants.consultancy_type_array'),
+        ]);
+    }
+    public function editServiceTest($id)
+    {
+        if (!Gate::allows('appointments_manage')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
+        $locationsids = array();
+        $doctorids = array();
+        $machineids = array();
+        $appointment = Appointments::with('patient', 'doctor', 'lead.patient')->find($id);
+        if (! $appointment) {
+            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+        }
+        $doctors =  Doctors::getActiveOnly($appointment->location_id, Auth::User()->account_id);
+        $cities = Cities::getActiveFeaturedOnly(ACL::getUserCities(), Auth::User()->account_id)->get();
+        if ($cities) {
+            $cities = $cities->pluck('full_name', 'id');
+        }
+        if ($appointment->service_id) {
+            $services = $serviceid = Services::where(['id' => $appointment->service_id])->get()->pluck('name', 'id');
+            $serviceid = Services::where(['id' => $appointment->service_id])->first();
+        } else {
+            $services = Services::get()->pluck('name', 'id');
+        }
+        $locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::User()->account_id);
+        if ($locations) {
+            $locations = $locations->pluck("name", "id");
+        }
+        $machines = Resources::where([
+            ["resource_type_id", "=", config("constants.resource_room_type_id")],
+            ["location_id", "=", $appointment->location_id],
+            ["account_id", "=", Auth::user()->account_id]],
+            ["actvie", "=", 1]
+        )->get();
+
+        $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
+        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+            'appointment' => $appointment,
+            'cities' => $cities,
+            'services' => $services,
+            'locations' => $locations,
+            'doctors' => $doctors,
+            'machines' => $machines,
+            
             'back_date_config' => $back_date_config,
             'genders' => config('constants.gender_array'),
             'consultancy_type' => config('constants.consultancy_type_array'),
