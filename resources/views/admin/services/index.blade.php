@@ -129,17 +129,10 @@
                             $("#service_color").val(data.color);
                         }
                     });
-                    $('#service_duration').css('display','block');
-                    $('#service_price').css('display','block');
-                    $('#service_tax').css('display','block');
-                    $('#service_node').css('display','block');
+                    $('#service_duration', '#service_price', '#service_tax', '#service_node').css('display','block');
                 }else{
-                    $('#service_duration').css('display','none');
-                    $('#service_price').css('display','none');
-                    $('#service_tax').css('display','none');
-                    $('#service_node').css('display','none');
+                    $('#service_duration', '#service_price', '#service_tax', '#service_node').css('display','none');
                 }
-                
             }
             function getEditColor()
             {
@@ -153,20 +146,10 @@
                             $("#edit_color").val(data.color);
                         }
                     });
-                    $('#service_duration').css('display','block');
-                    $('#service_price').css('display','block');
-                    $('#service_tax').css('display','block');
-                    $('#service_node').css('display','block');
-                    $('#main_edit_complimentary').css('display','block');
+                    $('#service_duration', '#service_price', '#service_tax', '#service_node','#main_edit_complimentary').css('display','block');
                 }else{
-                    $('#service_duration').css('display','none');
-                    $('#service_price').css('display','none');
-                    $('#service_tax').css('display','none');
-                    $('#service_node').css('display','none');
-                    $('#main_edit_complimentary').css('display','none');
-                }
-                
-                
+                    $('#service_duration', '#service_price', '#service_tax', '#service_node','#main_edit_complimentary').css('display','none');
+                }     
             }
         </script>
     @endpush
