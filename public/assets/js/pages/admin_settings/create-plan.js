@@ -1105,7 +1105,6 @@ function createPlan(url, id) {
         $("#add_discount_id").html('<option value="">Select Discount</option>');
         $("#add_patient_id").val('');
         $(".search_patient").val('');
-        //$("#add_appointment_id").html('');
         $("#net_amount_1").val('');
         $("#package_total_1").val('');
         $("#grand_total_1").val('');
