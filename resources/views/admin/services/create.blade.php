@@ -38,7 +38,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Service Name <span class="text text-danger">*</span></label>
                             <input id="add_service_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                        <div class="fv-row col-md-6 mt-5" >
+                        <div class="fv-row col-md-6 mt-5" style="display:none" id="service_duration">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Duration <span class="text text-danger">*</span></label>
                             <select id="add_duration" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="duration">
                             </select>
@@ -47,11 +47,11 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Color <span class="text text-danger">*</span></label>
                             <input class="form-control" type="color" name="color" value="#000" id="service_color">
                         </div>
-                        <div class="fv-row col-md-12 mt-5" >
+                        <div class="fv-row col-md-12 mt-5"  style="display:none" id="service_price">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price <span class="text text-danger">*</span></label>
                             <input name="price" class="form-control" type="number">
                         </div>
-                        <div class="fv-row col-md-6 mt-5" >
+                        <div class="fv-row col-md-6 mt-5" style="display:none" id="service_node">
                             <label class="required fw-bold fs-6 mb-2 pl-0">End Node? <span class="text text-danger">*</span></label>
                             <label class="checkbox checkbox-single">
                                 <input name="end_node" onchange="switchComplimentary('complimentary')" value="1" type="checkbox">&nbsp;
@@ -64,7 +64,7 @@
                                 <input name="complimentory" value="1" type="checkbox">&nbsp;<span></span>
                             </label>
                         </div>
-                        <div class="fv-row col-md-12 mt-5" >
+                        <div class="fv-row col-md-12 mt-5" style="display:none" id="service_tax">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Tax</label>
                             <div class="radio-inline tax-radios">
                                 <label class="radio">
