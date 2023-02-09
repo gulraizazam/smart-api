@@ -2572,7 +2572,7 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $doctor_has_service = DoctorHasLocations::where(['user_id'=>$request->doctor_id])->first();
-        if($doctor_has_service==13){
+        if($doctor_has_service->service_id==13){
             $validator = $this->verifyUpdateFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
