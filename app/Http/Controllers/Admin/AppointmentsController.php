@@ -2509,7 +2509,6 @@ class AppointmentsController extends Controller
             $services = Services::get()->pluck('name', 'id');
         }
         $locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::User()->account_id);
-       dd($locations);
         if ($locations) {
             $locations = $locations->pluck("name", "id");
         }
