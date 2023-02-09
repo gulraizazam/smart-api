@@ -358,8 +358,8 @@ let loadEditConsultancyDoctors = function (locationId, appointment = null) {
                     Object.entries(dropdowns).forEach(function (dropdown) {
                         dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                     });
-                    console
-                    $('#edit_doctor').html(dropdown_options);
+                  
+                    $('#edit_doctor').html(dropdown_options).select2();
                     setQueryStringParameter('location_id', locationId);
                 } else {
                     resetDoctors();
