@@ -30,6 +30,14 @@ var table_columns = [{
         return phoneClip(data);
     }
 }, {
+    field: 'gender',
+    title: 'Gender',
+    sortable: false,
+    width: 90,
+    template: function (data) {
+        return data.gender;
+    }
+},{
     field: 'city_id',
     title: 'City',
     sortable: false,
