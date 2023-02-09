@@ -129,9 +129,9 @@
                             $("#service_color").val(data.color);
                         }
                     });
-                    $('#service_duration', '#service_price', '#service_tax', '#service_node').css('display','block');
+                    $('.servicefield').show();
                 }else{
-                    $('#service_duration', '#service_price', '#service_tax', '#service_node').css('display','none');
+                    $('.servicefield').hide();
                 }
             }
             function getEditColor()
@@ -146,9 +146,9 @@
                             $("#edit_color").val(data.color);
                         }
                     });
-                    $('#service_duration', '#service_price', '#service_tax', '#service_node','#main_edit_complimentary').css('display','block');
+                    $('.servicefield').show();
                 }else{
-                    $('#service_duration', '#service_price', '#service_tax', '#service_node','#main_edit_complimentary').css('display','none');
+                    $('.servicefield').hide();
                 }     
             }
         </script>
