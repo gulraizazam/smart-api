@@ -2658,42 +2658,7 @@ class AppointmentsController extends Controller
                         if (count($changes) == 5) {
                             if (isset($changes['doctor_id'])) {
                                 $appointment->update(['send_message' => 0]);
-                                tData['appointment_status_id'] == 1){
-                                    $appointmentData['lead_status_id'] = 4;
-                                }else if($appointmentData['appointment_status_id'] == 3){
-                                    $appointmentData['lead_status_id'] = 1;
-                                }
-                                $lead = Leads::find($appointmentData['lead_id']);
-                                if (! $lead) {
-                                    return ApiHelper::apiResponse($this->success, 'Lead not found', false);
-                                }
-                                $lead->update($appointmentData);
-                                $patient = Patients::find($lead->patient_id);
-                                if (! $patient) {
-                                    return ApiHelper::apiResponse($this->success, 'Patient not found', false);
-                                }
-                                $patientData = $appointmentData;
-                                /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in
-                                 * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
-                                 */
-                                $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
-                                GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
-                                $patient = Patients::updateRecord($lead->patient_id, $patientData);
-                                $patient->update($patientData);
-                                /*
-                                 * Lead Operations End
-                                 */
-                        
-                                /**
-                                 * Dispatch Elastic Search Index
-                                 */
-                                $this->dispatch(
-                                    new IndexSingleAppointmentJob([
-                                        'account_id' => Auth::User()->account_id,
-                                        'appointment_id' => $appointment->id
-                                    ])
-                                );
-                                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');  }
+                            }
                         } else if (count($changes) == 2) {
                             $appointment->update(['send_message' => $value_of_sending_message]);
                         }
@@ -2833,42 +2798,7 @@ class AppointmentsController extends Controller
                             if (count($changes) == 5) {
                                 if (isset($changes['doctor_id'])) {
                                     $appointment->update(['send_message' => 0]);
-                                    tData['appointment_status_id'] == 1){
-                                        $appointmentData['lead_status_id'] = 4;
-                                    }else if($appointmentData['appointment_status_id'] == 3){
-                                        $appointmentData['lead_status_id'] = 1;
-                                    }
-                                    $lead = Leads::find($appointmentData['lead_id']);
-                                    if (! $lead) {
-                                        return ApiHelper::apiResponse($this->success, 'Lead not found', false);
-                                    }
-                                    $lead->update($appointmentData);
-                                    $patient = Patients::find($lead->patient_id);
-                                    if (! $patient) {
-                                        return ApiHelper::apiResponse($this->success, 'Patient not found', false);
-                                    }
-                                    $patientData = $appointmentData;
-                                    /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in
-                                     * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
-                                     */
-                                    $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
-                                    GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
-                                    $patient = Patients::updateRecord($lead->patient_id, $patientData);
-                                    $patient->update($patientData);
-                                    /*
-                                     * Lead Operations End
-                                     */
-                            
-                                    /**
-                                     * Dispatch Elastic Search Index
-                                     */
-                                    $this->dispatch(
-                                        new IndexSingleAppointmentJob([
-                                            'account_id' => Auth::User()->account_id,
-                                            'appointment_id' => $appointment->id
-                                        ])
-                                    );
-                                    return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');  }
+                                }
                             } else if (count($changes) == 2) {
                                 $appointment->update(['send_message' => $value_of_sending_message]);
                             }
