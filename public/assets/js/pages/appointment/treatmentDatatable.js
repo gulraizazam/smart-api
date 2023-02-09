@@ -877,7 +877,7 @@ function setTreatmentEditData(response) {
             
             machine_option  += '<option value="' + machine[1].id+ '">' + machine[1].name + '</option>';
         });
-        
+        $("#treatment_service_id").html(service_option).val(appointment.service_id);
         $("#edit_treatment_service_id").html(service_option).val(appointment.service_id);
         $("#edit_treatment_machine_id").html(machine_option).val(appointment.resource_id);
         $("#edit_treatment_city_id").html(city_option).val(appointment.city_id);

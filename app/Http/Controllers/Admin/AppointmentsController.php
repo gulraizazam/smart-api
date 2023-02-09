@@ -2417,26 +2417,26 @@ class AppointmentsController extends Controller
         }
         $locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::User()->account_id);
         /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
-        // foreach ($locations as $location) {
-        //     $location_serivce = AppointmentEditWidget::loadlocationservice_edit($location->id, Auth::User()->account_id, 'true');
-        //     if (in_array($serviceid->id, $location_serivce)) {
-        //         $locationsids[] = $location->id;
-        //     }
-        // }
-        // $locations = Locations::whereIn('id', $locationsids)->get();
+        foreach ($locations as $location) {
+            $location_serivce = AppointmentEditWidget::loadlocationservice_edit($location->id, Auth::User()->account_id, 'true');
+            if (in_array($serviceid->id, $location_serivce)) {
+                $locationsids[] = $location->id;
+            }
+        }
+        $locations = Locations::whereIn('id', $locationsids)->get();
         /*End*/
         if ($locations) {
             $locations = $locations->pluck("name", "id");
         }
         $doctors = $doctors_no_final = Doctors::getActiveOnly($appointment->location_id, Auth::User()->account_id);
         /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
-        // foreach ($doctors as $key => $doctor) {
-        //     $doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $appointment->location_id, Auth::User()->account_id, 'true');
-        //     if (in_array($serviceid->id, $doctor_serivce)) {
-        //         $doctorids[] = $key;
-        //     }
-        // }
-        // $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
+        foreach ($doctors as $key => $doctor) {
+            $doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $appointment->location_id, Auth::User()->account_id, 'true');
+            if (in_array($serviceid->id, $doctor_serivce)) {
+                $doctorids[] = $key;
+            }
+        }
+        $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
         /*End*/
         if ($doctors_no_final) {
             foreach ($doctors_no_final as $key => $doctor) {
@@ -2457,14 +2457,14 @@ class AppointmentsController extends Controller
             ["actvie", "=", 1]
         )->get();
         /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
-        // foreach ($machines as $machine) {
-        //     $machinetypeid = MachineType::where('id', '=', $machine->machine_type_id)->first();
-        //     $machine_serivce = AppointmentEditWidget::loadmachinetypeservice_edit($machinetypeid->id, Auth::User()->account_id, 'true');
-        //     if (in_array($serviceid->id, $machine_serivce)) {
-        //         $machineids[] = $machine->id;
-        //     }
-        // }
-        // $machines = Resources::whereIn('id', $machineids)->get()->pluck('name', 'id');
+        foreach ($machines as $machine) {
+            $machinetypeid = MachineType::where('id', '=', $machine->machine_type_id)->first();
+            $machine_serivce = AppointmentEditWidget::loadmachinetypeservice_edit($machinetypeid->id, Auth::User()->account_id, 'true');
+            if (in_array($serviceid->id, $machine_serivce)) {
+                $machineids[] = $machine->id;
+            }
+        }
+        $machines = Resources::whereIn('id', $machineids)->get()->pluck('name', 'id');
         /*End*/
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
         return ApiHelper::apiResponse($this->success, 'Data found.', true, [
@@ -2495,7 +2495,10 @@ class AppointmentsController extends Controller
         if (! $appointment) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
-        $doctors =  Doctors::getActiveOnly($appointment->location_id, Auth::User()->account_id);
+        $resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
+        $machineHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id_for_machine);
+        $biggerTime = ResourceHasRota::getBiggerTime($resourceHadRotaDay->start_time, $machineHadRotaDay->start_time);
+        $smallerTime = ResourceHasRota::getSmallerTime($resourceHadRotaDay->end_time, $machineHadRotaDay->end_time);
         $cities = Cities::getActiveFeaturedOnly(ACL::getUserCities(), Auth::User()->account_id)->get();
         if ($cities) {
             $cities = $cities->pluck('full_name', 'id');
@@ -2507,8 +2510,23 @@ class AppointmentsController extends Controller
             $services = Services::get()->pluck('name', 'id');
         }
         $locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::User()->account_id);
+       
         if ($locations) {
             $locations = $locations->pluck("name", "id");
+        }
+        $doctors = $doctors_no_final = Doctors::getActiveOnly($appointment->location_id, Auth::User()->account_id);
+        
+        if ($doctors_no_final) {
+            foreach ($doctors_no_final as $key => $doctor) {
+                $resource = Resources::where('external_id', '=', $key)->first();
+                $doctor_rota = ResourceHasRota::where([
+                    ['resource_id', '=', $resource?->id],
+                    ['is_treatment', '=', '1']
+                ])->get();
+                if (count($doctor_rota) == 0) {
+                    unset($doctors[$key]);
+                }
+            }
         }
         $machines = Resources::where([
             ["resource_type_id", "=", config("constants.resource_room_type_id")],
@@ -2516,7 +2534,16 @@ class AppointmentsController extends Controller
             ["account_id", "=", Auth::user()->account_id]],
             ["actvie", "=", 1]
         )->get();
-
+        /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
+        foreach ($machines as $machine) {
+            $machinetypeid = MachineType::where('id', '=', $machine->machine_type_id)->first();
+            $machine_serivce = AppointmentEditWidget::loadmachinetypeservice_edit($machinetypeid->id, Auth::User()->account_id, 'true');
+            if (in_array($serviceid->id, $machine_serivce)) {
+                $machineids[] = $machine->id;
+            }
+        }
+        $machines = Resources::whereIn('id', $machineids)->get()->pluck('name', 'id');
+        /*End*/
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
         return ApiHelper::apiResponse($this->success, 'Data found.', true, [
             'appointment' => $appointment,
@@ -2525,7 +2552,10 @@ class AppointmentsController extends Controller
             'locations' => $locations,
             'doctors' => $doctors,
             'machines' => $machines,
-            
+            'resourceHadRotaDay' => $resourceHadRotaDay,
+            'machineHadRotaDay' => $machineHadRotaDay,
+            'biggerTime' => $biggerTime,
+            'smallerTime' => $smallerTime,
             'back_date_config' => $back_date_config,
             'genders' => config('constants.gender_array'),
             'consultancy_type' => config('constants.consultancy_type_array'),
@@ -2542,6 +2572,11 @@ class AppointmentsController extends Controller
     {
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
+        $parent = Services::whereId($request->treatment_service_id)->first();
+        $doctor_has_service = DoctorHasLocations::where(['user_id'=>$request->doctor_id,'service_id'=>$parent->parent_id])->first();
+        if(!$doctor_has_service){
+            return ApiHelper::apiResponse($this->error, 'Service is not assigned to this doctor', false);
         }
         $validator = $this->verifyUpdateFields($request);
         if ($validator->fails()) {
