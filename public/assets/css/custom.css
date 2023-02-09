@@ -619,7 +619,9 @@ select2-container--default .select2-selection--single .select2-selection__render
 .fa_icon i{
     font-size: 23px;
 }
-
+.select2-container.select2-container--default.select2-container--open{
+    z-index: 111111;
+}
 @media screen and (min-width: 1350px) {
     .horizontal-nav-bar-li p{
         font-size: 12px;
