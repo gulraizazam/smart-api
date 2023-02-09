@@ -2571,10 +2571,8 @@ class AppointmentsController extends Controller
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        
-        $parent = Services::whereId($request->treatment_service_id)->first();
-        $doctor_has_service = DoctorHasLocations::where(['user_id'=>$request->doctor_id,'service_id'=>$parent->parent_id])->first();
-        if(!$doctor_has_service && $doctor_has_service==13){
+        $doctor_has_service = DoctorHasLocations::where(['user_id'=>$request->doctor_id])->first();
+        if($doctor_has_service==13){
             $validator = $this->verifyUpdateFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
@@ -2660,7 +2658,42 @@ class AppointmentsController extends Controller
                         if (count($changes) == 5) {
                             if (isset($changes['doctor_id'])) {
                                 $appointment->update(['send_message' => 0]);
-                            }
+                                tData['appointment_status_id'] == 1){
+                                    $appointmentData['lead_status_id'] = 4;
+                                }else if($appointmentData['appointment_status_id'] == 3){
+                                    $appointmentData['lead_status_id'] = 1;
+                                }
+                                $lead = Leads::find($appointmentData['lead_id']);
+                                if (! $lead) {
+                                    return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+                                }
+                                $lead->update($appointmentData);
+                                $patient = Patients::find($lead->patient_id);
+                                if (! $patient) {
+                                    return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+                                }
+                                $patientData = $appointmentData;
+                                /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in
+                                 * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
+                                 */
+                                $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
+                                GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
+                                $patient = Patients::updateRecord($lead->patient_id, $patientData);
+                                $patient->update($patientData);
+                                /*
+                                 * Lead Operations End
+                                 */
+                        
+                                /**
+                                 * Dispatch Elastic Search Index
+                                 */
+                                $this->dispatch(
+                                    new IndexSingleAppointmentJob([
+                                        'account_id' => Auth::User()->account_id,
+                                        'appointment_id' => $appointment->id
+                                    ])
+                                );
+                                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');  }
                         } else if (count($changes) == 2) {
                             $appointment->update(['send_message' => $value_of_sending_message]);
                         }
@@ -2711,7 +2744,184 @@ class AppointmentsController extends Controller
             );
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         }else{
-            return ApiHelper::apiResponse($this->error, 'Service is not assigned to this doctor', false);
+            $parent = Services::whereid($request->treatment_service_id)->first();
+            $doctor_has_service = DoctorHasLocations::where(['user_id'=>$request->doctor_id,'service_id'=>$parent->parent_id])->first();
+            if($doctor_has_service)
+            {
+                $validator = $this->verifyUpdateFields($request);
+                if ($validator->fails()) {
+                    return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+                }
+                $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
+                if (strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
+                    return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
+                }
+                $appointment = Appointments::find($id);
+                if($appointment){
+                    $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
+                    if($check_invoice){
+                        return ApiHelper::apiResponse($this->error, 'Invoice already generated. Appointment can not be rescheduled.', false);
+                    }
+                }
+                $rota = $this->checkRota($appointment, $request);
+                if (!$rota['status']) {
+                    return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
+                }
+                if (! $appointment) {
+                    return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
+                }
+                $value_of_sending_message = $appointment->send_message;
+                $city_info = Cities::find($request->city_id);
+                if($request->input('phone') == '***********'){
+                    $request->merge(['phone' => $request->input('old_phone')]);
+                }
+                $request->request->remove('old_phone');
+                $appointmentData = $request->all();
+                $appointmentData['region_id'] = $city_info->region_id;
+                $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
+                $appointmentData['updated_by'] = Auth::user()->id;
+                $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
+                $appointmentData['updated_by'] = Auth::User()->id;
+                $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
+                $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
+                // Reset Scheduled Time to null, stop sending message
+                $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
+                if ($appointment_status) {
+                    $appointmentData['appointment_status_id'] = $appointment_status->id;
+                    $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                    $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
+                    $appointmentData['send_message'] = $appointment_status->allow_message;
+                }
+                /*
+                * Grab Rota day info and update
+                */
+                $resource = Resources::where([
+                    'external_id' => $appointmentData['doctor_id'],
+                    'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
+                    'account_id' => Auth::User()->account_id,
+                ])->first();
+                if ($resource) {
+                    $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->get('scheduled_date'), Auth::User()->account_id, $appointmentData['location_id']);
+                    if (count($resource_has_rota_day)) {
+                        $appointmentData['resource_id'] = $resource->id;
+                        $appointmentData['resource_has_rota_day_id'] = $resource_has_rota_day['id'];
+                    }
+                }
+                if ($appointment->appointment_type_id == Config::get('constants.appointment_type_service')) {
+                    $machine_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($appointmentData['machine_id'], $request->get('scheduled_date'), Auth::User()->account_id, $appointmentData['location_id']);
+                    if (count($machine_has_rota_day)) {
+                        $appointmentData['resource_id'] = $appointmentData['machine_id'];
+                        $appointmentData['resource_has_rota_day_id_for_machine'] = $machine_has_rota_day['id'];
+                    }
+                }
+                $appointment->update($appointmentData);
+                if (count($appointment->getChanges()) > 1) {
+                    // if only doctor are going to change and first sms already sent, so we need to stop sending message again
+                    if ($value_of_sending_message == '0') {
+                        $changes = $appointment->getChanges();
+                        // in future if edit form increase input field so we need to change that count also
+                        // And Reader I didnt find any proper way so I use static check
+                        if ($appointment->appointment_type_id == Config::get('constants.appointment_type_service')) {
+                            if (count($changes) == 4) {
+                                if (isset($changes['doctor_id'])) {
+                                    $appointment->update(['send_message' => 0]);
+                                }
+                            } else if (count($changes) == 2) {
+                                $appointment->update(['send_message' => $value_of_sending_message]);
+                            }
+                        } else {
+                            if (count($changes) == 5) {
+                                if (isset($changes['doctor_id'])) {
+                                    $appointment->update(['send_message' => 0]);
+                                    tData['appointment_status_id'] == 1){
+                                        $appointmentData['lead_status_id'] = 4;
+                                    }else if($appointmentData['appointment_status_id'] == 3){
+                                        $appointmentData['lead_status_id'] = 1;
+                                    }
+                                    $lead = Leads::find($appointmentData['lead_id']);
+                                    if (! $lead) {
+                                        return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+                                    }
+                                    $lead->update($appointmentData);
+                                    $patient = Patients::find($lead->patient_id);
+                                    if (! $patient) {
+                                        return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+                                    }
+                                    $patientData = $appointmentData;
+                                    /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in
+                                     * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
+                                     */
+                                    $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
+                                    GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
+                                    $patient = Patients::updateRecord($lead->patient_id, $patientData);
+                                    $patient->update($patientData);
+                                    /*
+                                     * Lead Operations End
+                                     */
+                            
+                                    /**
+                                     * Dispatch Elastic Search Index
+                                     */
+                                    $this->dispatch(
+                                        new IndexSingleAppointmentJob([
+                                            'account_id' => Auth::User()->account_id,
+                                            'appointment_id' => $appointment->id
+                                        ])
+                                    );
+                                    return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');  }
+                            } else if (count($changes) == 2) {
+                                $appointment->update(['send_message' => $value_of_sending_message]);
+                            }
+                        }
+                    }
+                    // End: That code only belong to stop sending message
+                    $scheduled_at_count = $appointment->scheduled_at_count;
+                    $appointment->update(['scheduled_at_count' => $scheduled_at_count + 1]);
+                }
+                Appointments::where('patient_id', '=', $appointment->patient_id)->update(['name' => $appointmentData['name']]);
+                /*
+                 * Perform Lead Operations
+                 */
+                if($appointmentData['appointment_status_id'] == 1){
+                    $appointmentData['lead_status_id'] = 4;
+                }else if($appointmentData['appointment_status_id'] == 3){
+                    $appointmentData['lead_status_id'] = 1;
+                }
+                $lead = Leads::find($appointmentData['lead_id']);
+                if (! $lead) {
+                    return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+                }
+                $lead->update($appointmentData);
+                $patient = Patients::find($lead->patient_id);
+                if (! $patient) {
+                    return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+                }
+                $patientData = $appointmentData;
+                /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in
+                 * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
+                 */
+                $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
+                GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
+                $patient = Patients::updateRecord($lead->patient_id, $patientData);
+                $patient->update($patientData);
+                /*
+                 * Lead Operations End
+                 */
+        
+                /**
+                 * Dispatch Elastic Search Index
+                 */
+                $this->dispatch(
+                    new IndexSingleAppointmentJob([
+                        'account_id' => Auth::User()->account_id,
+                        'appointment_id' => $appointment->id
+                    ])
+                );
+                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            }else{
+                return ApiHelper::apiResponse($this->error, 'Service is not assigned to this doctor', false);
+            }
+            
         }
            
         
