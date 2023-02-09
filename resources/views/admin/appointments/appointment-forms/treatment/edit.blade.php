@@ -48,12 +48,12 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_city_id" onchange="loadLocations($(this).val());" class="form-control select2" name="city_id"></select>
+                            <select id="edit_treatment_city_id" onchange="loadEditTreatmentLocations($(this).val());" class="form-control select2" name="city_id"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_location_id" onchange="loadDoctors($(this).val());" class="form-control select2" name="location_id"></select>
+                            <select id="edit_treatment_location_id" onchange="loadEditTreatmentDoctors($(this).val());" class="form-control select2" name="location_id"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">

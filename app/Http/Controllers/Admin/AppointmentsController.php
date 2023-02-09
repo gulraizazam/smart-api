@@ -5450,9 +5450,9 @@ class AppointmentsController extends Controller
         } else {
             $object->start = $request->start;
         }
-        $object->city_id = $appointment->city_id;
+        $object->city_id = $request->city_id;
         $object->doctor_id = $request->doctor_id;
-        $object->location_id = $appointment->location_id;
+        $object->location_id = $request->location_id;
         $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
         if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy') ) {
             $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
