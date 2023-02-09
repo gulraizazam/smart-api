@@ -129,7 +129,74 @@ let loadLocations = function (cityId, appointment = null) {
     //     resetDropdowns();
     // }
 }
-
+let loadEditTreatmentLocations = function (cityId, appointment = null) {
+    if(cityId != '' ) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_locations'),
+            type: 'POST',
+            data: {
+                city_id: cityId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Location</option>';
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+                    $('#edit_treatment_location_id').html(dropdown_options);
+                    setQueryStringParameter('city_id', cityId);
+                    resetDoctors();
+                } else {
+                    resetDropdowns();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDropdowns();
+            }
+        });
+    } else {
+        resetDropdowns();
+    }
+}
+let loadEditConsultancyLocations = function (cityId, appointment = null) {
+    if(cityId != '' ) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_locations'),
+            type: 'POST',
+            data: {
+                city_id: cityId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Location</option>';
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+                    $('#edit_location').html(dropdown_options);
+                    setQueryStringParameter('city_id', cityId);
+                    resetDoctors();
+                } else {
+                    resetDropdowns();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDropdowns();
+            }
+        });
+    } else {
+        resetDropdowns();
+    }
+}
 let loadDoctors = function (locationId, appointment = null) {
 
     if (locationId != '' && locationId != null) {
@@ -208,7 +275,106 @@ let loadDoctors = function (locationId, appointment = null) {
     }
 
 }
+let loadEditTreatmentDoctors = function (locationId, appointment = null) {
+    if (locationId != '' && locationId != null) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_doctors'),
+            type: 'POST',
+            data: {
+                location_id: locationId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Doctor</option>';
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+                    $('#edit_treatment_doctor_id').html(dropdown_options);
+                    setQueryStringParameter('location_id', locationId);
+                    loadMachine(locationId);
+                } else {
+                    resetDoctors();
+                }
+                setQueryStringParameter('reload');
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDoctors();
+            }
+        });
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.center_machines', {
+                location_id: locationId,
+            }),
+            type: 'GET',
+            data: {
+                location_id: locationId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Machine</option>';
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+                    $('#edit_treatment_machine_id').html(dropdown_options);  
+                } else {
+                    resetDoctors();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDoctors();
+            }
+        });
+    } else {
+        resetDoctors();
+    }
 
+}
+let loadEditConsultancyDoctors = function (locationId, appointment = null) {
+    if (locationId != '' && locationId != null) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_doctors'),
+            type: 'POST',
+            data: {
+                location_id: locationId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Doctor</option>';
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+                    console
+                    $('#edit_doctor').html(dropdown_options);
+                    setQueryStringParameter('location_id', locationId);
+                } else {
+                    resetDoctors();
+                }
+                setQueryStringParameter('reload');
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDoctors();
+            }
+        });
+    } else {
+        resetDoctors();
+    }
+
+}
 let resetDoctors = function () {
     var doctorDropdown = '<select id="doctor_id" class="form-control select2 required" name="doctor_id"><option value="" selected="selected">Select a Doctor</option></select>';
     $('#convert_doctor_id').html(doctorDropdown);
