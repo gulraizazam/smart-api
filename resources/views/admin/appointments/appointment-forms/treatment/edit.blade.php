@@ -34,7 +34,7 @@
             <input type="hidden" id="treatment_machineRotaDayID" >
             <input type="hidden" id="treatment_start_time" >
             <input type="hidden" id="treatment_end_time"  >
-
+            <input type="hidden" id="treatment_service_id"  name="treatment_service_id">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_appointment_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
