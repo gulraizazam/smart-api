@@ -414,13 +414,13 @@ class LeadsController extends Controller
                 $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
             }
             if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leads")){
-                $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+                $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId','users.gender')
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->orderBy($orderBy, $order)
                 ->get();
             }else{
-                $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
+                $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId','users.gender')
                 ->where('leads.active',1)
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
@@ -450,7 +450,7 @@ class LeadsController extends Controller
             if ($Leads->count()) {
                 $index = 0;
                 foreach ($Leads as $lead) {
-                    
+                   
                     //check lead s lead status has parent or not if yes than get parent data and if no than get simple that row data
                     if (array_key_exists($lead->lead_status_id, $lead_status)) {
                         if ($lead_status[$lead->lead_status_id]->parent_id == 0) {
@@ -464,6 +464,7 @@ class LeadsController extends Controller
                         'lead_id' => $lead->lead_id,
                         'PatientId' => GeneralFunctions::patientSearchStringAdd($lead->PatientId),
                         'name' => $lead->name,
+                        'gender'=>$lead->gender==1 ? 'Male' : 'Female',
                         'active' => $lead->active,
                         'cityId' => $lead?->city?->id ?? 0,
                         'phone' =>  GeneralFunctions::prepareNumber4Call($lead->patient->phone),
