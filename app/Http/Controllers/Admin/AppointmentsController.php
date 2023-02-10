@@ -2710,7 +2710,12 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         }else{
             $parent = Services::whereid($request->treatment_service_id)->first();
-            $doctor_has_service = DoctorHasLocations::where(['user_id'=>$request->doctor_id,'service_id'=>$parent->parent_id])->first();
+            if($parent && $parent->parent_id==0){
+                $service = $parent->id;
+            }else{
+                $service = $parent->parent_id;
+            }
+            $doctor_has_service = DoctorHasLocations::where(['user_id'=>$request->doctor_id,'service_id'=>$service])->first();
             if($doctor_has_service)
             {
                 $validator = $this->verifyUpdateFields($request);
