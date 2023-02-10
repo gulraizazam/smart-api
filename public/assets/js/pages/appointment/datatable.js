@@ -801,6 +801,7 @@ function setEditData(response) {
 
         $("#edit_consultancy_type").html(type_option).val(appointment.consultancy_type);
         $("#edit_treatment").html(service_option).val(appointment.service_id);
+        $("#consultancy_service_id").html(service_option).val(appointment.service_id);
         $("#edit_city").html(city_option).val(appointment.city_id);
         $("#edit_location").html(location_option).val(appointment.location_id);
         $("#edit_doctor").html(doctor_option).val(appointment?.doctor_id);
