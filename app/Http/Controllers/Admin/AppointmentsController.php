@@ -2482,7 +2482,7 @@ class AppointmentsController extends Controller
             'consultancy_type' => config('constants.consultancy_type_array'),
         ]);
     }
-    public function editServiceTest($id)
+    public function editAppointmentService($id)
     {
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
