@@ -54,11 +54,11 @@
                         <div class="fv-row col-md-6 mt-5 servicefield" style="display: none;">
                             <label class="required fw-bold fs-6 mb-2 pl-0">End Node? <span class="text text-danger">*</span></label>
                             <label class="checkbox checkbox-single">
-                                <input name="end_node" onchange="switchComplimentary('complimentary')" value="1" type="checkbox">&nbsp;
+                                <input name="end_node" id="endnode"  value="1" type="checkbox">&nbsp;
                                 <span></span>
                             </label>
                         </div>
-                        <div class="fv-row col-md-6 mt-5 d-none" id="complimentary">
+                        <div class="fv-row col-md-6 mt-5 servicefield" style="display: none;">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Complimentary?</label>
                             <label class="checkbox checkbox-single">
                                 <input name="complimentory" value="1" type="checkbox">&nbsp;<span></span>
