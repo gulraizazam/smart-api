@@ -61,7 +61,7 @@
                             <tr>
                                 <th>Appointment Status</th>
                                 <td id="appointment_appointment_status"></td>
-                                <th>Service/Consultancy</th>
+                                <th>Treatment</th>
                                 <td id="appointment_service_consultancy_name"></td>
                             </tr>
                             <tr>
