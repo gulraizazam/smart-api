@@ -2228,7 +2228,6 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Data Found.', true, [
                 'lead_sources' => $lead_sources,
                 'services' => $services,
-                //'city_id' => $city_id,
                 'city_id' => '0',
                 'location_id' => $location_id,
                 'doctor_id' => $doctor_id,
@@ -2664,14 +2663,10 @@ class AppointmentsController extends Controller
                         }
                     }
                 }
-                // End: That code only belong to stop sending message
                 $scheduled_at_count = $appointment->scheduled_at_count;
                 $appointment->update(['scheduled_at_count' => $scheduled_at_count + 1]);
             }
             Appointments::where('patient_id', '=', $appointment->patient_id)->update(['name' => $appointmentData['name']]);
-            /*
-             * Perform Lead Operations
-             */
             if($appointmentData['appointment_status_id'] == 1){
                 $appointmentData['lead_status_id'] = 4;
             }else if($appointmentData['appointment_status_id'] == 3){
@@ -2687,20 +2682,10 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Patient not found', false);
             }
             $patientData = $appointmentData;
-            /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in
-             * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
-             */
             $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
             GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
             $patient = Patients::updateRecord($lead->patient_id, $patientData);
             $patient->update($patientData);
-            /*
-             * Lead Operations End
-             */
-    
-            /**
-             * Dispatch Elastic Search Index
-             */
             $this->dispatch(
                 new IndexSingleAppointmentJob([
                     'account_id' => Auth::User()->account_id,
@@ -2839,13 +2824,6 @@ class AppointmentsController extends Controller
                 GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
                 $patient = Patients::updateRecord($lead->patient_id, $patientData);
                 $patient->update($patientData);
-                /*
-                 * Lead Operations End
-                 */
-        
-                /**
-                 * Dispatch Elastic Search Index
-                 */
                 $this->dispatch(
                     new IndexSingleAppointmentJob([
                         'account_id' => Auth::User()->account_id,
@@ -2855,12 +2833,8 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }else{
                 return ApiHelper::apiResponse($this->error, 'Service is not assigned to this doctor', false);
-            }
-            
-        }
-           
-        
-        
+            } 
+        } 
     }
     /**
      * Remove Appointment from storage.
@@ -3505,25 +3479,17 @@ class AppointmentsController extends Controller
 
     public function getScheduledAppointments(Request $request)
     {
-        
-        if (
-            //$request->get("city_id") &&
-            $request->get("location_id") 
-            //$request->get("doctor_id")
-        ) {
+        if ($request->location_id) {
             $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
             if($request->doctor_id){
-                $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"));
-                
+                $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id")); 
             }
-            
             $location_id = $request->get("location_id");
             $doctor_id = $request->get("doctor_id");
             $machine_id = $request->get("machine_id");
             $start = $request->get("start");
             $end = $request->get("end");
             $minTime = Resources::getMinTimeWithDr($location_id, $doctor_id, $start, $end);
-           
             if ($appointments) {
                 $data = array();
                 foreach ($appointments as $appointment) {
