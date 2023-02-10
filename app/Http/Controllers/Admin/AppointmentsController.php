@@ -2147,11 +2147,9 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         if (
-            //$request->get("city_id") &&
             $request->get("location_id") &&
             $request->get("doctor_id")
         ) {
-            //$city_id = $request->get("city_id");
             $location_id = $request->get("location_id");
             $doctor_id = $request->get("doctor_id");
         } else {
@@ -2160,7 +2158,6 @@ class AppointmentsController extends Controller
             $doctor_id = 0;
             return response()->json(array("message" => "Invalid request"), 400);
         }
-        
         if ($request->start) {
             $appointment_checkes = AppointmentCheckesWidget::AppointmentConsultancyCheckes($request);
         } else {
@@ -2168,7 +2165,6 @@ class AppointmentsController extends Controller
                 'status' => true
             );
         }
-        
         if ($request->get('lead_id')) {
             $lead = Leads::where(['id' => $request->get('lead_id')])->first();
             if ($lead) {
@@ -2215,7 +2211,6 @@ class AppointmentsController extends Controller
         } else {
             $employees = array();
         }
-        
         $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->get("location_id"), $request->get("doctor_id"), Auth::User()->account_id);
         if (count($serviceIds)) {
             $services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
