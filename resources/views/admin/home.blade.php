@@ -217,7 +217,7 @@
                         </div>
                     </div>
                     @if(\Illuminate\Support\Facades\Gate::allows("dashboard_collection_by_centre"))
-                    <div class="col-lg-12 col-xxl-12">
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="collectionbycenter">
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -296,7 +296,7 @@
                     </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
-                    <div class="col-lg-12 col-xxl-12">
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -375,7 +375,7 @@
                     </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
-                    <div class="col-lg-12 col-xxl-12">
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -454,7 +454,7 @@
                     </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
-                    <div class="col-lg-12 col-xxl-12">
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -533,7 +533,7 @@
                     </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
-                    <div class="col-lg-12 col-xxl-12">
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
