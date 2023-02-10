@@ -130,6 +130,7 @@
                         }
                     });
                     $('.servicefield').show();
+                    $('#endnode').attr('checked','checked');
                 }else{
                     $('.servicefield').hide();
                 }
