@@ -556,7 +556,7 @@ function setTreatmentDetailData(response) {
         $("#treatment_center_name").text(location?.name ?? 'N/A');
         $("#treatment_appointment_status").text(appointment_status?.name ?? 'N/A');
         $("#treatment_service_consultancy_name").text(service?.name ?? 'N/A');
-
+        $("#treatment_service_consultancy_name_title").text(service?.name ?? 'Detail');
         setTreatmentComments(appointment);
 
     } catch (e) {
