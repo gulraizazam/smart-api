@@ -441,7 +441,7 @@ function setDetailData(response) {
         $("#center_name").text(location?.name ?? 'N/A');
         $("#appointment_status").text(appointment_status?.name ?? 'N/A');
         $("#service_consultancy_name").text(service?.name ?? 'N/A');
-
+        $("#service_consultancy_name_title").text(service?.name ?? 'N/A');
         setComments(appointment);
     } catch (e) {
         showException(e);
