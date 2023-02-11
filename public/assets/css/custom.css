@@ -619,15 +619,27 @@ select2-container--default .select2-selection--single .select2-selection__render
 .fa_icon i{
     font-size: 23px;
 }
-.select2-container.select2-container--default.select2-container--open{
-    z-index: 111111;
-}
+
 @media screen and (min-width: 1350px) {
     .horizontal-nav-bar-li p{
         font-size: 12px;
     }
 }
+@media screen and (max-width: 992px) {
+    .horizontal-nav-bar {
+        display: block;
+    }
+    .horizontal-nav-bar-li{
+        width: 100px;
+        height: 100px
+    }
+    .horizontal-nav-bar-li a {
+        height: 100%;
+        display: flex;
+        width: 100%;
+    }
 
+}
 #toast-container > div {
     opacity: 1 !important;
 }
@@ -871,61 +883,4 @@ select2-container--default .select2-selection--single .select2-selection__render
 .section-states{
     display: flex;
     flex-wrap: wrap;
-}
-
-@media screen and (max-width: 992px) {
-    .horizontal-nav-bar:not(.horizontalnav_not) {
-        display: block;
-    }
-    .horizontal-nav-bar:not(.horizontalnav_not) .horizontal-nav-bar-li{
-        width: 100px;
-        height: 100px
-    }
-    .horizontal-nav-bar:not(.horizontalnav_not) .horizontal-nav-bar-li a {
-        height: 100%;
-        display: flex;
-        width: 100%;
-    }
-    #kt_content {
-        margin-top: 15px;
-    }
-    .custom_tabs_style .card-body > div.d-flex{
-        flex-wrap: wrap;
-        flex-direction: column;
-        align-items: flex-start !important;
-    }
-    .custom_tabs_style .card-body > div.d-flex .dashboard-counter{
-        margin: 3px 0px 10px;
-    }
-    .custom_tabs_style .card-body .nav.nav-tabs li .actions {
-        padding-left: 0px !important;
-        padding-bottom: 0px !important;
-    }
-    .custom_tabs_style .card-body .nav.nav-tabs{
-        margin: 0px 0px 8px;
-    }
-    .custom_tabs_style .card-body .nav.nav-tabs li{
-        margin-bottom: 10px;
-    }
-    .custom_tabs_style .card-body .nav.nav-tabs li a:not(.btn){
-        padding: 10px 9px 5px;
-    }
-    .custom_tabs_style .card-body .nav-tabs>li a.active{
-        border-bottom: 3px;
-    }
-    .custom_tabs_style > .card.card-custom{
-        min-height: 400px !important;
-        height: auto !important;
-    }
-    #consultancy_by_status, #treatment_by_status, #revenue-service, #revenue-centre, #collection-by-centre{
-        height: 300px !important;
-    } 
-}
-@media(max-width:480px){
-    .dashboard-counter{
-        float: left;
-        margin: 8px 0px 8px;
-        display: block;
-        width: 100%;
-    }
 }
