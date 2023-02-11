@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder rota-title" id="treatment_service_consultancy_name_title"></h2>
+        <h2 class="fw-bolder rota-title">Details</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -68,7 +68,7 @@
                                     <tr>
                                         <th>Appointment Status</th>
                                         <td id="treatment_appointment_status"></td>
-                                        <th>Treatment</th>
+                                        <th>Service/Consultancy</th>
                                         <td id="treatment_service_consultancy_name"></td>
                                     </tr>
                                     </tbody>
