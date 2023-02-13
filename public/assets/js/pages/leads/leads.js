@@ -1180,7 +1180,11 @@ jQuery(document).ready( function () {
     });
 
     $(document).on( "click", ".popup-close", function () {
-        $(this).parents(".modal").modal("toggle");
+        $("#modal_add_leads_form")[0].reset();
+        $("#modal_edit_leads_form")[0].reset();
+        $("#modal_add_leads_form").find('input').val('');
+        $("#modal_edit_leads_form").find('input').val('');
+        $(".select2").val(null).trigger("change");
     });
 
 });

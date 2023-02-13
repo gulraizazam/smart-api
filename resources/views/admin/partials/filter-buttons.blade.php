@@ -4,7 +4,7 @@
          $search_id = $customId;
     }
 @endphp
-<div class="input-icon mb-0" style="width: 215px;">
+<div class="input-icon mb-1" style="width: 215px;">
     <button class="btn btn-primary btn-primary--icon" id="{{$search_id}}">
         
         Search
