@@ -37,7 +37,7 @@
             <input type="hidden" id="scheduled_date_old">
             <input type="hidden" id="scheduled_time_old">
             <input type="hidden" name="appointment_type_id" id="consultancy_appointment_type">
-
+            <input type="hidden" name="treatment_service_id" id="consultancy_service_id">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_appointment_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -56,12 +56,12 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span> </label>
-                            <select id="edit_city" onchange="loadLocations($(this).val());" class="form-control select2" name="city_id"></select>
+                            <select id="edit_city" onchange="loadEditConsultancyLocations($(this).val());" class="form-control select2" name="city_id"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span> </label>
-                            <select id="edit_location" onchange="loadDoctors($(this).val());" class="form-control select2" name="location_id"></select>
+                            <select id="edit_location" onchange="loadEditConsultancyDoctors($(this).val());" class="form-control select2" name="location_id"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
