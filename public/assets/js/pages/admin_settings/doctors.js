@@ -30,7 +30,7 @@ var table_columns = [
     }, {
         field: 'roles',
         title: 'roles',
-        width: 120,
+        width: 'auto',
         sortable: false,
         template: function (data) {
             let roles = '';
@@ -46,21 +46,18 @@ var table_columns = [
             return roles;
         }
     }, {
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-        template: function (data) {
-            return formatDate(data.created_at);
-        }
-    },{
         field: 'active',
         title: 'status',
-        width: 'auto',
+        width: 60,
         template: function (data) {
             let status_url = route('admin.doctors.status');
             return statuses(data, status_url);
         }
-    }, {
+    },{
+        field: 'created_at',
+        title: 'Created At',
+        width: 'auto',
+    },  {
         field: 'actions',
         title: 'Actions',
         sortable: false,

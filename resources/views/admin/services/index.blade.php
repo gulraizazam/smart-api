@@ -129,11 +129,8 @@
                             $("#service_color").val(data.color);
                         }
                     });
-                    $('.servicefield').show();
-                    $('#endnode').attr('checked','checked');
-                }else{
-                    $('.servicefield').hide();
                 }
+                
             }
             function getEditColor()
             {
@@ -147,10 +144,8 @@
                             $("#edit_color").val(data.color);
                         }
                     });
-                    $('.servicefield').show();
-                }else{
-                    $('.servicefield').hide();
-                }     
+                }
+                
             }
         </script>
     @endpush
