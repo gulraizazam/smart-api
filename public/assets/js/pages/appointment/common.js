@@ -66,9 +66,8 @@ function toggleSection($this, $class) {
 
 let loadLocations = function (cityId, appointment = null) {
     let url = window.location.href;
-    const lastSegment = url.split("/").pop();        
-    console.log('lastSegment', lastSegment);
-    if (lastSegment == 'treatment?tab=treatment') {
+    const lastSegment = url.split("/").pop();
+    if (lastSegment.includes('treatment')) {
         appointment = 'treatment';
     } else {
         appointment = 'consultancy';
@@ -192,7 +191,6 @@ let loadEditConsultancyLocations = function (cityId, appointment = null) {
     }
 }
 let loadDoctors = function (locationId, appointment = null) {
-
     if (locationId != '' && locationId != null) {
 
         $.ajax({
@@ -239,8 +237,8 @@ let loadDoctors = function (locationId, appointment = null) {
                     } else if (appointment && appointment == 'treatment') {
                         $('#treatment_doctor_filter').html(dropdown_options);
                         setQueryStringParameter('location_id', locationId);
-
                         loadMachine(locationId);
+                        
                         loadCalendar();
 
                         if (typeof result.doctor_id !== "undefined" && typeof result.reload === "undefined") {
