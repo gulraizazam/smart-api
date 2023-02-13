@@ -693,7 +693,7 @@ function setAppointmentDetailData(response) {
         $("#appointment_center_name").text(location?.name ?? 'N/A');
         $("#appointment_appointment_status").text(appointment_status?.name ?? 'N/A');
         $("#appointment_service_consultancy_name").text(service?.name ?? 'N/A');
-
+        $("#appointment_service_consultancy_name_title").text(service?.name ?? 'N/A');
         setAppointmentComments(appointment);
     } catch (e) {
         showException(e);
@@ -876,7 +876,7 @@ function setTreatmentEditData(response) {
         Object.entries(machines).forEach(function (machine) {
             machine_option  += '<option value="' + machine[0] + '">' + machine[1] + '</option>';
         });
-
+        $("#treatment_service_id").html(service_option).val(appointment.service_id);
         $("#edit_treatment_service_id").html(service_option).val(appointment.service_id);
         $("#edit_treatment_machine_id").html(machine_option).val(appointment.resource_id);
         $("#edit_treatment_city_id").html(city_option).val(appointment.city_id);
