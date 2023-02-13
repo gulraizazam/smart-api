@@ -4683,9 +4683,9 @@ class AppointmentsController extends Controller
     public function getScheduledServiceAppointments(Request $request)
     {
         if (
-            $request->get("city_id") &&
-            $request->get("location_id") &&
-            $request->get("doctor_id")
+            //$request->get("city_id") &&
+            $request->get("location_id") 
+            //$request->get("doctor_id")
         ) {
             $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id, true);
             $resources = Resources::getRoomsResourceRotaWithoutDays($request->get("location_id"));
@@ -4724,15 +4724,28 @@ class AppointmentsController extends Controller
                 foreach ($resources as $resource) {
                     $resource_ids[] = $resource["id"];
                 }
-                return response()->json(array(
-                    'status' => 1,
-                    'events' => $data,
-                    'rotas' => $doctor_rotas->toArray(),
-                    'min_time' => $minTime,
-                    'resource_ids' => $resource_ids,
-                    'start_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))->format("H:i:s"),
-                    'end_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))->format("H:i:s"),
-                ));
+                if($request->doctor_id){
+                    return response()->json(array(
+                        'status' => 1,
+                        'events' => $data,
+                        'rotas' => $doctor_rotas->toArray(),
+                        'min_time' => $minTime,
+                        'resource_ids' => $resource_ids,
+                        'start_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))->format("H:i:s"),
+                        'end_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))->format("H:i:s"),
+                    ));
+                }else{
+                    return response()->json(array(
+                        'status' => 1,
+                        'events' => $data,
+                        'rotas' => $doctor_rotas->toArray() ?? '',
+                        'min_time' => $minTime,
+                        'resource_ids' => $resource_ids,
+                        'start_time' => '6:00',
+                        'end_time' => '22:00',
+                    ));
+                }
+                
             } else {
                 return response()->json(array(
                     'status' => 0,
