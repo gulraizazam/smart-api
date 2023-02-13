@@ -2,7 +2,7 @@
 <div class="card mb-8 menu_section" style="width: 100%">
 
     <div class="card-body menu-card">
-        <ul class="horizontal-nav-bar list-unstyled mb-0 appointment-menu horizontalnav_not">
+        <ul class="horizontal-nav-bar list-unstyled mb-0 appointment-menu">
 
             @can('appointments_manage')
                 <li class="horizontal-nav-bar-li" style="width: 50%;">
