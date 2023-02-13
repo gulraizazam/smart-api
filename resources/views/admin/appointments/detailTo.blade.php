@@ -127,7 +127,7 @@
             <td @if($appointment->appointment_status_id != Config::get('constants.appointment_status_not_show'))
                 @endif>@if($appointment->appointment_status_id){{ $appointment->appointment_status->name }}
                 @else{{'N/A'}}@endif</td>
-            <th>Treatment</th>
+            <th>Service/Consultancy</th>
             <td>{{$appointment->service->name}}</td>
         </tr>
         <tr>
