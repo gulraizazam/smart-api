@@ -69,11 +69,9 @@ let loadLocations = function (cityId, appointment = null) {
     const lastSegment = url.split("/").pop();
     if (lastSegment.includes('treatment')) {
         appointment = 'treatment';
-        
     } else {
         appointment = 'consultancy';
     }    
-    console.log('appointment', appointment);
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -86,20 +84,15 @@ let loadLocations = function (cityId, appointment = null) {
         cache: false,
         success: function(response) {
             if(response.status) {
-
                 let dropdowns =  response.data.dropdown;
                 let dropdown_options =  '<option value="">Select a Location</option>';
-
                 Object.entries(dropdowns).forEach(function (dropdown) {
                     dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                 });
-
                 let result = get_query();
-
                 if (appointment && appointment == 'consultancy') {
                     $('#consultancy_location_filter').html(dropdown_options);
                     setQueryStringParameter('city_id', cityId);
-
                     if (typeof result.location_id !== "undefined") {
                         $("#consultancy_location_filter").val(result.location_id).change();
                     }
@@ -112,7 +105,6 @@ let loadLocations = function (cityId, appointment = null) {
                 } else {
                     $('#edit_location').html(dropdown_options);
                 }
-                // $('.select2').select2({ width: '100%' });
                 resetDoctors();
             } else {
                 resetDropdowns();
