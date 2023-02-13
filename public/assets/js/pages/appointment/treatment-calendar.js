@@ -550,13 +550,13 @@ function setTreatmentDetailData(response) {
             $("#treatment_customer_id").text("C-" + patient?.id ?? 'N/A');
         }
         $("#treatment_patient_gender").text(getGender(patient?.gender));
-        $("#treatment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + appointment.scheduled_time);
+        $("#treatment_patient_scheduled_time").text(formatDate(appointment?.scheduled_date, 'MMM, D, YY') + " at " + moment(appointment.scheduled_time, ["HH.mm"]).format("hh:mm a"));
         $("#treatment_doctor_name").text(doctor?.name ?? 'N/A');
         $("#treatment_city_name").text(city?.name ?? 'N/A');
         $("#treatment_center_name").text(location?.name ?? 'N/A');
         $("#treatment_appointment_status").text(appointment_status?.name ?? 'N/A');
         $("#treatment_service_consultancy_name").text(service?.name ?? 'N/A');
-
+        $("#treatment_service_consultancy_name_title").text(service?.name ?? 'Detail');
         setTreatmentComments(appointment);
 
     } catch (e) {
