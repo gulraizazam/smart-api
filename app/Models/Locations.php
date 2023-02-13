@@ -831,8 +831,10 @@ class Locations extends BaseModal
         }
 
         if (is_array($locationId)) {
-            return self::where($where)->whereIn('id', $locationId)->orderBy('name', 'asc')->get();
+            $names= ['All Centres','All South Region','All Central Region'];
+            return self::where($where)->whereIn('id', $locationId)->whereNotIn('name',$names)->orderBy('name', 'asc')->get();
         } else {
+           
             if ($locationId) {
                 return self::where($where)->whereIn('id', array($locationId))->orderBy('name', 'asc')->get();
             } else {
