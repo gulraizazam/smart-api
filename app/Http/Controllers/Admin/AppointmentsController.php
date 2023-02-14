@@ -4708,23 +4708,44 @@ class AppointmentsController extends Controller
             }
             if ($appointments) {
                 $data = array();
-                foreach ($appointments as $appointment) {
-                    $dutation = explode(':', $appointment->service->duration);
-                    $data[$appointment->id] = array(
-                        'id' => $appointment->id,
-                        'service' => $appointment->service->name,
-                        'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
-                        'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-                        'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
-                        'duration' => $appointment->service->duration,
-                        'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
-                        'overlap' => false,
-                        'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-                        'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-                        'color' => ($request->get("doctor_id") == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
-                        'resourceId' => $appointment->resource_id,
-                    );
+                if($request->get("doctor_id") != ''){
+                    foreach ($appointments as $appointment) {
+                        $dutation = explode(':', $appointment->service->duration);
+                        $data[$appointment->id] = array(
+                            'id' => $appointment->id,
+                            'service' => $appointment->service->name,
+                            'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                            'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
+                            'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                            'duration' => $appointment->service->duration,
+                            'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
+                            'overlap' => false,
+                            'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
+                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
+                            'color' => ($request->get("doctor_id") == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
+                            'resourceId' => $appointment->resource_id,
+                        );
+                    }
+                }else{
+                    foreach ($appointments as $appointment) {
+                        $dutation = explode(':', $appointment->service->duration);
+                        $data[$appointment->id] = array(
+                            'id' => $appointment->id,
+                            'service' => $appointment->service->name,
+                            'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                            'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
+                            'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                            'duration' => $appointment->service->duration,
+                            'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
+                            'overlap' => false,
+                            'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
+                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
+                            'color' => $appointment->service->color,
+                            'resourceId' => $appointment->resource_id,
+                        );
+                    }
                 }
+                
                 $resource_ids = array();
                 $resources = array_filter($resources);
                 foreach ($resources as $resource) {
