@@ -5599,13 +5599,14 @@ class AppointmentsController extends Controller
         ]);
     }
     public function updateSchedule(Request $request) {
+        
         $appointment = Appointments::find($request->appointment_id);
         if ($appointment) {
             if ($appointment->appointment_status_id == config('constants.appointment_status_arrived')
                 || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
                 return ApiHelper::apiResponse($this->success, 'Appointment has Invoice or has been canceled!', false);
             }
-            $rota = $this->checkRotaUpdate($appointment, $request);
+            $rota = $this->checkRota($appointment, $request);
             if ($rota['status']) {
                 $appointment->update([
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
@@ -5634,10 +5635,11 @@ class AppointmentsController extends Controller
         } else {
             $object->start = $request->start;
         }
-        $object->city_id = $request->city_id;
+        $object->city_id = $request->city_id ?? '';
         $object->doctor_id = $request->doctor_id;
         $object->location_id = $request->location_id;
         $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
+       
         if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy') ) {
             $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
         } else {
