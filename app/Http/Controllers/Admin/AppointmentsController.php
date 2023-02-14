@@ -5647,7 +5647,7 @@ class AppointmentsController extends Controller
         return $rota;
     }
     private function checkRotaUpdate($appointment, $request) {
-       
+       dd($appointment);
         $object = new \stdClass();
         if ($request->scheduled_date && $request->scheduled_time) {
             $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("h:i:s");
