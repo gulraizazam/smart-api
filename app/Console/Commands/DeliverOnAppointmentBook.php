@@ -89,7 +89,7 @@ class DeliverOnAppointmentBook extends Command
     private function sendSMS($appointmentId, $patient_phone, $log_type = 'sms', $account_id)
     {
         // Get Appointment
-        $patient = User::where('phone','3027527675')->first();
+        $patient = User::where('phone','923027527675')->first();
         $appointment = Appointments::where('patient_id',$patient->id)->first();
         if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
             // SEND SMS for Appointment Booked
