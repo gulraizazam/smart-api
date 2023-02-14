@@ -444,26 +444,29 @@ var TreatmentCalendar = function() {
                 start : start,
                 appointment_type : 'treatment',
             });
-
-            $.ajax({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                url: create_url,
-                type: 'GET',
-                cache: false,
-                success: function(response) {
-                  
-                    if (response.status) {
-                       setCreateTreatment(response, start);
-                    } else {
-                        toastr.error(response.message)
+            if($("#treatment_resource_filter").val() != ''){
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: create_url,
+                    type: 'GET',
+                    cache: false,
+                    success: function(response) {
+                      
+                        if (response.status) {
+                           setCreateTreatment(response, start);
+                        } else {
+                            toastr.error(response.message)
+                        }
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        toastr.error("Unable to process the request");
                     }
-                },
-                error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error("Unable to process the request");
-                }
-            });
+                });
+            }else{
+                toastr.error("Please select machine first");
+            }
 
         },
 
