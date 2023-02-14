@@ -50,10 +50,10 @@ class AppointmentCheckesWidget
             }
         }
         
-        $started_time = \Carbon\Carbon::parse($request->start)->format("Y-m-d H:i:s");
+        $started_time = \Carbon\Carbon::parse($request->start)->format("Y-m-d h:i:s");
 
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format("H:i");
-        dd($continue_rota[0]);
+       
         if (count($continue_rota) > 0) {
             $resource_has_rota_days = ResourceHasRotaDays::where([
                 ['resource_has_rota_id', '=', $continue_rota[0]->id],
