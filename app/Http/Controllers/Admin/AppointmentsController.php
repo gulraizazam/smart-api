@@ -5565,7 +5565,7 @@ class AppointmentsController extends Controller
                 || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
                 return ApiHelper::apiResponse($this->success, 'Appointment has Invoice or has been canceled!', false);
             }
-            $rota = $this->checkRotaUpdate($appointment, $request);
+            $rota = $this->checkRota($appointment, $request);
             if ($rota['status']) {
                 $appointment->update([
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
