@@ -23,7 +23,7 @@ class AppointmentCheckesWidget
      */
     static function AppointmentConsultancyCheckes($request)
     {
-        dd($request->all());
+        dd($request);
         $appointment_status = true;
 
         $status = array(
