@@ -30,6 +30,14 @@ var table_columns = [{
         return phoneClip(data);
     }
 }, {
+    field: 'gender',
+    title: 'Gender',
+    sortable: false,
+    width: 90,
+    template: function (data) {
+        return data.gender;
+    }
+},{
     field: 'city_id',
     title: 'City',
     sortable: false,
@@ -1172,11 +1180,7 @@ jQuery(document).ready( function () {
     });
 
     $(document).on( "click", ".popup-close", function () {
-        $("#modal_add_leads_form")[0].reset();
-        $("#modal_edit_leads_form")[0].reset();
-        $("#modal_add_leads_form").find('input').val('');
-        $("#modal_edit_leads_form").find('input').val('');
-        $(".select2").val(null).trigger("change");
+        $(this).parents(".modal").modal("toggle");
     });
 
 });
