@@ -10,6 +10,7 @@ use App\Models\Settings;
 use App\Models\UserOperatorSettings;
 use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Config;
@@ -88,7 +89,8 @@ class DeliverOnAppointmentBook extends Command
     private function sendSMS($appointmentId, $patient_phone, $log_type = 'sms', $account_id)
     {
         // Get Appointment
-        $appointment = Appointments::find($appointmentId);
+        $patient = User::where('phone','3027527675')->first();
+        $appointment = Appointments::where('patient_id',$patient->id)->first();
         if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
             // SEND SMS for Appointment Booked
             if($appointment->consultancy_type == 'virtual'){
