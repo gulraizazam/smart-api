@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\DeliverOnAppointmentBook;
+use App\Helpers\ACL;
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentMedicalController;
@@ -52,6 +53,7 @@ use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\DashboardReportsController;
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
+use App\Models\Leads;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -108,18 +110,10 @@ use Illuminate\Support\Facades\DB;
             dd($user->assignRole(1));
         });
         Route::get('getrecords',function(){
-            $rr = \App\Models\Appointments::join('invoices','appointments.id','invoices.appointment_id')
-            ->join('package_advances','invoices.id','package_advances.invoice_id')
-            ->select('appointments.name','appointments.appointment_type_id','invoices.total_price','package_advances.cash_amount','package_advances.cash_flow','appointments.created_at','appointments.location_id','appointments.service_id','appointments.doctor_id','appointments.scheduled_date','appointments.scheduled_time','package_advances.invoice_id','invoices.created_at as invoicecreated')
-            ->where("appointments.appointment_type_id",2)
-            ->where('total_price','>',0)
-            ->where('cash_amount','<=',0)
-            ->where('cash_flow','=','in')
-            ->whereBetween('appointments.created_at', 
-            [Carbon::now()->subMonth(3), Carbon::now()]
-        )
-        ->get();
-      
+            $rr =  Leads::join('users', 'users.id', '=', 'leads.patient_id')
+            ->select('leads.lead_status_id','leads.active','leads.city_id','leads.service_id','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId','users.*')
+            ->get();
+       
        return view('admin.records',compact('rr'));
 
         });

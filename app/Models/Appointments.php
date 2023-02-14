@@ -372,40 +372,32 @@ class Appointments extends Model
      */
     static function getScheduledAppointments(Request $request, $appointment_type_id = false, $account_id, $skip_doctor = false)
     {
-       
         $where = array();
         $where[] = ['account_id', '=', $account_id];
-
-        /*
-         * Get default cancelled appointment status
-         */
         $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly($account_id);
         if ($cancelled_appointment_status) {
             $where[] = ['base_appointment_status_id', '!=', $cancelled_appointment_status->id];
         }
-
         if ($appointment_type_id) {
             $where[] = ['appointment_type_id', '=', $appointment_type_id];
         }
-
         if ($request->get('city_id')) {
             $where[] = ['city_id', '=', $request->get('city_id')];
         }
-
         if ($request->get('start')) {
             $where[] = ['scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d')];
         }
-
         if ($request->get('location_id')) {
             $where[] = ['location_id', '=', $request->get('location_id')];
         }
-
+        if($request->doctor_id && !$request->machine_id){
+            $where[] = ['doctor_id', '=', $request->get('doctor_id')];
+        }
         if (!$skip_doctor) {
             if ($request->get('doctor_id')) {
                 $where[] = ['doctor_id', '=', $request->get('doctor_id')];
             }
         }
-
         return self::where($where)
             ->whereNotNull('scheduled_date')
             ->whereNotNull('scheduled_time')

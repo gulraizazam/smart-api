@@ -17,9 +17,9 @@ jQuery(document).ready(function() {
         setTimeout( function () {
             $("#treatment_city_filter").val(result.city_id).change();
         }, 200);
-        setTimeout( function () {
-            $("#treatment_location_filter").val(result.location_id).change();
-        },300);
+        // setTimeout( function () {
+        //     $("#treatment_location_filter").val(result.location_id).change();
+        // },300);
         setTimeout( function () {
             $("#treatment_resource_filter").val(result.machine_id).change();
         },1200);
@@ -56,20 +56,27 @@ jQuery(document).ready(function() {
     });
 
 });
-
-
-var counter = 0;
-var treatmentDoctorListener = function (doctorId) {
-
+    var counter = 0;
+    var treatmentDoctorListener = function (doctorId) { 
     setQueryStringParameter('doctor_id', doctorId);
-
     $("#treatment_doctor_filter").val(doctorId);
-
-    loadCalendar();
-
+    if (typeof treatment_calendar !== "undefined") { /*if already initiate then destroy first*/
+        treatment_calendar.destroy();
+    }
+    var result = get_query();
+    if ($("#treatment_location_filter").val() !== "" && $("#treatment_doctor_filter").val() !== "" && typeof result.tab !== 'undefined' && result.tab == 'treatment') {
+        window.eventData = {}
+        window.eventData.city_id = $("#treatment_city_filter").val()
+        window.eventData.location_id = $("#treatment_location_filter").val()
+        window.eventData.doctor_id = $("#treatment_doctor_filter").val();
+        window.eventData.id = null;
+        window.eventData.firstTime = true;
+        setTimeout( function () {
+            TreatmentCalendar.init();
+        }, 500);
+    }
     counter = counter+1;
 }
-
 let loadMachine = function(locationId) {
 
     $.ajax({
