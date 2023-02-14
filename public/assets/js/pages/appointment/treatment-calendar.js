@@ -159,6 +159,7 @@ var TreatmentCalendar = function() {
                
 
                 var events = [];
+               
                 //  var currentDate = null;
                 $.each(response.events, function(id, appointmentObj) {
                     if (appointmentObj.id == window.eventData.id && window.eventData.firstTime == true) {
@@ -195,6 +196,7 @@ var TreatmentCalendar = function() {
                             overlap: true,
                         });
                     } else {
+                        
                         events.push({
                             id: appointmentObj.id,
                             title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
