@@ -62,7 +62,7 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_days.start_timestamp', '<=', $started_time],
                 ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
-            dd($started_time);
+            dd($resource_has_rota_days);
             if (!$resource_has_rota_days) {
                 $appointment_status = false;
                 $message = "Doctor rota is not available.";
