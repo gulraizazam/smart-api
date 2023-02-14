@@ -28,7 +28,8 @@
 
 
                 <input type="hidden" name="appointment_id" id="schedule_appointment_id">
-
+                <input type="hidden" name="doctor_id" id="schedule_doctor_id">
+                <input type="hidden" name="location_id" id="schedule_location_id">
                 <div class="form-group">
                     <div class="row">
 
