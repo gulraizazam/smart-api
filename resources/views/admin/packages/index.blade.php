@@ -1,7 +1,12 @@
 @extends('admin.layouts.master')
 
 @section('content')
-
+<style>
+    .form-control:disabled, .form-control[readonly] {
+    background-color: #F3F6F9 !important;
+    opacity: 1;
+}
+</style>
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
