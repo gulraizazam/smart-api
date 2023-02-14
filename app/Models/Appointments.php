@@ -390,6 +390,9 @@ class Appointments extends Model
         if ($request->get('location_id')) {
             $where[] = ['location_id', '=', $request->get('location_id')];
         }
+        if($request->doctor_id && !$request->machine_id){
+            $where[] = ['doctor_id', '=', $request->get('doctor_id')];
+        }
         if (!$skip_doctor) {
             if ($request->get('doctor_id')) {
                 $where[] = ['doctor_id', '=', $request->get('doctor_id')];
