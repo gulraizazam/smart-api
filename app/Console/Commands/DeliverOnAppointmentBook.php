@@ -128,6 +128,7 @@ class DeliverOnAppointmentBook extends Command
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
             );
             $response = TelenorSMSAPI::SendSMS($SMSObj);
+            dd( $response);
         } else {
             $SMSObj = array(
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
@@ -138,6 +139,7 @@ class DeliverOnAppointmentBook extends Command
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
             );
             $response = JazzSMSAPI::SendSMS($SMSObj);
+            dd( $response);
         }
         $SMSLog = array_merge($SMSObj, $response);
         $SMSLog['appointment_id'] = $appointmentId;
