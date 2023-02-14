@@ -14,6 +14,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Config;
+use Illuminate\Support\Facades\Log;
 
 class DeliverOnAppointmentBook extends Command
 {
@@ -128,6 +129,7 @@ class DeliverOnAppointmentBook extends Command
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
             );
             $response = TelenorSMSAPI::SendSMS($SMSObj);
+            Log::info($response);
             dd( $response);
         // } else {
         //     $SMSObj = array(
