@@ -80,7 +80,7 @@ var TreatmentCalendar = function() {
                                 //city_id: $('#treatment_city_filter').val(),
                                 location_id: $('#treatment_location_filter').val(),
                                 doctor_id: $('#treatment_doctor_filter').val(),
-                                //machine_id: $('#treatment_resource_filter').val(),
+                                machine_id: $('#treatment_resource_filter').val(),
                                 start: formatDate(event.start, 'YYYY-MM-DD'),
                                 end: formatDate(event.end, 'YYYY-MM-DD'),
                             },
@@ -195,14 +195,12 @@ var TreatmentCalendar = function() {
                             overlap: true,
                         });
                     } else {
-                        console.log(appointmentObj);
-                        var test = appointmentObj.color.replace('-','');
                         events.push({
                             id: appointmentObj.id,
                             title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
                             duration: appointmentObj.duration, // use the element's text as the event title
                             editable: appointmentObj.editable, // use the element's text as the event title,
-                            color:test, // use the element's text as the event title
+                            color:appointmentObj.color, // use the element's text as the event title
                             resourceId: appointmentObj.resourceId,
                             start: appointmentObj.start,
                             end: appointmentObj.end,
@@ -438,7 +436,7 @@ var TreatmentCalendar = function() {
 
             let start = formatDate(info.date, 'YYYY-MM-DDTHH:mm:ss');
             let create_url = route('admin.appointments.treatment.create', {
-                city_id : $("#treatment_city_filter").val(),
+                //city_id : $("#treatment_city_filter").val(),
                 location_id : $("#treatment_location_filter").val(),
                 machine_id : $("#treatment_resource_filter").val(),
                 doctor_id : $("#treatment_doctor_filter").val(),
@@ -455,6 +453,7 @@ var TreatmentCalendar = function() {
                 type: 'GET',
                 cache: false,
                 success: function(response) {
+                  
                     if (response.status) {
                        setCreateTreatment(response, start);
                     } else {
@@ -577,7 +576,7 @@ function setCreateTreatment(response, start) {
 
         $("#modal_create_treatment_form")[0].reset();
 
-        let city_id = response.data.city_id;
+        //let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
         let location_id = response.data.location_id;
         let employees = response.data.employees;
@@ -592,7 +591,7 @@ function setCreateTreatment(response, start) {
         /*Hidden fields*/
         $("#treatment_lead_id").val(lead?.id);
         $("#treatment_patient_id").val(lead?.patient_id ? lead?.patient_id : '0');
-        $("#treatment_city_id").val(city_id);
+        //$("#treatment_city_id").val(city_id);
         $("#treatment_location_id").val(location_id);
         $("#treatment_doctor_id").val(doctor_id);
         $("#treatment_start").val(start);
