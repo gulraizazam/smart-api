@@ -2032,11 +2032,11 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         if (
-            $request->get("city_id") &&
+            //$request->get("city_id") &&
             $request->get("location_id") &&
             $request->get("doctor_id")
         ) {
-            $city_id = $request->get("city_id");
+            //$city_id = $request->get("city_id");
             $location_id = $request->get("location_id");
             $doctor_id = $request->get("doctor_id");
         } else {
@@ -2118,7 +2118,7 @@ class AppointmentsController extends Controller
             'lead_sources' => $lead_sources,
             'services' => $services,
             'doctors' => $doctors,
-            'city_id' => $city_id,
+            'city_id' => '0',
             'location_id' => $location_id,
             'doctor_id' => $doctor_id,
             'lead' => $lead,
@@ -4618,7 +4618,7 @@ class AppointmentsController extends Controller
         return Validator::make($data, [
             'name' => 'required',
             'phone' => 'required',
-            'city_id' => 'required',
+//'city_id' => 'required',
             'location_id' => 'required',
             'doctor_id' => 'required',
         ]);
@@ -4682,16 +4682,22 @@ class AppointmentsController extends Controller
 
     public function getScheduledServiceAppointments(Request $request)
     {
-        if (
-            //$request->get("city_id") &&
-            $request->get("location_id") 
-            //$request->get("doctor_id")
-        ) {
-            $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id, true);
-            $resources = Resources::getRoomsResourceRotaWithoutDays($request->get("location_id"));
+        // if (
+            
+        //     $request->get("location_id") 
+            
+        // ) {}elseif(
+        //     $request->get("location_id") 
+        //     && $request->get("doctor_id")
+        // ){
+
+        // }
             $location_id = $request->get("location_id");
             $doctor_id = $request->get("doctor_id");
             $machine_id = $request->get("machine_id");
+            $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id, true);
+            $resources = Resources::getRoomsResourceRotaWithoutDays($request->get("location_id"));
+           
             $start = $request->get("start");
             $end = $request->get("end");
             $minTime = Resources::getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end);
@@ -4752,12 +4758,12 @@ class AppointmentsController extends Controller
                     'events' => null,
                 ));
             }
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'events' => null,
-            ));
-        }
+        // } else {
+        //     return response()->json(array(
+        //         'status' => 0,
+        //         'events' => null,
+        //     ));
+        // }
     }
     /*
      * check and update treatment appointment
