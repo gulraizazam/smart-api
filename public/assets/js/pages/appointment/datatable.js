@@ -434,13 +434,13 @@ function actions(data) {
 
         if (permissions.invoice_display) {
             if(data.invoice) {
-                actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="btn btn-icon btn-info btn-sm">\
+                actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                         </a>';
                         
             }
         }
-        actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm ml-2">\
+        actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="d-lg-inline-flex d-none btn btn-icon btn-success btn-sm ml-2">\
                         <span class="navi-icon"><i class="la la-sms"></i></span>\
                     </a>';
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -595,6 +595,22 @@ function actions(data) {
                         </li>';
         }
         //}
+
+        if (permissions.invoice_display) {
+            actions += '<li class="navi-item d-lg-none">\
+                        <a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);"  class="navi-link">\
+                            <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
+                            <span class="navi-text">View Invoice</span>\
+                        </a>\
+                    </li>';
+        }
+
+        actions += '<li class="navi-item  d-lg-none">\
+                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-eye"></i></span>\
+                            <span class="navi-text">SMS Logs</span>\
+                        </a>\
+                    </li>';
 
         actions += '</ul>\
             </div>\
