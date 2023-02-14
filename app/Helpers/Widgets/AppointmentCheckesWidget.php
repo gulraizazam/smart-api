@@ -51,7 +51,7 @@ class AppointmentCheckesWidget
         }
         
         $started_time = \Carbon\Carbon::parse($request->start)->format("Y-m-d H:i:s");
-
+       
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format("H:i");
       
         if (count($continue_rota) > 0) {
@@ -59,10 +59,8 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_id', '=', $continue_rota[0]->id],
                 ['date', '=', $start],
                 ['active', '=', '1'],
-                ['resource_has_rota_days.start_timestamp', '<=', $started_time],
-                ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
-            dd($start);
+           
             if (!$resource_has_rota_days) {
                 $appointment_status = false;
                 $message = "Doctor rota is not available.";
