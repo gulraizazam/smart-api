@@ -49,11 +49,11 @@ class AppointmentCheckesWidget
                 $continue_rota[0] = $resourceroata;
             }
         }
-        dd($continue_rota);
+        
         $started_time = \Carbon\Carbon::parse($request->start)->format("Y-m-d H:i:s");
 
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format("H:i");
-
+        dd(count($continue_rota));
         if (count($continue_rota) > 0) {
             $resource_has_rota_days = ResourceHasRotaDays::where([
                 ['resource_has_rota_id', '=', $continue_rota[0]->id],
