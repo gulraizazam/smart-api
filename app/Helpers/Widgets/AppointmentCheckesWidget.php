@@ -23,7 +23,7 @@ class AppointmentCheckesWidget
      */
     static function AppointmentConsultancyCheckes($request)
     {
-        dd($request);
+     
         $appointment_status = true;
 
         $status = array(
@@ -42,8 +42,9 @@ class AppointmentCheckesWidget
             ['resource_id', '=', $resource_id->id],
             ['location_id','=',$request->location_id]
         ])->get();
-
+        dd($resource_rota);
         foreach ($resource_rota as $resourceroata) {
+            
             if (($start >= $resourceroata->start) && ($start <= $resourceroata->end)) {
                 $continue_rota[0] = $resourceroata;
             }
