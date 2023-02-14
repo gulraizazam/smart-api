@@ -118,7 +118,7 @@ class DeliverOnAppointmentBook extends Command
 
         $UserOperatorSettings = UserOperatorSettings::getRecord($account_id, $setting->data);
 
-        if ($setting->data == 1) {
+        //if ($setting->data == 1) {
             $SMSObj = array(
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
@@ -129,18 +129,18 @@ class DeliverOnAppointmentBook extends Command
             );
             $response = TelenorSMSAPI::SendSMS($SMSObj);
             dd( $response);
-        } else {
-            $SMSObj = array(
-                'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
-                'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-                'from' => $UserOperatorSettings->mask,
-                'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
-                'text' => $preparedText,
-                'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
-            $response = JazzSMSAPI::SendSMS($SMSObj);
-            dd( $response);
-        }
+        // } else {
+        //     $SMSObj = array(
+        //         'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
+        //         'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
+        //         'from' => $UserOperatorSettings->mask,
+        //         'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
+        //         'text' => $preparedText,
+        //         'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
+        //     );
+        //     $response = JazzSMSAPI::SendSMS($SMSObj);
+        //     dd( $response);
+        // }
         $SMSLog = array_merge($SMSObj, $response);
         $SMSLog['appointment_id'] = $appointmentId;
         $SMSLog['created_by'] = 1;
