@@ -43,6 +43,10 @@ var table_columns = [
         sortable: false,
         width: 170,
     },{
+        field: 'created_at',
+        title: 'Created at',
+        width: 'auto',
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -52,10 +56,6 @@ var table_columns = [
         template: function (data) {
             return actions(data);
         }
-    },{
-        field: 'created_at',
-        title: 'Created at',
-        width: 'auto',
     }];
 
 
