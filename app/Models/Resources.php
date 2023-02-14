@@ -296,10 +296,7 @@ class Resources extends BaseModal
             $query->where("resource_has_rota.is_consultancy", '1');
             $query->where("resource_has_rota.active", '1');
         }])->get();
-
-        //return self::where($where)->with("doctor_rotas")->get();
     }
-
     public static function getRoomsWithRotas()
     {
         $where = [];

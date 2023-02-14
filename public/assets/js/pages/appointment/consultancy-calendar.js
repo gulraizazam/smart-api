@@ -114,8 +114,7 @@ var ConsultancyCalendar = function() {
                             url: route('admin.appointments.load_scheduled_appointments'),
                             type: 'GET',
                             data: {
-                                // city_id: $('#consultancy_city_filter').val(),
-                                 location_id: $('#consultancy_location_filter').val(),
+                                location_id: $('#consultancy_location_filter').val(),
                                 doctor_id: $('#consultancy_doctor_filter').val().length !== 'undefined' ? $('#consultancy_doctor_filter').val() : 
                                 '',
                                 start: formatDate(event.start, 'YYYY-MM-DDTHH:mm:ss'),
@@ -123,25 +122,18 @@ var ConsultancyCalendar = function() {
                             },
                             cache: false,
                             success: async function (response) {
-
                                 minxTime = response.start_time;
                                 maxTime = response.end_time;
-
                                 await ConsultancyCalendar.loadEvents(response, callback);
-
                                 ConsultancyCalendar.showOnlyAvailableSlots(minxTime, maxTime);
-
                                 $('.appointment-loader-base').hide();
-
                             },
                             error: function (xhr, ajaxOptions, thrownError) {
                                 var events = [];
                                 callback(events);
                             }
                         });
-
                     }
-
                 },
                 eventConstraint: { /*restrict event drop on back dates*/
                     start: moment().format('YYYY-MM-DD'),
@@ -250,7 +242,6 @@ var ConsultancyCalendar = function() {
                 });
                 if(jQuery('#consultancy_doctor_filter').val() !== ''){
                     $.each(response.rotas[0].doctor_rotas, function(id, rota) {
-
                         if (rota.active == '1') {
                             /**
                              * Case 1: All times are added
@@ -339,20 +330,14 @@ var ConsultancyCalendar = function() {
             window.eventData.createdId = eventId;
         },
         createConsultancy: function (info) {
-
             let result = get_query();
-
             let start = formatDate(info.date, 'YYYY-MM-DDTHH:mm:ss');
-            
             let create_url = route('admin.appointments.consulting.create', {
-               
                 appointment_type: 'consulting',
-                //city_id: result.city_id,
                 doctor_id: result.doctor_id,
                 location_id: result.location_id,
                 start: start
             });
-
             $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -441,7 +426,7 @@ function setDetailData(response) {
         $("#center_name").text(location?.name ?? 'N/A');
         $("#appointment_status").text(appointment_status?.name ?? 'N/A');
         $("#service_consultancy_name").text(service?.name ?? 'N/A');
-
+        $("#service_consultancy_name_title").text(service?.name ?? 'N/A');
         setComments(appointment);
     } catch (e) {
         showException(e);
