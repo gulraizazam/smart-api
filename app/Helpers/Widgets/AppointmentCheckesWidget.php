@@ -37,7 +37,7 @@ class AppointmentCheckesWidget
         $today = Carbon::now()->toDateString();
 
         $resource_id = Resources::where('external_id', '=', $request->doctor_id)->first();
-
+        
         $resource_rota = ResourceHasRota::where([
             ['resource_id', '=', $resource_id->id],
             ['location_id','=',$request->location_id]
@@ -59,6 +59,8 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_id', '=', $continue_rota[0]->id],
                 ['date', '=', $start],
                 ['active', '=', '1'],
+                // ['resource_has_rota_days.start_timestamp', '<=', $started_time],
+                // ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
            
             if (!$resource_has_rota_days) {
