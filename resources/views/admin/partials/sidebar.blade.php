@@ -30,7 +30,7 @@
             <!--begin::Menu Container-->
             <div id="kt_aside_menu" class="aside-menu my-4" data-menu-vertical="1" data-menu-scroll="1" data-menu-dropdown-timeout="500">
                <!--begin::Brand-->
-                <div class="flex-column-auto pt-4 pb-7" id="kt_brand" style="border-bottom: 1px solid #032f58;">
+                <div class="flex-column-auto d-lg-none pt-4 pb-7" id="kt_brand" style="border-bottom: 1px solid #032f58;">
                     <!--begin::Logo-->
                     <a class="brand-logo">
                         <img style="width: 130px;margin-left:25px; display:block;" alt="Logo" src="{{asset('logo.png')}}" />
