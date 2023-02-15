@@ -415,14 +415,14 @@ function actions(data) {
         if (permissions.invoice) {
             if(!data.invoice) {
                 if (data.appointment_type == 2) {
-                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                             <!--<span class="navi-text">Create Invoice</span>-->\
                         </a>';
                 }
 
                 if(data.appointment_type == 1) {
-                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                         </a>';
                        
@@ -597,20 +597,47 @@ function actions(data) {
         //}
 
         if (permissions.invoice_display) {
+            if(data.invoice) {
             actions += '<li class="navi-item d-lg-none">\
                         <a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);"  class="navi-link">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                             <span class="navi-text">View Invoice</span>\
                         </a>\
                     </li>';
+            }
         }
 
         actions += '<li class="navi-item  d-lg-none">\
                         <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-eye"></i></span>\
+                            <span class="navi-icon"><i class="la la-sms"></i></span>\
                             <span class="navi-text">SMS Logs</span>\
                         </a>\
                     </li>';
+
+
+        if (permissions.invoice) {
+            if(!data.invoice) {
+                if (data.appointment_type == 2) {
+                    actions += '<li class="navi-item d-lg-none">\
+                        <a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);"  class="navi-link">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                            <span class="navi-text">Create Invoice</span>\
+                        </a>\
+                    </li>';
+                }
+
+                if(data.appointment_type == 1) {
+                    actions += '<li class="navi-item d-lg-none">\
+                        <a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);"   class="navi-link">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                            <span class="navi-text">Create Invoice</span>\
+                        </a>\
+                    </li>';                        
+                }
+                
+            }
+
+        }
 
         actions += '</ul>\
             </div>\

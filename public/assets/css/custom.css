@@ -920,6 +920,10 @@ select2-container--default .select2-selection--single .select2-selection__render
     #consultancy_by_status, #treatment_by_status, #revenue-service, #revenue-centre, #collection-by-centre{
         height: 300px !important;
     } 
+    .card-body.appointment-section .datatable-table td[data-field="actions"] > span, .card-body.appointment-section .datatable-table th[data-field="actions"] > span{
+        width: 65px !important;
+        text-align: right;
+    }
 }
 @media(max-width:480px){
     .dashboard-counter{
