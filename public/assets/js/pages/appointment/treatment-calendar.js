@@ -2,42 +2,39 @@
 
 var treatment_calendar;
 var start_treatment_date;
-
+var getURLQuery = get_query();
+var ActiveURL;
 var TreatmentCalendar = function() {
-
     return {
         init: function(start) {
-
             var minxTime;
             var maxTime;
             var todayDate = moment().startOf('day');
             var TODAY = todayDate.format('YYYY-MM-DD');
-
             if (typeof start !== "undefined") {
                 TODAY = formatDate(start, 'YYYY-MM-DD');
             }
-
+            if(getURLQuery.scheduledDate !== "undefined"){
+                ActiveURL = getURLQuery.scheduledDate;
+            } else{
+                ActiveURL = TODAY;
+            }
             var calendarEl = document.getElementById('treatment_calendar');
-
             treatment_calendar = new FullCalendar.Calendar(calendarEl, {
                 plugins: [ 'bootstrap', 'interaction', 'dayGrid', 'timeGrid', 'list' ],
                 themeSystem: 'bootstrap',
-
                 isRTL: KTUtil.isRTL(),
-
                 header: {
                     left: 'prev,next today',
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-
                 height: 800,
                 slotDuration: '00:05:00',
                 contentHeight: 780,
                 aspectRatio: 3,
                 minTime: "09:00:00",
                 maxTime: "23:00:00",
-
                 nowIndicator: true,
                 now: TODAY,
                 views: {
@@ -46,8 +43,7 @@ var TreatmentCalendar = function() {
                     timeGridDay: { buttonText: 'day' }
                 },
                 defaultView: 'timeGridWeek',
-                defaultDate: TODAY,
-
+                defaultDate: ActiveURL,
                 editable: true,
                 droppable: true,
                 eventLimit: true, // allow "more" link when too many events
@@ -56,20 +52,13 @@ var TreatmentCalendar = function() {
                 businessHours: true,
                 refetchResourcesOnNavigate: true,
                 resources: function (callback, start, end, timezone) {
-
                 },
                 events: function(event, callback) {
-
                     $('.appointment-loader-base').show();
                     start_treatment_date = event.start;
-
                     if (
-                        //$('#treatment_city_filter').val() !== null
-                         $('#treatment_location_filter').val() !== null
-                        // && $('#treatment_doctor_filter').val() !== null
-                        // && $('#treatment_resource_filter').val() !== null
+                        $('#treatment_location_filter').val() !== null
                     ) {
-
                         $.ajax({
                             headers: {
                                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -77,7 +66,6 @@ var TreatmentCalendar = function() {
                             url: route('admin.appointments.load_scheduled_service_appointments'),
                             type: 'GET',
                             data: {
-                                //city_id: $('#treatment_city_filter').val(),
                                 location_id: $('#treatment_location_filter').val(),
                                 doctor_id: $('#treatment_doctor_filter').val(),
                                 machine_id: $('#treatment_resource_filter').val(),
@@ -88,13 +76,9 @@ var TreatmentCalendar = function() {
                             success: async function (response) {
                                 minxTime = response.start_time;
                                 maxTime = response.end_time;
-
                                 await TreatmentCalendar.loadTreatmentEvents(response, callback);
-
                                 TreatmentCalendar.showOnlyAvailableSlotsTreatment(minxTime, maxTime);
-
                                 $('.appointment-loader-base').hide();
-
                             },
                             error: function (xhr, ajaxOptions, thrownError) {
                                 var events = [];
