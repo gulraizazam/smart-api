@@ -43,7 +43,7 @@ var TreatmentCalendar = function() {
                     timeGridDay: { buttonText: 'day' }
                 },
                 defaultView: 'timeGridWeek',
-                defaultDate: getCurrentURL,
+                defaultDate: ActiveURL,
                 editable: true,
                 droppable: true,
                 eventLimit: true, // allow "more" link when too many events
