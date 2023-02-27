@@ -3,7 +3,7 @@
 var treatment_calendar;
 var start_treatment_date;
 var getURLQuery = get_query();
-var getCurrentURL;
+var ActiveURL;
 var TreatmentCalendar = function() {
     return {
         init: function(start) {
@@ -15,9 +15,9 @@ var TreatmentCalendar = function() {
                 TODAY = formatDate(start, 'YYYY-MM-DD');
             }
             if(getURLQuery.scheduledDate !== "undefined"){
-                getCurrentURL = getURLQuery.scheduledDate;
+                ActiveURL = getURLQuery.scheduledDate;
             } else{
-                getCurrentURL = TODAY;
+                ActiveURL = TODAY;
             }
             var calendarEl = document.getElementById('treatment_calendar');
             treatment_calendar = new FullCalendar.Calendar(calendarEl, {
