@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUpdateServicesRequest;
+use App\Models\Appointments;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Validator;
@@ -268,13 +269,17 @@ class ServicesController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $validator = $this->verifyFields($request);
-
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
-
         $service = Services::findOrFail($id);
-
+        if($service->parent_id > 0 && $request->parent_id == 0)
+        {
+            $check_appointment = Appointments::whereServiceId($id)->count();
+            if($check_appointment > 0){
+                return ApiHelper::apiResponse($this->error, 'Service can not be updated due to one or more treatments are associated with it.', false);
+            }
+        }
         if (
             Services::isChildExists($id, Auth::User()->account_id) &&
             ($service->parent_id != $request->get('parent_id') || $service->end_node != (int)$request->get('end_node'))
