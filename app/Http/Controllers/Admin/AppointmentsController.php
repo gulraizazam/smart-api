@@ -5620,7 +5620,9 @@ class AppointmentsController extends Controller
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
                 $log_type = 'sms';
                 $patient = Patients::findOrFail($appointment->patient_id);
-                $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                if($appointment->isDirty('scheduled_date')){
+                    $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                }
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
             return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
