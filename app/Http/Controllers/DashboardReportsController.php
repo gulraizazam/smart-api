@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 Use App\Models\Patients;
 use App\Models\User;
 use Gate;
+use Illuminate\Support\Facades\Config;
 use App\Helpers\ACL;
 use App;
 use App\Models\Appointments;
@@ -20,6 +21,7 @@ use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
+use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\DB;
 
 class DashboardReportsController extends Controller
