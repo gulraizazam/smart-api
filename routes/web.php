@@ -554,6 +554,8 @@ use Illuminate\Support\Facades\DB;
         Route::get('dashboard/collection-by-centre', [DashboardReportsController::class,'collectionByCentre'])->name('dashboard.collection_by_centre');
         Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
         Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
+        Route::get('dashboard/revenue-by-service-category', [DashboardReportsController::class, 'RevenueByServiceCategory'])->name('dashboard.revenueByServiceCategory');
+        Route::get('dashboard/collection-by-service-category', [DashboardReportsController::class, 'CollectionByServiceCategory'])->name('dashboard.CollectionByServiceCategory');
         Route::get('dashboard/my-revenue-by-centre', [DashboardReportsController::class, 'myRevenueByCentre'])->name('dashboard.myRevenueByCentre');
         Route::get('dashboard/revenue-by-service', [DashboardReportsController::class, 'revenueByService'])->name('dashboard.revenueByService');
         Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
