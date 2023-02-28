@@ -793,21 +793,20 @@ class HomeController extends Controller
         ]);
     }
     public function CollectionByServiceCategory(Request $request)
-{
-    $data = array(
-        'today' => array(),
-        'yesterday' => array(),
-        'last7days' => array(),
-        'thismonth' => array(),
-        'lastmonth' => array(),
-    );
-    $services = Services::where([
-        'account_id'=> Auth::User()->account_id,
-        'active'=>'1',
-        'parent_id'=>'0'
-    ])->get();
-    if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-        if ($request->today) {
+    {
+        $data = array(
+            'today' => array(),
+            'yesterday' => array(),
+            'last7days' => array(),
+            'thismonth' => array(),
+            'lastmonth' => array(),
+        );
+        $services = Services::where([
+            'account_id'=> Auth::User()->account_id,
+            'active'=>'1',
+            'parent_id'=>'0'
+        ])->get();
+        if ($request->type=='today') {
             $total = 0;
             $today[0] = array(
                 'Task',
@@ -903,7 +902,7 @@ class HomeController extends Controller
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-                                   
+                                    
                                 }
                             }
                         }
@@ -926,7 +925,7 @@ class HomeController extends Controller
                 }
             }
         }
-        if ($request->yesterday) {
+        if ($request->type=='yesterday') {
             $total = 0;
             $yesterday[0] = array(
                 'Task',
@@ -1044,7 +1043,7 @@ class HomeController extends Controller
                 }
             }
         }
-        if ($request->last7days) {
+        if ($request->type=='last7days') {
             $total = 0;
             $last7days[0] = array(
                 'Task',
@@ -1164,7 +1163,7 @@ class HomeController extends Controller
                 }
             }
         }
-        if ($request->thismonth) {
+        if ($request->type=='thismonth') {
             $total = 0;
             $thismonth[0] = array(
                 'Task',
@@ -1263,7 +1262,7 @@ class HomeController extends Controller
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-                                   
+                                    
                                 }
                             }
                         }
@@ -1286,7 +1285,7 @@ class HomeController extends Controller
                 }
             }   
         }
-        if ($request->lastmonth) {
+        if ($request->type=='lastmonth') {
             $total = 0;
             $lastmonth[0] = array(
                 'Task',
@@ -1309,12 +1308,10 @@ class HomeController extends Controller
                         $total_refund_out = 0;
                         foreach ($packagesadvances as $packagesadvance) {
                             if (
-                                (
-                                    $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
-                                )
+                                $packagesadvance->cash_flow == 'in' &&
+                                $packagesadvance->is_adjustment == '0' &&
+                                $packagesadvance->is_tax == '0' &&
+                                $packagesadvance->is_cancel == '0'
                             ) {
                                 switch ($packagesadvance->cash_flow) {
                                     case 'in':
@@ -1387,7 +1384,7 @@ class HomeController extends Controller
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-                                   
+                                    
                                 }
                             }
                         }
@@ -1398,7 +1395,6 @@ class HomeController extends Controller
                         $lastmonth[$service->id] = array(
                             $service->name,
                             $In_hand_balance,
-                            
                         );
                         $colors[] = $service->color;
                         $total += $In_hand_balance;
@@ -1411,13 +1407,131 @@ class HomeController extends Controller
                 }
             }   
         }
+        if ($request->type=='') {
+            $total = 0;
+            $today[0] = array(
+                'Task',
+                'Hours per Day'
+            ); 
+            foreach ($services as $service) {
+                $childServices = Services::where('parent_id',$service->id)->get();
+                foreach($childServices as $child){
+                    $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')->whereDate('package_advances.created_at', '=', Carbon::now()->format('Y-m-d'))
+                    ->where([
+                        'package_advances.account_id'=> Auth::User()->account_id,
+                        'appointments.service_id'=>$child->id,
+                    ])->get();
+                    if($packagesadvances ){
+                        $balance = 0;
+                        $total_revenue_cash_in = 0;
+                        $total_revenue_card_in = 0;
+                        $total_refund_out = 0;
+                        foreach ($packagesadvances as $packagesadvance) {
+                            if (
+                                $packagesadvance->cash_flow == 'in' &&
+                                    $packagesadvance->is_adjustment == '0' &&
+                                    $packagesadvance->is_tax == '0' &&
+                                    $packagesadvance->is_cancel == '0'    
+                            ) {
+                                switch ($packagesadvance->cash_flow) {
+                                    case 'in':
+                                        $balance = $balance + $packagesadvance->cash_amount;
+                                        break;
+                                    case 'out':
+                                        $balance = $balance - $packagesadvance->cash_amount;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                if ($packagesadvance->cash_amount != 0) {
+                                    if ($packagesadvance->package_id) {
+                                        $transtype = Config::get('constants.trans_type.advance_in');
+                                    }
+                                    if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                                        $transtype = Config::get('constants.trans_type.advance_in');
+                                    }
+                                    if ($packagesadvance->is_adjustment == '1') {
+                                        $transtype = Config::get('constants.trans_type.adjustment');
+                                    }
+                                    if ($packagesadvance->is_cancel == '1') {
+                                        $transtype = Config::get('constants.trans_type.invoice_cancel');
+                                    }
+                                    if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                                        $transtype = Config::get('constants.trans_type.invoice_create');
+                                    }
+                                    if ($packagesadvance->is_refund == '1') {
+                                        $transtype = Config::get('constants.trans_type.refund_in');
+                                    }
+                                    if ($packagesadvance->is_tax == '1') {
+                                        $transtype = Config::get('constants.trans_type.tax_out');
+                                    }
+                                    if ($packagesadvance->cash_flow == 'in') {
+                                        if ($packagesadvance->paymentmode->name == 'Cash') {
+                                            $revenue_cash_in = $packagesadvance->cash_amount;
+                                            $revenue_card_in = '';
+                                            $revenue_bank_in = '';
+                                            $refund_out = '';
+                                        }
+                                        if ($packagesadvance->paymentmode->name == 'Card') {
+                                            $revenue_cash_in = '';
+                                            $revenue_card_in = $packagesadvance->cash_amount;
+                                            $revenue_bank_in = '';
+                                            $refund_out = '';
+                                        }
+                                        if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
+                                            $revenue_cash_in = '';
+                                            $revenue_card_in = '';
+                                            $revenue_bank_in = $packagesadvance->cash_amount;
+                                            $refund_out = '';
+                                        }
+                                    } else {
+                                        $revenue_cash_in = '';
+                                        $revenue_card_in = '';
+                                        $revenue_bank_in = '';
+                                        $refund_out = $packagesadvance->cash_amount;
+                                    }
+        
+                                    if ($revenue_cash_in) {
+                                        $total_revenue_cash_in += $revenue_cash_in;
+                                    }
+                                    if ($revenue_card_in) {
+                                        $total_revenue_card_in += $revenue_card_in;
+                                    }
+                                    if ($revenue_bank_in) {
+                                        $total_revenue_card_in += $revenue_bank_in;
+                                    }
+                                    if ($refund_out) {
+                                        $total_refund_out += $refund_out;
+                                    }
+                                    
+                                }
+                            }
+                        }
+                    }
+                    $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
+                    $In_hand_balance = $total_revenue - $total_refund_out;
+                    if ($In_hand_balance > 0) {
+                        $today[$service->id] = array(
+                            $service->name,
+                            $In_hand_balance,
+                        );
+                        $colors[] = $service->color;
+                        $total += $In_hand_balance;
+                    }
+                }
+            }
+            if (count($today)) {
+                foreach ($today as $record) {
+                    $data['today'][] = $record;
+                }
+            }
+        }
+        return ApiHelper::apiResponse($this->success, 'service data', true, [
+            'pie' => $data,
+            'colors' => $colors ?? '',
+            'total' =>  number_format($total ?? 0, 2),
+        ]);
     }
-    return ApiHelper::apiResponse($this->success, 'service data', true, [
-        'pie' => $data,
-        'colors' => $colors ?? '',
-        'total' =>  number_format($total ?? 0, 2),
-    ]);
-}
     public function revenueByCentre(Request $request)
     {
         $data = array();

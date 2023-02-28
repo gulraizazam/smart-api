@@ -890,7 +890,7 @@
                     }
                 });
             }
-            if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !collection_by_service_category){
+            if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.33) && !collection_by_service_category){
                 collection_by_service_category= true; 
                 $.ajax({
                         url: route('admin.home.CollectionByServiceCategory'),
@@ -898,6 +898,7 @@
                         data: {'type': '{{request('type')}}'},
                         cache: false,
                         success: function (response) {
+                            console.log(response);
                             let colors = response.data.colors;
                             let total = response.data.total;
                             
