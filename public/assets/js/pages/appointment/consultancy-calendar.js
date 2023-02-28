@@ -50,7 +50,8 @@ function patient_search_func() {
         return repo.name || repo.text;
     }
 }
-
+var getURLQuery = get_query();
+var ActiveURL;
 var ConsultancyCalendar = function() {
     return {
         init: function(start) {
@@ -63,7 +64,11 @@ var ConsultancyCalendar = function() {
             if (typeof start !== "undefined") {
                 TODAY = formatDate(start, 'YYYY-MM-DD');
             }
-
+            if(getURLQuery.scheduledDate !== "undefined"){
+                ActiveURL = getURLQuery.scheduledDate;
+            } else{
+                ActiveURL = TODAY;
+            }
             var calendarEl = document.getElementById('consultancy_calendar');
 
             calendar = new FullCalendar.Calendar(calendarEl, {
