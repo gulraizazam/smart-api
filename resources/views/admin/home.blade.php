@@ -456,6 +456,75 @@
                             <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase" >Collection by Service Category</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('today', '', '', '','');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_1" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('', 'yesterday', '', '','');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_2" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('', '', 'last7days', '','');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('', '', '', 'thismonth','');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('', '', '','', 'lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
+                                            <span class="text-muted font-weight-bold mt-2 service-title"></span>
+                                        </div>
+                                    </div>
+                                    <div id="revenue-service-collection"></div>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="col-lg-12 col-xxl-12">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                         <span class="dashboard-counter text-uppercase" >Revenue by Service Category</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
@@ -708,6 +777,7 @@
         var revenue_by_center= false;
         var revenue_by_service=false;
         var revenue_by_service_category=false;
+        var collection_by_service_category=false;
         var consultancy_by_status=false;
         var treatment_by_status=false;
         $(window).scroll(function(){
