@@ -826,7 +826,6 @@ function setQueryStringParameter(name, value = null) {
         params.delete(name);
     }
     var URL = `${window.location.pathname}?${params}`;
-    console.log('URL',URL);
     var queryStringencode = encodeURIComponent(URL);
     var queryString = decodeURIComponent(queryStringencode);
     var getURL =  window.location.href;
