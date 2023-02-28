@@ -129,6 +129,7 @@ use Illuminate\Support\Facades\DB;
         Route::post('/home/datatable', [App\Http\Controllers\HomeController::class, 'datatable'])->name('home.datatable');
         Route::get('/home/collection-by-centre', [App\Http\Controllers\HomeController::class, 'collectionByCentre'])->name('home.collectionByCentre');
         Route::get('/home/my-collection-by-centre', [App\Http\Controllers\HomeController::class, 'myCollectionByCentre'])->name('home.myCollectionByCentre');
+        Route::get('/home/revenue-by-service-category', [App\Http\Controllers\HomeController::class, 'RevenueByServiceCategory'])->name('home.RevenueByServiceCategory');
         Route::get('/home/revenue-by-centre', [App\Http\Controllers\HomeController::class, 'revenueByCentre'])->name('home.revenueByCentre');
         Route::get('/home/my-revenue-by-centre', [App\Http\Controllers\HomeController::class, 'myRevenueByCentre'])->name('home.myRevenueByCentre');
         Route::get('/home/revenue-by-service', [App\Http\Controllers\HomeController::class, 'revenueByService'])->name('home.revenueByService');
