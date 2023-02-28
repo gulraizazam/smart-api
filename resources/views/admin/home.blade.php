@@ -890,6 +890,39 @@
                     }
                 });
             }
+            if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !collection_by_service_category){
+                collection_by_service_category= true; 
+                $.ajax({
+                        url: route('admin.home.CollectionByServiceCategory'),
+                        type: "GET",
+                        data: {'type': '{{request('type')}}'},
+                        cache: false,
+                        success: function (response) {
+                            let colors = response.data.colors;
+                            let total = response.data.total;
+                            
+                            @if(request('type') == 'today')
+                            var pie = response.data.pie.today;
+                            @endif
+                            @if(request('type') == 'yesterday')
+                                var pie = response.data.pie.yesterday;
+                            @endif
+                            @if(request('type') == 'week')
+                                var pie = response.data.pie.week;
+                            @endif
+                            @if(request('type') == 'month')
+                                var pie = response.data.pie.month;
+                            @endif
+                            @if(request('type') == '')
+                                var pie = response.data.pie.today;
+                            @endif
+                            CollectionByServiceCategory(pie, colors);
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            errorMessage(xhr);
+                        }
+                    });
+            }
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !consultancy_by_status){
                 consultancy_by_status= true; 
                 $.ajax({
@@ -1051,6 +1084,22 @@
                 $("#revenue-service-category").css("height", "500px");
             }
         }
+        function CollectionByServiceCategory(service) {
+                google.load('visualization', '1', {
+                    packages: ['corechart', 'bar', 'line']
+                });
+                google.setOnLoadCallback(function () {
+                var data = google.visualization.arrayToDataTable(service);
+                var options = {
+                    colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
+                };
+                var chart = new google.visualization.PieChart(document.getElementById('revenue-service-collection'));
+                    chart.draw(data, options);
+                });
+                if (typeof service !== 'undefined' && service.length > 1) {
+                    $("#revenue-service-collection").css("height", "500px");
+                }
+            }
     </script>
 @endpush
 @endsection
