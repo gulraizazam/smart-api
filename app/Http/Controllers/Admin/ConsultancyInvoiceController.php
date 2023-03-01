@@ -549,7 +549,7 @@ class ConsultancyInvoiceController extends Controller
             $activity = new Activity();
             $activity->action = 'received';
             $activity->patient = $patient->name;
-            $activity->appointment_type = 'Consultancy';
+            $activity->appointment_type = $appointmentinfo->service->name .' Consultation';
             $activity->created_by = Auth::user()->name;
             $activity->invoice_id = $invoice->id;
             $activity->amount = $request->price;

@@ -2608,9 +2608,17 @@ class AppointmentsController extends Controller
             $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
             // Reset Scheduled Time to null, stop sending message
             $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
+           
             if ($appointment_status) {
-                $appointmentData['appointment_status_id'] = $appointment_status->id;
-                $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
+                if($check_invoice){
+                    $appointmentData['appointment_status_id'] = $appointment->appointment_status_id;
+                    $appointmentData['base_appointment_status_id'] = $appointment->base_appointment_status_id;
+                }else{
+                    $appointmentData['appointment_status_id'] = $appointment_status->id;
+                    $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                }
+                
                 $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
                 $appointmentData['send_message'] = $appointment_status->allow_message;
             }
@@ -2636,6 +2644,7 @@ class AppointmentsController extends Controller
                     $appointmentData['resource_has_rota_day_id_for_machine'] = $machine_has_rota_day['id'];
                 }
             }
+           
             $appointment->update($appointmentData);
             if (count($appointment->getChanges()) > 1) {
                 // if only doctor are going to change and first sms already sent, so we need to stop sending message again
@@ -2742,8 +2751,14 @@ class AppointmentsController extends Controller
                 // Reset Scheduled Time to null, stop sending message
                 $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
                 if ($appointment_status) {
-                    $appointmentData['appointment_status_id'] = $appointment_status->id;
-                    $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                    $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
+                    if($check_invoice){
+                        $appointmentData['appointment_status_id'] = $appointment->appointment_status_id;
+                        $appointmentData['base_appointment_status_id'] = $appointment->base_appointment_status_id;
+                    }else{
+                        $appointmentData['appointment_status_id'] = $appointment_status->id;
+                        $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                    }
                     $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
                     $appointmentData['send_message'] = $appointment_status->allow_message;
                 }
@@ -5616,7 +5631,7 @@ class AppointmentsController extends Controller
                 $appointment->update([
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
-                    'updated_by' => auth()->id(),
+                    'converted_by' => auth()->id(),
                     'appointment_status_id' => config('constants.appointment_status_pending'),
                     'base_appointment_status_id' => config('constants.appointment_status_pending'),
                     'updated_at'=>Filters::getCurrentTimeStamp()
@@ -5625,7 +5640,9 @@ class AppointmentsController extends Controller
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
                 $log_type = 'sms';
                 $patient = Patients::findOrFail($appointment->patient_id);
-                $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                if($appointment->isDirty('scheduled_date')){
+                    $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                }
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
             return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
