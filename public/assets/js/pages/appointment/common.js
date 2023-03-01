@@ -83,10 +83,11 @@ let loadLocations = function (cityId, appointment = null) {
         },
         cache: false,
         success: function(response) {
+            
             if(response.status) {
 
                 let dropdowns =  response.data.dropdown;
-                let dropdown_options =  '<option value="">Select a Location</option>';
+                let dropdown_options =  '<option selected="selected" disabled value="">Select a Location</option>';
 
                 Object.entries(dropdowns).forEach(function (dropdown) {
                     dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
@@ -195,7 +196,9 @@ var something = (function() {
     return function() {
         if (!executed) {
             executed = true;
-            TreatmentCalendar.init();
+            setTimeout( function () {
+                TreatmentCalendar.init();
+            }, 500);
         }
     };
 })();
@@ -241,8 +244,8 @@ let loadDoctors = function (locationId, appointment = null) {
                         }
 
                     } else if (appointment && appointment == 'treatment') {
-                        if (typeof calendar !== "undefined") { /*if already initiate then destroy first*/
-                            calendar.destroy();
+                        if (typeof treatment_calendar !== "undefined" && $('#treatment_location_filter option').length > 2) { /*if already initiate then destroy first*/
+                            treatment_calendar.destroy();
                         }
                         $('#treatment_doctor_filter').html(dropdown_options);
                         setQueryStringParameter('location_id', locationId);
@@ -264,9 +267,14 @@ let loadDoctors = function (locationId, appointment = null) {
                             window.eventData.id = null;
                             window.eventData.firstTime = true;
                             //$('#treatment_calendar').fullCalendar('destroy');;
-                            setTimeout( function () {
+                            if($('#treatment_location_filter option').length == 2){
                                 something();
-                            }, 500);
+                            } else{                                
+                                setTimeout( function () {
+                                    TreatmentCalendar.init();
+                                }, 500);
+                            }
+                            
                         }
                         
                         
