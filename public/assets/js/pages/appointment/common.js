@@ -247,8 +247,12 @@ let loadDoctors = function (locationId, appointment = null) {
                         if (typeof treatment_calendar !== "undefined" && $('#treatment_location_filter option').length > 2) { /*if already initiate then destroy first*/
                             treatment_calendar.destroy();
                         }
-                        $('#treatment_doctor_filter').html(dropdown_options);
+                        $('#treatment_doctor_filter').html(dropdown_options);                        
+                        if(typeof result.machine_id == "undefined"){
+                            setQueryStringParameter('doctor_id', '');
+                        }
                         setQueryStringParameter('location_id', locationId);
+                        
                         loadMachine(locationId);
                         
                         var result3 = get_query();
