@@ -5631,7 +5631,7 @@ class AppointmentsController extends Controller
                 $appointment->update([
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
-                    'updated_by' => auth()->id(),
+                    'converted_by' => auth()->id(),
                     'appointment_status_id' => config('constants.appointment_status_pending'),
                     'base_appointment_status_id' => config('constants.appointment_status_pending'),
                     'updated_at'=>Filters::getCurrentTimeStamp()
@@ -5640,7 +5640,9 @@ class AppointmentsController extends Controller
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
                 $log_type = 'sms';
                 $patient = Patients::findOrFail($appointment->patient_id);
-                $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                if($appointment->isDirty('scheduled_date')){
+                    $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                }
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
             return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
