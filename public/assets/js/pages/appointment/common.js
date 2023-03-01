@@ -233,6 +233,9 @@ let loadDoctors = function (locationId, appointment = null) {
                         }
 
                     } else if (appointment && appointment == 'treatment') {
+                        if (typeof calendar !== "undefined") { /*if already initiate then destroy first*/
+                            calendar.destroy();
+                        }
                         $('#treatment_doctor_filter').html(dropdown_options);
                         setQueryStringParameter('location_id', locationId);
                         loadMachine(locationId);
