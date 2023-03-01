@@ -250,6 +250,7 @@ let loadDoctors = function (locationId, appointment = null) {
                         $('#treatment_doctor_filter').html(dropdown_options);                        
                         if(typeof result.machine_id == "undefined"){
                             setQueryStringParameter('doctor_id', '');
+                            
                         }
                         setQueryStringParameter('location_id', locationId);
                         
