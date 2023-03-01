@@ -65,7 +65,7 @@
                             <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
                                 <span style="color: #056FBF;">{{$log['created_by'] ?? 'N/A'}}</span>
                                 {{$log['action']}} 
-                                    <strong >Rs. {{ round($log['amount']) }}</strong> against
+                                    <strong >Rs. {{ round($log['amount']) }}</strong> from
                                 <span  style="color: #056FBF;"> {{$log['patient']}}</span> for
                                 <span  style="color: #F5B183;">{{$log['appointment_type']}}</span>
                                     at  {{$log['location']}} Centre.
