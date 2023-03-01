@@ -69,7 +69,7 @@
                                                 <span style="color: #056FBF;">{{$log['user_id'] ?? 'N/A'}}</span>
                                                 {{$log['action'] ?? 'N/A'}} a payment of
                                                  <strong >{{ $log['cash_amount'] }}</strong> for
-                                                <span  style="color: #056FBF;"> {{$log['patient_id']}}</span> against
+                                                <span  style="color: #056FBF;"> {{$log['patient_id']}}</span> from
                                                 <span  style="color: #F5B183;">{{$log['appointment_type_id'] ?? 'Appointment'}}</span>
                                                  In  {{$log['location_id']}} Centre
                                             </div>
