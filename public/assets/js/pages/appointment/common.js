@@ -190,6 +190,15 @@ let loadEditConsultancyLocations = function (cityId, appointment = null) {
         resetDropdowns();
     }
 }
+var something = (function() {
+    var executed = false;
+    return function() {
+        if (!executed) {
+            executed = true;
+            TreatmentCalendar.init();
+        }
+    };
+})();
 let loadDoctors = function (locationId, appointment = null) {
     if (locationId != '' && locationId != null) {
         $.ajax({
@@ -203,8 +212,7 @@ let loadDoctors = function (locationId, appointment = null) {
             },
             cache: false,
             success: function(response) {
-                if(response.status) {
-
+                if(response.status) {                    
                     let dropdowns =  response.data.dropdown;
                     let dropdown_options =  '<option value="">Select a Doctor</option>';
 
@@ -233,12 +241,15 @@ let loadDoctors = function (locationId, appointment = null) {
                         }
 
                     } else if (appointment && appointment == 'treatment') {
+                        if (typeof calendar !== "undefined") { /*if already initiate then destroy first*/
+                            calendar.destroy();
+                        }
                         $('#treatment_doctor_filter').html(dropdown_options);
                         setQueryStringParameter('location_id', locationId);
                         loadMachine(locationId);
                         
                         var result3 = get_query();
-
+                        
                         if (
                             //$("#treatment_city_filter").val() !== ""
                              $("#treatment_location_filter").val() !== ""
@@ -252,9 +263,9 @@ let loadDoctors = function (locationId, appointment = null) {
                             window.eventData.doctor_id = $("#treatment_doctor_filter").val();
                             window.eventData.id = null;
                             window.eventData.firstTime = true;
-
+                            //$('#treatment_calendar').fullCalendar('destroy');;
                             setTimeout( function () {
-                                TreatmentCalendar.init();
+                                something();
                             }, 500);
                         }
                         
