@@ -10,11 +10,9 @@ use App\Models\Settings;
 use App\Models\UserOperatorSettings;
 use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Config;
-use Illuminate\Support\Facades\Log;
 
 class DeliverOnAppointmentBook extends Command
 {
@@ -90,8 +88,7 @@ class DeliverOnAppointmentBook extends Command
     private function sendSMS($appointmentId, $patient_phone, $log_type = 'sms', $account_id)
     {
         // Get Appointment
-        $patient = User::where('phone','923027527675')->first();
-        $appointment = Appointments::where('patient_id',$patient->id)->first();
+        $appointment = Appointments::find($appointmentId);
         if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
             // SEND SMS for Appointment Booked
             if($appointment->consultancy_type == 'virtual'){
@@ -119,7 +116,7 @@ class DeliverOnAppointmentBook extends Command
 
         $UserOperatorSettings = UserOperatorSettings::getRecord($account_id, $setting->data);
 
-        //if ($setting->data == 1) {
+        if ($setting->data == 1) {
             $SMSObj = array(
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
@@ -129,20 +126,17 @@ class DeliverOnAppointmentBook extends Command
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
             );
             $response = TelenorSMSAPI::SendSMS($SMSObj);
-            Log::info($response);
-            dd( $response);
-        // } else {
-        //     $SMSObj = array(
-        //         'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
-        //         'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-        //         'from' => $UserOperatorSettings->mask,
-        //         'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
-        //         'text' => $preparedText,
-        //         'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-        //     );
-        //     $response = JazzSMSAPI::SendSMS($SMSObj);
-        //     dd( $response);
-        // }
+        } else {
+            $SMSObj = array(
+                'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
+                'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
+                'from' => $UserOperatorSettings->mask,
+                'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
+                'text' => $preparedText,
+                'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
+            );
+            $response = JazzSMSAPI::SendSMS($SMSObj);
+        }
         $SMSLog = array_merge($SMSObj, $response);
         $SMSLog['appointment_id'] = $appointmentId;
         $SMSLog['created_by'] = 1;
