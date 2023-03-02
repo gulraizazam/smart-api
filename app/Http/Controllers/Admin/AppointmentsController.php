@@ -2033,11 +2033,9 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         if (
-            //$request->get("city_id") &&
             $request->get("location_id") &&
             $request->get("doctor_id")
         ) {
-            //$city_id = $request->get("city_id");
             $location_id = $request->get("location_id");
             $doctor_id = $request->get("doctor_id");
         } else {
@@ -2577,10 +2575,12 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
             }
             $appointment = Appointments::find($id);
-            if($appointment){
-                $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
-                if($check_invoice){
-                    return ApiHelper::apiResponse($this->error, 'Invoice already generated. Appointment can not be rescheduled.', false);
+            if (!Gate::allows('edit_after_arrived')) {
+                if($appointment){
+                    $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
+                    if($check_invoice){
+                        return ApiHelper::apiResponse($this->error, 'Invoice already generated. Appointment can not be rescheduled.', false);
+                    }
                 }
             }
             $rota = $this->checkRota($appointment, $request);
@@ -2606,9 +2606,17 @@ class AppointmentsController extends Controller
             $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
             // Reset Scheduled Time to null, stop sending message
             $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
+           
             if ($appointment_status) {
-                $appointmentData['appointment_status_id'] = $appointment_status->id;
-                $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
+                if($check_invoice){
+                    $appointmentData['appointment_status_id'] = $appointment->appointment_status_id;
+                    $appointmentData['base_appointment_status_id'] = $appointment->base_appointment_status_id;
+                }else{
+                    $appointmentData['appointment_status_id'] = $appointment_status->id;
+                    $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                }
+                
                 $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
                 $appointmentData['send_message'] = $appointment_status->allow_message;
             }
@@ -2634,6 +2642,7 @@ class AppointmentsController extends Controller
                     $appointmentData['resource_has_rota_day_id_for_machine'] = $machine_has_rota_day['id'];
                 }
             }
+           
             $appointment->update($appointmentData);
             if (count($appointment->getChanges()) > 1) {
                 // if only doctor are going to change and first sms already sent, so we need to stop sending message again
@@ -2708,10 +2717,12 @@ class AppointmentsController extends Controller
                     return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
                 }
                 $appointment = Appointments::find($id);
-                if($appointment){
-                    $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
-                    if($check_invoice){
-                        return ApiHelper::apiResponse($this->error, 'Invoice already generated. Appointment can not be rescheduled.', false);
+                if (!Gate::allows('edit_after_arrived')) {
+                    if($appointment){
+                        $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
+                        if($check_invoice){
+                            return ApiHelper::apiResponse($this->error, 'Invoice already generated. Appointment can not be rescheduled.', false);
+                        }
                     }
                 }
                 $rota = $this->checkRota($appointment, $request);
@@ -2738,8 +2749,14 @@ class AppointmentsController extends Controller
                 // Reset Scheduled Time to null, stop sending message
                 $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
                 if ($appointment_status) {
-                    $appointmentData['appointment_status_id'] = $appointment_status->id;
-                    $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                    $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
+                    if($check_invoice){
+                        $appointmentData['appointment_status_id'] = $appointment->appointment_status_id;
+                        $appointmentData['base_appointment_status_id'] = $appointment->base_appointment_status_id;
+                    }else{
+                        $appointmentData['appointment_status_id'] = $appointment_status->id;
+                        $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                    }
                     $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
                     $appointmentData['send_message'] = $appointment_status->allow_message;
                 }
@@ -4619,7 +4636,6 @@ class AppointmentsController extends Controller
         return Validator::make($data, [
             'name' => 'required',
             'phone' => 'required',
-//'city_id' => 'required',
             'location_id' => 'required',
             'doctor_id' => 'required',
         ]);
@@ -4683,109 +4699,92 @@ class AppointmentsController extends Controller
 
     public function getScheduledServiceAppointments(Request $request)
     {
-        // if (
-            
-        //     $request->get("location_id") 
-            
-        // ) {}elseif(
-        //     $request->get("location_id") 
-        //     && $request->get("doctor_id")
-        // ){
-
-        // }
-            $location_id = $request->get("location_id");
-            $doctor_id = $request->get("doctor_id");
-            $machine_id = $request->get("machine_id");
-            $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id, true);
-            $resources = Resources::getRoomsResourceRotaWithoutDays($request->get("location_id"));
-           
-            $start = $request->get("start");
-            $end = $request->get("end");
-            $minTime = Resources::getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end);
-            if ($request->has("start") && $request->has("end")) {
-                $doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end"));
-            } else {
-                $doctor_rotas = collect();
+        $location_id = $request->get("location_id");
+        $doctor_id = $request->get("doctor_id");
+        $machine_id = $request->get("machine_id");
+        $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id, true);
+        $resources = Resources::getRoomsResourceRotaWithoutDays($request->get("location_id"));
+        $start = $request->get("start");
+        $end = $request->get("end");
+        $minTime = Resources::getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end);
+        if ($request->has("start") && $request->has("end")) {
+            $doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end"));
+        } else {
+            $doctor_rotas = collect();
+        }
+        if ($appointments) {
+            $data = array();
+            if($request->get("doctor_id") != ''){
+                foreach ($appointments as $appointment) {
+                    $dutation = explode(':', $appointment->service->duration);
+                    $data[$appointment->id] = array(
+                        'id' => $appointment->id,
+                        'service' => $appointment->service->name,
+                        'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                        'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
+                        'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                        'duration' => $appointment->service->duration,
+                        'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
+                        'overlap' => false,
+                        'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
+                        'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
+                        'color' => ($request->get("doctor_id") == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
+                        'resourceId' => $appointment->resource_id,
+                    );
+                }
+            }else{
+                foreach ($appointments as $appointment) {
+                    $dutation = explode(':', $appointment->service->duration);
+                    $data[$appointment->id] = array(
+                        'id' => $appointment->id,
+                        'service' => $appointment->service->name,
+                        'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                        'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
+                        'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                        'duration' => $appointment->service->duration,
+                        'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
+                        'overlap' => false,
+                        'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
+                        'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
+                        'color' => $appointment->service->color,
+                        'resourceId' => $appointment->resource_id,
+                    );
+                }
             }
-            if ($appointments) {
-                $data = array();
-                if($request->get("doctor_id") != ''){
-                    foreach ($appointments as $appointment) {
-                        $dutation = explode(':', $appointment->service->duration);
-                        $data[$appointment->id] = array(
-                            'id' => $appointment->id,
-                            'service' => $appointment->service->name,
-                            'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
-                            'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-                            'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
-                            'duration' => $appointment->service->duration,
-                            'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
-                            'overlap' => false,
-                            'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-                            'color' => ($request->get("doctor_id") == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
-                            'resourceId' => $appointment->resource_id,
-                        );
-                    }
-                }else{
-                    foreach ($appointments as $appointment) {
-                        $dutation = explode(':', $appointment->service->duration);
-                        $data[$appointment->id] = array(
-                            'id' => $appointment->id,
-                            'service' => $appointment->service->name,
-                            'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
-                            'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-                            'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
-                            'duration' => $appointment->service->duration,
-                            'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
-                            'overlap' => false,
-                            'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-                            'color' => $appointment->service->color,
-                            'resourceId' => $appointment->resource_id,
-                        );
-                    }
-                }
-                
-                $resource_ids = array();
-                $resources = array_filter($resources);
-                foreach ($resources as $resource) {
-                    $resource_ids[] = $resource["id"];
-                }
-                if($request->doctor_id){
-                    return response()->json(array(
-                        'status' => 1,
-                        'events' => $data,
-                        'rotas' => $doctor_rotas->toArray(),
-                        'min_time' => $minTime,
-                        'resource_ids' => $resource_ids,
-                        'start_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))->format("H:i:s"),
-                        'end_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))->format("H:i:s"),
-                    ));
-                }else{
-                    return response()->json(array(
-                        'status' => 1,
-                        'events' => $data,
-                        'rotas' => $doctor_rotas->toArray() ?? '',
-                        'min_time' => $minTime,
-                        'resource_ids' => $resource_ids,
-                        'start_time' => '6:00',
-                        'end_time' => '22:00',
-                    ));
-                }
-                
-            } else {
+            
+            $resource_ids = array();
+            $resources = array_filter($resources);
+            foreach ($resources as $resource) {
+                $resource_ids[] = $resource["id"];
+            }
+            if($request->doctor_id){
                 return response()->json(array(
-                    'status' => 0,
-                    'events' => null,
+                    'status' => 1,
+                    'events' => $data,
+                    'rotas' => $doctor_rotas->toArray(),
+                    'min_time' => $minTime,
+                    'resource_ids' => $resource_ids,
+                    'start_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))->format("H:i:s"),
+                    'end_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))->format("H:i:s"),
+                ));
+            }else{
+                return response()->json(array(
+                    'status' => 1,
+                    'events' => $data,
+                    'rotas' => $doctor_rotas->toArray() ?? '',
+                    'min_time' => $minTime,
+                    'resource_ids' => $resource_ids,
+                    'start_time' => '6:00',
+                    'end_time' => '22:00',
                 ));
             }
-        // } else {
-        //     return response()->json(array(
-        //         'status' => 0,
-        //         'events' => null,
-        //     ));
-        // }
+            
+        } else {
+            return response()->json(array(
+                'status' => 0,
+                'events' => null,
+            ));
+        }
     }
     /*
      * check and update treatment appointment
@@ -5612,7 +5611,7 @@ class AppointmentsController extends Controller
                 $appointment->update([
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
-                    'updated_by' => auth()->id(),
+                    'converted_by' => auth()->id(),
                     'appointment_status_id' => config('constants.appointment_status_pending'),
                     'base_appointment_status_id' => config('constants.appointment_status_pending'),
                     'updated_at'=>Filters::getCurrentTimeStamp()
@@ -5621,7 +5620,9 @@ class AppointmentsController extends Controller
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
                 $log_type = 'sms';
                 $patient = Patients::findOrFail($appointment->patient_id);
-                $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                if($appointment->isDirty('scheduled_date')){
+                    $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
+                }
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
             return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);

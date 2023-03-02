@@ -452,6 +452,144 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-lg-12 col-xxl-12">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase" >Collection by Service Category</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('today', '', '', '','');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_1" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('', 'yesterday', '', '','');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_2" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('', '', 'last7days', '','');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('', '', '', 'thismonth','');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="InitCollectionByServiceCategory('', '', '','', 'lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
+                                            <span class="text-muted font-weight-bold mt-2 service-title"></span>
+                                        </div>
+                                    </div>
+                                    <div id="revenue-service-collection"></div>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="col-lg-12 col-xxl-12">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase" >Revenue by Service Category</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">LAst Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
+                                                onclick="InitRevenueByServiceCategory('today', '', '', '','');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_1" data-toggle="tab"
+                                                onclick="InitRevenueByServiceCategory('', 'yesterday', '', '','');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_2" data-toggle="tab"
+                                                onclick="InitRevenueByServiceCategory('', '', 'last7days', '','');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="InitRevenueByServiceCategory('', '', '', 'thismonth','');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-category-service"></span>
+                                            <span class="text-muted font-weight-bold mt-2 service-category-title"></span>
+                                        </div>
+                                    </div>
+                                    <div id="revenue-service-category"></div>
+                                </div>
+                            </div>
+                        </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
                     <div class="col-lg-12 col-xxl-12 custom_tabs_style">
@@ -638,6 +776,8 @@
         var collection_by_center= false; 
         var revenue_by_center= false;
         var revenue_by_service=false;
+        var revenue_by_service_category=false;
+        var collection_by_service_category=false;
         var consultancy_by_status=false;
         var treatment_by_status=false;
         $(window).scroll(function(){
@@ -719,6 +859,71 @@
                     }
                 });
             }
+            if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !revenue_by_service_category){
+                revenue_by_service_category= true; 
+                $.ajax({
+                    url: route('admin.home.RevenueByServiceCategory'),
+                    type: "GET",
+                    data: {'type': '{{request('type')}}'},
+                    cache: false,
+                    success: function (response) {
+                    
+                        @if(request('type') == 'today')
+                            var pie = response.data.pie.today;
+                        @endif
+                        @if(request('type') == 'yesterday')
+                            var pie = response.data.pie.yesterday;
+                        @endif
+                        @if(request('type') == 'week')
+                            var pie = response.data.pie.week;
+                        @endif
+                        @if(request('type') == 'month')
+                            var pie = response.data.pie.month;
+                        @endif
+                        @if(request('type') == '')
+                            var pie = response.data.pie.today;
+                        @endif
+                        RevenueByServiceCategory(pie);
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
+            }
+            if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.33) && !collection_by_service_category){
+                collection_by_service_category= true; 
+                $.ajax({
+                        url: route('admin.home.CollectionByServiceCategory'),
+                        type: "GET",
+                        data: {'type': '{{request('type')}}'},
+                        cache: false,
+                        success: function (response) {
+                            console.log(response);
+                            let colors = response.data.colors;
+                            let total = response.data.total;
+                            
+                            @if(request('type') == 'today')
+                            var pie = response.data.pie.today;
+                            @endif
+                            @if(request('type') == 'yesterday')
+                                var pie = response.data.pie.yesterday;
+                            @endif
+                            @if(request('type') == 'week')
+                                var pie = response.data.pie.week;
+                            @endif
+                            @if(request('type') == 'month')
+                                var pie = response.data.pie.month;
+                            @endif
+                            @if(request('type') == '')
+                                var pie = response.data.pie.today;
+                            @endif
+                            CollectionByServiceCategory(pie, colors);
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            errorMessage(xhr);
+                        }
+                    });
+            }
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !consultancy_by_status){
                 consultancy_by_status= true; 
                 $.ajax({
@@ -783,37 +988,6 @@
                     }
                 });
             }
-            // if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.66) && !appointment_by_type){
-            //     appointment_by_type= true; 
-            //     $.ajax({
-            //         url: route('admin.dashboard.appointment_by_type'),
-            //         type: "GET",
-            //         data: {'period': '{{request('type')}}'},
-            //         cache: false,
-            //         success: function (response) {
-            //             let colors = response.data.colors;
-            //             @if(request('type') == 'today')
-            //                 var pie = response.data.pie.today;
-            //             @endif
-            //             @if(request('type') == 'yesterday')
-            //                 var pie = response.data.pie.yesterday;
-            //             @endif
-            //             @if(request('type') == 'week')
-            //                 var pie = response.data.pie.week;
-            //             @endif
-            //             @if(request('type') == 'month')
-            //                 var pie = response.data.pie.month;
-            //             @endif
-            //             @if(request('type') == '')
-            //                 var pie = response.data.pie.today;
-            //             @endif
-            //             AppointmentByType(pie, colors);
-            //         },
-            //         error: function (xhr, ajaxOptions, thrownError) {
-            //             errorMessage(xhr);
-            //         }
-            //     });
-            // }
         });
         function TreatmentByStatus(pie,colors) {
             google.load('visualization', '1', {
@@ -895,6 +1069,38 @@
                 $("#revenue-service").css("height", "500px");
             }
         }
+        function RevenueByServiceCategory(pie) {
+            google.load('visualization', '1', {
+                packages: ['corechart', 'bar', 'line']
+            });
+            google.setOnLoadCallback(function () {
+            var data = google.visualization.arrayToDataTable(pie);
+            var options = {
+                colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
+            };
+            var chart = new google.visualization.PieChart(document.getElementById('revenue-service-category'));
+                chart.draw(data, options);
+            });
+            if (pie.length > 1) {
+                $("#revenue-service-category").css("height", "500px");
+            }
+        }
+        function CollectionByServiceCategory(service) {
+                google.load('visualization', '1', {
+                    packages: ['corechart', 'bar', 'line']
+                });
+                google.setOnLoadCallback(function () {
+                var data = google.visualization.arrayToDataTable(service);
+                var options = {
+                    colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
+                };
+                var chart = new google.visualization.PieChart(document.getElementById('revenue-service-collection'));
+                    chart.draw(data, options);
+                });
+                if (typeof service !== 'undefined' && service.length > 1) {
+                    $("#revenue-service-collection").css("height", "500px");
+                }
+            }
     </script>
 @endpush
 @endsection
