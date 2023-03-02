@@ -17,9 +17,6 @@ jQuery(document).ready(function() {
         setTimeout( function () {
             $("#treatment_city_filter").val(result.city_id).change();
         }, 200);
-        // setTimeout( function () {
-        //     $("#treatment_location_filter").val(result.location_id).change();
-        // },300);
         setTimeout( function () {
             $("#treatment_resource_filter").val(result.machine_id).change();
         },1200);
