@@ -25,42 +25,30 @@ class AppointmentCheckesWidget
     {
      
         $appointment_status = true;
-
         $status = array(
             'status' => $appointment_status
         );
-
         $continue_rota = array();
-
         $start = Carbon::parse($request->start)->format("Y-m-d");
-
         $today = Carbon::now()->toDateString();
-
         $resource_id = Resources::where('external_id', '=', $request->doctor_id)->first();
-        
         $resource_rota = ResourceHasRota::where([
-            ['resource_id', '=', $resource_id->id],
-            ['location_id','=',$request->location_id]
+            'resource_id' => $resource_id->id,
+            'location_id' =>$request->location_id
         ])->get();
-       
         foreach ($resource_rota as $resourceroata) {
-            
             if (($start >= $resourceroata->start) && ($start <= $resourceroata->end)) {
                 $continue_rota[0] = $resourceroata;
             }
         }
-        
         $started_time = \Carbon\Carbon::parse($request->start)->format("Y-m-d H:i:s");
-       
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format("H:i");
-      
         if (count($continue_rota) > 0) {
             $resource_has_rota_days = ResourceHasRotaDays::where([
-                ['resource_has_rota_id', '=', $continue_rota[0]->id],
-                ['date', '=', $start],
-                ['active', '=', '1'],
+                'resource_has_rota_id'=> $continue_rota[0]->id,
+                'date'=> $start,
+                'active'=> '1',
             ])->first();
-           
             if (!$resource_has_rota_days) {
                 $appointment_status = false;
                 $message = "Doctor rota is not available.";
