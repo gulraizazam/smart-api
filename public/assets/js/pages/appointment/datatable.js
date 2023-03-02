@@ -491,7 +491,7 @@ function actions(data) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                        <span class="navi-text">Consultancy</span>\
+                        <span class="navi-text">Treatment</span>\
                     </a>\
                 </li>';
             }
