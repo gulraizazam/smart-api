@@ -221,8 +221,6 @@ function editSchedule(id) {
 
     $("#modal_change_appointment_schedule").modal("show");
     $("#schedule_appointment_id").val(id)
-    $("#schedule_doctor_id").val(doc_id)
-    $("#schedule_location_id").val(loc_id)
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
