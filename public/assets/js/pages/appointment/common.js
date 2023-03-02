@@ -103,9 +103,9 @@ let loadLocations = function (cityId, appointment = null) {
                         $("#consultancy_location_filter").val(result.location_id).change();
                     }
                 } else  if (appointment && appointment == 'treatment') {
-                    $('#treatment_location_filter').html(dropdown_options);
+                    $('#treatment_location_filter').html(dropdown_options);                    
                     setQueryStringParameter('city_id', cityId);
-
+                    
                     if (typeof result.location_id !== "undefined") {
                         $("#treatment_location_filter").val(result.location_id).change();
                     }
@@ -215,7 +215,7 @@ let loadDoctors = function (locationId, appointment = null) {
             },
             cache: false,
             success: function(response) {
-                if(response.status) {                    
+                if(response.status) {    
                     let dropdowns =  response.data.dropdown;
                     let dropdown_options =  '<option value="">Select a Doctor</option>';
 
@@ -243,15 +243,46 @@ let loadDoctors = function (locationId, appointment = null) {
                             $("#consultancy_doctor_filter").val(result.doctor_id).change();
                         }
 
+                        var result3 = get_query();
+                        
+                        if (
+                            //$("#treatment_city_filter").val() !== ""
+                             $("#consultancy_location_filter").val() !== ""
+                            //&& $("#treatment_doctor_filter").val() !== ""
+                            //&& $("#treatment_resource_filter").val() !== ""
+                            && typeof result3.tab !== 'undefined' && result3.tab == 'treatment') {
+
+                            window.eventData = {}
+                            //window.eventData.city_id = $("#treatment_city_filter").val()
+                            window.eventData.location_id = $("#consultancy_location_filter").val()
+                            window.eventData.doctor_id = $("#consultancy_doctor_filter").val();
+                            window.eventData.id = null;
+                            window.eventData.firstTime = true;
+                            //$('#treatment_calendar').fullCalendar('destroy');;
+                            if($('#consultancy_location_filter option').length == 2){
+                                something();
+                            } else{                                
+                                setTimeout( function () {
+                                    ConsultancyCalendar.init();
+                                }, 500);
+                            }
+                            
+                        }
+
                     } else if (appointment && appointment == 'treatment') {
                         if (typeof treatment_calendar !== "undefined" && $('#treatment_location_filter option').length > 2) { /*if already initiate then destroy first*/
                             treatment_calendar.destroy();
                         }
                         $('#treatment_doctor_filter').html(dropdown_options);                        
                         if(typeof result.machine_id == "undefined"){
-                            setQueryStringParameter('doctor_id', '');
-                            
+                            setQueryStringParameter('doctor_id', '');    
                         }
+                        
+                        if(result.location_id !== jQuery('#treatment_location_filter').val()){
+                            setQueryStringParameter('doctor_id', '');
+                            setQueryStringParameter('machine_id', '');
+                        }
+                        
                         setQueryStringParameter('location_id', locationId);
                         
                         loadMachine(locationId);
