@@ -767,6 +767,7 @@ class DashboardReportsController extends Controller
                 $todayRecords = $todayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
                     ->groupBy('invoice_details.service_id')
                     ->get();
+                    
                 if ($services) {
                     $total = 0;
                     foreach ($services as $service) {
@@ -792,6 +793,7 @@ class DashboardReportsController extends Controller
                         }
                     }
                 }
+                dd($today );
                 if (count($today)) {
                     foreach ($today as $record) {
                         $data['today'][] = $record;
