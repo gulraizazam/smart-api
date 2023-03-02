@@ -30,7 +30,7 @@ var table_columns = [
             if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
                 return '<span>'+data.scheduled_date+'</span>';
             } else {
-                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId+','+ data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
             }
         }
     },{
@@ -217,10 +217,12 @@ function setStatusData(response, id) {
     }
 }
 
-function editSchedule(id) {
+function editSchedule(id,doc_id,loc_id) {
 
     $("#modal_change_appointment_schedule").modal("show");
     $("#schedule_appointment_id").val(id)
+    $("#schedule_doctor_id").val(doc_id)
+    $("#schedule_location_id").val(loc_id)
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -374,11 +376,14 @@ let statusListener = function (appointmentStatusId) {
 }
 
 function actions(data) {
+
     let id = data.id;
+
     let edit_url = route('admin.appointments.edit', {id: id});
     let edit_service_url = route('admin.appointments.edit_service', {id: id});
     let detail_url = route('admin.appointments.detail', {id: id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: id});
+
     let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: id, type: 'appointment'});
     let invoice_url = route('admin.appointments.invoicecreate', {id: id});
     let invoice_display_url = route('admin.appointments.InvoiceDisplay', {id: data.invoice_id});
@@ -473,9 +478,9 @@ function actions(data) {
         if(data.appointment_type==1) {
             if (permissions.consultancy) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', \''+data.apt_scheduled_date+'\')" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
-                        <span class="navi-text">View On Calendar</span>\
+                        <span class="navi-text">Consultancy</span>\
                     </a>\
                 </li>';
             }
@@ -486,7 +491,7 @@ function actions(data) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                        <span class="navi-text">View On Calendar</span>\
+                        <span class="navi-text">Consultancy</span>\
                     </a>\
                 </li>';
             }
@@ -643,7 +648,7 @@ function actions(data) {
     return '';
 }
 
-function goToConsultancy(type, city_id, location_id, doctor_id, resource_id,scheduledDate) {
+function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
 
     if (type == 'appointment') {
         $(".export-appointments").show();
@@ -662,8 +667,7 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id,sche
     //setQueryStringParameter('city_id', city_id);
     setQueryStringParameter('location_id', location_id);
     setQueryStringParameter('doctor_id', doctor_id);
-    setQueryStringParameter('reload', 'true');
-    setQueryStringParameter('scheduledDate', scheduledDate);
+    setQueryStringParameter('reload', 'false');
     $(".change-label").text($("." +type+ "-tab").text());
 
     if (type === 'treatment') {
