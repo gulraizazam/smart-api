@@ -30,7 +30,7 @@ var table_columns = [
             if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
                 return '<span>'+data.scheduled_date+'</span>';
             } else {
-                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId+','+ data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId +','+data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
             }
         }
     },{
@@ -223,6 +223,7 @@ function editSchedule(id,doc_id,loc_id) {
     $("#schedule_appointment_id").val(id)
     $("#schedule_doctor_id").val(doc_id)
     $("#schedule_location_id").val(loc_id)
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

@@ -30,7 +30,7 @@ var table_columns = [
             if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
                 return '<span>'+data.scheduled_date+'</span>';
             } else {
-                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId+','+ data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId +','+data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
             }
         }
     },{
