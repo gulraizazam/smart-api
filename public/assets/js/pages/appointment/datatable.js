@@ -376,14 +376,11 @@ let statusListener = function (appointmentStatusId) {
 }
 
 function actions(data) {
-
     let id = data.id;
-
     let edit_url = route('admin.appointments.edit', {id: id});
     let edit_service_url = route('admin.appointments.edit_service', {id: id});
     let detail_url = route('admin.appointments.detail', {id: id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: id});
-
     let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: id, type: 'appointment'});
     let invoice_url = route('admin.appointments.invoicecreate', {id: id});
     let invoice_display_url = route('admin.appointments.InvoiceDisplay', {id: data.invoice_id});
@@ -478,9 +475,9 @@ function actions(data) {
         if(data.appointment_type==1) {
             if (permissions.consultancy) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', \''+data.apt_scheduled_date+'\')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
-                        <span class="navi-text">Consultancy</span>\
+                        <span class="navi-text">View On Calendar</span>\
                     </a>\
                 </li>';
             }
@@ -491,7 +488,7 @@ function actions(data) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                        <span class="navi-text">Treatment</span>\
+                        <span class="navi-text">View On Calendar</span>\
                     </a>\
                 </li>';
             }
@@ -648,7 +645,7 @@ function actions(data) {
     return '';
 }
 
-function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
+function goToConsultancy(type, city_id, location_id, doctor_id, resource_id,scheduledDate) {
 
     if (type == 'appointment') {
         $(".export-appointments").show();
@@ -664,11 +661,11 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
     $("." +type+ "-tab").addClass("nav-bar-active");
 
     setQueryStringParameter('tab', type);
-    setQueryStringParameter('city_id', city_id);
+    //setQueryStringParameter('city_id', city_id);
     setQueryStringParameter('location_id', location_id);
     setQueryStringParameter('doctor_id', doctor_id);
-    setQueryStringParameter('reload', 'false');
-
+    setQueryStringParameter('reload', 'true');
+    setQueryStringParameter('scheduledDate', scheduledDate);
     $(".change-label").text($("." +type+ "-tab").text());
 
     if (type === 'treatment') {
