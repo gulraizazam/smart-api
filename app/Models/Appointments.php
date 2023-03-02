@@ -405,48 +405,10 @@ class Appointments extends Model
         ->whereNotNull('scheduled_date')
         ->whereNotNull('scheduled_time')
         ->get();
-        
-        
-        // if ($request->get('city_id')) {
-        //     $where[] = ['city_id', '=', $request->get('city_id')];
-        // }
-        // if ($request->start) {
-        //     $where[] = [];
-        // }
-        // if ($request->get('location_id')) {
-        //     $where[] = ['location_id', '=', $request->get('location_id')];
-        // }
-
-        // if($request->machine_id){
-        //     $where[] = ['resource_id', '=', $request->get('machine_id')];
-        // } else {
-        //     if ($request->doctor_id){
-        //         $where[] = ['doctor_id', '=', $request->get('doctor_id')];
-        //     }
-        // }
-
-
-        
-        // if($request->doctor_id && !$request->machine_id){
-        //     $where[] = ['doctor_id', '=', $request->get('doctor_id')];
-        // }
-        // if($request->machine_id && $request->doctor_id ){
-        //     $where[] = ['resource_id', '=', $request->get('machine_id')];
-        // }
-        // if (!$skip_doctor) {
-        //     if ($request->get('doctor_id')) {
-        //         $where[] = ['doctor_id', '=', $request->get('doctor_id')];
-        //     }
-        // }
-        
         return self::where($where)
             ->whereNotNull('scheduled_date')
             ->whereNotNull('scheduled_time')
-            // these lines skiping records because data from request is is date and matching with time
-            /*            ->whereDate('scheduled_time', '>=', Carbon::parse($request->get('start'))->toDateString())
-                        ->whereDate('scheduled_time', '<=', Carbon::parse($request->get('end'))->toDateString())*/
             ->get();
-            
     }
 
     /**

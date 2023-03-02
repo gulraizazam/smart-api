@@ -246,19 +246,13 @@ let loadDoctors = function (locationId, appointment = null) {
                         var result3 = get_query();
                         
                         if (
-                            //$("#treatment_city_filter").val() !== ""
                              $("#consultancy_location_filter").val() !== ""
-                            //&& $("#treatment_doctor_filter").val() !== ""
-                            //&& $("#treatment_resource_filter").val() !== ""
                             && typeof result3.tab !== 'undefined' && result3.tab == 'treatment') {
-
                             window.eventData = {}
-                            //window.eventData.city_id = $("#treatment_city_filter").val()
                             window.eventData.location_id = $("#consultancy_location_filter").val()
                             window.eventData.doctor_id = $("#consultancy_doctor_filter").val();
                             window.eventData.id = null;
                             window.eventData.firstTime = true;
-                            //$('#treatment_calendar').fullCalendar('destroy');;
                             if($('#consultancy_location_filter option').length == 2){
                                 something();
                             } else{                                
@@ -266,9 +260,7 @@ let loadDoctors = function (locationId, appointment = null) {
                                     ConsultancyCalendar.init();
                                 }, 500);
                             }
-                            
                         }
-
                     } else if (appointment && appointment == 'treatment') {
                         if (typeof treatment_calendar !== "undefined" && $('#treatment_location_filter option').length > 2) { /*if already initiate then destroy first*/
                             treatment_calendar.destroy();
@@ -282,27 +274,17 @@ let loadDoctors = function (locationId, appointment = null) {
                             setQueryStringParameter('doctor_id', '');
                             setQueryStringParameter('machine_id', '');
                         }
-                        
                         setQueryStringParameter('location_id', locationId);
-                        
                         loadMachine(locationId);
-                        
                         var result3 = get_query();
-                        
                         if (
-                            //$("#treatment_city_filter").val() !== ""
                              $("#treatment_location_filter").val() !== ""
-                            //&& $("#treatment_doctor_filter").val() !== ""
-                            //&& $("#treatment_resource_filter").val() !== ""
                             && typeof result3.tab !== 'undefined' && result3.tab == 'treatment') {
-
                             window.eventData = {}
-                            //window.eventData.city_id = $("#treatment_city_filter").val()
                             window.eventData.location_id = $("#treatment_location_filter").val()
                             window.eventData.doctor_id = $("#treatment_doctor_filter").val();
                             window.eventData.id = null;
                             window.eventData.firstTime = true;
-                            //$('#treatment_calendar').fullCalendar('destroy');;
                             if($('#treatment_location_filter option').length == 2){
                                 something();
                             } else{                                
@@ -310,18 +292,13 @@ let loadDoctors = function (locationId, appointment = null) {
                                     TreatmentCalendar.init();
                                 }, 500);
                             }
-                            
                         }
-                        
-                        
                         if (typeof result.doctor_id !== "undefined" && typeof result.reload === "undefined") {
-                            //  $("#treatment_doctor_filter").val(result.doctor_id).change();
                         }
                     } else {
                         $('#edit_doctor').html(dropdown_options);
                     }
 
-                    //$('.select2').select2({ width: '100%' });
                 } else {
                     resetDoctors();
                 }
