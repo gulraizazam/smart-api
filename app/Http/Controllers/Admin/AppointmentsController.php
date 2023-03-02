@@ -1034,7 +1034,6 @@ class AppointmentsController extends Controller
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
                     'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
-                    'apt_scheduled_date' => $appointment->scheduled_date,
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
                     'doctorId' => $appointment->doctor->id ?? 0,
                     'region_id' => (array_key_exists($appointment->region_id, $Regions)) ? $Regions[$appointment->region_id]->name : 'N/A',
