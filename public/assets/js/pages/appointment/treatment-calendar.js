@@ -51,6 +51,7 @@ var TreatmentCalendar = function() {
                 events: function(event, callback) {
                     $('.appointment-loader-base').show();
                     start_treatment_date = event.start;
+                    var query_result = get_query();
                     if (
                         $('#treatment_location_filter').val() !== null
                     ) {
@@ -62,7 +63,7 @@ var TreatmentCalendar = function() {
                             type: 'GET',
                             data: {
                                 location_id: $('#treatment_location_filter').val(),
-                                doctor_id: $('#treatment_doctor_filter').val(),
+                                doctor_id: query_result.doctor_id,
                                 machine_id: $('#treatment_resource_filter').val(),
                                 start: formatDate(event.start, 'YYYY-MM-DD'),
                                 end: formatDate(event.end, 'YYYY-MM-DD'),
@@ -129,6 +130,7 @@ var TreatmentCalendar = function() {
         },
 
         async loadTreatmentEvents(response, callback) {
+           
             if (response.status) {
                 if($('#treatment_doctor_filter').val() !=''){
                     if (response.rotas[0].doctor_rotas.length == 0) {
