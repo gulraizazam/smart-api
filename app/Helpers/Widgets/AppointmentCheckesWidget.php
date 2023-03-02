@@ -59,8 +59,6 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_id', '=', $continue_rota[0]->id],
                 ['date', '=', $start],
                 ['active', '=', '1'],
-                // ['resource_has_rota_days.start_timestamp', '<=', $started_time],
-                // ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
            
             if (!$resource_has_rota_days) {
