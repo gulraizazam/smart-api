@@ -504,7 +504,6 @@ function actions(data) {
                     </li>';
                 }
             }
-
             if(data.appointment_type==2) {
                 if (permissions.treatment) {
                     actions += '<li class="navi-item">\
@@ -576,10 +575,7 @@ function actions(data) {
         }
 
         if (permissions.delete) {
-            /*if (
-                (data?.unscheduled_appointment_status?.id == data?.appointment_status_id) &&
-                (!data?.scheduled_date && !data?.scheduled_time)
-            ) {*/
+
             actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-trash"></i></span>\
@@ -587,7 +583,6 @@ function actions(data) {
                             </a>\
                         </li>';
         }
-        //}
 
         actions += '<li class="navi-item d-lg-none">\
                         <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
