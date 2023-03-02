@@ -51,6 +51,7 @@ function patient_search_func() {
     }
 }
 var getURLQuery = get_query();
+var ActiveURL;
 var ConsultancyCalendar = function() {
     return {
         init: function(start) {
