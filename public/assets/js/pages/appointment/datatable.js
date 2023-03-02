@@ -481,7 +481,7 @@ function actions(data) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
-                        <span class="navi-text">Consultancy</span>\
+                        <span class="navi-text">View On Calendar</span>\
                     </a>\
                 </li>';
             }
@@ -492,7 +492,7 @@ function actions(data) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                        <span class="navi-text">Treatment</span>\
+                        <span class="navi-text">View On Calendar</span>\
                     </a>\
                 </li>';
             }
@@ -505,7 +505,7 @@ function actions(data) {
             if(data.appointment_type==1) {
                 if (permissions.consultancy) {
                     actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+',\'2023-01-01\')" class="navi-link">\
                             <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
                             <span class="navi-text">Consultancy</span>\
                         </a>\
@@ -516,7 +516,7 @@ function actions(data) {
             if(data.appointment_type==2) {
                 if (permissions.treatment) {
                     actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+',\'2023-01-01\')" class="navi-link">\
                             <span class="navi-icon"><i class="la la-medkit"></i></span>\
                             <span class="navi-text">Treatment</span>\
                         </a>\
@@ -650,7 +650,6 @@ function actions(data) {
 }
 
 function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
-
     if (type == 'appointment') {
         $(".export-appointments").show();
         reInitTable();

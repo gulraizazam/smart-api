@@ -477,7 +477,7 @@ function actions(data) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
-                        <span class="navi-text">Consultancy</span>\
+                        <span class="navi-text">View On Calendar</span>\
                     </a>\
                 </li>';
             }
@@ -485,9 +485,9 @@ function actions(data) {
         if(data.appointment_type==2) {
             if (permissions.treatment) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+', \''+data.apt_scheduled_date+'\')" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                        <span class="navi-text">Treatment</span>\
+                        <span class="navi-text">View On Calendar</span>\
                     </a>\
                 </li>';
             }
@@ -636,7 +636,7 @@ function actions(data) {
     return '';
 }
 
-function goToConsultancy(type, city_id, location_id, doctor_id, resource_id, scheduledDate) {
+function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
     if (type == 'appointment') {
         $(".export-appointments").show();
         reInitTable();
@@ -651,7 +651,6 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id, sch
     setQueryStringParameter('location_id', location_id);
     setQueryStringParameter('doctor_id', doctor_id);
     setQueryStringParameter('reload', 'true');
-    setQueryStringParameter('scheduledDate', scheduledDate);
     $(".change-label").text($("." +type+ "-tab").text());
     if (type === 'treatment') {
         setQueryStringParameter('machine_id', resource_id);

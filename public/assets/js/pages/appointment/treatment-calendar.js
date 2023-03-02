@@ -2,7 +2,6 @@
 
 var treatment_calendar;
 var start_treatment_date;
-var getURLQuery = get_query();
 var ActiveURL;
 var TreatmentCalendar = function() {
     return {
@@ -14,11 +13,7 @@ var TreatmentCalendar = function() {
             if (typeof start !== "undefined") {
                 TODAY = formatDate(start, 'YYYY-MM-DD');
             }
-            if(getURLQuery.scheduledDate !== "undefined"){
-                ActiveURL = getURLQuery.scheduledDate;
-            } else{
-                ActiveURL = TODAY;
-            }
+            ActiveURL = TODAY;
             var calendarEl = document.getElementById('treatment_calendar');
             treatment_calendar = new FullCalendar.Calendar(calendarEl, {
                 plugins: [ 'bootstrap', 'interaction', 'dayGrid', 'timeGrid', 'list' ],
