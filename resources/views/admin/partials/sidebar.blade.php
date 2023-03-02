@@ -29,6 +29,15 @@
         <div class="aside-menu-wrapper flex-column-fluid" id="kt_aside_menu_wrapper">
             <!--begin::Menu Container-->
             <div id="kt_aside_menu" class="aside-menu my-4" data-menu-vertical="1" data-menu-scroll="1" data-menu-dropdown-timeout="500">
+               <!--begin::Brand-->
+                <div class="flex-column-auto d-lg-none pt-4 pb-7" id="kt_brand" style="border-bottom: 1px solid #032f58;">
+                    <!--begin::Logo-->
+                    <a class="brand-logo">
+                        <img style="width: 130px;margin-left:25px; display:block;" alt="Logo" src="{{asset('logo.png')}}" />
+                    </a>
+                    <!--end::Logo-->
+                </div>
+                <!--end::Brand-->
                 <!--begin::Menu Nav-->
                 <ul class="menu-nav">
                     <li class="menu-item {{activeMenu('admin.home')}}" aria-haspopup="true">
