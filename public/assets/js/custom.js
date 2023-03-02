@@ -818,18 +818,25 @@ function makePhoneNumber(phoneNo, permission, type = 0) {
 
     return phoneNo;
 }
-
 function setQueryStringParameter(name, value = null) {
-
     const params = new URLSearchParams(window.location.search);
     if (value) {
         params.set(name, value);
     } else {
         params.delete(name);
     }
-    window.history.replaceState({}, "", decodeURIComponent(`${window.location.pathname}?${params}`));
+    var URL = `${window.location.pathname}?${params}`;
+    var queryStringencode = encodeURIComponent(URL);
+    var queryString = decodeURIComponent(queryStringencode);
+    var getURL =  window.location.href;
+    if(!getURL.includes('#loaded')){
+        window.history.replaceState({}, "", queryString);
+    }
+    if(!getURL.includes('#loaded') && getURL.includes('scheduledDate=2')){
+        window.location = window.location + '#loaded';
+        window.location.reload();
+    }
 }
-
 function get_query(){
     var url = document.location.href;
     var qs = url.substring(url.indexOf('?') + 1).split('&');

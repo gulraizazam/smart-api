@@ -50,11 +50,11 @@ function patient_search_func() {
         return repo.name || repo.text;
     }
 }
-
+var getURLQuery = get_query();
+var ActiveURL;
 var ConsultancyCalendar = function() {
     return {
         init: function(start) {
-            // patient_search_func();
             var minxTime;
             var maxTime;
             var todayDate = moment().startOf('day');
@@ -63,9 +63,8 @@ var ConsultancyCalendar = function() {
             if (typeof start !== "undefined") {
                 TODAY = formatDate(start, 'YYYY-MM-DD');
             }
-
+            ActiveURL = TODAY;
             var calendarEl = document.getElementById('consultancy_calendar');
-
             calendar = new FullCalendar.Calendar(calendarEl, {
                 plugins: [ 'bootstrap', 'interaction', 'dayGrid', 'timeGrid', 'list' ],
                 themeSystem: 'bootstrap',

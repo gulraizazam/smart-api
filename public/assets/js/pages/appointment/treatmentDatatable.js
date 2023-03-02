@@ -394,7 +394,7 @@ function actions(data) {
     let delete_url = route('admin.appointments.destroy', {id: id});
     let patient_url = route('admin.patients.preview', {id: data.patient_id});
     let viewlog_url = route('admin.appointments.loadPage', {id: id, type: 'web'});
-
+    
     if (
         permissions.edit
         || permissions.delete
@@ -415,14 +415,14 @@ function actions(data) {
         if (permissions.invoice) {
             if(!data.invoice) {
                 if (data.appointment_type == 2) {
-                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                             <!--<span class="navi-text">Create Invoice</span>-->\
                         </a>';
                 }
 
                 if(data.appointment_type == 1) {
-                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="btn btn-icon btn-warning btn-sm">\
+                    actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                         </a>';
                 }
@@ -432,12 +432,12 @@ function actions(data) {
 
         if (permissions.invoice_display) {
             if(data.invoice) {
-                actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="btn btn-icon btn-info btn-sm">\
+                actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                         </a>';
             }
         }
-        actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="btn btn-icon btn-success btn-sm ml-2">\
+        actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="d-lg-inline-flex d-none btn btn-icon btn-success btn-sm ml-2">\
                         <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -477,7 +477,7 @@ function actions(data) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
-                        <span class="navi-text">Consultancy</span>\
+                        <span class="navi-text">View On Calendar</span>\
                     </a>\
                 </li>';
             }
@@ -487,7 +487,7 @@ function actions(data) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                        <span class="navi-text">Treatment</span>\
+                        <span class="navi-text">View On Calendar</span>\
                     </a>\
                 </li>';
             }
@@ -504,7 +504,6 @@ function actions(data) {
                     </li>';
                 }
             }
-
             if(data.appointment_type==2) {
                 if (permissions.treatment) {
                     actions += '<li class="navi-item">\
@@ -576,10 +575,7 @@ function actions(data) {
         }
 
         if (permissions.delete) {
-            /*if (
-                (data?.unscheduled_appointment_status?.id == data?.appointment_status_id) &&
-                (!data?.scheduled_date && !data?.scheduled_time)
-            ) {*/
+
             actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-trash"></i></span>\
@@ -587,7 +583,49 @@ function actions(data) {
                             </a>\
                         </li>';
         }
-        //}
+
+        actions += '<li class="navi-item d-lg-none">\
+                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-sms"></i></span>\
+                        <span class="navi-text">SMS Log</span>\
+                        </a>\
+                    </li>';
+        
+        
+        if (permissions.invoice_display) {
+            if(data.invoice) {
+                actions += '<li class="navi-item d-lg-none">\
+                    <a  href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);"  class="navi-link">\
+                    <span class="navi-icon"><i class="la la-sms"></i></span>\
+                    <span class="navi-text">View Invoice</span>\
+                    </a>\
+                </li>';
+            }
+        }
+
+        if (permissions.invoice) {
+            if(!data.invoice) {
+                if (data.appointment_type == 2) {
+                    actions += '<li class="navi-item d-lg-none">\
+                        <a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);"  class="navi-link">\
+                        <span class="navi-icon"><i class="la la-file"></i></span>\
+                        <span class="navi-text">Create Invoice</span>\
+                        </a>\
+                    </li>';
+                }
+
+                if(data.appointment_type == 1) {
+                    actions += '<li class="navi-item d-lg-none">\
+                        <a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);"  class="navi-link">\
+                        <span class="navi-icon"><i class="la la-file"></i></span>\
+                        <span class="navi-text">Create Invoice</span>\
+                        </a>\
+                    </li>';
+                }
+            }
+
+        }
+
 
         actions += '</ul>\
             </div>\
@@ -599,50 +637,35 @@ function actions(data) {
 }
 
 function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
-
     if (type == 'appointment') {
         $(".export-appointments").show();
         reInitTable();
     } else {
         $(".export-appointments").hide();
     }
-
     $(".appointment").addClass("d-none");
     $("." + type + "-section").removeClass("d-none");
-
     $(".change-tab").removeClass("nav-bar-active");
-    $("." +type+ "-tab").addClass("nav-bar-active");
-
+    $("." +type+ "-tab").addClass("nav-bar-active");    
     setQueryStringParameter('tab', type);
-    setQueryStringParameter('city_id', city_id);
     setQueryStringParameter('location_id', location_id);
     setQueryStringParameter('doctor_id', doctor_id);
-    setQueryStringParameter('reload', 'false');
-
+    setQueryStringParameter('reload', 'true');
     $(".change-label").text($("." +type+ "-tab").text());
-
     if (type === 'treatment') {
-
         setQueryStringParameter('machine_id', resource_id);
-
         $("#treatment_city_filter").val(city_id).trigger("change");
-
         setTimeout( function () {
             $("#treatment_resource_filter").val(resource_id).trigger("change");
         },1100);
-
         setTimeout( function () {
             $("#treatment_doctor_filter").val(doctor_id).trigger("change");
         },1200);
-
-
     }
-
     if (type === 'consultancy') {
         $("#consultancy_city_filter").val(city_id).trigger("change");
     }
 }
-
 function viewDetail(url) {
 
     $("#modal_appointment_detail").modal("show");

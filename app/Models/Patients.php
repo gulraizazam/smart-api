@@ -82,34 +82,27 @@ use Illuminate\Support\Facades\Auth as FacadesAuth;
 		{
 		    if (stripos($name, 'C-') !== false) {
                 $name = str_replace(['C-', 'c-'], '', $name);
-
                 return self::where([
-                    ['user_type_id', '=', '3'],
-                    ['active', '=', '1'],
-                    ['account_id', '=', $account_id],
-                    ['id', 'LIKE', "%{$name}%"]
+                    'user_type_id'=> '3',
+                    'active'=> '1',
+                    'account_id'=> $account_id,
+                    'id'=> $name
                 ])->select('name', 'id', 'phone')->get();
             }
-
             $users = collect();
             if (is_numeric($name)) {
-
                 $users =  self::where([
-                    ['user_type_id', '=', '3'],
-                    ['active', '=', '1'],
-                    ['account_id', '=', $account_id],
-                    ['id', 'LIKE', "%{$name}%"]
+                    'user_type_id'=>'3',
+                    'active'=> '1',
+                    'account_id'=> $account_id,
+                    'id'=> $name
                 ])->select('name', 'id', 'phone')->get();
             }
-
             if ($users->count() > 0) {
                 return $users;
             }
-
 		    $name = GeneralFunctions::patientSearch($name);
-
             $phone_numeric = GeneralFunctions::clearnString($name);
-
 			if (is_numeric($phone_numeric)) {
                 $phone = GeneralFunctions::cleanNumber($name);
 				return self::where([
