@@ -756,7 +756,7 @@ class DashboardReportsController extends Controller
             ])->get();
             $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
             if ($request->today) {
-                $todayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -767,16 +767,30 @@ class DashboardReportsController extends Controller
                 $todayRecords = $todayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
                     ->groupBy('invoice_details.service_id')
                     ->get();
-                    
-                    foreach ($todayRecords as $todayRecord) {
+                    // dd($todayRecords);
+                    // dd($todayRecords);
+                    $prepareData = [];
+                    foreach ($todayRecords as $key => $todayRecord) {
                         $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
-                        $today[0] = ['Task','Hours per Day'];
-                        $today[$todayRecord->service_id] = [
-                            $parent_services->parent->name,
-                            $todayRecord->total_price
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if(array_key_exists($service_id, $prepareData)){
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        }else{
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price
+                            ];
+                        }
+                    }
+                    $today[0] = ['Task','Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $today[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total']
                         ];
-                        $colors[] = $parent_services->color;
-                        $total += $todayRecord->total_price;
                     }
                     if (count($today) > 0) {
                         foreach ($today as $record) {
@@ -797,17 +811,29 @@ class DashboardReportsController extends Controller
                     ->groupBy('invoice_details.service_id')
                     ->get();
                 $yesterday = array();
-                foreach ($yesterdayRecords as $yestredayRecord) {
-                    $parent_services = Services::with('parent')->where('id',$yestredayRecord->service_id)->first();
-                   $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                $prepareData = [];
+                    foreach ($yesterdayRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if(array_key_exists($service_id, $prepareData)){
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        }else{
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price
+                            ];
+                        }
+                    }
                     $yesterday[0] = ['Task','Hours per Day'];
-                    $yesterday[$yestredayRecord->service_id] = [
-                        $service_name,
-                        $yestredayRecord->total_price
-                    ];
-                    $colors[] = $parent_services->color;
-                    $total += $yestredayRecord->total_price;
-                }
+                    foreach ($prepareData as $todayRecord) {
+                        $yesterday[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total']
+                        ];
+                    }
                 if (count($yesterday) > 0) {
                     foreach ($yesterday as $record) {
                         $data['yesterday'][] = $record;
@@ -828,17 +854,29 @@ class DashboardReportsController extends Controller
                     ->groupBy('invoice_details.service_id')
                     ->get();
                 $last7days = array();
-                foreach ($last7DaysRecords as $last7DaysRecord) {
-                    $parent_services = Services::with('parent')->where('id',$last7DaysRecord->service_id)->first();
-                   $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                $prepareData = [];
+                    foreach ($last7DaysRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if(array_key_exists($service_id, $prepareData)){
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        }else{
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price
+                            ];
+                        }
+                    }
                     $last7days[0] = ['Task','Hours per Day'];
-                    $last7days[$last7DaysRecord->service_id] = [
-                        $service_name,
-                        $last7DaysRecord->total_price
-                    ];
-                    $colors[] = $parent_services->color;
-                    $total += $last7DaysRecord->total_price;
-                }
+                    foreach ($prepareData as $todayRecord) {
+                        $last7days[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total']
+                        ];
+                    }
                 if (count($last7days) > 0) {
                     foreach ($last7days as $record) {
                         $data['week'][] = $record;
@@ -859,17 +897,29 @@ class DashboardReportsController extends Controller
                     ->groupBy('invoice_details.service_id')
                     ->get();
                 $thisMonth = array();
-                foreach ($thisMonthRecords as $thisMonthRecord) {
-                    $parent_services = Services::with('parent')->where('id',$thisMonthRecord->service_id)->first();
-                   $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                $prepareData = [];
+                    foreach ($thisMonthRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if(array_key_exists($service_id, $prepareData)){
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        }else{
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price
+                            ];
+                        }
+                    }
                     $thisMonth[0] = ['Task','Hours per Day'];
-                    $thisMonth[$thisMonthRecord->service_id] = [
-                        $service_name,
-                        $thisMonthRecord->total_price
-                    ];
-                    $colors[] = $parent_services->color;
-                    $total += $thisMonthRecord->total_price;
-                }
+                    foreach ($prepareData as $todayRecord) {
+                        $thisMonth[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total']
+                        ];
+                    }
                 if (count($thisMonth) > 0) {
                     foreach ($thisMonth as $record) {
                         $data['month'][] = $record;
@@ -890,17 +940,29 @@ class DashboardReportsController extends Controller
                     ->groupBy('invoice_details.service_id')
                     ->get();
                 $thisMonth = array();
-                foreach ($thisMonthRecords as $thisMonthRecord) {
-                    $parent_services = Services::with('parent')->where('id',$thisMonthRecord->service_id)->first();
-                   $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                $prepareData = [];
+                    foreach ($thisMonthRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if(array_key_exists($service_id, $prepareData)){
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        }else{
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price
+                            ];
+                        }
+                    }
                     $thisMonth[0] = ['Task','Hours per Day'];
-                    $thisMonth[$thisMonthRecord->service_id] = [
-                        $service_name,
-                        $thisMonthRecord->total_price
-                    ];
-                    $colors[] = $parent_services->color;
-                    $total += $thisMonthRecord->total_price;
-                }
+                    foreach ($prepareData as $todayRecord) {
+                        $thisMonth[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total']
+                        ];
+                    }
                 if (count($thisMonth) > 0) {
                     foreach ($thisMonth as $record) {
                         $data['lastmonth'][] = $record;
