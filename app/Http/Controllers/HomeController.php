@@ -585,17 +585,29 @@ class HomeController extends Controller
                 $todayRecords = $todayRecords->select('invoices.id','invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
                     ->groupBy('invoice_details.service_id')
                     ->get();
-                foreach ($todayRecords as $todayRecord) {
-                    $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
-                    $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                    $prepareData = [];
+                    foreach ($todayRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if(array_key_exists($service_id, $prepareData)){
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        }else{
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price
+                            ];
+                        }
+                    }
                     $today[0] = ['Task','Hours per Day'];
-                    $today[$todayRecord->service_id] = [
-                        $parent_services->parent->name,
-                        $todayRecord->total_price
-                    ];
-                    $colors[] = $parent_services->color;
-                    $total += $todayRecord->total_price;
-                }
+                    foreach ($prepareData as $todayRecord) {
+                        $today[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total']
+                        ];
+                    }
                 if (count($today) > 0) {
                     foreach ($today as $record) {
                         $data['today'][] = $record;
@@ -1544,7 +1556,7 @@ class HomeController extends Controller
                 }
             }
         }
-        dd($data);
+       
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
             'colors' => $colors ?? '',
