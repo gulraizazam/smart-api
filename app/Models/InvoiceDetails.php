@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use App\Models\AuditTrails;
 use Auth;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InvoiceDetails extends Model
 {
@@ -47,5 +48,9 @@ class InvoiceDetails extends Model
         return $this->belongsTo('App\Models\Services', 'service_id')->withTrashed();
     }
 
+    public function parentService() :BelongsTo
+    {
+        return $this->belongsTo('App\Models\Services', 'parent_id', 'service_id');
+    }
 
 }
