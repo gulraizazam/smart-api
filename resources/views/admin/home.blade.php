@@ -523,7 +523,7 @@
                             </div>
                         </div>
                     @endif
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_test'))
+                    <!-- @if(\Illuminate\Support\Facades\Gate::allows('dashboard_test'))
                     <div class="col-lg-12 col-xxl-12">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -593,7 +593,7 @@
                                 </div>
                             </div>
                         </div>
-                        @endif
+                        @endif -->
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
                     <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
