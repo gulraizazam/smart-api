@@ -10,6 +10,8 @@ use App\Models\AuditTrails;
 use Auth;
 use DB;
 use App\Helpers\ACL;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Invoices extends Model
 {
@@ -409,6 +411,11 @@ class Invoices extends Model
         }
 
         return $where ;
+    }
+
+    public function invoiceDetailService() :HasOne
+    {
+        return $this->hasOne('App\Models\InvoiceDetails', 'invoice_id', 'id');
     }
 
 }
