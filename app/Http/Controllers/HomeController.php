@@ -568,136 +568,164 @@ class HomeController extends Controller
         $today = array();
         $colors = array();
         if (Gate::allows('dashboard_revenue_by_service')) {
-            $services = Services::where([
+            $services = Services::select('id')->where([
                 'account_id'=>Auth::User()->account_id,
                 'active'=>'1',
                 'parent_id'=>'0'
             ])->get();
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->type == '') {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $todayRecords->where('invoices.created_by', Auth::User()->id);
                 }
-                $todayRecords = $todayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                $todayRecords = $todayRecords->select('invoices.id','invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
                     ->groupBy('invoice_details.service_id')
                     ->get();
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $child_services = Services::where('parent_id',$service->id)->get();
-                        $today[0] = array(
-                            'Task',
-                            'Hours per Day'
-                        );
-                        if ($todayRecords) {
-                            foreach ($child_services as $child) {
-                                foreach ($todayRecords as $todayRecord) {
-                                    if ($todayRecord->service_id == $child->id) {
-                                        $today[$service->id] = [
-                                            $service->name,
-                                            $todayRecord->total_price
-                                        ];
-                                        $colors[] = $service->color;
-                                        $total += $todayRecord->total_price;
-                                    }
-                                }
-                            }
+                    $prepareData = [];
+                    foreach ($todayRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if(array_key_exists($service_id, $prepareData)){
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        }else{
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price
+                            ];
                         }
                     }
-                }
-                if (count($today)) {
+                    $today[0] = ['Task','Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $today[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total']
+                        ];
+                    }
+                if (count($today) > 0) {
                     foreach ($today as $record) {
                         $data['today'][] = $record;
                     }
                 }
+                // dd($todayRecords->toSql(), $todayRecords->getBindings(), 'ddd');
+                // dd($services->toArray(), $todayRecords);
+                // if ($services) {
+                //     $total = 0;
+                //     foreach ($services as $service) {
+                //         $child_services = Services::where('parent_id',$service->id)->get();
+                //         $today[0] = array(
+                //             'Task',
+                //             'Hours per Day'
+                //         );
+                //         if ($todayRecords) {
+                //             foreach ($child_services as $child) {
+                //                 foreach ($todayRecords as $todayRecord) {
+                //                     if ($todayRecord->service_id == $child->id) {
+                //                         $today[$service->id] = [
+                //                             $service->name,
+                //                             $todayRecord->total_price
+                //                         ];
+                //                         $colors[] = $service->color;
+                //                         $total += $todayRecord->total_price;
+                //                     }
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
+                // if (count($today)) {
+                //     foreach ($today as $record) {
+                //         $data['today'][] = $record;
+                //     }
+                // }
             }
             if ($request->type == 'today') {
-                $todayRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                $todayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
                     $todayRecords->where('invoices.created_by', Auth::User()->id);
                 }
-                $todayRecords = $todayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
+                $todayRecords = $todayRecords->select('invoices.id','invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
                     ->groupBy('invoice_details.service_id')
                     ->get();
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $child_services = Services::where('parent_id',$service->id)->get();
-                        $today[0] = array(
-                            'Task',
-                            'Hours per Day'
-                        );
-                        if ($todayRecords) {
-                            foreach ($child_services as $child) {
-                                foreach ($todayRecords as $todayRecord) {
-                                    if ($todayRecord->service_id == $child->id) {
-                                        $today[$service->id] = [
-                                            $service->name,
-                                            $todayRecord->total_price
-                                        ];
-                                        $colors[] = $service->color;
-                                        $total += $todayRecord->total_price;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                foreach ($todayRecords as $todayRecord) {
+                    $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();
+                    $today[0] = ['Task','Hours per Day'];
+                    $today[$todayRecord->service_id] = [
+                        $parent_services->parent->name,
+                        $todayRecord->total_price
+                    ];
+                    $colors[] = $parent_services->color;
+                    $total += $todayRecord->total_price;
                 }
-                if (count($today)) {
+                if (count($today) > 0) {
                     foreach ($today as $record) {
                         $data['today'][] = $record;
                     }
                 }
             }
             if ($request->type == 'yesterday') {
-                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
+                $yesterdayRecords = Invoices::leftjoin('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $yesterdayRecords->where('invoices.created_by', Auth::User()->id);
-                }
                 $yesterdayRecords = $yesterdayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
                     ->groupBy('invoice_details.service_id')
                     ->get();
                 $yesterday = array();
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $child_services = Services::where('parent_id',$child->id)->get();
-                        $yesterday[0] = array(
-                            'Task',
-                            'Hours per Day'
-                        );
-                        if ($yesterdayRecords) {
-                            foreach ($child_services as $child) {
-                                foreach ($yesterdayRecords as $yesterdayRecord) {
-                                    if ($yesterdayRecord->service_id == $child->id) {
-                                        $yesterday[$service->id] = [
-                                            $service->name,
-                                            $yesterdayRecord->total_price
-                                        ];
-                                        $colors[] = $service->color;
-                                        $total += $yesterdayRecord->total_price;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                foreach ($yesterdayRecords as $yesterdayRecord) {
+                    $parent_services = Services::with('parent')->where('id',$yesterdayRecord->service_id)->first();
+                    $yesterday[0] = ['Task','Hours per Day'];
+                    $yesterday[$yesterdayRecord->service_id] = [
+                        $parent_services->parent->name,
+                        $yesterdayRecord->total_price
+                    ];
+                    $colors[] = $parent_services->color;
+                    $total += $yesterdayRecord->total_price;
                 }
-                if (count($yesterday)) {
+                if (count($yesterday) > 0) {
                     foreach ($yesterday as $record) {
                         $data['yesterday'][] = $record;
                     }
                 }
+                // if ($services) {
+                //     $total = 0;
+                //     foreach ($services as $service) {
+                //         $child_services = Services::where('parent_id',$child->id)->get();
+                //         $yesterday[0] = array(
+                //             'Task',
+                //             'Hours per Day'
+                //         );
+                //         if ($yesterdayRecords) {
+                //             foreach ($child_services as $child) {
+                //                 foreach ($yesterdayRecords as $yesterdayRecord) {
+                //                     if ($yesterdayRecord->service_id == $child->id) {
+                //                         $yesterday[$service->id] = [
+                //                             $service->name,
+                //                             $yesterdayRecord->total_price
+                //                         ];
+                //                         $colors[] = $service->color;
+                //                         $total += $yesterdayRecord->total_price;
+                //                     }
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
+                // if (count($yesterday)) {
+                //     foreach ($yesterday as $record) {
+                //         $data['yesterday'][] = $record;
+                //     }
+                // }
             }
             if ($request->type == 'week') {
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
