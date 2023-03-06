@@ -128,9 +128,8 @@
             <label>Consultancy Type:</label>
             <select class="form-control filter-field select2" id="appoint_search_consultancy_type" onchange="SetConsultancyType()"></select>
         </div>
-
-        <!-- <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
-            <label>Create At:</label>
+        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
+            <label>Created At:</label>
             <div class="input-daterange input-group to-from-datepicker" >
                 <input type="text" id="appoint_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" onchange="SetAdvanceFromdate()">
                 <div class="input-group-append" style="width: 0;">
@@ -140,8 +139,7 @@
                 </div>
                 <input type="text" id="appoint_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" onchange="SetAdvanceTodate()">
             </div>
-        </div> -->
-
+        </div>
         <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
             <label>Updated By:</label>
             <select class="form-control filter-field select2" id="appoint_search_updated_by" onchange="SetUpdatedBy()">
