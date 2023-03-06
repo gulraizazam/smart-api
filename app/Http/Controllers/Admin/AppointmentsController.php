@@ -5631,7 +5631,7 @@ class AppointmentsController extends Controller
         return ApiHelper::apiResponse($this->success, 'Appointment not found!', false);
     }
     private function checkRota($appointment, $request) {
-       
+        dd($appointment);
         $object = new \stdClass();
         if ($request->scheduled_date && $request->scheduled_time) {
             $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
@@ -5643,7 +5643,7 @@ class AppointmentsController extends Controller
         $object->location_id = $request->location_id;
         $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
         $object->appointment_id = $appointment->id;
-        dd($object);
+        
         if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy') ) {
             $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
         } else {
