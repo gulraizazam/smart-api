@@ -763,43 +763,71 @@ function setEditData(response) {
         $("#edit_monday_to").val(resourceRota.time_to_monday);
         $("#edit_break_monday_from").val(resourceRota.break_from_monday);
         $("#edit_break_monday_to").val(resourceRota.break_to_monday);
-
+        if(response.data.resourceRota.mondaychecked=="_off"){
+            $('#edit_mondayElement_1').attr('checked',false);
+        }else{
+            $('#edit_mondayElement_1').attr('checked',true);
+        }
         /*Tuesday*/
         $("#edit_time_f_tuesday").val(resourceRota.time_f_tuesday);
         $("#edit_time_to_tuesday").val(resourceRota.time_to_tuesday);
         $("#edit_break_from_tuesday").val(resourceRota.break_from_tuesday);
         $("#edit_break_to_tuesday").val(resourceRota.break_to_tuesday);
-
+        if(response.data.resourceRota.tuesdaychecked=="_off"){
+            $('#edit_tuesdayElement_1').attr('checked',false);
+        }else{
+            $('#edit_tuesdayElement_1').attr('checked',true);
+        }
         /*Wednesday*/
         $("#edit_time_f_wednesday").val(resourceRota.time_f_wednesday);
         $("#edit_time_to_wednesday").val(resourceRota.time_to_wednesday);
         $("#edit_break_from_wednesday").val(resourceRota.break_from_wednesday);
         $("#edit_break_to_wednesday").val(resourceRota.break_to_wednesday);
-
+        if(response.data.resourceRota.wednesdaychecked=="_off"){
+            $('#edit_wednesdayElement_1').attr('checked',false);
+        }else{
+            $('#edit_wednesdayElement_1').attr('checked',true);
+        }
         /*Thursday*/
         $("#edit_time_f_thursday").val(resourceRota.time_f_thursday);
         $("#edit_time_to_thursday").val(resourceRota.time_to_thursday);
         $("#edit_break_from_thursday").val(resourceRota.break_from_thursday);
         $("#edit_break_to_thursday").val(resourceRota.break_to_thursday);
-
+        if(response.data.resourceRota.thursdaychecked=="_off"){
+            $('#edit_thursdayElement_1').attr('checked',false);
+        }else{
+            $('#edit_thursdayElement_1').attr('checked',true);
+        }
         /*Friday*/
         $("#edit_time_f_friday").val(resourceRota.time_f_friday);
         $("#edit_time_to_friday").val(resourceRota.time_to_friday);
         $("#edit_break_from_friday").val(resourceRota.break_from_friday);
         $("#edit_break_to_friday").val(resourceRota.break_to_friday);
-
+        if(response.data.resourceRota.fridaychecked=="_off"){
+            $('#edit_fridayElement_1').attr('checked',false);
+        }else{
+            $('#edit_fridayElement_1').attr('checked',true);
+        }
         /*Saturday*/
         $("#edit_time_f_saturday").val(resourceRota.time_f_saturday);
         $("#edit_time_to_saturday").val(resourceRota.time_to_saturday);
         $("#edit_break_from_saturday").val(resourceRota.break_from_saturday);
         $("#edit_break_to_saturday").val(resourceRota.break_to_saturday);
-
+        if(response.data.resourceRota.saturdaychecked=="_off"){
+            $('#edit_saturdayElement_1').attr('checked',false);
+        }else{
+            $('#edit_saturdayElement_1').attr('checked',true);
+        }
         /*Sunday*/
         $("#edit_time_f_sunday").val(resourceRota.time_f_sunday);
         $("#edit_time_to_sunday").val(resourceRota.time_to_sunday);
         $("#edit_break_from_sunday").val(resourceRota.break_from_sunday);
         $("#edit_break_to_sunday").val(resourceRota.break_to_sunday);
-
+        if(response.data.resourceRota.sundaychecked=="_off"){
+            $('#edit_sundayElement_1').attr('checked',false);
+        }else{
+            $('#edit_sundayElement_1').attr('checked',true);
+        }
     } catch (error) {
         showException(error);
     }
