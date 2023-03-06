@@ -2570,11 +2570,11 @@ class AppointmentsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
+            $appointment = Appointments::find($id);
             $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-            if (strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
+            if ($appointment->scheduled_date != $request->scheduled_date && strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
                 return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
             }
-            $appointment = Appointments::find($id);
             if (!Gate::allows('edit_after_arrived')) {
                 if($appointment){
                     $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
@@ -2712,11 +2712,12 @@ class AppointmentsController extends Controller
                 if ($validator->fails()) {
                     return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
                 }
+                $appointment = Appointments::find($id);
                 $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-                if (strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
+                if ($appointment->scheduled_date != $request->scheduled_date && strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
                     return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
                 }
-                $appointment = Appointments::find($id);
+                
                 if (!Gate::allows('edit_after_arrived')) {
                     if($appointment){
                         $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
@@ -5641,7 +5642,7 @@ class AppointmentsController extends Controller
         $object->doctor_id = $request->doctor_id;
         $object->location_id = $request->location_id;
         $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
-       
+        $object->appointment_id = $appointment->id;
         if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy') ) {
             $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
         } else {
