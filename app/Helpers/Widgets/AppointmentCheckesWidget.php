@@ -108,6 +108,7 @@ class AppointmentCheckesWidget
      */
     static function AppointmentAppointmentCheckesfromcalender($request)
     {
+        dd("no here");
         $appointment_status = true;
         $status = array(
             'status' => $appointment_status
@@ -232,6 +233,7 @@ class AppointmentCheckesWidget
     */
     static function AppointmentAppointmentCheckesfromcard($request)
     {
+        dd("here");
         $appointment_status = true;
         $status = array(
             'status' => $appointment_status
