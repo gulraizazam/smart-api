@@ -2,6 +2,7 @@
 
 namespace App\Helpers\Widgets;
 
+use App\Models\Appointments;
 use App\Models\Cities;
 use App\Models\Locations;
 use App\Models\Regions;
@@ -88,8 +89,8 @@ class AppointmentCheckesWidget
             );
         }
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-
-        if ($start < $today && $back_date_config->data==0) {
+        $appointment = Appointments::find($request->appointment_id);
+        if ($start < $today && $back_date_config->data==0 && $appointment->scheduled_date != $start ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
