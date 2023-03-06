@@ -5631,7 +5631,7 @@ class AppointmentsController extends Controller
         return ApiHelper::apiResponse($this->success, 'Appointment not found!', false);
     }
     private function checkRota($appointment, $request) {
-        dd($request);
+        dd($request->all());
         $object = new \stdClass();
         if ($request->scheduled_date && $request->scheduled_time) {
             $object->start = $request->scheduled_date ."T". \Illuminate\Support\Carbon::parse($request->scheduled_time)->format("H:i:s");
