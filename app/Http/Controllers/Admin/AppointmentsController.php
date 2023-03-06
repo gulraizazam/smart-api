@@ -2571,7 +2571,7 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
             $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-            if (strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
+            if ( $back_date_config->data == 0) {
                 return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
             }
             $appointment = Appointments::find($id);
