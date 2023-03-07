@@ -40,7 +40,6 @@ class AppointmentCheckesWidget
             'location_id' =>$request->location_id,
             'active'=>1
         ])->get();
-        dd($resource_rota);
         foreach ($resource_rota as $resourceroata) {
             if (($start >= $resourceroata->start) && ($start <= $resourceroata->end)) {
                 $continue_rota[0] = $resourceroata;
