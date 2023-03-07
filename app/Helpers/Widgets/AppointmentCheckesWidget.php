@@ -14,6 +14,7 @@ use App\Models\Resources;
 use App\Models\ResourceHasRota;
 use App\Models\ResourceHasRotaDays;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Gate;
 
 class AppointmentCheckesWidget
 {
