@@ -89,7 +89,7 @@ class AppointmentCheckesWidget
             );
         }
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-        if ($start < $today && $back_date_config->data==0 ) {
+        if (!Gate::allows('edit_after_arrived') && $start < $today && $back_date_config->data==0 ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
@@ -211,7 +211,7 @@ class AppointmentCheckesWidget
             );
         }
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-        if ($start < $today && $back_date_config->data==0 ) {
+        if (!Gate::allows('edit_after_arrived') && $start < $today && $back_date_config->data==0 ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
@@ -328,8 +328,7 @@ class AppointmentCheckesWidget
         }
 
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-
-        if ($start < $today && $back_date_config->data==0 ) {
+        if ( !Gate::allows('edit_after_arrived') && $start < $today && $back_date_config->data==0 ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
