@@ -24,7 +24,6 @@ class AppointmentCheckesWidget
      */
     static function AppointmentConsultancyCheckes($request)
     {
-     
         $appointment_status = true;
         $status = array(
             'status' => $appointment_status
@@ -88,9 +87,9 @@ class AppointmentCheckesWidget
                 'message' => $message
             );
         }
-        
+        $appointment = Appointments::find($request->aptid);
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-        if ($start < $today && $back_date_config->data==1  ) {
+        if ($start < $today && $back_date_config->data==0 && $start != $appointment->scheduled_date ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
@@ -212,9 +211,9 @@ class AppointmentCheckesWidget
             );
         }
 
+        $appointment = Appointments::find($request->aptid);
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-
-        if ($start < $today && $back_date_config->data==0) {
+        if ($start < $today && $back_date_config->data==0 && $start != $appointment->scheduled_date ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
@@ -329,8 +328,9 @@ class AppointmentCheckesWidget
                 'message' => $message
             );
         }
+        $appointment = Appointments::find($request->aptid);
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-        if ($start < $today && $back_date_config->data==1 ) {
+        if ($start < $today && $back_date_config->data==0 && $start != $appointment->scheduled_date ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
