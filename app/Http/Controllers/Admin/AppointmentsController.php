@@ -2561,6 +2561,7 @@ class AppointmentsController extends Controller
      */
     public function update(Request $request, $id)
     {
+        
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -2572,10 +2573,8 @@ class AppointmentsController extends Controller
             }
             $appointment = Appointments::find($id);
             $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-            if($request->get('scheduled_date') != $appointment->scheduled_date){
-                if (strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
-                    return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
-                }
+            if ( strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
+                return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
             }
             if (!Gate::allows('edit_after_arrived')) {
                 if($appointment){
@@ -2585,10 +2584,7 @@ class AppointmentsController extends Controller
                     }
                 }
             }
-           
             $rota = $this->checkRota($appointment, $request);
-            
-                
             if (!$rota['status']) {
                 return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
             }
@@ -2718,16 +2714,12 @@ class AppointmentsController extends Controller
                     return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
                 }
                 $appointment = Appointments::find($id);
-                if($appointment->doctor_id != $request->doctor_id && Gate::allows('edit_after_arrived') && $appointment->scheduled_date == $request->scheduled_date)
-                {
-                    $appointment->update(['doctor_id'=>$request->doctor_id]);
-                    return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
-                }
                 $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-                
-                if ($appointment->scheduled_date != $request->scheduled_date && strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
+                if ( strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
                     return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
                 }
+               
+               
                 if (!Gate::allows('edit_after_arrived')) {
                     if($appointment){
                         $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
@@ -4785,7 +4777,7 @@ class AppointmentsController extends Controller
                     'rotas' => $doctor_rotas->toArray() ?? '',
                     'min_time' => $minTime,
                     'resource_ids' => $resource_ids,
-                    'start_time' => '10:00',
+                    'start_time' => '6:00',
                     'end_time' => '22:00',
                 ));
             }
@@ -5652,10 +5644,7 @@ class AppointmentsController extends Controller
         $object->doctor_id = $request->doctor_id;
         $object->location_id = $request->location_id;
         $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
-        if(isset($appointment) && isset($appointment->id)){
-            $object->appointment_id= $appointment->id;
-        }
-       
+        $object->appointment_id = $appointment->id;
         if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy') ) {
             $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
         } else {
