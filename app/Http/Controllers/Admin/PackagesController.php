@@ -397,47 +397,34 @@ class PackagesController extends Controller
      */
     public function getdiscountinfocustom(Request $request)
     {
-        
         $status = true;
         $service_id = $request->service_id;
         $service_data = Bundles::find($service_id);
-
         $discount_id = $request->discount_id;
-
         $discount_data = Discounts::find($discount_id);
         if($discount_data->slug == 'custom'){
             $discount_id = $request->discount_id;
         }else{
             $request->discount_value = $discount_data->amount;
         }
-        
         if($discount_data->type=='Fixed'){
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 if($request->discount_value > $discount_data->amount){
                     return false;
                 }
                 $discount_type = Config::get('constants.Fixed');
-    
                 $discount_price = $request->discount_value;
-    
                 $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
                 $net_amount = ($service_data->price) - ($discount_price);
-                
-    
             } else {
-    
                 $discount_type = Config::get('constants.Percentage');
-    
                 $discount_price = $request->discount_value;
-    
                 if ($discount_data->amount >= $discount_price) {
                     $discount_price_cal =  $discount_data->amount * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
-    
                 } else {
                     $status = false;
                 }
-                
             }
         }else{
             if ($request->discount_type == Config::get('constants.Fixed')) {
@@ -453,21 +440,15 @@ class PackagesController extends Controller
                 }
                 $discount_price = $request->discount_value;
                 $discount_price_in_percentage = ($discount_data->amount/100)*$service_data->price;
-                
                 $net_amount = ($service_data->price) - ($discount_price_in_percentage);
             }
         }
-        
         if ($status == true) {
-
             return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
                 'net_amount' => $net_amount
             ]);
-
         }
-
         return ApiHelper::apiResponse($this->success, 'Net Amount', false);
-
     }
 
     /**
