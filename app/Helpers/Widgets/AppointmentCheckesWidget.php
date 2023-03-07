@@ -32,13 +32,14 @@ class AppointmentCheckesWidget
         );
         $continue_rota = array();
         $start = Carbon::parse($request->start)->format("Y-m-d");
-        dd($start);
+        
         $today = Carbon::now()->toDateString();
         $resource_id = Resources::where('external_id', '=', $request->doctor_id)->first();
         $resource_rota = ResourceHasRota::where([
             'resource_id' => $resource_id->id,
             'location_id' =>$request->location_id
         ])->get();
+        dd($resource_rota);
         foreach ($resource_rota as $resourceroata) {
             if (($start >= $resourceroata->start) && ($start <= $resourceroata->end)) {
                 $continue_rota[0] = $resourceroata;
