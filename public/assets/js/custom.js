@@ -485,10 +485,9 @@ function reInitTable(appointment = null) {
                 consultancyFilters();
             }
         } else {
-
             /*this is for reload datatable*/
             if (typeof datatable !== 'undefined') {
-                datatable.search({datatable_reload: 'reload'}, 'search');
+                rotaFilters();
             }
         }
 
@@ -544,7 +543,23 @@ function consultancyFilters() {
 
     datatable.search(filters, 'search');
 }
-
+function rotaFilters() {
+   let filters =  {
+        delete: '',
+        resourcename: $("#search_resource_name").val(),
+        resource_type_id: $("#search_type_id").val(),
+        region_id: $("#search_region_id").val(),
+        city_id: $("#search_city_id").val(),
+        location_id: $("#search_location_id").val(),
+        startdate: $("#search_from").val(),
+        enddate: $("#search_to").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
 function reloadTable(table_class) {
     patientDatatable[table_class].search({ datatable_reload: 'reload' }, 'search');
 }
