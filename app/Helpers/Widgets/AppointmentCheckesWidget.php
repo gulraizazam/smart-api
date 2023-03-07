@@ -14,6 +14,7 @@ use App\Models\Resources;
 use App\Models\ResourceHasRota;
 use App\Models\ResourceHasRotaDays;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Gate;
 
 class AppointmentCheckesWidget
 {
@@ -24,18 +25,19 @@ class AppointmentCheckesWidget
      */
     static function AppointmentConsultancyCheckes($request)
     {
-     
         $appointment_status = true;
         $status = array(
             'status' => $appointment_status
         );
         $continue_rota = array();
         $start = Carbon::parse($request->start)->format("Y-m-d");
+        
         $today = Carbon::now()->toDateString();
         $resource_id = Resources::where('external_id', '=', $request->doctor_id)->first();
         $resource_rota = ResourceHasRota::where([
             'resource_id' => $resource_id->id,
-            'location_id' =>$request->location_id
+            'location_id' =>$request->location_id,
+            'active'=>1
         ])->get();
         foreach ($resource_rota as $resourceroata) {
             if (($start >= $resourceroata->start) && ($start <= $resourceroata->end)) {
@@ -89,8 +91,7 @@ class AppointmentCheckesWidget
             );
         }
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-        
-        if ($start < $today && $back_date_config->data==0 ) {
+        if (!Gate::allows('edit_after_arrived') && $start < $today && $back_date_config->data==0 ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
@@ -211,9 +212,8 @@ class AppointmentCheckesWidget
                 'message' => $message
             );
         }
-        
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-        if ($start < $today && $back_date_config->data==0 ) {
+        if (!Gate::allows('edit_after_arrived') && $start < $today && $back_date_config->data==0 ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
@@ -330,8 +330,7 @@ class AppointmentCheckesWidget
         }
 
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-
-        if ($start < $today && $back_date_config->data==0 ) {
+        if ( !Gate::allows('edit_after_arrived') && $start < $today && $back_date_config->data==0 ) {
             $appointment_status = false;
             $message = "Sorry! You cannot schedule the appointment in back date.";
             $status = array(
