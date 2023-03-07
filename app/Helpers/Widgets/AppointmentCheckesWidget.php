@@ -37,7 +37,8 @@ class AppointmentCheckesWidget
         $resource_id = Resources::where('external_id', '=', $request->doctor_id)->first();
         $resource_rota = ResourceHasRota::where([
             'resource_id' => $resource_id->id,
-            'location_id' =>$request->location_id
+            'location_id' =>$request->location_id,
+            'active'=>1
         ])->get();
         dd($resource_rota);
         foreach ($resource_rota as $resourceroata) {
