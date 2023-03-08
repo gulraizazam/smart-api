@@ -87,10 +87,14 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
-                            <select id="add_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
+                            <select id="add_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id" onchange="loadLocation()">
                             </select>
                         </div>
-
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span></label>
+                            <select id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                            </select>
+                        </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source </label>
