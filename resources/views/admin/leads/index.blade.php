@@ -244,7 +244,7 @@
 
                 @endif
             });
-
+            
             function getUserCity() {
 
                 <?php if(auth()->id() != 1): ?>
@@ -267,7 +267,64 @@
                 <?php endif; ?>
 
             }
-
+            function loadLocation() {
+              var cityId = $('#add_city_id').val();
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: route('admin.appointments.load_locations'),
+                    type: 'POST',
+                    data: {
+                        city_id: cityId
+                    },
+                    cache: false,
+                    success: function(response) {
+                        if(response.status) {
+                            let dropdowns =  response.data.dropdown;
+                            let dropdown_options =  '<option selected="selected" disabled value="">Select a Location</option>';
+                            Object.entries(dropdowns).forEach(function (dropdown) {
+                                dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                            });
+                            $('#add_location_id').html(dropdown_options);
+                        } else {
+                            resetDropdowns();
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        resetDropdowns();
+                    }
+                });
+            }
+            function loadEditLocation() {
+              var cityId = $('#edit_city_id').val();
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: route('admin.appointments.load_locations'),
+                    type: 'POST',
+                    data: {
+                        city_id: cityId
+                    },
+                    cache: false,
+                    success: function(response) {
+                        if(response.status) {
+                            let dropdowns =  response.data.dropdown;
+                            let dropdown_options =  '<option selected="selected" disabled value="">Select a Location</option>';
+                            Object.entries(dropdowns).forEach(function (dropdown) {
+                                dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                            });
+                            $('#edit_location_id').html(dropdown_options);
+                        } else {
+                            resetDropdowns();
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        resetDropdowns();
+                    }
+                });
+            }
         </script>
     @endpush
 
