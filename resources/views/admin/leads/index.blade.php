@@ -324,6 +324,64 @@
                         resetDropdowns();
                     }
                 });
+            } 
+            function loadChildServices(){
+                var serviceId = $('#add_service_id').val();
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: route('admin.appointments.load_child_services'),
+                    type: 'POST',
+                    data: {
+                        serviceId: serviceId
+                    },
+                    cache: false,
+                    success: function(response) {
+                        if(response.status) {
+                            let dropdowns =  response.data.dropdown;
+                            let dropdown_options =  '<option selected="selected" disabled value="">Select a Service</option>';
+                            Object.entries(dropdowns).forEach(function (dropdown) {
+                                dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                            });
+                            $('#add_child_service_id').html(dropdown_options);
+                        } else {
+                            resetDropdowns();
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        resetDropdowns();
+                    }
+                });
+            }
+            function loadEditChildServices(){
+                var serviceId = $('#edit_service_id').val();
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: route('admin.appointments.load_child_services'),
+                    type: 'POST',
+                    data: {
+                        serviceId: serviceId
+                    },
+                    cache: false,
+                    success: function(response) {
+                        if(response.status) {
+                            let dropdowns =  response.data.dropdown;
+                            let dropdown_options =  '<option selected="selected" disabled value="">Select a Service</option>';
+                            Object.entries(dropdowns).forEach(function (dropdown) {
+                                dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                            });
+                            $('#edit_child_service_id').html(dropdown_options);
+                        } else {
+                            resetDropdowns();
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        resetDropdowns();
+                    }
+                });
             }
         </script>
     @endpush
