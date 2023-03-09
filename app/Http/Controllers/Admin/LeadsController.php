@@ -1626,7 +1626,7 @@ class LeadsController extends Controller
                         $leadSources = LeadSources::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
                         $LeadStatuses = LeadStatuses::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
                         $Treatments = Services::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
-                        $Services = Services::where(['account_id' => Auth::User()->account_id],'parent_id' > 0)->get()->pluck('id', 'name');
+                        $child_Services = Services::where(['account_id' => Auth::User()->account_id])->where('parent_id','!=',0)->get()->pluck('id', 'name');
                         $Locations = Locations::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
                         // Array to hold phone numbers which will be used to find duplicates if any
                         $dupPhone_list = array();
@@ -1916,20 +1916,19 @@ class LeadsController extends Controller
                             } else {
                                 $childservice = null;
                             }
+                           
                             if ($Treatments && $service) {
                                 foreach ($Treatments as $Name => $Id) {
                                     if (trim(strtolower($service)) == trim(strtolower($Name))) {
                                         $service_id = $Id;
                                     }
-                                    $childs[] = $service_id;
                                 }
                             }
-                           
-                           
-                            if ($Services && $childservice) {
-                                foreach ($Services as $Name => $Id) {
-                                    if (trim(strtolower($childservice)) == trim(strtolower($Name))) {
-                                        $child_service_id = $Id;
+                            if ($child_Services && $childservice) {
+                                foreach ($child_Services as $childName => $childId) {
+                                    
+                                    if (trim(strtolower($childservice)) == trim(strtolower($childName))) {
+                                        $child_service_id = $childId;
                                     }
                                 }
                             }
@@ -2032,7 +2031,7 @@ class LeadsController extends Controller
                                 'lead_source_id' => $lead_source_id,
                                 'lead_status_id' => $lead_status_id,
                                 'service_id' => $service_id,
-                                'child_service_id'=>$child_service_id,
+                                'child_service_id'=>$child_service_id ?? '',
                                 'created_by' => Auth::User()->id,
                                 'updated_by' => Auth::User()->id,
                                 'converted_by' => Auth::User()->id,
