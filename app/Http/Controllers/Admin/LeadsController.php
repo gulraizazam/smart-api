@@ -687,6 +687,7 @@ class LeadsController extends Controller
      */
     public function store(Request $request)
     {
+        
         if (!Gate::allows('leads_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -963,6 +964,11 @@ class LeadsController extends Controller
             'parent_id' => '0',
             'active' =>'1'
         ])->get()->pluck('name', 'id');
+        $child_services = Services::where([
+            'slug' => 'custom',
+            'parent_id' => $lead->service_id,
+            'active' =>'1'
+        ])->get()->pluck('name', 'id');
         $employees = User::getAllActiveRecords(Auth::User()->account_id);
         if ($employees) {
             $employees = $employees->pluck('full_name', 'id');
@@ -974,6 +980,7 @@ class LeadsController extends Controller
         /*end*/
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'Services' => $Services,
+            'child_services'=>$child_services,
             'lead' =>$lead,
             'locations'=>$locations,
             'cities' => $cities,
@@ -1619,6 +1626,7 @@ class LeadsController extends Controller
                         $leadSources = LeadSources::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
                         $LeadStatuses = LeadStatuses::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
                         $Treatments = Services::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
+                        $Services = Services::where(['account_id' => Auth::User()->account_id],'parent_id' > 0)->get()->pluck('id', 'name');
                         $Locations = Locations::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
                         // Array to hold phone numbers which will be used to find duplicates if any
                         $dupPhone_list = array();
@@ -1898,21 +1906,33 @@ class LeadsController extends Controller
                              * Process Treatment, If Treatment not found skip this record
                              */
                             $service_id = null;
-                            
                             if (isset($SingleRow['H'])) {
                                 $service = trim(strtolower($SingleRow['H']));
                             } else {
                                 $service = null;
                             }
-                            
+                            if (isset($SingleRow['J'])) {
+                                $childservice = trim(strtolower($SingleRow['J']));
+                            } else {
+                                $childservice = null;
+                            }
                             if ($Treatments && $service) {
                                 foreach ($Treatments as $Name => $Id) {
                                     if (trim(strtolower($service)) == trim(strtolower($Name))) {
                                         $service_id = $Id;
                                     }
+                                    $childs[] = $service_id;
                                 }
                             }
-                            
+                           
+                           
+                            if ($Services && $childservice) {
+                                foreach ($Services as $Name => $Id) {
+                                    if (trim(strtolower($childservice)) == trim(strtolower($Name))) {
+                                        $child_service_id = $Id;
+                                    }
+                                }
+                            }
                             // Treatment ID is not exist and leads are exist, lets skip this record
                             // if (!$service_id && array_key_exists($phone, $allLeadsMapping)) {
                             //     // Skip this record.
@@ -1962,12 +1982,12 @@ class LeadsController extends Controller
                                             'created_at' => Carbon::now(),
                                             'updated_at' => Carbon::now(),
                                         ));
-
                                         $update_lead = array(
                                             'city_id' => $city_id,
                                             'region_id' => $region_id,
                                             'lead_source_id' => $lead_source_id,
                                             'service_id' => $service_id,
+                                            'child_service_id'=>$child_service_id ?? '',
                                             'created_by' => Auth::User()->id,
                                             'updated_by' => Auth::User()->id,
                                             'converted_by' => Auth::User()->id,
@@ -2012,6 +2032,7 @@ class LeadsController extends Controller
                                 'lead_source_id' => $lead_source_id,
                                 'lead_status_id' => $lead_status_id,
                                 'service_id' => $service_id,
+                                'child_service_id'=>$child_service_id,
                                 'created_by' => Auth::User()->id,
                                 'updated_by' => Auth::User()->id,
                                 'converted_by' => Auth::User()->id,
