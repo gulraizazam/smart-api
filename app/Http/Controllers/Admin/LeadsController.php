@@ -530,22 +530,17 @@ class LeadsController extends Controller
             'account_id' => Auth::User()->account_id,
             'is_junk' => 1,
         ))->first();
-
         if ($junk_lead_statuses) {
             $lead_statuses = LeadStatuses::getLeadStatuses($junk_lead_statuses->id);
         } else {
             $lead_statuses = LeadStatuses::getLeadStatuses();
         }
-
         $Services = Services::where([
-            ['slug', '=', 'custom'],
-            ['parent_id', '=', '0'],
-            ['active', '=', '1']
+            'slug'=> 'custom',
+            'parent_id'=> '0',
+            'active'=> '1'
         ])->get()->pluck('name', 'id');
-
         $leadServices = Filters::get(Auth::User()->id, 'leads', 'service_id');
-
-
         $records['filter_values'] = [
             'Services' => $Services,
             'cities' => $cities,
@@ -554,7 +549,6 @@ class LeadsController extends Controller
             'lead_statuses' => $lead_statuses,
             'leadServices' => $leadServices,
         ];
-
         if (isset($filters['created_from'])) {
             $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
         }
@@ -687,7 +681,6 @@ class LeadsController extends Controller
      */
     public function store(Request $request)
     {
-        
         if (!Gate::allows('leads_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
