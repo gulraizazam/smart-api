@@ -647,6 +647,7 @@ function setEditData(response) {
     try {
 
         let Services = response.data.Services;
+        let Childservices = response.data.child_services;
         let cities = response.data.cities;
         let locations = response.data.locations;
         let employees = response.data.employees;
@@ -655,6 +656,7 @@ function setEditData(response) {
         let lead_statuses = response.data.lead_statuses;
         let lead = response.data.lead;
         let service_options = '<option value="">Select Service</option>';
+        let child_service_options = '<option value="">Select Child Service</option>';
         let city_options = '<option value="">Select a City</option>';
         let location_options = '<option value="">Select a Location</option>';
         let employee_options = '<option value="">Select a Referrer</option>';
@@ -667,7 +669,11 @@ function setEditData(response) {
                 service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
             });
         }
-
+        if (Childservices) {
+            Object.entries(Childservices).forEach(function(childservice) {
+                child_service_options += '<option value="' + childservice[0] + '">' + childservice[1] + '</option>';
+            });
+        }
         if (cities) {
             Object.entries(cities).forEach(function(city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
@@ -703,6 +709,7 @@ function setEditData(response) {
         }
 
         $("#edit_service_id").html(service_options);
+        $("#edit_child_service_id").html(child_service_options);
         $("#edit_city_id").html(city_options);
         $("#edit_location_id").html(location_options);
         $("#edit_referred_by_id").html(employee_options);
@@ -710,6 +717,7 @@ function setEditData(response) {
         $("#edit_lead_source_id").html(lead_sources_options);
         $("#edit_lead_status_id").html(lead_statuses_options);
         $("#edit_service_id").val(lead.service_id);
+        $("#edit_child_service_id").val(lead.child_service_id);
         $("#edit_city_id").val(lead.city_id);
         $("#edit_location_id").val(lead.town_id);
         if (lead?.patient?.referred_by && lead?.patient?.referred_by != 0) {

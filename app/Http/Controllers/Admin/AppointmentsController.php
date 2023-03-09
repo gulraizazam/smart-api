@@ -3225,6 +3225,22 @@ class AppointmentsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function LoadChildServices(Request $request)
+    {
+        try {
+            if ($request->serviceId) {
+                $child_services = Services::where(['parent_id'=>$request->serviceId,'active'=>1])->get();
+                if ($child_services) {
+                    $child_services = $child_services->pluck("name", "id");
+                }
+            }
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'dropdown' => $child_services
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
     /*
      * Load Locations by City
      *
