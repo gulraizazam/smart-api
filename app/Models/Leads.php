@@ -35,7 +35,10 @@ class Leads extends BaseModal
     {
         return $this->belongsTo('App\Models\Services')->withTrashed();
     }
-
+    public function childservice()
+    {
+        return $this->belongsTo('App\Models\Services','child_service_id')->withTrashed();
+    }
     /**
      * Get the Patient that owns the Lead.
      */

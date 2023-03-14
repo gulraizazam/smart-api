@@ -62,6 +62,10 @@ class Services extends BaseModal
     {
         return $this->hasMany('App\Models\Leads', 'service_id');
     }
+    public function childlead()
+    {
+        return $this->hasMany('App\Models\Leads', 'child_service_id');
+    }
     /**
      * Get the measurement for user.
      */
