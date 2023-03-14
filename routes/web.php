@@ -119,7 +119,7 @@ use Illuminate\Support\Facades\DB;
         });
 
         Route::get('error-logs', [LogViewerController::class, 'index']);
-
+        Route::get('updateleads', [LeadsController::class, 'leadupdate']);
         Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
