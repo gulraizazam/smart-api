@@ -2747,4 +2747,9 @@ class LeadsController extends Controller
         ini_set('memory_limit', '-1');
         return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
     }
+    public function leadupdate()
+    {
+        $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id','!=',Null)->get();
+        dd($apts);
+    }
 }
