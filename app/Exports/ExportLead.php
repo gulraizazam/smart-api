@@ -70,6 +70,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             'Phone',
             'Gender',
             'City',
+            'Centre',
             'Region',
             'Lead Status',
             'Service',
@@ -91,6 +92,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $phone,
             $lead->gender== 1 ? 'Male' : 'Female',
             $lead->city->name ?? 'N/A',
+            $lead->town->name ?? 'N/A',
             $lead->region->name ?? 'N/A',
             $lead->lead_status->name ?? 'N/A',
             $lead->service->name ?? 'N/A',
@@ -119,8 +121,9 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
                 $event->sheet->getDelegate()->getColumnDimension('E')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('F')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('G')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('H')->setWidth(40);
-                $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(20);
+                $event->sheet->getDelegate()->getColumnDimension('H')->setWidth(20);
+                $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(40);
+                $event->sheet->getDelegate()->getColumnDimension('J')->setWidth(20);
 
             },
         ];
