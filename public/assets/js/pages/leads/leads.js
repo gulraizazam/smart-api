@@ -136,6 +136,15 @@ var table_columns = [{
     title: 'Created At',
     sortable: false,
     width: 'auto',
+}, {
+    field: 'child_service_id',
+    title: 'Child Service',
+    sortable: false,
+    width: 'auto',
+    template: function (data) {
+        console.log(data);
+        return data.child_service;
+    }
 }];
 
 function editLeadStatus(lead_id) {
