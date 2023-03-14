@@ -92,7 +92,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $phone,
             $lead->gender== 1 ? 'Male' : 'Female',
             $lead->city->name ?? 'N/A',
-            $lead->town->name ?? 'N/A',
+            $lead->towns->name ?? 'N/A',
             $lead->region->name ?? 'N/A',
             $lead->lead_status->name ?? 'N/A',
             $lead->service->name ?? 'N/A',
