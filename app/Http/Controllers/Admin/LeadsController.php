@@ -451,7 +451,6 @@ class LeadsController extends Controller
             if ($Leads->count()) {
                 $index = 0;
                 foreach ($Leads as $lead) {
-                   
                     //check lead s lead status has parent or not if yes than get parent data and if no than get simple that row data
                     if (array_key_exists($lead->lead_status_id, $lead_status)) {
                         if ($lead_status[$lead->lead_status_id]->parent_id == 0) {
@@ -475,7 +474,8 @@ class LeadsController extends Controller
                         'service_id' => $lead->service->name ?? '',
                         'created_at' => Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A'),
                         'created_by' => array_key_exists($lead->lead_created_by, $Users) ? $Users[$lead->lead_created_by]->name : 'N/A',
-                        'location'=>$lead->towns->name ?? ''
+                        'location'=>$lead->towns->name ?? '',
+                        'child_service'=>$lead->childservice->name ?? '',
                     );
                     $index++;
                 }
