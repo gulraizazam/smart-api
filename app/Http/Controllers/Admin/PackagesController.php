@@ -409,7 +409,7 @@ class PackagesController extends Controller
         }
         if($discount_data->type=='Fixed'){
             if ($request->discount_type == Config::get('constants.Fixed')) {
-                if($request->discount_value > $discount_data->amount){
+                if($request->discount_value > $discount_data->amount || $request->discount_value > $service_data->price){
                     return false;
                 }
                 $discount_type = Config::get('constants.Fixed');
@@ -419,18 +419,18 @@ class PackagesController extends Controller
             } else {
                 $discount_type = Config::get('constants.Percentage');
                 $discount_price = $request->discount_value;
-                if ($discount_data->amount >= $discount_price) {
-                    $discount_price_cal =  $discount_data->amount * (($discount_price) / 100);
-                    $net_amount = ($service_data->price) - ($discount_price_cal);
-                } else {
+                $discount_price_cal =  ($discount_data->amount /$service_data->price) * 100;
+                if ($request->discount_value > $discount_price_cal) {
                     $status = false;
                 }
+                $amount_after_per = ($request->discount_value/100)*$service_data->price;
+                $net_amount = $service_data->price-$amount_after_per;
             }
         }else{
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 $discount_price = $request->discount_value;
-                $discount_price_in_percentage = ($discount_data->amount/100)*$service_data->price;
-                if($request->discount_value > $discount_price_in_percentage){
+                $discount_price_in_percentage = ($discount_price/$service_data->price)*100;
+                if($discount_price_in_percentage > $discount_data->amount){
                     return false;
                 }
                 $net_amount = ($service_data->price) - ($request->discount_value);
@@ -439,7 +439,7 @@ class PackagesController extends Controller
                     return false;
                 }
                 $discount_price = $request->discount_value;
-                $discount_price_in_percentage = ($discount_data->amount/100)*$service_data->price;
+                $discount_price_in_percentage = ($request->discount_value/100)*$service_data->price;
                 $net_amount = ($service_data->price) - ($discount_price_in_percentage);
             }
         }
