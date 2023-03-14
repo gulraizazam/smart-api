@@ -2752,16 +2752,20 @@ class LeadsController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '-1');
         DB::enableQueryLog();
-        $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
-        foreach($leads as $lead){
-            $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)
-            ->where('patient_id', $lead->patient_id)
-            ->latest()->first();
-            if($apts){
-                Leads::where('lead_status_id',4)->where('patient_id',$apts->patient_id)->update(['location_id'=>$apts->location_id]);
-            }
+        $leads = Leads::where('lead_status_id',4)->get()->pluck('patient_id');
+        $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)
+            ->whereIn('patient_id', $leads)
+            ->orderBy('id','desc')->paginate(10);
+            dd($apts);
+        // foreach($leads as $lead){
+        //     $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)
+        //     ->where('patient_id', $lead->patient_id)
+        //     ->latest()->first();
+        //     if($apts){
+        //         Leads::where('lead_status_id',4)->where('patient_id',$apts->patient_id)->update(['location_id'=>$apts->location_id]);
+        //     }
             
-        }
+        // }
         
        dd(DB::getQueryLog());
     }
