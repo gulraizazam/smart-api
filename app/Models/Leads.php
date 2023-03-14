@@ -105,9 +105,9 @@ class Leads extends BaseModal
      */
     public function towns()
     {
-        return $this->belongsTo('App\Models\Locations','town_id', 'id')->withTrashed();
+        return $this->belongsTo('App\Models\Locations','location_id', 'id')->withTrashed();
     }
-    
+   
     /**
      * @param $id
      * @return \Illuminate\Database\Eloquent\Builder|Model|object|null
