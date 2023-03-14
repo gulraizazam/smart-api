@@ -2749,11 +2749,12 @@ class LeadsController extends Controller
     }
     public function leadupdate()
     {
-        set_time_limit(0);
+        DB::enableQueryLog();
         $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id','!=',Null)
         ->orderBy('lead_id')->latest()->get();
        foreach($apts as $apt){
         Leads::where('lead_status_id',4)->where('id',$apt->lead_id)->update(['location_id'=>$apt->location_id]);
        }
+       dd(DB::getQueryLog());
     }
 }
