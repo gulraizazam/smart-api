@@ -20,7 +20,7 @@ var table_columns = [{
     field: 'name',
     title: 'Full Name',
     sortable: false,
-    width: 'auto',
+    width: 110,
 }, {
     field: 'phone',
     title: 'Phone',
@@ -30,18 +30,10 @@ var table_columns = [{
         return phoneClip(data);
     }
 }, {
-    field: 'gender',
-    title: 'Gender',
-    sortable: false,
-    width: 90,
-    template: function (data) {
-        return data.gender;
-    }
-},{
     field: 'city_id',
     title: 'City',
     sortable: false,
-    width: 70,
+    width: 90,
     className: 'tooltip_wrap',
     template: function (data) {
 
@@ -53,6 +45,15 @@ var table_columns = [{
 
         return '<a href="javascript:void(0);" data-city_id="'+data.cityId+'" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`, $(this))" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
     }
+},{
+    field: 'location_id',
+    title: 'Centre',
+    sortable: false,
+    width: 110,
+    template: function (data) {
+        return data.location;
+    }
+   
 },{
     field: 'service_id',
     title: 'Service',
@@ -73,7 +74,6 @@ var table_columns = [{
     sortable: false,
     width: 60,
     template: function(data) {
-        console.log(data);
         let status_url = route('admin.leads.status');
         let id = data.id;
         let active = data.active;
@@ -109,25 +109,33 @@ var table_columns = [{
         return status;
     }
 },{
+    field: 'gender',
+    title: 'Gender',
+    sortable: false,
+    width: 70,
+    template: function (data) {
+        return data.gender;
+    }
+},{
     field: 'created_by',
     title: 'Created By',
     sortable: false,
     width: 70,
-}, {
-    field: 'created_at',
-    title: 'Created At',
-    sortable: false,
-    width: 'auto',
 },{
     field: 'actions',
     title: 'Actions',
     sortable: false,
-    width: 80,
+    width: 70,
     overflow: 'visible',
     autoHide: false,
     template: function(data) {
         return actions(data);
     }
+}, {
+    field: 'created_at',
+    title: 'Created At',
+    sortable: false,
+    width: 'auto',
 }];
 
 function editLeadStatus(lead_id) {
@@ -639,15 +647,18 @@ function setEditData(response) {
     try {
 
         let Services = response.data.Services;
+        let Childservices = response.data.child_services;
         let cities = response.data.cities;
+        let locations = response.data.locations;
         let employees = response.data.employees;
         let gender = response.data.gender;
         let lead_sources = response.data.lead_sources;
         let lead_statuses = response.data.lead_statuses;
         let lead = response.data.lead;
-
         let service_options = '<option value="">Select Service</option>';
+        let child_service_options = '<option value="">Select Child Service</option>';
         let city_options = '<option value="">Select a City</option>';
+        let location_options = '<option value="">Select a Location</option>';
         let employee_options = '<option value="">Select a Referrer</option>';
         let gender_options = '<option value="">Select a Gender</option>';
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
@@ -658,13 +669,21 @@ function setEditData(response) {
                 service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
             });
         }
-
+        if (Childservices) {
+            Object.entries(Childservices).forEach(function(childservice) {
+                child_service_options += '<option value="' + childservice[0] + '">' + childservice[1] + '</option>';
+            });
+        }
         if (cities) {
             Object.entries(cities).forEach(function(city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
             });
         }
-
+        if (locations) {            
+            Object.entries(locations).forEach(function(location) {
+                location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            });
+        }
         if (employees) {
             Object.entries(employees).forEach(function(employee) {
                 employee_options += '<option value="' + employee[0] + '">' + employee[1] + '</option>';
@@ -690,15 +709,17 @@ function setEditData(response) {
         }
 
         $("#edit_service_id").html(service_options);
+        $("#edit_child_service_id").html(child_service_options);
         $("#edit_city_id").html(city_options);
+        $("#edit_location_id").html(location_options);
         $("#edit_referred_by_id").html(employee_options);
         $("#edit_gender_id").html(gender_options);
         $("#edit_lead_source_id").html(lead_sources_options);
         $("#edit_lead_status_id").html(lead_statuses_options);
-
         $("#edit_service_id").val(lead.service_id);
+        $("#edit_child_service_id").val(lead.child_service_id);
         $("#edit_city_id").val(lead.city_id);
-
+        $("#edit_location_id").val(lead.town_id);
         if (lead?.patient?.referred_by && lead?.patient?.referred_by != 0) {
             $("#edit_referred_by_id").val(lead?.patient?.referred_by);
         }
@@ -708,30 +729,22 @@ function setEditData(response) {
         if (lead.lead_source_id) {
             $("#edit_lead_source_id").val(lead.lead_source_id);
         }
-
         if (lead.lead_status_id) {
             $("#edit_lead_status_id").val(lead.lead_status_id);
         }
-
         $("#edit_full_name").val(lead.patient.name);
         $("#edit_patient_id").val(lead.patient.id);
-
         $("#edit_lead_id").val(lead.id);
-
         $("#edit_old_phone").val(lead.patient.phone);
-
         if (permissions.contact) {
             $("#edit_phone").val(lead.patient.phone);
         } else {
             $("#edit_phone").val("***********").attr("readonly", true);
         }
-
     } catch (error) {
         showException(error);
     }
-
 }
-
 function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function() {
@@ -744,6 +757,7 @@ function applyFilters(datatable) {
             city_id: $("#search_city_id").val(),
             region_id: $("#search_region_id").val(),
             service_id: $("#search_service_id").val(),
+            service_id: $("#search__id").val(),
             created_by: $("#search_created_by").val(),
             date_from: $("#search_created_from").val(),
             date_to: $("#search_created_to").val(),
