@@ -1831,6 +1831,7 @@ class AppointmentsController extends Controller
                 $leadObj['base_service_id'] = $leadObj['service_id'];
                 $leadObj['created_at']=Filters::getCurrentTimeStamp();
                 $leadObj['updated_at']=Filters::getCurrentTimeStamp();
+                $leadObj['town_id']=$request->location_id;
                 $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
                 if($lead){
                     $lead->lead_status_id = 4;
@@ -2572,7 +2573,6 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
             $appointment = Appointments::find($id);
-            
             $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
             if (!Gate::allows('edit_after_arrived')&&  strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
                 return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
@@ -2606,9 +2606,9 @@ class AppointmentsController extends Controller
             $appointmentData['updated_by'] = Auth::User()->id;
             $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
             $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
+            $appointmentData['town_id'] = $request->location_id ?? $appointment->location_id;
             // Reset Scheduled Time to null, stop sending message
             $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
-           
             if ($appointment_status) {
                 $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
                 if($check_invoice){
@@ -2618,7 +2618,6 @@ class AppointmentsController extends Controller
                     $appointmentData['appointment_status_id'] = $appointment_status->id;
                     $appointmentData['base_appointment_status_id'] = $appointment_status->id;
                 }
-                
                 $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
                 $appointmentData['send_message'] = $appointment_status->allow_message;
             }
@@ -2644,7 +2643,6 @@ class AppointmentsController extends Controller
                     $appointmentData['resource_has_rota_day_id_for_machine'] = $machine_has_rota_day['id'];
                 }
             }
-           
             $appointment->update($appointmentData);
             if (count($appointment->getChanges()) > 1) {
                 // if only doctor are going to change and first sms already sent, so we need to stop sending message again
@@ -3220,6 +3218,22 @@ class AppointmentsController extends Controller
             
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'dropdown' =>$locations->pluck("name", "id")
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+    public function LoadChildServices(Request $request)
+    {
+        try {
+            if ($request->serviceId) {
+                $child_services = Services::where(['parent_id'=>$request->serviceId,'active'=>1])->get();
+                if ($child_services) {
+                    $child_services = $child_services->pluck("name", "id");
+                }
+            }
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'dropdown' => $child_services
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

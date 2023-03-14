@@ -62,10 +62,14 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
-                            <select id="edit_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                            <select id="edit_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id" onchange="loadEditChildServices()">
                             </select>
                         </div>
-
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service <span class="text text-danger">*</span> </label>
+                            <select id="edit_child_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="child_service_id">
+                            </select>
+                        </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
 
@@ -91,10 +95,14 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">City</label>
-                            <select id="edit_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id">
+                            <select id="edit_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id" onchange="loadEditLocation()">
                             </select>
                         </div>
-
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre</label>
+                            <select id="edit_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                            </select>
+                        </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>
                             <select id="edit_lead_source_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source_id">
