@@ -20,7 +20,7 @@ class Leads extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id'];
+    protected $fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id','child_service_id'];
 
     protected static $_fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id','town_id'];
 
@@ -105,9 +105,9 @@ class Leads extends BaseModal
      */
     public function towns()
     {
-        return $this->belongsTo('App\Models\Towns','town_id', 'id')->withTrashed();
+        return $this->belongsTo('App\Models\Locations','town_id', 'id')->withTrashed();
     }
-
+    
     /**
      * @param $id
      * @return \Illuminate\Database\Eloquent\Builder|Model|object|null
