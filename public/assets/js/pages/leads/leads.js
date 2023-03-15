@@ -508,7 +508,6 @@ function setViewData(response) {
         if(lead?.child_service_id) {
             child = lead?.childservice?.name;
         }
-        console.log(child);
         $("#child_service").text(child);
         $("#comment_lead_id").val(lead.id)
 
