@@ -25,7 +25,6 @@ class AppointmentCheckesWidget
      */
     static function AppointmentConsultancyCheckes($request)
     {
-     
         $appointment_status = true;
         $status = array(
             'status' => $appointment_status

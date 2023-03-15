@@ -4790,7 +4790,7 @@ class AppointmentsController extends Controller
                     'rotas' => $doctor_rotas->toArray() ?? '',
                     'min_time' => $minTime,
                     'resource_ids' => $resource_ids,
-                    'start_time' => '6:00',
+                    'start_time' => '10:00',
                     'end_time' => '22:00',
                 ));
             }
