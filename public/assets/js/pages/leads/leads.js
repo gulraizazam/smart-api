@@ -786,7 +786,6 @@ function applyFilters(datatable) {
             location_id: $("#search_location_id").val(),
             region_id: $("#search_region_id").val(),
             service_id: $("#search_service_id").val(),
-            // service_id: $("#search__id").val(),
             created_by: $("#search_created_by").val(),
             date_from: $("#search_created_from").val(),
             date_to: $("#search_created_to").val(),
@@ -1296,36 +1295,32 @@ function cleanId(id){
 function LoadLoc()
 {
     cityId = $("#search_city_id").val();
-        $.ajax({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            url: route('admin.appointments.load_locations'),
-            type: 'POST',
-            data: {
-                city_id: cityId
-            },
-            cache: false,
-            success: function(response) {
-                if(response.status) {
-
-                    let dropdowns =  response.data.dropdown;
-                    let dropdown_options =  '<option value="">Select a Location</option>';
-
-                    Object.entries(dropdowns).forEach(function (dropdown) {
-                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
-                    });
-
-                    $('#search_location_id').html(dropdown_options);
-                } else {
-                    resetDropdowns();
-                }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.load_locations'),
+        type: 'POST',
+        data: {
+            city_id: cityId
+        },
+        cache: false,
+        success: function(response) {
+            if(response.status) {
+                let dropdowns =  response.data.dropdown;
+                let dropdown_options =  '<option value="">Select a Location</option>';
+                Object.entries(dropdowns).forEach(function (dropdown) {
+                    dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                });
+                $('#search_location_id').html(dropdown_options);
+            } else {
                 resetDropdowns();
             }
-        });
-    
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            resetDropdowns();
+        }
+    });
 }
 
 
