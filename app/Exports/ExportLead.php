@@ -43,6 +43,9 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         if($this->request->city_id != null || $this->request->city_id != ''){
             $resultQuery->where('leads.city_id', $this->request->city_id);
         }
+        if($this->request->location_id != null || $this->request->location_id != ''){
+            $resultQuery->where('leads.location_id', $this->request->location_id);
+        }
         if($this->request->region_id != null || $this->request->region_id != ''){
             $resultQuery->where('leads.region_id', $this->request->region_id);
         }
