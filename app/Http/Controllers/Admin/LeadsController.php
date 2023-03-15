@@ -2720,7 +2720,7 @@ class LeadsController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '-1');
         DB::enableQueryLog();
-        $leads = Leads::get()->pluck('patient_id');
+        $leads = Leads::where('lead_status_id',4)->get()->pluck('patient_id','id');
         $serv = ['96','112','128','147'];
         $apts = Appointments::select('location_id','lead_id','patient_id','service_id')
         ->whereIn('service_id',$serv)
@@ -2729,7 +2729,7 @@ class LeadsController extends Controller
             
         foreach($apts as $apt){
            
-            Leads::where('patient_id',$apt->patient_id)->update(['service_id'=>$apt->service->parent->id]);
+            Leads::where('lead_status_id',4)->where('patient_id',$apt->patient_id)->where('id',$apt->lead_id)->update(['service_id'=>$apt->service->parent->id]);
             
             
         }
