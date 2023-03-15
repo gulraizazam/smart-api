@@ -80,6 +80,7 @@ class LeadsController extends Controller
      */
     public function datatable(Request $request)
     {
+       
         try {
 
             $where = array();
@@ -229,8 +230,7 @@ class LeadsController extends Controller
                     }
                 }
             }
-
-
+        
             if (hasFilter($filters, 'region_id')) {
                 $where[] = array(
                     'region_id',
