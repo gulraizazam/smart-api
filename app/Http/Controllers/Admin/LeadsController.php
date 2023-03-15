@@ -978,7 +978,7 @@ class LeadsController extends Controller
 
         $lead = Leads::findOrFail($id);
         if($lead->service_id == $request->service_id && $lead->city_id == $request->city_id){
-            return ApiHelper::apiResponse($this->error, 'Lead already exist against this patient with same service and location.', false);
+            return ApiHelper::apiResponse($this->error, 'Lead already exist against this patient with same service and centre.', false);
         }
         if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
