@@ -1003,6 +1003,7 @@ class LeadsController extends Controller
                 return ApiHelper::apiResponse($this->error, $patient);
             }
         } else {
+            dd($logLevelPatient);
             if ($logLevelPatient) {
                 $data['updated_by'] = Auth::User()->id;
                 $patient = Patients::updateRecord($logLevelPatient->id, $data);
