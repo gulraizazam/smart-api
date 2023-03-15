@@ -117,14 +117,11 @@ use Illuminate\Support\Facades\DB;
        return view('admin.records',compact('rr'));
 
         });
-
         Route::get('error-logs', [LogViewerController::class, 'index']);
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
         Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
-
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password',  [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
-
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
         Route::post('/home/datatable', [App\Http\Controllers\HomeController::class, 'datatable'])->name('home.datatable');
         Route::get('/home/collection-by-centre', [App\Http\Controllers\HomeController::class, 'collectionByCentre'])->name('home.collectionByCentre');
