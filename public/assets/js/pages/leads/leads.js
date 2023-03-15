@@ -507,8 +507,20 @@ function setViewData(response) {
         if(lead?.child_service_id) {
             child = lead?.child_service_id;
         }
-        
-            $("#childservice").text(child);
+        $.ajax({
+
+            url: route('admin.dashboard.getchild'),
+            type: 'GET',
+            data: {
+                'child_id': child,
+            },
+            cache: false,
+            success: function (response) {
+                $("#childservice").text(response.child);  
+            },
+            
+        });
+            
         
         
         

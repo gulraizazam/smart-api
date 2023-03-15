@@ -2261,4 +2261,8 @@ class DashboardReportsController extends Controller
             'total' =>  0,
         ]);
     }
+    public function getChild(Request $request)
+    {
+        dd($request->all());
+    }
 }
