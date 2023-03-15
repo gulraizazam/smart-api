@@ -520,10 +520,6 @@ function setViewData(response) {
             },
             
         });
-            
-        
-        
-        
         $("#comment_lead_id").val(lead.id)
 
         setComments(lead);

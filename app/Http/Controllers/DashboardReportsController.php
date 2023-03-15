@@ -2263,6 +2263,15 @@ class DashboardReportsController extends Controller
     }
     public function getChild(Request $request)
     {
-        dd($request->all());
+        if($request->child_id){
+            $service = Services::find($request->child_id);
+            return ApiHelper::apiResponse($this->success, 'service data', true, [
+                'child' => $service->name,
+            ]);
+        }else{
+            return ApiHelper::apiResponse($this->success, 'service data', true, [
+                'child' => 'N/A',
+            ]);
+        }
     }
 }
