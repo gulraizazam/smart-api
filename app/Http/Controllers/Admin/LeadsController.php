@@ -963,6 +963,7 @@ class LeadsController extends Controller
      */
     public function update(Request $request, $id)
     {
+        dd($request->all());
         $data = array($request, $id);
 
         if (!Gate::allows('leads_edit')) {
@@ -976,6 +977,7 @@ class LeadsController extends Controller
         }
 
         $lead = Leads::findOrFail($id);
+
         if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
         }
@@ -1060,7 +1062,6 @@ class LeadsController extends Controller
                 $logLevelLead = Leads::where(array(
                     'patient_id' => $data['patient_id'],
                     'service_id' => $data['service_id'],
-                    'city_id' => $data['city_id'],
                 ))->first();
 
                 if ($logLevelLead) {
