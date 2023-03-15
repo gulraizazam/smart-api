@@ -4496,7 +4496,13 @@ class AppointmentsController extends Controller
             }
             $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
             if($lead){
+                $find_cons = Appointments::where('appointment_id',$appointmentData['appointment_id'])->first();
+                if($find_cons){
+                    $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointmentData['service_id'],'service_id'=>$appointmentData['service_id']->parent->id]);
+                    
+                }
                 $lead->lead_status_id = 4;
+
                 $lead->save();
             }else{
                 $leadObj['lead_status_id'] = $default_converted_lead_status_id;
