@@ -51,7 +51,12 @@ var table_columns = [{
     sortable: false,
     width: 110,
     template: function (data) {
-        return data.location;
+        if(data.location != ""){
+            return data.location;
+        }else{
+            return 'N/A';
+        }
+        
     }
    
 },{
@@ -142,7 +147,12 @@ var table_columns = [{
     sortable: false,
     width: 'auto',
     template: function (data) {
-        return data.child_service;
+        if(data.child_service != ""){
+            return data.child_service;
+        }else{
+            return 'N/A';
+        }
+        
     }
 }];
 
