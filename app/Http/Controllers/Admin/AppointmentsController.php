@@ -4534,7 +4534,8 @@ class AppointmentsController extends Controller
         $appointmentData['created_at'] =Filters::getCurrentTimeStamp();
         $appointmentData['updated_at'] =Filters::getCurrentTimeStamp();
         $appointment = Appointments::create($appointmentData);
-        $find_cons = Appointments::where('appointment_id',$appointment->appointment_id)->first();
+        $find_apt = Appointments::find($appointment->id);
+        $find_cons = Appointments::where('appointment_id',$find_apt->appointment_id)->first();
         if($find_cons){
             $parents = Services::where('parent_id',$appointment->service_id)->first();
             $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointment->service_id]);
