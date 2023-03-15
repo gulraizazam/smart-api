@@ -34,7 +34,11 @@
 
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>City:</label>
-            <select class="form-control filter-field select2" id="search_city_id"></select>
+            <select class="form-control filter-field select2" id="search_city_id" onchange="LoadLoc()"></select>
+        </div>
+        <div class="col-lg-2 mb-lg-0 mb-6">
+            <label>Location:</label>
+            <select class="form-control filter-field select2" id="search_location_id"></select>
         </div>
         @if(request('type') == '')
         <div class="col-lg-2 mb-lg-0 mb-6">

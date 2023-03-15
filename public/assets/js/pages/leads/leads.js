@@ -142,7 +142,6 @@ var table_columns = [{
     sortable: false,
     width: 'auto',
     template: function (data) {
-        console.log(data);
         return data.child_service;
     }
 }];
@@ -764,6 +763,7 @@ function applyFilters(datatable) {
             name: $("#search_full_name").val(),
             phone: $("#search_phone").val(),
             city_id: $("#search_city_id").val(),
+            location_id: $("#search_location_id").val(),
             region_id: $("#search_region_id").val(),
             service_id: $("#search_service_id").val(),
             // service_id: $("#search__id").val(),
@@ -807,23 +807,27 @@ function setFilters(filter_values, active_filters) {
     try {
 
         let cities = filter_values.cities;
+        let locations = filter_values.locations;
         let regions = filter_values.regions;
         let lead_statuses = filter_values.lead_statuses;
         let services = filter_values.Services;
         let users = filter_values.users;
-
         let city_options = '<option value="">All</option>';
+        let location_options = '<option value="">All</option>';
         let region_options = '<option value="">All</option>';
         let status_options = '<option value="">All</option>';
         let service_options = '<option value="">All</option>';
         let user_options = '<option value="">All</option>';
-
         if (cities) {
             Object.entries(cities).forEach(function(city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
             });
         }
-
+        if (locations) {
+            Object.entries(locations).forEach(function(location) {
+                location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            });
+        }
         if (regions) {
             Object.entries(regions).forEach(function(region) {
                 region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
@@ -858,6 +862,7 @@ function setFilters(filter_values, active_filters) {
 
 
         $("#search_city_id").html(city_options);
+        $("#search_location_id").html(location_options);
         $("#search_region_id").html(region_options);
         $("#search_service_id").html(service_options);
         $("#search_created_by").html(user_options);
@@ -866,6 +871,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_full_name").val(active_filters.name);
         $("#search_phone").val(active_filters.phone);
         $("#search_city_id").val(active_filters.city_id);
+        $("#search_location_id").val(active_filters.location_id);
         $("#search_region_id").val(active_filters.region_id);
         $("#search_status_id").val(active_filters.lead_status_id);
         $("#search_service_id").val(active_filters.service_id);
@@ -1267,6 +1273,40 @@ function cleanId(id){
       return id.replace('C-','');
     }
     return id;
+}
+function LoadLoc()
+{
+    cityId = $("#search_city_id").val();
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_locations'),
+            type: 'POST',
+            data: {
+                city_id: cityId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Location</option>';
+
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+
+                    $('#search_location_id').html(dropdown_options);
+                } else {
+                    resetDropdowns();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDropdowns();
+            }
+        });
+    
 }
 
 
