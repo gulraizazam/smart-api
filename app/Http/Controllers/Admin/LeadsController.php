@@ -675,7 +675,7 @@ class LeadsController extends Controller
             $data['converted_by'] = Auth::user()->id;
             $data['user_type_id'] = Config::get('constants.patient_id');
             $data['account_id'] = Auth::User()->account_id;
-            $data['location_id'] = $request->location_id;
+            // $data['location_id'] = $request->location_id;
             /*
              * *********************************************
              * Logger for both create and update for patient
