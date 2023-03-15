@@ -431,7 +431,7 @@ function viewLead(url) {
 }
 
 function setViewData(response) {
-
+console.log('test',response);
     try {
 
         let lead = response.data.lead;
