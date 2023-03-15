@@ -4496,11 +4496,7 @@ class AppointmentsController extends Controller
             }
             $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
             if($lead){
-                $find_cons = Appointments::where('appointment_id',$appointmentData['appointment_id'])->first();
-                if($find_cons){
-                    $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointmentData['service_id'],'service_id'=>$appointmentData['service_id']->parent->id]);
-                    
-                }
+                
                 $lead->lead_status_id = 4;
 
                 $lead->save();
@@ -4538,6 +4534,11 @@ class AppointmentsController extends Controller
         $appointmentData['created_at'] =Filters::getCurrentTimeStamp();
         $appointmentData['updated_at'] =Filters::getCurrentTimeStamp();
         $appointment = Appointments::create($appointmentData);
+        $find_cons = Appointments::where('appointment_id',$appointment->appointment_id)->first();
+        if($find_cons){
+            $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointment->service_id,'service_id'=>$appointment->service_id->parent->id]);
+            
+        }
         /* Now We need to update name of all appointments that already in appointment table against patient*/
         Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name'],'updated_at'=> $appointmentData['updated_at']]);
         if ($request->new_patient == '1') {
