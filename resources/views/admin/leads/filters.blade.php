@@ -31,7 +31,7 @@
             <select class="form-control filter-field select2" id="search_city_id" onchange="LoadLoc()"></select>
         </div>
         <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Location:</label>
+            <label>Centre:</label>
             <select class="form-control filter-field select2" id="search_location_id"></select>
         </div>
         @if(request('type') == '')
