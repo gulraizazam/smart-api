@@ -728,7 +728,7 @@ function setEditData(response) {
         $("#edit_service_id").val(lead.service_id);
         $("#edit_child_service_id").val(lead.child_service_id);
         $("#edit_city_id").val(lead.city_id);
-        $("#edit_location_id").val(lead.town_id);
+        $("#edit_location_id").val(lead.location_id);
         if (lead?.patient?.referred_by && lead?.patient?.referred_by != 0) {
             $("#edit_referred_by_id").val(lead?.patient?.referred_by);
         }
