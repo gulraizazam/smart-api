@@ -127,9 +127,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
                 $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(40);
                 $event->sheet->getDelegate()->getColumnDimension('J')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('K')->setWidth(20);
-
             },
         ];
     }
-
 }

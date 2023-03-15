@@ -613,37 +613,6 @@ class HomeController extends Controller
                         $data['today'][] = $record;
                     }
                 }
-                // dd($todayRecords->toSql(), $todayRecords->getBindings(), 'ddd');
-                // dd($services->toArray(), $todayRecords);
-                // if ($services) {
-                //     $total = 0;
-                //     foreach ($services as $service) {
-                //         $child_services = Services::where('parent_id',$service->id)->get();
-                //         $today[0] = array(
-                //             'Task',
-                //             'Hours per Day'
-                //         );
-                //         if ($todayRecords) {
-                //             foreach ($child_services as $child) {
-                //                 foreach ($todayRecords as $todayRecord) {
-                //                     if ($todayRecord->service_id == $child->id) {
-                //                         $today[$service->id] = [
-                //                             $service->name,
-                //                             $todayRecord->total_price
-                //                         ];
-                //                         $colors[] = $service->color;
-                //                         $total += $todayRecord->total_price;
-                //                     }
-                //                 }
-                //             }
-                //         }
-                //     }
-                // }
-                // if (count($today)) {
-                //     foreach ($today as $record) {
-                //         $data['today'][] = $record;
-                //     }
-                // }
             }
             if ($request->type == 'today') {
                 $todayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
@@ -697,35 +666,6 @@ class HomeController extends Controller
                         $data['yesterday'][] = $record;
                     }
                 }
-                // if ($services) {
-                //     $total = 0;
-                //     foreach ($services as $service) {
-                //         $child_services = Services::where('parent_id',$child->id)->get();
-                //         $yesterday[0] = array(
-                //             'Task',
-                //             'Hours per Day'
-                //         );
-                //         if ($yesterdayRecords) {
-                //             foreach ($child_services as $child) {
-                //                 foreach ($yesterdayRecords as $yesterdayRecord) {
-                //                     if ($yesterdayRecord->service_id == $child->id) {
-                //                         $yesterday[$service->id] = [
-                //                             $service->name,
-                //                             $yesterdayRecord->total_price
-                //                         ];
-                //                         $colors[] = $service->color;
-                //                         $total += $yesterdayRecord->total_price;
-                //                     }
-                //                 }
-                //             }
-                //         }
-                //     }
-                // }
-                // if (count($yesterday)) {
-                //     foreach ($yesterday as $record) {
-                //         $data['yesterday'][] = $record;
-                //     }
-                // }
             }
             if ($request->type == 'week') {
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
@@ -822,7 +762,6 @@ class HomeController extends Controller
     }
     public function CollectionByServiceCategory(Request $request)
     {
-        
         $data = array(
             'today' => array(),
             'yesterday' => array(),
@@ -1556,7 +1495,6 @@ class HomeController extends Controller
                 }
             }
         }
-       
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
             'colors' => $colors ?? '',
@@ -1925,7 +1863,6 @@ class HomeController extends Controller
                 }
             }
         }
-
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
             'colors' => $colors,
@@ -1946,7 +1883,6 @@ class HomeController extends Controller
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1']
             ])->get();
-
             $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
             if ($request->type == '') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
@@ -2311,26 +2247,18 @@ class HomeController extends Controller
 
     private function salesByCentre(Request $request, $data)
     {
-       
         $data['revenue'] = 0;
-
         if (!Gate::allows('dashboard_states')) {
-
             $data['revenue'] = null;
-
             return $data;
         }
-
         $locations = ACL::getUserCentres();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-
         list($start_date, $end_date) = $this->getDates($request);
-
         if($request->type=="lastmonth"){
             $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
             $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
         }
-
         $where[] = array(
             'created_at',
             '>=',
@@ -2351,7 +2279,6 @@ class HomeController extends Controller
         }
         $todayRecords = $todayRecords->select('location_id', DB::raw("SUM(invoices.total_price) AS total_price"))
             ->groupBy('location_id')->get();
-        // dd($todayRecords->toSql(), $todayRecords->getBindings());
         if ($locations) {
             foreach ($locations as $location) {
                 if ($todayRecords) {

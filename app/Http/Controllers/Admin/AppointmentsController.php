@@ -2717,8 +2717,6 @@ class AppointmentsController extends Controller
                 if (!Gate::allows('edit_after_arrived') &&  strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
                     return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
                 }
-               
-               
                 if (!Gate::allows('edit_after_arrived')) {
                     if($appointment){
                         $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
