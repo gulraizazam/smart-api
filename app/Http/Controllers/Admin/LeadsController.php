@@ -977,9 +977,9 @@ class LeadsController extends Controller
         }
 
         $lead = Leads::findOrFail($id);
-        if($lead->service_id == $request->service_id && $lead->city_id == $request->city_id){
-            return ApiHelper::apiResponse($this->error, 'Lead already exist against this patient with same service and centre.', false);
-        }
+        // if($lead->service_id == $request->service_id && $lead->city_id == $request->city_id){
+        //     return ApiHelper::apiResponse($this->error, 'Lead already exist against this patient with same service and centre.', false);
+        // }
         if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
         }
@@ -988,7 +988,7 @@ class LeadsController extends Controller
         $data = $request->all();
         $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
         $data['account_id'] = Auth::User()->account_id;
-        $data['location_id'] = $request->location_id;
+        //$data['location_id'] = $request->location_id;
         // Find and update patient, if not found then create patient.
         $logLevelPatient = Patients::where(array(
             'id' => $request->patient_id,
