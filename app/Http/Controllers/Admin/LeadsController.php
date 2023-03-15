@@ -2723,13 +2723,13 @@ class LeadsController extends Controller
         $leads = Leads::where('lead_status_id',4)->get()->pluck('patient_id');
         $serv = ['96','112','128','147'];
         $apts = Appointments::select('location_id','lead_id','patient_id','service_id')
-        ->whereIn('service_id',$serv )
+        ->whereIn('service_id',$serv)
         ->whereIn('patient_id', $leads)
            ->get();
             
         foreach($apts as $apt){
            
-            Leads::where('lead_status_id',4)->where('patient_id',$apt->patient_id)->update(['service_id'=>$apt->service->parent->id]);
+            Leads::where('patient_id',$apt->patient_id)->update(['service_id'=>$apt->service->parent->id]);
             
             
         }
