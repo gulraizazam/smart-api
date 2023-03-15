@@ -473,6 +473,7 @@ function setViewData(response) {
         if(lead?.city_id) {
             city = lead?.city?.name;
         }
+        $("#city").text(city);
         let centre = 'N/A';
         if(lead?.location_id) {
             centre = lead?.towns?.name;
