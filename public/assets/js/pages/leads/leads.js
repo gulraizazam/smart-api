@@ -64,6 +64,14 @@ var table_columns = [{
     title: 'Service',
     sortable: false,
     width: 110,
+    template: function (data) {
+        if(data.service_id != ""){
+            return data.service_id;
+        }else{
+            return 'N/A';
+        }
+        
+    }
 },{
     field: 'lead_status_id',
     title: 'Lead Status',
