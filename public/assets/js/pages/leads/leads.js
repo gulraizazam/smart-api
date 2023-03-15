@@ -503,12 +503,12 @@ function setViewData(response) {
         }
         $("#treatment").text(treatment);
 
-        let child_service = 'N/A';
+        let child = 'N/A';
         if(lead?.child_service_id) {
-            child_service = lead?.childservice?.name;
+            child = lead?.childservice?.name;
         }
-        console.log(child_service);
-        $("#child_service").text(child_service);
+        console.log(child);
+        $("#child_service").text(child);
         $("#comment_lead_id").val(lead.id)
 
         setComments(lead);
