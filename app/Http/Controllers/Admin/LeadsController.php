@@ -692,13 +692,11 @@ class LeadsController extends Controller
                     return ApiHelper::apiResponse($this->error, $patient);
                 }
             } else {
-                
                 $logLevelPatient = Patients::where(array(
                     'phone' => $data['phone'],
                     'user_type_id' => Config::get('constants.patient_id'),
                     'account_id' => Auth::User()->account_id
                 ))->first();
-                dd($data);
                 if ($logLevelPatient) {
                     $data['updated_by'] = Auth::User()->id;
                     $patient = Patients::updateRecord($logLevelPatient->id, $data);
@@ -720,6 +718,7 @@ class LeadsController extends Controller
              */
 
             $lead = $this->existingLead($request);
+            dd($lead);
             if ($request->new_patient == '1') {
                 $data['created_by'] = Auth::User()->id;
                 $data['updated_by'] = Auth::User()->id;
