@@ -1003,7 +1003,7 @@ class LeadsController extends Controller
                 return ApiHelper::apiResponse($this->error, $patient);
             }
         } else {
-            dd($logLevelPatient);
+
             if ($logLevelPatient) {
                 $data['updated_by'] = Auth::User()->id;
                 $patient = Patients::updateRecord($logLevelPatient->id, $data);
@@ -1042,16 +1042,19 @@ class LeadsController extends Controller
             !Leads::where(array(
                 ['patient_id', '=', $data['patient_id']],
                 ['service_id', '=', $data['service_id']],
+                ['city_id', '=', $data['city_id']],
                 ['id', '!=', $id],
                 'account_id' => Auth::User()->account_id
             ))->count()
             ) {
+                dd("here");
                 /*
                  * If other service selected and this lead is first time then allow change of Lead service
                  */
                 $data['updated_by'] = Auth::User()->id;
                 Leads::updateRecord($lead->id, $data, $patient);
             } else {
+                dd("hersse");
                 /*
                  * If other service selected and this lead is not first time then update other lead
                  */
