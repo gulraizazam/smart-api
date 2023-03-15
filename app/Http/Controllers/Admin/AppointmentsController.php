@@ -1831,7 +1831,7 @@ class AppointmentsController extends Controller
                 $leadObj['base_service_id'] = $leadObj['service_id'];
                 $leadObj['created_at']=Filters::getCurrentTimeStamp();
                 $leadObj['updated_at']=Filters::getCurrentTimeStamp();
-                $leadObj['town_id']=$request->location_id;
+                $leadObj['location_id']=$request->location_id;
                 $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
                 if($lead){
                     $lead->lead_status_id = 4;
