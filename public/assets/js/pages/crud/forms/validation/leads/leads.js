@@ -117,7 +117,13 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    
+                    location_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Centre field is required'
+                            }
+                        }
+                    },
                     name: {
                         validators: {
                             notEmpty: {
@@ -196,6 +202,13 @@ var EditValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The city field is required'
+                            }
+                        }
+                    },
+                    location_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Centre field is required'
                             }
                         }
                     },
