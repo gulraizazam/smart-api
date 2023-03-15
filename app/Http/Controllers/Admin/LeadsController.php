@@ -2715,7 +2715,6 @@ class LeadsController extends Controller
         $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
         ->get();
         $customPaper = array(0,0,720,1440);
-        dd($leads);
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');;
         return $pdf->download('leads.pdf');
     }
