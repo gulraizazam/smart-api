@@ -505,13 +505,11 @@ function setViewData(response) {
         $("#treatment").text(treatment);
         let child = 'N/A';
         if(lead?.child_service_id) {
-            child = lead?.childservice?.name;
+            child = lead?.child_service_id;
         }
-        if(child != 'undefined'){
+        
             $("#childservice").text(child);
-        }else{
-            $("#childservice").text('N/A');
-        }
+        
         
         
         $("#comment_lead_id").val(lead.id)
