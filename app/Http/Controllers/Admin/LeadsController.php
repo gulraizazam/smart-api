@@ -1900,7 +1900,6 @@ class LeadsController extends Controller
                                         $find_parent = Services::whereId($child_service_id)->first();
                                         $find_parent2 = Services::whereId($service_id)->first();
                                         if($find_parent2->id != $find_parent->parent_id ){
-                                            dd($find_parent);
                                             $service_id= $find_parent->parent_id;
                                         }
                                     }
