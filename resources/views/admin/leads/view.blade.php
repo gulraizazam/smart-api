@@ -47,8 +47,6 @@
                 <td id="lead_status"></td>
                 <th>Service</th>
                 <td id="treatment"></td>
-                <th>Child Service</th>
-                <td id="child_service"></td>
                 <th>SMS Status</th>
                 <td id="sms_status"></td>
             </tr>
