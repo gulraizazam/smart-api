@@ -2676,7 +2676,9 @@ class LeadsController extends Controller
         if($request->city_id != null || $request->city_id != ''){
             $resultQuery->where('leads.city_id', $request->city_id);
         }
-
+        if($request->location_id != null || $request->location_id != ''){
+            $resultQuery->where('leads.location_id', $request->location_id);
+        }
         if($request->region_id != null || $request->region_id != ''){
             $resultQuery->where('leads.region_id', $request->region_id);
         }
