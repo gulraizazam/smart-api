@@ -1896,7 +1896,7 @@ class LeadsController extends Controller
                             if ($child_Services && $childservice) {
                                 foreach ($child_Services as $childName => $childId) {
                                     
-                                    if (trim(strtolower($childservice)) == trim(strtolower($childName))) {
+                                    if ($childservice == trim(strtolower($childName))) {
                                         $child_service_id = $childId;
                                     }
                                 }
