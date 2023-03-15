@@ -76,6 +76,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             'Region',
             'Lead Status',
             'Service',
+            'Child Service',
             'Created At',
             'Created By',
         ];
@@ -98,6 +99,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $lead->region->name ?? 'N/A',
             $lead->lead_status->name ?? 'N/A',
             $lead->service->name ?? 'N/A',
+            $lead->childservice->name ?? 'N/A',
             Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A') ?? 'N/A',
             $lead->user->name?? 'N/A',
         ];
@@ -112,10 +114,8 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         return [
             AfterSheet::class    => function(AfterSheet $event) {
 
-                $event->sheet->getDelegate()->getStyle('A1:I1')->getFont()->setBold(true);
-
+                $event->sheet->getDelegate()->getStyle('A1:K1')->getFont()->setBold(true);
                 $event->sheet->getDelegate()->getRowDimension('1')->setRowHeight(30);
-
                 $event->sheet->getDelegate()->getColumnDimension('A')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('B')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('C')->setWidth(20);
@@ -126,6 +126,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
                 $event->sheet->getDelegate()->getColumnDimension('H')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(40);
                 $event->sheet->getDelegate()->getColumnDimension('J')->setWidth(20);
+                $event->sheet->getDelegate()->getColumnDimension('K')->setWidth(20);
 
             },
         ];
