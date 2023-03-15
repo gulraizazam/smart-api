@@ -718,7 +718,6 @@ class LeadsController extends Controller
              */
 
             $lead = $this->existingLead($request);
-            dd($lead);
             if ($request->new_patient == '1') {
                 $data['created_by'] = Auth::User()->id;
                 $data['updated_by'] = Auth::User()->id;
@@ -735,6 +734,7 @@ class LeadsController extends Controller
                     'service_id' => $data['service_id'],
                     'account_id' => Auth::User()->account_id
                 ))->first();
+                dd( $logLevelLead);
                 if ($logLevelLead) {
                     $data['updated_by'] = Auth::User()->id;
                     $data['lead_status_id'] = 1;
