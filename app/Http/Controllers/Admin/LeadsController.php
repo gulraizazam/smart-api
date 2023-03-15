@@ -80,39 +80,27 @@ class LeadsController extends Controller
      */
     public function datatable(Request $request)
     {
-       
         try {
-
             $where = array();
             $records = array();
             $records["data"] = array();
             $lead_type = null;
-
             $filename = 'leads';
-
-           if ($request->has('type')) {
+            if ($request->has('type')) {
                $filename = 'junk_leads';
                $lead_type = $request->type;
-           }
-
-
+            }
             $filters = getFilters($request->all());
-           
             $apply_filter = checkFilters($filters, $filename);
-
-
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Leads = Leads::whereIn('id', $ids);
-
                 if ($Leads->count()) {
                     $Leads->delete();
                 }
                 $records["status"] = true; // pass custom message(useful for getting status of group actions)
                 $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
             }
-
-
             if ($request->has('sort')) {
                 list($orderBy, $order) = getSortBy($request, 'leads.created_at', 'DESC');
 
@@ -140,7 +128,6 @@ class LeadsController extends Controller
                     Filters::put(Auth::User()->id, $filename, 'order', $order);
                 }
             }
-
             if (hasFilter($filters, 'patient_id')) {
                 $where[] = array(
                     'leads.patient_id',
@@ -162,7 +149,6 @@ class LeadsController extends Controller
                     }
                 }
             }
-
             if (hasFilter($filters, 'name')) {
                 $where[] = array(
                     'users.name',
@@ -184,8 +170,6 @@ class LeadsController extends Controller
                     }
                 }
             }
-
-
             if (hasFilter($filters, 'phone')) {
                 $where[] = array(
                     'users.phone',
@@ -207,15 +191,12 @@ class LeadsController extends Controller
                     }
                 }
             }
-
-
             if (hasFilter($filters, 'city_id')) {
                 $where[] = array(
                     'city_id',
                     '=',
                     $filters['city_id']
                 );
-
                 Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
             } else {
                 if ($apply_filter) {
@@ -230,7 +211,26 @@ class LeadsController extends Controller
                     }
                 }
             }
-        
+            if (hasFilter($filters, 'location_id')) {
+                $where[] = array(
+                    'leads.location_id',
+                    '=',
+                    $filters['location_id']
+                );
+                Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $filename, 'location_id');
+                } else {
+                    if (Filters::get(Auth::User()->id, $filename, 'location_id')) {
+                        $where[] = array(
+                            'leads.location_id',
+                            '=',
+                            Filters::get(Auth::User()->id, $filename, 'location_id')
+                        );
+                    }
+                }
+            }
             if (hasFilter($filters, 'region_id')) {
                 $where[] = array(
                     'region_id',
@@ -252,8 +252,6 @@ class LeadsController extends Controller
                     }
                 }
             }
-
-
             if (hasFilter($filters, 'lead_status_id')) {
                 $where[] = array(
                     'lead_status_id',
@@ -275,7 +273,6 @@ class LeadsController extends Controller
                     }
                 }
             }
-
             if (hasFilter($filters, 'service_id')) {
                 $where[] = array(
                     'service_id',
@@ -297,7 +294,6 @@ class LeadsController extends Controller
                     }
                 }
             }
-
             if (hasFilter($filters, 'created_by')) {
                 $where[] = array(
                     'leads.created_by',
@@ -319,7 +315,6 @@ class LeadsController extends Controller
                     }
                 }
             }
-
             if (hasFilter($filters, 'date_from')) {
                 $where[] = array(
                     'leads.created_at',
@@ -341,7 +336,6 @@ class LeadsController extends Controller
                     }
                 }
             }
-
             if (hasFilter($filters, 'date_to')) {
                 $where[] = array(
                     'leads.created_at',
@@ -363,54 +357,38 @@ class LeadsController extends Controller
                     }
                 }
             }
-
             // Find Junk Lead Status to exclude
             $junk_lead_statuses = LeadStatuses::where(array(
                 'account_id' => Auth::User()->account_id,
                 'is_junk' => 1,
             ))->first();
-
             $countQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
                 ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
                 ->where(function ($query) {
                     $query->whereIn('leads.city_id', ACL::getUserCities());
                     $query->orWhereNull('leads.city_id');
                 });
-
-
             if (count($where)) {
                 $countQuery->where($where);
             }
             if ($lead_type) {
-
                 $countQuery->where('leads.lead_status_id', $junk_lead_statuses->id ?? 0);
-
             } else {
                 $countQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
             }
-
             $iTotalRecords = $countQuery->count();
-
-
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
             $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
                 ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
                 ->where(function ($query) {
                     $query->whereIn('leads.city_id', ACL::getUserCities());
                     $query->orWhereNull('leads.city_id');
                 });
-                /*->whereNotIn('leads.lead_status_id', array($junk_lead_statuses->id ?? 0))*/;
-
-
             if (count($where)) {
                 $resultQuery->where($where);
             }
-
             if ($lead_type) {
-
                 $resultQuery->where('leads.lead_status_id', $junk_lead_statuses->id ?? 0);
-
             } else {
                 $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
             }
@@ -428,13 +406,9 @@ class LeadsController extends Controller
                 ->orderBy($orderBy, $order)
                 ->get();
             }
-            
-
-            
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $lead_status = LeadStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-
             // Convert Lead status to Converted
             $DefaultConvertedLeadStatus = LeadStatuses::where(array(
                 'account_id' => Auth::User()->account_id,
@@ -445,9 +419,7 @@ class LeadsController extends Controller
             } else {
                 $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
             }
-
             $records = $this->getFiltersData($records, $filename);
-            
             if ($Leads->count()) {
                 $index = 0;
                 foreach ($Leads as $lead) {
@@ -479,7 +451,6 @@ class LeadsController extends Controller
                     );
                     $index++;
                 }
-
                 $records["meta"] = [
                     'field' => $orderBy,
                     'page' => $page,
@@ -489,7 +460,6 @@ class LeadsController extends Controller
                     'sort' => $order,
                 ];
             }
-
             $records["permissions"] = [
                 'edit' => Gate::allows('leads_edit'),
                 'delete' => Gate::allows('leads_destroy'),
@@ -500,9 +470,7 @@ class LeadsController extends Controller
                 'contact' => Gate::allows('contact'),
                 'update_status' => Gate::allows('leads_lead_status'),
             ];
-
             return ApiHelper::apiDataTable($records);
-
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
