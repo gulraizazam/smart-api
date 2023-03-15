@@ -50,7 +50,10 @@
                 <th>SMS Status</th>
                 <td id="sms_status"></td>
             </tr>
-            
+            <tr>
+                <th>Treatment</th>
+                <td id="childservice"></td>
+            </tr>
             </tbody>
         </table>
 
