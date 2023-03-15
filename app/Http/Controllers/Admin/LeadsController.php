@@ -1895,9 +1895,13 @@ class LeadsController extends Controller
                             }
                             if ($child_Services && $childservice) {
                                 foreach ($child_Services as $childName => $childId) {
-                                    
                                     if (trim(strtolower($childservice)) == trim(strtolower($childName))) {
                                         $child_service_id = $childId;
+                                        $find_parent = Services::whereId($child_service_id)->first();
+                                        $find_parent2 = Services::whereId($service_id)->first();
+                                        if($find_parent->parent_id != $find_parent2->id){
+                                            $find_parent->update(['parent_id'=>$find_parent2->id]);
+                                        }
                                     }
                                 }
                             }
