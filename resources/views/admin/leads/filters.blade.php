@@ -12,26 +12,20 @@
             </div>
         </div>
     </div>
-
-
-
     <div class="row mb-6">
-
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>ID:</label>
             <input type="text" class="form-control filter-field" placeholder="Enter ID" id="search_id" />
         </div>
-
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Full Name:</label>
             <input class="form-control filter-field" id="search_full_name" placeholder="Enter Name">
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Phone:</label>
             <input type="text" oninput="phoneField(this);" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
         </div>
-
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>City:</label>
             <select class="form-control filter-field select2" id="search_city_id" onchange="LoadLoc()"></select>
