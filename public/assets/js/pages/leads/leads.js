@@ -431,7 +431,6 @@ function viewLead(url) {
 }
 
 function setViewData(response) {
-console.log('test',response);
     try {
 
         let lead = response.data.lead;
@@ -503,10 +502,12 @@ console.log('test',response);
             treatment = lead?.service?.name;
         }
         $("#treatment").text(treatment);
+
         let child_service = 'N/A';
         if(lead?.child_service_id) {
             child_service = lead?.childservice?.name;
         }
+        console.log(child_service);
         $("#child_service").text(child_service);
         $("#comment_lead_id").val(lead.id)
 
