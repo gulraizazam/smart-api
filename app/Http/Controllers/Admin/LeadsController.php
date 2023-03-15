@@ -1623,6 +1623,7 @@ class LeadsController extends Controller
                             // Process Phone Number
                             $dupPhone_list[] = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
                         }
+                     
                         /*
                          * Step A: Start
                          * Find patients who are not in system and create them
@@ -1764,7 +1765,7 @@ class LeadsController extends Controller
                         ))->first();
                         if ($DefaultLeadStatus) {
                             $default_lead_status_id = $DefaultLeadStatus->id;
-                        } else {
+                        }else {
                             $default_lead_status_id = Config::get('constants.lead_status_open');
                         }
                         // Iterate over the data
@@ -1881,10 +1882,13 @@ class LeadsController extends Controller
                                     if (trim(strtolower($childservice)) == trim(strtolower($childName))) {
                                         $child_service_id = $childId;
                                         $find_parent = Services::whereId($child_service_id)->first();
-                                        $find_parent2 = Services::whereId($service_id)->first();
-                                        if($find_parent2->id != $find_parent->parent_id ){
-                                            $service_id= $find_parent->parent_id;
+                                        if($service_id){
+                                            $find_parent2 = Services::whereId($service_id)->first();
+                                            if($find_parent2->id != $find_parent->parent_id ){
+                                                $service_id= $find_parent->parent_id;
+                                            }
                                         }
+                                        
                                     }
                                 }
                             }
@@ -2033,7 +2037,6 @@ class LeadsController extends Controller
                                 }
                             }
                         }
-
                         // If Get some recors insert them now
                         if (count($LeadData)) {
                             Leads::insert($LeadData);
