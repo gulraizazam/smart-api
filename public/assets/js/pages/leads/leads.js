@@ -516,8 +516,7 @@ function setViewData(response) {
             },
             cache: false,
             success: function (response) {
-                console.log('ssss',response);
-                $("#childservice").text(response.child);  
+                $("#childservice").text(response.data.child);  
             },
             
         });
