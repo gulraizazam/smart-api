@@ -803,7 +803,6 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-    console.log('active_filters',active_filters);
     try {
 
         let cities = filter_values.cities;
@@ -862,16 +861,13 @@ function setFilters(filter_values, active_filters) {
 
 
         $("#search_city_id").html(city_options);
-        $("#search_location_id").html(location_options);
         $("#search_region_id").html(region_options);
         $("#search_service_id").html(service_options);
         $("#search_created_by").html(user_options);
-
         $("#search_id").val(active_filters.patient_id);
         $("#search_full_name").val(active_filters.name);
         $("#search_phone").val(active_filters.phone);
         $("#search_city_id").val(active_filters.city_id);
-        $("#search_location_id").val(active_filters.location_id);
         $("#search_region_id").val(active_filters.region_id);
         $("#search_status_id").val(active_filters.lead_status_id);
         $("#search_service_id").val(active_filters.service_id);
