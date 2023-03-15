@@ -2720,7 +2720,7 @@ class LeadsController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '-1');
         DB::enableQueryLog();
-        $leads = Leads::where('lead_status_id',4)->get()->pluck('patient_id');
+        $leads = Leads::get()->pluck('patient_id');
         $serv = ['96','112','128','147'];
         $apts = Appointments::select('location_id','lead_id','patient_id','service_id')
         ->whereIn('service_id',$serv)
