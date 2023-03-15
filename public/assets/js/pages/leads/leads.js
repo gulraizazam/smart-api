@@ -803,7 +803,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-    console.log('filter_values',filter_values);
+    console.log('active_filters',active_filters);
     try {
 
         let cities = filter_values.cities;
