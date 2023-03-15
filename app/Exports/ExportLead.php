@@ -28,7 +28,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function collection()
     {
-        dd($this->request->all());
+        
         DB::enableQueryLog();
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'));

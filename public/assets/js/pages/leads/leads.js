@@ -1216,6 +1216,7 @@ $("#export-pdf-leads").on("click",function(){
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
     let city_id =$("#search_city_id").val()
+    let location_id =$("#search_location_id").val()
     let region_id =$("#search_region_id").val()
     let lead_status_id =$("#search_status_id").val()
     let service_id =$("#search_service_id").val()
@@ -1223,7 +1224,7 @@ $("#export-pdf-leads").on("click",function(){
     let end_date =$("#search_created_to").val()
     let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by;
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by;
 });
 
 $("#export-leads").on("click",function(){
@@ -1232,6 +1233,7 @@ $("#export-leads").on("click",function(){
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
     let city_id =$("#search_city_id").val()
+    let location_id =$("#search_location_id").val()
     let region_id =$("#search_region_id").val()
     let lead_status_id =$("#search_status_id").val()
     let service_id =$("#search_service_id").val()
@@ -1239,7 +1241,7 @@ $("#export-leads").on("click",function(){
     let end_date =$("#search_created_to").val()
     let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=xlsx';
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=xlsx';
 });
 
 $("#csv-leads").on("click",function(){
@@ -1248,6 +1250,7 @@ $("#csv-leads").on("click",function(){
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
     let city_id =$("#search_city_id").val()
+    let location_id =$("#search_location_id").val()
     let region_id =$("#search_region_id").val()
     let lead_status_id =$("#search_status_id").val()
     let service_id =$("#search_service_id").val()
@@ -1255,7 +1258,7 @@ $("#csv-leads").on("click",function(){
     let end_date =$("#search_created_to").val()
     let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=csv';
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=csv';
 });
 
 function cleanId(id){
