@@ -766,7 +766,7 @@ function applyFilters(datatable) {
             city_id: $("#search_city_id").val(),
             region_id: $("#search_region_id").val(),
             service_id: $("#search_service_id").val(),
-            service_id: $("#search__id").val(),
+            // service_id: $("#search__id").val(),
             created_by: $("#search_created_by").val(),
             date_from: $("#search_created_from").val(),
             date_to: $("#search_created_to").val(),
