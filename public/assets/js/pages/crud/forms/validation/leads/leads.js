@@ -117,13 +117,7 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    location_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Centre field is required'
-                            }
-                        }
-                    },
+                    
                     name: {
                         validators: {
                             notEmpty: {
@@ -205,13 +199,7 @@ var EditValidation = function () {
                             }
                         }
                     },
-                    location_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Centre field is required'
-                            }
-                        }
-                    },
+                    
                     name: {
                         validators: {
                             notEmpty: {
