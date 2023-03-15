@@ -138,7 +138,7 @@ var table_columns = [{
     width: 'auto',
 }, {
     field: 'child_service_id',
-    title: 'Child Service',
+    title: 'Treatment',
     sortable: false,
     width: 'auto',
     template: function (data) {
