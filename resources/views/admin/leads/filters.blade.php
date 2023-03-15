@@ -32,7 +32,16 @@
         </div>
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Centre:</label>
-            <select class="form-control filter-field select2" id="search_location_id"></select>
+            <select class="form-control filter-field select2" id="search_location_id">
+                <option value="">Select</option>
+                <option value="2">CUTERA, DHA Karachi</option>
+                <option value="3">CUTERA, Bahadurabad Karachi</option>
+                <option value="46">CUTERA, Johar Town, Lahore</option>
+                <option value="47">CUTERA, Gulshan/Johar Karachi</option>
+                <option value="48">CUTERA, DHA Lahore</option>
+                <option value="49">CUTERA, Gulberg Lahore</option>
+                <option value="35">RED SIGNAL</option>
+            </select>
         </div>
         @if(request('type') == '')
         <div class="col-lg-2 mb-lg-0 mb-6">
