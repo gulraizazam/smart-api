@@ -244,11 +244,8 @@
 
                 @endif
             });
-            
             function getUserCity() {
-
                 <?php if(auth()->id() != 1): ?>
-
                 $.ajax({
                     url: '<?php echo e(route('admin.users.get_cities')); ?>',
                     type: 'GET',

@@ -117,7 +117,6 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    
                     name: {
                         validators: {
                             notEmpty: {
@@ -199,7 +198,6 @@ var EditValidation = function () {
                             }
                         }
                     },
-                    
                     name: {
                         validators: {
                             notEmpty: {

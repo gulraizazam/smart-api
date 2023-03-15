@@ -767,8 +767,6 @@ class DashboardReportsController extends Controller
                 $todayRecords = $todayRecords->select('invoice_details.service_id', DB::raw("SUM(invoices.total_price) AS total_price"))
                     ->groupBy('invoice_details.service_id')
                     ->get();
-                    // dd($todayRecords);
-                    // dd($todayRecords);
                     $prepareData = [];
                     foreach ($todayRecords as $key => $todayRecord) {
                         $parent_services = Services::with('parent')->where('id',$todayRecord->service_id)->first();

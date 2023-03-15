@@ -649,7 +649,6 @@ class LeadsController extends Controller
      */
     public function store(Request $request)
     {
-        
         if (!Gate::allows('leads_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -675,7 +674,6 @@ class LeadsController extends Controller
             $data['converted_by'] = Auth::user()->id;
             $data['user_type_id'] = Config::get('constants.patient_id');
             $data['account_id'] = Auth::User()->account_id;
-            // $data['location_id'] = $request->location_id;
             /*
              * *********************************************
              * Logger for both create and update for patient
@@ -963,23 +961,15 @@ class LeadsController extends Controller
      */
     public function update(Request $request, $id)
     {
-       
         $data = array($request, $id);
-
         if (!Gate::allows('leads_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
         $validator = $this->verifyFields($request);
-
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
-
         $lead = Leads::findOrFail($id);
-        // if($lead->service_id == $request->service_id && $lead->city_id == $request->city_id){
-        //     return ApiHelper::apiResponse($this->error, 'Lead already exist against this patient with same service and centre.', false);
-        // }
         if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
         }
@@ -988,7 +978,6 @@ class LeadsController extends Controller
         $data = $request->all();
         $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
         $data['account_id'] = Auth::User()->account_id;
-        //$data['location_id'] = $request->location_id;
         // Find and update patient, if not found then create patient.
         $logLevelPatient = Patients::where(array(
             'id' => $request->patient_id,
@@ -1001,13 +990,11 @@ class LeadsController extends Controller
             $data['updated_by'] = Auth::User()->id;
             $data['user_type_id'] = Config::get('constants.patient_id');
             $data['patient_id'] = $request->patient_id;
-            
             $patient = Patients::createRecord($data,1);
             if($patient == 'Patient is already exist'){
                 return ApiHelper::apiResponse($this->error, $patient);
             }
         } else {
-
             if ($logLevelPatient) {
                 $data['updated_by'] = Auth::User()->id;
                 $patient = Patients::updateRecord($logLevelPatient->id, $data);
@@ -1032,10 +1019,8 @@ class LeadsController extends Controller
             $data['patient_id_1'] = $patient->id;
             unset($data['id']);
             $lead = Leads::createRecord($data, $patient, $status = "Lead");
-
             $message = 'Record has been created successfully.';
             flash($message)->success()->important();
-
             return response()->json(array(
                 'status' => 1,
                 'message' => $message,
@@ -1050,14 +1035,12 @@ class LeadsController extends Controller
                 'account_id' => Auth::User()->account_id
             ))->count()
             ) {
-                
                 /*
                  * If other service selected and this lead is first time then allow change of Lead service
                  */
                 $data['updated_by'] = Auth::User()->id;
                 Leads::updateRecord($lead->id, $data, $patient);
             } else {
-               
                 /*
                  * If other service selected and this lead is not first time then update other lead
                  */
