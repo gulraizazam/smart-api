@@ -56,9 +56,7 @@ var table_columns = [{
         }else{
             return 'N/A';
         }
-        
     }
-   
 },{
     field: 'service_id',
     title: 'Service',
@@ -69,8 +67,7 @@ var table_columns = [{
             return data.service_id;
         }else{
             return 'N/A';
-        }
-        
+        }  
     }
 },{
     field: 'lead_status_id',
@@ -159,8 +156,7 @@ var table_columns = [{
             return data.child_service;
         }else{
             return 'N/A';
-        }
-        
+        } 
     }
 }];
 
