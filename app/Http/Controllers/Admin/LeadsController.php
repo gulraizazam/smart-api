@@ -1791,7 +1791,9 @@ class LeadsController extends Controller
                         }
                         // Iterate over the data
                         $count = 0;
+                        
                         foreach ($SheetData as $SingleRow) {
+                            
                             // Provided Sheet columns should match
                             if (
                                 (
@@ -1834,7 +1836,16 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
-                            $location = trim(strtolower($SingleRow['I']));
+                            if(trim(strtolower($SingleRow['I'])) == ''){
+                                $SingleRow['I']='N/A';
+                            }
+                            $location_id=null;
+                            if (isset($SingleRow['I'])) {
+                                $location = trim(strtolower($SingleRow['I']));
+                            } else {
+                                $location = null;
+                            }
+                           
                             if ($Locations && $location) {
                                 foreach ($Locations as $LocationName => $LocationId) {
                                     if ($location == trim(strtolower($LocationName))) {
@@ -1842,6 +1853,7 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
+                            
                             // Process Lead Source
                             $lead_source_id = Config::get('constants.lead_source_social_media');
                             if (isset($SingleRow['F'])) {
@@ -1908,6 +1920,8 @@ class LeadsController extends Controller
                                             $find_parent2 = Services::whereId($service_id)->first();
                                             if($find_parent2->id != $find_parent->parent_id ){
                                                 $service_id= $find_parent->parent_id;
+                                            }else{
+                                                $service_id= $find_parent->parent_id;
                                             }
                                         }
                                         
@@ -1973,7 +1987,7 @@ class LeadsController extends Controller
                                             'created_at' => Carbon::now(),
                                             'updated_at' => Carbon::now(),
                                             'account_id' => Auth::User()->account_id,
-                                            'location_id'=>$location_id
+                                            'location_id'=>$location_id ?? ''
                                         );
                                         /*
                                          * 'skip_lead_statuses' is not checked
