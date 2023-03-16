@@ -39,6 +39,7 @@ use Validator;
 use App\Models\Appointments;
 use App\Models\Locations;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Exception;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Support\Facades\DB as FacadesDB;
 
@@ -1923,6 +1924,8 @@ class LeadsController extends Controller
                                             }else{
                                                 $service_id= $find_parent->parent_id;
                                             }
+                                        }else{
+                                            $service_id= $find_parent->parent_id;
                                         }
                                         
                                     }
@@ -2754,17 +2757,24 @@ class LeadsController extends Controller
     public function leadupdate()
     {
        set_time_limit(0);
-        DB::enableQueryLog();
+       ini_set('memory_limit', '-1');
+       try{
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
-        foreach($leads as $lead){
-         $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id',$lead->id)
-            ->where('patient_id', $lead->patient_id)
-            ->latest()->first();
-          
-            if($apts){
-               Leads::where('lead_status_id',4)->where('patient_id',$apts->patient_id)->update(['location_id'=>$apts->location_id]);
-           }
+        $tt = Leads::join('appointments','leads.id','appointments.lead_id')->where('leads.lead_status_id',4)->where('appointment_type_id',1)
+        ->orderBy('appointments.id','desc')
+        ->distinct('appointments.lead_id')
+        ->get();
+
+        foreach($tt as $lead){
+         
+               Leads::where('lead_status_id',4)->where('patient_id',$lead->patient_id)->update(['location_id'=>$lead->location_id]);
+           
            
         }
+       }catch(Exception $e){
+dd($e->getMessage());
+       }
+        
+        
     }
 }
