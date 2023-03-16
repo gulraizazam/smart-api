@@ -2740,14 +2740,13 @@ class LeadsController extends Controller
     public function leadupdate()
     {
        set_time_limit(0);
-        DB::enableQueryLog();
+       ini_set('memory_limit', '-1');
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
-        dd($leads);
         foreach($leads as $lead){
          $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id',$lead->id)
             ->where('patient_id', $lead->patient_id)
             ->latest()->first();
-          
+         dd($apts);
             if($apts){
                Leads::where('lead_status_id',4)->where('patient_id',$apts->patient_id)->update(['location_id'=>$apts->location_id]);
            }
