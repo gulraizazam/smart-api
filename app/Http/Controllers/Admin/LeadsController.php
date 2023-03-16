@@ -2705,7 +2705,7 @@ class LeadsController extends Controller
         $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
         ->orderBy("leads.created_at", "DESC")->get();
         $customPaper = array(0,0,720,1440);
-        $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');;
+        $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
         return $pdf->download('leads.pdf');
     }
 
@@ -2719,21 +2719,15 @@ class LeadsController extends Controller
     {
         set_time_limit(0);
         ini_set('memory_limit', '-1');
-        DB::enableQueryLog();
         $leads = Leads::where('lead_status_id',4)->get()->pluck('patient_id');
         $serv = ['96','112','128','147'];
         $apts = Appointments::select('location_id','lead_id','patient_id','service_id')
         ->whereIn('service_id',$serv)
         ->whereIn('patient_id', $leads)
-           ->get();
-            
+        ->get();
         foreach($apts as $apt){
-           
-            Leads::where('lead_status_id',4)->where('patient_id',$apt->patient_id)->where('id',$apt->lead_id)->update(['service_id'=>$apt->service->parent->id]);
-            
-            
+            Leads::where('lead_status_id',4)->where('patient_id',$apt->patient_id)->where('id',$apt->lead_id)->update(['service_id'=>$apt->service->parent->id]); 
         }
-        
-       dd(DB::getQueryLog());
+        return true;
     }
 }

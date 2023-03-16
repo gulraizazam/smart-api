@@ -110,7 +110,6 @@ class Leads extends BaseModal
     {
         return $this->belongsTo('App\Models\Locations','location_id', 'id')->withTrashed();
     }
-   
     /**
      * @param $id
      * @return \Illuminate\Database\Eloquent\Builder|Model|object|null
