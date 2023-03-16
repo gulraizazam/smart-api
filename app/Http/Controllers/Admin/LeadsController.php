@@ -1792,7 +1792,9 @@ class LeadsController extends Controller
                         }
                         // Iterate over the data
                         $count = 0;
+                        
                         foreach ($SheetData as $SingleRow) {
+                            
                             // Provided Sheet columns should match
                             if (
                                 (
@@ -1835,7 +1837,16 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
-                            $location = trim(strtolower($SingleRow['I']));
+                            if(trim(strtolower($SingleRow['I'])) == ''){
+                                $SingleRow['I']='N/A';
+                            }
+                            $location_id=null;
+                            if (isset($SingleRow['I'])) {
+                                $location = trim(strtolower($SingleRow['I']));
+                            } else {
+                                $location = null;
+                            }
+                           
                             if ($Locations && $location) {
                                 foreach ($Locations as $LocationName => $LocationId) {
                                     if ($location == trim(strtolower($LocationName))) {
@@ -1843,6 +1854,7 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
+                            
                             // Process Lead Source
                             $lead_source_id = Config::get('constants.lead_source_social_media');
                             if (isset($SingleRow['F'])) {
@@ -1908,6 +1920,8 @@ class LeadsController extends Controller
                                         if($service_id){
                                             $find_parent2 = Services::whereId($service_id)->first();
                                             if($find_parent2->id != $find_parent->parent_id ){
+                                                $service_id= $find_parent->parent_id;
+                                            }else{
                                                 $service_id= $find_parent->parent_id;
                                             }
                                         }else{
@@ -1976,7 +1990,7 @@ class LeadsController extends Controller
                                             'created_at' => Carbon::now(),
                                             'updated_at' => Carbon::now(),
                                             'account_id' => Auth::User()->account_id,
-                                            'location_id'=>$location_id
+                                            'location_id'=>$location_id ?? ''
                                         );
                                         /*
                                          * 'skip_lead_statuses' is not checked
@@ -2743,6 +2757,7 @@ class LeadsController extends Controller
     public function leadupdate()
     {
        set_time_limit(0);
+<<<<<<< HEAD
        ini_set('memory_limit', '-1');
        try{
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
@@ -2762,5 +2777,19 @@ dd($e->getMessage());
        }
         
         
+=======
+        DB::enableQueryLog();
+        $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
+        foreach($leads as $lead){
+         $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id',$lead->id)
+            ->where('patient_id', $lead->patient_id)
+            ->latest()->first();
+          
+            if($apts){
+               Leads::where('lead_status_id',4)->where('patient_id',$apts->patient_id)->update(['location_id'=>$apts->location_id]);
+           }
+           
+        }
+>>>>>>> d845d0d4d40eef5c17ba3fddbd94b7cfe8e24ebf
     }
 }
