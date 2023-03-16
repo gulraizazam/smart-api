@@ -5,9 +5,11 @@
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Full Name</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Phone</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">City</th>
+            <th style="padding: 10px 15px 10px 15px; color: #fff;">Centre</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Region</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Lead Status</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Service</th>
+            <th style="padding: 10px 15px 10px 15px; color: #fff;">Child Service</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Created At</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Created By</th>
         </tr>
@@ -25,9 +27,11 @@
                 <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->name ?? 'N/A'}}</td>
                 <td style="padding: 10px 5px 10px 5px;">{{$phone ?? 'N/A'}}</td>
                 <td style="padding: 10px 5px 10px 5px;">{{$lead->city->name ?? 'N/A'}} </td>
+                <td style="padding: 10px 5px 10px 5px;">{{$lead->towns->name ?? 'N/A'}} </td>
                 <td style="padding: 10px 5px 10px 5px;">{{$lead->region->name ?? 'N/A'}}</td>
                 <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->lead_status->name ?? 'N/A'}}</td>
                 <td style="padding: 10px 5px 10px 5px;; width: 15%;">{{$lead->service->name ?? 'N/A'}}</td>
+                <td style="padding: 10px 5px 10px 5px;; width: 15%;">{{$lead->childservice->name ?? 'N/A'}}</td>
                 <td style="padding: 10px 5px 10px 5px;">{{\Carbon\Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A')}}</td>
                 <td style="padding: 10px 5px 10px 5px;">{{$lead->user->name ?? 'N/A'}}</td>
             </tr>

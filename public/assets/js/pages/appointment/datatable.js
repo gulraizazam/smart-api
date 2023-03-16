@@ -1051,13 +1051,10 @@ function setSmsLogs(response) {
 
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
-        
         let filters =  {
             delete: '',
             patient_id: $("#appointment_patient_id").val(),
-          /*  name: $("#appoint_search_patient").val(),*/
             phone: $("#appoint_search_phone").val(),
             date_from: $("#appoint_search_start").val(),
             date_to: $("#appoint_appoint_end").val(),
@@ -1069,17 +1066,15 @@ function applyFilters(datatable) {
             doctor_id: $("#appoint_search_doctor").val(),
             appointment_status_id: $("#appoint_search_status").val(),
             consultancy_type: $("#appoint_search_consultancy_type").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_from: $("#appoint_search_created_from").val(),
+            created_to: $("#appoint_search_created_to").val(),
             created_by: $("#appoint_search_created_by").val(),
             converted_by: $("#appoint_search_updated_by").val(),
             updated_by: $("#appoint_search_rescheduled_by").val(),
             filter: 'filter',
         }
-
         datatable.search(filters, 'search');
     });
-
 }
 
 function resetAllFilters(datatable) {

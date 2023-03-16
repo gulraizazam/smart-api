@@ -34,18 +34,25 @@
             </tr>
 
             <tr>
+                <th>Centre</th>
+                <td id="centre"></td>
                 <th>Gender</th>
                 <td id="gender"></td>
                 <th>Lead Source</th>
                 <td id="lead_source"></td>
-                <th>Lead Status</th>
-                <td id="lead_status"></td>
+                
             </tr>
             <tr>
-                <th>Treatment</th>
+                <th>Lead Status</th>
+                <td id="lead_status"></td>
+                <th>Service</th>
                 <td id="treatment"></td>
                 <th>SMS Status</th>
                 <td id="sms_status"></td>
+            </tr>
+            <tr>
+                <th>Treatment</th>
+                <td id="childservice"></td>
             </tr>
             </tbody>
         </table>
