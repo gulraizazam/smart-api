@@ -39,6 +39,7 @@ use Validator;
 use App\Models\Appointments;
 use App\Models\Locations;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Exception;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Support\Facades\DB as FacadesDB;
 
@@ -2741,6 +2742,7 @@ class LeadsController extends Controller
     {
        set_time_limit(0);
        ini_set('memory_limit', '-1');
+       try{
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
         foreach($leads as $lead){
          $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id',$lead->id)
@@ -2751,6 +2753,10 @@ class LeadsController extends Controller
            }
            
         }
-        return true;
+       }catch(Exception $e){
+dd($e->getMessage());
+       }
+        
+        
     }
 }
