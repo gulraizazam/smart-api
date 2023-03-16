@@ -1897,6 +1897,12 @@ class AppointmentsController extends Controller
             }
             $appointmentData['appointment_status_id'] = config('constants.appointment_status_pending');
             $appointment = Appointments::create($appointmentData);
+            $find_cons = Appointments::latest()->first();
+            if($find_cons){
+                Leads::where('patient_id',$find_cons->patient_id)->update(['lead_status_id'=>4]);
+                $parents = Services::where('parent_id',$find_cons->service_id)->first();
+                $find_lead = $lead->update(['service_id'=>$find_cons->service_id,'location_id'=>$find_cons->location_id]);   
+            }
             /* Now We need to update name of all appointments that already in appointment table against patient
              */
             Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name']]);
@@ -3080,6 +3086,7 @@ class AppointmentsController extends Controller
         }
         $appointment->update($data);
         $appointment_status_name = AppointmentStatuses::where('id', '=', $data['base_appointment_status_id'])->first();
+        
         /** When appointment status will be 'No Show' then lead status will be automatically changed to 'Open' */
         if($data['base_appointment_status_id'] == 3){
             $lead = Leads::findOrFail($appointment->lead_id);
@@ -3090,6 +3097,11 @@ class AppointmentsController extends Controller
             $lead->lead_status_id = 4;
             $lead->save();
         }
+        if($data['base_appointment_status_id'] == 14){
+            $lead = Leads::where('patient_id',$appointment->patient_id)->update(['lead_status_id'=>2]);
+            
+        }
+        
         /**
          * Dispatch Elastic Search Index
          */
@@ -4535,7 +4547,7 @@ class AppointmentsController extends Controller
         $find_apt = Appointments::find($appointment->id);
         $find_cons = Appointments::latest()->first();
         if($find_cons){
-            $parents = Services::where('parent_id',$appointment->service_id)->first();
+            $parents = Services::where('parent_id',$find_cons->service_id)->first();
             $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointment->service_id]);   
         }
         /* Now We need to update name of all appointments that already in appointment table against patient*/
