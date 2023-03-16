@@ -2757,27 +2757,10 @@ class LeadsController extends Controller
     public function leadupdate()
     {
        set_time_limit(0);
-<<<<<<< HEAD
+
        ini_set('memory_limit', '-1');
        try{
-        $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
-        $tt = Leads::join('appointments','leads.id','appointments.lead_id')->where('leads.lead_status_id',4)->where('appointment_type_id',1)
-        ->orderBy('appointments.id','desc')
-        ->distinct('appointments.lead_id')
-        ->get();
-
-        foreach($tt as $lead){
-         
-               Leads::where('lead_status_id',4)->where('patient_id',$lead->patient_id)->update(['location_id'=>$lead->location_id]);
-           
-           
-        }
-       }catch(Exception $e){
-dd($e->getMessage());
-       }
-        
-        
-=======
+       
         DB::enableQueryLog();
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
         foreach($leads as $lead){
@@ -2790,6 +2773,5 @@ dd($e->getMessage());
            }
            
         }
->>>>>>> d845d0d4d40eef5c17ba3fddbd94b7cfe8e24ebf
-    }
+ }
 }
