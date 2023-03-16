@@ -117,14 +117,11 @@ use Illuminate\Support\Facades\DB;
        return view('admin.records',compact('rr'));
 
         });
-
         Route::get('error-logs', [LogViewerController::class, 'index']);
-
+        Route::get('updateleads', [LeadsController::class, 'leadupdate']);
         Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
-
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password',  [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
-
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
         Route::post('/home/datatable', [App\Http\Controllers\HomeController::class, 'datatable'])->name('home.datatable');
         Route::get('/home/collection-by-centre', [App\Http\Controllers\HomeController::class, 'collectionByCentre'])->name('home.collectionByCentre');
@@ -514,11 +511,8 @@ use Illuminate\Support\Facades\DB;
 
         /*Consultancy Routes*/
         Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
-
-        //Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
-
+        Route::post('appointments/load_child_services', [AppointmentsController::class, 'LoadChildServices'])->name('appointments.load_child_services');
         Route::get('appointments/load-non-scheduled-appointments', [AppointmentsController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
-
         Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
         Route::get('appointments/export/{limit}/{offset}', [AppointmentsController::class, 'export'])->name('appointments.export');
         Route::get('download-today-consultancies', [AppointmentsController::class, 'todayexport']);
@@ -565,4 +559,5 @@ use Illuminate\Support\Facades\DB;
         Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
         Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
         Route::get('getcolor',[ServicesController::class,'GetColor'])->name('dashboard.getcolor');
+        Route::get('dashboard/getchild', [DashboardReportsController::class,'getChild'])->name('dashboard.getchild');
     });

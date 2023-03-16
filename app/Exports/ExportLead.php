@@ -28,7 +28,6 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function collection()
     {
-        DB::enableQueryLog();
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
         if($this->request->id != null || $this->request->id != ''){
@@ -42,6 +41,9 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         }
         if($this->request->city_id != null || $this->request->city_id != ''){
             $resultQuery->where('leads.city_id', $this->request->city_id);
+        }
+        if($this->request->location_id != null || $this->request->location_id != ''){
+            $resultQuery->where('leads.location_id', $this->request->location_id);
         }
         if($this->request->region_id != null || $this->request->region_id != ''){
             $resultQuery->where('leads.region_id', $this->request->region_id);
@@ -70,9 +72,11 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             'Phone',
             'Gender',
             'City',
+            'Centre',
             'Region',
             'Lead Status',
             'Service',
+            'Child Service',
             'Created At',
             'Created By',
         ];
@@ -91,9 +95,11 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $phone,
             $lead->gender== 1 ? 'Male' : 'Female',
             $lead->city->name ?? 'N/A',
+            $lead->towns->name ?? 'N/A',
             $lead->region->name ?? 'N/A',
             $lead->lead_status->name ?? 'N/A',
             $lead->service->name ?? 'N/A',
+            $lead->childservice->name ?? 'N/A',
             Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A') ?? 'N/A',
             $lead->user->name?? 'N/A',
         ];
@@ -108,10 +114,8 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         return [
             AfterSheet::class    => function(AfterSheet $event) {
 
-                $event->sheet->getDelegate()->getStyle('A1:I1')->getFont()->setBold(true);
-
+                $event->sheet->getDelegate()->getStyle('A1:K1')->getFont()->setBold(true);
                 $event->sheet->getDelegate()->getRowDimension('1')->setRowHeight(30);
-
                 $event->sheet->getDelegate()->getColumnDimension('A')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('B')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('C')->setWidth(20);
@@ -119,11 +123,11 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
                 $event->sheet->getDelegate()->getColumnDimension('E')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('F')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('G')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('H')->setWidth(40);
-                $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(20);
-
+                $event->sheet->getDelegate()->getColumnDimension('H')->setWidth(20);
+                $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(40);
+                $event->sheet->getDelegate()->getColumnDimension('J')->setWidth(20);
+                $event->sheet->getDelegate()->getColumnDimension('K')->setWidth(20);
             },
         ];
     }
-
 }
