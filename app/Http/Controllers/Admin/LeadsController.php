@@ -2743,7 +2743,7 @@ class LeadsController extends Controller
        ini_set('memory_limit', '-1');
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
         foreach($leads as $lead){
-         $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)
+         $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id',$lead->id)
             ->where('patient_id', $lead->patient_id)
             ->latest()->first();
             if($apts){
