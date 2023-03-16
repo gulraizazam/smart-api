@@ -1910,6 +1910,8 @@ class LeadsController extends Controller
                                             if($find_parent2->id != $find_parent->parent_id ){
                                                 $service_id= $find_parent->parent_id;
                                             }
+                                        }else{
+                                            $service_id= $find_parent->parent_id;
                                         }
                                         
                                     }
