@@ -2,7 +2,7 @@
     <!--begin::Header-->
     <div class="card-header align-items-center border-0 mt-4">
         <h3 class="card-title align-items-start flex-column">
-            <span class="font-weight-bolder text-dark">Recent Activity</span>
+            <span class="font-weight-bolder text-dark">Today's Activities!</span>
             <span class="text-muted mt-3 font-weight-bold font-size-sm" id="totalactivities">{{count($finance_log) }} activities</span>
         </h3>
     </div>

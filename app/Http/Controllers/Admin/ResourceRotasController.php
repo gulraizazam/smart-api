@@ -632,7 +632,7 @@ class ResourceRotasController extends Controller
                     }
 
                 } else {
-                    $resourceRota[$day . 'checked'] = 'on';
+                    $resourceRota[$day . 'checked'] = '_off';
                 }
             }
         }
