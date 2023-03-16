@@ -2739,17 +2739,18 @@ class LeadsController extends Controller
     }
     public function leadupdate()
     {
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
-        $leads = Leads::where('lead_status_id',4)->get()->pluck('patient_id');
-        $serv = ['96','112','128','147','165'];
-        $apts = Appointments::select('location_id','lead_id','patient_id','service_id')
-        ->whereIn('service_id',$serv)
-        ->whereIn('patient_id', $leads)
-        ->get();
-        foreach($apts as $apt){
-            Leads::where('lead_status_id',4)->where('patient_id',$apt->patient_id)->where('id',$apt->lead_id)->update(['service_id'=>$apt->service->parent->id]); 
+       set_time_limit(0);
+        DB::enableQueryLog();
+        $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
+        foreach($leads as $lead){
+         $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id',$lead->id)
+            ->where('patient_id', $lead->patient_id)
+            ->latest()->first();
+          
+            if($apts){
+               Leads::where('lead_status_id',4)->where('patient_id',$apts->patient_id)->update(['location_id'=>$apts->location_id]);
+           }
+           
         }
-        return true;
     }
 }
