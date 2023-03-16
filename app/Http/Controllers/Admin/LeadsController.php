@@ -2746,11 +2746,11 @@ class LeadsController extends Controller
          $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id',$lead->id)
             ->where('patient_id', $lead->patient_id)
             ->latest()->first();
-         dd($apts);
             if($apts){
                Leads::where('lead_status_id',4)->where('patient_id',$apts->patient_id)->update(['location_id'=>$apts->location_id]);
            }
            
         }
+        return true;
     }
 }
