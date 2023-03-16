@@ -2745,9 +2745,10 @@ class LeadsController extends Controller
        try{
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
         $tt = Leads::join('appointments','leads.id','appointments.lead_id')->where('leads.lead_status_id',4)->where('appointment_type_id',1)
+        ->orderBy('appointments.id','desc')
         ->distinct('appointments.lead_id')
         ->get();
-dd($tt);
+
         foreach($tt as $lead){
          
                Leads::where('lead_status_id',4)->where('patient_id',$lead->patient_id)->update(['location_id'=>$lead->location_id]);
