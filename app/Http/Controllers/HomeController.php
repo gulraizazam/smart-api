@@ -2269,11 +2269,9 @@ class HomeController extends Controller
             '<=',
             $end_date . ' 23:59:59'
         );
-
         $todayRecords = \App\Models\Invoices::where($where)
             ->whereIn('location_id', ACL::getUserCentres())
             ->where('invoice_status_id', '=', $invoicestatus->id);
-
         if ($request->get('performance') == '1') {
             $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
         }

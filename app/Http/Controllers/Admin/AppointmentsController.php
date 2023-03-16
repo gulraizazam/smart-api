@@ -2606,7 +2606,7 @@ class AppointmentsController extends Controller
             $appointmentData['updated_by'] = Auth::User()->id;
             $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
             $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
-            $appointmentData['town_id'] = $request->location_id ?? $appointment->location_id;
+            $appointmentData['location_id'] = $request->location_id ?? $appointment->location_id;
             // Reset Scheduled Time to null, stop sending message
             $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
             if ($appointment_status) {
@@ -4496,9 +4496,7 @@ class AppointmentsController extends Controller
             }
             $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
             if($lead){
-                
                 $lead->lead_status_id = 4;
-
                 $lead->save();
             }else{
                 $leadObj['lead_status_id'] = $default_converted_lead_status_id;
@@ -4536,11 +4534,9 @@ class AppointmentsController extends Controller
         $appointment = Appointments::create($appointmentData);
         $find_apt = Appointments::find($appointment->id);
         $find_cons = Appointments::latest()->first();
-        
         if($find_cons){
             $parents = Services::where('parent_id',$appointment->service_id)->first();
-            $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointment->service_id]);
-            
+            $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointment->service_id]);   
         }
         /* Now We need to update name of all appointments that already in appointment table against patient*/
         Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name'],'updated_at'=> $appointmentData['updated_at']]);
