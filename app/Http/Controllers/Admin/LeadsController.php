@@ -2019,7 +2019,7 @@ class LeadsController extends Controller
                                 'created_at' => Carbon::now(),
                                 'updated_at' => Carbon::now(),
                                 'account_id' => Auth::User()->account_id,
-                                'location_id'=>$location_id
+                                'location_id'=>$location_id ?? ''
                             );
                             
                             $piplined_leads[] = $allPatientMapping[$phone]['id'] . "##" . $service_id;
