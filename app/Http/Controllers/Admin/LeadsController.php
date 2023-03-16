@@ -2759,7 +2759,7 @@ class LeadsController extends Controller
        set_time_limit(0);
 
        ini_set('memory_limit', '-1');
-       try{
+       
        
         DB::enableQueryLog();
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
