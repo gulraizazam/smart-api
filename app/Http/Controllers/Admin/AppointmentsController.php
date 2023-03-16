@@ -4548,7 +4548,7 @@ class AppointmentsController extends Controller
         $find_cons = Appointments::latest()->first();
         if($find_cons){
             $parents = Services::where('parent_id',$find_cons->service_id)->first();
-            $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointment->service_id,'service_id'=>$parents->id]);   
+            $find_lead = Leads::where('id',$find_cons->lead_id)->update(['child_service_id'=>$appointment->service_id]);   
         }
         /* Now We need to update name of all appointments that already in appointment table against patient*/
         Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name'],'updated_at'=> $appointmentData['updated_at']]);
