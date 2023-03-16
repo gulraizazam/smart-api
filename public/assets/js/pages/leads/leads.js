@@ -20,7 +20,7 @@ var table_columns = [{
     field: 'name',
     title: 'Full Name',
     sortable: false,
-    width: 'auto',
+    width: 110,
 }, {
     field: 'phone',
     title: 'Phone',
@@ -30,18 +30,10 @@ var table_columns = [{
         return phoneClip(data);
     }
 }, {
-    field: 'gender',
-    title: 'Gender',
-    sortable: false,
-    width: 90,
-    template: function (data) {
-        return data.gender;
-    }
-},{
     field: 'city_id',
     title: 'City',
     sortable: false,
-    width: 70,
+    width: 90,
     className: 'tooltip_wrap',
     template: function (data) {
 
@@ -54,10 +46,29 @@ var table_columns = [{
         return '<a href="javascript:void(0);" data-city_id="'+data.cityId+'" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`, $(this))" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
     }
 },{
+    field: 'location_id',
+    title: 'Centre',
+    sortable: false,
+    width: 110,
+    template: function (data) {
+        if(data.location != ""){
+            return data.location;
+        }else{
+            return 'N/A';
+        }
+    }
+},{
     field: 'service_id',
     title: 'Service',
     sortable: false,
     width: 110,
+    template: function (data) {
+        if(data.service_id != ""){
+            return data.service_id;
+        }else{
+            return 'N/A';
+        }  
+    }
 },{
     field: 'lead_status_id',
     title: 'Lead Status',
@@ -73,7 +84,6 @@ var table_columns = [{
     sortable: false,
     width: 60,
     template: function(data) {
-        console.log(data);
         let status_url = route('admin.leads.status');
         let id = data.id;
         let active = data.active;
@@ -109,24 +119,44 @@ var table_columns = [{
         return status;
     }
 },{
+    field: 'gender',
+    title: 'Gender',
+    sortable: false,
+    width: 70,
+    template: function (data) {
+        return data.gender;
+    }
+},{
     field: 'created_by',
     title: 'Created By',
     sortable: false,
     width: 70,
+},{
+    field: 'actions',
+    title: 'Actions',
+    sortable: false,
+    width: 70,
+    overflow: 'visible',
+    autoHide: false,
+    template: function(data) {
+        return actions(data);
+    }
 }, {
     field: 'created_at',
     title: 'Created At',
     sortable: false,
     width: 'auto',
-},{
-    field: 'actions',
-    title: 'Actions',
+}, {
+    field: 'child_service_id',
+    title: 'Treatment',
     sortable: false,
-    width: 80,
-    overflow: 'visible',
-    autoHide: false,
-    template: function(data) {
-        return actions(data);
+    width: 'auto',
+    template: function (data) {
+        if(data.child_service != ""){
+            return data.child_service;
+        }else{
+            return 'N/A';
+        } 
     }
 }];
 
@@ -415,7 +445,6 @@ function viewLead(url) {
 }
 
 function setViewData(response) {
-
     try {
 
         let lead = response.data.lead;
@@ -459,6 +488,11 @@ function setViewData(response) {
             city = lead?.city?.name;
         }
         $("#city").text(city);
+        let centre = 'N/A';
+        if(lead?.location_id) {
+            centre = lead?.towns?.name;
+        }
+        $("#centre").text(centre);
 
         let town = 'N/A';
         if(lead?.town_id) {
@@ -483,7 +517,23 @@ function setViewData(response) {
             treatment = lead?.service?.name;
         }
         $("#treatment").text(treatment);
+        let child = 'N/A';
+        if(lead?.child_service_id) {
+            child = lead?.child_service_id;
+        }
+        $.ajax({
 
+            url: route('admin.dashboard.getchild'),
+            type: 'GET',
+            data: {
+                'child_id': child,
+            },
+            cache: false,
+            success: function (response) {
+                $("#childservice").text(response.data.child);  
+            },
+            
+        });
         $("#comment_lead_id").val(lead.id)
 
         setComments(lead);
@@ -639,15 +689,18 @@ function setEditData(response) {
     try {
 
         let Services = response.data.Services;
+        let Childservices = response.data.child_services;
         let cities = response.data.cities;
+        let locations = response.data.locations;
         let employees = response.data.employees;
         let gender = response.data.gender;
         let lead_sources = response.data.lead_sources;
         let lead_statuses = response.data.lead_statuses;
         let lead = response.data.lead;
-
         let service_options = '<option value="">Select Service</option>';
+        let child_service_options = '<option value="">Select Child Service</option>';
         let city_options = '<option value="">Select a City</option>';
+        let location_options = '<option value="">Select a Location</option>';
         let employee_options = '<option value="">Select a Referrer</option>';
         let gender_options = '<option value="">Select a Gender</option>';
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
@@ -658,13 +711,21 @@ function setEditData(response) {
                 service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
             });
         }
-
+        if (Childservices) {
+            Object.entries(Childservices).forEach(function(childservice) {
+                child_service_options += '<option value="' + childservice[0] + '">' + childservice[1] + '</option>';
+            });
+        }
         if (cities) {
             Object.entries(cities).forEach(function(city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
             });
         }
-
+        if (locations) {            
+            Object.entries(locations).forEach(function(location) {
+                location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            });
+        }
         if (employees) {
             Object.entries(employees).forEach(function(employee) {
                 employee_options += '<option value="' + employee[0] + '">' + employee[1] + '</option>';
@@ -690,15 +751,17 @@ function setEditData(response) {
         }
 
         $("#edit_service_id").html(service_options);
+        $("#edit_child_service_id").html(child_service_options);
         $("#edit_city_id").html(city_options);
+        $("#edit_location_id").html(location_options);
         $("#edit_referred_by_id").html(employee_options);
         $("#edit_gender_id").html(gender_options);
         $("#edit_lead_source_id").html(lead_sources_options);
         $("#edit_lead_status_id").html(lead_statuses_options);
-
         $("#edit_service_id").val(lead.service_id);
+        $("#edit_child_service_id").val(lead.child_service_id);
         $("#edit_city_id").val(lead.city_id);
-
+        $("#edit_location_id").val(lead.location_id);
         if (lead?.patient?.referred_by && lead?.patient?.referred_by != 0) {
             $("#edit_referred_by_id").val(lead?.patient?.referred_by);
         }
@@ -708,30 +771,22 @@ function setEditData(response) {
         if (lead.lead_source_id) {
             $("#edit_lead_source_id").val(lead.lead_source_id);
         }
-
         if (lead.lead_status_id) {
             $("#edit_lead_status_id").val(lead.lead_status_id);
         }
-
         $("#edit_full_name").val(lead.patient.name);
         $("#edit_patient_id").val(lead.patient.id);
-
         $("#edit_lead_id").val(lead.id);
-
         $("#edit_old_phone").val(lead.patient.phone);
-
         if (permissions.contact) {
             $("#edit_phone").val(lead.patient.phone);
         } else {
             $("#edit_phone").val("***********").attr("readonly", true);
         }
-
     } catch (error) {
         showException(error);
     }
-
 }
-
 function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function() {
@@ -742,6 +797,7 @@ function applyFilters(datatable) {
             name: $("#search_full_name").val(),
             phone: $("#search_phone").val(),
             city_id: $("#search_city_id").val(),
+            location_id: $("#search_location_id").val(),
             region_id: $("#search_region_id").val(),
             service_id: $("#search_service_id").val(),
             created_by: $("#search_created_by").val(),
@@ -780,27 +836,30 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
     try {
 
         let cities = filter_values.cities;
+        let locations = filter_values.locations;
         let regions = filter_values.regions;
         let lead_statuses = filter_values.lead_statuses;
         let services = filter_values.Services;
         let users = filter_values.users;
-
         let city_options = '<option value="">All</option>';
+        let location_options = '<option value="">All</option>';
         let region_options = '<option value="">All</option>';
         let status_options = '<option value="">All</option>';
         let service_options = '<option value="">All</option>';
         let user_options = '<option value="">All</option>';
-
         if (cities) {
             Object.entries(cities).forEach(function(city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
             });
         }
-
+        if (locations) {
+            Object.entries(locations).forEach(function(location) {
+                location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            });
+        }
         if (regions) {
             Object.entries(regions).forEach(function(region) {
                 region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
@@ -838,7 +897,6 @@ function setFilters(filter_values, active_filters) {
         $("#search_region_id").html(region_options);
         $("#search_service_id").html(service_options);
         $("#search_created_by").html(user_options);
-
         $("#search_id").val(active_filters.patient_id);
         $("#search_full_name").val(active_filters.name);
         $("#search_phone").val(active_filters.phone);
@@ -1191,6 +1249,7 @@ $("#export-pdf-leads").on("click",function(){
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
     let city_id =$("#search_city_id").val()
+    let location_id =$("#search_location_id").val()
     let region_id =$("#search_region_id").val()
     let lead_status_id =$("#search_status_id").val()
     let service_id =$("#search_service_id").val()
@@ -1198,7 +1257,7 @@ $("#export-pdf-leads").on("click",function(){
     let end_date =$("#search_created_to").val()
     let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by;
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by;
 });
 
 $("#export-leads").on("click",function(){
@@ -1207,6 +1266,7 @@ $("#export-leads").on("click",function(){
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
     let city_id =$("#search_city_id").val()
+    let location_id =$("#search_location_id").val()
     let region_id =$("#search_region_id").val()
     let lead_status_id =$("#search_status_id").val()
     let service_id =$("#search_service_id").val()
@@ -1214,7 +1274,7 @@ $("#export-leads").on("click",function(){
     let end_date =$("#search_created_to").val()
     let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=xlsx';
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=xlsx';
 });
 
 $("#csv-leads").on("click",function(){
@@ -1223,6 +1283,7 @@ $("#csv-leads").on("click",function(){
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
     let city_id =$("#search_city_id").val()
+    let location_id =$("#search_location_id").val()
     let region_id =$("#search_region_id").val()
     let lead_status_id =$("#search_status_id").val()
     let service_id =$("#search_service_id").val()
@@ -1230,7 +1291,7 @@ $("#csv-leads").on("click",function(){
     let end_date =$("#search_created_to").val()
     let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=csv';
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=csv';
 });
 
 function cleanId(id){
@@ -1244,6 +1305,36 @@ function cleanId(id){
       return id.replace('C-','');
     }
     return id;
+}
+function LoadLoc()
+{
+    cityId = $("#search_city_id").val();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.load_locations'),
+        type: 'POST',
+        data: {
+            city_id: cityId
+        },
+        cache: false,
+        success: function(response) {
+            if(response.status) {
+                let dropdowns =  response.data.dropdown;
+                let dropdown_options =  '<option value="">Select a Location</option>';
+                Object.entries(dropdowns).forEach(function (dropdown) {
+                    dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                });
+                $('#search_location_id').html(dropdown_options);
+            } else {
+                resetDropdowns();
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            resetDropdowns();
+        }
+    });
 }
 
 
