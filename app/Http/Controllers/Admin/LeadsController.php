@@ -1257,12 +1257,23 @@ class LeadsController extends Controller
                         'converted_by' => Auth::User()->id
                     ]);
             } else {
-                DB::table('leads')
+                $count_leads = Leads::where('patient_id',$lead->patient_id)->count();
+                if($count_leads == 1){
+                    DB::table('leads')
                     ->where('id', $lead->id)
                     ->update([
                         'lead_status_id' => $data['lead_status_parent_id'],
                         'converted_by' => Auth::User()->id
                     ]);
+                }else{
+                    DB::table('leads')
+                    ->where('patient_id', $lead->patient_id)
+                    ->update([
+                        'lead_status_id' => $data['lead_status_parent_id'],
+                        'converted_by' => Auth::User()->id
+                    ]);
+                }
+                
             }
             //End
             $data['created_by'] = Auth::User()->id;
@@ -1630,7 +1641,11 @@ class LeadsController extends Controller
                          */
                         if (count($dupPhone_list)) {
                             // Find duplicate records in System.
-                            $dupPhones = Patients::whereIn('phone', $dupPhone_list)->where('account_id', Auth::User()->account_id)->select('phone', 'id')->get()->keyBy('phone');
+                            $dupPhones = Patients::whereIn('phone', $dupPhone_list)
+                            ->where('account_id', Auth::User()->account_id)
+                            ->select('phone', 'id')
+                            ->get()
+                            ->keyBy('phone');
                             if ($dupPhones) {
                                 $dupPhones = $dupPhones->toArray();
                             } else {
@@ -1638,7 +1653,11 @@ class LeadsController extends Controller
                                 $dupPhones = array();
                             }
                             $newPatientPhones = array(); /* New Patient Phones Array */
-                            $found_patients = Patients::whereIn('phone', $dupPhone_list)->where('account_id', Auth::User()->account_id)->select('phone')->get()->pluck('phone');
+                            $found_patients = Patients::whereIn('phone', $dupPhone_list)
+                            ->where('account_id', Auth::User()
+                            ->account_id)->select('phone')
+                            ->get()
+                            ->pluck('phone');
                             if ($found_patients) {
                                 $newPatientPhones = array_diff($dupPhone_list, $found_patients->toArray());
                             }
@@ -1742,7 +1761,9 @@ class LeadsController extends Controller
                          * b. 'Skip Leads Statuses' is not checked
                          * b.i If lead is found update it without Lead Status
                          */
-                        $allLeadsMapping = Patients::join('leads', 'leads.patient_id', '=', 'users.id')->whereIn('users.phone', $dupPhone_list)->where('leads.account_id', Auth::User()->account_id)->select('users.phone')->get()->keyBy('phone');
+                        $allLeadsMapping = Patients::join('leads', 'leads.patient_id', '=', 'users.id')
+                        ->whereIn('users.phone', $dupPhone_list)
+                        ->where('leads.account_id', Auth::User()->account_id)->select('users.phone')->get()->keyBy('phone');
                         if (count($allLeadsMapping)) {
                             $allLeadsMapping = $allLeadsMapping->toArray();
                         } else {
@@ -1800,6 +1821,7 @@ class LeadsController extends Controller
                             }
                             // Process Phone Number
                             $phone = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
+                            
                             // Process City
                             $city_id = null;
                             $region_id = null;
@@ -1902,14 +1924,12 @@ class LeadsController extends Controller
                              */
                            
                             if (array_key_exists($phone, $allLeadsMapping)) {
-
                                 if (Leads::where(array(
                                     'patient_id' => $allPatientMapping[$phone]['id'],
                                     'service_id' => $service_id
                                 ))->count()) {
-
                                     if ($request->get("update_records") != '1') {
-                                        
+                                        $test = Leads::where('patient_id',$allPatientMapping[$phone]['id'])->where('service_id',$service_id)->get();
                                         /*
                                          * update_records' is not checked
                                          * Skip this entire record
@@ -1967,12 +1987,13 @@ class LeadsController extends Controller
                                             'patient_id' => $allPatientMapping[$phone]['id'],
                                             'service_id' => $service_id
                                         ), $update_lead);
-
+                                        
+                                       
                                         continue;
                                     }
                                 }
                             }
-
+                            
                             /*
                              * If lead already exists in Piplined lead
                              * then skip this lead to avoid duplicate
@@ -2000,7 +2021,7 @@ class LeadsController extends Controller
                                 'account_id' => Auth::User()->account_id,
                                 'location_id'=>$location_id
                             );
-
+                            
                             $piplined_leads[] = $allPatientMapping[$phone]['id'] . "##" . $service_id;
 
                             $user_info_L = User::where('id', $allPatientMapping[$phone]['id'])->first();
@@ -2041,6 +2062,7 @@ class LeadsController extends Controller
                         if (count($LeadData)) {
                             Leads::insert($LeadData);
                         }
+                        
                         // Invalid data is provided
                         return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($LeadData) . ', Duplicates: ' . count($dupPhones));
                     } else {
