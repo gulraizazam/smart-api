@@ -65,7 +65,14 @@
             <label>Service:</label>
             <select class="form-control filter-field select2" id="search_service_id"></select>
         </div>
-
+        <div class="col-lg-2 mb-lg-0 mb-6">
+            <label>Gender:</label>
+            <select class="form-control filter-field select2" id="search_gender_id">
+                <option value="">Select</option>
+                <option value="1">Male</option>
+                <option value="2">Female</option>
+            </select>
+        </div>
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Create at:</label>
             <div class="input-daterange input-group to-from-datepicker" >
