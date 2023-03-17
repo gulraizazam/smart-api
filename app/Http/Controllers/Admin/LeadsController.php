@@ -2767,33 +2767,4 @@ class LeadsController extends Controller
            
         }
     }
-    public function leadstatusupdate()
-    {
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
-    //    $leads=Leads::where('lead_status_id',4)->get();
-
-    //    foreach($leads as $lead){
-    //     $find_booked = Leads::where('patient_id',$lead->patient_id)->where('lead_status_id',4)->latest()->first();
-
-    //     $test = Leads::where('patient_id',$find_booked->patient_id)
-    //         ->where('lead_status_id',1)
-    //         ->where('id','<',$find_booked->id)
-    //         ->update(['lead_status_id'=>4]);
-            
-    //    }
-    $leads=Leads::where('lead_status_id',2)->get();
-
-       foreach($leads as $lead){
-        $find_booked = Leads::where('patient_id',$lead->patient_id)->where('lead_status_id',2)->latest()->first();
-
-        $test = Leads::where('patient_id',$find_booked->patient_id)
-            ->where('lead_status_id',1)
-            ->where('id','<',$find_booked->id)
-            ->update(['lead_status_id'=>2]);
-            
-       }
-       dd($test);
-        
-    }
 }
