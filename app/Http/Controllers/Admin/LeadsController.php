@@ -1558,7 +1558,7 @@ class LeadsController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
 
-     public function uploadLeads(FileUploadLeadsRequest $request)
+    public function uploadLeads(FileUploadLeadsRequest $request)
     {
         if (!Gate::allows('leads_import')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
@@ -1605,7 +1605,6 @@ class LeadsController extends Controller
                         $piplined_patients = array();
                         // Iterate over the data
                         foreach ($SheetData as $SingleRow) {
-                            
                             // Provided Sheet columns should match
                             if (
                                 (
@@ -1636,7 +1635,6 @@ class LeadsController extends Controller
                             // Process Phone Number
                             $dupPhone_list[] = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
                         }
-                        
                         /*
                          * Step A: Start
                          * Find patients who are not in system and create them
@@ -1793,9 +1791,7 @@ class LeadsController extends Controller
                         }
                         // Iterate over the data
                         $count = 0;
-                        
-                        foreach ($SheetData as $SingleRow) {
-                            
+                        foreach ($SheetData as $index => $SingleRow) {
                             // Provided Sheet columns should match
                             if (
                                 (
@@ -1838,24 +1834,6 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
-                            if(trim(strtolower($SingleRow['I']))==null){
-                                $SingleRow['I']='Empty';
-                            }
-                            $location_id=null;
-                            if (isset($SingleRow['I'])) {
-                                $location = trim(strtolower($SingleRow['I']));
-                            } else {
-                                $location = null;
-                            }
-                           
-                            if ($Locations && $location) {
-                                foreach ($Locations as $LocationName => $LocationId) {
-                                    if ($location == trim(strtolower($LocationName))) {
-                                        $location_id = $LocationId;
-                                    }
-                                }
-                            }
-                            
                             // Process Lead Source
                             $lead_source_id = Config::get('constants.lead_source_social_media');
                             if (isset($SingleRow['F'])) {
@@ -1890,27 +1868,34 @@ class LeadsController extends Controller
                                     $lead_status_id = $default_lead_status_id;
                                 }
                             }
-                            
                             /*
                              * Process Treatment, If Treatment not found skip this record
                              */
                             $service_id = null;
+                            $service = null;
                             if (isset($SingleRow['H'])) {
                                 $service = trim(strtolower($SingleRow['H']));
-                            } else {
-                                $service = null;
                             }
-                            $childservice = null;
-                            if(trim(strtolower($SingleRow['J']))==null){
-                                $SingleRow['J']='Empty';
-                            }
-                           
-                            if (isset($SingleRow['J'])) {
+                            $childservice = 0;
+                            if ($SingleRow['J']) {
                                 $childservice = trim(strtolower($SingleRow['J']));
-                            } else {
-                                $childservice = null;
                             }
-                           
+                            if(trim(strtolower($SingleRow['I']))==null){
+                                $SingleRow['I']='Empty';
+                            }
+                            $location_id=null;
+                            if (isset($SingleRow['I'])) {
+                                $location = trim(strtolower($SingleRow['I']));
+                            } else {
+                                $location = null;
+                            }
+                            if ($Locations && $location) {
+                                foreach ($Locations as $LocationName => $LocationId) {
+                                    if ($location == trim(strtolower($LocationName))) {
+                                        $location_id = $LocationId;
+                                    }
+                                }
+                            }
                             if ($Treatments && $service) {
                                 foreach ($Treatments as $Name => $Id) {
                                     if (trim(strtolower($service)) == trim(strtolower($Name))) {
@@ -1918,7 +1903,7 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
-                            
+                            $child_service_id=null;
                             if ($child_Services && $childservice) {
                                 foreach ($child_Services as $childName => $childId) {
                                     if (trim(strtolower($childservice)) == trim(strtolower($childName))) {
@@ -2082,6 +2067,7 @@ class LeadsController extends Controller
                                 }
                             }
                         }
+                        
                         // If Get some recors insert them now
                         if (count($LeadData)) {
                             Leads::insert($LeadData);
