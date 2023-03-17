@@ -76,7 +76,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             'Region',
             'Lead Status',
             'Service',
-            'Child Service',
+            'Treatment',
             'Created At',
             'Created By',
         ];
@@ -99,7 +99,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $lead->region->name ?? 'N/A',
             $lead->lead_status->name ?? 'N/A',
             $lead->service->name ?? 'N/A',
-            $lead->childservice->name ?? 'N/A',
+            $lead->childservice->name ?? 'Empty',
             Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A') ?? 'N/A',
             $lead->user->name?? 'N/A',
         ];
@@ -127,6 +127,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
                 $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(40);
                 $event->sheet->getDelegate()->getColumnDimension('J')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('K')->setWidth(20);
+                $event->sheet->getDelegate()->getColumnDimension('L')->setWidth(20);
             },
         ];
     }
