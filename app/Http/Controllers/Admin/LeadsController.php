@@ -232,6 +232,26 @@ class LeadsController extends Controller
                     }
                 }
             }
+            if (hasFilter($filters, 'gender_id')) {
+                $where[] = array(
+                    'users.gender',
+                    '=',
+                    $filters['gender_id']
+                );
+                Filters::put(Auth::User()->id, $filename, 'gender_id', $filters['gender_id']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $filename, 'gender_id');
+                } else {
+                    if (Filters::get(Auth::User()->id, $filename, 'gender_id')) {
+                        $where[] = array(
+                            'users.gender',
+                            '=',
+                            Filters::get(Auth::User()->id, $filename, 'gender_id')
+                        );
+                    }
+                }
+            }
             if (hasFilter($filters, 'region_id')) {
                 $where[] = array(
                     'region_id',
