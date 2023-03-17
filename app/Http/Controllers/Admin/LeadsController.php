@@ -1901,6 +1901,9 @@ class LeadsController extends Controller
                             } else {
                                 $service = null;
                             }
+                            if(trim(strtolower($SingleRow['J']))==null){
+                                $SingleRow['J']='Empty';
+                            }
                             if (isset($SingleRow['J'])) {
                                 $childservice = trim(strtolower($SingleRow['J']));
                             } else {
@@ -1914,6 +1917,7 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
+                            
                             if ($child_Services && $childservice) {
                                 foreach ($child_Services as $childName => $childId) {
                                     if (trim(strtolower($childservice)) == trim(strtolower($childName))) {
