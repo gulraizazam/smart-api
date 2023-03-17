@@ -1056,7 +1056,6 @@ class LeadsController extends Controller
                 'account_id' => Auth::User()->account_id
             ))->count()
             ) {
-                
                 /*
                  * If other service selected and this lead is first time then allow change of Lead service
                  */
