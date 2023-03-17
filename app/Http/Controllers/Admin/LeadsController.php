@@ -1069,22 +1069,20 @@ class LeadsController extends Controller
                     'patient_id' => $data['patient_id'],
                     'service_id' => $data['service_id'],
                 ))->first();
-
                 if ($logLevelLead) {
                     $data['updated_by'] = Auth::User()->id;
+                    if($logLevelLead->service_id == $data['service_id']){
+                        $data['service_id'] = $lead->service_id;
+                    }
                     $lead = Leads::updateRecord($logLevelLead->id, $data, $patient);
-
                 } else {
                     $data['created_by'] = Auth::User()->id;
                     $data['updated_by'] = Auth::User()->id;
                     $lead = Leads::createRecord($data, $patient, $status = "Lead");
                 }
             }
-
             Appointments::where('patient_id', '=', $lead->patient_id)->update(['name' => $data['name']]);
-
             $message = 'Record has been updated successfully.';
-
             if (!$lead->msg_count) {
                 // Send SMS via API
                 $response = $this->sendSMS($lead->id, $patient->phone);
