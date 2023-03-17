@@ -229,19 +229,16 @@ class Leads extends BaseModal
      */
     static public function updateRecord($id, $data, $parent_data, $status = false)
     {
-
         if ($status == "Appointment") {
             $old_data = (Leads::find($id))->toArray();
         } else {
             $old_data = '0';
         }
         $parent_id = $parent_data->id;
-
         $record = self::where(['id' => $id])->first();
         if (!$record) {
             return null;
         }
-
         if (isset($data['city_id']) && $data['city_id']) {
             // Set Region ID
             $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
