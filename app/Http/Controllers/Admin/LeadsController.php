@@ -1572,6 +1572,7 @@ class LeadsController extends Controller
                 \File::delete($fullPath);
                 // Read File and dump data
                 $SheetData = $SpreadSheet->getActiveSheet(0)->toArray(null, true, true, true);
+                
                 if (count($SheetData)) {
                     if (
                         isset($SheetData[1])
@@ -1605,6 +1606,7 @@ class LeadsController extends Controller
                         $piplined_patients = array();
                         // Iterate over the data
                         foreach ($SheetData as $SingleRow) {
+                            
                             // Provided Sheet columns should match
                             if (
                                 (
@@ -1635,7 +1637,7 @@ class LeadsController extends Controller
                             // Process Phone Number
                             $dupPhone_list[] = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
                         }
-                     
+                        
                         /*
                          * Step A: Start
                          * Find patients who are not in system and create them
@@ -1837,8 +1839,8 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
-                            if(trim(strtolower($SingleRow['I'])) == ''){
-                                $SingleRow['I']='N/A';
+                            if(trim(strtolower($SingleRow['I']))==null){
+                                $SingleRow['I']='Empty';
                             }
                             $location_id=null;
                             if (isset($SingleRow['I'])) {
