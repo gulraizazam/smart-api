@@ -1572,7 +1572,6 @@ class LeadsController extends Controller
                 \File::delete($fullPath);
                 // Read File and dump data
                 $SheetData = $SpreadSheet->getActiveSheet(0)->toArray(null, true, true, true);
-                
                 if (count($SheetData)) {
                     if (
                         isset($SheetData[1])
@@ -1901,9 +1900,11 @@ class LeadsController extends Controller
                             } else {
                                 $service = null;
                             }
+                            $childservice = null;
                             if(trim(strtolower($SingleRow['J']))==null){
                                 $SingleRow['J']='Empty';
                             }
+                           
                             if (isset($SingleRow['J'])) {
                                 $childservice = trim(strtolower($SingleRow['J']));
                             } else {
