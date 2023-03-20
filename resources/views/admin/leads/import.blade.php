@@ -42,7 +42,11 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <div class="mt-checkbox-inline">
-
+                                <label class="custom_checkbox mt-5">
+                                    <input  type="checkbox" value="1" id="update_statuss" name="update_status" onchange="HideskipStatus($(this));">
+                                    <strong></strong>
+                                    <span class="ml-5">Only Update Status</span>
+                                </label>
 
                                 <label class="custom_checkbox mt-5">
                                     <input onchange="skipStatus($(this));" type="checkbox" value="1" id="update_records" name="update_records">
@@ -51,9 +55,9 @@
                                 </label>
 
                                 <label class="custom_checkbox mt-5 skip_lead_status" style="opacity: 0.7">
-                                    <input type="checkbox" disabled value="1" id="skip_lead_statuses" name="skip_lead_statuses">
+                                    <input type="checkbox" disabled value="1" id="skip_lead_statuses" name="skip_lead_statuses" onchange="skipUpdateStatus($(this));">
                                     <strong></strong>
-                                    <span class="ml-5">Skip Lead Statuses</span>
+                                    <span class="ml-5 skip_lead_status">Skip Lead Statuses</span>
                                 </label>
 
 
