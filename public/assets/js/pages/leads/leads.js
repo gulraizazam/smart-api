@@ -1208,16 +1208,35 @@ let loadDoctors = function (locationId) {
 }
 
 function skipStatus($this) {
-
     if ($this.is(":checked")) {
-        $("#skip_lead_statuses").prop("disabled", false);
-        $(".skip_lead_status").css("opacity", 1);
+        if($("#update_statuss").val() != 1){
+            $("#skip_lead_statuses").attr("checked", false);
+            $("#skip_lead_statuses").prop("disabled", false);
+            $(".skip_lead_status").css("opacity", 1);
+        }
     } else {
         $("#skip_lead_statuses").prop("disabled", true);
         $(".skip_lead_status").css("opacity", 0.7);
     }
 }
-
+function HideskipStatus($this){
+    if ($this.is(":checked")) {
+        $("#skip_lead_statuses").prop("disabled", true);
+        $(".skip_lead_status").css("opacity", 0.7);
+    } else {
+        $("#skip_lead_statuses").prop("disabled", false);
+        $(".skip_lead_status").css("opacity", 1);
+    }
+}
+function skipUpdateStatus($this){
+    if ($this.is(":checked")) {
+        $("#update_statuss").prop("disabled", true);
+        $(".update_statuss").css("opacity", 0.7);
+    } else {
+        $("#update_statuss").prop("disabled", false);
+        $(".update_statuss").css("opacity", 1);
+    }
+}
 function addValidation(elem) {
 
     if (elem.val() == '') {
