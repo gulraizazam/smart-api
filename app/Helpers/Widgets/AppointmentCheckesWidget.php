@@ -134,7 +134,7 @@ class AppointmentCheckesWidget
                 $continue_rota_doctor[0] = $resourceroata;
             }
         }
-
+dd($continue_rota_doctor);
         foreach ($resource_rota_machine as $resourceroata_machine) {
             if (($start >= $resourceroata_machine->start) && ($start <= $resourceroata_machine->end)) {
                 $continue_rota_machine[0] = $resourceroata_machine;
@@ -162,7 +162,7 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_days.start_timestamp', '<=', $started_time],
                 ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
-            dd($resource_has_rota_days_doctor );
+          
             if (!$resource_has_rota_days_doctor || !$resource_has_rota_days_machine) {
                 $appointment_status = false;
                 $message = "Doctor or Machine rota is not available.";
