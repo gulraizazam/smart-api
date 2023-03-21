@@ -1807,7 +1807,6 @@ class LeadsController extends Controller
                         }
                         // Iterate over the data
                         $count = 0;
-                        // dd($SheetData);
                         foreach ($SheetData as $index => $SingleRow) {
                             // Provided Sheet columns should match
                             if (
@@ -1963,7 +1962,6 @@ class LeadsController extends Controller
                                         $update_lead['lead_status_id'] = $lead_status_id;
                                         Leads::where([ 'patient_id' => $allPatientMapping[$phone]['id'],
                                         'service_id' => $service_id])->update(['lead_status_id'=>$lead_status_id]);
-                                        //return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($LeadData) . ', Duplicates: ' . count($dupPhones));
                                        continue;
                                     } else {
                                         /*
@@ -2015,7 +2013,6 @@ class LeadsController extends Controller
                                         ), $update_lead);
                                         continue;
                                     }
-                                    
                                 }
                             }
                             /*
@@ -2747,64 +2744,10 @@ class LeadsController extends Controller
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
         return $pdf->download('leads.pdf');
     }
-
     public function exportDocs(Request $request) {
        
         set_time_limit(0);
         ini_set('memory_limit', '-1');
         return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
-    }
-    public function leadupdate()
-    {
-       set_time_limit(0);
-
-       ini_set('memory_limit', '-1');
-       try{
-        $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
-        $tt = Leads::join('appointments','leads.id','appointments.lead_id')->where('leads.lead_status_id',4)->where('appointment_type_id',1)
-        ->orderBy('appointments.id','desc')
-        ->distinct('appointments.lead_id')
-        ->get();
-
-        foreach($tt as $lead){
-         
-               Leads::where('lead_status_id',4)->where('patient_id',$lead->patient_id)->update(['location_id'=>$lead->location_id]);
-           
-           
-        }
-       }catch(Exception $e){
-        dd($e->getMessage());
-       }
-        
-        
-    }
-    public function leadstatusupdate()
-    {
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
-    //    $leads=Leads::where('lead_status_id',4)->get();
-
-    //    foreach($leads as $lead){
-    //     $find_booked = Leads::where('patient_id',$lead->patient_id)->where('lead_status_id',4)->latest()->first();
-
-    //     $test = Leads::where('patient_id',$find_booked->patient_id)
-    //         ->where('lead_status_id',1)
-    //         ->where('id','<',$find_booked->id)
-    //         ->update(['lead_status_id'=>4]);
-            
-    //    }
-    $leads=Leads::where('lead_status_id',2)->get();
-
-       foreach($leads as $lead){
-        $find_booked = Leads::where('patient_id',$lead->patient_id)->where('lead_status_id',2)->latest()->first();
-
-        $test = Leads::where('patient_id',$find_booked->patient_id)
-            ->where('lead_status_id',1)
-            ->where('id','<',$find_booked->id)
-            ->update(['lead_status_id'=>2]);
-            
-       }
-       dd($test);
-        
     }
 }
