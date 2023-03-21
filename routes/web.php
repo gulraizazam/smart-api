@@ -534,7 +534,7 @@ use Illuminate\Support\Facades\DB;
 
         Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
         Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports');
-
+        Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted');
         Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
 
         Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
