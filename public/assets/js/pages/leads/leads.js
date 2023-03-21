@@ -1209,7 +1209,6 @@ let loadDoctors = function (locationId) {
 
 function skipStatus($this) {
     if ($this.is(":checked")) {
-       
         if($("#update_statuss").val() != 0){
             $("#skip_lead_statuses").attr("checked", false);
             $("#skip_lead_statuses").prop("disabled", false);
@@ -1223,9 +1222,13 @@ function skipStatus($this) {
 function HideskipStatus($this){
     if ($this.is(":checked")) {
         $("#skip_lead_statuses").prop("disabled", true);
+        $("#update_records").prop("disabled", true);
         $(".skip_lead_status").css("opacity", 0.7);
+        $(".update_records").css("opacity", 0.7);
     } else {
+        $("#update_records").prop("disabled", false);
         $("#skip_lead_statuses").prop("disabled", false);
+        $(".update_records").css("opacity", 1);
         $(".skip_lead_status").css("opacity", 1);
     }
 }
