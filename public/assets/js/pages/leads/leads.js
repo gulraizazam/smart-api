@@ -1223,6 +1223,7 @@ function HideskipStatus($this){
     if ($this.is(":checked")) {
         $("#skip_lead_statuses").prop("disabled", true);
         $("#update_records").prop("disabled", true);
+        $("#update_records").attr("checked", false);
         $(".skip_lead_status").css("opacity", 0.7);
         $(".update_records").css("opacity", 0.7);
     } else {
