@@ -54,6 +54,9 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         if($this->request->phone != null || $this->request->phone != ''){
             $resultQuery->where('users.phone', $this->request->phone);
         }
+        if($this->request->gender_id != null || $this->request->gender_id != ''){
+            $resultQuery->where('users.gender', $this->request->gender_id);
+        }
         if($this->request->name != null || $this->request->name != ''){
             $resultQuery->where('users.name','like', $this->request->name.'%');
         }
