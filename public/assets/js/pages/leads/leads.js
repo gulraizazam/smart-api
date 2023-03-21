@@ -801,6 +801,7 @@ function applyFilters(datatable) {
             location_id: $("#search_location_id").val(),
             region_id: $("#search_region_id").val(),
             service_id: $("#search_service_id").val(),
+            gender_id: $("#search_gender_id").val(),
             created_by: $("#search_created_by").val(),
             date_from: $("#search_created_from").val(),
             date_to: $("#search_created_to").val(),
@@ -829,6 +830,7 @@ function resetAllFilters(datatable) {
             date_from: '',
             date_to: '',
             lead_status_id: '',
+            gender_id:'',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -841,12 +843,14 @@ function setFilters(filter_values, active_filters) {
 
         let cities = filter_values.cities;
         let locations = filter_values.locations;
+        let genders = filter_values.genders;
         let regions = filter_values.regions;
         let lead_statuses = filter_values.lead_statuses;
         let services = filter_values.Services;
         let users = filter_values.users;
         let city_options = '<option value="">All</option>';
         let location_options = '<option value="">All</option>';
+        let gender_options = '<option value="">All</option>';
         let region_options = '<option value="">All</option>';
         let status_options = '<option value="">All</option>';
         let service_options = '<option value="">All</option>';
@@ -859,6 +863,11 @@ function setFilters(filter_values, active_filters) {
         if (locations) {
             Object.entries(locations).forEach(function(location) {
                 location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            });
+        }
+        if (genders) {
+            Object.entries(genders).forEach(function(gender) {
+                gender_options += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
             });
         }
         if (regions) {
@@ -1200,16 +1209,40 @@ let loadDoctors = function (locationId) {
 }
 
 function skipStatus($this) {
-
     if ($this.is(":checked")) {
-        $("#skip_lead_statuses").prop("disabled", false);
-        $(".skip_lead_status").css("opacity", 1);
+        if($("#update_statuss").val() != 0){
+            $("#skip_lead_statuses").attr("checked", false);
+            $("#skip_lead_statuses").prop("disabled", false);
+            $(".skip_lead_status").css("opacity", 1);
+        }
     } else {
         $("#skip_lead_statuses").prop("disabled", true);
         $(".skip_lead_status").css("opacity", 0.7);
     }
 }
-
+function HideskipStatus($this){
+    if ($this.is(":checked")) {
+        $("#skip_lead_statuses").prop("disabled", true);
+        $("#update_records").prop("disabled", true);
+        $("#update_records").attr("checked", false);
+        $(".skip_lead_status").css("opacity", 0.7);
+        $(".update_records").css("opacity", 0.7);
+    } else {
+        $("#update_records").prop("disabled", false);
+        $("#skip_lead_statuses").prop("disabled", false);
+        $(".update_records").css("opacity", 1);
+        $(".skip_lead_status").css("opacity", 1);
+    }
+}
+function skipUpdateStatus($this){
+    if ($this.is(":checked")) {
+        $("#update_statuss").prop("disabled", true);
+        $(".update_statuss").css("opacity", 0.7);
+    } else {
+        $("#update_statuss").prop("disabled", false);
+        $(".update_statuss").css("opacity", 1);
+    }
+}
 function addValidation(elem) {
 
     if (elem.val() == '') {
