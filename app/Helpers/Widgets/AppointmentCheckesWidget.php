@@ -140,7 +140,6 @@ class AppointmentCheckesWidget
                 $continue_rota_machine[0] = $resourceroata_machine;
             }
         }
-        dd(count($continue_rota_machine) > 0);
         $started_time = \Carbon\Carbon::parse($request->start)->format("Y-m-d H:i:s");
 
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format("H:i");
