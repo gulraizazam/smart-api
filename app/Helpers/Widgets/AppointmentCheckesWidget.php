@@ -161,7 +161,7 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_days.start_timestamp', '<=', $started_time],
                 ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
-            dd($continue_rota_machine[0]->id);
+
             if (!$resource_has_rota_days_doctor || !$resource_has_rota_days_machine) {
                 $appointment_status = false;
                 $message = "Doctor or Machine rota is not available.";
