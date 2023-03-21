@@ -207,12 +207,15 @@ class LocationsController extends Controller
         }
 
         /* Create Nodes with Parents */
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id, true, true);
-        $parentGroups->toList($parentGroups, -1);
+        // $parentGroups = new NodesTree();
+        // $parentGroups->current_id = -1;
+        // $parentGroups->build(0, Auth::User()->account_id, true, true);
+        // $parentGroups->toList($parentGroups, -1);
 
-        $Services = $parentGroups->nodeList;
+        // $Services = $parentGroups->nodeList;
+
+        $iTotalRecords = Services::getAllRecordsDictionary(Auth::User()->account_id);
+        $Services = GeneralFunctions::ServicesTree(null, count($iTotalRecords));
 
         $cities = Cities::where([
             ['account_id', '=', Auth::User()->account_id],
