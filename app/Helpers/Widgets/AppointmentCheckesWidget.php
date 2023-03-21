@@ -153,7 +153,7 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_days.start_timestamp', '<=', $started_time],
                 ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
-
+dd($resource_has_rota_days_doctor);
             $resource_has_rota_days_machine = ResourceHasRotaDays::where([
                 ['resource_has_rota_id', '=', $continue_rota_machine[0]->id],
                 ['date', '=', $start],
