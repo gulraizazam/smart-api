@@ -188,6 +188,10 @@
                         $("#treatment_city_filter").val(result.city_id).change();
                         setDashboardFilters();
                     }, 1300);
+                } else {
+                    setTimeout( function () {
+                        setDashboardFilters();
+                    }, 1300);
                 }
             });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
