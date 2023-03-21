@@ -134,13 +134,13 @@ class AppointmentCheckesWidget
                 $continue_rota_doctor[0] = $resourceroata;
             }
         }
-dd($continue_rota_doctor);
+
         foreach ($resource_rota_machine as $resourceroata_machine) {
             if (($start >= $resourceroata_machine->start) && ($start <= $resourceroata_machine->end)) {
                 $continue_rota_machine[0] = $resourceroata_machine;
             }
         }
-
+        dd($continue_rota_machine > 0);
         $started_time = \Carbon\Carbon::parse($request->start)->format("Y-m-d H:i:s");
 
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format("H:i");
