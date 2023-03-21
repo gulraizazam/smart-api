@@ -2762,5 +2762,9 @@ class FinanceReportController extends Controller
             'discounts' => view('admin.reports.accountsalesreport.discounts', compact('discounts'))->render(),
         ));
     }
+    public function ArrivedNotConverted()
+    {
+        dd("here");
+    }
 
 }
