@@ -54,7 +54,7 @@ var table_columns = [{
         if(data.location != ""){
             return data.location;
         }else{
-            return 'Empty';
+            return '<span class="text text-danger">Empty</span>';
         }
     }
 },{
@@ -66,7 +66,7 @@ var table_columns = [{
         if(data.service_id != ""){
             return data.service_id;
         }else{
-            return 'Empty';
+            return '<span class="text text-danger">Empty</span>';
         }  
     }
 },{
@@ -155,7 +155,8 @@ var table_columns = [{
         if(data.child_service != ""){
             return data.child_service;
         }else{
-            return 'Empty';
+            return '<span class="text text-danger">Empty</span>';
+
         } 
     }
 }];

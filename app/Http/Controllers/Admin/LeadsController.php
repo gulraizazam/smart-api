@@ -2077,6 +2077,7 @@ class LeadsController extends Controller
                                 }
                             }
                         }
+                        
                         // If Get some recors insert them now
                         if (count($LeadData)) {
                             Leads::insert($LeadData);
@@ -2756,6 +2757,7 @@ class LeadsController extends Controller
     public function leadupdate()
     {
        set_time_limit(0);
+
        ini_set('memory_limit', '-1');
        try{
         $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
