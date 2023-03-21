@@ -48,7 +48,7 @@
                                     <span class="ml-5">Only Update Status</span>
                                 </label>
 
-                                <label class="custom_checkbox mt-5">
+                                <label class="custom_checkbox mt-5 update_records">
                                     <input onchange="skipStatus($(this));" type="checkbox" value="1" id="update_records" name="update_records">
                                     <strong></strong>
                                     <span class="ml-5">Update existing records</span>
@@ -57,7 +57,7 @@
                                 <label class="custom_checkbox mt-5 skip_lead_status" style="opacity: 0.7">
                                     <input type="checkbox" disabled value="1" id="skip_lead_statuses" name="skip_lead_statuses" onchange="skipUpdateStatus($(this));">
                                     <strong></strong>
-                                    <span class="ml-5 skip_lead_status">Skip Lead Statuses</span>
+                                    <span class="ml-5">Skip Lead Statuses</span>
                                 </label>
 
 
