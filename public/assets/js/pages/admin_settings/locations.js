@@ -289,7 +289,7 @@ function makeServiceOptions(response) {
 
     let services = response.data.services;
     let service_options = '<option value="">Select</option>';
-
+console.log(services);
     let tmp_id = '';
     let id = 0;
     let val = 'Select';
