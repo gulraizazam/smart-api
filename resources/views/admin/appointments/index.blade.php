@@ -270,7 +270,11 @@
                         $("#consultancy_city_filter").val(result.city_id).change();
                         setDashboardFilters();
                     }, 1300);
-                }   
+                } else {
+                    setTimeout( function () {
+                        setDashboardFilters();
+                    }, 1300);
+                }
             });
             </script>
             <script>
