@@ -232,6 +232,26 @@ class LeadsController extends Controller
                     }
                 }
             }
+            if (hasFilter($filters, 'gender_id')) {
+                $where[] = array(
+                    'users.gender',
+                    '=',
+                    $filters['gender_id']
+                );
+                Filters::put(Auth::User()->id, $filename, 'gender_id', $filters['gender_id']);
+            } else {
+                if ($apply_filter) {
+                    Filters::forget(Auth::User()->id, $filename, 'gender_id');
+                } else {
+                    if (Filters::get(Auth::User()->id, $filename, 'gender_id')) {
+                        $where[] = array(
+                            'users.gender',
+                            '=',
+                            Filters::get(Auth::User()->id, $filename, 'gender_id')
+                        );
+                    }
+                }
+            }
             if (hasFilter($filters, 'region_id')) {
                 $where[] = array(
                     'region_id',
@@ -1049,22 +1069,20 @@ class LeadsController extends Controller
                     'patient_id' => $data['patient_id'],
                     'service_id' => $data['service_id'],
                 ))->first();
-
                 if ($logLevelLead) {
                     $data['updated_by'] = Auth::User()->id;
+                    if($logLevelLead->service_id == $data['service_id']){
+                        $data['service_id'] = $lead->service_id;
+                    }
                     $lead = Leads::updateRecord($logLevelLead->id, $data, $patient);
-
                 } else {
                     $data['created_by'] = Auth::User()->id;
                     $data['updated_by'] = Auth::User()->id;
                     $lead = Leads::createRecord($data, $patient, $status = "Lead");
                 }
             }
-
             Appointments::where('patient_id', '=', $lead->patient_id)->update(['name' => $data['name']]);
-
             $message = 'Record has been updated successfully.';
-
             if (!$lead->msg_count) {
                 // Send SMS via API
                 $response = $this->sendSMS($lead->id, $patient->phone);
@@ -1584,7 +1602,6 @@ class LeadsController extends Controller
                             trim(strtolower($SheetData[1]['I'])) == 'centre' 
                         )
                     ) {
-                        // Prepare Source Status, Source Source and City data for comparision
                         $Cities = Cities::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
                         $RegionCities = Cities::getAllRecordsDictionary(Auth::User()->account_id);
                         $leadSources = LeadSources::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
@@ -1740,7 +1757,6 @@ class LeadsController extends Controller
                         /*
                          * Step A: End
                          */
-
                         // Var to hold all Leads Data
                         $LeadData = array();
                         /*
@@ -1821,7 +1837,6 @@ class LeadsController extends Controller
                             }
                             // Process Phone Number
                             $phone = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
-                            
                             // Process City
                             $city_id = null;
                             $region_id = null;
@@ -1931,33 +1946,34 @@ class LeadsController extends Controller
                             /*
                              * Check cases mentioned above
                              */
-                           
                             if (array_key_exists($phone, $allLeadsMapping)) {
                                 if (Leads::where(array(
                                     'patient_id' => $allPatientMapping[$phone]['id'],
                                     'service_id' => $service_id
                                 ))->count()) {
-                                    if ($request->get("update_records") != '1') {
-                                        $test = Leads::where('patient_id',$allPatientMapping[$phone]['id'])->where('service_id',$service_id)->get();
+                                    if ($request->get("update_records") != '1' && $request->get("update_status") != '1') {
                                         /*
                                          * update_records' is not checked
                                          * Skip this entire record
                                          */
                                         continue;
+                                    }elseif($request->update_status == '1' && $request->get("update_records") != '1'){
+                                        $update_lead = array();
+                                        $update_lead['lead_status_id'] = $lead_status_id;
+                                        Leads::where([ 'patient_id' => $allPatientMapping[$phone]['id'],
+                                        'service_id' => $service_id])->update(['lead_status_id'=>$lead_status_id]);
+                                       continue;
                                     } else {
-                                       
                                         /*
                                          * update_records' is checked
                                          * update records nows
                                          */
-
                                         $gender = 0;
                                         if (trim(strtolower($SingleRow['D'])) == 'male') {
                                             $gender = 1; // 1 for Male, Check constants.php
                                         } else if (trim(strtolower($SingleRow['D'])) == 'female') {
                                             $gender = 2; // 2 for Female, Check constants.php
                                         }
-
                                         Patients::updateOrCreate(array(
                                             'id' => $allPatientMapping[$phone]['id']
                                         ), array(
@@ -1991,18 +2007,14 @@ class LeadsController extends Controller
                                         if ($request->get('skip_lead_statuses') != '1') {
                                             $update_lead['lead_status_id'] = $lead_status_id;
                                         }
-
                                         Leads::updateOrCreate(array(
                                             'patient_id' => $allPatientMapping[$phone]['id'],
                                             'service_id' => $service_id
                                         ), $update_lead);
-                                        
-                                       
                                         continue;
                                     }
                                 }
                             }
-                            
                             /*
                              * If lead already exists in Piplined lead
                              * then skip this lead to avoid duplicate
@@ -2013,13 +2025,12 @@ class LeadsController extends Controller
                                 // Duplicate Lead is found so skip it.
                                 continue;
                             }
-
                             $LeadData[] = array(
                                 'patient_id' => $allPatientMapping[$phone]['id'],
                                 'city_id' => $city_id,
                                 'region_id' => $region_id,
                                 'lead_source_id' => $lead_source_id,
-                                'lead_status_id' => $lead_status_id,
+                                'lead_status_id' => 1,
                                 'service_id' => $service_id,
                                 'child_service_id'=>$child_service_id ?? '',
                                 'created_by' => Auth::User()->id,
@@ -2030,14 +2041,10 @@ class LeadsController extends Controller
                                 'account_id' => Auth::User()->account_id,
                                 'location_id'=>$location_id ?? ''
                             );
-                            
                             $piplined_leads[] = $allPatientMapping[$phone]['id'] . "##" . $service_id;
-
                             $user_info_L = User::where('id', $allPatientMapping[$phone]['id'])->first();
-
                             $job_status_gender = 0;
                             $job_status_email = 0;
-
                             if ($user_info_L) {
                                 if ($user_info_L->gender) {
                                     $job_status_gender = 0;
@@ -2072,7 +2079,6 @@ class LeadsController extends Controller
                         if (count($LeadData)) {
                             Leads::insert($LeadData);
                         }
-                        
                         // Invalid data is provided
                         return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($LeadData) . ', Duplicates: ' . count($dupPhones));
                     } else {
@@ -2081,14 +2087,12 @@ class LeadsController extends Controller
                 } else {
                     return ApiHelper::apiResponse($this->success, 'No input file specified..');
                 }
-
                 return ApiHelper::apiResponse($this->success, 'No input file specified..', false);
             }
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
-
     /**
      * Display a listing of Junk Lead.
      *
@@ -2740,31 +2744,10 @@ class LeadsController extends Controller
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
         return $pdf->download('leads.pdf');
     }
-
     public function exportDocs(Request $request) {
        
         set_time_limit(0);
         ini_set('memory_limit', '-1');
         return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
-    }
-    public function leadupdate()
-    {
-       set_time_limit(0);
-
-       ini_set('memory_limit', '-1');
-       
-       
-        DB::enableQueryLog();
-        $leads = Leads::select('patient_id','id')->where('lead_status_id',4)->get();
-        foreach($leads as $lead){
-         $apts = Appointments::select('location_id','lead_id')->where('appointment_type_id',1)->where('lead_id',$lead->id)
-            ->where('patient_id', $lead->patient_id)
-            ->latest()->first();
-          
-            if($apts){
-               Leads::where('lead_status_id',4)->where('patient_id',$apts->patient_id)->update(['location_id'=>$apts->location_id]);
-           }
-           
-        }
     }
 }
