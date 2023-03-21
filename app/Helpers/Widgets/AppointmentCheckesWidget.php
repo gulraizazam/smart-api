@@ -126,7 +126,7 @@ class AppointmentCheckesWidget
             ['resource_id', '=', $resource_id_doctor->id],
             ['location_id','=',$request->location_id]
         ])->get();
-
+dd($resource_rota_doctor);
         $resource_rota_machine = ResourceHasRota::where('resource_id', '=', $request->machine_id)->get();
 
         foreach ($resource_rota_doctor as $resourceroata) {

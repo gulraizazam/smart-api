@@ -954,7 +954,20 @@
                                     </ul>
                                 </div>
                             @endcan
+                            <div class="menu-submenu">
+                                    <i class="menu-arrow"></i>
+                                    <ul class="menu-subnav">
+                                        <li class="menu-item {{activeMenu('admin.reports.arrived_not_converted')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.reports.arrived_not_converted')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Arrived but not converted </span>
+                                            </a>
+                                        </li>
 
+                                    </ul>
+                                </div>
                         </li>
                     @endif
 
