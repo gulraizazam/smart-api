@@ -239,8 +239,8 @@ function changeDate() {
             var collection = response.data.todaycollection;
             var sales = response.data.revenue.toFixed();
             let locationId = "<?php implode(',', " + response.data.location_id + "); ?>";
-            let urlconsultant = route('admin.consultancy.index') + "?type=1&from=" + response.data.start_date + "&to=" + response.data.end_date + "&center_id=";
-            let urltreatment = route('admin.treatment.index') + "?type=2&from=" + response.data.start_date + "&to=" + response.data.end_date + "&center_id=";
+            let urlconsultant = route('admin.consultancy.index') + "?type=1&from=" + response.data.start_date + "&to=" + response.data.end_date;
+            let urltreatment = route('admin.treatment.index') + "?type=2&from=" + response.data.start_date + "&to=" + response.data.end_date;
             $("#allrevenue").text('PKR: ' + sales);
             $("#allconsult").text(response.data.done_consultancies+'/'+response.data.all_consultancies);
             $("#allconsultantdate").attr("href", urlconsultant);
