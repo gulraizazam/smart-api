@@ -2033,7 +2033,7 @@ class LeadsController extends Controller
                                 'city_id' => $city_id,
                                 'region_id' => $region_id,
                                 'lead_source_id' => $lead_source_id,
-                                'lead_status_id' => $lead_status_id,
+                                'lead_status_id' => 1,
                                 'service_id' => $service_id,
                                 'child_service_id'=>$child_service_id ?? '',
                                 'created_by' => Auth::User()->id,
