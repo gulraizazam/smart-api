@@ -126,7 +126,7 @@ class AppointmentCheckesWidget
             ['resource_id', '=', $resource_id_doctor->id],
             ['location_id','=',$request->location_id]
         ])->get();
-dd($resource_rota_doctor);
+
         $resource_rota_machine = ResourceHasRota::where('resource_id', '=', $request->machine_id)->get();
 
         foreach ($resource_rota_doctor as $resourceroata) {
@@ -142,7 +142,7 @@ dd($resource_rota_doctor);
         }
 
         $started_time = \Carbon\Carbon::parse($request->start)->format("Y-m-d H:i:s");
-
+dd($started_time );
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format("H:i");
 
         if (count($continue_rota_doctor) > 0 && count($continue_rota_machine) > 0) {
