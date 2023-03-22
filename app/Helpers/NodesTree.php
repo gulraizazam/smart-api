@@ -101,13 +101,10 @@ class NodesTree
         {
             /* Create new AccountList object */
             $this->children_groups[$counter] = new NodesTree();
-
             /* Initial setup */
             $this->children_groups[$counter]->current_id = $this->current_id;
             $this->children_groups[$counter]->current_id = $this->non_negative_groups;
-
             $this->children_groups[$counter]->build($row['id'], $account_id, true, true);
-
             $counter++;
         }
     }
