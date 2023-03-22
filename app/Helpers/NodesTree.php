@@ -72,7 +72,6 @@ class NodesTree
             $this->color = $group['color'];
             $this->end_node = $group['end_node'];
         }
-
         $this->add_sub_nodes($account_id, $only_active);
         $this->add_sub_groups($account_id, $only_active);
     }
@@ -96,7 +95,7 @@ class NodesTree
                 $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'account_id' => $account_id])->OrderBy('name','asc')->get()->toArray();
             }
         }
-
+        
         $counter = 0;
         foreach ($child_group_q as $row)
         {
@@ -107,7 +106,7 @@ class NodesTree
             $this->children_groups[$counter]->current_id = $this->current_id;
             $this->children_groups[$counter]->current_id = $this->non_negative_groups;
 
-            $this->children_groups[$counter]->build($row['id'], $account_id);
+            $this->children_groups[$counter]->build($row['id'], $account_id, true, true);
 
             $counter++;
         }
@@ -118,15 +117,10 @@ class NodesTree
      */
     function add_sub_nodes($account_id, $only_active = false)
     {
-
         if($only_active) {
-            $child_node_q = Services::where(
-                ['parent_id' => $this->id, 'end_node' => 1, 'active' => 1, 'account_id' => $account_id]
-            )->OrderBy('name','asc')->get()->toArray();
+            $child_node_q = Services::where(['parent_id' => $this->id, 'end_node' => 1, 'active' => 1, 'account_id' => $account_id])->OrderBy('name','asc')->get()->toArray();
         } else {
-            $child_node_q = Services::where(
-                ['parent_id' => $this->id, 'end_node' => 1, 'account_id' => $account_id]
-            )->OrderBy('name','asc')->get()->toArray();
+            $child_node_q = Services::where(['parent_id' => $this->id, 'end_node' => 1, 'account_id' => $account_id])->OrderBy('name','asc')->get()->toArray();
         }
 
         $counter = 0;

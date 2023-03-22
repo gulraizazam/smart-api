@@ -102,7 +102,6 @@ class ServiceWidget
             }
             $uniq_array = array_merge($service, $array);
 
-
             return $uniq_array;
         }
 
@@ -149,7 +148,7 @@ class ServiceWidget
                         $parentGroups->current_id = 0;
                         $parentGroups->non_negative_groups = true;
                         $parentGroups->build(0, Auth::User()->account_id, true, true);
-                        $parentGroups->toList($parentGroups, 0);
+                        $parentGroups->toList($parentGroups, 0, true);
                         $parentGroups = $parentGroups->nodeList;
                         foreach ($parentGroups as $key => $parentGroup) {
                             if ($key == 0) {
@@ -173,7 +172,7 @@ class ServiceWidget
                         $parentGroups->current_id = 1;
                         $parentGroups->non_negative_groups = true;
                         $parentGroups->build($service_data->id, Auth::User()->account_id, false, true);
-                        $parentGroups->toList($parentGroups, 0);
+                        $parentGroups->toList($parentGroups, 0, true);
                         $Services[] = $parentGroups->nodeList;
                     }
                 }
