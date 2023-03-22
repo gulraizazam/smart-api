@@ -152,11 +152,8 @@ class GeneralFunctions
 
     public static function ServicesTree($request = null, $total = 0)
     {
-        
         $where = [];
-        
         if ($total >= 0) {
-           
             $filename = 'services';
             if(isset($request)){
                 $filters = getFilters($request->all());
