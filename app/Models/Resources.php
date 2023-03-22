@@ -278,20 +278,14 @@ class Resources extends BaseModal
      * @param $doctor_id
      * @return mixed
      */
-    public static function getDoctorWithRotas($location_id, $doctor_id)
+    public static function getDoctorWithRotas($location_id, $doctor_id, $start_date, $end_date)
     {
-        
         $where = [];
         $where[] = array("external_id", "=", $doctor_id);
         $where[] = array("resource_type_id", "=", self::getResourceType("doctor"));
         $where[] = array("account_id", "=", Auth::User()->account_id);
-
-//        return self::where($where)->with(["doctor_rotas" => function($query) use($location_id,$start_date, $end_date){
-//            $query->whereBetween("resource_has_rota_days.date",[$start_date, $end_date]);
-//            $query->where("resource_has_rota.location_id",$location_id);
-//        }])->get();
-
-        return self::where($where)->with(["doctor_rotas" => function ($query) use ($location_id) {
+        return self::where($where)->with(["doctor_rotas" => function ($query) use ($location_id,$start_date, $end_date) {
+            $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
             $query->where("resource_has_rota.location_id", $location_id);
             $query->where("resource_has_rota.is_consultancy", '1');
             $query->where("resource_has_rota.active", '1');
