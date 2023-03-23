@@ -2768,7 +2768,8 @@ class FinanceReportController extends Controller
         $patients = DB::table('users')
         ->join('appointments', 'appointments.patient_id', '=', 'users.id')
         ->leftJoin('package_advances', 'package_advances.patient_id', '=', 'users.id')
-        ->select('users.*','appointments.service_id','appointments.location_id','appointments.scheduled_date','appointments.doctor_id')
+        ->select('users.*','appointments.service_id','appointments.location_id','appointments.scheduled_date','appointments.doctor_id',
+        'appointments.appointment_status_id')
         ->where('appointments.appointment_status_id',2)
         ->whereNotNull('appointments.patient_id')
         ->whereNull('package_advances.patient_id')
