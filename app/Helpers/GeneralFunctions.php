@@ -318,9 +318,8 @@ class GeneralFunctions
                 $q->where('active', $active);
                 $q->orderBy('name');
             }])
-            ->where('parent_id', 0)
+            ->where(['parent_id' => 0, 'active' => $active])
             ->where('slug', '!=', 'all')
-            ->where('active', $active)
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
             $services = $query->get()->toArray();
             //$mergedServices = [];
