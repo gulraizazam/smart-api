@@ -953,7 +953,7 @@
 
                                     </ul>
                                 </div>
-                            @endcan
+                            
                             <div class="menu-submenu">
                                     <i class="menu-arrow"></i>
                                     <ul class="menu-subnav">
@@ -968,6 +968,7 @@
 
                                     </ul>
                                 </div>
+                                @endcan
                         </li>
                     @endif
 
