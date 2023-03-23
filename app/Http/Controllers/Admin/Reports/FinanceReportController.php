@@ -2774,6 +2774,7 @@ class FinanceReportController extends Controller
         ->where('appointments.base_appointment_status_id',"!=",3)
         ->where('appointments.base_appointment_status_id',"!=",4)
         ->where('appointments.base_appointment_status_id',"!=",1)
+        ->where('appointments.base_appointment_status_id',"!=",14)
         ->whereNull('package_advances.patient_id')
         ->groupBy('users.id')
         ->get();
