@@ -675,7 +675,6 @@ class DiscountsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $discount_info = Discounts::find($request->discount_id);
-
         if($discount_info->discount_type == Config::get('constants.Service')){
             $serive = ServiceWidget::generateServiceArrayArray($request, Auth::User()->account_id);
         } else {
