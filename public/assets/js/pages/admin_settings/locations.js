@@ -286,21 +286,21 @@ function setCreateData(response) {
 }
 function makeServiceOptions(response) {
 
-    let services = response.data.services;console.log(services);
+    let services = response.data.services;
     let service_value = '';
+    let service_child_value = '';
     let service_options = '';
 
     Object.entries(services).forEach(function (value, index) {
-        if(value[1].parent_id == 0){
-            service_value=value[1].name;
-        }
-        else{
-            service_value='\t&nbsp; \t&nbsp; \t&nbsp;'+value[1].name;
-        }
+        service_value=value[1].name;
         if (service_value == 'All Services') {
             service_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
         } else {
             service_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
+            Object.entries(value[1].children).forEach(function (child, index) {
+                service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child[1].name;
+                service_options += '<option value="' + child[1].id + '">' + service_child_value + '</option>';
+            });
         }
     });
     return service_options;
