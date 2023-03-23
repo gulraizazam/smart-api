@@ -2764,19 +2764,8 @@ class FinanceReportController extends Controller
     }
     public function ArrivedNotConverted()
      {
-        $allserviceslug = Services::where('slug', '=', 'all')->first();
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
-        $parentGroups->toList($parentGroups, -1);
-        $services = $parentGroups->nodeList;
-        foreach ($services as $key => $ser) {
-           if ($key) {
-               if ($ser['name'] == $allserviceslug->name) {
-                   unset($services[$key]);
-               }
-           }
-        }
+        
+        $services = Services::where('parent_id',0)->where('slug','!=','all')->get();
         $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
         $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
