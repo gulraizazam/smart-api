@@ -58,7 +58,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Arrived but not converted</h3>
+                            <h3 class="card-label">Non-Converted Patients Report</h3>
                         </div>
                     </div>
                     <div class="card-body">
