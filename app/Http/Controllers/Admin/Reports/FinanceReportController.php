@@ -28,6 +28,7 @@ use App\Models\Invoices;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Explode_Multi_select;
+use Illuminate\Support\Facades\DB;
 
 class FinanceReportController extends Controller
 {
@@ -2764,7 +2765,17 @@ class FinanceReportController extends Controller
     }
     public function ArrivedNotConverted()
     {
-        dd("here");
+        $patients = DB::table('users')
+        ->join('appointments', 'appointments.patient_id', '=', 'users.id')
+        ->leftJoin('package_advances', 'package_advances.patient_id', '=', 'users.id')
+        ->select('users.*','appointments.service_id','appointments.location_id','appointments.scheduled_date','appointments.doctor_id')
+        ->where('appointments.appointment_type_id',1)
+        ->whereNotNull('appointments.patient_id')
+        ->whereNull('package_advances.patient_id')
+        ->groupBy('users.id')
+        ->get();
+        return view('admin.reports.arrived_not_converted',compact('patients'));
+      
     }
 
 }
