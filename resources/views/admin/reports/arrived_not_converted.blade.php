@@ -47,7 +47,7 @@
 <div class="sn-table-holder">
     <div class="sn-report-head">
         <div class="sn-title">
-            <h1>{{ 'Arrived but not converted Report' }}</h1>
+            <h1>{{ 'Non-Converted Patients Report' }}</h1>
         </div>
        
     </div>
