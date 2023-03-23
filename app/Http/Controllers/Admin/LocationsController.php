@@ -359,7 +359,7 @@ class LocationsController extends Controller
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
 
-        $allserviceslug = Services::where('slug', '=', 'all')->first()->toArray();
+        $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
         $Services = GeneralFunctions::ServicesTree();
         array_unshift($Services, $allserviceslug);
 
