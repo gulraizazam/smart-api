@@ -2765,20 +2765,23 @@ class FinanceReportController extends Controller
     }
     public function ArrivedNotConverted()
     {
-        $patients = DB::table('users')
-        ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*','appointments.doctor_id','appointments.location_id','appointments.service_id','appointments.scheduled_date')
-        ->join('appointments', 'appointments.patient_id', '=', 'users.id')
-        ->leftJoin('package_advances', function($join) {
-            $join->on('package_advances.patient_id', '=', 'users.id');
-            $join->where('package_advances.cash_flow', '=', 'in');
-        })
-        ->where('appointments.appointment_status_id', '=', 2)
-        ->where('appointments.appointment_type_id', '=', 1)
-        ->groupBy('users.id')
-        ->havingRaw('cash_amount_test < 1')
-        ->get();
-        return view('admin.reports.arrived_not_converted',compact('patients'));
-      
+        $allserviceslug = Services::where('slug', '=', 'all')->first();
+        $parentGroups = new NodesTree();
+        $parentGroups->current_id = -1;
+        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->toList($parentGroups, -1);
+        $services = $parentGroups->nodeList;
+        foreach ($services as $key => $ser) {
+            if ($key) {
+                if ($ser['name'] == $allserviceslug->name) {
+                    unset($services[$key]);
+                }
+            }
+        }
+        $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
+        $cities->prepend('Select a City', '');
+        $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
+        return view('admin.reports.arrived',compact('locations',  'services',  'cities')); 
     }
 
 }
