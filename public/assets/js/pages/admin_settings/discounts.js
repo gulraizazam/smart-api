@@ -234,17 +234,21 @@ function setServicesData(response) {
 
     let services = response.data.services;
     let locaiton_id = response.data.locaiton_id_1;
-
+    let service_child_value = '';
     let service_options = '<option value="">Select</option>';
 
     Object.values(services).forEach(function(value, index) {
-
-        service_options += '<option value="'+value.id+'">'+value.name+'</option>';
-
+        if (value.name == 'All Services') {
+              service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+        } else {
+            service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+            Object.values(value.children).forEach(function (child, index) {
+                service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+            });
+        }
     });
-
     $("#services").html(service_options);
-
 }
 
 function deleteModel(id) {
