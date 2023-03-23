@@ -6,8 +6,6 @@
     @else
         @include('partials.head')
     @endif
-    
-    
     <style type="text/css">
         @page {
             margin: 10px 20px;
@@ -48,28 +46,20 @@
 <div class="sn-table-holder">
     <div class="sn-report-head">
         <div class="sn-title">
-            <h1>{{ 'Arrived but not converted Report' }}</h1>
+            <h1>{{ 'Non-Converted Patients Report' }}</h1>
         </div>
        
     </div>
 </div>
-
-<!-- <div class="card mb-8 menu_section" style="width: 100%">
-
-    @include('admin.reports.common.tab')
-
-</div> -->
-
 <div class="panel-body sn-table-body">
     <div class="bordered">
         <div class="sn-table-head">
-
             <div class="row">
                 <div class="col-md-2">
                     <img style="width: 180px;" src="{{asset('logo_final.png')}}">
                 </div>
                 <div class="col-md-6">&nbsp;</div>
-                
+            
             </div>
             <div class="pt-4 border-top  all-sections section-states" >
                
