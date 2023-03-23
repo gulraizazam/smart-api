@@ -204,7 +204,8 @@
                                     'excelHtml5',
                                     'csvHtml5',
                                     'pdfHtml5'
-                                ]
+                                ],
+                                "ordering": false
                             });
                         hideSpinner();
                     },
