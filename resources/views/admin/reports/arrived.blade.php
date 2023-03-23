@@ -34,7 +34,7 @@
     @endpush
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Non-Converted Patients Report'])
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Non-Converted Customer Report'])
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
@@ -58,7 +58,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Non-Converted Patients Report</h3>
+                            <h3 class="card-label">Non-Converted Customer Report</h3>
                         </div>
                     </div>
                     <div class="card-body">
@@ -66,9 +66,9 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                        <div class="form-group col-md-5 sn-select @if($errors->has('location_id')) has-error @endif"
+                                        <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                              id="locations">
-                                            {!! Form::label('location_id', 'Centre', ['class' => 'control-label']) !!}
+                                            {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="location_id" name="service_id">
                                                 <option value="">Select Centre</option>
                                                 @foreach($locations as $location)
@@ -77,18 +77,40 @@
                                             </select>
                                             <span id="location_id_handler"></span>
                                         </div>
-                                        <div class="form-group col-md-5 sn-select @if($errors->has('report_type')) has-error @endif">
-                                            {!! Form::label('doctor_id', 'Doctor*', ['class' => 'control-label']) !!}
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('report_type')) has-error @endif">
+                                            {!! Form::label('doctor_id', 'Doctor:', ['class' => 'control-label']) !!}
                                             <select name="report_type" id="doctors_list" style="width: 100%;"
                                                     class="form-control select2">
                                             </select>
                                             <span id="report_type_handler"></span>
                                         </div>
-                                        <div class="form-group col-md-3 sn-select @if($errors->has('service_id')) has-error @endif"
-                                             id="services" style="display:none">
+                                        <div class="col-md-3 form-group  ">
+                                        {!! Form::label('scheduled_date', 'Scheduled Date:', ['class' => 'control-label']) !!}
+                                            <div class="input-daterange input-group to-from-datepicker" >
+                                                <input type="text" id="appoint_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" onchange="SetAdvanceFromdate()">
+                                                <div class="input-group-append" style="width: 0;">
+                                                    <span class="input-group-text">
+                                                        <i class="la la-ellipsis-h"></i>
+                                                    </span>
+                                                </div>
+                                                <input type="text" id="appoint_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" onchange="SetAdvanceTodate()">
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
+                                             id="services" >
                                             {!! Form::label('service_id', 'Services', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="service_id" name="service_id">
                                                 <option value="">Select Service</option>
+                                                @foreach($services as $id => $service)
+                                                    @if ($id == 0) @continue; @endif
+                                                    @if($id < 0)
+                                                        @php($tmp_id = ($id * -1))
+                                                    @else
+                                                        @php($tmp_id = ($id * 1))
+                                                    @endif
+                                                    <option value="@if($id < 0){{ ($id * -1) }}@else{{ $id }}@endif">@if($id < 0)
+                                                            <b>{!! $service['name'] !!}</b>@else{!! $service['name'] !!}@endif</option>
+                                                @endforeach
                                             </select>
                                             <span id="service_id_handler"></span>
                                         </div>
@@ -168,19 +190,23 @@
                     data: {
                         location_id: $('#location_id').val(),
                         doctor_id: $('#doctors_list').val(),
+                        date_from: $('#appoint_search_created_from').val(),
+                        date_to: $('#appoint_search_created_to').val(),
+                        service_id:$('#service_id').val(),
                     },
                     success: function(response){
                         $('#converted_content').html('');
-                            $('#converted_content').html(response);
-                            $("#arrived_patients_table").DataTable({
-                                dom: 'Bfrtip',
-                                buttons: [
-                                    'copyHtml5',
-                                    'excelHtml5',
-                                    'csvHtml5',
-                                    'pdfHtml5'
-                                ]
-                            });
+                        $('#converted_content').html(response);
+                        $("#arrived_patients_table").DataTable({
+                            dom: 'Bfrtip',
+                            buttons: [
+                                'copyHtml5',
+                                'excelHtml5',
+                                'csvHtml5',
+                                'pdfHtml5',  
+                            ],
+                            "ordering": false
+                        });
                         hideSpinner();
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
