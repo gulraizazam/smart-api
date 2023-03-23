@@ -150,11 +150,11 @@ class GeneralFunctions
         return $appointment->appointment_type_id ?? 0;
     }
 
-    public static function ServicesTree($request = null, $total = 0)
+    public static function ServicesTree($request = null, $total = 0, $id = null)
     {
         $where = [];
         $active = (\Illuminate\Support\Facades\Gate::allows("view_inactive_services")) ? 0 : 1;
-        if ($total >= 0) {
+        if ($total >= 0 && $id == null) {
             $filename = 'services';
             if(isset($request)){
                 $filters = getFilters($request->all());
@@ -322,20 +322,29 @@ class GeneralFunctions
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
             $services = $query->get()->toArray();
-            //$mergedServices = [];
-            // foreach ($services as $key => $service) {
-            //     if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
-            //         $children = Services::where('parent_id',$service->id)->orderBy('name')->get();
-            //     }else{
-            //         $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
-            //     }
-            //     $mergedServices[] = $service->toArray();
-            //     $children = $children->toArray();
-            //     foreach ($children as $child) {
-            //         $mergedServices[] = $child;
-            //     }
-            // }
+            /* $mergedServices = [];
+            foreach ($services as $key => $service) {
+                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                    $children = Services::where('parent_id',$service->id)->orderBy('name')->get();
+                }else{
+                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+                }
+                $mergedServices[] = $service->toArray();
+                $children = $children->toArray();
+                foreach ($children as $child) {
+                    $mergedServices[] = $child;
+                }
+            } */
             return $services;   
+        } else {
+            $query = Services::with(['children'=> function($q) use($active){
+                $q->where('active', $active);
+                $q->orderBy('name');
+            }])
+            ->where(['id' => $id, 'parent_id' => 0, 'active' => $active])
+            ->where('slug', '!=', 'all');
+            $services[] = $query->first()->toArray();
+            return $services;  
         }
     }
     private static function appendAllService()
