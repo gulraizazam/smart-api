@@ -2769,8 +2769,8 @@ class FinanceReportController extends Controller
         ->join('appointments', 'appointments.patient_id', '=', 'users.id')
         ->leftJoin('package_advances', 'package_advances.patient_id', '=', 'users.id')
         ->select('users.*','appointments.service_id','appointments.location_id','appointments.scheduled_date','appointments.doctor_id',
-        'appointments.appointment_status_id')
-        ->where('appointments.appointment_status_id',2)
+        'appointments.base_appointment_status_id')
+        ->where('appointments.base_appointment_status_id',2)
         ->whereNotNull('appointments.patient_id')
         ->whereNull('package_advances.patient_id')
         ->groupBy('users.id')
