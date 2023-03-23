@@ -26,6 +26,7 @@ use App\Reports\Finanaces;
 use App\Models\Doctors;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -124,7 +125,55 @@ class OperationsReportController extends Controller
                 break;
         }
     }
-
+    public function reportLoadConverted(Request $request)
+    {
+        
+        if($request->location_id && $request->doctor_id==""){
+            $patients = DB::table('users')
+            ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*','appointments.doctor_id','appointments.location_id','appointments.service_id','appointments.scheduled_date')
+            ->join('appointments', 'appointments.patient_id', '=', 'users.id')
+            ->leftJoin('package_advances', function($join) {
+                $join->on('package_advances.patient_id', '=', 'users.id');
+                $join->where('package_advances.cash_flow', '=', 'in');
+            })
+            ->where('appointments.appointment_status_id', '=', 2)
+            ->where('appointments.location_id',$request->location_id)
+            ->where('appointments.appointment_type_id', '=', 1)
+            ->groupBy('users.id')
+            ->havingRaw('cash_amount_test < 1')
+            ->get();
+        }elseif($request->location_id && $request->doctor_id){
+            $patients = DB::table('users')
+            ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*','appointments.doctor_id','appointments.location_id','appointments.service_id','appointments.scheduled_date')
+            ->join('appointments', 'appointments.patient_id', '=', 'users.id')
+            ->leftJoin('package_advances', function($join) {
+                $join->on('package_advances.patient_id', '=', 'users.id');
+                $join->where('package_advances.cash_flow', '=', 'in');
+            })
+            ->where('appointments.appointment_status_id', '=', 2)
+            ->where('appointments.location_id',$request->location_id)
+            ->where('appointments.doctor_id',$request->doctor_id)
+            ->where('appointments.appointment_type_id', '=', 1)
+            ->groupBy('users.id')
+            ->havingRaw('cash_amount_test < 1')
+            ->get();
+        }else{
+            $patients = DB::table('users')
+            ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*','appointments.doctor_id','appointments.location_id','appointments.service_id','appointments.scheduled_date')
+            ->join('appointments', 'appointments.patient_id', '=', 'users.id')
+            ->leftJoin('package_advances', function($join) {
+                $join->on('package_advances.patient_id', '=', 'users.id');
+                $join->where('package_advances.cash_flow', '=', 'in');
+            })
+            ->where('appointments.appointment_status_id', '=', 2)
+            ->where('appointments.appointment_type_id', '=', 1)
+            ->groupBy('users.id')
+            ->havingRaw('cash_amount_test < 1')
+            ->get();
+        }
+        
+        return view('admin.reports.arrived_not_converted',compact('patients'));
+    }
     /**
      * Center target report
      * @param Request $request
