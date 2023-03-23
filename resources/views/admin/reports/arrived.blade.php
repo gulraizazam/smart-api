@@ -34,7 +34,7 @@
     @endpush
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Arrived but not converted Reports'])
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Non-Converted Patients Report'])
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
@@ -58,7 +58,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Arrived but not converted</h3>
+                            <h3 class="card-label">Non-Converted Patients Report</h3>
                         </div>
                     </div>
                     <div class="card-body">

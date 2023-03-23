@@ -961,7 +961,7 @@
                                                  <i class="menu-bullet menu-bullet-dot">
                                                      <span></span>
                                                  </i>
-                                                 <span class="menu-text">Arrived but not converted </span>
+                                                 <span class="menu-text">Non-Converted Patients Report </span>
                                              </a>
                                          </li>
  
