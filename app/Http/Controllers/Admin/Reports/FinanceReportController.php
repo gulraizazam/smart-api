@@ -2765,9 +2765,8 @@ class FinanceReportController extends Controller
     }
     public function ArrivedNotConverted()
     {
-        DB::enableQueryLog();
         $patients = DB::table('users')
-        ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*')
+        ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*','appointments.doctor_id','appointments.location_id','appointments.service_id','appointments.scheduled_date')
         ->join('appointments', 'appointments.patient_id', '=', 'users.id')
         ->leftJoin('package_advances', function($join) {
             $join->on('package_advances.patient_id', '=', 'users.id');
@@ -2778,7 +2777,6 @@ class FinanceReportController extends Controller
         ->groupBy('users.id')
         ->havingRaw('cash_amount_test < 1')
         ->get();
-        dd($patients);
         return view('admin.reports.arrived_not_converted',compact('patients'));
       
     }
