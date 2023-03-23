@@ -206,7 +206,7 @@ class LocationsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         /*Get Service as we get in resource create module*/
-        $allserviceslug = Services::where('slug', '=', 'all')->first()->toArray();
+        $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
         $Services = GeneralFunctions::ServicesTree();
         array_unshift($Services, $allserviceslug);
 
