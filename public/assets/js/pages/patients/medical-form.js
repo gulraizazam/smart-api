@@ -1,4 +1,3 @@
-
 var table_url = route('admin.medicalhistoryform.datatable', {id: patientCardID});
 
 var table_columns = [
@@ -30,16 +29,11 @@ var table_columns = [
         }
     }];
 
-
 function actions(data) {
-
     if (typeof data.id !== 'undefined') {
-
         let id = data.id;
-
         let edit_url = route('admin.medicalhistoryform.edit', {id: id});
         let preview_url = route('admin.medicalhistoryform.previewform', {id: id});
-
         if (permissions.edit || permissions.manage) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -78,9 +72,7 @@ function actions(data) {
 }
 
 function applyFilters(datatable) {
-
     $('#medical-search').on('click', function() {
-
         let filters =  {
             delete: '',
             name: $("#medical_search_name").val(),
@@ -88,15 +80,11 @@ function applyFilters(datatable) {
             created_to: $("#medical_search_created_to").val(),
             filter: 'filter',
         }
-
         datatable.search(filters, 'search');
-
     });
-
 }
 
 function resetAllFilters(datatable) {
-
     $(".page-medical-form").find('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
@@ -113,12 +101,10 @@ function resetAllFilters(datatable) {
 function setFilters(filter_values, active_filters) {
 
     try {
-
         $("#search_name").val(active_filters.name);
         $("#search_patient_name").val(active_filters.patient_name);
         $("#search_created_from").val(active_filters.created_from);
         $("#search_created_to").val(active_filters.created_to);
-
     } catch (error) {
         showException(error);
     }
