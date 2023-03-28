@@ -802,15 +802,15 @@ class DoctorsController extends Controller
                 ['location_id', '=', $myArray[0]],
                 ['service_id', '=', $myArray[1]],
                 ['user_id', '=', $request->doctor_id],
-            ])->get();
-            if (count($checked_service) == '0') {
+            ])->count();
+            if ($checked_service == '0') {
                 $query = DoctorHasLocations::query()
                 ->where([
                     ['location_id', '=', $myArray[0]],
                     ['user_id', '=', $request->doctor_id],
                 ]);
                 $checked = $query->with('service')->get();
-                if(count($checked_service) == '0' && count($checked) == '0'){
+                if($checked_service == '0' && count($checked) == '0'){
                     $has_services = 'new';
                 } else {
                     foreach($checked->toArray() as $value){
