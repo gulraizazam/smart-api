@@ -73,7 +73,6 @@ var table_columns = [
     }];
 
 function actions(data) {
-
     let id = data.id;
     let url = route('admin.doctors.destroy', {id: id});
     let allocate_url = route('admin.doctors.location_manage', {id: id});
@@ -133,9 +132,7 @@ function actions(data) {
 
 
 function editRow(id) {
-
     $("#modal_edit_user").modal("show");
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -144,23 +141,17 @@ function editRow(id) {
         type: "GET",
         cache: false,
         success: function (response) {
-
             setEditData(response);
-
             reInitSelect2(".select2", "");
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-
             reInitValidation(UserValidation);
         }
     });
-
-
 }
 
 function getDesrvice($this) {
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -206,9 +197,7 @@ function setServicesData(response) {
 }
 
 function allocateRow(url) {
-
     $("#modal_allocate_discounts").modal("show");
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -217,15 +206,11 @@ function allocateRow(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-
             setAllocateData(response);
-
             reInitSelect2(".select2", "");
-
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-
             reInitValidation(EditValidation);
         }
     });
@@ -281,8 +266,6 @@ function deleteIcon(id) {
 }
 
 function deleteModel(id) {
-
-
     swal.fire({
         title: 'Are you sure you want to remove?',
         type: 'danger',
@@ -295,7 +278,6 @@ function deleteModel(id) {
         confirmButtonClass: 'btn btn-danger font-weight-bold'
     }).then(function(result) {
         if (result.value) {
-
             $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -313,7 +295,6 @@ function deleteModel(id) {
                     }
                 }
             });
-
         }
     });
 }
@@ -344,7 +325,6 @@ function changePassword(id) {
 }
 
 function createUsers($route) {
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -408,9 +388,7 @@ function setEditData(response) {
 }
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
-
         let filters =  {
             delete: '',
             name: $("#search_name").val(),
@@ -425,11 +403,9 @@ function applyFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function resetAllFilters(datatable) {
-
     $('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
@@ -445,7 +421,6 @@ function resetAllFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function setFilters(filter_values, active_filters) {
