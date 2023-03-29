@@ -7,9 +7,7 @@
 
  let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 $(document).ready(function () {
-
     $(document).on("change", ".select2", function () {
-
        if ($(this).val() != '') {
             $(this).parents(".fv-row").find(".fv-plugins-message-container").find(".fv-help-block").hide();
             $(this).parent(".fv-row").find(".select2-selection").removeClass("select2-is-invalid");
@@ -21,6 +19,8 @@ $(document).ready(function () {
 
     $(document).on( "click", ".popup-close", function () {
         $(this).parents(".modal").modal("toggle");
+        $("#modal_allocate_doctors_form").find("#services").empty();
+        $("#modal_allocate_discounts_form").find("#services").empty();
     });
     $('.select2').select2();
     $('.to-from-datepicker').datepicker({
