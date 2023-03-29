@@ -830,7 +830,7 @@ class DoctorsController extends Controller
                     $query->delete();
                     $record = DoctorHasLocations::create($data);
                 } elseif($has_services == 'child'){
-                    $query->whereHas('service', fn($q) => $q->where('parent_id', '=', $service->id))->delete();
+                    $query->whereHas('service', fn($q) => $q->where(['parent_id' => $service->id]))->delete();
                     $record = DoctorHasLocations::create($data);
                 } elseif($has_services == 'equal'){
                     $record = DoctorHasLocations::create($data);
