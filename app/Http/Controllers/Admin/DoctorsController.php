@@ -794,20 +794,19 @@ class DoctorsController extends Controller
             $data['user_id'] = $request->doctor_id;
             $data['location_id'] = $myArray[0];
             $data['service_id'] = $myArray[1];
-            $service= Services::where('id', '=', $data['service_id'])->first();
+            $service= Services::where(['id' => $data['service_id']])->first();
             $data['end_node'] = $service->end_node;
             
-            $checked_service = DoctorHasLocations::query()
-            ->where([
-                ['location_id', '=', $myArray[0]],
-                ['service_id', '=', $myArray[1]],
-                ['user_id', '=', $request->doctor_id],
+            $checked_service = DoctorHasLocations::where([
+                'location_id' => $myArray[0],
+                'service_id' => $myArray[1],
+                'user_id' => $request->doctor_id,
             ])->count();
             if ($checked_service == '0') {
-                $query = DoctorHasLocations::query()
-                ->where([
-                    ['location_id', '=', $myArray[0]],
-                    ['user_id', '=', $request->doctor_id],
+                $query = DoctorHasLocations::
+                where([
+                    'location_id' => $myArray[0],
+                    'user_id' => $request->doctor_id,
                 ]);
                 $checked = $query->with('service')->get();
                 if($checked_service == '0' && count($checked) == '0'){
