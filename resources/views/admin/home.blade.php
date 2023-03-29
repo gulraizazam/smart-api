@@ -138,7 +138,7 @@
                                                 </svg>
                                                 <span class="dashboard-counter" id="allleads">{{isset($todaycollection[0]) && $todaycollection[0] !== false ? 'PKR:' . $todaycollection[0] : 'Your are not authorized'}}</span>
                                             </span>
-                                            <a href="{{route('admin.leads.index', ['from' => $start_date, 'to' => $end_date])}}" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Sales</a>
+                                            <a href="javascript:void(0);" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Sales</a>
                                         </div>
                                         <div class="col bg-light-warning px-6 py-8 rounded-xl  mb-7">
                                             <span class="svg-icon svg-icon-3x svg-icon-warning d-block my-2">
