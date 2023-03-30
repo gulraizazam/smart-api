@@ -206,9 +206,7 @@ class LocationsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         /*Get Service as we get in resource create module*/
-        $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-        $Services = GeneralFunctions::ServicesTree();
-        array_unshift($Services, $allserviceslug);
+        $Services = GeneralFunctions::ServicesTreeList();
 
         $cities = Cities::where([
             ['account_id', '=', Auth::User()->account_id],
@@ -358,11 +356,7 @@ class LocationsController extends Controller
             ['is_featured', '=', '1']
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
-
-        $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-        $Services = GeneralFunctions::ServicesTree();
-        array_unshift($Services, $allserviceslug);
-
+        $Services = GeneralFunctions::ServicesTreeList();
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'location' => $location,
             'services' => $Services,
