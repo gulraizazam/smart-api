@@ -84,10 +84,6 @@ class HomeController extends Controller
         $timeZone = "Asia/Karachi";
         $location_id = $this->getUserLocation();
         list($start_date, $end_date) = $this->getDates($request);
-        if($request->type=="lastmonth"){
-            $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
-            $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
-        } 
         $data = $this->consultancies($data, $start_date, $end_date);
         $data = $this->treatments($data, $start_date, $end_date);
         $data = $this->salesByCentre($request, $data);
@@ -382,18 +378,11 @@ class HomeController extends Controller
     private function collection_by_center(Request $request, $data){
         
         $data['collection'] = 0;
-
         if (!Gate::allows('dashboard_states')) {
-
             $data['collection'] = null;
-
             return $data;
         }
-        
         $locations = ACL::getUserCentres();
-
-        
-
         list($start_date, $end_date) = $this->getDates($request);
         switch ($request->type) {
             case 'today':
@@ -405,7 +394,6 @@ class HomeController extends Controller
                     $data['todaycollection'][] = $total;
             break;
             case 'last7days':
-                
                 list($total) = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'last7days', $request);
                     $data['todaycollection'][] = $total;
             break;
