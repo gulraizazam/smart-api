@@ -1504,7 +1504,7 @@ class AppointmentsController extends Controller
         $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
         $doctors = Doctors::getActiveOnly(ACL::getUserCentres());
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
-        $services = Services::get()->pluck('name', 'id');
+        $services = GeneralFunctions::ServicesTreeList();
         $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
         if ($appointment_statuses) {
             $appointment_statuses = $appointment_statuses->pluck('name', 'id');

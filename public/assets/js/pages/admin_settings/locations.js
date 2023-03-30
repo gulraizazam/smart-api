@@ -291,15 +291,15 @@ function makeServiceOptions(response) {
     let service_child_value = '';
     let service_options = '';
 
-    Object.entries(services).forEach(function (value, index) {
-        service_value=value[1].name;
+    Object.values(services).forEach(function (value, index) {
+        service_value=value.name;
         if (service_value == 'All Services') {
-            service_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
+            service_options += '<option value="' + value.id + '">' + service_value + '</option>';
         } else {
-            service_options += '<option value="' + value[1].id + '">' + service_value + '</option>';
-            Object.entries(value[1].children).forEach(function (child, index) {
-                service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child[1].name;
-                service_options += '<option value="' + child[1].id + '">' + service_child_value + '</option>';
+            service_options += '<option value="' + value.id + '">' + service_value + '</option>';
+            Object.values(value.children).forEach(function (child, index) {
+                service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
             });
         }
     });
