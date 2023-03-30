@@ -476,6 +476,7 @@ class HomeController extends Controller
                         }
                     }
                     break;
+                
                 default:
                     list( $report_data, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
                     if (count($report_data)) {
@@ -2143,6 +2144,10 @@ class HomeController extends Controller
                 $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
                 $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
                 break;
+            case 'lastmonth':
+                $start_date = Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d');
+                $end_date = Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d');
+                break;
             default:
                 $start_date = Carbon::now()->format('Y-m-d');
                 $end_date = Carbon::now()->format('Y-m-d');
@@ -2255,10 +2260,10 @@ class HomeController extends Controller
         $locations = ACL::getUserCentres();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         list($start_date, $end_date) = $this->getDates($request);
-        if($request->type=="lastmonth"){
-            $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
-            $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
-        }
+        // if($request->type=="lastmonth"){
+        //     $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
+        //     $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+        // }
         $where[] = array(
             'created_at',
             '>=',
