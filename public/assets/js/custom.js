@@ -865,7 +865,7 @@ function patientSearch(search_id = 'patient_id',flag=1) {
     $("." + search_id).on("input",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
-        if ($(this).val().length < 2) {
+        if ($(this).val().length < 1) {
             $(".suggesstion-box").hide();
             return false;
         }
@@ -877,24 +877,18 @@ function patientSearch(search_id = 'patient_id',flag=1) {
                 dataType: 'json',
                 delay: 250,
                 data: {search: $(this).val()},
-
                 success: function (response) {
-
                     let html = '';
                     let patients = response.data.patients;
-
                     if (patients.length) {
                         Object.values(patients).forEach(function (patient) {
                             html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
                         });
-
                         $(".suggestion-list").html(html);
-
                         $(".suggesstion-box").show();
                     } else {
                         $(".suggesstion-box").hide();
                     }
-
                 }
             });
         } else {
@@ -916,14 +910,11 @@ function patientSearch(search_id = 'patient_id',flag=1) {
                 };
             },
             processResults: function (response, params) {
-
                 try {
                     let data = response.data.patients;
-
                     params.page = params.page || 1;
                     return {
                         results: $.map(data, function (item) {
-
                             return {
                                 text: item.name + ' - C-' + item.id,
                                 id: item.id
