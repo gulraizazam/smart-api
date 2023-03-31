@@ -49,20 +49,14 @@ class ServicesController extends Controller
 
     public function datatable(Request $request)
     {
-        
-
         try {
-
             $filters = getFilters($request->all());
-
             $records = array();
             $records["data"] = array();
-
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Locations = Services::getBulkData($ids);
                 if ($Locations) {
-
                     foreach ($Locations as $Location) {
                         // Check if child records exists or not, If exist then disallow to delete it.
                         if (!Services::isChildExists($Location->id, Auth::User()->account_id)) {
@@ -73,22 +67,14 @@ class ServicesController extends Controller
                 $records["status"] = true;
                 $records["message"] = "Records has been deleted successfully!";
             }
-            
             list($orderBy, $order) = getSortBy($request);
-
             // Get Total Records
             $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
-            
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
-
             $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
-            
             $records = $this->getExtraData($records);
-
             if (!empty($Services)) {
                 $records["data"] = $Services;
-
                 $records["permissions"] = [
                     'edit' => Gate::allows('services_edit'),
                     'delete' => Gate::allows('services_destroy'),
@@ -97,7 +83,6 @@ class ServicesController extends Controller
                     'create' => Gate::allows('services_create'),
                     'sort' => Gate::allows('services_sort'),
                 ];
-
                 $records["meta"] = [
                     'field' => $orderBy,
                     'page' => $page,
@@ -108,8 +93,6 @@ class ServicesController extends Controller
                 ];
 
             } //end
-
-
             return ApiHelper::apiDataTable($records);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

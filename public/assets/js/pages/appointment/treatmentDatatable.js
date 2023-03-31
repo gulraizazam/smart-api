@@ -1130,9 +1130,16 @@ function setFilters(filter_values, active_filters) {
             region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
         });
 
-        let service_options = '<option value="">All</option>';
-        Object.entries(services).forEach(function (service, index) {
-            service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+        let service_options = '';
+        Object.values(services).forEach(function (service, index) {
+            if (service.name == 'All Services') {
+                service_options += '<option value="' + service.id + '">' + service.name + '</option>';
+            } else {
+              service_options += '<option value="' + service.id + '">' + service.name + '</option>';
+              Object.values(service.children).forEach(function (child, index) {
+                  service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;'+child.name + '</option>';
+              });
+            }
         });
 
         let user_options = '<option value="">All</option>';
