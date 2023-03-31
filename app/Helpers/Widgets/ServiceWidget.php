@@ -52,9 +52,7 @@ class ServiceWidget
                 foreach ($service_has_location as $servicehaslocation) {
                     $service_data = Services::find($servicehaslocation->service_id);
                     if ($service_data->slug == 'all') {
-                        $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-                        $Services = GeneralFunctions::ServicesTree();
-                        array_unshift($Services, $allserviceslug);
+                        $Services = GeneralFunctions::ServicesTreeList();
                         /* $Services = array();
                         $parentGroups = new NodesTree();
                         $parentGroups->current_id = 0;
@@ -70,9 +68,7 @@ class ServiceWidget
                         } */
                         return $Services;
                     } else {
-                        $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-                        $Services = GeneralFunctions::ServicesTree(null, 0, $service_data->id);
-                        array_unshift($Services, $allserviceslug);
+                        $Services = GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
                         /* $parentGroups = new NodesTree();
                         $parentGroups->current_id = 1;
                         $parentGroups->non_negative_groups = true;
@@ -131,9 +127,7 @@ class ServiceWidget
                 foreach ($service_has_location as $servicehaslocation) {
                     $service_data = Services::find($servicehaslocation->service_id);
                     if ($service_data->slug == 'all') {
-                        $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-                        $Services = GeneralFunctions::ServicesTree();
-                        array_unshift($Services, $allserviceslug);
+                        $Services = GeneralFunctions::ServicesTreeList();
                         /* $Services = array();
                         $parentGroups = new NodesTree();
                         $parentGroups->current_id = 0;
@@ -158,9 +152,7 @@ class ServiceWidget
                         } */
                         return $Services;
                     } else {
-                        $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-                        $Services = GeneralFunctions::ServicesTree(null, 0, $service_data->id);
-                        array_unshift($Services, $allserviceslug);
+                        $Services = GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
                         return $Services;
                         /* $parentGroups = new NodesTree();
                         $parentGroups->current_id = 1;
