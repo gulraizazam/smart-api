@@ -107,9 +107,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
     try {
-
         let patient = filter_values.patient;
         let cities = filter_values.cities;
         let locations = filter_values.locations;
@@ -161,6 +159,17 @@ function setFilters(filter_values, active_filters) {
             Object.entries(services).forEach(function (service, index) {
                 service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
             });
+            /* Object.values(services).forEach(function(value, index) {
+                if (value.name == 'All Services') {
+                      service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                } else {
+                    service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                    Object.values(value.children).forEach(function (child, index) {
+                        service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                        service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                    });
+                }
+            }); */
         }
 
         let user_options = '<option value="">All</option>';
