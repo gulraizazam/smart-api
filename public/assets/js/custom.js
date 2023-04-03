@@ -21,6 +21,8 @@ $(document).ready(function () {
 
     $(document).on( "click", ".popup-close", function () {
         $(this).parents(".modal").modal("toggle");
+        $("#modal_allocate_doctors_form").find("#services").empty();
+        $("#modal_allocate_discounts_form").find("#services").empty();
     });
     $('.select2').select2();
     $('.to-from-datepicker').datepicker({
