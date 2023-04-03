@@ -954,7 +954,7 @@
                                     </ul>
                                 </div>
                             
-                            <div class="menu-submenu">
+                                <div class="menu-submenu">
                                     <i class="menu-arrow"></i>
                                     <ul class="menu-subnav">
                                         <li class="menu-item {{activeMenu('admin.reports.arrived_not_converted')}}" aria-haspopup="true">
@@ -962,13 +962,13 @@
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
                                                 </i>
-                                                <span class="menu-text">Arrived but not converted </span>
+                                                <span class="menu-text">Non-Converted Customer Report</span>
                                             </a>
                                         </li>
 
                                     </ul>
                                 </div>
-                                @endcan
+                            @endcan
                         </li>
                     @endif
 
