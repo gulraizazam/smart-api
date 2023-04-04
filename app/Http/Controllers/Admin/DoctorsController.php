@@ -844,7 +844,7 @@ class DoctorsController extends Controller
                 $myarray = ['record' => $record, 'record_location_name' => $record_location_name, 'record_service_name' => $record_service_name];
                 return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
             }
-            return ApiHelper::apiResponse($this->success, 'Service not found!', false);
+            return ApiHelper::apiResponse($this->success, 'Service already exist!', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
