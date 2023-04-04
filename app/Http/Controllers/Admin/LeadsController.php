@@ -2395,8 +2395,6 @@ class LeadsController extends Controller
         $cities->prepend('All', '');
         $regions = Regions::getActiveSorted(ACL::getUserRegions());
         $regions->prepend('Select a Region', '');
-//        $users = User::getUsers();
-//        $users->prepend('All', '');
         $users = User::getAllActiveRecords(Auth::User()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
         // Find Junk Lead Status to exclude
@@ -2572,34 +2570,18 @@ class LeadsController extends Controller
         if($request->region_id != null || $request->region_id != ''){
             $resultQuery->where('leads.region_id', $request->region_id);
         }
-
         if($request->created_by != null || $request->created_by != ''){
             $resultQuery->where('leads.created_by', $request->created_by);
         }
-
         if($request->name != null || $request->name != ''){
             $resultQuery->where('users.name','like', $request->name.'%');
         }
-
         if($request->name != null || $request->name != ''){
             $resultQuery->where('users.name','like', $request->name.'%');
         }
-
         if($request->start_date != null || $request->start_date != ''){
             $resultQuery->whereBetween('leads.created_at', [$request->start_date, $request->end_date]);
         }  
-        // $junk_lead_statuses_id = LeadStatuses::where(array(
-        //     'account_id' => Auth::User()->account_id,
-        //     'is_junk' => 1,
-        // ))->value('id');
-
-        // if (request()->has('type')) {
-
-        //     $resultQuery->where('leads.lead_status_id', $junk_lead_statuses_id ?? 0);
-
-        // } else {
-        //     $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses_id ?? 0);
-        // }
         $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
         ->orderBy("leads.created_at", "DESC")->get();
         $customPaper = array(0,0,720,1440);
