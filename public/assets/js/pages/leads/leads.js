@@ -2,7 +2,6 @@ var table_url = route('admin.leads.datatable');
 if (typeof lead_type !== 'undefined' && lead_type != '') {
     table_url = route('admin.leads.datatable', {type: lead_type});
 }
-
 var table_columns = [{
     field: 'id',
     sortable: false,
@@ -42,7 +41,6 @@ var table_columns = [{
         if (city_id != '') {
             city = city_id;
         }
-
         return '<a href="javascript:void(0);" data-city_id="'+data.cityId+'" onclick="editInline(`' + data.lead_id + '`, `'+data.cityId+'`, $(this))" class="lead_city" id="lead-'+data.lead_id+'">'+city+'</a>';
     }
 },{
@@ -75,7 +73,6 @@ var table_columns = [{
     sortable: false,
     width: 70,
     template: function (data) {
-
         return '<a href="javascript:void(0);" onclick="editLeadStatus('+data.lead_id+');">'+data.lead_status_id+'</a>';
     }
 }, {
@@ -88,7 +85,6 @@ var table_columns = [{
         let id = data.id;
         let active = data.active;
         let status = '';
-
         if (active) {
             if (permissions.update_status) {
                 status += '<span class="switch switch-icon">\
@@ -105,9 +101,7 @@ var table_columns = [{
             </label>\
             </span>';
             }
-
         } else {
-
             status += '<span class="switch switch-icon">\
         <label>\
             <input value="1" onchange="updateStatus(`'+status_url+'`, `'+data.lead_id+'`, $(this));" type="checkbox" name="select">\
@@ -115,7 +109,6 @@ var table_columns = [{
         </label>\
         </span>';
         }
-
         return status;
     }
 },{
@@ -156,17 +149,13 @@ var table_columns = [{
             return data.child_service;
         }else{
             return '<span class="text text-danger">Empty</span>';
-
         } 
     }
 }];
 
 function editLeadStatus(lead_id) {
-
     $("#modal_change_status").modal("show");
-
     $("#lead_id").val(lead_id);
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -181,21 +170,17 @@ function editLeadStatus(lead_id) {
                 let lead_status_chalid = response.data.lead_status_chalid;
                 let lead_statuses_Cdata = response.data.lead_statuses_Cdata;
                 let lead_status_parent = response.data.lead_status_parent;
-
                 let status_option = '<option value="">Select a Lead Status</option>';
-
                 if (statuses) {
                     Object.entries(statuses).forEach(function (status) {
                         status_option += '<option value="'+status[0]+'">'+status[1]+'</option>';
                     });
                 }
-
                 $("#update_status_id").html(status_option);
                 $("#update_status_id").val(parent_id);
                 $("#update_status_id").attr('name', 'lead_status_parent_id');
                 $("#update_status_id").removeClass('d-none');
                 $("#lead_status_chalid_id").addClass('d-none');
-
                 if (lead_status_chalid != 'null') {
                     $("#lead_status_chalid_id").html(status_option);
                     $("#lead_status_chalid_id").val(lead_status_chalid.id);
@@ -203,14 +188,12 @@ function editLeadStatus(lead_id) {
                     $("#lead_status_chalid_id").removeClass('d-none');
                     $("#update_status_id").addClass('d-none');
                 }
-
                 if (lead_status_chalid == 'null' && lead_statuses_Cdata != 'nothing') {
                     $("#lead_status_chalid_id").html(status_option);
                     $("#lead_status_chalid_id").attr('name', 'lead_status_child_id');
                     $("#lead_status_chalid_id").removeClass('d-none');
                     $("#update_status_id").addClass('d-none');
                 }
-
                 if(lead_status_parent.is_comment == '1') {
                     $("#lead_status_comment1_id").attr('name', 'comment1');
                     $("#lead_status_comment1_id").removeClass('d-none');
@@ -221,11 +204,9 @@ function editLeadStatus(lead_id) {
             errorMessage(xhr);
         }
     });
-
 }
 
 function updateLeadStatus() {
-
     showSpinner();
     $.ajax({
         headers: {
@@ -254,25 +235,19 @@ function updateLeadStatus() {
 }
 
 function actions(data) {
-
     if (typeof data.id !== 'undefined') {
         let id = data.lead_id;
-
-
         let edit_url = route('admin.leads.edit', { id: id });
         let display_url = route('admin.leads.detail', { id: id });
         let delete_url = route('admin.leads.destroy', { id: id });
         let convert_url = route('admin.leads.convert', { id: id });
-
         if (permissions.create || permissions.edit) {
             let actions = '<div class="dropdown dropdown-inline action-dots">';
-
             if (permissions.convert && lead_type === 'junk') {
                 actions += '<a title="Convert Lead" href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="btn btn-icon btn-success btn-sm">\
                         <span class="navi-icon"><i class="la la-recycle"></i></span>\
                     </a>';
             }
-
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
         </a>\
@@ -281,14 +256,12 @@ function actions(data) {
                 <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                     Choose an action: \
                     </li>';
-
             actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="viewLead(`' + display_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-eye"></i></span>\
                         <span class="navi-text">View</span>\
                     </a>\
                 </li>';
-
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, '+id+');" class="navi-link">\
@@ -297,7 +270,6 @@ function actions(data) {
                     </a>\
                 </li>';
             }
-
             if (permissions.delete) {
                 actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
@@ -306,11 +278,9 @@ function actions(data) {
                         </a>\
                      </li>';
             }
-
             actions += '</ul>\
         </div>\
     </div>';
-
             return actions;
         }
     }
@@ -318,12 +288,9 @@ function actions(data) {
 }
 
 function createLead(url) {
-
     $(".croxcli").click();
-
     $('.msg_new_patient').hide();
     $('.new_patient').prop("checked", false);
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -333,15 +300,12 @@ function createLead(url) {
         cache: false,
         success: function(response) {
             $("#modal_edit_regions").modal("show");
-
             setLeadData(response);
-            
             setTimeout(function(){
                 $("#add_phone").attr("readonly",true);
                 $("#add_full_name").attr("readonly",true);
                 $("#add_gender_id").attr("readonly",true);
             },500)
-
         },
         error: function(xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -352,9 +316,7 @@ function createLead(url) {
 }
 
 function setLeadData(response) {
-
     try {
-
         let Services = response.data.Services;
         let cities = response.data.cities;
         let employees = response.data.employees;
@@ -363,7 +325,6 @@ function setLeadData(response) {
         let lead_sources = response.data.lead_sources;
         let lead_statuses = response.data.lead_statuses;
         let lead = response.data.lead;
-
         let service_options = '<option value="">Select Service</option>';
         let city_options = '<option value="">Select a City</option>';
         let employee_options = '<option value="">Select a Referrer</option>';
@@ -371,60 +332,49 @@ function setLeadData(response) {
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
         let lead_statuses_options = '<option value="">Select a Lead Status</option>';
         let town_options = '<option value="">Select a Townus</option>';
-
         if (Services) {
             Object.entries(Services).forEach(function (service) {
                 service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
             });
         }
-
         if (cities) {
             Object.entries(cities).forEach(function (city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
             });
         }
-
         if (employees) {
             Object.entries(employees).forEach(function (employee) {
                 employee_options += '<option value="' + employee[0] + '">' + employee[1] + '</option>';
             });
         }
-
         if (gender) {
             Object.entries(gender).forEach(function (gender) {
                 gender_options += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
             });
         }
-
         if (lead_sources) {
             Object.entries(lead_sources).forEach(function (source) {
                 lead_sources_options += '<option value="' + source[0] + '">' + source[1] + '</option>';
             });
         }
-
         if (lead_statuses) {
             Object.entries(lead_statuses).forEach(function (status) {
                 lead_statuses_options += '<option value="' + status[0] + '">' + status[1] + '</option>';
             });
         }
-
         $("#add_service_id").html(service_options);
         $("#add_city_id").html(city_options);
         $("#add_referred_by_id").html(employee_options);
         $("#add_gender_id").html(gender_options);
         $("#add_lead_source_id").html(lead_sources_options);
         $("#add_lead_status_id").html(lead_statuses_options);
-
         getUserCity();
-
     } catch (error) {
         showException(error);
     }
-
 }
 
 function viewLead(url) {
-
     $("#modal_view_lead").modal("show");
     $.ajax({
         headers: {
@@ -436,54 +386,43 @@ function viewLead(url) {
         success: function(response) {
             $("#modal_edit_regions").modal("show");
             setViewData(response);
-
         },
         error: function(xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
-
 }
 
 function setViewData(response) {
     try {
-
         let lead = response.data.lead;
-
         $("#full_name").text(lead?.patient?.name)
-
         let email = 'N/A';
         if(lead?.patient?.email) {
             email = lead?.patient?.email;
         }
         $("#email").text(email);
-
         let phone = 'N/A';
         if(lead?.phone) {
             phone = lead.phone;
         }
         $("#phone").text(phone);
-
         $("#dob").text(lead?.patient?.dob);
-
         let gender = 'N/A';
         if(lead?.gender) {
             gender = lead?.gender;
         }
         $("#gender").text(gender);
-
         let sms = 'Not Delivered';
         if(lead?.msg_count) {
             sms = 'Delivered';
         }
         $("#sms_status").text(sms);
-
         let address = 'N/A';
         if(lead?.patient?.address) {
             address = lead?.patient?.address;
         }
         $("#address").text(address);
-
         let city = 'N/A';
         if(lead?.city_id) {
             city = lead?.city?.name;
@@ -506,13 +445,11 @@ function setViewData(response) {
             lead_source = lead?.lead_source?.name;
         }
         $("#lead_source").text(lead_source);
-
         let lead_status = 'N/A';
         if(lead?.lead_status_id) {
             lead_status = lead?.lead_status?.name;
         }
         $("#lead_status").text(lead_status);
-
         let treatment = 'N/A';
         if(lead?.service_id) {
             treatment = lead?.service?.name;
@@ -523,7 +460,6 @@ function setViewData(response) {
             child = lead?.child_service_id;
         }
         $.ajax({
-
             url: route('admin.dashboard.getchild'),
             type: 'GET',
             data: {
@@ -533,20 +469,15 @@ function setViewData(response) {
             success: function (response) {
                 $("#childservice").text(response.data.child);  
             },
-            
         });
         $("#comment_lead_id").val(lead.id)
-
         setComments(lead);
-
     } catch (error) {
         showException(error);
     }
-
 }
 
 function viewConvert(url) {
-
     $("#modal_convert_lead").modal("show");
     $.ajax({
         headers: {
@@ -558,17 +489,14 @@ function viewConvert(url) {
         success: function(response) {
             $("#modal_edit_regions").modal("show");
             setConvert(response);
-
         },
         error: function(xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
-
 }
 
 function setConvert(response) {
-
     try {
         resetDoctors();
         resetLocations();
@@ -577,33 +505,27 @@ function setConvert(response) {
         let consultancy_types = response.data.consultancy_types;
         let lead = response.data.lead;
         let user_info = response.data.user_info;
-
         let city_options = '<option value="">Select a City</option>';
         let service_options = '<option value="">Select a Service</option>';
         let consultancy_options = '<option value="">Select Consultancy Type</option>';
-
         if (cities) {
             Object.entries(cities).forEach(function (city) {
                 city_options += '<option value="'+city[0]+'">'+city[1]+'</option>';
             });
         }
-
         if (services) {
             Object.entries(services).forEach(function (service) {
                 service_options += '<option value="'+service[0]+'">'+service[1]+'</option>';
             });
         }
-
         if (consultancy_types) {
             Object.entries(consultancy_types).forEach(function (consultancy_type) {
                 consultancy_options += '<option value="'+consultancy_type[0]+'">'+consultancy_type[1]+'</option>';
             });
         }
-
         $("#convert_city").html(city_options).val(lead.city_id).change();
         $("#convert_treatment_id").html(service_options).val(lead.service_id).change();
         $("#convert_consultancy_type_id").html(consultancy_options);
-
         $("#convert_lead_id").val(lead.id);
         $("#convert_patient_id").val(lead.patient_id);
         $("#convert_patient_phone").val(lead.patient.phone);
@@ -615,15 +537,12 @@ function setConvert(response) {
         $("#convert_lead_source_id").val(lead.lead_source_id);
         $("#convert_referred_by").val(user_info.referred_by);
         $("#convert_service_id").val(user_info.service_id);
-
     } catch (error) {
         showException(error);
     }
-
 }
 
 function setComments(lead) {
-
     let lead_comments = lead.lead_comments;
     let comment_html = '';
     if (lead_comments.length) {
@@ -635,9 +554,7 @@ function setComments(lead) {
 }
 
 function commentData(user_name, created_at, comment) {
-
     let comment_html = '';
-
     comment_html = '<div class="tab-content" id="itemComment">' +
         ' <div class="tab-pane active" id="portlet_comments_1"> ' +
         '<div class="mt-comments"> ' +
@@ -649,23 +566,20 @@ function commentData(user_name, created_at, comment) {
         '<span class="mt-comment-author" id="creat_by">';
     comment_html += user_name ?? 'N/A';
     comment_html += '</span> <span class="mt-comment-date" id="datetime">';
-    comment_html += formatDate(created_at, 'ddd MMM, mm yyyy HH:mm A');
+    comment_html += formatDate(created_at, 'ddd MMM, DD yyyy HH:mm A');
     comment_html += '</span> </div>' +
         '<div class="mt-comment-text" id="message">';
     comment_html += comment ?? 'N/A';
     comment_html += '</div><div class="mt-comment-details"> </div>' +
         '</div></div></div></div></div>';
-
     return comment_html;
 }
 
 function editRow(url, id) {
-
     $('.new_patient').prop("checked", false);
     $('.msg_new_patient').hide();
     $("#modal_edit_leads").modal("show");
     $("#modal_edit_leads_form").attr("action", route('admin.leads.update', {id: id}));
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -675,20 +589,15 @@ function editRow(url, id) {
         cache: false,
         success: function(response) {
             setEditData(response);
-
         },
         error: function(xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
-
-
 }
 
 function setEditData(response) {
-
     try {
-
         let Services = response.data.Services;
         let Childservices = response.data.child_services;
         let cities = response.data.cities;
@@ -706,7 +615,6 @@ function setEditData(response) {
         let gender_options = '<option value="">Select a Gender</option>';
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
         let lead_statuses_options = '<option value="">Select a Lead Status</option>';
-
         if (Services) {
             Object.entries(Services).forEach(function(service) {
                 service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
@@ -732,25 +640,21 @@ function setEditData(response) {
                 employee_options += '<option value="' + employee[0] + '">' + employee[1] + '</option>';
             });
         }
-
         if (gender) {
             Object.entries(gender).forEach(function(gender) {
                 gender_options += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
             });
         }
-
         if (lead_sources) {
             Object.entries(lead_sources).forEach(function(source) {
                 lead_sources_options += '<option value="' + source[0] + '">' + source[1] + '</option>';
             });
         }
-
         if (lead_statuses) {
             Object.entries(lead_statuses).forEach(function(status) {
                 lead_statuses_options += '<option value="' + status[0] + '">' + status[1] + '</option>';
             });
         }
-
         $("#edit_service_id").html(service_options);
         $("#edit_child_service_id").html(child_service_options);
         $("#edit_city_id").html(city_options);
@@ -789,9 +693,7 @@ function setEditData(response) {
     }
 }
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
-
         let filters = {
             delete: '',
             patient_id: $("#search_id").val(),
@@ -808,15 +710,11 @@ function applyFilters(datatable) {
             lead_status_id: $("#search_status_id").val(),
             filter: 'filter',
         }
-
         datatable.search(filters, 'search');
-
     });
-
 }
 
 function resetAllFilters(datatable) {
-
     $('#reset-filters').on('click', function() {
         let filters = {
             delete: '',
@@ -835,12 +733,10 @@ function resetAllFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function setFilters(filter_values, active_filters) {
     try {
-
         let cities = filter_values.cities;
         let locations = filter_values.locations;
         let genders = filter_values.genders;
@@ -875,34 +771,28 @@ function setFilters(filter_values, active_filters) {
                 region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
             });
         }
-
         if (lead_statuses) {
             Object.entries(lead_statuses).forEach(function(status) {
                 status_options += '<option value="' + status[0] + '">' + status[1] + '</option>';
             });
         }
-
         if (services) {
             Object.entries(services).forEach(function(service) {
 
                 service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
             });
         }
-
         if (users) {
             Object.entries(users).forEach(function(user) {
 
                 user_options += '<option value="' + user[0] + '">' + user[1] + '</option>';
             });
         }
-
         if (lead_type == 'junk') {
             $("#search_status_id").html('<option value="">All</option><option value="'+junk+'">Junk</option>');
         } else {
             $("#search_status_id").html(status_options);
         }
-
-
         $("#search_city_id").html(city_options);
         $("#search_region_id").html(region_options);
         $("#search_service_id").html(service_options);
@@ -917,18 +807,14 @@ function setFilters(filter_values, active_filters) {
         $("#search_created_from").val(active_filters.date_from);
         $("#search_created_to").val(active_filters.date_to);
         $("#search_created_by").val(active_filters.created_by);
-
         hideShowAdvanceFilters(active_filters);
-
         getUserCity();
-
     } catch (error) {
         showException(error);
     }
 }
 
 function hideShowAdvanceFilters(active_filters) {
-
     if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
         || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
         || (typeof active_filters.lead_status_id !== 'undefined' && active_filters.lead_status_id != '')
@@ -936,44 +822,34 @@ function hideShowAdvanceFilters(active_filters) {
         || (typeof active_filters.service_id !== 'undefined' && active_filters.service_id != '')
         || (typeof active_filters.created_by !== 'undefined' && active_filters.created_by != '')
     ) {
-
         $(".advance-filters").show();
         $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
     }
-
 }
 
 function newPatient() {
-
     $('.new_patient').change(function () {
         if ($(this).is(":checked")) {
             $('.new_patient').val('1');
             $('.msg_new_patient').show();
-
             $("#add_phone").removeAttr("readonly");
             $("#add_full_name").removeAttr("readonly");
-
             if ($("#add_phone").val() != '') {
                 $(".select2").val(null).trigger("change");
                 $("input").val('');
             }
-
             $("#add_phone").attr("readonly",false);
             $("#add_full_name").attr("readonly",false);
             $("#add_gender_id").attr("readonly",false);
-
            /* $("#modal_add_leads_form").find('input').val('');
             $("#modal_edit_leads_form").find('input').val('');
             $(".select2").val(null).trigger("change");*/
-
         } else {
             $('.new_patient').val('0');
             $('.msg_new_patient').hide();
-
             $("#add_phone").val("");
             $("#add_full_name").val("");
             $("#add_gender_id").val("");
-
             $("#add_phone").prop("readonly", true);
             $("#add_full_name").prop("readonly", true);
             $("#add_gender_id").attr("readonly",true);
@@ -982,16 +858,12 @@ function newPatient() {
 }
 
 function editInline($lead_id, city_id, $this) {
-
     let cities = filter_values.cities;
     let city_options = '<option value="">Select City</option>';
-
     Object.entries(cities).forEach( function (city) {
         city_options += '<option value="'+city[0]+'">'+city[1]+'</option>';
     });
-
     $(".city-editable-" + $lead_id).remove();
-
     let editable = '<div class="city_editable custom_tooltip form-group city-editable-'+$lead_id+'"> ' +
         '<div class="row">' +
         '<div class="city-popup">' +
@@ -1007,22 +879,16 @@ function editInline($lead_id, city_id, $this) {
         '</div>' +
         '</div>' +
         '</div>';
-
     $("#lead-" + $lead_id).parents('.datatable-row').css("margin-top", "130px");
     $("#lead-" + $lead_id).parents('td').append(editable);
-
     $(".city-editable-" + $lead_id).find(".city-select").val(city_id);
-
     $(".city-select").val($this.data("city_id"))
-
 }
 
 function saveCity(lead_id) {
-
     showSpinner();
     let city_id = $(".city-editable-" + lead_id).find('.city-select').val();
     $("#lead-" + lead_id).data("city_id", city_id);
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -1058,20 +924,17 @@ function closeEditable($lead_id) {
 $(function () {
     $(document).mouseup(function(e) {
         var container = $(".city_editable");
-
         if (!container.is(e.target) && container.has(e.target).length === 0) {
             container.remove();
             $(".datatable-row").css("margin-top", 0);
         }
     });
-
         $("#lead-1").mouseover(
             function() {
                 $(this).animate({backgroundColor: "#fff"}, 'slow');
             }, function() {
                 $(this).animate({backgroundColor:"#000"},'slow');
         });
-
     $("#Add_comment").click(function(){
         $.ajax({
             type: 'get',
@@ -1084,7 +947,6 @@ $(function () {
             success: function(data) {
                 $('#commentsection').prepend(commentData(data.username, data.leadCommentDate, data.lead.comment));
             },
-
         });
         $('#cment')[0].reset();
     });
@@ -1131,7 +993,6 @@ let loadLocations = function (cityId) {
 
 let resetLocations = function () {
     var locationDropdown = '<select id="location_id" class="form-control select2 required" name="location_id"><option value="" selected="selected">Select a Location</option></select>';
-
     $('#convert_location_id').html(locationDropdown);
     $('.select2').select2({ width: '100%' });
 }
@@ -1149,7 +1010,6 @@ let resetDropdowns = function () {
 }
 
 let loadDoctors = function (locationId) {
-
     if (locationId != '' && locationId != null) {
         $.ajax({
             headers: {
@@ -1163,16 +1023,12 @@ let loadDoctors = function (locationId) {
             cache: false,
             success: function(response) {
                 if(response.status) {
-
                     let dropdowns =  response.data.dropdown;
                     let dropdown_options =  '<option value="">Select a Doctor</option>';
-
                     Object.entries(dropdowns).forEach(function (dropdown) {
                         dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                     });
-
                     $('#convert_doctor_id').html(dropdown_options);
-
                     $('.select2').select2({ width: '100%' });
                 } else {
                     resetDoctors();
@@ -1185,18 +1041,15 @@ let loadDoctors = function (locationId) {
     } else {
         resetDoctors();
     }
-
 }
 
  function importLead() {
-
      let form_id = 'modal_import_leads_form';
      let form = document.getElementById(form_id);
      if ($(".leads_file").val() == '') {
          addValidation($(".leads_file"))
          return false;
      }
-
      submitFileForm($(form).attr('action'), $(form).attr('method'), form_id, function (response) {
          if (response.status) {
              toastr.success(response.message);
@@ -1244,7 +1097,6 @@ function skipUpdateStatus($this){
     }
 }
 function addValidation(elem) {
-
     if (elem.val() == '') {
         elem.addClass("is-invalid");
         $(".lead_file_msg").removeClass("d-none");
@@ -1255,30 +1107,22 @@ function addValidation(elem) {
 }
 
 jQuery(document).ready( function () {
-
     $(".leads_file").change( function () {
         addValidation($(this))
-
     });
-
-
     $(document).on("click", ".croxcli", function () {
         $('.search_field').val('').change();
         setTimeout( function () {
             $("#add_phone").removeAttr("readonly");
             $("#add_full_name").removeAttr("readonly");
         },300);
-
     });
-
     $(document).on( "click", ".popup-close", function () {
         $(this).parents(".modal").modal("toggle");
     });
-
 });
 
 $("#export-pdf-leads").on("click",function(){
-
     let id =$('#search_id').val();
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
@@ -1295,7 +1139,6 @@ $("#export-pdf-leads").on("click",function(){
 });
 
 $("#export-leads").on("click",function(){
-
     let id =$('#search_id').val();
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
@@ -1312,7 +1155,6 @@ $("#export-leads").on("click",function(){
 });
 
 $("#csv-leads").on("click",function(){
-
     let id =$('#search_id').val();
     let name =$('#search_full_name').val();
     let phone =$("#search_phone").val()
@@ -1329,7 +1171,6 @@ $("#csv-leads").on("click",function(){
 });
 
 function cleanId(id){
-
     if (id.indexOf('c-') > -1)
     {
       return id.replace('c-','');

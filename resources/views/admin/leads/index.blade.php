@@ -232,7 +232,6 @@
                 @if(request('create') != '' && request('create') !== null)
                     $("#create_lead").click()
                 @endif
-
                 @if(request('from') != '' && request('to') != '')
                     setTimeout( function () {
 
@@ -241,7 +240,6 @@
                         $("#apply-filters").click();
 
                     }, 800);
-
                 @endif
             });
             function getUserCity() {

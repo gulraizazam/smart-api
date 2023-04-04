@@ -45,13 +45,9 @@ use Illuminate\Support\Facades\DB as FacadesDB;
 
 class LeadsController extends Controller
 {
-
     public $success;
-
     public $error;
-
     public $unauthorized;
-
     public function __construct()
     {
         $this->success = config('constants.api_status.success');
@@ -69,7 +65,6 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_manage')) {
             return abort(401);
         }
-
         return view('admin.leads.index');
     }
 
@@ -889,7 +884,6 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-
         $lead = Leads::with( 'lead_comments.user', 'patient', 'towns', 'city', 'lead_source', 'lead_status', 'service')->find($id);
         $lead->phone = GeneralFunctions::prepareNumber4Call($lead->patient->phone);
         $lead->gender = Config::get('constants.gender_array')[$lead->patient->gender];
@@ -909,17 +903,13 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_manage')) {
             return abort(401);
         }
-
         $data = $request->all();
         // Set Created by
         $data['created_by'] = Auth::user()->id;
         $lead = LeadComments::create($data);
-
         flash('Comment has been added successfully.')->success()->important();
-
         return redirect()->back();
     }
-
 
     /**
      * Show the form for editing Lead.
@@ -1028,12 +1018,10 @@ class LeadsController extends Controller
                 $data['patient_id'] = $lead->patient_id;
             }
         }
-
         /*
          * Case: If other than selected service is selected then?
          */
         if ($request->new_patient == '1') {
-
             $data['created_by'] = Auth::User()->id;
             $data['updated_by'] = Auth::User()->id;
             $data['patient_id'] = $patient->id;
@@ -1119,15 +1107,12 @@ class LeadsController extends Controller
     public function destroy($id)
     {
         try {
-
             if (!Gate::allows('leads_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $lead = Leads::find($id);
             $lead->delete();
-
             return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
-
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -1146,9 +1131,7 @@ class LeadsController extends Controller
         }
         $lead = Leads::findOrFail($id);
         $lead->update(['active' => 0]);
-
         flash('Record has been inactivated successfully.')->success()->important();
-
         return redirect()->route('admin.leads.index');
     }
 
@@ -1165,9 +1148,7 @@ class LeadsController extends Controller
         }
         $lead = Leads::findOrFail($id);
         $lead->update(['active' => 1]);
-
         flash('Record has been inactivated successfully.')->success()->important();
-
         return redirect()->route('admin.leads.index');
     }
 
@@ -1181,33 +1162,22 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_lead_status')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-
         try {
-
             $lead_statuses_Pdata = LeadStatuses::getLeadStatuses();
-
             $lead = Leads::find($request->get('id'));
-
             $lead_status = LeadStatuses::where('id', '=', $lead->lead_status_id)->first();
-
             $lead_status_comment = LeadComments::where('lead_id', '=', $lead->id)->get();
-
             if ($lead_status->parent_id == 0) {
-
                 $lead_status_parent = DB::table('lead_statuses')->where('id', '=', $lead->lead_status_id)->first();
                 $lead_status_chalid = 'null';
-
             } else {
-
                 $lead_status_chalid = DB::table('lead_statuses')->where('id', '=', $lead->lead_status_id)->first();
                 $lead_status_parent = DB::table('lead_statuses')->where('id', '=', $lead_status_chalid->parent_id)->first();
             }
             $lead_statuses_Cdata = DB::table('lead_statuses')->where('parent_id', '=', $lead_status_parent->id)->get();
-
             if (count($lead_statuses_Cdata) < 1) {
                 $lead_statuses_Cdata = 'nothing';
             }
-
             return ApiHelper::apiResponse($this->success, 'Record Found', true, [
                 'lead' => $lead,
                 'lead_statuses_Pdata' => $lead_statuses_Pdata,
@@ -1228,13 +1198,9 @@ class LeadsController extends Controller
      */
     public function LeadStatusespopcheck(Request $request)
     {
-
         $lead_status = LeadStatuses::find($request->id);
-
         $lead_status_chalid = LeadStatuses::where('parent_id', '=', $lead_status->id)->get();
-
         $myarray = ['d' => $lead_status_chalid, 'lead_status' => $lead_status];
-
         return response()->json($myarray);
     }
 
@@ -1245,13 +1211,9 @@ class LeadsController extends Controller
      */
     public function LeadStatusChildpopcheck(Request $request)
     {
-
         $lead_status_chalid = LeadStatuses::find($request->id);
-
         $lead_status2 = DB::table('lead_statuses')->where('id', '=', $lead_status_chalid->parent_id)->first();
-
         $myarray = ['d' => $lead_status_chalid, 'lead_status2' => $lead_status2];
-
         return response()->json($myarray);
     }
 
@@ -1264,7 +1226,6 @@ class LeadsController extends Controller
     public function storeLeadStatuses(Request $request)
     {
         try {
-
             $data = $request->all();
             $lead = Leads::find($request->get('id'));
             //Always save child id because our code mange it for parent id
@@ -1307,9 +1268,7 @@ class LeadsController extends Controller
             if ($request->get('comment2') == null && $request->get('comment1') == null) {
                 return ApiHelper::apiResponse($this->success, 'Status updated successfully!');
             }
-
             LeadComments::create($data);
-
             return ApiHelper::apiResponse($this->success, 'Status updated successfully!');
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -1324,9 +1283,7 @@ class LeadsController extends Controller
     public function loadLeadStatuses(Request $request)
     {
         $lead_statuses = LeadStatuses::getActiveOnly();
-
         $data = array();
-
         if ($lead_statuses) {
             foreach ($lead_statuses as $lead_status) {
                 $data[] = array(
@@ -1361,7 +1318,6 @@ class LeadsController extends Controller
                     'converted_by' => Auth::User()->id
                 );
                 $lead->update($data);
-
                 /*
                      * Prepare Default Lead Status ID
                      */
@@ -1387,13 +1343,10 @@ class LeadsController extends Controller
                         }
                     }
                 }
-
                 $lead->update($data);
-
                 return response()->json(array('status' => 1));
             }
         }
-
     }
 
     /**
@@ -1404,9 +1357,7 @@ class LeadsController extends Controller
     public function loadTreatments(Request $request)
     {
         $services = Services::getActiveOnly();
-
         $data = array();
-
         if ($services) {
             foreach ($services as $service) {
                 $data[] = array(
@@ -1415,7 +1366,6 @@ class LeadsController extends Controller
                 );
             }
         }
-
         return response()->json($data);
     }
 
@@ -1445,7 +1395,6 @@ class LeadsController extends Controller
                 return response()->json(array('status' => 1));
             }
         }
-
     }
 
     /**
@@ -1456,9 +1405,7 @@ class LeadsController extends Controller
     public function loadLeadSources(Request $request)
     {
         $lead_sources = LeadSources::getActiveOnly();
-
         $data = array();
-
         if ($lead_sources) {
             foreach ($lead_sources as $lead_source) {
                 $data[] = array(
@@ -1467,7 +1414,6 @@ class LeadsController extends Controller
                 );
             }
         }
-
         return response()->json($data);
     }
 
@@ -1505,11 +1451,8 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_city')) {
             return abort(401);
         }
-
         $cities = Cities::getActiveOnly(ACL::getUserCities(), Auth::User()->account_id);
-
         $data = array();
-
         if ($cities) {
             foreach ($cities as $citie) {
                 $data[] = array(
@@ -1518,7 +1461,6 @@ class LeadsController extends Controller
                 );
             }
         }
-
         return response()->json($data);
     }
 
@@ -1534,15 +1476,12 @@ class LeadsController extends Controller
         } else {
             $id = $request->get('pk');
             $city_id = $request->get('value');
-
             // Check if Lead found or not
             $citie = Cities::find($city_id);
             $lead = Leads::find($id);
-
             if (!$lead || !$citie) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
             }
-
             $lead->update([
                 'city_id' => $city_id,
                 'region_id' => $citie->region_id
@@ -1564,7 +1503,6 @@ class LeadsController extends Controller
             flash('You are not authorized to access this resource.')->error()->important();
             return redirect()->route('admin.leads.index');
         }
-
         return view('admin.leads.import');
     }
 
@@ -2074,7 +2012,6 @@ class LeadsController extends Controller
                                 }
                             }
                         }
-                        
                         // If Get some recors insert them now
                         if (count($LeadData)) {
                             Leads::insert($LeadData);
@@ -2103,7 +2040,6 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_junk')) {
             return abort(401);
         }
-
         return view('admin.leads.junk');
     }
 
@@ -2117,7 +2053,6 @@ class LeadsController extends Controller
     {
         /*This function is not using, i handled both cases using just dattable function*/
         $where = array();
-
         /*
          * Reset form filter is applied
          */
@@ -2130,7 +2065,6 @@ class LeadsController extends Controller
                 $apply_filter = true;
             }
         }
-
         if ($request->get('order')) {
             $orderColumn = $request->get('order')[0]['column'];
             $orderBy = $request->get('columns')[$orderColumn]['data'];
@@ -2138,7 +2072,6 @@ class LeadsController extends Controller
                 $orderBy = 'leads.created_at';
             }
             $order = $request->get('order')[0]['dir'];
-
             Filters::put(Auth::User()->id, 'leads_junk', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'leads_junk', 'order', $order);
         } else {
@@ -2148,7 +2081,6 @@ class LeadsController extends Controller
             ) {
                 $orderBy = Filters::get(Auth::User()->id, 'leads_junk', 'order_by');
                 $order = Filters::get(Auth::User()->id, 'leads_junk', 'order');
-
                 if ($orderBy == 'created_at') {
                     $orderBy = 'leads.created_at';
                 }
@@ -2158,7 +2090,6 @@ class LeadsController extends Controller
                 if ($orderBy == 'created_at') {
                     $orderBy = 'leads.created_at';
                 }
-
                 Filters::put(Auth::User()->id, 'leads_junk', 'order_by', $orderBy);
                 Filters::put(Auth::User()->id, 'leads_junk', 'order', $order);
             }
@@ -2169,7 +2100,6 @@ class LeadsController extends Controller
                 '=',
                 GeneralFunctions::patientSearch($request->get('patient_id'))
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'patient_id', GeneralFunctions::patientSearch($request->get('patient_id')));
         } else {
             if ($apply_filter) {
@@ -2190,7 +2120,6 @@ class LeadsController extends Controller
                 'like',
                 '%' . $request->get('name') . '%'
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'name', $request->get('name'));
         } else {
             if ($apply_filter) {
@@ -2213,7 +2142,6 @@ class LeadsController extends Controller
                     $request->get('phone')
                 ) . '%'
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'phone', GeneralFunctions::cleanNumber($request->get('phone')));
         } else {
             if ($apply_filter) {
@@ -2234,7 +2162,6 @@ class LeadsController extends Controller
                 '=',
                 $request->get('city_id')
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'city_id', $request->get('city_id'));
         } else {
             if ($apply_filter) {
@@ -2255,7 +2182,6 @@ class LeadsController extends Controller
                 '=',
                 $request->get('region_id')
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'region_id', $request->get('region_id'));
         } else {
             if ($apply_filter) {
@@ -2276,7 +2202,6 @@ class LeadsController extends Controller
                 '=',
                 $request->get('lead_status_id')
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'lead_status_id', $request->get('lead_status_id'));
         } else {
             if ($apply_filter) {
@@ -2297,7 +2222,6 @@ class LeadsController extends Controller
                 '=',
                 $request->get('service_id')
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'service_id', $request->get('service_id'));
         } else {
             if ($apply_filter) {
@@ -2318,7 +2242,6 @@ class LeadsController extends Controller
                 '=',
                 $request->get('created_by')
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'created_by', $request->get('created_by'));
         } else {
             if ($apply_filter) {
@@ -2339,7 +2262,6 @@ class LeadsController extends Controller
                 '>=',
                 $request->get('date_from') . ' 00:00:00'
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'date_from', $request->get('date_from'));
         } else {
             if ($apply_filter) {
@@ -2360,7 +2282,6 @@ class LeadsController extends Controller
                 '<=',
                 $request->get('date_to') . ' 23:59:59'
             );
-
             Filters::put(Auth::User()->id, 'leads_junk', 'date_to', $request->get('date_to'));
         } else {
             if ($apply_filter) {
@@ -2380,7 +2301,6 @@ class LeadsController extends Controller
             'account_id' => Auth::User()->account_id,
             'is_junk' => 1,
         ))->first();
-
         $countQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
             ->where(function ($query) {
@@ -2389,25 +2309,18 @@ class LeadsController extends Controller
 
             })
             ->whereIn('leads.lead_status_id', array($junk_lead_statuses->id));
-
-
         if (count($where)) {
             $countQuery->where($where);
         }
         $iTotalRecords = $countQuery->count();
-
-
         $iDisplayLength = intval($request->get('length'));
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
         $iDisplayStart = intval($request->get('start'));
         $sEcho = intval($request->get('draw'));
-
         $records = array();
         $records["data"] = array();
-
         $end = $iDisplayStart + $iDisplayLength;
         $end = $end > $iTotalRecords ? $iTotalRecords : $end;
-
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
             ->where(function ($query) {
@@ -2415,8 +2328,6 @@ class LeadsController extends Controller
                 $query->orWhereNull('leads.city_id');
             })
             ->whereIn('leads.lead_status_id', array($junk_lead_statuses->id));
-
-
         if (count($where)) {
             $resultQuery->where($where);
         }
@@ -2425,11 +2336,9 @@ class LeadsController extends Controller
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order)
             ->get();
-
         $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
         $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
         $lead_status = LeadStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-
         // Convert Lead status to Converted
         $DefaultConvertedLeadStatus = LeadStatuses::where(array(
             'account_id' => Auth::User()->account_id,
@@ -2440,7 +2349,6 @@ class LeadsController extends Controller
         } else {
             $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
         }
-
         if ($Leads) {
             $index = 0;
             foreach ($Leads as $lead) {
@@ -2467,7 +2375,6 @@ class LeadsController extends Controller
                 $index++;
             }
         }
-
         if ($request->get('customActionType') && $request->get('customActionType') == "group_action") {
             $Leads = Leads::whereIn('id', $request->get('id'));
             if ($Leads) {
@@ -2476,53 +2383,38 @@ class LeadsController extends Controller
             $records["customActionStatus"] = "OK"; // pass custom message(useful for getting status of group actions)
             $records["customActionMessage"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
         }
-
         $records["draw"] = $sEcho;
         $records["recordsTotal"] = $iTotalRecords;
         $records["recordsFiltered"] = $iTotalRecords;
-
         return response()->json($records);
     }
 
     private function getJunkFilters() {
-
         $filters = Filters::all(Auth::User()->id, 'leads_junk');
-
         $cities = Cities::getActiveSorted(ACL::getUserCities());
         $cities->prepend('All', '');
-
         $regions = Regions::getActiveSorted(ACL::getUserRegions());
         $regions->prepend('Select a Region', '');
-
-//        $users = User::getUsers();
-//        $users->prepend('All', '');
         $users = User::getAllActiveRecords(Auth::User()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
-
-
         // Find Junk Lead Status to exclude
         $junk_lead_statuses = LeadStatuses::where(array(
             'account_id' => Auth::User()->account_id,
             'is_junk' => 1,
         ))->first();
-
         if ($junk_lead_statuses) {
             $lead_statuses[''] = 'All';
             $lead_statuses[$junk_lead_statuses->id] = $junk_lead_statuses->name;
         } else {
             $lead_statuses[''] = 'All';
         }
-
         $Services = Services::where([
             ['slug', '=', 'custom'],
             ['parent_id', '=', '0'],
             ['active', '=', '1']
         ])->get()->pluck('name', 'id');
         $Services->prepend('All', '');
-
         $leadServices = Filters::get(Auth::User()->id, 'leads_junk', 'service_id');
-
-
         $records['filter_values'] = [
             'Services' => $Services,
             'cities' => $cities,
@@ -2531,20 +2423,14 @@ class LeadsController extends Controller
             'lead_statuses' => $lead_statuses,
             'leadServices' => $leadServices,
         ];
-
         if (isset($filters['created_from'])) {
             $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
         }
         if (isset($filters['created_to'])) {
             $filters['created_to'] = date('Y-m-d', strtotime($filters['created_to']));
         }
-
         $records['active_filters'] = $filters;
-
         return $records;
-
-
-
     }
 
     /*Start Comment function for lead*/
@@ -2573,21 +2459,16 @@ class LeadsController extends Controller
     {
         $data = $request->all();
         // Add Additional Data
-
         $data['status'] = 0;
         $data['patient_id'] = 0;
-
         if (Gate::allows('leads_manage') && $request->get('phone') && !$request->get('lead_id')) {
             if($request->input('phone') == '***********'){
                 $request->merge(['phone' => $request->input('old_phone')]);
             }
             $request->request->remove('old_phone');
             $phone = GeneralFunctions::cleanNumber($request->get('phone'));
-
             $patient = Patients::getByPhone($phone, Auth::User()->account_id, $request->patient_id);
-
             if (!$patient) {
-
                 $data['status'] = 1;
                 $data['service_id'] = $request->get('service_id');
                 $data['phone'] = $request->get('phone');
@@ -2595,11 +2476,8 @@ class LeadsController extends Controller
                 $data['dob'] = $request->get('dob');
                 $data['address'] = $request->get('address');
                 $data['referred_by'] = $request->get('referred_by');
-
             } else {
-
                 $lead = Leads::where(['patient_id' => $patient->id, 'service_id' => $request->get('service_id')])->first();
-
                 if ($lead) {
                     $data['id'] = $lead->id;
                     $data['city_id'] = $lead->city_id;
@@ -2631,40 +2509,29 @@ class LeadsController extends Controller
      */
     public function convert($id)
     {
-
         if (!Gate::allows('appointments_manage') || !Gate::allows('leads_convert')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-
         try {
-
             $lead = Leads::getData($id);
             $user_info = User::where(['id' => $lead->patient_id, 'active' => 1, 'account_id' => Auth::User()->account_id])->first();
-
             if ($lead == null) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
             }
-
             $employees = User::getAllActiveRecords(Auth::User()->account_id);
             if ($employees) {
                 $employees = $employees->pluck('full_name', 'id');
             } else {
                 $employees = array();
             }
-
             $services[''] = 'Select a Service';
-
             $cities = Cities::getActiveFeaturedOnly(ACL::getUserCities(), Auth::User()->account_id)->get();
             if ($cities) {
                 $cities = $cities->pluck('full_name', 'id');
             }
-
             $lead_sources = LeadSources::getActiveSorted();
-
             $services = Services::getGroupsActiveOnly()->pluck('name', 'id');
-
             $setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
-
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'services' => $services,
                 'lead' => $lead,
@@ -2675,7 +2542,6 @@ class LeadsController extends Controller
                 'setting' => $setting,
                 'consultancy_types' =>  Config::get("constants.consultancy_type_array"),
             ]);
-
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -2686,19 +2552,15 @@ class LeadsController extends Controller
         set_time_limit(0);
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
-
         if($request->id != null || $request->id != ''){
             $resultQuery->where('leads.patient_id', $request->id);
         }
-
         if($request->service_id != null || $request->service_id != ''){
             $resultQuery->where('leads.service_id', $request->service_id);
         }
-
         if($request->lead_status_id != null || $request->lead_status_id != ''){
             $resultQuery->where('leads.lead_status_id', $request->lead_status_id);
         }
-
         if($request->city_id != null || $request->city_id != ''){
             $resultQuery->where('leads.city_id', $request->city_id);
         }
@@ -2708,36 +2570,18 @@ class LeadsController extends Controller
         if($request->region_id != null || $request->region_id != ''){
             $resultQuery->where('leads.region_id', $request->region_id);
         }
-
         if($request->created_by != null || $request->created_by != ''){
             $resultQuery->where('leads.created_by', $request->created_by);
         }
-
         if($request->name != null || $request->name != ''){
             $resultQuery->where('users.name','like', $request->name.'%');
         }
-
         if($request->name != null || $request->name != ''){
             $resultQuery->where('users.name','like', $request->name.'%');
         }
-
         if($request->start_date != null || $request->start_date != ''){
             $resultQuery->whereBetween('leads.created_at', [$request->start_date, $request->end_date]);
-        }
-            
-        // $junk_lead_statuses_id = LeadStatuses::where(array(
-        //     'account_id' => Auth::User()->account_id,
-        //     'is_junk' => 1,
-        // ))->value('id');
-
-        // if (request()->has('type')) {
-
-        //     $resultQuery->where('leads.lead_status_id', $junk_lead_statuses_id ?? 0);
-
-        // } else {
-        //     $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses_id ?? 0);
-        // }
-
+        }  
         $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
         ->orderBy("leads.created_at", "DESC")->get();
         $customPaper = array(0,0,720,1440);
@@ -2745,7 +2589,6 @@ class LeadsController extends Controller
         return $pdf->download('leads.pdf');
     }
     public function exportDocs(Request $request) {
-       
         set_time_limit(0);
         ini_set('memory_limit', '-1');
         return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
