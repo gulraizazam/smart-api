@@ -92,8 +92,6 @@
                 </div>
             </div>
         @endif
-
-
     </div>
     <!--end::Modal body-->
 </div>
