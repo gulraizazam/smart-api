@@ -610,6 +610,7 @@ class DashboardReportsController extends Controller
                 }   
             }
             if ($request->lastmonth) {
+                
                 $total = 0;
                 $lastmonth[0] = array(
                     'Task',
@@ -619,8 +620,8 @@ class DashboardReportsController extends Controller
                     $childServices = Services::where(['parent_id' => $service->id])->get();
                     foreach($childServices as $child){
                         $packagesadvances = PackageAdvances::join('appointments','appointments.id','package_advances.appointment_id')
-                        ->whereDate('package_advances.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
-                        ->whereDate('package_advances.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                        ->whereDate('package_advances.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                        ->whereDate('package_advances.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
                         ->where([
                             'package_advances.account_id'=> Auth::User()->account_id,
                             'appointments.service_id'=>$child->id,
@@ -927,8 +928,8 @@ class DashboardReportsController extends Controller
             }
             if ($request->lastmonth) {
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '>=',Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
@@ -1360,8 +1361,8 @@ class DashboardReportsController extends Controller
             }
             if ($request->get('lastmonth')) {
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
                     ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
@@ -1698,8 +1699,8 @@ class DashboardReportsController extends Controller
                 $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
             break;
             case 'lastmonth':
-                $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
-                $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+                $start_date = Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d');
+                $end_date = Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d');
             break;
             default:
                 $start_date = Carbon::now()->format('Y-m-d');
@@ -1958,8 +1959,8 @@ class DashboardReportsController extends Controller
                 }
             }
             if ($request->period=='lastmonth') {
-                $monthlyRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                $monthlyRecords = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
                 ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
@@ -2214,8 +2215,8 @@ class DashboardReportsController extends Controller
             
         }
         if ($request->period=='lastmonth') {
-            $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
-            ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+            $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+            ->whereDate('created_at', '<=',Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
                 ->whereIn('location_id', ACL::getUserCentres());
             if ($request->get('performance')) {
                 $monthlyRecords = $monthlyRecords->where('created_by', Auth::User()->id);
