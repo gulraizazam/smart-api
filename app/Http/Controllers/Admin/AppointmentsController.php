@@ -3518,71 +3518,71 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function getScheduledAppointments(Request $request)
-    {
-        if ($request->location_id) {
-            $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-            $start = $request->get("start");
-            $end = $request->get("end");
-            if($request->doctor_id){
-                $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end")); 
-            }
-            $location_id = $request->get("location_id");
-            $doctor_id = $request->get("doctor_id");
-            $machine_id = $request->get("machine_id");
-            $minTime = Resources::getMinTimeWithDr($location_id, $doctor_id, $start, $end);
-            if ($appointments) {
-                $data = array();
-                foreach ($appointments as $appointment) {
-                    $dutation = explode(':', $appointment?->service?->duration ?? '');
-                        $data[$appointment->id] = array(
-                            'id' => $appointment->id,
-                            'service' => $appointment?->service?->name ?? '',
-                            'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
-                            'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-                            'phone' => GeneralFunctions::prepareNumber4Call($appointment?->patient?->phone ?? '0300'),
-                            'duration' => $appointment?->service?->duration ?? '00',
-                            'editable' => true,
-                            'overlap' => false,
-                            'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-                            'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0] ?? 0)->addMinutes($dutation[1] ?? 0)->format('H:i'),
-                            'color' => $appointment?->service?->color ?? '#fff',
-                            'resourceId' => $appointment->doctor_id,
-                        );
-					}
-                    if($request->doctor_id){
-                        return response()->json(array(
-                            'status' => 1,
-                            'events' => $data,
-                            'min_time' => $minTime,
-                            "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
-                            'start_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))->format("H:i:s"),
-                            'end_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))->format("H:i:s"),
-
-                        ));
-                    }else{
-                        return response()->json(array(
-                            'status' => 1,
-                            'events' => $data,
-                            'min_time' => $minTime,
-                            "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
-                            'start_time' => '10:00',
-                            'end_time' => '23:00',
-                        ));
-                    }
-            } else {
-                return response()->json(array(
-                    'status' => 0,
-                    'events' => null,
-                ));
-            }
-        } else {
-            return response()->json(array(
-                'status' => 0,
-                'events' => null,
-            ));
-        }
-    }
+     public function getScheduledAppointments(Request $request)
+     {
+         if ($request->location_id) {
+             $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
+             $start = $request->get("start");
+             $end = $request->get("end");
+             if($request->doctor_id){
+                 $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end")); 
+             }
+             $location_id = $request->get("location_id");
+             $doctor_id = $request->get("doctor_id");
+             $machine_id = $request->get("machine_id");
+             $minTime = Resources::getMinTimeWithDr($location_id, $doctor_id, $start, $end);
+             if ($appointments) {
+                 $data = array();
+                 foreach ($appointments as $appointment) {
+                     $dutation = explode(':', $appointment?->service?->duration ?? '');
+                         $data[$appointment->id] = array(
+                             'id' => $appointment->id,
+                             'service' => $appointment?->service?->name ?? '',
+                             'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                             'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
+                             'phone' => GeneralFunctions::prepareNumber4Call($appointment?->patient?->phone ?? '0300'),
+                             'duration' => $appointment?->service?->duration ?? '00',
+                             'editable' => true,
+                             'overlap' => false,
+                             'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
+                             'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0] ?? 0)->addMinutes($dutation[1] ?? 0)->format('H:i'),
+                             'color' => $appointment?->service?->color ?? '#fff',
+                             'resourceId' => $appointment->doctor_id,
+                         );
+                     }
+                     if($request->doctor_id){
+                         return response()->json(array(
+                             'status' => 1,
+                             'events' => $data,
+                             'min_time' => $minTime,
+                             "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
+                             'start_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))->format("H:i:s"),
+                             'end_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))->format("H:i:s"),
+ 
+                         ));
+                     }else{
+                         return response()->json(array(
+                             'status' => 1,
+                             'events' => $data,
+                             'min_time' => $minTime,
+                             "rotas" => isset($doctor_rotas)? $doctor_rotas->toArray() : '',
+                             'start_time' => '10:00',
+                             'end_time' => '23:00',
+                         ));
+                     }
+             } else {
+                 return response()->json(array(
+                     'status' => 0,
+                     'events' => null,
+                 ));
+             }
+         } else {
+             return response()->json(array(
+                 'status' => 0,
+                 'events' => null,
+             ));
+         }
+     }
     /*
      * check and save Consulting appointment
 

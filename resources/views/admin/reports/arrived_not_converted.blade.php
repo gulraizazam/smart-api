@@ -1,4 +1,3 @@
-
 @inject('request', 'Illuminate\Http\Request')
 @if($request->get('medium_type') != 'web')
     @if($request->get('medium_type') == 'pdf')
@@ -6,6 +5,8 @@
     @else
         @include('partials.head')
     @endif
+    
+    
     <style type="text/css">
         @page {
             margin: 10px 20px;
@@ -54,12 +55,13 @@
 <div class="panel-body sn-table-body">
     <div class="bordered">
         <div class="sn-table-head">
+
             <div class="row">
                 <div class="col-md-2">
                     <img style="width: 180px;" src="{{asset('logo_final.png')}}">
                 </div>
                 <div class="col-md-6">&nbsp;</div>
-            
+                
             </div>
             <div class="pt-4 border-top  all-sections section-states" >
                
