@@ -1058,11 +1058,13 @@ class LeadsController extends Controller
                     'service_id' => $data['service_id'],
                 ))->first();
                 if ($logLevelLead) {
-                    $data['updated_by'] = Auth::User()->id;
                     if($logLevelLead->service_id == $data['service_id']){
-                        $data['service_id'] = $lead->service_id;
+                        $message = 'Service already exist.';
+                        return response()->json(array(
+                            'status' => 0,
+                            'message' => $message,
+                        ));
                     }
-                    $lead = Leads::updateRecord($logLevelLead->id, $data, $patient);
                 } else {
                     $data['created_by'] = Auth::User()->id;
                     $data['updated_by'] = Auth::User()->id;
