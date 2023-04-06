@@ -602,8 +602,7 @@ class LocationsWidget
 
         // Locaton Based Services Array
         $location_services_array = array();
-        $services = ServiceHasLocations
-            ::join('services','services.id', '=', 'service_has_locations.service_id')
+        $services = ServiceHasLocations::join('services','services.id', '=', 'service_has_locations.service_id')
             ->where([
             'service_has_locations.service_id' => Services::where(array(
                 'slug' => 'all',
@@ -611,7 +610,7 @@ class LocationsWidget
             ))->select('id')->first()->id,
             'service_has_locations.location_id' => $location_id
         ])->get();
-
+        dd($services);
         if ($services->count()) {
             $ss = Services::where(array(
                 'slug' => 'custom',
