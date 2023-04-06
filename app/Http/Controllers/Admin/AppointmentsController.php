@@ -2105,7 +2105,10 @@ class AppointmentsController extends Controller
         } else {
             $employees = array();
         }
+        
+        
         $intersect_resource_service_ids = LocationsWidget::loadAppointmentServiceByLocationResource($request->get("machine_id"), Auth::User()->account_id);
+        dd($intersect_resource_service_ids);
         $intersect_location_doctor_service_ids = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->get("location_id"), $request->get("doctor_id"), Auth::User()->account_id);
         $serviceIds = array();
         if (count($intersect_resource_service_ids) && count($intersect_location_doctor_service_ids)) {
