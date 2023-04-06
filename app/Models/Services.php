@@ -444,7 +444,7 @@ class Services extends BaseModal
         if (!$service) {
             return false;
         }
-
+        Services::where('parent_id',$id)->update(['active'=>1]);
         $record = $service->update(['active' => 1]);
 
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
