@@ -610,8 +610,9 @@ class LocationsWidget
             ))->select('id')->first()->id,
             'service_has_locations.location_id' => $location_id
         ])->get();
-        dd($services);
+        
         if ($services->count()) {
+            dd("here");
             $ss = Services::where(array(
                 'slug' => 'custom',
                 'account_id' => $account_id,
