@@ -126,6 +126,12 @@
                             @if($patient['base_appointment_status_id'] == 2)
                             <label class="label label-success" style="width:100px;border-radius:2px">Arrived</label>
                             @endif
+                            @if($patient['base_appointment_status_id'] == 3)
+                            <label class="label label-info" style="width:100px;border-radius:2px">No Show</label>
+                            @endif
+                            @if($patient['base_appointment_status_id'] == 4)
+                            <label class="label label-danger" style="width:100px;border-radius:2px">Cancelled</label>
+                            @endif
                         </td> 
                     </tr>
                 @endforeach
