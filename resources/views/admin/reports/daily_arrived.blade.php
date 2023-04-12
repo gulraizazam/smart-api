@@ -5,45 +5,6 @@
     @else
         @include('partials.head')
     @endif
-    
-    
-    <style type="text/css">
-        @page {
-            margin: 10px 20px;
-        }
-
-        @media print {
-            table {
-                font-size: 12px;
-            }
-
-            .tr-root-group {
-                background-color: #F3F3F3;
-                color: rgba(0, 0, 0, 0.98);
-                font-weight: bold;
-            }
-
-            .tr-group {
-                font-weight: bold;
-            }
-
-            .bold-text {
-                font-weight: bold;
-            }
-
-            .error-text {
-                font-weight: bold;
-                color: #FF0000;
-            }
-
-            .ok-text {
-                color: #006400;
-            }
-            
-
-        }
-
-    </style>
 @endif
 <div class="sn-table-holder">
     <div class="sn-report-head">
@@ -71,19 +32,19 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Total Scheduled Appointments</td>
-                                <td class="bg-light" style="text-align:right;">{{$booked ?? 0}}</td>
+                                <td class="bg-light" style="text-align:right;">{{count($Appointments) ?? 0}}</td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light" style=""> Arrived</td>
+                                <td class="border-top bg-light"> Arrived</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$arrived ?? 0}}</td>
                             </tr>
                             
                                 <tr class="">
-                                    <td class="border-top bg-light" style="">Arrival Ratio</td>
+                                    <td class="border-top bg-light" >Arrival Ratio</td>
                                     <td class="border-top bg-light" style="text-align:right;">
                                         <?php
-                                        if (isset($arrived) && isset($booked)) {
-                                            echo number_format(($arrived / $booked) * 100, 2) . '%';
+                                        if (isset($arrived) && isset($Appointments)) {
+                                            echo number_format(($arrived / count($Appointments)) * 100, 2) . '%';
                                         } else {
                                             echo '00.00 %';
                                         }
@@ -99,43 +60,41 @@
             <div class="table-wrapper all-sections section-detail" id="topscroll">
                 <table class="table" id="arrived_patients_table">
                     <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Patient Name</th>
-                        <th>Phone</th>
-                        <th>Service</th>
-                        <th>Centre</th>
-                        <th>Scheduled Date</th>
-                        <th>Appointment Status</th>
-                    </tr>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient Name</th>
+                            <th>Phone</th>
+                            <th>Service</th>
+                            <th>Centre</th>
+                            <th>Scheduled Date</th>
+                            <th>Appointment Status</th>
+                        </tr>
                     </thead>
-                    
-                <tbody>
-                    
-                @foreach($Appointments as $patient)
-                    <tr>
-                        <td>{{$patient['id']}}</td>
-                        <td>{{$patient['name']}}</td>
-                        <td>{{$patient['phone']}}</td>
-                        <td>{{$patient->service->name}}</td>
-                        <td>{{$patient->location->name}}</td>
-                        <td>{{$patient['scheduled_date']}}</td> 
-                        <td>@if($patient['base_appointment_status_id'] == 1)
-                            <label class="label label-warning" style="width:100px;border-radius:2px">Pending</label>
-                            @endif
-                            @if($patient['base_appointment_status_id'] == 2)
-                            <label class="label label-success" style="width:100px;border-radius:2px">Arrived</label>
-                            @endif
-                            @if($patient['base_appointment_status_id'] == 3)
-                            <label class="label label-info" style="width:100px;border-radius:2px">No Show</label>
-                            @endif
-                            @if($patient['base_appointment_status_id'] == 4)
-                            <label class="label label-danger" style="width:100px;border-radius:2px">Cancelled</label>
-                            @endif
-                        </td> 
-                    </tr>
-                @endforeach
-                </tbody>
+                    <tbody>
+                        @foreach($Appointments as $patient)
+                            <tr>
+                                <td>{{$patient['id']}}</td>
+                                <td>{{$patient['name']}}</td>
+                                <td>{{$patient['phone']}}</td>
+                                <td>{{$patient->service->name}}</td>
+                                <td>{{$patient->location->name}}</td>
+                                <td>{{$patient['scheduled_date']}}</td> 
+                                <td>@if($patient['base_appointment_status_id'] == 1)
+                                    <label class="label label-warning" style="width:100px;border-radius:2px">Pending</label>
+                                    @endif
+                                    @if($patient['base_appointment_status_id'] == 2)
+                                    <label class="label label-success" style="width:100px;border-radius:2px">Arrived</label>
+                                    @endif
+                                    @if($patient['base_appointment_status_id'] == 3)
+                                    <label class="label label-info" style="width:100px;border-radius:2px">No Show</label>
+                                    @endif
+                                    @if($patient['base_appointment_status_id'] == 4)
+                                    <label class="label label-danger" style="width:100px;border-radius:2px">Cancelled</label>
+                                    @endif
+                                </td> 
+                            </tr>
+                        @endforeach
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -143,6 +102,5 @@
     <div class="clear clearfix"></div>
     <!-- Liabilities and Assets -->
     <script src="{{ url('assets/js/fake-scroll.js') }}" type="text/javascript"></script>
-    
 </div>
 
