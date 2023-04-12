@@ -2,36 +2,6 @@
 @section('content')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
-    @push('css')
-        <style>
-            .table-wrapper {
-                overflow-x: scroll;
-            }
-            .sn-report-head{
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: space-between;
-                padding: 8px 15px 10px;
-            }
-            .sn-report-head {
-                background-color: #02203d;
-                color: #fff;
-            }
-            .sn-white-btn {
-                background-color: #35a1d4 !important;
-                border: #35a1d4 !important;
-                color: #fff !important;
-            }
-            .sn-white-btn > i {
-                color: #fff !important;;
-            }
-            .shdoc-header {
-                background: rgba(54, 65, 80, 1) !important;
-                color: #fff !important;
-                font-weight: bold !important;
-            }
-        </style>
-    @endpush
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Daily Arrival Report'])
