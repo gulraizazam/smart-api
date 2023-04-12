@@ -2767,21 +2767,18 @@ class FinanceReportController extends Controller
     }
     public function ArrivedNotConverted()
     {
-    
-        $services = Services::where('parent_id',0)->where('slug','!=','all')->get();
+        $services = Services::where(['parent_id' => 0])->whereNotIn('slug',['all'])->get();
         $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
-        $cities->prepend('Select a City', '');
         $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
-        return view('admin.reports.arrived',compact('locations',  'services',  'cities')); 
+        return view('admin.reports.arrived',get_defined_vars()); 
     }
 
     public function DailyArrival()
     {
-        $services = Services::where(['parent_id'=>0])->where('slug','!=','all')->get();
+        $services = Services::where(['parent_id'=>0])->whereNotIn('slug',['all'])->get();
         $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
-        $cities->prepend('Select a City', '');
         $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
-        return view('admin.reports.dailyarrival',compact('locations',  'services',  'cities'));
+        return view('admin.reports.dailyarrival',get_defined_vars());
     }
 
     public function LoadDailyArrival(Request $request)
