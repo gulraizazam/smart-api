@@ -496,6 +496,46 @@ class LeadsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function allleads()
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+        $junk_lead_statuses = LeadStatuses::where(array(
+            'account_id' => Auth::User()->account_id,
+            'is_junk' => 1,
+        ))->first();
+        
+        $countQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
+            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
+            ->where(function ($query) {
+                $query->whereIn('leads.city_id', ACL::getUserCities());
+                $query->orWhereNull('leads.city_id');
+            });
+        $countQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
+        $iTotalRecords = $countQuery->count();
+        $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
+            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
+            ->where(function ($query) {
+                $query->whereIn('leads.city_id', ACL::getUserCities());
+                $query->orWhereNull('leads.city_id');
+            });
+       
+            $resultQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
+           
+        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leads")){
+            $Leads = $resultQuery->select('*','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId','users.gender')
+            ->get();
+        }else{
+            
+            $Leads = Leads::join('users','users.id','leads.patient_id')->select( 'users.phone','users.gender','leads.city_id')
+            ->where('leads.active',1)
+            ->get();
+        }
+    
+        
+       return view('admin.allleadsdata',compact('Leads'));
+        
+    }
     public function status(Request $request){
   
         $lead = Leads::findOrFail($request->id);
