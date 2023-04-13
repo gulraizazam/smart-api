@@ -387,12 +387,13 @@ class LeadsController extends Controller
             if (count($where)) {
                 $countQuery->where($where);
             }
-            if ($lead_type) {
-                $countQuery->where('leads.lead_status_id', $junk_lead_statuses->id ?? 0);
-            } else {
-                $countQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
-            }
+            // if ($lead_type) {
+            //     $countQuery->where('leads.lead_status_id', $junk_lead_statuses->id ?? 0);
+            // } else {
+            //     $countQuery->where('leads.lead_status_id', '!=', $junk_lead_statuses->id ?? 0);
+            // }
             $iTotalRecords = $countQuery->count();
+           
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
             $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
                 ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
