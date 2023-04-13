@@ -69,8 +69,8 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $resultQuery->whereBetween('leads.created_at', [$this->request->start_date. ' 00:00:00', $this->request->end_date. ' 23:59:59']);
         }
         $result = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
-            ->orderBy("leads.created_at", "DESC")->count();
-         dd($result);
+            ->orderBy("leads.created_at", "DESC")->get();
+         
         return $result;
     }
     public function headings(): array
