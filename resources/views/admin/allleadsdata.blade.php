@@ -7,6 +7,7 @@
     @endif
     
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
     <style type="text/css">
         @page {
             margin: 10px 20px;
@@ -84,7 +85,7 @@
                     <tr>
                         <td>{{$patient->phone}}</td>
                         <td>{{$patient->city->name ?? 'Empty'}}</td>
-                        <td>{{$patient->gender}}</td>
+                        <td>{{$patient->gender==1 ? 'Male' : 'Female'}}</td>
                         
                     </tr>
                 @endforeach
@@ -99,11 +100,25 @@
     </div>
     <div class="clear clearfix"></div>
     <!-- Liabilities and Assets -->
-    <script src="https://code.jquery.com/jquery-3.5.1.js" type="text/javascript"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>        
     <script>
         $(document).ready(function () {
-            $('#arrived_patients_table').DataTable();
+            $("#arrived_patients_table").DataTable({
+                            dom: 'Bfrtip',
+                            buttons: [
+                                
+                                'excelHtml5',
+                                'csvHtml5',
+                                'pdfHtml5',  
+                            ],
+                            "ordering": false
+                        });
         });
     </script>
     
