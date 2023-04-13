@@ -136,7 +136,7 @@ use Illuminate\Support\Facades\DB;
         Route::get('/home/getstats', [App\Http\Controllers\HomeController::class, 'getStats'])->name('home.getstats');
         Route::get('/home/getactivity', [App\Http\Controllers\HomeController::class, 'getActivity'])->name('home.getactivity');
         Route::get('settings', [SettingsController::class,'index'])->name('settings.index');
-
+        Route::get('allleadsdata', [LeadsController::class,'allleads']);
         Route::resource('permissions', PermissionsController::class);
 
         Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
