@@ -136,7 +136,7 @@ use Illuminate\Support\Facades\DB;
         Route::get('/home/getstats', [App\Http\Controllers\HomeController::class, 'getStats'])->name('home.getstats');
         Route::get('/home/getactivity', [App\Http\Controllers\HomeController::class, 'getActivity'])->name('home.getactivity');
         Route::get('settings', [SettingsController::class,'index'])->name('settings.index');
-        Route::get('allleadsdata', [LeadsController::class,'allleads']);
+
         Route::resource('permissions', PermissionsController::class);
 
         Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
@@ -534,7 +534,7 @@ use Illuminate\Support\Facades\DB;
 
         Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
         Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports');
-
+        Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted');
         Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
 
         Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
@@ -545,8 +545,8 @@ use Illuminate\Support\Facades\DB;
         Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report');
         Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
         Route::post('operation_reports/converted-report-load', [OperationsReportController::class, 'reportLoadConverted'])->name('reports.converted_report_load');
-        Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted');
-        
+        Route::get('reports/dailyarrival', [FinanceReportController::class, 'Dailyarrival'])->name('reports.dailyarrival');
+        Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
         //Route end for Operations reports
 
         /////////////////Dashboard Stats//////
