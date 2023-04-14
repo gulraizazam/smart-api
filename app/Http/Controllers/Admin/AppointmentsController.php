@@ -2149,6 +2149,7 @@ class AppointmentsController extends Controller
      */
     public function createConsultingAppointment(Request $request)
     {
+       
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
