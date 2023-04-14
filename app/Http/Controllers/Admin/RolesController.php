@@ -329,7 +329,7 @@ class RolesController extends Controller
 
             'cash_delete' => 'Plan Cash Delete',
             'log' => 'Log',
-            'log_excel' => 'Excel Log',
+            'log_excel' => 'Generate Invoice For Outrange',
             'sms_log' => 'Sms Log',
         );
     }
