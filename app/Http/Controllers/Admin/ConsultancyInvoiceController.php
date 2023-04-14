@@ -410,10 +410,15 @@ class ConsultancyInvoiceController extends Controller
         } else {
             $payment_mode_id = $request->payment_mode_id;
         }
-        $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
-        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+        $paymentmode_settle = PaymentModes::where(['payment_type' => Config::get('constants.payment_type_settle')])->first();
+        $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
-
+        if(!Gate::allows('appointments_log_excel')){
+            if($appointmentinfo->scheduled_date < date('Y-m-d') || $appointmentinfo->scheduled_date > date('Y-m-d'))
+            {
+                return response()->json(["message"=> 'Invoice can not be genersted in past and future dates.',"status"=>false]);
+            }
+        }
         if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
             $is_exclusive = $request->is_exclusive;
         } else if ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
