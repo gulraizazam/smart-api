@@ -238,7 +238,9 @@ $(document).ready(function () {
                     'tax_treatment_type_id': tax_treatment_type_id,
                 },
                 success: function (resposne) {
-                    if (resposne.status) {
+                    if (resposne.status == false) {
+                        toastr.error("Invoice can not be generated in past and future dates!");
+                    } else if(resposne.status) {
                         let invoice_id = resposne.data.invoice_id;
                         $('#successMessage').show();
                         toastr.success("Invoice successfully created");
