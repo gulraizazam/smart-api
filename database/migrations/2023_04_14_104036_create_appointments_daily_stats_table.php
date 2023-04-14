@@ -19,7 +19,7 @@ class CreateAppointmentsDailyStatsTable extends Migration
             $table->integer('consultation_arrived_count')->nullable();
             $table->integer('treatment_scheduled_count')->nullable();
             $table->integer('treatment_arrived_count')->nullable();
-            $table->timestamp('cron_current_date')->nullable();
+            $table->date('cron_current_date');
             $table->timestamps();
         });
     }
