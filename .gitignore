@@ -21,3 +21,4 @@ composer.lock
 /.idea
 /.vscode
 cutera_hrm.sql
+server.php
