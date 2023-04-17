@@ -591,7 +591,7 @@ function setEditData(response) {
 
         $(".plan_history").html(history_options);
 
-        $(".package_total_price").text(package.grand_total);
+        $(".package_total_price").text(package.total_price);
         $("#user_name").text(package?.user?.name)
         $("#location_name").text(package?.location?.name)
 
@@ -777,7 +777,7 @@ function displayData(response) {
 
         $(".plan_history").html(history_options);
 
-        $(".package_total_price").text(package.total_price);
+        $(".package_total_price").text(package.grand_total);
         $("#user_name").text(package.user.name)
         $("#location_name").text(package.location.name)
 
