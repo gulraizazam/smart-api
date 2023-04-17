@@ -94,7 +94,7 @@ class Packages extends BaseModal
      * @return: mixed
      * */
     static public function updateRecord($data,$random_id,$request){
-
+        
         $record = self::where('random_id','=',$random_id)->first();
 
         $id = $record->id;
