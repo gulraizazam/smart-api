@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use App\Models\AuditTrails;
 use Auth;
+use Carbon\Carbon;
 
 class PackageBundles extends Model
 {
@@ -146,8 +147,15 @@ class PackageBundles extends Model
             ['is_allocate','=','1']
         ])->pluck('id');
         $GetPackage = Packages::findOrFail($packagebundle[0]->package_id);
-        $GetAppointment = Appointments::findOrFail($GetPackage->appointment_id);
-        $packageservicez = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)->get();
+        
+        $GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
+        ->select('appointments.id','appointments.service_id')
+        ->where('appointments.id',$GetPackage->appointment_id)->first();
+       $GetInvoiceInfo = Invoices::where('appointment_id',$GetAppointment->id)->first();
+        $packageservicez = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)
+        ->where('created_at','>',Carbon::parse($GetInvoiceInfo->created_at))
+        ->get();
+        dd($packageservicez);
         foreach ($packageservicez as $packagebundl) {
             if($packagebundl->service->parent_id != $GetAppointment->service_id){
                 $GetAppointment->update(['service_id'=> $packageservicez[0]->service->parent_id]);
