@@ -65,28 +65,34 @@ class PackageBundles extends Model
     static public function createRecord($package,$request){
 
         $parent_id = $package->id;
-
         $updateDetails = [
             'package_id' => $package->id,
             'is_allocate' => 1
         ];
-
         foreach ($request['package_bundles'] as $bundle_id){
             self::where([
-                ['id', '=', $bundle_id],
-                ['random_id','=',$package->random_id]
+                'id' => $bundle_id,
+                'random_id' => $package->random_id
             ])->update($updateDetails);
         }
-
         $packagebundle = self::where([
-            ['package_id', '=', $package->id],
-            ['is_allocate','=','1']
+            'package_id' => $package->id,
+            'is_allocate' => '1'
         ])->get();
-
+        $packagebundleIds = self::where([
+            'package_id' => $package->id,
+            'is_allocate' => '1'
+        ])->pluck('id');
+        $GetPackage = Packages::findOrFail($packagebundle[0]->package_id);
+        $GetAppointment = Appointments::findOrFail($GetPackage->appointment_id);
+        $package_services = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)->get();
+        foreach ($package_services as $packagebundl) {
+            if($packagebundl->service->parent_id != $GetAppointment->service_id){
+                $GetAppointment->update(['service_id'=> $package_services[0]->service->parent_id]);
+            }
+        }
         foreach ($packagebundle as $packagebundle) {
-
             AuditTrails::addEventLogger(self::$_table, 'create', $packagebundle, self::$_fillable, $packagebundle, $parent_id);
-
             $packageservice = PackageService::createRecord($packagebundle);
         }
         return true;
@@ -102,6 +108,7 @@ class PackageBundles extends Model
      * */
     static public function updateRecord($package,$request){
 
+       
         $parent_id = $package->id;
 
         $updateDetails = [
@@ -120,7 +127,7 @@ class PackageBundles extends Model
                 ['package_id', '=', $package->id],
                 ['is_allocate','=','1']
             ])->get();
-
+            
             foreach ($packagebundle as $packagebundle) {
 
                 $old_data = '0';
@@ -128,6 +135,22 @@ class PackageBundles extends Model
                 AuditTrails::editEventLogger(self::$_table, 'Edit', $packagebundle, self::$_fillable, $old_data, $packagebundle, $parent_id);
 
                 $packageservice = PackageService::updateRecord($packagebundle);
+            }
+        }
+        $packagebundle = PackageBundles::where([
+            ['package_id', '=', $package->id],
+            ['is_allocate','=','1']
+        ])->get();
+        $packagebundleIds = self::where([
+            ['package_id', '=', $package->id],
+            ['is_allocate','=','1']
+        ])->pluck('id');
+        $GetPackage = Packages::findOrFail($packagebundle[0]->package_id);
+        $GetAppointment = Appointments::findOrFail($GetPackage->appointment_id);
+        $packageservicez = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)->get();
+        foreach ($packageservicez as $packagebundl) {
+            if($packagebundl->service->parent_id != $GetAppointment->service_id){
+                $GetAppointment->update(['service_id'=> $packageservicez[0]->service->parent_id]);
             }
         }
         return true;
