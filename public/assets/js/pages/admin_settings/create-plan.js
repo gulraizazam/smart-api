@@ -976,8 +976,8 @@ console.log(response);
 
 
         $(".plan_history").html(history_options);
-
-        $(".package_total_price").text(response.data.grand_total);
+var totalam = Math.round(response.data.grand_total);
+        $(".package_total_price").text(totalam);
         $("#user_name").text(package.user.name)
         $("#location_name").text(package.location.name)
 
