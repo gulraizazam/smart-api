@@ -53,6 +53,7 @@ use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\DashboardReportsController;
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
+use App\Http\Controllers\ConversionReportController;
 use App\Models\Leads;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -547,6 +548,8 @@ use Illuminate\Support\Facades\DB;
         Route::post('operation_reports/converted-report-load', [OperationsReportController::class, 'reportLoadConverted'])->name('reports.converted_report_load');
         Route::get('reports/dailyarrival', [FinanceReportController::class, 'Dailyarrival'])->name('reports.dailyarrival');
         Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
+        Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion');
+        Route::post('reports/load_conversion_report', [ConversionReportController::class, 'LoadConversionReport'])->name('reports.load_conversion_report');
         //Route end for Operations reports
 
         /////////////////Dashboard Stats//////
