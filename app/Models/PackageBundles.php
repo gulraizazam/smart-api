@@ -111,10 +111,7 @@ class PackageBundles extends Model
      * @return mixed
      * */
     static public function updateRecord($package,$request){
-
-       
         $parent_id = $package->id;
-
         $updateDetails = [
             'package_id' => $package->id,
             'is_allocate' => 1
@@ -142,12 +139,12 @@ class PackageBundles extends Model
             }
         }
         $packagebundle = PackageBundles::where([
-            ['package_id', '=', $package->id],
-            ['is_allocate','=','1']
+            'package_id' => $package->id,
+            'is_allocate' => '1'
         ])->get();
         $packagebundleIds = self::where([
-            ['package_id', '=', $package->id],
-            ['is_allocate','=','1']
+            'package_id' => $package->id,
+            'is_allocate' => '1'
         ])->pluck('id');
         $GetPackage = Packages::findOrFail($packagebundle[0]->package_id);
         $GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
