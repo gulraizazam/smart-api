@@ -49,6 +49,7 @@ class DeliverOnAppointmentBook extends Command
     {
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
             ->where(['appointments.send_message' => 1])
+            ->where(['appointments.base_appointment_status_id' => 1])
             ->where('appointments.updated_at', '<=', Carbon::parse(Carbon::now())->subMinutes(3)->toDateTimeString())
             ->whereNull('coming_from')
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'appointments.updated_at', 'users.phone')
