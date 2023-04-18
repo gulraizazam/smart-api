@@ -1415,11 +1415,11 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'out']
         ])->sum('cash_amount');
-
+        $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
         $cash_amount = $cash_amount_in - $cash_amount_out;
         /*We discuss it in future what happen next*/
-        $grand_total = number_format($package->total_price - $cash_amount_in);
-
+        //$grand_total = number_format($package->total_price - $cash_amount_in);
+        $grand_total = number_format($packageservices_price);
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::User()->account_id);
 
