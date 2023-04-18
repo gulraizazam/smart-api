@@ -60,6 +60,11 @@ class SecondMessageOfAppointment extends Command
             '=',
             $tomorrow
         );
+        $where[] = array(
+            'base_appointment_status_id',
+            '=',
+            1
+        );
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')->where($where)
             ->where(['appointments.appointment_status_allow_message' => 1])
             ->whereNull('coming_from')
