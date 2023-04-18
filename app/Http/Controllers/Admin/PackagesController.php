@@ -524,7 +524,6 @@ class PackagesController extends Controller
      */
     public function savepackages(Request $request)
     {
-       
         DB::beginTransaction();
         try {
             if(isset($request->appointment_id)){
