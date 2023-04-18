@@ -86,7 +86,7 @@ class PackageBundles extends Model
         ])->pluck('id');
         $GetPackage = Packages::findOrFail($packagebundle[0]->package_id);
         $GetAppointment = Appointments::findOrFail($GetPackage->appointment_id);
-        $GetInvoiceInfo = Invoices::where('appointment_id',$GetAppointment->id)->first();
+        $GetInvoiceInfo = Invoices::where(['appointment_id' => $GetAppointment->id])->first();
         $package_services = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)
         ->where('created_at','>',Carbon::parse($GetInvoiceInfo->created_at))
         ->get();
@@ -153,7 +153,7 @@ class PackageBundles extends Model
         $GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
         ->select('appointments.id','appointments.service_id')
         ->where('appointments.id',$GetPackage->appointment_id)->first();
-        $GetInvoiceInfo = Invoices::where('appointment_id',$GetAppointment->id)->first();
+        $GetInvoiceInfo = Invoices::where(['appointment_id' => $GetAppointment->id])->first();
         $packageservicez = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)
         ->where('created_at','>',Carbon::parse($GetInvoiceInfo->created_at))
         ->get();
