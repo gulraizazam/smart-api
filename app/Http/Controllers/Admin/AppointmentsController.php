@@ -2623,12 +2623,13 @@ class AppointmentsController extends Controller
                 $appointmentData['converted_by'] = Auth::user()->id;
             }
             if((string)$appointment->city_id !== $request->city_id || (string)$appointment->location_id !== $request->location_id || (string)$appointment->doctor_id !== $request->doctor_id || (string)$patient->gender !== $request->gender) {
-                if((string)$appointment->consultancy_type !== $request->consultancy_type){
-                    $appointmentData['updated_by'] = Auth::user()->id;
-                }
-                if((string)$appointment->resource_id !== $request->machine_id){
-                    $appointmentData['updated_by'] = Auth::user()->id;
-                }
+                $appointmentData['updated_by'] = Auth::user()->id;
+            }
+            if((string)$appointment->consultancy_type !== $request->consultancy_type){
+                $appointmentData['updated_by'] = Auth::user()->id;
+            }
+            if((string)$appointment->resource_id !== $request->machine_id){
+                $appointmentData['updated_by'] = Auth::user()->id;
             }
             $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
             $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
@@ -2777,12 +2778,13 @@ class AppointmentsController extends Controller
                     return ApiHelper::apiResponse($this->success, 'Patient not found', false);
                 }
                 if((string)$appointment->city_id !== $request->city_id || (string)$appointment->location_id !== $request->location_id || (string)$appointment->doctor_id !== $request->doctor_id || (string)$patient->gender !== $request->gender) {
-                    if((string)$appointment->consultancy_type !== $request->consultancy_type){
-                        $appointmentData['updated_by'] = Auth::user()->id;
-                    }
-                    if((string)$appointment->resource_id !== $request->machine_id){
-                        $appointmentData['updated_by'] = Auth::user()->id;
-                    }
+                    $appointmentData['updated_by'] = Auth::user()->id;
+                }
+                if((string)$appointment->consultancy_type !== $request->consultancy_type){
+                    $appointmentData['updated_by'] = Auth::user()->id;
+                }
+                if((string)$appointment->resource_id !== $request->machine_id){
+                    $appointmentData['updated_by'] = Auth::user()->id;
                 }
                 $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
                 if($appointment->scheduled_date != $request->scheduled_date ){
