@@ -45,6 +45,6 @@ class ConversionReportController extends Controller
             $end_date = null;
         }
         list($report_data, $locationData) = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
-        return view('admin.reports.conversion_report', compact('report_data', 'start_date', 'end_date'));
+        return view('admin.reports.conversion_report', get_defined_vars());
     }
 }
