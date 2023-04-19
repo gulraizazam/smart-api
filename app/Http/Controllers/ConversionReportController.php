@@ -36,14 +36,6 @@ class ConversionReportController extends Controller
     }
     public function LoadConversionReport(Request $request)
     {
-        if ($request->date_range) {
-            $date_range = explode(' - ', $request->date_range);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
         list($report_data, $locationData) = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
         return view('admin.reports.conversion_report', get_defined_vars());
     }
