@@ -2677,7 +2677,6 @@ class AppointmentsController extends Controller
                 if (! $patient) {
                     return ApiHelper::apiResponse($this->success, 'Patient not found', false);
                 }
-                //dd((string)$appointment->consultancy_type !== $request->consultancy_type || (string)$appointment->city_id !== $request->city_id || (string)$appointment->location_id !== $request->location_id || (string)$appointment->doctor_id !== $request->doctor_id || (string)$patient->gender !== $request->gender);
                 if((string)$appointment->city_id !== $request->city_id || (string)$appointment->location_id !== $request->location_id || (string)$appointment->doctor_id !== $request->doctor_id || (string)$patient->gender !== $request->gender) {
                     if((string)$appointment->consultancy_type !== $request->consultancy_type){
                         $appointmentData['updated_by'] = Auth::user()->id;
