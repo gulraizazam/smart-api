@@ -2612,7 +2612,6 @@ class AppointmentsController extends Controller
             $appointmentData = $request->all();
             $appointmentData['region_id'] = $city_info->region_id;
             $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
-            $appointmentData['updated_by'] = Auth::user()->id;
             if($appointment->scheduled_date != $request->scheduled_date ){
                 $appointmentData['converted_by'] = Auth::user()->id;
             }
