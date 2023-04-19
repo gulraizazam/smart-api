@@ -5529,9 +5529,15 @@ class AppointmentsController extends Controller
         ]);
     }
     public function updateSchedule(Request $request) {
-
+        $data = [];
         $appointment = Appointments::find($request->appointment_id);
         if ($appointment) {
+            if($appointment->scheduled_date != $request->scheduled_date ){
+                $data['converted_by'] = Auth::user()->id;
+            }
+            if($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format("H:i:s")){
+                $data['converted_by'] = Auth::user()->id;
+            }
             if ($appointment->appointment_status_id == config('constants.appointment_status_arrived')
                 || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
                 return ApiHelper::apiResponse($this->success, 'Appointment has Invoice or has been canceled!', false);
@@ -5541,7 +5547,7 @@ class AppointmentsController extends Controller
                 $appointment->update([
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format("Y-m-d"),
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format("H:i:s"),
-                    'converted_by' => auth()->id(),
+                    'converted_by' => ($data == null) ? $appointment->converted_by : $data['converted_by'],
                     'appointment_status_id' => config('constants.appointment_status_pending'),
                     'base_appointment_status_id' => config('constants.appointment_status_pending'),
                     'updated_at'=>Filters::getCurrentTimeStamp()
