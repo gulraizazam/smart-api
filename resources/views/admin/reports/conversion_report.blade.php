@@ -46,21 +46,7 @@
         <div class="sn-title">
             <h1>{{ 'Conversion Report'  }}</h1>
         </div>
-        <div class="sn-buttons">
-            @if($request->get('medium_type') == 'web')
-                <a class="btn sn-white-btn btn-default" href="javascript:;"
-                   onclick="printReport('excel');">
-                    <i class="fa fa-file-excel-o"></i><span>Excel</span>
-                </a>
-                <a class="btn sn-white-btn btn-default" href="javascript:;" onclick="printReport('pdf');">
-                    <i class="fa fa-file-pdf-o"></i><span>PDF</span>
-                </a>
-                <a class="btn sn-white-btn btn-default" href="javascript:;"
-                   onclick="printReport('print');">
-                    <i class="fa fa-print"></i><span>Print</span>
-                </a>
-            @endif
-        </div>
+        
     </div>
 </div>
 <div class="panel-body sn-table-body">
@@ -85,11 +71,9 @@
                     </table>
                 </div>
             </div>
-
             <div class="table-wrapper" id="topscroll">
-                <table class="table">
+                <table class="table" id="conversion_table">
                     <thead>
-                   
                     <th>Patient ID</th>
                     <th>Doctor</th>
                     <th>Patient</th>
@@ -128,77 +112,40 @@
                         </tr>
                     @endif
                     </tbody>
-                    <tr class="shdoc-header">
-                        <td style="color: #fff">Total</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right ; color: #fff;">{{ number_format($total,2) }}</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr class="shdoc-header">
-                        <td style="color: #fff">Total Count</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right ; color: #fff;">{{ count($report_data) }}</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr class="shdoc-header">
-                        <td style="color: #fff">Converted Count</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right ; color: #fff;">{{ $count }}</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr class="shdoc-header">
-                        <td style="color: #fff">Converted Ration</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right ; color: #fff;">{{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr class="shdoc-header">
-                        <td style="color: #fff">Conversion Average</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right ; color: #fff;">{{ $total > 0 ? number_format($total / $count, 2) : 0}}</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
                 </table>
+                <div class="col-md-12 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">Total</td>
+                                <td class="bg-light" style="text-align:right;">{{ number_format($total,2) }}</td>
+                            </tr>
+                            <tr class="">
+                                <td class="border-top bg-light"> Total Count</td>
+                                <td class="border-top bg-light" style="text-align:right;">{{ count($report_data) }}</td>
+                            </tr>
+                            
+                                <tr class="">
+                                    <td class="border-top bg-light" >Converted Count	</td>
+                                    <td class="border-top bg-light" style="text-align:right;">
+                                    {{ $count }}
+                                    </td>
+                                </tr>
+                                <tr class="">
+                                    <td class="border-top bg-light" >Converted Ratio	</td>
+                                    <td class="border-top bg-light" style="text-align:right;">
+                                    {{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %
+                                    </td>
+                                </tr>
+                                <tr class="">
+                                    <td class="border-top bg-light" >Conversion Average</td>
+                                    <td class="border-top bg-light" style="text-align:right;">
+                                    {{ $total > 0 ? number_format($total / $count, 2) : 0}}
+                                    </td>
+                                </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
