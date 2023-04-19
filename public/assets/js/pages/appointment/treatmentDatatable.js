@@ -1201,9 +1201,8 @@ function setFilters(filter_values, active_filters) {
 
 
         $("#treatment_search_created_by").val(active_filters.created_by);
-        $("#treatment_search_updated_by").val(active_filters.converted_by);
-
-        $("#treatment_search_rescheduled_by").val(active_filters.updated_by);
+        $("#treatment_search_updated_by").val(active_filters.updated_by);
+        $("#treatment_search_rescheduled_by").val(active_filters.converted_by);
         $("#treatment_search_type").val(active_filters.appointment_type_id);
         $("#treatment_search_status").val(active_filters.appointment_status_id);
         $("#treatment_search_doctor").val(active_filters.doctor_id);
