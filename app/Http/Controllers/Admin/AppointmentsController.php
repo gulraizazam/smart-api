@@ -2771,7 +2771,7 @@ class AppointmentsController extends Controller
                 $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
                 $lead = Leads::find($appointmentData['lead_id']);
                 if (! $lead) {
-                    return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+                    return ApiHelper::apiResponse($this->success, 'Lead not  found', false);
                 }
                 $patient = Patients::find($lead->patient_id);
                 if (! $patient) {
