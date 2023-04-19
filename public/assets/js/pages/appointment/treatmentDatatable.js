@@ -394,7 +394,7 @@ function actions(data) {
     let delete_url = route('admin.appointments.destroy', {id: id});
     let patient_url = route('admin.patients.preview', {id: data.patient_id});
     let viewlog_url = route('admin.appointments.loadPage', {id: id, type: 'web'});
-    
+
     if (
         permissions.edit
         || permissions.delete
@@ -590,8 +590,8 @@ function actions(data) {
                         <span class="navi-text">SMS Log</span>\
                         </a>\
                     </li>';
-        
-        
+
+
         if (permissions.invoice_display) {
             if(data.invoice) {
                 actions += '<li class="navi-item d-lg-none">\
@@ -646,7 +646,7 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
     $(".appointment").addClass("d-none");
     $("." + type + "-section").removeClass("d-none");
     $(".change-tab").removeClass("nav-bar-active");
-    $("." +type+ "-tab").addClass("nav-bar-active");    
+    $("." +type+ "-tab").addClass("nav-bar-active");
     setQueryStringParameter('tab', type);
     setQueryStringParameter('location_id', location_id);
     setQueryStringParameter('doctor_id', doctor_id);
@@ -855,7 +855,7 @@ function setEditData(response) {
 }
 
 function setTreatmentEditData(response) {
-   
+
     try {
 
         let appointment = response.data.appointment;
@@ -987,7 +987,7 @@ function setSmsLogs(response) {
                     rows += '<td>' + smsLog.to + '</td>';
                     rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
                     rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
-                   
+
                     rows += '<span class="full_text" style="display:none; text-underline: none;"><pre>' + smsLog.text + '</pre></span>';
                     '</a></td>';
 
@@ -1046,8 +1046,8 @@ function applyFilters(datatable) {
             created_from: $("#treatment_search_created_from").val(),
             created_to: $("#treatment_search_created_to").val(),
             created_by: $("#treatment_search_created_by").val(),
-            converted_by: $("#treatment_search_updated_by").val(),
-            updated_by: $("#treatment_search_rescheduled_by").val(),
+            converted_by: $("#treatment_search_rescheduled_by").val(),
+            updated_by: $("#treatment_search_updated_by").val(),
             filter: 'filter',
         }
 
@@ -1087,7 +1087,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-    
+
     try {
 
         let appointment_statuses = filter_values.appointment_statuses;
@@ -1130,7 +1130,7 @@ function setFilters(filter_values, active_filters) {
             region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
         });
 
-        let service_options = '';
+        let service_options = '<option value=""></option>';
         Object.values(services).forEach(function (service, index) {
             if (service.name == 'All Services') {
                 service_options += '<option value="' + service.id + '">' + service.name + '</option>';
@@ -1201,9 +1201,8 @@ function setFilters(filter_values, active_filters) {
 
 
         $("#treatment_search_created_by").val(active_filters.created_by);
-        $("#treatment_search_updated_by").val(active_filters.converted_by);
-       
-        $("#treatment_search_rescheduled_by").val(active_filters.updated_by);
+        $("#treatment_search_updated_by").val(active_filters.updated_by);
+        $("#treatment_search_rescheduled_by").val(active_filters.converted_by);
         $("#treatment_search_type").val(active_filters.appointment_type_id);
         $("#treatment_search_status").val(active_filters.appointment_status_id);
         $("#treatment_search_doctor").val(active_filters.doctor_id);
@@ -1220,7 +1219,7 @@ function setFilters(filter_values, active_filters) {
         if(service_value==null){
             $("#treatment_search_service").html(service_options);
         }
-        
+
         if (city_value == null) {
             $("#treatment_city_filter").html(city_options);
         }
@@ -1312,7 +1311,7 @@ function createTreatmentInvoice(url) {
             $('#package_id_create').change();
             $("#modal_create_treatment_invoice").modal("show");
             customDatePicker();
-            
+
         },
         error: function(xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
