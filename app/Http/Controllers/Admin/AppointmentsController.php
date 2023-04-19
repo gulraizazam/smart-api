@@ -726,11 +726,7 @@ class AppointmentsController extends Controller
             }
         }
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = array(
-                'users.id',
-                '=',
-                GeneralFunctions::patientSearch($filters['patient_id'])
-            );
+            $where[] = array(['users.id' => GeneralFunctions::patientSearch($filters['patient_id'])]);
             Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['patient_id']));
         }
         if (hasFilter($filters, 'phone')) {
@@ -758,83 +754,43 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'date_to', $filters['date_to'] . ' 23:59:59');
         }
         if (hasFilter($filters, 'doctor_id')) {
-            $where[] = array(
-                'doctor_id',
-                '=',
-                $filters['doctor_id']
-            );
+            $where[] = array(['doctor_id' => $filters['doctor_id']]);
             Filters::put(Auth::User()->id, $filename, 'doctor_id', $filters['doctor_id']);
         }
         if (hasFilter($filters, 'region_id')) {
-            $where[] = array(
-                'region_id',
-                '=',
-                $filters['region_id']
-            );
+            $where[] = array(['region_id' => $filters['region_id']]);
             Filters::put(Auth::User()->id, $filename, 'region_id', $filters['region_id']);
         }
         if (hasFilter($filters, 'city_id')) {
-            $where[] = array(
-                'city_id',
-                '=',
-                $filters['city_id']
-            );
+            $where[] = array(['city_id' => $filters['city_id']]);
             Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
         }
         if (hasFilter($filters, 'service_id')) {
-            $where[] = array(
-                'service_id',
-                '=',
-                $filters['service_id']
-            );
+            $where[] = array(['service_id' => $filters['service_id']]);
             Filters::put(Auth::User()->id, $filename, 'service_id', $filters['service_id']);
         }
         if (hasFilter($filters, 'created_by')) {
-            $where[] = array(
-                'appointments.created_by',
-                '=',
-                $filters['created_by']
-            );
+            $where[] = array(['appointments.created_by' => $filters['created_by']]);
             Filters::put(Auth::User()->id, $filename, 'created_by', $filters['created_by']);
         }
         if (hasFilter($filters, 'converted_by')) {
-            $where[] = array(
-                'appointments.converted_by',
-                '=',
-                $filters['converted_by']
-            );
+            $where[] = array(['appointments.converted_by' => $filters['converted_by']]);
             Filters::put(Auth::User()->id, 'appointments', 'converted_by', $filters['converted_by']);
         }
         if (hasFilter($filters, 'updated_by')) {
-            $where[] = array(
-                'appointments.updated_by',
-                '=',
-                $filters['updated_by']
-            );
+            $where[] = array(['appointments.updated_by' => $filters['updated_by']]);
             Filters::put(Auth::User()->id, $filename, 'updated_by', $filters['updated_by']);
         }
         if (hasFilter($filters, 'appointment_status_id')) {
-            $where[] = array(
-                'appointments.base_appointment_status_id',
-                '=',
-                $filters['appointment_status_id']
-            );
+            $where[] = array(['appointments.base_appointment_status_id' => $filters['appointment_status_id']]);
             Filters::put(Auth::User()->id, $filename, 'appointment_status_id', $filters['appointment_status_id']);
         }
         if (hasFilter($filters, 'appointment_type_id')) {
-            $where[] = array(
-                'appointments.appointment_type_id',
-                '=',
-                $filters['appointment_type_id']
-            );
+            $where[] = array(['appointments.appointment_type_id' => $filters['appointment_type_id']]);
             Filters::put(Auth::user()->id, $filename, 'appointment_type_id', $filters['appointment_type_id']);
         }
         if (hasFilter($filters, 'consultancy_type')) {
-            $where[] = array(
-                'appointments.consultancy_type',
-                '=',
-                $filters['consultancy_type']
-            );
+            $where[] = array(['appointments.consultancy_type' => $filters['consultancy_type']]);
             Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
         }
         if (hasFilter($filters, 'created_from')) {
@@ -855,11 +811,7 @@ class AppointmentsController extends Controller
         }
         if (hasFilter($filters, 'phone')) {
             $phone = substr($filters['phone'],1);
-            $where[] = array(
-                'users.phone',
-                '=',
-                $phone
-            );
+            $where[] = array(['users.phone' => $phone]);
             Filters::put(Auth::User()->id, $filename, 'phone', $phone);
         }
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
@@ -1120,11 +1072,7 @@ class AppointmentsController extends Controller
             }
         }
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = array(
-                'users.id',
-                '=',
-                GeneralFunctions::patientSearch($filters['patient_id'])
-            );
+            $where[] = array(['users.id' => GeneralFunctions::patientSearch($filters['patient_id'])]);
             Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['patient_id']));
         }
         if (hasFilter($filters, 'phone')) {
@@ -1152,92 +1100,48 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'date_to', $filters['date_to'] . ' 23:59:59');
         }
         if (hasFilter($filters, 'doctor_id')) {
-            $where[] = array(
-                'doctor_id',
-                '=',
-                $filters['doctor_id']
-            );
+            $where[] = array(['doctor_id' => $filters['doctor_id']]);
             Filters::put(Auth::User()->id, $filename, 'doctor_id', $filters['doctor_id']);
         }
         if (hasFilter($filters, 'region_id')) {
-            $where[] = array(
-                'region_id',
-                '=',
-                $filters['region_id']
-            );
+            $where[] = array(['region_id' => $filters['region_id']]);
             Filters::put(Auth::User()->id, $filename, 'region_id', $filters['region_id']);
         }
         if (hasFilter($filters, 'city_id')) {
-            $where[] = array(
-                'city_id',
-                '=',
-                $filters['city_id']
-            );
+            $where[] = array(['city_id' => $filters['city_id']]);
             Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
         }
         if (hasFilter($filters, 'phone')) {
             $phone = substr($filters['phone'],1);
-            $where[] = array(
-                'users.phone',
-                '=',
-                $phone
-            );
+            $where[] = array(['users.phone' => $phone]);
             Filters::put(Auth::User()->id, $filename, 'phone', $phone);
         }
         if (hasFilter($filters, 'service_id')) {
-            $where[] = array(
-                'service_id',
-                '=',
-                $filters['service_id']
-            );
+            $where[] = array(['service_id' => $filters['service_id']]);
             Filters::put(Auth::User()->id, $filename, 'service_id', $filters['service_id']);
         }
         if (hasFilter($filters, 'created_by')) {
-            $where[] = array(
-                'appointments.created_by',
-                '=',
-                $filters['created_by']
-            );
+            $where[] = array(['appointments.created_by' => $filters['created_by']]);
             Filters::put(Auth::User()->id, $filename, 'created_by', $filters['created_by']);
         }
         if (hasFilter($filters, 'converted_by')) {
-            $where[] = array(
-                'appointments.converted_by',
-                '=',
-                $filters['converted_by']
-            );
+            $where[] = array(['appointments.converted_by' => $filters['converted_by']]);
             Filters::put(Auth::User()->id, 'appointments', 'converted_by', $filters['converted_by']);
         }
         if (hasFilter($filters, 'updated_by')) {
-            $where[] = array(
-                'appointments.updated_by',
-                '=',
-                $filters['updated_by']
-            );
+            $where[] = array(['appointments.updated_by' => $filters['updated_by']]);
             Filters::put(Auth::User()->id, $filename, 'updated_by', $filters['updated_by']);
         }
         if (hasFilter($filters, 'appointment_status_id')) {
-            $where[] = array(
-                'appointments.base_appointment_status_id',
-                '=',
-                $filters['appointment_status_id']
-            );
+            $where[] = array(['appointments.base_appointment_status_id' => $filters['appointment_status_id']]);
             Filters::put(Auth::User()->id, $filename, 'appointment_status_id', $filters['appointment_status_id']);
         }
         if (hasFilter($filters, 'appointment_type_id')) {
-            $where[] = array(
-                'appointments.appointment_type_id',
-                '=',
-                $filters['appointment_type_id']
-            );
+            $where[] = array(['appointments.appointment_type_id' => $filters['appointment_type_id']]);
             Filters::put(Auth::user()->id, $filename, 'appointment_type_id', $filters['appointment_type_id']);
         }
         if (hasFilter($filters, 'consultancy_type')) {
-            $where[] = array(
-                'appointments.consultancy_type',
-                '=',
-                $filters['consultancy_type']
-            );
+            $where[] = array(['appointments.consultancy_type' => $filters['consultancy_type']]);
             Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
         }
         if (hasFilter($filters, 'created_from')) {
@@ -5144,11 +5048,7 @@ class AppointmentsController extends Controller
         $schedule_T = '';
         $where = array();
         if ($request->get('patient_id') && $request->get('patient_id') != '') {
-            $where[] = array(
-                'users.id',
-                '=',
-                $request->get('patient_id')
-            );
+            $where[] = array(['users.id' => $request->get('patient_id')]);
         }
         if ($request->get('phone') && $request->get('phone') != '') {
             $where[] = array(
@@ -5209,74 +5109,34 @@ class AppointmentsController extends Controller
             );
         }
         if ($request->get('region_id') && $request->get('region_id') != '') {
-            $where[] = array(
-                'region_id',
-                '=',
-                $request->get('region_id')
-            );
+            $where[] = array(['region_id' => $request->get('region_id')]);
         }
         if ($request->get('city_id') && $request->get('city_id') != '') {
-            $where[] = array(
-                'city_id',
-                '=',
-                $request->get('city_id')
-            );
+            $where[] = array(['city_id' => $request->get('city_id')]);
         }
         if ($request->get('location_id') && $request->get('location_id') != '') {
-            $where[] = array(
-                'location_id',
-                '=',
-                $request->get('location_id')
-            );
+            $where[] = array(['location_id' => $request->get('location_id')]);
         }
         if ($request->get('service_id') && $request->get('service_id') != '') {
-            $where[] = array(
-                'service_id',
-                '=',
-                $request->get('service_id')
-            );
+            $where[] = array(['service_id' => $request->get('service_id')]);
         }
         if ($request->get('created_by') && $request->get('created_by') != '') {
-            $where[] = array(
-                'appointments.created_by',
-                '=',
-                $request->get('created_by')
-            );
+            $where[] = array(['appointments.created_by' => $request->get('created_by')]);
         }
         if ($request->get('converted_by') && $request->get('converted_by') != '') {
-            $where[] = array(
-                'appointments.converted_by',
-                '=',
-                $request->get('converted_by')
-            );
+            $where[] = array(['appointments.converted_by' => $request->get('converted_by')]);
         }
         if ($request->get('updated_by') && $request->get('updated_by') != '') {
-            $where[] = array(
-                'appointments.updated_by',
-                '=',
-                $request->get('updated_by')
-            );
+            $where[] = array(['appointments.updated_by' => $request->get('updated_by')]);
         }
         if ($request->get('appointment_status_id') && $request->get('appointment_status_id') != '') {
-            $where[] = array(
-                'appointments.base_appointment_status_id',
-                '=',
-                $request->get('appointment_status_id')
-            );
+            $where[] = array(['appointments.base_appointment_status_id' => $request->get('appointment_status_id')]);
         }
         if ($request->get('appointment_type_id') && $request->get('appointment_type_id') != '') {
-            $where[] = array(
-                'appointments.appointment_type_id',
-                '=',
-                $request->get('appointment_type_id')
-            );
+            $where[] = array(['appointments.appointment_type_id' => $request->get('appointment_type_id')]);
         }
         if ($request->get('consultancy_type') && $request->get('consultancy_type') != '') {
-            $where[] = array(
-                'appointments.consultancy_type',
-                '=',
-                $request->get('consultancy_type')
-            );
+            $where[] = array(['appointments.consultancy_type' => $request->get('consultancy_type')]);
         }
         if (Gate::allows('appointments_export_all')) {
             if ($request->get('created_from') && $request->get('created_from') != '') {
