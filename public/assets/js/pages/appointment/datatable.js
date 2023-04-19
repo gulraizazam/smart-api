@@ -1108,9 +1108,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
     try {
-
         let appointment_statuses = filter_values.appointment_statuses;
         let appointment_types = filter_values.appointment_types;
         let cities = filter_values.cities;
@@ -1180,6 +1178,7 @@ function setFilters(filter_values, active_filters) {
         }
 
         let updated_by = $("#appoint_search_updated_by").val();
+
         if (updated_by == null || updated_by == '') {
             $("#appoint_search_updated_by").html(user_options);
         }
@@ -1229,8 +1228,8 @@ function setFilters(filter_values, active_filters) {
         }
 
         $("#appoint_search_created_by").val(active_filters.created_by);
-        $("#appoint_search_updated_by").val(active_filters.converted_by);
-        $("#appoint_search_rescheduled_by").val(active_filters.updated_by);
+        $("#appoint_search_updated_by").val(active_filters.updated_by);
+        $("#appoint_search_rescheduled_by").val(active_filters.converted_by);
         $("#appoint_search_type").val(active_filters.appointment_type_id);
         $("#appoint_search_status").val(active_filters.appointment_status_id);
         $("#appoint_search_doctor").val(active_filters.doctor_id);
