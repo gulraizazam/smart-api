@@ -1722,8 +1722,6 @@ class AppointmentsController extends Controller
             unset($appointmentData['old_phone']);
             $appointmentData['phone'] = GeneralFunctions::cleanNumber($phone);
             $appointmentData['created_by'] = Auth::user()->id;
-            $appointmentData['updated_by'] = Auth::user()->id;
-            $appointmentData['converted_by'] = Auth::user()->id;
             if ($request->appointment_type_id = Config::get('constants.appointment_type_consultancy')) {
                 $response = Resources::getDoctorRotaHasDay($request->get("start"), $request->doctor_id);
                 if (isset($response['resource_id']) && $response['resource_id']) {
@@ -1887,7 +1885,6 @@ class AppointmentsController extends Controller
              * End Lead ID Process
              */
             
-            $appointmentData['updated_by'] = Auth::User()->id;
             if ($request->scheduled_date && $request->scheduled_time) {
                 $appointmentData['scheduled_date'] = Carbon::parse($request->scheduled_date)->format("Y-m-d");
                 $appointmentData['scheduled_time'] = Carbon::parse($request->scheduled_time)->format("H:i:s");
@@ -1899,7 +1896,7 @@ class AppointmentsController extends Controller
             $appointment = Appointments::create($appointmentData);
             $find_cons = Appointments::latest()->first();
             if($find_cons){
-                Leads::where('patient_id',$find_cons->patient_id)->update(['lead_status_id'=>4]);
+                Leads::where('patient_id',$find_cons->patient_id)->update(['lead_status_id' => 4]);
                 $parents = Services::where('parent_id',$find_cons->service_id)->first();
                 $find_lead = $lead->update(['service_id'=>$find_cons->service_id,'location_id'=>$find_cons->location_id]);   
             }
@@ -2602,6 +2599,14 @@ class AppointmentsController extends Controller
             if (! $appointment) {
                 return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
             }
+            $lead = Leads::find($request->lead_id);
+            if (! $lead) {
+                return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+            }
+            $patient = Patients::find($lead->patient_id);
+            if (! $patient) {
+                return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+            }
             $value_of_sending_message = $appointment->send_message;
             $city_info = Cities::find($request->city_id);
             if($request->input('phone') == '***********'){
@@ -2611,15 +2616,21 @@ class AppointmentsController extends Controller
             $appointmentData = $request->all();
             $appointmentData['region_id'] = $city_info->region_id;
             $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
-            $appointmentData['updated_by'] = Auth::user()->id;
             if($appointment->scheduled_date != $request->scheduled_date ){
                 $appointmentData['converted_by'] = Auth::user()->id;
             }
-            if($appointment->scheduled_time !=Carbon::parse($request->scheduled_time)->format("H:i:s")){
+            if($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format("H:i:s")){
                 $appointmentData['converted_by'] = Auth::user()->id;
             }
+            if((string)$appointment->city_id !== $request->city_id || (string)$appointment->location_id !== $request->location_id || (string)$appointment->doctor_id !== $request->doctor_id || (string)$patient->gender !== $request->gender) {
+                if((string)$appointment->consultancy_type !== $request->consultancy_type){
+                    $appointmentData['updated_by'] = Auth::user()->id;
+                }
+                if((string)$appointment->resource_id !== $request->machine_id){
+                    $appointmentData['updated_by'] = Auth::user()->id;
+                }
+            }
             $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
-            $appointmentData['updated_by'] = Auth::User()->id;
             $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
             $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
             $appointmentData['location_id'] = $request->location_id ?? $appointment->location_id;
@@ -2757,9 +2768,29 @@ class AppointmentsController extends Controller
                 $appointmentData = $request->all();
                 $appointmentData['region_id'] = $city_info->region_id;
                 $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
-                $appointmentData['updated_by'] = Auth::user()->id;
+                $lead = Leads::find($appointmentData['lead_id']);
+                if (! $lead) {
+                    return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+                }
+                $patient = Patients::find($lead->patient_id);
+                if (! $patient) {
+                    return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+                }
+                if((string)$appointment->city_id !== $request->city_id || (string)$appointment->location_id !== $request->location_id || (string)$appointment->doctor_id !== $request->doctor_id || (string)$patient->gender !== $request->gender) {
+                    if((string)$appointment->consultancy_type !== $request->consultancy_type){
+                        $appointmentData['updated_by'] = Auth::user()->id;
+                    }
+                    if((string)$appointment->resource_id !== $request->machine_id){
+                        $appointmentData['updated_by'] = Auth::user()->id;
+                    }
+                }
                 $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
-                $appointmentData['updated_by'] = Auth::User()->id;
+                if($appointment->scheduled_date != $request->scheduled_date ){
+                    $appointmentData['converted_by'] = Auth::user()->id;
+                }
+                if($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format("H:i:s")){
+                    $appointmentData['converted_by'] = Auth::user()->id;
+                }
                 $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
                 $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
                 // Reset Scheduled Time to null, stop sending message
@@ -4413,8 +4444,7 @@ class AppointmentsController extends Controller
         $appointmentData['phone'] = GeneralFunctions::cleanNumber($phone);
         $appointmentData['account_id'] = Auth::User()->account_id;
         $appointmentData['created_by'] = Auth::user()->id;
-        $appointmentData['updated_by'] = Auth::user()->id;
-        $appointmentData['converted_by'] = Auth::user()->id;
+        
         $appointmentData['consultancy_type'] = 'treatment';
         if (GeneralFunctions::AppointmentType($request->appointment_type) == config('constants.appointment_type_service')) {
             $response = Resources::getResourceRotaHasDay($request->get('start'), $request->resource_id);

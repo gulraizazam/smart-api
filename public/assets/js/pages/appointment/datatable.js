@@ -1069,8 +1069,8 @@ function applyFilters(datatable) {
             created_from: $("#appoint_search_created_from").val(),
             created_to: $("#appoint_search_created_to").val(),
             created_by: $("#appoint_search_created_by").val(),
-            converted_by: $("#appoint_search_updated_by").val(),
-            updated_by: $("#appoint_search_rescheduled_by").val(),
+            converted_by: $("#appoint_search_rescheduled_by").val(),
+            updated_by: $("#appoint_search_updated_by").val(),
             filter: 'filter',
         }
         datatable.search(filters, 'search');
@@ -1221,8 +1221,8 @@ function setFilters(filter_values, active_filters) {
         }
 
         $("#appoint_search_created_by").val(active_filters.created_by);
-        $("#appoint_search_updated_by").val(active_filters.converted_by);
-        $("#appoint_search_rescheduled_by").val(active_filters.updated_by);
+        $("#appoint_search_updated_by").val(active_filters.updated_by);
+        $("#appoint_search_rescheduled_by").val(active_filters.converted_by);
         $("#appoint_search_type").val(active_filters.appointment_type_id);
         $("#appoint_search_status").val(active_filters.appointment_status_id);
         $("#appoint_search_doctor").val(active_filters.doctor_id);
