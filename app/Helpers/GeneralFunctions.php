@@ -160,19 +160,31 @@ class GeneralFunctions
                 $filters['status'] = 0;
                 $apply_filter = checkFilters($filters, $filename);
                 if (hasFilter($filters, 'name')) {
-                    $where[] = ['name','like','%' . $filters['name'] . '%',];
+                    $where[] = [
+                        'name',
+                        'like',
+                        '%' . $filters['name'] . '%',
+                    ];
                     Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                 } else {
                     if ($apply_filter) {
                         Filters::forget(Auth::User()->id, $filename, 'name');
                     } else {
                         if (Filters::get(Auth::User()->id, $filename, 'name')) {
-                            $where[] = [ 'name','like', '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',];
+                            $where[] = [
+                                'name',
+                                'like',
+                                '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',
+                            ];
                         }
                     }
                 }
                 if (hasFilter($filters, 'status')) {
-                    $where[] = ['active' => $filters['status']];
+                    $where[] = [
+                        'active',
+                        '=',
+                        $filters['status'],
+                    ];
                     Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
                 } else {
                     if ($apply_filter) {
@@ -180,7 +192,10 @@ class GeneralFunctions
                     } else {
                         if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
                             if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
-                                $where[] = ['active' => Filters::get(Auth::user()->id, $filename, 'status'),
+                                $where[] = [
+                                    'active',
+                                    '=',
+                                    Filters::get(Auth::user()->id, $filename, 'status'),
                                 ];
                             }
                         }
@@ -197,7 +212,7 @@ class GeneralFunctions
                         foreach ($services as $key => $service) {
                             $serv = Services::where('id',$service->id)->first();
                             if($serv->parent_id=="0"){
-                                if(Gate::allows("view_inactive_services")){
+                                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
                                     $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                                 }else{
                                     $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
@@ -233,7 +248,7 @@ class GeneralFunctions
                         foreach ($services as $key => $service) {
                             $serv = Services::where('id',$service->id)->first();
                             if($serv->parent_id=="0"){
-                                if(Gate::allows("view_inactive_services")){
+                                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
                                     $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                                 }else{
                                     $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
@@ -265,9 +280,9 @@ class GeneralFunctions
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
-                        if(Gate::allows("view_inactive_services")){
+                        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
                             $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
-                        } else {
+                        }else{
                             $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                         }
                         $mergedServices[] = $service->toArray();
@@ -285,9 +300,9 @@ class GeneralFunctions
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
-                        if(Gate::allows("view_inactive_services")){
+                        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
                             $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
-                        } else {
+                        }else{
                             $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                         }
                         $mergedServices[] = $service->toArray();
@@ -306,7 +321,7 @@ class GeneralFunctions
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
                             if($service->parent_id=="0"){
-                               $children = Services::where(['parent_id' => $service->id])->orderBy('name')->get()->toArray();
+                               $children = Services::where('parent_id',$service->id)->orderBy('name')->get()->toArray();
                                $mergedServices[] = $service->toArray();
                                 foreach ($children as $child) {
                                     $mergedServices[] = $child;
@@ -325,10 +340,10 @@ class GeneralFunctions
             $services = $query->get();
             $mergedServices = [];
             foreach ($services as $key => $service) {
-                if(Gate::allows("view_inactive_services")){
-                    $children = Services::where(['parent_id' => $service->id])->orderBy('name')->get();
+                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                    $children = Services::where('parent_id',$service->id)->orderBy('name')->get();
                 }else{
-                    $children = Services::where(['parent_id' => $service->id, 'active' => 1])->where()->orderBy('name')->get();
+                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                 }
                 $mergedServices[] = $service->toArray();
                 $children = $children->toArray();
@@ -343,26 +358,38 @@ class GeneralFunctions
     public static function ServicesTreeList($request = null, $total = 0, $id = null)
     {
         $where = [];
-        $active = (Gate::allows("view_inactive_services")) ? 0 : 1;
+        $active = (\Illuminate\Support\Facades\Gate::allows("view_inactive_services")) ? 0 : 1;
         if ($total >= 0 && $id == null) {
             $filename = 'services';
             if(isset($request)){
                 $filters = getFilters($request->all());
                 $apply_filter = checkFilters($filters, $filename);
                 if (hasFilter($filters, 'name')) {
-                    $where[] = ['name','like','%' . $filters['name'] . '%',];
+                    $where[] = [
+                        'name',
+                        'like',
+                        '%' . $filters['name'] . '%',
+                    ];
                     Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                 } else {
                     if ($apply_filter) {
                         Filters::forget(Auth::User()->id, $filename, 'name');
                     } else {
                         if (Filters::get(Auth::User()->id, $filename, 'name')) {
-                            $where[] = ['name','like','%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',];
+                            $where[] = [
+                                'name',
+                                'like',
+                                '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',
+                            ];
                         }
                     }
                 }
                 if (hasFilter($filters, 'status')) {
-                    $where[] = ['active' => $filters['status']];
+                    $where[] = [
+                        'active',
+                        '=',
+                        $filters['status'],
+                    ];
                     Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
                 } else {
                     if ($apply_filter) {
@@ -370,7 +397,10 @@ class GeneralFunctions
                     } else {
                         if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
                             if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
-                                $where[] = ['active' => Filters::get(Auth::user()->id, $filename, 'status'),
+                                $where[] = [
+                                    'active',
+                                    '=',
+                                    Filters::get(Auth::user()->id, $filename, 'status'),
                                 ];
                             }
                         }
@@ -378,19 +408,19 @@ class GeneralFunctions
                 }
                 if(hasFilter($filters, 'status') && hasFilter($filters, 'name') && $filters['status']==1 ){
                     $query = Services::with('children')
-                    ->where(['parent_id' => 0])
-                    ->whereNot(['slug' =>  'all'])
+                    ->where('parent_id', 0)
+                    ->where('slug', '!=', 'all')
                     ->where($where);
                     $services = $query->get();
                     if(count($services)>0){
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
-                            $serv = Services::where(['id' => $service->id])->first();
+                            $serv = Services::where('id',$service->id)->first();
                             if($serv->parent_id=="0"){
-                                if(Gate::allows("view_inactive_services")){
-                                    $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
+                                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                                    $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                                 }else{
-                                    $children = Services::where(['parent_id' => $service->id,'active' => 1])->orderBy('name')->get();
+                                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                                 }
                             }else{
                                 $children = collect($service->children)->flatten();
@@ -404,25 +434,29 @@ class GeneralFunctions
                         }
                         return $mergedServices;
                     }else{
-                        $children = Services::where('active',$filters['status'])->where('name','like','%' . $filters['name'] . '%')->get();
-                        return $children;
+                        $children = Services::where('active',$filters['status'])->where( 'name',
+                            'like',
+                            '%' . $filters['name'] . '%')->get();
+                            return $children;
                     }
                 }
                 if(hasFilter($filters, 'status') && hasFilter($filters, 'name') && $filters['status']==0 ){
                     $query = Services::with('children')
-                    ->where(['parent_id' => 0])
-                    ->whereNot(['slug' =>'all'])
-                    ->where('name','like','%' . $filters['name'] . '%');
+                    ->where('parent_id', 0)
+                    ->where('slug', '!=', 'all')
+                    ->where('name',
+                    'like',
+                    '%' . $filters['name'] . '%');
                     $services = $query->get();
                     if(count($services)>0){
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
-                            $serv = Services::where(['id' => $service->id])->first();
+                            $serv = Services::where('id',$service->id)->first();
                             if($serv->parent_id=="0"){
-                                if(Gate::allows("view_inactive_services")){
-                                    $children = Services::where(['parent_id' => $service->id,'active' => $filters['status']])->orderBy('name')->get();
+                                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                                    $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
                                 }else{
-                                    $children = Services::where(['parent_id' => $service->id,'active' => 1])->orderBy('name')->get();
+                                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                                 }    
                             }else{
                                 $children = collect($service->children)->flatten();
@@ -437,7 +471,9 @@ class GeneralFunctions
                         }
                         return $mergedServices;
                     }else{
-                        $children = Services::where(['active' => $filters['status']])->where( 'name','like','%' . $filters['name'] . '%')->get();
+                        $children = Services::where('active',$filters['status'])->where( 'name',
+                            'like',
+                            '%' . $filters['name'] . '%')->get();
                             return $children;
                     }
                 }
@@ -449,9 +485,9 @@ class GeneralFunctions
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
-                        if(Gate::allows("view_inactive_services")){
+                        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
                             $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
-                        } else {
+                        }else{
                             $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                         }
                         $mergedServices[] = $service->toArray();
@@ -469,9 +505,9 @@ class GeneralFunctions
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
-                        if(Gate::allows("view_inactive_services")){
+                        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
                             $children = Services::where('parent_id',$service->id)->where('active',$filters['status'])->orderBy('name')->get();
-                        } else {
+                        }else{
                             $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
                         }
                         $mergedServices[] = $service->toArray();
