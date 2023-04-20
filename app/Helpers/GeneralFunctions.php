@@ -160,31 +160,19 @@ class GeneralFunctions
                 $filters['status'] = 0;
                 $apply_filter = checkFilters($filters, $filename);
                 if (hasFilter($filters, 'name')) {
-                    $where[] = [
-                        'name',
-                        'like',
-                        '%' . $filters['name'] . '%',
-                    ];
+                    $where[] = ['name','like','%' . $filters['name'] . '%',];
                     Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                 } else {
                     if ($apply_filter) {
                         Filters::forget(Auth::User()->id, $filename, 'name');
                     } else {
                         if (Filters::get(Auth::User()->id, $filename, 'name')) {
-                            $where[] = [
-                                'name',
-                                'like',
-                                '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',
-                            ];
+                            $where[] = [ 'name','like', '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',];
                         }
                     }
                 }
                 if (hasFilter($filters, 'status')) {
-                    $where[] = [
-                        'active',
-                        '=',
-                        $filters['status'],
-                    ];
+                    $where[] = ['active' => $filters['status']];
                     Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
                 } else {
                     if ($apply_filter) {
@@ -192,10 +180,7 @@ class GeneralFunctions
                     } else {
                         if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
                             if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
-                                $where[] = [
-                                    'active',
-                                    '=',
-                                    Filters::get(Auth::user()->id, $filename, 'status'),
+                                $where[] = ['active' => Filters::get(Auth::user()->id, $filename, 'status'),
                                 ];
                             }
                         }
