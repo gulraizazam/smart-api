@@ -787,32 +787,64 @@ class DoctorsController extends Controller
             if (!Gate::allows('doctors_allocate')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
+            $has_services = '';
             $myString = $request->id;
             $myArray = explode(',', $myString);
             $data = [];
-
             $data['user_id'] = $request->doctor_id;
             $data['location_id'] = $myArray[0];
             $data['service_id'] = $myArray[1];
-            $service_endnode = Services::where('id', '=', $data['service_id'])->first();
-            $data['end_node'] = $service_endnode->end_node;
-
-            $checked = DoctorHasLocations::where([
-                ['location_id', '=', $myArray[0]],
-                ['service_id', '=', $myArray[1]],
-                ['user_id', '=', $request->doctor_id],
-            ])->get();
-
-            if (count($checked) == '0') {
-                $record = DoctorHasLocations::create($data);
-
+            $service= Services::where(['id' => $data['service_id']])->first();
+            $data['end_node'] = $service->end_node;
+            
+            $checked_service = DoctorHasLocations::where([
+                'location_id' => $myArray[0],
+                'service_id' => $myArray[1],
+                'user_id' => $request->doctor_id,
+            ])->count();
+            if ($checked_service == '0') {
+                $query = DoctorHasLocations::
+                where([
+                    'location_id' => $myArray[0],
+                    'user_id' => $request->doctor_id,
+                ]);
+                $checked = $query->with('service')->get();
+                if($checked_service == '0' && count($checked) == '0'){
+                    $has_services = 'new';
+                } else {
+                    foreach($checked->toArray() as $value){
+                        if($value['service']['slug'] == 'all'){
+                            $has_services = 'all';
+                        } elseif($service->parent_id == $value['service']['id']){
+                            $has_services = 'parent';
+                        } elseif($service->id == $value['service']['parent_id']){
+                            $has_services = 'child';
+                        } else{
+                            $has_services = 'equal';
+                        }
+                    }
+                }
+                if($has_services == 'new'){
+                    $record = DoctorHasLocations::create($data);
+                } elseif($service->slug == 'all'){
+                    $query->delete();
+                    $record = DoctorHasLocations::create($data);
+                } elseif($has_services == 'child'){
+                    $query->whereHas('service', fn($q) => $q->where(['parent_id' => $service->id]))->delete();
+                    $record = DoctorHasLocations::create($data);
+                } elseif($has_services == 'equal'){
+                    $record = DoctorHasLocations::create($data);
+                } elseif($has_services == 'all' || $has_services == 'parent'){
+                    return ApiHelper::apiResponse($this->success, 'Parent Service / All Service already exist!', false);
+                } else {
+                    return ApiHelper::apiResponse($this->success, 'Service not found!', false);
+                }
                 $record_location_name = $record->location->city->name . '-' . $record->location->name;
                 $record_service_name = $record->service->name;
-
                 $myarray = ['record' => $record, 'record_location_name' => $record_location_name, 'record_service_name' => $record_service_name];
                 return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
             }
-            return ApiHelper::apiResponse($this->success, 'Service not found!', false);
+            return ApiHelper::apiResponse($this->success, 'Service already exist!', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
