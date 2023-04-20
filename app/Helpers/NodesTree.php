@@ -192,25 +192,7 @@ class NodesTree
                     'color' => $data['color'],
                     'end_node' => $data['end_node'],
                     'active' => $data['active'],
-                );
-                /* Add nodes as per restrictions */
-//				if ($this->restriction_bankcash == 1 ||
-//					$this->restriction_bankcash == 2 ||
-//					$this->restriction_bankcash == 3) {
-//					/* All nodes */
-//					$this->nodeList[$data['id']] = $this->space($c) . $node_name;
-//				} else if ($this->restriction_bankcash == 4) {
-//					/* Only bank or cash nodes */
-//					if ($data['type'] == 1) {
-//						$this->nodeList[$data['id']] = $this->space($c) . $node_name;
-//					}
-//
-//				} else if ($this->restriction_bankcash == 5) {
-//					/* Only NON bank or cash nodes */
-//					if ($data['type'] == 0) {
-//						$this->nodeList[$data['id']] = $this->space($c) . $node_name;
-//					}
-//				}
+                );	
             }
             $c--;
         }
