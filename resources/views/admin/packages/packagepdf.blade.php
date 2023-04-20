@@ -361,7 +361,7 @@
     <table class="grand-tax">
         <tbody>
         <tr>
-            <td style="text-align: right;"><strong>Total:</strong> <?php echo number_format($package->total_price);?>/-</td>
+            <td style="text-align: right;"><strong>Total:</strong> <?php echo $grand_total;?>/-</td>
         </tr>
         <tr>
             <td><strong>Note:</strong> All treatment prices are inclusive of taxes</td>

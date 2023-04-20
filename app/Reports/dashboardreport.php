@@ -79,7 +79,7 @@ class dashboardreport
             }
             if ($where == 'lastMonth') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                    ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
+                    ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
                         ['location_id', '=', $location_infomation],

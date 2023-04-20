@@ -866,6 +866,7 @@ class PackagesController extends Controller
         $records = $this->getFiltersData($records);
         if ($packages) {
             foreach ($packages as $package) {
+                $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
                 $session_count = count(PackageService::where('package_id', '=', $package->id)->get());
                 /*We discuss in future what happen next*/
                 $cash_receive = PackageAdvances::where([
@@ -902,7 +903,7 @@ class PackagesController extends Controller
                     'package_id' => $package?->name ?? '',
                     'location_id' => $package->location->city->name . "-" . $package->location->name,
                     'session_count' => $session_count,
-                    'total' => number_format($package->total_price),
+                    'total' => number_format($packageservices_price),
                     'cash_receive' => number_format($cash_receive),
                     'settle_amount' => number_format($settle_amount_with_tax),
                     'refund' => $refund_status,
@@ -1303,7 +1304,7 @@ class PackagesController extends Controller
         $packagebundles = PackageBundles::with('bundle')->where('package_id', '=', $package->id)->get();
 
         $packageservices = PackageService::with('service')->where('package_id', '=', $package->id)->get();
-
+        $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
         $packageadvances = PackageAdvances::with('paymentmode')->where([
             ['package_id', '=', $package->id],
             ['is_cancel', '=', '0'],
@@ -1329,8 +1330,8 @@ class PackagesController extends Controller
 
         /*We discuss it in future what happen next*/
 
-        $grand_total = number_format($package->total_price - $cash_amount_in);
-
+        //$grand_total = number_format($package->total_price - $cash_amount_in);
+        $grand_total = round($packageservices_price,2);
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::User()->account_id);
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
@@ -1414,11 +1415,11 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'out']
         ])->sum('cash_amount');
-
+        $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
         $cash_amount = $cash_amount_in - $cash_amount_out;
         /*We discuss it in future what happen next*/
-        $grand_total = number_format($package->total_price - $cash_amount_in);
-
+        //$grand_total = number_format($package->total_price - $cash_amount_in);
+        $grand_total = number_format($packageservices_price);
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::User()->account_id);
 

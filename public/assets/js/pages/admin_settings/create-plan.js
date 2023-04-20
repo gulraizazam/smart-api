@@ -875,7 +875,7 @@ function viewPlan($route) {
 }
 
 function displayData(response) {
-
+console.log(response);
     try {
 
         let packageadvances = response.data.packageadvances;
@@ -976,8 +976,8 @@ function displayData(response) {
 
 
         $(".plan_history").html(history_options);
-
-        $(".package_total_price").text(package.total_price);
+var totalam = Math.round(response.data.grand_total);
+        $(".package_total_price").text(totalam);
         $("#user_name").text(package.user.name)
         $("#location_name").text(package.location.name)
 
