@@ -107,9 +107,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
     try {
-
         let patient = filter_values.patient;
         let cities = filter_values.cities;
         let locations = filter_values.locations;

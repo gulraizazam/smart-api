@@ -205,14 +205,8 @@ class LocationsController extends Controller
         if (!Gate::allows('locations_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
-        /* Create Nodes with Parents */
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id, true, true);
-        $parentGroups->toList($parentGroups, -1);
-
-        $Services = $parentGroups->nodeList;
+        /*Get Service as we get in resource create module*/
+        $Services = GeneralFunctions::ServicesTreeList();
 
         $cities = Cities::where([
             ['account_id', '=', Auth::User()->account_id],
@@ -220,10 +214,7 @@ class LocationsController extends Controller
             ['active', '=', '1'],
             ['is_featured', '=', '1']
         ])->get()->pluck('full_name', 'id');
-
-
         $ServiceLocations = array();
-
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'services' => $Services,
             'service_location' => $ServiceLocations,
@@ -249,16 +240,11 @@ class LocationsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         if ($location = Locations::createRecord($request, Auth::User()->account_id)) {
-
             $locatUser = array();
-
             $location_slug_all = Locations::where('slug', '=', 'all')->first();
-
             $user_has_location_data = UserHasLocations::where('location_id', '=', $location_slug_all->id ?? 0)->groupby('user_id')->get();
-
             if (count($user_has_location_data) > 0) {
                 foreach ($user_has_location_data as $user) {
-
                     $user_has_locations = array(
                         'user_id' => $user->user_id,
                         'region_id' => $location->region_id,
@@ -317,9 +303,7 @@ class LocationsController extends Controller
                     ServiceHasLocations::createRecord($servicesData, $location);
                 }
             }
-
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
-
         } else {
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         }
@@ -360,15 +344,11 @@ class LocationsController extends Controller
         if (!Gate::allows('locations_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
         $location = Locations::getData($id);
-
         if (!$location) {
             return view('error', compact('lead_statuse'));
         }
-
         $ServiceLocations = $location->service_has_locations()->pluck('service_id')->toArray();
-
         $cities = Cities::where([
             ['account_id', '=', Auth::User()->account_id],
             ['slug', '=', 'custom'],
@@ -376,15 +356,7 @@ class LocationsController extends Controller
             ['is_featured', '=', '1']
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
-
-        /* Create Nodes with Parents */
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id, true, true);
-        $parentGroups->toList($parentGroups, -1);
-
-        $Services = $parentGroups->nodeList;
-
+        $Services = GeneralFunctions::ServicesTreeList();
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'location' => $location,
             'services' => $Services,
