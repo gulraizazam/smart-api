@@ -410,8 +410,8 @@ class ConsultancyInvoiceController extends Controller
         } else {
             $payment_mode_id = $request->payment_mode_id;
         }
-        $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
-        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+        $paymentmode_settle = PaymentModes::where(['payment_type' => Config::get('constants.payment_type_settle')])->first();
+        $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
         if(!Gate::allows('appointments_log_excel')){
             if($appointmentinfo->scheduled_date < date('Y-m-d') || $appointmentinfo->scheduled_date > date('Y-m-d'))
