@@ -139,7 +139,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>        
+        <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
         <script>
             $("#location_id_com").on('change',function(){
                 $("#location_id_com-report").val($("#location_id_com").val());
@@ -184,19 +184,19 @@
                         discount_id:$('#discount_id').val()
                     },
                     success: function(response){
-                        
+
                         $('#content').html('');
                         if($('#medium_type').val() == 'web') {
                             $('#content').html(response);
-                            $("#conversion_table").DataTable({
-                            dom: 'Bfrtip',
-                            buttons: [
-                                'excelHtml5',
-                                'csvHtml5',
-                                'pdfHtml5',  
-                            ],
-                            "ordering": false
-                        });
+                        //     $("#conversion_table").DataTable({
+                        //     dom: 'Bfrtip',
+                        //     buttons: [
+                        //         'excelHtml5',
+                        //         'csvHtml5',
+                        //         'pdfHtml5',
+                        //     ],
+                        //     "ordering": false
+                        // });
                         } else {
                             return false;
                         }
