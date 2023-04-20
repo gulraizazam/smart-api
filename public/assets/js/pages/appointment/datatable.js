@@ -126,7 +126,7 @@ function editStatus(id) {
         data: {id: id},
         cache: false,
         success: function(response) {
-            
+
             if (response.status) {
                 setStatusData(response, id);
             }
@@ -426,9 +426,9 @@ function actions(data) {
                     actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                         </a>';
-                       
+
                 }
-               
+
             }
 
         }
@@ -438,7 +438,7 @@ function actions(data) {
                 actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                         </a>';
-                        
+
             }
         }
         actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="d-lg-inline-flex d-none btn btn-icon btn-success btn-sm ml-2">\
@@ -498,7 +498,7 @@ function actions(data) {
             }
         }
 
-        
+
 
         if(data.cancelled_appointment_status == null && (data.cancelled_appointment_status?.id != data.appointment_status_id))
         {
@@ -633,9 +633,9 @@ function actions(data) {
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                             <span class="navi-text">Create Invoice</span>\
                         </a>\
-                    </li>';                        
+                    </li>';
                 }
-                
+
             }
 
         }
@@ -881,7 +881,7 @@ function setEditData(response) {
 }
 
 function setTreatmentEditData(response) {
-    
+
     try {
 
         let appointment = response.data.appointment;
@@ -991,7 +991,7 @@ function viewSmsLogs($route) {
 }
 
 function setSmsLogs(response) {
-   
+
     try {
 
         let SMSLogs = response.data.SMSLogs;
@@ -1005,7 +1005,7 @@ function setSmsLogs(response) {
             let sent_url = route('admin.appointments.resend_sms');
             rows = '';
             Object.values(SMSLogs).forEach(function (smsLog, index) {
-               
+
                 if(smsLog.invoice_id === null) {
                     rows += '<tr>';
                     rows += '<td>' + smsLog.to + '</td>';
@@ -1108,9 +1108,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-   
     try {
-
         let appointment_statuses = filter_values.appointment_statuses;
         let appointment_types = filter_values.appointment_types;
         let cities = filter_values.cities;
@@ -1151,9 +1149,17 @@ function setFilters(filter_values, active_filters) {
             region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
         });
 
-        let service_options = '<option value="">All</option>';
-        Object.entries(services).forEach(function (service, index) {
-            service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+        let service_options = '';
+        Object.values(services).forEach(function(value, index) {
+            if (value.name == 'All Services') {
+                  service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+            } else {
+                service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                Object.values(value.children).forEach(function (child, index) {
+                    service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                    service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;' + child.name + '</option>';
+                });
+            }
         });
 
         let user_options = '<option value="">All</option>';
@@ -1172,6 +1178,7 @@ function setFilters(filter_values, active_filters) {
         }
 
         let updated_by = $("#appoint_search_updated_by").val();
+
         if (updated_by == null || updated_by == '') {
             $("#appoint_search_updated_by").html(user_options);
         }

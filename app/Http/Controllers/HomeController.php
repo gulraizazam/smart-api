@@ -2113,7 +2113,6 @@ class HomeController extends Controller
                 $start_date = Carbon::now()->format('Y-m-d');
                 $end_date = Carbon::now()->format('Y-m-d');
                 break;
-
             case 'yesterday':
                 $start_date = Carbon::now()->subDay(1)->format('Y-m-d');
                 $end_date = Carbon::now()->subDay(1)->format('Y-m-d');
@@ -2126,9 +2125,7 @@ class HomeController extends Controller
                 $start_date = Carbon::now()->startOfWeek()->format('Y-m-d');
                 $end_date = Carbon::now()->endOfWeek()->format('Y-m-d');
                 break;
-
             case 'month':
-             
                 $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
                 $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
                 break;
@@ -2141,7 +2138,6 @@ class HomeController extends Controller
                 $end_date = Carbon::now()->format('Y-m-d');
                 break;
         }
-        
         return [
             $start_date,
             $end_date

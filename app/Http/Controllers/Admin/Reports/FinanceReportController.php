@@ -28,6 +28,9 @@ use App\Models\Invoices;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Explode_Multi_select;
+use App\Helpers\GeneralFunctions;
+use App\Models\Appointments;
+use Illuminate\Support\Facades\DB;
 
 class FinanceReportController extends Controller
 {
@@ -2763,13 +2766,89 @@ class FinanceReportController extends Controller
         ));
     }
     public function ArrivedNotConverted()
-     {
-        
-        $services = Services::where('parent_id',0)->where('slug','!=','all')->get();
+    {
+        $services = Services::where(['parent_id' => 0])->whereNotIn('slug',['all'])->get();
         $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
-        $cities->prepend('Select a City', '');
         $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
-        return view('admin.reports.arrived',compact('locations',  'services',  'cities')); 
-     }
+        return view('admin.reports.arrived',get_defined_vars()); 
+    }
 
+    public function DailyArrival()
+    {
+        $services = Services::where(['parent_id'=>0])->whereNotIn('slug',['all'])->get();
+        $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
+        $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
+        return view('admin.reports.dailyarrival',get_defined_vars());
+    }
+
+    public function LoadDailyArrival(Request $request)
+    {
+        $where = array();
+        if ($request->location_id  && $request->location_id ) {
+            $where[] = array(['appointments.location_id' => $request->location_id]);
+        }
+
+        if ($request->service_id && $request->service_id != '') {
+            $where[] = array(['appointments.service_id' => $request->service_id]);
+        }
+
+        if ($request->apt_type && $request->apt_type != '') {
+            $where[] = array(['appointments.appointment_type_id' => $request->apt_type]);
+        }
+
+        if ($request->date_from) {
+            $where[] = array('appointments.scheduled_date', '>=', $request->date_from);
+        }
+
+        if ($request->date_to) {
+            $where[] = array('appointments.scheduled_date', '<=', $request->date_to);
+        }
+
+        $records = array();
+        $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first();
+        $treatmentslug = AppointmentTypes::where(['slug' => 'treatment'])->first();
+        $records["data"] = array();
+        if (Gate::allows('appointments_consultancy')) {
+            $resultQuery = Appointments::join('users', function ($query) {
+                $query->on('users.id', 'appointments.patient_id')
+                    ->where(['users.user_type_id' => config('constants.patient_id')]);
+            })->where(['appointments.appointment_type_id' =>  $consultancyslug->id])
+                ->whereIn('appointments.city_id', ACL::getUserCities())
+                ->whereIn('appointments.location_id', ACL::getUserCentres());
+        }
+        if (Gate::allows('appointments_services')) {
+            $resultQuery = Appointments::join('users', function ($query) {
+                $query->on('users.id', 'appointments.patient_id')
+                    ->where(['users.user_type_id' => config('constants.patient_id')]);
+            })->where(['appointments.appointment_type_id' =>  $treatmentslug->id])
+                ->whereIn('appointments.city_id', ACL::getUserCities())
+                ->whereIn('appointments.location_id', ACL::getUserCentres());
+        }
+        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
+            $resultQuery = Appointments::join('users', function ($query) {
+                $query->on('users.id', 'appointments.patient_id')
+                    ->where(['users.user_type_id' => config('constants.patient_id')]);
+            })->whereIn('appointments.city_id', ACL::getUserCities())
+                ->whereIn('appointments.location_id', ACL::getUserCentres());
+        }
+        if (!Gate::allows('appointments_consultancy') && !Gate::allows('appointments_services')) {
+            $resultQuery = Appointments::join('users', function ($query) {
+                $query->on('users.id', 'appointments.patient_id')
+                    ->where(['users.user_type_id' => config('constants.patient_id')]);
+            })->where([
+                ['appointments.appointment_type_id', '!=', $consultancyslug->id],
+                ['appointments.appointment_type_id', '!=', $treatmentslug->id]
+            ])
+                ->whereIn('appointments.city_id', ACL::getUserCities())
+                ->whereIn('appointments.location_id', ACL::getUserCentres());
+        }
+        if (count($where)) {
+            $resultQuery->where($where);
+        }
+        $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+        ->orderBy("appointments.created_at", "DESC")
+        ->get();
+        $arrived = $resultQuery->where(['base_appointment_status_id' => 2])->count();
+        return view('admin.reports.daily_arrived',get_defined_vars());
+    }
 }
