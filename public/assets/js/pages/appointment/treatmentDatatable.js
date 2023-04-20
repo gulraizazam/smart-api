@@ -1213,9 +1213,8 @@ function setFilters(filter_values, active_filters) {
         $("#treatment_search_consultancy_type").val(active_filters.consultancy_type);
 
         /*For Consultancy filter*/
-       // $("#consultancy_city_filter").html(city_options);
-        let city_value = $("#treatment_search_service").val();
-        let service_value = $("#treatment_city_filter").val();
+        let city_value = $("#treatment_city_filter").val();
+        let service_value = $("#treatment_search_service").val();
         if(service_value==null){
             $("#treatment_search_service").html(service_options);
         }
