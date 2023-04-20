@@ -1,0 +1,154 @@
+@inject('request', 'Illuminate\Http\Request')
+@if($request->get('medium_type') != 'web')
+    @if($request->get('medium_type') == 'pdf')
+        @include('partials.pdf_head')
+    @else
+        @include('partials.head')
+    @endif
+    <style type="text/css">
+        @page {
+            margin: 10px 20px;
+        }
+
+        @media print {
+            table {
+                font-size: 12px;
+            }
+
+            .tr-root-group {
+                background-color: #F3F3F3;
+                color: rgba(0, 0, 0, 0.98);
+                font-weight: bold;
+            }
+
+            .tr-group {
+                font-weight: bold;
+            }
+
+            .bold-text {
+                font-weight: bold;
+            }
+
+            .error-text {
+                font-weight: bold;
+                color: #FF0000;
+            }
+
+            .ok-text {
+                color: #006400;
+            }
+
+        }
+    </style>
+@endif
+<div class="sn-table-holder">
+    <div class="sn-report-head">
+        <div class="sn-title">
+            <h1>{{ 'Conversion Report'  }}</h1>
+        </div>
+        
+    </div>
+</div>
+<div class="panel-body sn-table-body">
+    <div class="bordered">
+        <div class="sn-table-head">
+
+            <div class="row">
+                <div class="col-md-2">
+                    <img style="width: 180px;" src="{{asset('logo_final.png')}}" >
+                </div>
+                <div class="col-md-6">&nbsp;</div>
+                <div class="col-md-4">
+                    <table class="dark-th-table table table-bordered">
+                        <tr>
+                            <th width="25%">Duration</th>
+                            <td>From {{ $start_date }} to {{ $end_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date</th>
+                            <td>{{ \Carbon\Carbon::now()->format('Y-m-d') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="table-wrapper" id="topscroll">
+                <table class="table" id="conversion_table">
+                    <thead>
+                    <th>Patient ID</th>
+                    <th>Doctor</th>
+                    <th>Patient</th>
+                    <th>Service</th>
+                    <th>Conversion Spend</th>
+                    <th>Conversion Date</th>
+                    <th>Location</th>
+                    </thead>
+                    <tbody>
+                    @php
+                        $total = 0;
+                        $count = 0;
+                    @endphp
+                    @if(count($report_data))
+                        @foreach($report_data as $appointment)
+                            @if($appointment['converted'] != '')
+                                <tr>
+                                    
+                                    <td>{{ $appointment['patient_id'] }}</td>
+                                    <td>{{$appointment['doctor']}}</td>
+                                    <td>{{$appointment['client']}}</td>
+                                    <td>{{$appointment['service']}}</td>
+                                    <td style="text-align: right">{{$appointment['conversion_spend']}}</td>
+                                    <td>{{ \Carbon\Carbon::parse($appointment['conversion_date'])->format('F j,Y')}}</td>
+                                    <td>{{$appointment['centre']}}</td>
+                                </tr>
+                                @php
+                                    $total += $appointment['conversion_spend']?$appointment['conversion_spend']:0 ;
+                                    $count++;
+                                @endphp
+                            @endif
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="12" align="center">No Record Found.</td>
+                        </tr>
+                    @endif
+                    </tbody>
+                </table>
+                <div class="col-md-12 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">Total</td>
+                                <td class="bg-light" style="text-align:right;">{{ number_format($total,2) }}</td>
+                            </tr>
+                            <tr class="">
+                                <td class="border-top bg-light"> Total Count</td>
+                                <td class="border-top bg-light" style="text-align:right;">{{ count($report_data) }}</td>
+                            </tr>
+                            
+                                <tr class="">
+                                    <td class="border-top bg-light" >Converted Count	</td>
+                                    <td class="border-top bg-light" style="text-align:right;">
+                                    {{ $count }}
+                                    </td>
+                                </tr>
+                                <tr class="">
+                                    <td class="border-top bg-light" >Converted Ratio	</td>
+                                    <td class="border-top bg-light" style="text-align:right;">
+                                    {{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %
+                                    </td>
+                                </tr>
+                                <tr class="">
+                                    <td class="border-top bg-light" >Conversion Average</td>
+                                    <td class="border-top bg-light" style="text-align:right;">
+                                    {{ $total > 0 ? number_format($total / $count, 2) : 0}}
+                                    </td>
+                                </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="clear clearfix"></div>
+
+</div>
