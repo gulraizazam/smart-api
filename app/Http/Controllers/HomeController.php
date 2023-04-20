@@ -2131,7 +2131,7 @@ class HomeController extends Controller
                 break;
             case 'lastmonth':
                 $start_date = Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d');
-                $end_date = Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d');
+                $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
                 break;
             default:
                 $start_date = Carbon::now()->format('Y-m-d');
