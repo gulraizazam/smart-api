@@ -29,7 +29,12 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
     public function collection()
     {
         $resultQuery = Leads::join('users', 'users.id', '=', 'leads.patient_id')
-            ->where('users.user_type_id', '=', Config::get('constants.patient_id'));
+        ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
+        ->where(function ($query) {
+            $query->whereIn('leads.city_id', ACL::getUserCities());
+            $query->orWhereNull('leads.city_id');
+        });
+       
         if($this->request->id != null || $this->request->id != ''){
             $resultQuery->where('leads.patient_id', $this->request->id);
         }
@@ -65,6 +70,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         }
         $result = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
             ->orderBy("leads.created_at", "DESC")->get();
+         
         return $result;
     }
     public function headings(): array

@@ -240,7 +240,7 @@ $(document).ready(function () {
                 success: function (resposne) {
                     if (resposne.status == false) {
                         toastr.error("Invoice can not be generated in past and future dates!");
-                    }else if(resposne.status) {
+                    } else if(resposne.status) {
                         let invoice_id = resposne.data.invoice_id;
                         $('#successMessage').show();
                         toastr.success("Invoice successfully created");
