@@ -135,7 +135,7 @@ class Kernel extends ConsoleKernel
          * */
 
         $schedule->command('appointments:daily-stats')
-        ->dailyAt('13:50')->timezone($timeZone);
+            ->dailyAt('13:50')->timezone($timeZone);
     }
 
     /**
