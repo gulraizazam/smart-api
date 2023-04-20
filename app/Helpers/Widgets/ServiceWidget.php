@@ -19,6 +19,7 @@ use App\Helpers\NodesTree;
 use Auth;
 use App\Models\Bundles;
 use Carbon\Carbon;
+use App\Helpers\GeneralFunctions;
 
 class ServiceWidget
 {
@@ -32,16 +33,13 @@ class ServiceWidget
     {
         $Services = array();
         $result = [];
-
         $location = Locations::find($request->id);
-
         if ($location) {
             if ($location->slug=='region') {
                 $locations = Locations::where([
                     ['slug', '=', 'custom'],
                     ['region_id', '=', $location->region_id]
                 ])->get();
-
             }
             if ($location->slug=='custom') {
                 $locations = Locations::where('id', '=', $location->id)->get();
@@ -49,66 +47,21 @@ class ServiceWidget
             if ($location->slug=='all') {
                 $locations = Locations::where('slug', '=', 'custom')->get();
             }
-
             foreach ($locations as $s_location) {
-
                 $service_has_location = ServiceHasLocations::where('location_id', '=', $s_location->id)->get();
                 foreach ($service_has_location as $servicehaslocation) {
                     $service_data = Services::find($servicehaslocation->service_id);
                     if ($service_data->slug == 'all') {
-                        $Services = array();
-                        $parentGroups = new NodesTree();
-                        $parentGroups->current_id = 0;
-                        $parentGroups->non_negative_groups = true;
-                        $parentGroups->build(0, Auth::User()->account_id, true, true);
-                        $parentGroups->toList($parentGroups, 0);
-                        $parentGroups = $parentGroups->nodeList;
-
-                        foreach ($parentGroups as $key => $parentGroup) {
-                            if ($key == 0) {
-                                continue;
-                            }
-                            $Services[] = (array)$parentGroup;
-                        }
-
+                        $Services = GeneralFunctions::ServicesTreeList();
                         return $Services;
-
                     } else {
-                        $parentGroups = new NodesTree();
-                        $parentGroups->current_id = 1;
-                        $parentGroups->non_negative_groups = true;
-                        $parentGroups->build($service_data->id, Auth::User()->account_id, false, true);
-                        $parentGroups->toList($parentGroups, 0);
-                        $Services[] = $parentGroups->nodeList;
+                        $Services = GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
+                        return $Services;
                     }
                 }
-
             }
-            $array = [];
-            $uniq_array = [];
-            foreach ($Services as $servicedata) {
-                foreach ($servicedata as $servicesigle) {
-                    if (!in_array($servicesigle['id'], $uniq_array)) {
-                        $uniq_array[] = $servicesigle['id'];
-                        $array[] = $servicesigle;
-                    }
-
-                }
-            }
-            $service=[];
-            $result = Services::where('slug', '=', 'all')->select('id', 'name', 'active', 'duration', 'color')->first();
-            if($result){
-                $service[]=$result->toArray();
-            }
-            $uniq_array = array_merge($service, $array);
-
-
-            return $uniq_array;
         }
-
     }
-
-
     /*
      * create Service Dropdown with Heiracrchy for consultancy
      * @param: $request (int) $account_id
@@ -119,16 +72,13 @@ class ServiceWidget
     {
         $Services = array();
         $result = [];
-
         $location = Locations::find($request->id);
-
         if ($location) {
             if ($location->slug=='region') {
                 $locations = Locations::where([
                     ['slug', '=', 'custom'],
                     ['region_id', '=', $location->region_id]
                 ])->get();
-
             }
             if ($location->slug=='custom') {
                 $locations = Locations::where('id', '=', $location->id)->get();
@@ -136,80 +86,21 @@ class ServiceWidget
             if ($location->slug=='all') {
                 $locations = Locations::where('slug', '=', 'custom')->get();
             }
-
             foreach ($locations as $s_location) {
-
                 $service_has_location = ServiceHasLocations::where('location_id', '=', $s_location->id)->get();
                 foreach ($service_has_location as $servicehaslocation) {
                     $service_data = Services::find($servicehaslocation->service_id);
                     if ($service_data->slug == 'all') {
-
-                        $Services = array();
-                        $parentGroups = new NodesTree();
-                        $parentGroups->current_id = 0;
-                        $parentGroups->non_negative_groups = true;
-                        $parentGroups->build(0, Auth::User()->account_id, true, true);
-                        $parentGroups->toList($parentGroups, 0);
-                        $parentGroups = $parentGroups->nodeList;
-                        foreach ($parentGroups as $key => $parentGroup) {
-                            if ($key == 0) {
-                                continue;
-                            }
-                            $Services[] = (array)$parentGroup;
-                        }
-                        foreach ($Services as $key => $ser){
-                            if($ser['parent_id'] == 0 && $ser['end_node'] == 0){}else{
-                                if($ser['slug']=='all'){
-                                    continue;
-                                } else {
-                                    unset($Services[$key]);
-                                }
-                            }
-                        }
+                        $Services = GeneralFunctions::ServicesTreeList();
                         return $Services;
-
                     } else {
-                        $parentGroups = new NodesTree();
-                        $parentGroups->current_id = 1;
-                        $parentGroups->non_negative_groups = true;
-                        $parentGroups->build($service_data->id, Auth::User()->account_id, false, true);
-                        $parentGroups->toList($parentGroups, 0);
-                        $Services[] = $parentGroups->nodeList;
+                        $Services = GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
+                        return $Services;
                     }
                 }
             }
-
-            $array = [];
-            $uniq_array = [];
-            foreach ($Services as $servicedata) {
-                foreach ($servicedata as $servicesigle) {
-                    if (!in_array($servicesigle['id'], $uniq_array)) {
-                        $uniq_array[] = $servicesigle['id'];
-                        $array[] = $servicesigle;
-                    }
-
-                }
-            }
-
-            $service[] = Services::where('slug', '=', 'all')->select('id', 'name','parent_id','slug','active', 'duration', 'color','end_node')->first()->toArray();
-            $uniq_array = array_merge($service, $array);
-
-            foreach ($uniq_array as $key => $ser){
-                if($ser['parent_id'] == 0 && $ser['end_node'] == 0){}else{
-                    if($ser['slug']=='all'){
-                        continue;
-                    } else {
-                        unset($uniq_array[$key]);
-                    }
-                }
-            }
-
-            return $uniq_array;
         }
-
     }
-
-
     /*
      * create Service Dropdown for plans against location id.
      *
@@ -222,21 +113,16 @@ class ServiceWidget
         $date = Carbon::now();
         $services = [];
         $Services = [];
-
         $allService = Services::where(['slug' => 'all'])->select('id')->first();
-
         foreach ($service_has_location as $servicehaslocation) {
             $service_data = Services::find($servicehaslocation->service_id);
-
             if ($service_data->slug == 'all') {
-
                 $parentGroups = new NodesTree();
                 $parentGroups->current_id = 0;
                 $parentGroups->non_negative_groups = true;
                 $parentGroups->build(0, $account_id, true, true);
                 $parentGroups->toList($parentGroups, 0);
                 $parentGroups = $parentGroups->nodeList;
-
                 foreach ($parentGroups as $key => $parentGroup) {
                     if ($key == 0) {
                         continue;
@@ -276,14 +162,11 @@ class ServiceWidget
                 $services[] = $parentGroups;
             }
         }
-
         foreach ($services as $key => $parentGroup) {
             foreach ($parentGroup as $service) {
                 $Services[] = $service['id'];
             }
-
         }
-
         $service1 = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
                     ->whereIn('bundle_has_services.service_id', $Services)
                     ->where([

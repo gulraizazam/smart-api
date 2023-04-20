@@ -55,7 +55,6 @@ use App\Models\PackageAdvances;
 
     function checkFilters($filters, $key): bool
     {
-
         $apply_filter = false;
         if(count($filters) > 0 && hasFilter($filters, 'filter')) {
             $action = $filters['filter'];
@@ -65,7 +64,6 @@ use App\Models\PackageAdvances;
                 $apply_filter = true;
             }
         }
-
         return $apply_filter;
     }
 
