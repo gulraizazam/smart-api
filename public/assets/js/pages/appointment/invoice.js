@@ -249,7 +249,7 @@ $(document).ready(function () {
                         $("#consultancy-invoice-create").remove();
                        // window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
                         displayInvoice(route('admin.appointments.InvoiceDisplay', {id: invoice_id}), invoice_id);
-                    } else {
+                    }else {
                         $('#wrongMessage').show();
                         toastr.error(" Something Went Wrong!");
                     }

@@ -278,7 +278,6 @@ function setCreateData(response) {
     $("#add_location_cities").html(cities_options);
 
     let service_options = makeServiceOptions(response);
-
     $("#add_location_services").html(service_options);
 
     let image = asset_url +'assets/media/new_logo.png';
@@ -288,33 +287,22 @@ function setCreateData(response) {
 function makeServiceOptions(response) {
 
     let services = response.data.services;
-    let service_options = '<option value="">Select</option>';
+    let service_value = '';
+    let service_child_value = '';
+    let service_options = '';
 
-    let tmp_id = '';
-    let id = 0;
-    let val = 'Select';
-
-    Object.values(services).forEach(function(value, index) {
-        if (value.id == 0) {
-            return;
-        }
-
-
-        if(value.id < 0) {
-            tmp_id = (value.id * -1);
-            id = value.id * -1;
-            val = '<b>'+value.name ?? ''+'</b>';
+    Object.values(services).forEach(function (value, index) {
+        service_value=value.name;
+        if (service_value == 'All Services') {
+            service_options += '<option value="' + value.id + '">' + service_value + '</option>';
         } else {
-            tmp_id = (value.id * 1);
-            id = value.id ;
-            val = value.name ?? '';
+            service_options += '<option value="' + value.id + '">' + service_value + '</option>';
+            Object.values(value.children).forEach(function (child, index) {
+                service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+            });
         }
-
-        //in_array($tmp_id, $ServiceLocations)
-
-        service_options += '<option value="'+id+'">'+val+'</option>';
     });
-
     return service_options;
 }
 function hideShowAdvanceFilters(active_filters) {
