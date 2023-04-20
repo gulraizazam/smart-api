@@ -7,9 +7,7 @@
 
  let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 $(document).ready(function () {
-
     $(document).on("change", ".select2", function () {
-
        if ($(this).val() != '') {
             $(this).parents(".fv-row").find(".fv-plugins-message-container").find(".fv-help-block").hide();
             $(this).parent(".fv-row").find(".select2-selection").removeClass("select2-is-invalid");
@@ -21,6 +19,8 @@ $(document).ready(function () {
 
     $(document).on( "click", ".popup-close", function () {
         $(this).parents(".modal").modal("toggle");
+        $("#modal_allocate_doctors_form").find("#services").empty();
+        $("#modal_allocate_discounts_form").find("#services").empty();
     });
     $('.select2').select2();
     $('.to-from-datepicker').datepicker({
@@ -877,24 +877,18 @@ function patientSearch(search_id = 'patient_id',flag=1) {
                 dataType: 'json',
                 delay: 250,
                 data: {search: $(this).val()},
-
                 success: function (response) {
-
                     let html = '';
                     let patients = response.data.patients;
-
                     if (patients.length) {
                         Object.values(patients).forEach(function (patient) {
                             html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
                         });
-
                         $(".suggestion-list").html(html);
-
                         $(".suggesstion-box").show();
                     } else {
                         $(".suggesstion-box").hide();
                     }
-
                 }
             });
         } else {
@@ -916,14 +910,11 @@ function patientSearch(search_id = 'patient_id',flag=1) {
                 };
             },
             processResults: function (response, params) {
-
                 try {
                     let data = response.data.patients;
-
                     params.page = params.page || 1;
                     return {
                         results: $.map(data, function (item) {
-
                             return {
                                 text: item.name + ' - C-' + item.id,
                                 id: item.id

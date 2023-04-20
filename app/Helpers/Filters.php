@@ -81,15 +81,12 @@ class Filters
      */
     public static function put($userId, $file, $key, $value = null) {
         self::_init($userId, $file);
-
         if(is_array($key)) {
             self::$valuestore->put($key);
         } else {
             self::$valuestore->put($key, $value);
         }
-
         Filters::RemoveEmptySubFolders(storage_path(self::$base_path));
-
         return true;
     }
 

@@ -125,7 +125,7 @@ class OperationsReportController extends Controller
                 break;
         }
     }
-
+   
     /**
      * Center target report
      * @param Request $request

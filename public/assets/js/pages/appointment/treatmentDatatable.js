@@ -394,7 +394,7 @@ function actions(data) {
     let delete_url = route('admin.appointments.destroy', {id: id});
     let patient_url = route('admin.patients.preview', {id: data.patient_id});
     let viewlog_url = route('admin.appointments.loadPage', {id: id, type: 'web'});
-    
+
     if (
         permissions.edit
         || permissions.delete
@@ -590,8 +590,8 @@ function actions(data) {
                         <span class="navi-text">SMS Log</span>\
                         </a>\
                     </li>';
-        
-        
+
+
         if (permissions.invoice_display) {
             if(data.invoice) {
                 actions += '<li class="navi-item d-lg-none">\
@@ -646,7 +646,7 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
     $(".appointment").addClass("d-none");
     $("." + type + "-section").removeClass("d-none");
     $(".change-tab").removeClass("nav-bar-active");
-    $("." +type+ "-tab").addClass("nav-bar-active");    
+    $("." +type+ "-tab").addClass("nav-bar-active");
     setQueryStringParameter('tab', type);
     setQueryStringParameter('location_id', location_id);
     setQueryStringParameter('doctor_id', doctor_id);
@@ -855,7 +855,7 @@ function setEditData(response) {
 }
 
 function setTreatmentEditData(response) {
-   
+
     try {
 
         let appointment = response.data.appointment;
@@ -987,7 +987,7 @@ function setSmsLogs(response) {
                     rows += '<td>' + smsLog.to + '</td>';
                     rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
                     rows += '<span class="short_text" style="display: block">' + smsLog.text.slice(0, 50).concat('...') + '</span>';
-                   
+
                     rows += '<span class="full_text" style="display:none; text-underline: none;"><pre>' + smsLog.text + '</pre></span>';
                     '</a></td>';
 
@@ -1087,7 +1087,7 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-    
+
     try {
 
         let appointment_statuses = filter_values.appointment_statuses;
@@ -1130,9 +1130,16 @@ function setFilters(filter_values, active_filters) {
             region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
         });
 
-        let service_options = '<option value="">All</option>';
-        Object.entries(services).forEach(function (service, index) {
-            service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+        let service_options = '<option value=""></option>';
+        Object.values(services).forEach(function (service, index) {
+            if (service.name == 'All Services') {
+                service_options += '<option value="' + service.id + '">' + service.name + '</option>';
+            } else {
+              service_options += '<option value="' + service.id + '">' + service.name + '</option>';
+              Object.values(service.children).forEach(function (child, index) {
+                  service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;'+child.name + '</option>';
+              });
+            }
         });
 
         let user_options = '<option value="">All</option>';
@@ -1206,13 +1213,12 @@ function setFilters(filter_values, active_filters) {
         $("#treatment_search_consultancy_type").val(active_filters.consultancy_type);
 
         /*For Consultancy filter*/
-       // $("#consultancy_city_filter").html(city_options);
-        let city_value = $("#treatment_search_service").val();
-        let service_value = $("#treatment_city_filter").val();
+        let city_value = $("#treatment_city_filter").val();
+        let service_value = $("#treatment_search_service").val();
         if(service_value==null){
             $("#treatment_search_service").html(service_options);
         }
-        
+
         if (city_value == null) {
             $("#treatment_city_filter").html(city_options);
         }
@@ -1304,7 +1310,7 @@ function createTreatmentInvoice(url) {
             $('#package_id_create').change();
             $("#modal_create_treatment_invoice").modal("show");
             customDatePicker();
-            
+
         },
         error: function(xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
