@@ -321,7 +321,7 @@ class GeneralFunctions
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
                             if($service->parent_id=="0"){
-                               $children = Services::where('parent_id',$service->id)->orderBy('name')->get()->toArray();
+                               $children = Services::where(['parent_id' => $service->id])->orderBy('name')->get()->toArray();
                                $mergedServices[] = $service->toArray();
                                 foreach ($children as $child) {
                                     $mergedServices[] = $child;
