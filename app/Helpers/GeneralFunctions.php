@@ -326,9 +326,9 @@ class GeneralFunctions
             $mergedServices = [];
             foreach ($services as $key => $service) {
                 if(Gate::allows("view_inactive_services")){
-                    $children = Services::where('parent_id',$service->id)->orderBy('name')->get();
+                    $children = Services::where(['parent_id' => $service->id])->orderBy('name')->get();
                 }else{
-                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+                    $children = Services::where(['parent_id' => $service->id, 'active' => 1])->where()->orderBy('name')->get();
                 }
                 $mergedServices[] = $service->toArray();
                 $children = $children->toArray();
@@ -350,11 +350,7 @@ class GeneralFunctions
                 $filters = getFilters($request->all());
                 $apply_filter = checkFilters($filters, $filename);
                 if (hasFilter($filters, 'name')) {
-                    $where[] = [
-                        'name',
-                        'like',
-                        '%' . $filters['name'] . '%',
-                    ];
+                    $where[] = ['name','like','%' . $filters['name'] . '%',];
                     Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                 } else {
                     if ($apply_filter) {
