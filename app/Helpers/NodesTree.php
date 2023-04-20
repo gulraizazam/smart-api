@@ -72,7 +72,6 @@ class NodesTree
             $this->color = $group['color'];
             $this->end_node = $group['end_node'];
         }
-
         $this->add_sub_nodes($account_id, $only_active);
         $this->add_sub_groups($account_id, $only_active);
     }
@@ -96,19 +95,15 @@ class NodesTree
                 $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'account_id' => $account_id])->OrderBy('name','asc')->get()->toArray();
             }
         }
-
         $counter = 0;
         foreach ($child_group_q as $row)
         {
             /* Create new AccountList object */
             $this->children_groups[$counter] = new NodesTree();
-
             /* Initial setup */
             $this->children_groups[$counter]->current_id = $this->current_id;
             $this->children_groups[$counter]->current_id = $this->non_negative_groups;
-
-            $this->children_groups[$counter]->build($row['id'], $account_id);
-
+            $this->children_groups[$counter]->build($row['id'], $account_id, true, true);
             $counter++;
         }
     }
@@ -118,17 +113,11 @@ class NodesTree
      */
     function add_sub_nodes($account_id, $only_active = false)
     {
-
         if($only_active) {
-            $child_node_q = Services::where(
-                ['parent_id' => $this->id, 'end_node' => 1, 'active' => 1, 'account_id' => $account_id]
-            )->OrderBy('name','asc')->get()->toArray();
+            $child_node_q = Services::where(['parent_id' => $this->id, 'end_node' => 1, 'active' => 1, 'account_id' => $account_id])->OrderBy('name','asc')->get()->toArray();
         } else {
-            $child_node_q = Services::where(
-                ['parent_id' => $this->id, 'end_node' => 1, 'account_id' => $account_id]
-            )->OrderBy('name','asc')->get()->toArray();
+            $child_node_q = Services::where(['parent_id' => $this->id, 'end_node' => 1, 'account_id' => $account_id])->OrderBy('name','asc')->get()->toArray();
         }
-
         $counter = 0;
         if(count($child_node_q)) {
             foreach ($child_node_q as $row)
@@ -168,7 +157,6 @@ class NodesTree
                     'price' => $tree->price,
                     'color' => $tree->color,
                     'end_node' => $tree->end_node,
-
                 );
             } else {
                 $this->nodeList[-$tree->id] = array(
@@ -187,7 +175,6 @@ class NodesTree
         } else {
             $this->nodeList[0] = $this->default_text;
         }
-
         /* Add child nodes */
         if (count($tree->children_nodes) > 0) {
             $c++;
@@ -205,30 +192,10 @@ class NodesTree
                     'color' => $data['color'],
                     'end_node' => $data['end_node'],
                     'active' => $data['active'],
-                );
-
-                /* Add nodes as per restrictions */
-//				if ($this->restriction_bankcash == 1 ||
-//					$this->restriction_bankcash == 2 ||
-//					$this->restriction_bankcash == 3) {
-//					/* All nodes */
-//					$this->nodeList[$data['id']] = $this->space($c) . $node_name;
-//				} else if ($this->restriction_bankcash == 4) {
-//					/* Only bank or cash nodes */
-//					if ($data['type'] == 1) {
-//						$this->nodeList[$data['id']] = $this->space($c) . $node_name;
-//					}
-//
-//				} else if ($this->restriction_bankcash == 5) {
-//					/* Only NON bank or cash nodes */
-//					if ($data['type'] == 0) {
-//						$this->nodeList[$data['id']] = $this->space($c) . $node_name;
-//					}
-//				}
+                );	
             }
             $c--;
         }
-
         /* Process child groups recursively */
         foreach ($tree->children_groups as $id => $data) {
             $c++;

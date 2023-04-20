@@ -312,11 +312,9 @@ jQuery(document).ready(function() {
 });
 
 function submitData(callback) {
-
     let ids = [];
     ids.push($("#locations").val());
     ids.push($("#services").val());
-
     showSpinner();
     $.ajax({
         headers: {
@@ -329,11 +327,12 @@ function submitData(callback) {
         success: function (response) {
             if (response.status == true) {
                 var data = response.data;
-                $('#allocate_services').append(serviceLocation(data.record.id, data.record_location_name, data.record_service_name));
+                allocateRow(route('admin.doctors.location_manage', {id: data.record.user_id}));
                 callback({
                     'status': response.status,
                     'message': response.message,
                 });
+                $("form").trigger("reset");
                 hideSpinnerRestForm();
             } else {
                 callback({
@@ -360,4 +359,5 @@ function submitData(callback) {
         }
     });
 }
+
 

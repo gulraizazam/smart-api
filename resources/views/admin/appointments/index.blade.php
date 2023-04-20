@@ -1,22 +1,16 @@
 @extends('admin.layouts.master')
-
 @section('content')
-
     @push('css')
         <link href="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.css')}}" rel="stylesheet" type="text/css" />
     @endpush
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-
     @include('admin.partials.breadcrumb', ['module' => 'Consultancy List', 'title' => 'Consultancies'])
-
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
             <div class="container">
-
                 @include('admin.appointments.partials.consultancy-menu')
-
                 <!--begin::Card-->
                 <div class="card card-custom">
                     <div class="card-header py-3">
@@ -37,9 +31,7 @@
                                 </span>
                             </span>
                             <h3 class="card-label change-label">Consultancies</h3>
-
                         </div>
-
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
                             @if(Gate::allows('appointments_destroy'))
@@ -57,7 +49,6 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
-
                             @if(Gate::allows('appointments_export'))
                                 <div class="delete-records export-appointments">
                                     <form method="POST" action="download-filter-data" id="filtersform">
@@ -270,7 +261,11 @@
                         $("#consultancy_city_filter").val(result.city_id).change();
                         setDashboardFilters();
                     }, 1300);
-                }   
+                } else {
+                    setTimeout( function () {
+                        setDashboardFilters();
+                    }, 1300);
+                }
             });
             </script>
             <script>

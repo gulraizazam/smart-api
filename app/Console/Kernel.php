@@ -129,6 +129,13 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('move:backup')
             ->dailyAt('02:30')->timezone($timeZone);
+
+        /*
+         * Appointment and Treatment daily sate created
+         * */
+
+        $schedule->command('appointments:daily-stats')
+            ->dailyAt('13:50')->timezone($timeZone);
     }
 
     /**

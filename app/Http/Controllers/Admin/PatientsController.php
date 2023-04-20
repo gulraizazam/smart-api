@@ -365,15 +365,11 @@ class PatientsController extends Controller
      */
     public function preview($id)
     {
-
         if (!Gate::allows('patients_manage')) {
             return abort(401);
         }
-
         return view('admin.patients.card.preview');
-
     }
-
     public function getPatient($id) {
 
         $patient = Patients::getData($id);

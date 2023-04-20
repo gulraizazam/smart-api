@@ -24,11 +24,8 @@
         <!--begin::Form-->
         <form id="modal_allocate_doctors_form" method="post" action="">
             <!--begin::Scroll-->
-
             <input type="hidden" name="id" id="doctor_id">
-
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-
                 <div class="form-group">
                     <div class="row">
 
@@ -45,18 +42,14 @@
                                 <option value="">Select Services</option>
                             </select>
                         </div>
-
                         <div class="fv-row col-md-2 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0" style="opacity: 0;">Add <span class="text text-danger">*</span></label>
                             <button type="submit" class="btn btn-primary spinner-button">
                                 <span class="indicator-label">Add</span>
                             </button>
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
             <!--end::Scroll-->
             <!--begin::Actions-->
@@ -69,11 +62,8 @@
         </div>--}}
         <!--end::Actions-->
         </form>
-
-
         <div class="table-responsive">
             <table id="allocate_services" class="table table-striped table-bordered table-advance table-hover">
-
                 <thead>
                 <tr>
                     <th>Location</th>
@@ -81,11 +71,8 @@
                     <th>Action</th>
                 </tr>
                 </thead>
-
             </table>
         </div>
-
-
         <!--end::Form-->
     </div>
     <!--end::Modal body-->
