@@ -865,7 +865,7 @@ function patientSearch(search_id = 'patient_id',flag=1) {
     $("." + search_id).on("input",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
-        if ($(this).val().length < 1) {
+        if ($(this).val().length < 2) {
             $(".suggesstion-box").hide();
             return false;
         }
