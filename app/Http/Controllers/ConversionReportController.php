@@ -3,19 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ACL;
-use App\Helpers\NodesTree;
-use App\Models\Appointments;
-use App\Models\AppointmentTypes;
-use App\Models\Cities;
-use App\Models\Invoices;
 use App\Models\Locations;
-use App\Models\Packages;
-use App\Models\PackageService;
-use App\Models\Regions;
 use App\Models\Services;
 use App\Models\User;
 use App\Reports\Finanaces;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,6 +27,8 @@ class ConversionReportController extends Controller
     }
     public function LoadConversionReport(Request $request)
     {
+        ini_set('memory_limit', '-1');
+        set_time_limit(0);
         if ($request->date_range) {
             $date_range = explode(' - ', $request->date_range);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
