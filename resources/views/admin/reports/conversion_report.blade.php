@@ -74,20 +74,20 @@
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="conversion_table">
                     <thead>
-                    <th>Patient ID</th>
-                    <th>Doctor</th>
-                    <th>Patient</th>
-                    <th>Service</th>
-                    <th>Conversion Spend</th>
-                    <th>Conversion Date</th>
-                    <th>Location</th>
+                        <th>Patient ID</th>
+                        <th>Doctor</th>
+                        <th>Patient</th>
+                        <th>Service</th>
+                        <th>Conversion Spend</th>
+                        <th>Conversion Date</th>
+                        <th>Location</th>
                     </thead>
                     <tbody>
                     @php
                         $total = 0;
                         $count = 0;
                     @endphp
-                    @if(count($report_data))
+                    @if(count($report_data) > 0)
                         @foreach($report_data as $appointment)
                             @if($appointment['converted'] != '')
                                 <tr>
@@ -108,7 +108,13 @@
                         @endforeach
                     @else
                         <tr>
-                            <td colspan="12" align="center">No Record Found.</td>
+                            <td colspan="12" align="center"></td>
+                            <td colspan="12" align="center"></td>
+                            <td colspan="12" align="center"></td>
+                            <td colspan="12" align="center"></td>
+                            <td colspan="12" align="center"></td>
+                            <td colspan="12" align="center"></td>
+                            <td colspan="12" align="center"></td>
                         </tr>
                     @endif
                     </tbody>

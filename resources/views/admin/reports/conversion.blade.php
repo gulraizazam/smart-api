@@ -184,7 +184,6 @@
                         discount_id:$('#discount_id').val()
                     },
                     success: function(response){
-
                         $('#content').html('');
                         if($('#medium_type').val() == 'web') {
                             $('#content').html(response);
