@@ -120,11 +120,6 @@
                                 <td class="bg-light">Total</td>
                                 <td class="bg-light" style="text-align:right;">{{ number_format($total,2) }}</td>
                             </tr>
-                            <tr class="">
-                                <td class="border-top bg-light"> Total Count</td>
-                                <td class="border-top bg-light" style="text-align:right;">{{ count($report_data) }}</td>
-                            </tr>
-                            
                                 <tr class="">
                                     <td class="border-top bg-light" >Converted Count	</td>
                                     <td class="border-top bg-light" style="text-align:right;">
