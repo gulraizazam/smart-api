@@ -188,15 +188,15 @@
                         $('#content').html('');
                         if($('#medium_type').val() == 'web') {
                             $('#content').html(response);
-                        //     $("#conversion_table").DataTable({
-                        //     dom: 'Bfrtip',
-                        //     buttons: [
-                        //         'excelHtml5',
-                        //         'csvHtml5',
-                        //         'pdfHtml5',
-                        //     ],
-                        //     "ordering": false
-                        // });
+                            $("#conversion_table").DataTable({
+                            dom: 'Bfrtip',
+                            buttons: [
+                                'excelHtml5',
+                                'csvHtml5',
+                                'pdfHtml5',
+                            ],
+                            "ordering": false
+                        });
                         } else {
                             return false;
                         }
