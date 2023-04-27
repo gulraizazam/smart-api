@@ -2845,11 +2845,24 @@ class Finanaces
                 }
                 $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
                 $locationData[$appointment->location->name]['total'] = $total;
+               
             }
         }
+        $maxConversion = collect($appointments_info)->max('conversion_spend');
+        $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->min('conversion_spend');
+        $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
+        ->map(function ($appointments_info) {
+            return $appointments_info->sum('conversion_spend');
+        });
+        
         return [
             $appointments_info,
-            $locationData
+            $locationData,
+            $maxConversion,
+            $minConversion,
+            $conversionsByPatient
+            
+
         ];
     }
     private static function centerWiseData($appointments_info, $appointment, $centerWise, $count, $arrived_count, $total, $locationData)
