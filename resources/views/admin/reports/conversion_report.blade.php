@@ -105,7 +105,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Arrival to Conversion Ratio</td>
-                                <td class="bg-light" style="text-align:right;">{{ $arrival_to_conversion_ratio }} %</td>
+                                <td class="bg-light" style="text-align:right;">{{ number_format($arrival_to_conversion_ratio,2) }} %</td>
                             </tr>
                             
                         </thead>
