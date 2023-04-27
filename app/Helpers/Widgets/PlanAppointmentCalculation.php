@@ -490,7 +490,7 @@ class PlanAppointmentCalculation
             $data_package['created_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
             $data_package['updated_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
 
-
+            
             if ($invoice_detail->package_id != null) {
                 $data_package['package_id'] = $invoice_detail->package_id;
             }
