@@ -131,7 +131,7 @@
                     @endphp
                     @if(count($report_data))
                         @foreach($report_data as $appointment)
-                            @if($appointment['converted'] != '')
+                            @if($appointment['converted'] != '' && $appointment['conversion_spend'] > 0)
                                 <tr>
                                     <td>{{ $appointment['patient_id'] }}</td>
                                     <td>{{$appointment['doctor']}}</td>
