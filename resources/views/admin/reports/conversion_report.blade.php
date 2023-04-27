@@ -71,23 +71,47 @@
                     </table>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="row">
+                <div class="col-md-4 mb-3">
                     <table class="table border">
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Highest Conversion Value</td>
-                                <td class="bg-light" style="text-align:right;">{{ number_format($maxConversion,2) }}</td>
+                                <td class="bg-light" style="text-align:right;">PKR:{{ number_format($maxConversion,2) }}</td>
                             </tr>
                             <tr class="">
                                 <td class="border-top bg-light" >Lowest Conversion Value</td>
                                 <td class="border-top bg-light" style="text-align:right;">
-                                {{ number_format($minConversion,2) }}
+                                PKR:{{ number_format($minConversion,2) }}
                                 </td>
                             </tr>
                             
                         </thead>
                     </table>
                 </div>
+                <div class="col-md-4 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">Average Conversion Value</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{ number_format($average_client_coversion,2) }}</td>
+                            </tr>
+                            
+                        </thead>
+                    </table>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">Arrival to Conversion Ratio</td>
+                                <td class="bg-light" style="text-align:right;">{{ $arrival_to_conversion_ratio }} %</td>
+                            </tr>
+                            
+                        </thead>
+                    </table>
+                </div>
+            </div>
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="conversion_table">
                     <thead>

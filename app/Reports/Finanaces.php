@@ -2850,19 +2850,27 @@ class Finanaces
         }
         $maxConversion = collect($appointments_info)->max('conversion_spend');
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->min('conversion_spend');
+        $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
+        $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
+        $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
+        ->where('scheduled_date','<=',$end_date)
+        ->where('base_appointment_status_id',2)
+        ->count();
+        $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
+        $average_client_coversion = $totalamount/$converted_Records;
         $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
         ->map(function ($appointments_info) {
             return $appointments_info->sum('conversion_spend');
         });
-        
         return [
             $appointments_info,
             $locationData,
             $maxConversion,
             $minConversion,
-            $conversionsByPatient
+            $conversionsByPatient,
+            $average_client_coversion,
+            $arrival_to_conversion_ratio
             
-
         ];
     }
     private static function centerWiseData($appointments_info, $appointment, $centerWise, $count, $arrived_count, $total, $locationData)
