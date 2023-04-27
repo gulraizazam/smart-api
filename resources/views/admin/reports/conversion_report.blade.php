@@ -74,31 +74,34 @@
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="conversion_table">
                     <thead>
-                        <th>Patient ID</th>
-                        <th>Doctor</th>
-                        <th>Patient</th>
-                        <th>Service</th>
-                        <th>Conversion Spend</th>
-                        <th>Conversion Date</th>
-                        <th>Location</th>
+                    <th>Patient ID</th>
+                    <th>Doctor</th>
+                    <th>Patient</th>
+                    <th>Service</th>
+                    <th>Conversion Spend</th>
+                    <th>Conversion Date</th>
+                    <th>Location</th>
+                    <th>Client Value</th>
                     </thead>
                     <tbody>
                     @php
                         $total = 0;
                         $count = 0;
                     @endphp
-                    @if(count($report_data) > 0)
+                    @if(count($report_data))
                         @foreach($report_data as $appointment)
                             @if($appointment['converted'] != '')
+                            
                                 <tr>
                                     
                                     <td>{{ $appointment['patient_id'] }}</td>
                                     <td>{{$appointment['doctor']}}</td>
                                     <td>{{$appointment['client']}}</td>
                                     <td>{{$appointment['service']}}</td>
-                                    <td style="text-align: right">{{$appointment['conversion_spend']}}</td>
+                                    <td style="text-align: right">PKR: {{$appointment['conversion_spend']}}</td>
                                     <td>{{ \Carbon\Carbon::parse($appointment['conversion_date'])->format('F j,Y')}}</td>
                                     <td>{{$appointment['centre']}}</td>
+                                    <td></td>
                                 </tr>
                                 @php
                                     $total += $appointment['conversion_spend']?$appointment['conversion_spend']:0 ;
@@ -126,24 +129,24 @@
                                 <td class="bg-light">Total</td>
                                 <td class="bg-light" style="text-align:right;">{{ number_format($total,2) }}</td>
                             </tr>
-                                <tr class="">
-                                    <td class="border-top bg-light" >Converted Count	</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                    {{ $count }}
-                                    </td>
-                                </tr>
-                                <tr class="">
-                                    <td class="border-top bg-light" >Converted Ratio	</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                    {{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %
-                                    </td>
-                                </tr>
-                                <tr class="">
-                                    <td class="border-top bg-light" >Conversion Average</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                    {{ $total > 0 ? number_format($total / $count, 2) : 0}}
-                                    </td>
-                                </tr>
+                            <tr class="">
+                                <td class="border-top bg-light" >Converted Count	</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                {{ $count }}
+                                </td>
+                            </tr>
+                            <tr class="">
+                                <td class="border-top bg-light" >Converted Ratio	</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                {{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %
+                                </td>
+                            </tr>
+                            <tr class="">
+                                <td class="border-top bg-light" >Conversion Average</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                {{ $total > 0 ? number_format($total / $count, 2) : 0}}
+                                </td>
+                            </tr>
                         </thead>
                     </table>
                 </div>

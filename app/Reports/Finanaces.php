@@ -2659,19 +2659,21 @@ class Finanaces
         $where[] = array(['appointments.appointment_type_id' => $appointment_type->id]);
         $where[] = array('package_advances.cash_amount', '>' , 0);
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
+
         $appointments = Appointments::with('location:id,name')
-            ->join('packages', 'appointments.id', '=', 'packages.appointment_id')
-            ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
+            // ->join('packages', 'appointments.id', '=', 'packages.appointment_id')
+            ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
             ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived')])
-            ->whereDate('package_advances.created_at', '>=', $start_date)
-            ->whereDate('package_advances.created_at', '<=', $end_date)
-            ->where($where)
-            ->whereNotNull('packages.appointment_id')
-            ->whereNull('packages.deleted_at')
+             ->whereDate('package_advances.created_at', '>=', $start_date)
+             ->whereDate('package_advances.created_at', '<=', $end_date)
+            //->where($where)
+            // ->whereNotNull('packages.appointment_id')
+            // ->whereNull('packages.deleted_at')
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->get();
+       
         $total = 0;
         $count = array();
         $arrived_count = array();
@@ -2699,19 +2701,19 @@ class Finanaces
                     );
                 }
                 $appointmentss[] = $appointment->id;
-                $package_info = Packages::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
+                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
                 if (count($package_info)) {
                     $actual = 0;
                     $revenue_in = 0;
                     $out = 0;
-                    $packagesadvances = PackageAdvances::whereIn('package_id', $package_info)
+                    $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->whereDate('created_at', '>=', $start_date)
                         ->whereDate('created_at', '<=', $end_date)
                         ->where('cash_amount', '>', 0)
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
-                        $first_advance = PackageAdvances::whereIn('package_id', $package_info)
+                        $first_advance = PackageAdvances::whereIn('id', $package_info)
                             ->where('cash_amount', '>', 0)
                             ->orderBy('created_at', 'asc')
                             ->first();
@@ -2816,6 +2818,7 @@ class Finanaces
                         'converted' => '',
                         'conversion_spend' => '',
                         'conversion_date' => '',
+                       
                     );
                     $package_info = Packages::where('appointment_id', '=', $appointment->id)->get()->pluck('id')->toArray();
                     if (count($package_info) == 0) {
