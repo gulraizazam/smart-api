@@ -151,6 +151,7 @@ class PackageBundles extends Model
         $GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
         ->select('appointments.id','appointments.service_id')
         ->where('appointments.patient_id',$package->patient_id)
+        ->where('appointments.appointment_type_id',1)
        ->latest('invoices.created_at')->first();
         $GetInvoiceInfo = Invoices::where(['appointment_id' => $GetAppointment->id])->first();
         $packageservicez = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)

@@ -134,6 +134,7 @@
 			
 			$GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
 			->where('appointments.patient_id',$data['patient_id'])
+			->where('appointments.appointment_type_id',1)
 			->select('appointments.id')
 			->latest('invoices.created_at')->first();
 			
