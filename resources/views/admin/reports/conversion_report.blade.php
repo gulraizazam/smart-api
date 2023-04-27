@@ -71,6 +71,23 @@
                     </table>
                 </div>
             </div>
+            <div class="col-md-3 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">Highest Conversion Value</td>
+                                <td class="bg-light" style="text-align:right;">{{ number_format($maxConversion,2) }}</td>
+                            </tr>
+                            <tr class="">
+                                <td class="border-top bg-light" >Lowest Conversion Value</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                {{ number_format($minConversion,2) }}
+                                </td>
+                            </tr>
+                            
+                        </thead>
+                    </table>
+                </div>
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="conversion_table">
                     <thead>
@@ -91,9 +108,7 @@
                     @if(count($report_data))
                         @foreach($report_data as $appointment)
                             @if($appointment['converted'] != '')
-                            
                                 <tr>
-                                    
                                     <td>{{ $appointment['patient_id'] }}</td>
                                     <td>{{$appointment['doctor']}}</td>
                                     <td>{{$appointment['client']}}</td>
@@ -101,7 +116,7 @@
                                     <td style="text-align: right">PKR: {{$appointment['conversion_spend']}}</td>
                                     <td>{{ \Carbon\Carbon::parse($appointment['conversion_date'])->format('F j,Y')}}</td>
                                     <td>{{$appointment['centre']}}</td>
-                                    <td></td>
+                                    <td>PKR: {{$conversionsByPatient[$appointment['patient_id']]}}</td>
                                 </tr>
                                 @php
                                     $total += $appointment['conversion_spend']?$appointment['conversion_spend']:0 ;
@@ -126,23 +141,23 @@
                     <table class="table border">
                         <thead>
                             <tr class="">
-                                <td class="bg-light">Total</td>
+                                <td class="bg-light">Total Conversions Value</td>
                                 <td class="bg-light" style="text-align:right;">{{ number_format($total,2) }}</td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light" >Converted Count	</td>
+                                <td class="border-top bg-light" >Total Conversions</td>
                                 <td class="border-top bg-light" style="text-align:right;">
                                 {{ $count }}
                                 </td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light" >Converted Ratio	</td>
+                                <td class="border-top bg-light" >Conversion Ratio	</td>
                                 <td class="border-top bg-light" style="text-align:right;">
                                 {{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %
                                 </td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light" >Conversion Average</td>
+                                <td class="border-top bg-light" >Average client value </td>
                                 <td class="border-top bg-light" style="text-align:right;">
                                 {{ $total > 0 ? number_format($total / $count, 2) : 0}}
                                 </td>
