@@ -2880,6 +2880,7 @@ class Finanaces
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
+        
         $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
         ->where('scheduled_date','<=',$end_date)
         ->where('base_appointment_status_id',2)
@@ -2899,6 +2900,11 @@ class Finanaces
         ->map(function ($appointments_info) {
             return $appointments_info->sum('conversion_spend');
         });
+        $avg_C_val = 0;
+        foreach($conversionsByPatient as $key => $c){
+            $avg_C_val+=$c;
+        }
+        $avg_cxlient_valu = $avg_C_val/count($conversionsByPatient);
         return [
             $appointments_info,
             $locationData,
@@ -2907,7 +2913,8 @@ class Finanaces
             $conversionsByPatient,
             $average_client_coversion,
             $arrival_to_conversion_ratio,
-            $returnData
+            $returnData,
+            $avg_cxlient_valu
             
         ];
     }
