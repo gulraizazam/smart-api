@@ -131,11 +131,11 @@
                                 <td class="bg-light" style="text-align:right;"></td>
                             </tr>
                             <tr class="">
-                                <td class="bg-light" style="text-align:right;">Total Conversiom Value</td>
+                                <td class="bg-light" style="text-align:right;">Total Conversion Value</td>
                                 <td class="bg-light" style="text-align:right;">PKR: {{$test['sum']}}</td>
                             </tr>
                             <tr class="">
-                                <td class="bg-light" style="text-align:right;">Average Conversiom Value</td>
+                                <td class="bg-light" style="text-align:right;">Average Conversion Value</td>
                                 <td class="bg-light" style="text-align:right;">PKR: {{number_format($test['avg'],2)}}</td>
                             </tr>
                         </thead>
