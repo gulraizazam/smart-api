@@ -2856,8 +2856,17 @@ class Finanaces
         ->where('scheduled_date','<=',$end_date)
         ->where('base_appointment_status_id',2)
         ->count();
-        $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
-        $average_client_coversion = $totalamount/$converted_Records;
+        if($total_appointments > 0){
+            $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
+        }else{
+            $arrival_to_conversion_ratio= 0;
+        }
+        if($converted_Records > 0){
+            $average_client_coversion = $totalamount/$converted_Records;
+        }else{
+            $average_client_coversion = 0;
+        }
+        
         $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
         ->map(function ($appointments_info) {
             return $appointments_info->sum('conversion_spend');
