@@ -2856,7 +2856,7 @@ class Finanaces
             }
         });
         $maxConversion1 = $maxConversion1->groupBy('service_id');
-        $returnData = [];
+        $returnCategoryData = [];
         foreach($maxConversion1 as $key => $app){
             $sum_conversion_spend = 0;
             foreach($app as $value) {
@@ -2864,21 +2864,20 @@ class Finanaces
                 $sum_conversion_spend += $value['conversion_spend'];
 
             }
-           $avg = ($sum_conversion_spend/count($app)) ;
-            $returnData[$key] = [
+           $avg_by_category = ($sum_conversion_spend/count($app)) ;
+            $returnCategoryData[$key] = [
                 'service' => $name,
                 'sum' => $sum_conversion_spend,
-                'avg' => $avg
+                'avg' => $avg_by_category
             ];
         }
         $maxConversion = collect($appointments_info)->max('conversion_spend');
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
-        
         $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
         ->where('scheduled_date','<=',$end_date)
-        ->where('base_appointment_status_id',2)
+        ->where(['base_appointment_status_id' => 2])
         ->count();
         if($total_appointments > 0){
             $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
@@ -2890,19 +2889,18 @@ class Finanaces
         }else{
             $average_client_coversion = 0;
         }
-        
         $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
         ->map(function ($appointments_info) {
             return $appointments_info->sum('conversion_spend');
         });
         $avg_C_val = 0;
-        foreach($conversionsByPatient as $key => $c){
-            $avg_C_val+=$c;
+        foreach($conversionsByPatient as $key => $client_val){
+            $avg_C_val+=$client_val;
         }
         if(count($conversionsByPatient) > 0){
-            $avg_cxlient_valu = $avg_C_val/count($conversionsByPatient);
+            $avg_cxlient_value = $avg_C_val/count($conversionsByPatient);
         }else{
-            $avg_cxlient_valu = 0;
+            $avg_cxlient_value = 0;
         }
         return [
             $appointments_info,
@@ -2912,8 +2910,8 @@ class Finanaces
             $conversionsByPatient,
             $average_client_coversion,
             $arrival_to_conversion_ratio,
-            $returnData,
-            $avg_cxlient_valu
+            $returnCategoryData,
+            $avg_cxlient_value
             
         ];
     }
