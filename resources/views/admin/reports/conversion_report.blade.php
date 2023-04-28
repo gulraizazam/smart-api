@@ -198,7 +198,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Total Conversions Value</td>
-                                <td class="bg-light" style="text-align:right;">{{ number_format($total,2) }}</td>
+                                <td class="bg-light" style="text-align:right;"> PKR: {{ number_format($total,2) }}</td>
                             </tr>
                             <tr class="">
                                 <td class="border-top bg-light" >Total Conversions</td>
@@ -215,7 +215,7 @@
                             <tr class="">
                                 <td class="border-top bg-light" >Average client value </td>
                                 <td class="border-top bg-light" style="text-align:right;">
-                                {{  number_format($avg_cxlient_valu, 2) }}
+                                PKR: {{  number_format($avg_cxlient_valu, 2) }}
                                 </td>
                             </tr>
                         </thead>
