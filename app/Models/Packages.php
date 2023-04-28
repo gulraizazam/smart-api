@@ -95,11 +95,6 @@ class Packages extends BaseModal
      * */
     static public function updateRecord($data,$random_id,$request)
     {
-    //     $GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
-    //     ->select('appointments.id','appointments.service_id')
-    //     ->where('appointments.patient_id',$data['patient_id'])
-    //    ->latest('appointments.created_at')->first();
-    //     $data['appointment_id'] = $GetAppointment->id;
         $record = self::where('random_id','=',$random_id)->first();
         $id = $record->id;
         $old_data = (self::find($record->id))->toArray();

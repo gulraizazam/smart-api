@@ -4055,7 +4055,6 @@ class AppointmentsController extends Controller
             $data_detail['package_id'] = $request->package_id;
         }
         $invoice_detail = InvoiceDetails::createRecord($data_detail, $invoice);
-        
         if ($invoice_detail->package_id != null) {
             $data_package['cash_flow'] = 'in';
             $data_package['cash_amount'] = $request->cash;
@@ -4073,10 +4072,8 @@ class AppointmentsController extends Controller
             ])->pluck('id');
             $GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
             ->select('appointments.id','appointments.service_id','invoices.created_at')
-            ->where('appointments.patient_id',$appointmentinfo->patient_id)
-            ->where('appointments.appointment_type_id',1)
+            ->where(['appointments.patient_id' => $appointmentinfo->patient_id ,'appointments.appointment_type_id' => 1 ])
            ->latest('invoices.created_at')->first();
-           
             $GetInvoiceInfo = Invoices::where(['appointment_id' => $GetAppointment->id])->first();
             $packageservicez = PackageService::with('service')
             ->whereIn('package_bundle_id',$packagebundle)
