@@ -169,7 +169,7 @@
                                     <td>{{$appointment['client']}}</td>
                                     <td>{{$appointment['service']}}</td>
                                     <td style="text-align: center">PKR: {{$appointment['conversion_spend']}}</td>
-                                    <td>{{ \Carbon\Carbon::parse($appointment['conversion_date'])->format('F j,Y')}}</td>
+                                    <td>{{ \Carbon\Carbon::parse($appointment['conversion_date'])}}</td>
                                     <td>{{$appointment['centre']}}</td>
                                     <td>PKR: {{$conversionsByPatient[$appointment['patient_id']]}}</td>
                                 </tr>
