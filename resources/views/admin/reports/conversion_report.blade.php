@@ -215,7 +215,7 @@
                             <tr class="">
                                 <td class="border-top bg-light" >Average client value </td>
                                 <td class="border-top bg-light" style="text-align:right;">
-                                {{ $total > 0 ? number_format($total / $count, 2) : 0}}
+                                {{  number_format($avg_cxlient_valu, 2) }}
                                 </td>
                             </tr>
                         </thead>
