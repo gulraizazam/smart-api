@@ -587,7 +587,6 @@ class PackagesController extends Controller
                 $activity->created_at = Filters::getCurrentTimeStamp();
                 $activity->updated_at = Filters::getCurrentTimeStamp();
                 $activity->save();
-        ////
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
                 // Commit Transaction
