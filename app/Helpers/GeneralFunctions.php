@@ -363,6 +363,7 @@ class GeneralFunctions
             $filename = 'services';
             if(isset($request)){
                 $filters = getFilters($request->all());
+                $filters['status'] = 0;
                 $apply_filter = checkFilters($filters, $filename);
                 if (hasFilter($filters, 'name')) {
                     $where[] = [
@@ -518,32 +519,47 @@ class GeneralFunctions
                     }
                     return $mergedServices;
                 }
+                if(hasFilter($filters, 'name')){
+                    $query = Services::with('children')
+                        ->where('slug', '!=', 'all')
+                        ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
+                        $services = $query->get();
+                        $mergedServices = [];
+                        foreach ($services as $key => $service) {
+                            if($service->parent_id=="0"){
+                               $children = Services::where('parent_id',$service->id)->orderBy('name')->get()->toArray();
+                               $mergedServices[] = $service->toArray();
+                                foreach ($children as $child) {
+                                    $mergedServices[] = $child;
+                                }
+                            } else {
+                                $mergedServices[] = $service->toArray();
+                            }
+                        }
+                    return $mergedServices;
+                }
             }
-            $query = Services::with(['children'=> function($q) use($active){
-                $q->where('active', $active);
-                $q->orderBy('name');
-            }])
-            ->where(['parent_id' => 0, 'active' => $active])
+            $query = Services::with('children')
+            ->where('parent_id', 0)
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
-            $services = $query->get()->toArray();
-            $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-            array_unshift($services, $allserviceslug);
-            return $services;   
-        } else {
-            $query = Services::with(['children'=> function($q) use($active){
-                $q->where('active', $active);
-                $q->orderBy('name');
-            }])
-            ->where(['id' => $id, 'parent_id' => 0, 'active' => $active])
-            ->where('slug', '!=', 'all');
-            $services[] = $query->first()->toArray();
-            $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-            array_unshift($services, $allserviceslug);
-            return $services;  
+            $services = $query->get();
+            $mergedServices = [];
+            foreach ($services as $key => $service) {
+                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services")){
+                    $children = Services::where('parent_id',$service->id)->orderBy('name')->get();
+                }else{
+                    $children = Services::where('parent_id',$service->id)->where('active',1)->orderBy('name')->get();
+                }
+                $mergedServices[] = $service->toArray();
+                $children = $children->toArray();
+                foreach ($children as $child) {
+                    $mergedServices[] = $child;
+                }
+            }
+            return $mergedServices;   
         }
     }
-
     private static function appendAllService()
     {
         $allService = [];
