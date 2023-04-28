@@ -207,12 +207,6 @@
                                 </td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light" >Conversion Ratio	</td>
-                                <td class="border-top bg-light" style="text-align:right;">
-                                {{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %
-                                </td>
-                            </tr>
-                            <tr class="">
                                 <td class="border-top bg-light" >Average client value </td>
                                 <td class="border-top bg-light" style="text-align:right;">
                                 PKR: {{  number_format($avg_cxlient_valu, 2) }}
