@@ -93,10 +93,7 @@
 			$record->updated_at = Filters::getCurrentTimeStamp();
 			$record->appointment_id = $parent_data->appointment_id;
 			$record->save();
-			//$record = self::create($data);
-
 			AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parent_id);
-
 			return $record;
 		}
 
@@ -133,11 +130,9 @@
 			])->pluck('id');
 			
 			$GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
-			->where('appointments.patient_id',$data['patient_id'])
-			->where('appointments.appointment_type_id',1)
+			->where(['appointments.patient_id' => $data['patient_id'] , 'appointments.appointment_type_id' => 1])
 			->select('appointments.id')
 			->latest('invoices.created_at')->first();
-			
 			$GetInvoiceInfo = Invoices::where(['appointment_id' => $GetAppointment->id])->first();
 			$packageservicez = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)
 			->where('created_at','>',Carbon::parse($GetInvoiceInfo->created_at))
@@ -158,8 +153,6 @@
 				$record->appointment_id = $GetAppointment->id;
 				$record->save();
 			}else{
-				
-				//$record = self::create($data);
 				$record = new PackageAdvances();
 				$record->cash_flow = 'in';
 				$record->cash_amount = $data['cash_amount'];
