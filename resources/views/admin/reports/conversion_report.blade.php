@@ -72,14 +72,22 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <table class="table border">
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Highest Conversion Value</td>
-                                <td class="bg-light" style="text-align:right;">PKR:{{ number_format($maxConversion,2) }}</td>
+                                <td class="bg-light" style="text-align:right;">PKR:{{$maxConversion }}</td>
                             </tr>
-                            <tr class="">
+                           
+                            
+                        </thead>
+                    </table>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <table class="table border">
+                        <thead>
+                             <tr class="">
                                 <td class="border-top bg-light" >Lowest Conversion Value</td>
                                 <td class="border-top bg-light" style="text-align:right;">
                                 PKR:{{ number_format($minConversion,2) }}
@@ -89,7 +97,7 @@
                         </thead>
                     </table>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <table class="table border">
                         <thead>
                             <tr class="">
@@ -100,7 +108,7 @@
                         </thead>
                     </table>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <table class="table border">
                         <thead>
                             <tr class="">
@@ -111,6 +119,29 @@
                         </thead>
                     </table>
                 </div>
+            </div>
+            <div class="row">
+                @foreach($returnData as $key => $test)
+               
+                <div class="col-md-4 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">{{$test['service']}}</td>
+                                <td class="bg-light" style="text-align:right;"></td>
+                            </tr>
+                            <tr class="">
+                                <td class="bg-light" style="text-align:right;">Total Conversiom Value</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{$test['sum']}}</td>
+                            </tr>
+                            <tr class="">
+                                <td class="bg-light" style="text-align:right;">Average Conversiom Value</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{number_format($test['avg'],2)}}</td>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                @endforeach
             </div>
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="conversion_table">
