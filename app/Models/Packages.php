@@ -93,20 +93,14 @@ class Packages extends BaseModal
      * @param: data
      * @return: mixed
      * */
-    static public function updateRecord($data,$random_id,$request){
-
+    static public function updateRecord($data,$random_id,$request)
+    {
         $record = self::where('random_id','=',$random_id)->first();
-
         $id = $record->id;
-
         $old_data = (self::find($record->id))->toArray();
-
         $record->update($data);
-
         AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable,$old_data,$id);
-
         $packagebundle = PackageBundles::updateRecord($record,$request);
-
         return $record;
     }
 
