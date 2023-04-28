@@ -92,7 +92,7 @@ use Illuminate\Support\Facades\DB;
         \Artisan::call('check:expired');
     });
     Route::get('/daily-stats', function () {
-        \Artisan::call('appointment:daily-stats');
+        \Artisan::call('appointments:daily-stats');
     });
 // Check Session
     Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
