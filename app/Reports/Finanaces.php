@@ -2295,7 +2295,6 @@ class Finanaces
 
     }
 
-
     static function conversion_report($data, $account_id)
     {
         $where = array();
@@ -2662,20 +2661,16 @@ class Finanaces
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
 
         $appointments = Appointments::with('location:id,name')
-            // ->join('packages', 'appointments.id', '=', 'packages.appointment_id')
             ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
             ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived')])
              ->whereDate('package_advances.created_at', '>=', $start_date)
              ->whereDate('package_advances.created_at', '<=', $end_date)
              ->where('package_advances.cash_amount','>',0)
-            //->where($where)
-            // ->whereNotNull('packages.appointment_id')
-            // ->whereNull('packages.deleted_at')
+            ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->get();
-       
         $total = 0;
         $count = array();
         $arrived_count = array();
@@ -2904,7 +2899,11 @@ class Finanaces
         foreach($conversionsByPatient as $key => $c){
             $avg_C_val+=$c;
         }
-        $avg_cxlient_valu = $avg_C_val/count($conversionsByPatient);
+        if(count($conversionsByPatient) > 0){
+            $avg_cxlient_valu = $avg_C_val/count($conversionsByPatient);
+        }else{
+            $avg_cxlient_valu = 0;
+        }
         return [
             $appointments_info,
             $locationData,
