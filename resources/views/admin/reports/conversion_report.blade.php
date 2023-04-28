@@ -121,22 +121,22 @@
                 </div>
             </div>
             <div class="row">
-                @foreach($returnData as $key => $test)
+                @foreach($CategoryConversionData as $key => $conversion)
                
                 <div class="col-md-4 mb-3">
                     <table class="table border">
                         <thead>
                             <tr class="">
-                                <td class="bg-light">{{$test['service']}}</td>
+                                <td class="bg-light">{{$conversion['service']}}</td>
                                 <td class="bg-light" style="text-align:right;"></td>
                             </tr>
                             <tr class="">
                                 <td class="bg-light" style="text-align:right;">Total Conversion Value</td>
-                                <td class="bg-light" style="text-align:right;">PKR: {{$test['sum']}}</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{$conversion['sum']}}</td>
                             </tr>
                             <tr class="">
                                 <td class="bg-light" style="text-align:right;">Average Conversion Value</td>
-                                <td class="bg-light" style="text-align:right;">PKR: {{number_format($test['avg'],2)}}</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{number_format($conversion['avg'],2)}}</td>
                             </tr>
                         </thead>
                     </table>
