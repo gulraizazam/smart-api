@@ -71,16 +71,7 @@
                                             </select>
                                             <span id="service_id_handler"></span>
                                         </div>
-                                        <div class="form-group col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
-                                             id="services" >
-                                           <label>Appointment Type</label>
-                                            <select class="form-control select2" id="apt_type" name="apt_type">
-                                               
-                                                <option value="1">Consultancy</option>
-                                                <option value="2">Treatment</option>
-                                            </select>
-                                            <span id="service_id_handler"></span>
-                                        </div>
+                                       
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
                                             <a href="javascript:void(0);" onclick="loadConvertedReport($(this));" id="load_converted_report"
