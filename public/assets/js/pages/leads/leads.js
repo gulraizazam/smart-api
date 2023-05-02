@@ -11,7 +11,7 @@ var table_columns = [{
         return childCheckbox(data, data.lead_id);
     }
 }, {
-    field: 'PatientId',
+    field: 'lead_id',
     title: 'ID',
     sortable: false,
     width: 60,
@@ -65,7 +65,7 @@ var table_columns = [{
             return data.service_id;
         }else{
             return '<span class="text text-danger">Empty</span>';
-        }  
+        }
     }
 },{
     field: 'lead_status_id',
@@ -149,7 +149,7 @@ var table_columns = [{
             return data.child_service;
         }else{
             return '<span class="text text-danger">Empty</span>';
-        } 
+        }
     }
 }];
 
@@ -467,7 +467,7 @@ function setViewData(response) {
             },
             cache: false,
             success: function (response) {
-                $("#childservice").text(response.data.child);  
+                $("#childservice").text(response.data.child);
             },
         });
         $("#comment_lead_id").val(lead.id)
@@ -630,7 +630,7 @@ function setEditData(response) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
             });
         }
-        if (locations) {            
+        if (locations) {
             Object.entries(locations).forEach(function(location) {
                 location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
             });
@@ -696,7 +696,7 @@ function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
         let filters = {
             delete: '',
-            patient_id: $("#search_id").val(),
+            lead_id: $("#search_id").val(),
             name: $("#search_full_name").val(),
             phone: $("#search_phone").val(),
             city_id: $("#search_city_id").val(),
@@ -718,7 +718,7 @@ function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
         let filters = {
             delete: '',
-            patient_id: '',
+            lead_id: '',
             name: '',
             phone: '',
             city_id: '',
@@ -797,7 +797,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_region_id").html(region_options);
         $("#search_service_id").html(service_options);
         $("#search_created_by").html(user_options);
-        $("#search_id").val(active_filters.patient_id);
+        $("#search_id").val(active_filters.lead_id);
         $("#search_full_name").val(active_filters.name);
         $("#search_phone").val(active_filters.phone);
         $("#search_city_id").val(active_filters.city_id);
@@ -827,11 +827,11 @@ function hideShowAdvanceFilters(active_filters) {
     }
 }
 
-function newPatient() {
-    $('.new_patient').change(function () {
+function newLead() {
+    $('.new_lead').change(function () {
         if ($(this).is(":checked")) {
-            $('.new_patient').val('1');
-            $('.msg_new_patient').show();
+            $('.new_lead').val('1');
+            $('.msg_new_lead').show();
             $("#add_phone").removeAttr("readonly");
             $("#add_full_name").removeAttr("readonly");
             if ($("#add_phone").val() != '') {
@@ -845,8 +845,8 @@ function newPatient() {
             $("#modal_edit_leads_form").find('input').val('');
             $(".select2").val(null).trigger("change");*/
         } else {
-            $('.new_patient').val('0');
-            $('.msg_new_patient').hide();
+            $('.new_lead').val('0');
+            $('.msg_new_lead').hide();
             $("#add_phone").val("");
             $("#add_full_name").val("");
             $("#add_gender_id").val("");
