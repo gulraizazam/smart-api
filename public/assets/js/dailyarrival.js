@@ -15,6 +15,7 @@ var loadConvertedReport = function (that) {
             date_from: $('#appoint_search_created_from').val(),
             date_to: $('#appoint_search_created_to').val(),
             service_id:$('#service_id').val(),
+            created_by:$('#created_by').val(),
             apt_type:$('#apt_type').val(),
         },
         success: function(response){
@@ -23,10 +24,9 @@ var loadConvertedReport = function (that) {
             $("#arrived_patients_table").DataTable({
                 dom: 'Bfrtip',
                 buttons: [
-                    
                     'excelHtml5',
                     'csvHtml5',
-                    'pdfHtml5',  
+                    'pdfHtml5',
                 ],
                 "ordering": false
             });
