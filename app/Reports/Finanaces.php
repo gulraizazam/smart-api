@@ -2659,6 +2659,7 @@ class Finanaces
         $where[] = array(['appointments.appointment_type_id' => $appointment_type->id]);
         $where[] = array('package_advances.cash_amount', '>' , 0);
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
+       
         $appointments = Appointments::with('location:id,name')
             ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
@@ -2666,6 +2667,7 @@ class Finanaces
              ->whereDate('package_advances.created_at', '>=', $start_date)
              ->whereDate('package_advances.created_at', '<=', $end_date)
              ->where('package_advances.cash_amount','>',0)
+             ->where('package_advances.cash_flow','=',"in")
             ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
