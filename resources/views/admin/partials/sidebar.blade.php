@@ -843,7 +843,7 @@
 
                                         </ul>
                                     </div>
-                                            
+
                                 @endcan
                                 @can('product_manage')
                                     <div class="menu-submenu">
@@ -860,7 +860,7 @@
 
                                         </ul>
                                     </div>
-                                            
+
                                 @endcan
                                 @can('order_manage')
                                     <div class="menu-submenu">
@@ -877,8 +877,8 @@
 
                                         </ul>
                                     </div>
-                                            
-                                @endcan    
+
+                                @endcan
                                 @can('refund_manage')
                                     <div class="menu-submenu">
                                         <i class="menu-arrow"></i>
@@ -894,13 +894,13 @@
 
                                         </ul>
                                     </div>
-                                            
-                                @endcan        
-                            </li>            
+
+                                @endcan
+                            </li>
                         @endcan
                     @endif
 
-                   
+
 
                     <!-- End Inventory menu -->
 
@@ -964,7 +964,7 @@
                                                  <span class="menu-text">Non-Converted Customer Report </span>
                                              </a>
                                          </li>
- 
+
                                      </ul>
                                  </div>
                                  <div class="menu-submenu">
@@ -978,7 +978,7 @@
                                                  <span class="menu-text">Daily Arrival Report </span>
                                              </a>
                                          </li>
- 
+
                                      </ul>
                                  </div>
                                  <div class="menu-submenu">
@@ -992,11 +992,24 @@
                                                  <span class="menu-text">Conversion Report </span>
                                              </a>
                                          </li>
- 
+
                                      </ul>
                                  </div>
-                            @endcan
+                                 <div class="menu-submenu">
+                                    <i class="menu-arrow"></i>
+                                    <ul class="menu-subnav">
+                                        <li class="menu-item {{activeMenu('admin.reports.staff_wise_arrival')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.reports.staff_wise_arrival')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Staff Wise Arrival Report </span>
+                                            </a>
+                                        </li>
 
+                                    </ul>
+                                </div>
+                            @endcan
                         </li>
                     @endif
 
