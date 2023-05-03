@@ -2702,7 +2702,7 @@ class Finanaces
                     );
                 }
                 $appointmentss[] = $appointment->id;
-                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
+                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->where('package_id',"!=",null)->get()->pluck('id')->toArray();
                dd($package_info);
                 if (count($package_info)) {
                     $actual = 0;
