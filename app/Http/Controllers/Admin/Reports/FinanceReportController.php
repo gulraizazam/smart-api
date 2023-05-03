@@ -2866,7 +2866,7 @@ class FinanceReportController extends Controller
         ->get();
         $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
-        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? '';
+        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
         return view('admin.reports.staff_wise_arrived',get_defined_vars());
     }
 }
