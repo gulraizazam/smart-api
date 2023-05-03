@@ -449,7 +449,7 @@ class LeadsController extends Controller
             if ($Leads->count()) {
                 $index = 0;
                 foreach ($Leads as $lead) {
-                    dd($lead->lead_service->toArray());
+                    dd($lead->lead_service->pluck('service_id')->toArray());
 
                     foreach($lead->lead_service as $data){
                         //dd($data->service->name);
