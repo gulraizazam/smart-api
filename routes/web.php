@@ -108,7 +108,7 @@ use Illuminate\Support\Facades\DB;
         ->orderBy('appointments.created_at', 'asc')
         ->paginate(50);
         foreach($appointments as $apt){
-           PackageAdvances::find('package_id',$apt->pkg_id)->where('appointment_id',null)->update(['appointment_id' => $apt->appointment_id]);
+           PackageAdvances::where('package_id',$apt->pkg_id)->where('appointment_id',null)->update(['appointment_id' => $apt->appointment_id]);
              
             
             
