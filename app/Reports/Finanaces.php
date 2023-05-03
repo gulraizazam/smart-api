@@ -2671,7 +2671,7 @@ class Finanaces
              ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
-            ->get();
+            ->count();
             dd($appointments);
         $total = 0;
         $count = array();
