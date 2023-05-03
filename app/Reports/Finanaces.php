@@ -2659,10 +2659,10 @@ class Finanaces
         $where[] = array(['appointments.appointment_type_id' => $appointment_type->id]);
         $where[] = array('package_advances.cash_amount', '>' , 0);
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
-        dd($start_date);
+       
         $appointments = Appointments::with('location:id,name')
             ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
-            ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
+           // ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
             ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived')])
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
