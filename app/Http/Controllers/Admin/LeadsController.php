@@ -406,7 +406,7 @@ class LeadsController extends Controller
             //         $query->whereIn('leads.city_id', ACL::getUserCities());
             //         $query->orWhereNull('leads.city_id');
             //     });
-            $resultQuery = Leads::where(function ($query) {
+            $resultQuery = Leads::with('lead_service')->where(function ($query) {
                     $query->whereIn('leads.city_id', ACL::getUserCities());
                     $query->orWhereNull('leads.city_id');
                 });
@@ -432,6 +432,7 @@ class LeadsController extends Controller
                 ->orderBy($orderBy, $order)
                 ->get();
             }
+            //dd($Leads->toArray());
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $lead_status = LeadStatuses::getAllRecordsDictionary(Auth::User()->account_id);
@@ -449,12 +450,27 @@ class LeadsController extends Controller
             if ($Leads->count()) {
                 $index = 0;
                 foreach ($Leads as $lead) {
-                    dd($lead->lead_service->pluck('service_id')->toArray());
-
+                    $service = [];
+                    $child_service = [];
+                    $service_active = [];
+                    //dd($lead->toArray());
                     foreach($lead->lead_service as $data){
-                        //dd($data->service->name);
-                        $service = implode(",", $data->service->name);
+                        //dd($data);
+                        if(!in_array($data->service->name, $service)){
+                            $service[] = $data->service->name;
+                            if($data->status == 1){
+                                $service_active[] = $data->service->name;
+                            }
+                        }
+                        if($data->status == 1){
+                            $child_service[] = $data->childservice->name;
+                        }
                     }
+                    $services = implode(",", $service);
+                    $child_services = implode(",", $child_service);
+                    $service_actives = implode(",", $service_active);
+
+                    //dd($services);
                     //check lead s lead status has parent or not if yes than get parent data and if no than get simple that row data
                     if (array_key_exists($lead->lead_status_id, $lead_status)) {
                         if ($lead_status[$lead->lead_status_id]->parent_id == 0) {
@@ -475,11 +491,12 @@ class LeadsController extends Controller
                         'city_id' => $lead->city->name ?? '', //view('admin.leads.city', compact('lead'))->render(),
                         'region_id' => (array_key_exists($lead->region_id, $Regions)) ? $Regions[$lead->region_id]->name : 'N/A',
                         'lead_status_id' => $lead_status_data->name ?? '',
-                        'service_id' => $service ?? '',
+                        'service_id' => $services ?? '',
+                        'service_active' => $service_actives ?? '',
                         'created_at' => Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A'),
                         'created_by' => array_key_exists($lead->lead_created_by, $Users) ? $Users[$lead->lead_created_by]->name : 'N/A',
                         'location'=>$lead->towns->name ?? '',
-                        'child_service'=>$lead->childservice->name ?? '',
+                        'child_service'=> $child_services ?? '',
                     );
                     $index++;
                 }
@@ -773,6 +790,10 @@ class LeadsController extends Controller
                             'lead_id' => $lead->id,
                             'service_id' => $data['service_id'],
                             'child_service_id' => $data['child_service_id'],
+                            'status' => 1
+                        ]);
+                        LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
+                            'status' => 0
                         ]);
                     }
                 } else {
@@ -785,7 +806,7 @@ class LeadsController extends Controller
                             'child_service_id' => $data['child_service_id'],
                             'status' => 1
                     ]);
-                    LeadsServices::where('service_id', '!=', $data['service_id'])->update([
+                    LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
                         'status' => 0
                     ]);
                 }
