@@ -46,10 +46,10 @@ class AppointmentsDailyStatsCron extends Command
         $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first()->id;
         $locations = Locations::whereActive(1)->get()->pluck('id');
         foreach($locations as $location){
-            $appointments = Appointments::where(['location_id' => $location, 'scheduled_date' =>Carbon::now()->subDays(2)->format("Y-m-d"), 'appointment_type_id' => $consultancyslug])->select('id', 'location_id', 'base_appointment_status_id', 'created_by')->get();
+            $appointments = Appointments::where(['location_id' => $location, 'scheduled_date' =>Carbon::now()->subDays(1)->format("Y-m-d"), 'appointment_type_id' => $consultancyslug])->select('id', 'location_id', 'base_appointment_status_id', 'created_by')->get();
             if(!$appointments->isEmpty()){
                 foreach ($appointments as $appointment){
-                    AppointmentsDailyStats::create(['centre_id' => $appointment->location_id, 'user_id' => $appointment->created_by, 'appointment_id' => $appointment->id, 'appointment_status_id' => $appointment->base_appointment_status_id, 'cron_current_date' => Carbon::now()->subDays(2),'created_at'=>Carbon::now()->subDays(2)]);
+                    AppointmentsDailyStats::create(['centre_id' => $appointment->location_id, 'user_id' => $appointment->created_by, 'appointment_id' => $appointment->id, 'appointment_status_id' => $appointment->base_appointment_status_id, 'cron_current_date' => Carbon::now()->subDays(1),'created_at'=>Carbon::now()->subDays(1)]);
                 }
             }
         }
