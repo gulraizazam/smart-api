@@ -2668,8 +2668,8 @@ class Finanaces
             ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived')])
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
-            //->where('package_advances.cash_amount','>',0)
-             ->where($where)
+            ->where('package_advances.cash_amount','>',0)
+             //->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->get();
