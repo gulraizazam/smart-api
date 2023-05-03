@@ -2671,8 +2671,8 @@ class Finanaces
              ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
-            ->count();
-            dd($appointments);
+            ->get();
+           
         $total = 0;
         $count = array();
         $arrived_count = array();
@@ -2702,6 +2702,7 @@ class Finanaces
                 }
                 $appointmentss[] = $appointment->id;
                 $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
+                dd( $package_info);
                 if (count($package_info)) {
                     $actual = 0;
                     $revenue_in = 0;
