@@ -2682,6 +2682,7 @@ class Finanaces
         $locationData = array();
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
+                dd($appointment);
                 if (!in_array($appointment->id, $appointmentss)) {
                     $appointments_info[$appointment->id] = array(
                         'patient_id' => $appointment->patient_id,
