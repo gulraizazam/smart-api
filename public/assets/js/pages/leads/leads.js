@@ -61,11 +61,25 @@ var table_columns = [{
     sortable: false,
     width: 110,
     template: function (data) {
+        let value = data.service_id.split(",");
+        let valueActive = data.service_active.split(",");
+        console.log(value, valueActive[0]);
+        let services = '';
         if(data.service_id != ""){
-            return data.service_id;
+            value.forEach((item) => {
+                if(valueActive[0] == item){
+                    services += '<span class="text text-primary">' + item + '</span><br>'
+                } else {
+                    services += '<span class="text">' + item + '</span><br>'
+                }
+
+            })
+
+            //return data.service_id.split(",");
         }else{
-            return '<span class="text text-danger">Empty</span>';
+            services += '<span class="text text-danger">Empty</span>'
         }
+        return services;
     }
 },{
     field: 'lead_status_id',
