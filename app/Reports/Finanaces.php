@@ -2673,7 +2673,7 @@ class Finanaces
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->get();
-         
+            dd(FacadesDB::getQueryLog());
         $total = 0;
         $count = array();
         $arrived_count = array();
@@ -2713,7 +2713,7 @@ class Finanaces
                         ->where('cash_flow', '=', "in")
                         ->where('cash_amount', '>', 0)
                         ->get();
-                        dd($packagesadvances);
+                       
                     if (count($packagesadvances) > 0) {
                         $check = 0;
                         $first_advance = PackageAdvances::whereIn('id', $package_info)
