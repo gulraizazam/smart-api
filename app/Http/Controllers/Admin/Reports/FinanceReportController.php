@@ -30,6 +30,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Explode_Multi_select;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
+use App\Models\AppointmentsDailyStats;
 use Illuminate\Support\Facades\DB;
 
 class FinanceReportController extends Controller
@@ -2826,5 +2827,69 @@ class FinanceReportController extends Controller
         ->get();
         $arrived = $resultQuery->where(['base_appointment_status_id' => 2])->count();
         return view('admin.reports.daily_arrived',get_defined_vars());
+    }
+
+    public function staffWiseArrival()
+    {
+        //$services = Services::where(['parent_id'=>0])->whereNotIn('slug',['all'])->get();
+        //$cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
+        $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
+        $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+        return view('admin.reports.staffwisearrival',get_defined_vars());
+    }
+
+    public function staffWiseArrivalReport(Request $request)
+    {
+        $where = array();
+        if ($request->location_id  && $request->location_id ) {
+            $where[] = array(['centre_id' => $request->location_id]);
+        }
+        // if ($request->service_id && $request->service_id != '') {
+        //     $where[] = array(['service_id' => $request->service_id]);
+        // }
+        if ($request->created_by && $request->created_by != '') {
+            $where[] = array(['user_id' => $request->created_by]);
+        }
+        if ($request->date_from) {
+            $where[] = array('cron_current_date', '>=', $request->date_from);
+        }
+        if ($request->date_to) {
+            $where[] = array('cron_current_date', '<=', $request->date_to);
+        }
+        $records = array();
+        $records["data"] = array();
+        if (Gate::allows('appointments_consultancy')) {
+            $resultQuery = AppointmentsDailyStats::
+            /* join('users', function ($query) {
+                $query->on('users.id', 'appointments_daily_stats.user_id');
+                    //->where(['users.user_type_id' => config('constants.patient_id')]);
+            }) */
+            /* ->where(['appointments.appointment_type_id' =>  1])
+                ->whereIn('appointments.city_id', ACL::getUserCities()) */
+                whereIn('centre_id', ACL::getUserCentres());
+        }
+        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
+            $resultQuery = AppointmentsDailyStats::
+            /* join('users', function ($query) {
+                $query->on('users.id', 'appointments_daily_stats.user_id');
+                    //->where(['users.user_type_id' => config('constants.patient_id')]);
+            }) */
+            //->whereIn('appointments.city_id', ACL::getUserCities())
+                whereIn('centre_id', ACL::getUserCentres());
+        }
+//dd($where);
+        if (count($where)) {
+            $resultQuery->where($where);
+        }
+        $Appointments = $resultQuery->with(['user', 'appointment' => function($q){
+            $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+            ->orderBy("appointments.created_at", "DESC");
+        }])
+        ->get();
+        //dd($Appointments);
+        $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
+        $user = User::where(['id' => $request->created_by])->first()->name ?? '';
+        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? '';
+        return view('admin.reports.staff_wise_arrived',get_defined_vars());
     }
 }
