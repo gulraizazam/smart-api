@@ -2682,7 +2682,6 @@ class Finanaces
         $locationData = array();
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
-                dd($appointment);
                 if (!in_array($appointment->id, $appointmentss)) {
                     $appointments_info[$appointment->id] = array(
                         'patient_id' => $appointment->patient_id,
@@ -2713,6 +2712,7 @@ class Finanaces
                         ->whereDate('created_at', '<=', $end_date)
                         ->where('cash_amount', '>', 0)
                         ->get();
+                        dd($packagesadvances);
                     if (count($packagesadvances) > 0) {
                         $check = 0;
                         $first_advance = PackageAdvances::whereIn('id', $package_info)
