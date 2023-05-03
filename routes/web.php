@@ -54,7 +54,9 @@ use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\DashboardReportsController;
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
 use App\Http\Controllers\ConversionReportController;
+use App\Models\Appointments;
 use App\Models\Leads;
+use App\Models\PackageAdvances;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -94,6 +96,25 @@ use Illuminate\Support\Facades\DB;
     Route::get('/daily-stats', function () {
         \Artisan::call('appointments:daily-stats');
     });
+    Route::get('/update_apt', function () {
+        $appointments = Appointments::join('packages', 'appointments.id', '=', 'packages.appointment_id')
+        ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
+        ->where('appointments.base_appointment_status_id', config('constants.appointment_status_arrived'))
+        ->where('appointments.appointment_type_id', 1)
+        ->whereNull('package_advances.appointment_id')
+        // ->whereNotNull('packages.appointment_id')
+        // ->whereNull('packages.deleted_at')
+        ->select('packages.appointment_id','packages.id as pkg_id')
+        ->orderBy('appointments.created_at', 'asc')
+        ->paginate(50);
+        foreach($appointments as $apt){
+           PackageAdvances::find('package_id',$apt->pkg_id)->where('appointment_id',null)->update(['appointment_id' => $apt->appointment_id]);
+             
+            
+            
+        }
+        dd("ok");
+    }); 
 // Check Session
     Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
