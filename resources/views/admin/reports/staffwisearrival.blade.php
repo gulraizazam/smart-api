@@ -59,18 +59,6 @@
                                                 <input type="text" id="appoint_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" >
                                             </div>
                                         </div>
-                                        {{-- <div class="form-group col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
-                                             id="services" >
-                                            {!! Form::label('service_id', 'Services', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="service_id" name="service_id">
-                                                <option value="">Select Service</option>
-                                                @foreach($services as $service)
-                                                    <option value="{{$service->id}}">
-                                                            <b>{!! $service['name'] !!}</b></option>
-                                                @endforeach
-                                            </select>
-                                            <span id="service_id_handler"></span>
-                                        </div> --}}
                                         <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="users" >
                                            {!! Form::label('created_by', 'Created By', ['class' => 'control-label']) !!}
                                            <select class="form-control select2" id="created_by" name="created_by">
@@ -92,7 +80,6 @@
                                         <div style="overflow: hidden; width: 100%;" id="converted_content"></div>
                                         {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.staff_wise_arrival_report'], 'id' => 'report-form']) !!}
                                         {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
-                                        {{-- {!! Form::hidden('service_id', null, ['id' => 'service_id-report']) !!}  --}}
                                         {!! Form::hidden('created_by', null, ['id' => 'created_by-report']) !!}
                                         {!! Form::close() !!}
                                     </div>
