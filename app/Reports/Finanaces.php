@@ -2710,6 +2710,7 @@ class Finanaces
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->whereDate('created_at', '>=', $start_date)
                         ->whereDate('created_at', '<=', $end_date)
+                        ->where('cash_flow', '=', "in")
                         ->where('cash_amount', '>', 0)
                         ->get();
                         dd($packagesadvances);
