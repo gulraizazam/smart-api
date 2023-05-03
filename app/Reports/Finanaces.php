@@ -2669,11 +2669,11 @@ class Finanaces
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
             ->where('package_advances.cash_amount','>',0)
-             //->where($where)
+             ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->get();
-            dd(FacadesDB::getQueryLog());
+           // dd(FacadesDB::getQueryLog());
         $total = 0;
         $count = array();
         $arrived_count = array();
