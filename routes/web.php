@@ -553,6 +553,8 @@ use Illuminate\Support\Facades\DB;
         Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
         Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion');
         Route::post('reports/load_conversion_report', [ConversionReportController::class, 'LoadConversionReport'])->name('reports.load_conversion_report');
+        Route::get('reports/staff_wise_arrival', [FinanceReportController::class, 'staffWiseArrival'])->name('reports.staff_wise_arrival');
+        Route::post('reports/staff_wise_arrival_report', [FinanceReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
         //Route end for Operations reports
 
         /////////////////Dashboard Stats//////
