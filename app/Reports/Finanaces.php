@@ -25,6 +25,7 @@ use Illuminate\Foundation\Inspiring;
 use App\Models\PackageService;
 use DB;
 use Auth;
+use Illuminate\Support\Facades\DB as FacadesDB;
 use PhpParser\Node\Expr\Cast\Object_;
 
 class Finanaces
@@ -2631,6 +2632,7 @@ class Finanaces
     }
     static function LoadConversionReport($data, $account_id)
     {
+        FacadesDB::enableQueryLog();
         $where = array();
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -2659,7 +2661,7 @@ class Finanaces
         $where[] = array(['appointments.appointment_type_id' => $appointment_type->id]);
         $where[] = array('package_advances.cash_amount', '>' , 0);
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
-       
+      
         $appointments = Appointments::with('location:id,name')
             ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
            // ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
@@ -2671,7 +2673,7 @@ class Finanaces
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->get();
-            //dd($appointments);
+            dd(FacadesDB::getQueryLog());
         $total = 0;
         $count = array();
         $arrived_count = array();
