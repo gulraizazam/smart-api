@@ -48,7 +48,6 @@ class AppointmentsDailyStatsCron extends Command
     {
         $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first()->id;
         $locations = Locations::whereActive(1)->get()->pluck('id');
-        //dd($locations);
         foreach($locations as $location){
             $appointments = Appointments::where(['location_id' => $location, 'scheduled_date' => Carbon::now()->format("Y-m-d"), 'appointment_type_id' => $consultancyslug])->select('id', 'location_id', 'base_appointment_status_id', 'created_by')->get();
             if(!$appointments->isEmpty()){
