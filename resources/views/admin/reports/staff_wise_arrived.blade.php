@@ -87,46 +87,6 @@
                 </div>
                 @endif
             </div>
-            {{-- <div class="table-wrapper all-sections section-detail" id="topscroll">
-                <table class="table" id="arrived_status_table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Patient Name</th>
-                            <th>Phone</th>
-                            <th>Centre</th>
-                            <th>Scheduled Date</th>
-                            <th>Created By</th>
-                            <th>Appointment Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($Appointments as $patient)
-                            <tr>
-                                <td>{{$patient->appointment->id}}</td>
-                                <td>{{$patient->appointment->name}}</td>
-                                <td>{{$patient->appointment->phone}}</td>
-                                <td>{{$patient->location->name}}</td>
-                                <td>{{$patient['created_at']}}</td>
-                                <td>{{$patient->user->name}}</td>
-                                <td>@if($patient['appointment_status_id'] == 1)
-                                    <label class="label label-warning" style="width:100px;border-radius:2px">Pending</label>
-                                    @endif
-                                    @if($patient['appointment_status_id'] == 2)
-                                    <label class="label label-success" style="width:100px;border-radius:2px">Arrived</label>
-                                    @endif
-                                    @if($patient['appointment_status_id'] == 3)
-                                    <label class="label label-info" style="width:100px;border-radius:2px">No Show</label>
-                                    @endif
-                                    @if($patient['appointment_status_id'] == 4)
-                                    <label class="label label-danger" style="width:100px;border-radius:2px">Cancelled</label>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div> --}}
         </div>
     </div>
     <div class="clear clearfix"></div>
