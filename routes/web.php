@@ -106,7 +106,8 @@ use Illuminate\Support\Facades\DB;
         // ->whereNull('packages.deleted_at')
         ->select('packages.appointment_id','packages.id as pkg_id')
         ->orderBy('appointments.created_at', 'asc')
-        ->paginate(50);
+       // ->paginate(50);
+       ->get();
         foreach($appointments as $apt){
            PackageAdvances::where('package_id',$apt->pkg_id)->where('appointment_id',null)->update(['appointment_id' => $apt->appointment_id]);
              
