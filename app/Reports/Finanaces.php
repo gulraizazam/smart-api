@@ -2670,7 +2670,7 @@ class Finanaces
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->get();
-            dd($appointments);
+            //dd($appointments);
         $total = 0;
         $count = array();
         $arrived_count = array();
