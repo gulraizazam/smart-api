@@ -25,7 +25,7 @@
             <div class="pt-4 border-top  all-sections section-states" >
                 @if(isset($Appointments) && count($Appointments) > 0 )
                 <div class="col-md-12 mb-3">
-                    <h3 class="">{{$user ? $user : $Appointments[0]->location->name ?? ''}}</h3>
+                    <h3 class="">{{$user ? $user : $Appointments[0]->location->name ?? 'All centres'}}</h3>
                     <table class="table border">
                         <thead>
                             <tr class="">
