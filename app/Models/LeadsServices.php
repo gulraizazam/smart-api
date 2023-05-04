@@ -13,10 +13,10 @@ class LeadsServices extends Model
 
     public function service()
     {
-        return $this->belongsTo('App\Models\Services');
+        return $this->belongsTo('App\Models\Services')->withTrashed();
     }
     public function childservice()
     {
-        return $this->belongsTo('App\Models\Services','child_service_id');
+        return $this->belongsTo('App\Models\Services','child_service_id')->withTrashed();
     }
 }

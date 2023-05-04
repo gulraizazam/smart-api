@@ -458,12 +458,10 @@ class LeadsController extends Controller
                         //dd($data);
                         if(!in_array($data->service->name, $service)){
                             $service[] = $data->service->name;
-                            if($data->status == 1){
-                                $service_active[] = $data->service->name;
-                            }
                         }
                         if($data->status == 1){
                             $child_service[] = $data->childservice->name;
+                            $service_active[] = $data->service->name;
                         }
                     }
                     $services = implode(",", $service);
@@ -963,7 +961,7 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        $lead = Leads::getData($id);
+        $lead = Leads::getData($id);dd($lead->lead_service);
         if ($lead == null) {
             return ApiHelper::apiResponse($this->success, 'Resource not found', false);
         }
@@ -1278,23 +1276,11 @@ class LeadsController extends Controller
                         'converted_by' => Auth::User()->id
                     ]);
             } else {
-                $count_leads = Leads::where('patient_id',$lead->patient_id)->count();
-                if($count_leads == 1){
-                    DB::table('leads')
-                    ->where('id', $lead->id)
+                Leads::where('id', $lead->id)
                     ->update([
                         'lead_status_id' => $data['lead_status_parent_id'],
                         'converted_by' => Auth::User()->id
                     ]);
-                }else{
-                    DB::table('leads')
-                    ->where('patient_id', $lead->patient_id)
-                    ->update([
-                        'lead_status_id' => $data['lead_status_parent_id'],
-                        'converted_by' => Auth::User()->id
-                    ]);
-                }
-
             }
             //End
             $data['created_by'] = Auth::User()->id;

@@ -20,7 +20,7 @@ class Leads extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender'];
+    protected $fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender', 'referred_by'];
 
     protected static $_fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id','town_id'];
 
@@ -33,19 +33,8 @@ class Leads extends BaseModal
      */
     public function lead_service()
     {
-        return $this->hasMany(LeadsServices::class, 'lead_id');
+        return $this->hasMany(LeadsServices::class, 'lead_id')->with('service:id,name,parent_id', 'childservice:id,name,parent_id');
     }
-    // public function childservice()
-    // {
-    //     return $this->belongsTo('App\Models\Services','child_service_id')->withTrashed();
-    // }
-    /**
-     * Get the Patient that owns the Lead.
-     */
-    /* public function patient()
-    {
-        return $this->belongsTo('App\Models\Patients', 'patient_id')->withTrashed();
-    } */
 
     /**
      * Get the Lead that owns the City.
@@ -116,7 +105,7 @@ class Leads extends BaseModal
      */
     static public function getData($id) {
 
-        return self::where([
+        return self::with('lead_service')->where([
             ['id','=',$id],
             ['account_id','=',Auth::user()->account_id]
         ])->first();
