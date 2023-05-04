@@ -961,7 +961,7 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        $lead = Leads::getData($id);dd($lead->lead_service);
+        $lead = Leads::getData($id);//dd($lead->lead_service);
         if ($lead == null) {
             return ApiHelper::apiResponse($this->success, 'Resource not found', false);
         }
@@ -974,9 +974,8 @@ class LeadsController extends Controller
             'parent_id' => '0',
             'active' =>'1'
         ])->get()->pluck('name', 'id');
-        $child_services = Services::where([
+        $child_services = Services::whereIn('id', $lead->lead_service->pluck('child_service_id')->toArray())->where([
             'slug' => 'custom',
-            'parent_id' => $lead->service_id,
             'active' =>'1'
         ])->get()->pluck('name', 'id');
         $employees = User::getAllActiveRecords(Auth::User()->account_id);
@@ -990,9 +989,9 @@ class LeadsController extends Controller
         /*end*/
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'Services' => $Services,
-            'child_services'=>$child_services,
-            'lead' =>$lead,
-            'locations'=>$locations,
+            'child_services' => $child_services,
+            'lead' => $lead,
+            'locations' => $locations,
             'cities' => $cities,
             'lead_sources' => $lead_sources,
             'lead_statuses' => $lead_statuses,
@@ -1933,7 +1932,7 @@ class LeadsController extends Controller
                                         $update_lead = array();
                                         $update_lead['lead_status_id'] = $lead_status_id;
                                         Leads::where([ 'phone' => $phone,
-                                        'service_id' => $service_id])->update(['lead_status_id'=>$lead_status_id]);
+                                        'service_id' => $service_id])->update(['lead_status_id' => $lead_status_id]);
                                        continue;
                                     } else {
                                         /*
