@@ -713,39 +713,6 @@ class LeadsController extends Controller
             $data['converted_by'] = Auth::user()->id;
             $data['account_id'] = Auth::User()->account_id;
             /*
-             * *********************************************
-             * Logger for both create and update for patient
-             * *********************************************
-             */
-            /*
-             * Check if patient already exists or not
-             */
-            /* if ($request->new_patient == '1') {
-                $data['created_by'] = Auth::User()->id;
-                $data['updated_by'] = Auth::User()->id;
-                $patient = Patients::createRecord($data,1);
-                if($patient == 'Patient is already exist'){
-                    return ApiHelper::apiResponse($this->error, $patient);
-                }
-            } else {
-                $logLevelPatient = Patients::where(array(
-                    'phone' => $data['phone'],
-                    'user_type_id' => Config::get('constants.patient_id'),
-                    'account_id' => Auth::User()->account_id
-                ))->first();
-                if ($logLevelPatient) {
-                    $data['updated_by'] = Auth::User()->id;
-                    $patient = Patients::updateRecord($logLevelPatient->id, $data);
-                } else {
-                    $data['created_by'] = Auth::User()->id;
-                    $data['updated_by'] = Auth::User()->id;
-                    $patient = Patients::createRecord($data);
-                }
-            } */
-
-            // Update Patient ID
-            //$data['patient_id'] = $patient->id;
-            /*
              * ******************************************
              * Logger for both create and update for Lead
              * ******************************************
@@ -753,7 +720,6 @@ class LeadsController extends Controller
             /*
              * Check if laad already exists or not
              */
-
             $lead = $this->existingLead($request);
             if ($request->new_lead == '1') {
                 $data['created_by'] = Auth::User()->id;
@@ -949,7 +915,24 @@ class LeadsController extends Controller
         flash('Comment has been added successfully.')->success()->important();
         return redirect()->back();
     }
-
+    public function LoadChildServices(Request $request)
+    {
+        try {
+            if ($request->serviceId) {
+                $child_services = Services::where(['parent_id'=>$request->serviceId,'active'=>1])->get();
+                if ($child_services) {
+                    $child_services = $child_services->pluck("name", "id");
+                }
+                $lead = Leads::with('lead_service')->where(['id' => $request->leadId])->first();
+            }
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'dropdown' => $child_services,
+                'lead_child_service' => $lead->lead_service,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
     /**
      * Show the form for editing Lead.
      *
@@ -1010,7 +993,6 @@ class LeadsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $data = array($request, $id);
         if (!Gate::allows('leads_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -1019,120 +1001,87 @@ class LeadsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         $lead = Leads::findOrFail($id);
-        if($request->input('phone') == '***********'){
+        /* if($request->input('phone') == '***********'){
             $request->merge(['phone' => $request->input('old_phone')]);
         }
-        $request->request->remove('old_phone');
+        $request->request->remove('old_phone'); */
         // Get all request data into a var
         $data = $request->all();
-        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        //dd($data);
+        //$data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        $data['updated_by'] = Auth::user()->id;
         $data['account_id'] = Auth::User()->account_id;
-        // Find and update patient, if not found then create patient.
-        $logLevelPatient = Patients::where(array(
-            'id' => $request->patient_id,
-            'phone' => $data['phone'],
-            'user_type_id' => Config::get('constants.patient_id'),
-            'account_id' => Auth::User()->account_id
-        ))->first();
-        if ($request->new_patient == '1') {
-            $data['created_by'] = Auth::User()->id;
-            $data['updated_by'] = Auth::User()->id;
-            $data['user_type_id'] = Config::get('constants.patient_id');
-            $data['patient_id'] = $request->patient_id;
-            $patient = Patients::createRecord($data,1);
-            if($patient == 'Patient is already exist'){
-                return ApiHelper::apiResponse($this->error, $patient);
-            }
-        } else {
-            if ($logLevelPatient) {
-                $data['updated_by'] = Auth::User()->id;
-                $patient = Patients::updateRecord($logLevelPatient->id, $data);
-            } else {
-                /*
-                 * With Phone customer not found. Now check if patient ID is provided then update phone number.
-                 */
-                $data['updated_by'] = Auth::User()->id;
-                $patient = Patients::updateRecord($lead->patient_id, $data);
-                $data['patient_id'] = $lead->patient_id;
-            }
-        }
         /*
-         * Case: If other than selected service is selected then?
+         * ******************************************
+         * Logger for both create and update for Lead
+         * ******************************************
          */
-        if ($request->new_patient == '1') {
-            $data['created_by'] = Auth::User()->id;
-            $data['updated_by'] = Auth::User()->id;
-            $data['patient_id'] = $patient->id;
-            $data['patient_id_1'] = $patient->id;
-            unset($data['id']);
-            $lead = Leads::createRecord($data, $patient, $status = "Lead");
-            $message = 'Record has been created successfully.';
-            flash($message)->success()->important();
-            return response()->json(array(
-                'status' => 1,
-                'message' => $message,
-            ));
+        /*
+         * Check if laad already exists or not
+         */
+        foreach($request->service_id as $service){
+            $lead_check = Leads::with(['lead_service' => function($q) use($service){
+                $q->where(['service_id' => $service]);
+            }])
+            ->where(['id' => $id, 'account_id' => Auth::User()->account_id])
+            ->first();
+            //dd($lead_check->lead_service->count(), $service);
+            if($lead_check->lead_service->count()){
+                foreach($request->child_service_id as $child_service){
+                    $child_service_check = $lead_check->lead_service->whereIn('child_service_id', [$child_service]);
+                    //dd($lead_check->lead_service, $child_service_check->count() == 0, $child_service, $data);
+                    if($child_service_check->count() == 0){
+                        $data['updated_by'] = Auth::User()->id;
+                        //$lead = Leads::where(['id' => $id])->update($data);
+                        $lead = Leads::where(['id' => $id])->update([
+                            'name' => $data['name'],
+                            'gender' => $data['gender'],
+                            'city_id' => $data['city_id'],
+                            'location_id' => $data['location_id'],
+                            'lead_source_id' => $data['lead_source_id'],
+                            'lead_status_id' => $data['lead_status_id'],
+                            'referred_by' => $data['referred_by'],
+                        ]);
+                        $lead_services = LeadsServices::create([
+                            'lead_id' => $id,
+                            'service_id' => $service,
+                            'child_service_id' => $child_service,
+                            'status' => 1
+                        ]);
+                        LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $id])->update([
+                            'status' => 0
+                        ]);
 
-        } else {
-            if (
-            !Leads::where(array(
-                ['patient_id', '=', $data['patient_id']],
-                ['service_id', '=', $data['service_id']],
-                ['id', '!=', $id],
-                'account_id' => Auth::User()->account_id
-            ))->count()
-            ) {
-                /*
-                 * If other service selected and this lead is first time then allow change of Lead service
-                 */
-                $data['updated_by'] = Auth::User()->id;
-                Leads::updateRecord($lead->id, $data, $patient);
-            } else {
-                /*
-                 * If other service selected and this lead is not first time then update other lead
-                 */
-                $logLevelLead = Leads::where(array(
-                    'patient_id' => $data['patient_id'],
-                    'service_id' => $data['service_id'],
-                ))->first();
-                if ($logLevelLead) {
-                    if($logLevelLead->service_id == $data['service_id']){
-                        $message = 'Service already exist.';
-                        return response()->json(array(
-                            'status' => 0,
-                            'message' => $message,
-                        ));
+
                     }
-                } else {
-                    $data['created_by'] = Auth::User()->id;
-                    $data['updated_by'] = Auth::User()->id;
-                    $lead = Leads::createRecord($data, $patient, $status = "Lead");
-                }
-            }
-            Appointments::where('patient_id', '=', $lead->patient_id)->update(['name' => $data['name']]);
-            $message = 'Record has been updated successfully.';
-            if (!$lead->msg_count) {
-                // Send SMS via API
-                $response = $this->sendSMS($lead->id, $patient->phone);
-                if ($response['status']) {
-                    // Message is sent so set flag to true
-                    $lead = Leads::findOrFail($id);
-                    $data['msg_count'] = $lead->msg_count + 1;
-                    $lead->update($data);
-
-                    $message = 'Record has been updated successfully. SMS Status: Sent';
-                } else {
-                    $message = 'Record has been updated successfully. SMS Error: ' . $response['error_msg'];
                 }
             } else {
-                $message = 'Record has been updated successfully.';
+                $data['updated_by'] = Auth::User()->id;
+                //$lead = Leads::updateRecord($id, $data);
+                $lead = Leads::where(['id' => $id])->update([
+                    'name' => $data['name'],
+                    'gender' => $data['gender'],
+                    'city_id' => $data['city_id'],
+                    'location_id' => $data['location_id'],
+                    'lead_source_id' => $data['lead_source_id'],
+                    'lead_status_id' => $data['lead_status_id'],
+                    'referred_by' => $data['referred_by'],
+                ]);
+                foreach($request->child_service_id as $child_service){
+                    $lead_services = LeadsServices::create([
+                        'lead_id' => $id,
+                        'service_id' => $service,
+                        'child_service_id' => $child_service,
+                        'status' => 1
+                    ]);
+                    LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $id])->update([
+                        'status' => 0
+                    ]);
+                }
+
             }
-            flash($message)->success()->important();
-            return response()->json(array(
-                'status' => 1,
-                'message' => $message,
-            ));
         }
+        return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
 
 

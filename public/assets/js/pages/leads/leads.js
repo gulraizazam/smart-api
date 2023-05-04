@@ -618,6 +618,8 @@ function setEditData(response) {
         let lead_sources = response.data.lead_sources;
         let lead_statuses = response.data.lead_statuses;
         let lead = response.data.lead;
+        let service_option_select = (services == "") ? "selected" : "";
+        //let service_options = '<option value="" ' + service_option_select + '>Select Service</option>';
         let service_options = '<option value="">Select Service</option>';
         let child_service_options = '<option value="">Select Child Service</option>';
         let city_options = '<option value="">Select a City</option>';
@@ -632,7 +634,6 @@ function setEditData(response) {
                 child_services.push(service.child_service);
             });
         }
-        console.log(Childservices, child_services);
         if (Services) {
             Object.entries(Services).forEach(function(service) {
                 if(jQuery.inArray(Number(service[0]), services) != -1){
@@ -644,7 +645,6 @@ function setEditData(response) {
         }
         if (Childservices) {
             Object.entries(Childservices).forEach(function(childservice) {
-                console.log(childservice[0])
                 child_service_options += '<option value="' + childservice[0] + '" selected>' + childservice[1] + '</option>';
             });
         }
@@ -678,6 +678,7 @@ function setEditData(response) {
                 lead_statuses_options += '<option value="' + status[0] + '">' + status[1] + '</option>';
             });
         }
+        console.log(service_options);
         $("#edit_service_id").html(service_options);
         $("#edit_child_service_id").html(child_service_options);
         $("#edit_city_id").html(city_options);
@@ -703,9 +704,9 @@ function setEditData(response) {
         }
         $("#edit_full_name").val(lead.name);
         $("#edit_lead_id").val(lead.id);
-        $("#edit_old_phone").val(lead.phone);
+        $("#edit_old_phone").val(lead.phone).attr("readonly", true);
         if (permissions.contact) {
-            $("#edit_phone").val(lead.phone);
+            $("#edit_phone").val(lead.phone).attr("readonly", true);
         } else {
             $("#edit_phone").val("***********").attr("readonly", true);
         }
