@@ -63,7 +63,6 @@ var table_columns = [{
     template: function (data) {
         let value = data.service_id.split(",");
         let valueActive = data.service_active.split(",");
-        console.log(value, valueActive[0]);
         let services = '';
         if(data.service_id != ""){
             value.forEach((item) => {
@@ -74,8 +73,6 @@ var table_columns = [{
                 }
 
             })
-
-            //return data.service_id.split(",");
         }else{
             services += '<span class="text text-danger">Empty</span>'
         }
@@ -612,6 +609,7 @@ function editRow(url, id) {
 
 function setEditData(response) {
     try {
+        console.log(response.data);
         let Services = response.data.Services;
         let Childservices = response.data.child_services;
         let cities = response.data.cities;
@@ -681,10 +679,10 @@ function setEditData(response) {
         $("#edit_child_service_id").val(lead.child_service_id);
         $("#edit_city_id").val(lead.city_id);
         $("#edit_location_id").val(lead.location_id);
-        if (lead?.patient?.referred_by && lead?.patient?.referred_by != 0) {
-            $("#edit_referred_by_id").val(lead?.patient?.referred_by);
+        if (lead?.referred_by && lead?.referred_by != 0) {
+            $("#edit_referred_by_id").val(lead?.referred_by);
         }
-        if (lead.patient.gender) {
+        if (lead.gender) {
             $("#edit_gender_id").val(lead.patient.gender);
         }
         if (lead.lead_source_id) {
