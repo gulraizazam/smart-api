@@ -58,7 +58,7 @@
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
                             {{-- <select id="edit_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2"  name="service_id[]" onchange="loadEditChildServices()"> --}}
-                            <select name="service_id[]" multiple="" id="edit_service_id" class="form-control select2 select2-hidden-accessible" data-select2-id="edit_service_id" tabindex="-1" aria-hidden="true" onchange="loadEditChildServices()">
+                            <select name="service_id[]" multiple="" id="edit_service_id" class="form-control select2 select2-hidden-accessible" data-select2-id="edit_service_id" tabindex="-1" aria-hidden="true" on="loadEditChildServices()">
                             </select>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
