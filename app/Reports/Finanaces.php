@@ -2668,7 +2668,7 @@ class Finanaces
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
             ->where('package_advances.cash_amount','>',0)
-            ->where('package_advances.package_id',4958)
+           
              ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
@@ -2775,9 +2775,9 @@ class Finanaces
                 $in_appointment_info = Appointments::where(['appointment_id' =>  $appointment->id])->get()->pluck('id')->toArray();
                 if (count($in_appointment_info)) {
                     $packageadvance_info = PackageAdvances::whereIn('appointment_id', $in_appointment_info)
-                        //->whereDate('created_at', '>=', $start_date)
+                        ->whereDate('created_at', '>=', $start_date)
                         ->where('cash_amount', '>', 0)
-                        //->whereDate('created_at', '<=', $end_date)
+                        ->whereDate('created_at', '<=', $end_date)
                         ->get();
                     if (count($packageadvance_info) > 0) {
                         $check = 0;
