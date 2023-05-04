@@ -77,7 +77,7 @@ use Illuminate\Support\Facades\DB;
 // Authentication Routes...
     Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
-    
+
     Route::get('/deliver-on-appointment-book', function () {
         \Artisan::call('appointment:deliver-on-appointment-book');
     });
@@ -114,7 +114,7 @@ use Illuminate\Support\Facades\DB;
             $rr =  Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->select('leads.lead_status_id','leads.active','leads.city_id','leads.service_id','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId','users.*')
             ->get();
-       
+
        return view('admin.records',compact('rr'));
 
         });
@@ -291,7 +291,7 @@ use Illuminate\Support\Facades\DB;
 
         Route::get('leads/junk', [LeadsController::class, 'junk'])->name('leads.junk');
 
-
+        Route::post('leads/load_child_services', [AppointmentsController::class, 'LoadChildServices'])->name('appointments.load_child_services');
         Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
 
         Route::post('leads/status', [LeadsController::class, 'status'])->name('leads.status');
@@ -553,7 +553,7 @@ use Illuminate\Support\Facades\DB;
         //Route end for Operations reports
 
         /////////////////Dashboard Stats//////
-        
+
         Route::get('dashboard/collection-by-centre', [DashboardReportsController::class,'collectionByCentre'])->name('dashboard.collection_by_centre');
         Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
         Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
