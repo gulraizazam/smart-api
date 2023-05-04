@@ -291,7 +291,7 @@ use Illuminate\Support\Facades\DB;
 
         Route::get('leads/junk', [LeadsController::class, 'junk'])->name('leads.junk');
 
-        Route::post('leads/load_child_services', [AppointmentsController::class, 'LoadChildServices'])->name('appointments.load_child_services');
+        Route::post('leads/load_child_services', [LeadsController::class, 'LoadChildServices'])->name('leads.load_child_services');
         Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
 
         Route::post('leads/status', [LeadsController::class, 'status'])->name('leads.status');
