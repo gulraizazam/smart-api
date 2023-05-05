@@ -37,6 +37,7 @@ class ConversionReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
+       
         list($report_data, $locationData,$maxConversion,$minConversion,$conversionsByPatient,$average_client_coversion,$arrival_to_conversion_ratio,$CategoryConversionData,$avg_cxlient_valu ) = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
         return view('admin.reports.conversion_report', get_defined_vars());
     }
