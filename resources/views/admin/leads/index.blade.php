@@ -376,10 +376,9 @@
                                 dropdown_options +=  '<option selected="selected" disabled value="">Select a Service</option>';
                             }
                             Object.entries(dropdowns).forEach(function (dropdown) {
-
-                                if (jQuery.inArray(Number(dropdown[0]), old_child_service) === -1) {
+                                //if(jQuery.inArray(Number(dropdown[0]), old_child_service) != -1){
                                     dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
-                                }
+                                //}
                             });
                             $('#edit_child_service_id').html(dropdown_options);
                         } else {
