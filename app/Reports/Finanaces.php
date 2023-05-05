@@ -2722,8 +2722,8 @@ class Finanaces
                             ->orderBy('created_at', 'asc')
                             ->first();
                             
-                            dd(Carbon::parse($first_advance->updated_at)->format('Y-m-d'));
-                        $date = ($first_advance->updated_at)->format('Y-m-d');
+                         
+                        $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
                         
                         if (($date >= $start_date) && ($date <= $end_date)) {
                             $check = 1;
@@ -2788,7 +2788,7 @@ class Finanaces
                             ->where('cash_amount', '>', 0)
                             ->orderBy('created_at', 'asc')
                             ->first();
-                        $date = ($first_advance->updated_at)->format('Y-m-d');
+                        $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
                         if (($date >= $start_date) && ($date <= $end_date)) {
                             $check = 1;
                         }
