@@ -678,7 +678,6 @@ function setEditData(response) {
                 lead_statuses_options += '<option value="' + status[0] + '">' + status[1] + '</option>';
             });
         }
-        console.log(service_options);
         $("#edit_service_id").html(service_options);
         $("#edit_child_service_id").html(child_service_options);
         $("#edit_city_id").html(city_options);
