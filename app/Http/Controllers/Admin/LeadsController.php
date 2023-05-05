@@ -927,7 +927,7 @@ class LeadsController extends Controller
             }
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'dropdown' => $child_services,
-                'lead_child_service' => $lead->lead_service,
+                'lead_child_service' => $lead->lead_service ?? '',
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -1028,8 +1028,10 @@ class LeadsController extends Controller
             //dd($lead_check->lead_service->count(), $service);
             if($lead_check->lead_service->count()){
                 foreach($request->child_service_id as $child_service){
-                    $child_service_check = $lead_check->lead_service->whereIn('child_service_id', [$child_service]);
-                    //dd($lead_check->lead_service, $child_service_check->count() == 0, $child_service, $data);
+                    //dd($lead->lead_service, $child_service);
+                    $child_service_check = $lead_check->lead_service->where(['service_id' => $service])->whereIn('child_service_id', [$child_service]);
+                    //dd($lead_check->lead_service->toArray(), $child_service_check->count() == 0, $child_service, $child_service_check);
+                    //dd($child_service_check->count());
                     if($child_service_check->count() == 0){
                         $data['updated_by'] = Auth::User()->id;
                         //$lead = Leads::where(['id' => $id])->update($data);
@@ -1042,7 +1044,11 @@ class LeadsController extends Controller
                             'lead_status_id' => $data['lead_status_id'],
                             'referred_by' => $data['referred_by'],
                         ]);
-                        $lead_services = LeadsServices::create([
+                        $lead_services = LeadsServices::updateOrCreate([
+                            'lead_id' => $id,
+                            'service_id' => $service,
+                            'child_service_id' => $child_service,
+                        ],[
                             'lead_id' => $id,
                             'service_id' => $service,
                             'child_service_id' => $child_service,
@@ -1051,11 +1057,9 @@ class LeadsController extends Controller
                         LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $id])->update([
                             'status' => 0
                         ]);
-
-
                     }
                 }
-            } else {
+            } else {dd(('ya'));
                 $data['updated_by'] = Auth::User()->id;
                 //$lead = Leads::updateRecord($id, $data);
                 $lead = Leads::where(['id' => $id])->update([
