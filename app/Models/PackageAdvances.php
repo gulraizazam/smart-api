@@ -20,7 +20,7 @@
 		protected $table = 'package_advances';
 
 		protected static $_table = 'package_advances';
-		public $timestamps = false;
+		
 		/*
 		 * get the payment modes
 		 * */
