@@ -147,8 +147,9 @@
                 <table class="table" id="conversion_table">
                     <thead>
                     <th>Patient ID</th>
-                    <th>Doctor</th>
                     <th>Patient</th>
+                    <th>Doctor</th>
+                   
                     <th>Service</th>
                     <th>Conversion Spend</th>
                     <th>Conversion Date</th>
@@ -165,8 +166,9 @@
                             @if($appointment['converted'] != '' && $appointment['conversion_spend'] > 0)
                                 <tr>
                                     <td>{{ $appointment['patient_id'] }}</td>
-                                    <td>{{$appointment['doctor']}}</td>
                                     <td>{{$appointment['client']}}</td>
+                                    <td>{{$appointment['doctor']}}</td>
+                                    
                                     <td>{{$appointment['service']}}</td>
                                     <td style="text-align: center">PKR: {{$appointment['conversion_spend']}}</td>
                                     <td>{{ \Carbon\Carbon::parse($appointment['conversion_date'])}}</td>
