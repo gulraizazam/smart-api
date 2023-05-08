@@ -31,6 +31,7 @@ use App\Helpers\Explode_Multi_select;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\AppointmentsDailyStats;
+use App\Models\RoleHasUsers;
 use Illuminate\Support\Facades\DB;
 
 class FinanceReportController extends Controller
@@ -2839,6 +2840,7 @@ class FinanceReportController extends Controller
         $where = array();
         if ($request->location_id  && $request->location_id ) {
             $where[] = array(['centre_id' => $request->location_id]);
+            $where_walkin[] = array(['centre_id' => $request->location_id]);
         }
         if ($request->created_by && $request->created_by != '') {
             $where[] = array(['user_id' => $request->created_by]);
@@ -2851,6 +2853,8 @@ class FinanceReportController extends Controller
         }
         $records = array();
         $records["data"] = array();
+       
+        $fdm_users = RoleHasUsers::where('role_id',4)->pluck('user_id');
         if (Gate::allows('appointments_consultancy')) {
             $resultQuery = AppointmentsDailyStats::whereIn('centre_id', ACL::getUserCentres());
         }
@@ -2860,11 +2864,33 @@ class FinanceReportController extends Controller
         if (count($where)) {
             $resultQuery->where($where);
         }
+        if(!$request->created_by){
+            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)->count();
+        }
+        if($request->location_id  && $request->location_id != ''  && !$request->created_by){
+                $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+                ->where('centre_id',$request->location_id)
+                ->count();
+        }
+        if($request->date_from && $request->date_to && !$request->created_by){
+            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+            ->whereDate('cron_current_date', '>=', $request->date_from)
+            ->whereDate('cron_current_date', '<=', $request->date_to)
+            ->count();
+        }
+        if($request->location_id  && $request->location_id != '' && $request->date_from && $request->date_to && !$request->created_by){
+            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+            ->where('centre_id',$request->location_id)
+            ->whereDate('cron_current_date', '>=', $request->date_from)
+            ->whereDate('cron_current_date', '<=', $request->date_to)
+            ->count();
+        }
         $Appointments = $resultQuery->with(['user', 'appointment' => function($q){
             $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->orderBy("appointments.created_at", "DESC");
         }])
         ->get();
+        
         $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
         $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
