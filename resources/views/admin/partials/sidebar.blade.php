@@ -904,9 +904,7 @@
 
                     <!-- End Inventory menu -->
 
-                    @if(
-                       Gate::allows('finance_general_revenue_reports_manage')
-                    )
+                    @if(Gate::allows('finance_general_revenue_reports_manage'))
                         <li class="menu-item menu-item-submenu {{openMenu([
                             'admin.reports.finance_reports',
                             'admin.reports.operations_report'
@@ -992,7 +990,7 @@
                                                  <span class="menu-text">Conversion Report </span>
                                              </a>
                                          </li>
-
+ 
                                      </ul>
                                  </div>
                                  <div class="menu-submenu">
@@ -1006,7 +1004,6 @@
                                                 <span class="menu-text">Staff Wise Arrival Report </span>
                                             </a>
                                         </li>
-
                                     </ul>
                                 </div>
                             @endcan
