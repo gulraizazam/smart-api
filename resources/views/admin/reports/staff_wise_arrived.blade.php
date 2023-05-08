@@ -9,15 +9,13 @@
 <div class="sn-table-holder">
     <div class="sn-report-head">
         <div class="sn-title">
-            <h1>{{ 'Staff Wise Arrival Report' }}</h1>
+            <h1></h1>
         </div>
-
     </div>
 </div>
 <div class="panel-body sn-table-body">
     <div class="bordered">
         <div class="sn-table-head">
-
             <div class="row">
                 <div class="col-md-2">
                     <img style="width: 180px;" src="{{asset('logo_final.png')}}">
@@ -27,7 +25,7 @@
             <div class="pt-4 border-top  all-sections section-states" >
                 @if(isset($Appointments) && count($Appointments) > 0 )
                 <div class="col-md-12 mb-3">
-                    <h3 class="">{{$user ? $user : $Appointments[0]->location->name ?? ''}}</h3>
+                    <h3 class="">{{$user ? $user : $centre}}</h3>
                     <table class="table border">
                         <thead>
                             <tr class="">
@@ -93,4 +91,3 @@
     <!-- Liabilities and Assets -->
     <script src="{{ url('assets/js/fake-scroll.js') }}" type="text/javascript"></script>
 </div>
-

@@ -2571,6 +2571,9 @@ class LeadsController extends Controller
         if($request->region_id != null || $request->region_id != ''){
             $resultQuery->where('leads.region_id', $request->region_id);
         }
+        if($request->gender_id != null || $request->gender_id != ''){
+            $resultQuery->where('users.gender', $request->gender_id);
+        }
         if($request->created_by != null || $request->created_by != ''){
             $resultQuery->where('leads.created_by', $request->created_by);
         }

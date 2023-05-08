@@ -4,6 +4,7 @@
             <th style="padding: 10px 15px 10px 15px; color: #fff;">ID</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Full Name</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Phone</th>
+            <th style="padding: 10px 15px 10px 15px; color: #fff;">Gender</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">City</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Centre</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Region</th>
@@ -26,6 +27,7 @@
                 <td style="padding: 10px 5px 10px 5px;">C-{{$lead->id ?? $loop->iteration}}</td>
                 <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->name ?? 'N/A'}}</td>
                 <td style="padding: 10px 5px 10px 5px;">{{$phone ?? 'N/A'}}</td>
+                <td style="padding: 10px 5px 10px 5px;">{{$lead->gender == 1 ? 'Male' : 'Female' }}</td>
                 <td style="padding: 10px 5px 10px 5px;">{{$lead->city->name ?? 'N/A'}} </td>
                 <td style="padding: 10px 5px 10px 5px;">{{$lead->towns->name ?? 'N/A'}} </td>
                 <td style="padding: 10px 5px 10px 5px;">{{$lead->region->name ?? 'N/A'}}</td>
