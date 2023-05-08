@@ -2828,14 +2828,12 @@ class FinanceReportController extends Controller
         $arrived = $resultQuery->where(['base_appointment_status_id' => 2])->count();
         return view('admin.reports.daily_arrived',get_defined_vars());
     }
-
     public function staffWiseArrival()
     {
         $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
         $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
         return view('admin.reports.staffwisearrival',get_defined_vars());
     }
-
     public function staffWiseArrivalReport(Request $request)
     {
         $where = array();
@@ -2869,7 +2867,7 @@ class FinanceReportController extends Controller
         ->get();
         $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
-        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? '';
+        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
         return view('admin.reports.staff_wise_arrived',get_defined_vars());
     }
 }

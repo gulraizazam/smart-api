@@ -70,7 +70,6 @@
                                            </select>
                                            <span id="created_by_handler"></span>
                                        </div>
-
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
                                             <a href="javascript:void(0);" onclick="loadStaffWiseArrivalReport($(this));" id="load_staff_wise_report"
@@ -106,5 +105,4 @@
         <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
         <script src="{{asset('assets/js/dailyarrival.js')}}"></script>
     @endpush
-
 @endsection
