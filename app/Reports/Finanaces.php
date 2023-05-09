@@ -2877,11 +2877,12 @@ class Finanaces
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
 
-        $total_appointments = Appointments::where('scheduled_date','>=',$start_date. ' 00:00:00')
-        ->where('scheduled_date','<=',$end_date. ' 23:59:59')
+        $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
+        ->where('scheduled_date','<=',$end_date)
+        ->where('appointment_type_id','=',1)
         ->where(['base_appointment_status_id' => 2])
         ->count();
-dd($total_appointments);
+
 
         if($total_appointments > 0){
             $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
