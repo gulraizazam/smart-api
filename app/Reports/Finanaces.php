@@ -2876,7 +2876,7 @@ class Finanaces
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
-
+dd($where);
         $total_appointments = Appointments::where($where)
         ->where('scheduled_date','>=',$start_date)
         ->where('scheduled_date','<=',$end_date)
