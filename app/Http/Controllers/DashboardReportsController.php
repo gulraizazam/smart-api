@@ -2278,17 +2278,39 @@ class DashboardReportsController extends Controller
 
     public function CentreWiseArrival(Request $request)
     {
+        $centre_array=['All Centres','All South Region','All Central Region'];
+        $assigned_centres = ACL::getUserCentres();
+        //$location_information = Locations::where(['active'=>1])->whereNotIn('name',$centre_array)->whereIn('id',$assigned_centres)->get();
+        $total_apts=[];
+        $arrived_apts=[];
+        $walkin_apts=[];
+        $lables=[];
         if ($request->period=='') {
             $fdm_users = RoleHasUsers::where('role_id',4)->pluck('user_id');
-            $yesterday_total_appointments = AppointmentsDailyStats::whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+            $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
             ->whereIn('centre_id', ACL::getUserCentres())->groupBy('centre_id')->get();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
             ->whereIn('centre_id', ACL::getUserCentres())->where('appointment_status_id',2)->groupBy('centre_id')->get();
-            $yesterday_walkin_appointments = AppointmentsDailyStats::whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-            ->whereIn('centre_id', ACL::getUserCentres())->whereIn('created_by',$fdm_users)->groupBy('centre_id')->get();
-            dd($yesterday_total_appointments);
-            
+            $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+            ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get();
+            foreach($yesterday_total_appointments as $loc){
+                $centre = Locations::where('id', $loc->centre_id)->first();
+                array_push($lables,$centre->name); 
+                
+            }
 
+            array_push($total_apts,$yesterday_total_appointments);
+            array_push($walkin_apts,$yesterday_walkin_appointments);
+            array_push($arrived_apts,$yesterday_arrived_appointments);
+             
         }
+       
+        return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
+            'bar' => $lables,
+            'total'=>$total_apts,
+            'arrived'=>$arrived_apts,
+            'walkin'=>$walkin_apts
+            
+        ]);
     }
 }
