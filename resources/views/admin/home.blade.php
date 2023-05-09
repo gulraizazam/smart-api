@@ -1077,7 +1077,7 @@
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
-                        console.log(response);
+                        console.log('bar chart test',response);
                         
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
