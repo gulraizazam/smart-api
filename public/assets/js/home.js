@@ -557,6 +557,129 @@ function CollectionByServiceCategory(service, colors) {
         $("#revenue-service-collection").css("height", "500px");
     }
 }   
-
+function initConsultanciesByStatus(today, yesterday, last7days, week,thismonth,lastmonth){
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.consultancies-by-status'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'today': today,
+            'yesterday': yesterday,
+            'last7days': last7days,
+            'week': week,
+            'thismonth': thismonth,
+            'lastmonth': lastmonth,
+        },
+        success: function (response) {
+            ConsultanciesByStatus(response);
+        },
+    });
+} 
+function ConsultanciesByStatus(bar)
+{
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    var options = {
+        series: [{
+            name: 'Scheduled',
+            data: bar.data.total
+        }, {
+            name: 'Arrived',
+            data: bar.data.arrived
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
+            
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 2,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: bar.data.bar,
+        },
+        colors: [primary, success, warning]
+    };
+    $("#chart_status").html('');
+    var chart = new ApexCharts(document.querySelector("#chart_status"), options);
+    chart.render();
+}
+function initConvertedConsultancies(today, yesterday, last7days, week,thismonth,lastmonth){
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.converted-consultancies'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'today': today,
+            'yesterday': yesterday,
+            'last7days': last7days,
+            'week': week,
+            'thismonth': thismonth,
+            'lastmonth': lastmonth,
+        },
+        success: function (response) {
+            ConvertedConsultanciesChart(response);
+        },
+    });
+} 
+function ConvertedConsultanciesChart(bar)
+{
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    var options = {
+        series: [{
+            name: 'Arrived',
+            data: bar.data.arrived 
+        }, {
+            name: 'Converted',
+            data: bar.data.total
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
+            
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 2,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: bar.data.bar,
+        },
+        colors: [primary, success, warning]
+    };
+    $("#chart_converted").html('');
+    var chart = new ApexCharts(document.querySelector("#chart_converted"), options);
+    chart.render();
+}
 
     
