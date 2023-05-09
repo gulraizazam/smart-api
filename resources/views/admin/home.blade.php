@@ -751,6 +751,83 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                            <div class="card-body p-0">
+                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase">Centre Wise Arrival</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center">
+                                        <li style="border-bottom: none;">
+                                            <div class="actions action-style p-3 mr-3">
+                                                <div class="btn-group">
+                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                    data-close-others="true" aria-expanded="false"> Report
+                                                        <i class="fa fa-angle-down"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu dropdown-menu-right">
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Today</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Yesterday</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Last 7 Days</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">This Week</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">This Month</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href=""
+                                                            target="_blank">Last Month</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li >
+                                            <a class="active" href="#appointment_by_status_4" data-toggle="tab"
+                                            onclick="initCentreWiseArrival('today','1');">Today</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_1" data-toggle="tab"
+                                            onclick="initCentreWiseArrival('yesterday','1');">Yesterday</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_2" data-toggle="tab"
+                                            onclick="initCentreWiseArrival('last7days','1');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_2" data-toggle="tab"
+                                            onclick="initCentreWiseArrival('week','1');">This Week</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_3" data-toggle="tab"
+                                            onclick="initCentreWiseArrival('thismonth','1');">This Month</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_3" data-toggle="tab"
+                                            onclick="initCentreWiseArrival('lastmonth','1');">Last Month</a>
+                                        </li>
+                                    </ul>
+                                    <div class="d-none flex-column text-right">
+                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                        <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                    </div>
+                                </div>
+                                <div id="centre_wise_arrival"></div>
+                            </div>
+                        </div>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -783,6 +860,7 @@
         var collection_by_service_category=false;
         var consultancy_by_status=false;
         var treatment_by_status=false;
+        var centre_wise_arrival=false;
         $(window).scroll(function(){
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.07) && !collection_by_center){
                 collection_by_center= true; 
@@ -991,6 +1069,22 @@
                     }
                 });
             }
+            if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !centre_wise_arrival){
+                centre_wise_arrival= true; 
+                $.ajax({
+                    url: route('admin.dashboard.centre_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+                        console.log(response);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
+            }
         });
         function TreatmentByStatus(pie,colors) {
             google.load('visualization', '1', {
@@ -1103,7 +1197,85 @@
                 if (typeof service !== 'undefined' && service.length > 1) {
                     $("#revenue-service-collection").css("height", "500px");
                 }
-            }
+        }
+        function BarChart(service) {
+            const primary = '#6993FF';
+            const success = '#1BC5BD';
+            const info = '#8950FC';
+            const warning = '#FFA800';
+            const danger = '#F64E60';
+            var options = {
+                series: [{
+                    name: 'Scheduled',
+                    data: service.data.total
+                }, {
+                    name: 'Arrived',
+                    data: service.data.arrived
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 350,
+                   
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        endingShape: 'rounded'
+                    },
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: service.data.bar,
+                },
+                colors: [primary, success, warning]
+            };
+            var chart = new ApexCharts(document.querySelector("#chart_status"), options);
+            chart.render();
+        }
+        function ConvertedChart(service) {
+            const primary = '#6993FF';
+            const success = '#1BC5BD';
+            const info = '#8950FC';
+            const warning = '#FFA800';
+            const danger = '#F64E60';
+            var options = {
+                series: [{
+                    name: 'Arrived',
+                    data: service.data.arrived
+                }, {
+                    name: 'Converted',
+                    data: service.data.total
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 350,
+                   
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        endingShape: 'rounded'
+                    },
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: service.data.bar,
+                },
+                colors: [primary, success, warning]
+            };
+            var chart = new ApexCharts(document.querySelector("#chart_converted"), options);
+            chart.render();
+        }
     </script>
 @endpush
 @endsection

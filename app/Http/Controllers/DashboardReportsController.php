@@ -17,11 +17,13 @@ use Illuminate\Support\Facades\Config;
 use App\Helpers\ACL;
 use App;
 use App\Models\Appointments;
+use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
+use App\Models\RoleHasUsers;
 use Illuminate\Support\Facades\DB;
 
 class DashboardReportsController extends Controller
@@ -2271,6 +2273,22 @@ class DashboardReportsController extends Controller
             return ApiHelper::apiResponse($this->success, 'service data', true, [
                 'child' => 'N/A',
             ]);
+        }
+    }
+
+    public function CentreWiseArrival(Request $request)
+    {
+        if ($request->period=='') {
+            $fdm_users = RoleHasUsers::where('role_id',4)->pluck('user_id');
+            $yesterday_total_appointments = AppointmentsDailyStats::whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+            ->whereIn('centre_id', ACL::getUserCentres())->groupBy('centre_id')->get();
+            $yesterday_arrived_appointments = AppointmentsDailyStats::whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+            ->whereIn('centre_id', ACL::getUserCentres())->where('appointment_status_id',2)->groupBy('centre_id')->get();
+            $yesterday_walkin_appointments = AppointmentsDailyStats::whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+            ->whereIn('centre_id', ACL::getUserCentres())->whereIn('created_by',$fdm_users)->groupBy('centre_id')->get();
+            dd($yesterday_total_appointments);
+            
+
         }
     }
 }
