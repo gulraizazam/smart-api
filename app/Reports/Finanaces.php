@@ -2876,10 +2876,13 @@ class Finanaces
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
+
         $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
         ->where('scheduled_date','<=',$end_date)
         ->where(['base_appointment_status_id' => 2])
         ->count();
+dd($total_appointments);
+
         if($total_appointments > 0){
             $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
         }else{
