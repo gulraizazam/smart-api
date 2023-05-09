@@ -751,6 +751,7 @@
                             </div>
                         </div>
                     </div>
+                   
                     <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
@@ -759,64 +760,69 @@
                                     <ul class="nav nav-tabs d-flex align-items-center">
                                         <li style="border-bottom: none;">
                                             <div class="actions action-style p-3 mr-3">
+                                            @if(Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('Super-Admin'))
+                                            @php
+                                                    $centres_array =['All Centres','All South Region','All Central Region'];
+                                                    $locations = \App\Helpers\ACL::getUserCentres();
+                                                    $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->get();
+                                            @endphp
                                                 <div class="btn-group">
                                                     <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
                                                     href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false"> Report
+                                                    data-close-others="true" aria-expanded="false"> All
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
+                                                    <li>
+                                                    <a onclick="LoadBarChart('All','yesterday')">All</a>
+                                                    </li>
+                                                        @foreach($centres as $centre)
                                                         <li>
-                                                            <a href=""
-                                                            target="_blank">Today</a>
+                                                            <a 
+                                                             data-id="{{$centre->id}}" onclick="LoadBarChart({{$centre->id}},'yesterday')">{{$centre->name}}</a>
                                                         </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Yesterday</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last 7 Days</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Week</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Month</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last Month</a>
-                                                        </li>
+                                                        @endforeach
+                                                        
                                                     </ul>
                                                 </div>
                                             </div>
+                                            @else
+                                            @php
+                                                    $centres_array =['All Centres','All South Region','All Central Region'];
+                                                    $locations = \App\Helpers\ACL::getUserCentres();
+                                                    $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->first();
+                                            @endphp
+                                            <div class="btn-group">
+                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                    data-close-others="true" aria-expanded="false"> {{$centres->name}}
+                                                        <i class="fa fa-angle-down"></i>
+                                                    </a>
+                                                    
+                                                </div>
+                                            </div>
+                                            @endif
                                         </li>
-                                        <li >
-                                            <a class="active" href="#appointment_by_status_4" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('today','1');">Today</a>
-                                        </li>
+                                        
                                         <li>
                                             <a href="#appointment_by_status_1" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('yesterday','1');">Yesterday</a>
+                                            onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
                                         </li>
                                         <li>
                                             <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('last7days','1');">Last 7 Days</a>
+                                            onclick="initCentreWiseArrival('last7days');">Last 7 Days</a>
                                         </li>
                                         <li>
                                             <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('week','1');">This Week</a>
+                                            onclick="initCentreWiseArrival('week');">This Week</a>
                                         </li>
                                         <li>
                                             <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('thismonth','1');">This Month</a>
+                                            onclick="initCentreWiseArrival('thismonth');">This Month</a>
                                         </li>
                                         <li>
                                             <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('lastmonth','1');">Last Month</a>
+                                            onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
                                         </li>
                                     </ul>
                                     <div class="d-none flex-column text-right">
@@ -900,7 +906,6 @@
                     data: {'type': '{{request('type')}}'},
                     cache: false,
                     success: function (response) {
-                        console.log(response);
                         let pie = response.data.pie;
                         revenueCentreChart(pie);
                     },
@@ -979,7 +984,6 @@
                         data: {'type': '{{request('type')}}'},
                         cache: false,
                         success: function (response) {
-                            console.log(response);
                             let colors = response.data.colors;
                             let total = response.data.total;
                             
@@ -1206,11 +1210,14 @@
             const danger = '#F64E60';
             var options = {
                 series: [{
-                    name: 'Scheduled',
-                    data: 60
+                    name: 'Total Appointments',
+                    data: service.data.total
                 }, {
                     name: 'Arrived',
-                    data: 50
+                    data: service.data.arrived
+                },{
+                    name: 'Walk-in',
+                    data: service.data.walkin
                 }],
                 chart: {
                     type: 'bar',
