@@ -2883,7 +2883,7 @@ class Finanaces
         ->where('appointment_type_id','=',1)
         ->where(['base_appointment_status_id' => 2])
         ->count();
-
+dd($total_appointments);
 
         if($total_appointments > 0){
             $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
