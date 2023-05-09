@@ -1077,7 +1077,7 @@
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
-                        console.log('bar chart test',response);
+                        BarChart(response);
                         
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
@@ -1207,10 +1207,10 @@
             var options = {
                 series: [{
                     name: 'Scheduled',
-                    data: service.data.total
+                    data: 60
                 }, {
                     name: 'Arrived',
-                    data: service.data.arrived
+                    data: 50
                 }],
                 chart: {
                     type: 'bar',
@@ -1234,48 +1234,10 @@
                 },
                 colors: [primary, success, warning]
             };
-            var chart = new ApexCharts(document.querySelector("#chart_status"), options);
+            var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
             chart.render();
         }
-        function ConvertedChart(service) {
-            const primary = '#6993FF';
-            const success = '#1BC5BD';
-            const info = '#8950FC';
-            const warning = '#FFA800';
-            const danger = '#F64E60';
-            var options = {
-                series: [{
-                    name: 'Arrived',
-                    data: service.data.arrived
-                }, {
-                    name: 'Converted',
-                    data: service.data.total
-                }],
-                chart: {
-                    type: 'bar',
-                    height: 350,
-                   
-                },
-                plotOptions: {
-                    bar: {
-                        horizontal: false,
-                        columnWidth: '55%',
-                        endingShape: 'rounded'
-                    },
-                },
-                stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ['transparent']
-                },
-                xaxis: {
-                    categories: service.data.bar,
-                },
-                colors: [primary, success, warning]
-            };
-            var chart = new ApexCharts(document.querySelector("#chart_converted"), options);
-            chart.render();
-        }
+        
     </script>
 @endpush
 @endsection
