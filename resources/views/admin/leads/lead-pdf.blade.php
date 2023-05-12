@@ -24,12 +24,6 @@
                }
             @endphp
 
-            {{-- if($lead->lead_service->count() > 0){
-
-            } else {
-
-            } --}}
-
             @foreach ($lead->lead_service as $data)
                 <tr style="font-size: 14px; background-color: #f6f6f6;">
                     <td style="padding: 10px 5px 10px 5px;">C-{{$lead->id ?? $loop->iteration}}</td>

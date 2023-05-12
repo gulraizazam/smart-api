@@ -369,15 +369,6 @@
                             let old_child_service = response.data.lead_child_service;
                             console.log(old_child_service);
                             let dropdown_options = '<option value="">Select Service</option>';
-                            /* if(old_child_service != ''){
-                                old_child_service.forEach(function(service) {
-                                    if (service.childservice != null) {
-                                        dropdown_options += '<option value="'+service.childservice.id+'" selected>'+service.childservice.name+'</option>';
-                                    }
-                                });
-                            } else {
-                                dropdown_options +=  '<option selected="selected" disabled value="">Select a Service</option>';
-                            } */
                             Object.entries(dropdowns).forEach(function (dropdown) {
                                 dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
 

@@ -812,10 +812,13 @@ class LeadsController extends Controller
             'parent_id' => '0',
             'active' =>'1'
         ])->get()->pluck('name', 'id');
-        $child_services = Services::whereIn('id', $lead->lead_service->pluck('child_service_id')->toArray())->where([
+        $child_service_array = $lead->lead_service->pluck('child_service_id')->toArray();
+        $child_services = Services::whereIn('id', $child_service_array)
+        ->where([
             'slug' => 'custom',
             'active' =>'1'
-        ])->get()->pluck('name', 'id');
+        ])->get()
+        ->pluck('name', 'id');
         $employees = User::getAllActiveRecords(Auth::User()->account_id);
         if ($employees) {
             $employees = $employees->pluck('full_name', 'id');
