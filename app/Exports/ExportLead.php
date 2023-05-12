@@ -28,10 +28,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function collection()
     {
-        $resultQuery = Leads::where(function ($query) {
-            $query->whereIn('leads.city_id', ACL::getUserCities());
-            $query->orWhereNull('leads.city_id');
-        });
+        $resultQuery = Leads::whereIn('leads.city_id', ACL::getUserCities())->orWhereNull('leads.city_id');
 
         if($this->request->id != null || $this->request->id != ''){
             $resultQuery->where('leads.id', $this->request->id);
