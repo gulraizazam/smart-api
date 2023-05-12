@@ -405,12 +405,13 @@ function viewLead(url) {
 }
 
 function setViewData(response) {
+
     try {
         let lead = response.data.lead;
-        $("#full_name").text(lead?.patient?.name)
+        $("#full_name").text(lead?.name)
         let email = 'N/A';
-        if(lead?.patient?.email) {
-            email = lead?.patient?.email;
+        if(lead?.email) {
+            email = lead?.email;
         }
         $("#email").text(email);
         let phone = 'N/A';
@@ -418,7 +419,7 @@ function setViewData(response) {
             phone = lead.phone;
         }
         $("#phone").text(phone);
-        $("#dob").text(lead?.patient?.dob);
+        $("#dob").text(lead?.dob);
         let gender = 'N/A';
         if(lead?.gender) {
             gender = lead?.gender;
@@ -430,8 +431,8 @@ function setViewData(response) {
         }
         $("#sms_status").text(sms);
         let address = 'N/A';
-        if(lead?.patient?.address) {
-            address = lead?.patient?.address;
+        if(lead?.address) {
+            address = lead?.address;
         }
         $("#address").text(address);
         let city = 'N/A';
@@ -462,14 +463,15 @@ function setViewData(response) {
         }
         $("#lead_status").text(lead_status);
         let treatment = 'N/A';
-        if(lead?.service_id) {
-            treatment = lead?.service?.name;
+        if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
+            treatment = lead?.lead_service?.find(service => service.status == 1)?.service.name;
         }
         $("#treatment").text(treatment);
         let child = 'N/A';
-        if(lead?.child_service_id) {
-            child = lead?.child_service_id;
+        if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
+            child = lead?.lead_service?.find(service => service.status == 1)?.childservice?.name;
         }
+        $("#childservice").text(child);
         $.ajax({
             url: route('admin.dashboard.getchild'),
             type: 'GET',
@@ -620,8 +622,13 @@ function setEditData(response) {
         let lead = response.data.lead;
         let service_option_select = (services == "") ? "selected" : "";
         //let service_options = '<option value="" ' + service_option_select + '>Select Service</option>';
-        let service_options = '<option value="">Select Service</option>';
-        let child_service_options = '<option value="">Select Child Service</option>';
+        let service_list = '';
+        let child_service_list = '';
+        let service_edit = '';
+        let service_options = '';
+        let child_service_options = '';
+        /* let service_options = '<option value="">Select Service</option>';
+        let child_service_options = '<option value="">Select Child Service</option>'; */
         let city_options = '<option value="">Select a City</option>';
         let location_options = '<option value="">Select a Location</option>';
         let employee_options = '<option value="">Select a Referrer</option>';
@@ -629,12 +636,43 @@ function setEditData(response) {
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
         let lead_statuses_options = '<option value="">Select a Lead Status</option>';
         if(lead){
+            let parentServiceNames = [];
+            let parentServiceButton = [];
             lead.lead_service.forEach(function(service) {
-                services.push(service.service_id);
-                child_services.push(service.child_service);
+                /* services.push(service.service_id);
+                child_services.push(service.child_service_id); */
+                service_list += '<tr>'; // Start a new row
+
+                // Check if service name already exists in parentServiceNames array
+                if (!parentServiceNames.includes(service.service.name)) {
+                  parentServiceNames.push(service.service.name); // Add service name to the array
+                  service_list += '<td>' + service.service.name + '</td>';
+                } else {
+                    service_list += '<td></td>';
+                }
+
+                if (service.child_service_id == null) {
+                  service_list += '<td>N/A</td>';
+                } else {
+                  service_list += '<td>' + service.childservice?.name + '</td>';
+                }
+                // Check if service name already exists in parentServiceButton array
+                if (!parentServiceButton.includes(service.service.name)) {
+                    parentServiceButton.push(service.service.name); // Add service name to the array
+                    if (service.consultancy_id == '' || service.consultancy_id == null) {
+                        service_list += '<td><a href="javascript:void(0);" onclick="editService(' + lead.id + ', ' + service.service_id + ');" class="btn btn-primary btn-sm"><i class="la la-pencil"></i></span></a></td>';
+                    } else {
+                        service_list += '<td></td>'; // Empty column for services without an edit button
+                    }
+                } else {
+                    service_list += '<td></td>';
+                }
+                service_list += '</tr>'; // End the row
             });
+
         }
-        if (Services) {
+
+        /* if (Services) {
             Object.entries(Services).forEach(function(service) {
                 if(jQuery.inArray(Number(service[0]), services) != -1){
                     service_options += '<option value="' + service[0] + '" selected>' + service[1] + '</option>';
@@ -647,7 +685,7 @@ function setEditData(response) {
             Object.entries(Childservices).forEach(function(childservice) {
                 child_service_options += '<option value="' + childservice[0] + '" selected>' + childservice[1] + '</option>';
             });
-        }
+        } */
         if (cities) {
             Object.entries(cities).forEach(function(city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
@@ -680,6 +718,8 @@ function setEditData(response) {
         }
         $("#edit_service_id").html(service_options);
         $("#edit_child_service_id").html(child_service_options);
+        $("#service_list_table").html(service_list);
+        $("#service_edit").html(service_edit);
         $("#edit_city_id").html(city_options);
         $("#edit_location_id").html(location_options);
         $("#edit_referred_by_id").html(employee_options);
@@ -712,6 +752,62 @@ function setEditData(response) {
     } catch (error) {
         showException(error);
     }
+}
+function editService(id, service_id){
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.leads.edit.service', {id: id, service_id: service_id}),
+        type: "GET",
+        cache: false,
+        success: function(response) {
+            setEditService(response.data, service_id);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
+function setEditService(data, service_id){
+    let Services = data.Services;
+    let Lead_service = data.lead_service;
+    let service_options = '';
+    let child_service_options = '';
+    let serviceIDs = [];
+    let childServiceIDs = [];
+    let save_service = '';
+
+    if (Lead_service) {
+        Lead_service.forEach((service) => {
+            console.log('yaha', service, childServiceIDs.length);
+            const serviceID = service.service.id;
+            if (!serviceIDs.includes(serviceID)) {
+                serviceIDs.push(serviceID);
+                childServiceIDs.push(service.childservice?.id)
+            }
+
+            if (service.childservice != null) {
+                child_service_options += `<option value="${service.childservice.id}" selected>${service.childservice.name}</option>`;
+            }
+        });
+    }
+
+    if (Services) {
+        Object.entries(Services).forEach(function(service) {
+            if(jQuery.inArray(Number(service[0]), serviceIDs) != -1){
+                service_options += '<option value="' + service[0] + '" selected>' + service[1] + '</option>';
+            } else {
+                service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            }
+        });
+    }
+
+    $("#edit_service_id").html(service_options);
+    $("#edit_child_service_id").html(child_service_options);
+    $("#edit_old_service").val(service_id);
+
+
 }
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {

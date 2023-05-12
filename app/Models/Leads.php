@@ -104,7 +104,6 @@ class Leads extends BaseModal
      * @return \Illuminate\Database\Eloquent\Builder|Model|object|null
      */
     static public function getData($id) {
-
         return self::with('lead_service')->where([
             ['id','=',$id],
             ['account_id','=',Auth::user()->account_id]
@@ -222,7 +221,7 @@ class Leads extends BaseModal
      *
      * @return (mixed)
      */
-    static public function createRecord($data, $status)
+    static public function createRecord($data, $status = null)
     {
 
         if ($status == "Appointment") {
@@ -234,12 +233,14 @@ class Leads extends BaseModal
                 'created_at' => Carbon::now()->timestamp
             ), $data);
             $final_data = $record;
+            $data['lead_id'] = $final_data->id;
+            $service = LeadsServices::create($data);
         } else {
             if (isset($data['city_id']) && $data['city_id']) {
                 // Set Region ID
                 $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
             }
-            $checkLeadExistance=Leads::where(array(
+            $checkLeadExistance = Leads::where(array(
                 'phone' => $data['phone'],
                 /* Patient Phone and Treatment are unique to create a service */
                 //'service_id' => $data['service_id'],
@@ -252,6 +253,11 @@ class Leads extends BaseModal
                 $checkLeadExistance->created_at = Carbon::now()->timestamp;
                 $checkLeadExistance->update();
                 $record = $checkLeadExistance;
+                $data['lead_id'] = $record->id;
+               /*  $service = LeadsServices::updateOrCreate([
+                    'lead_id' => $data['lead_id'],
+                    'service_id' => $data['service_id'],
+                ], $data); */
             }
             $final_data = $data;
         }
