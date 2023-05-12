@@ -22,7 +22,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
 {
     private $limit = 1000;
     private $offset = 0;
-    
+
     public function __construct($limit = 1000, $offset = 0, $request)
     {
         $this->limit = $limit;
@@ -40,7 +40,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_date_from
             );
 
-            
+
         }
 
         if ($this->request->filter_date_to) {
@@ -50,7 +50,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_date_to
             );
 
-            
+
         }
         if ($this->request->appointmenttype) {
             $where[] = array(
@@ -59,7 +59,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->appointmenttype
             );
 
-            
+
         }
         if ($this->request->filter_doctor_id) {
             $where[] = array(
@@ -74,7 +74,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                     'base_appointment_status_id' => $this->request->filter_status_id
                 ]
             ];
-           
+
         }
         if ($this->request->filter_created_by_id) {
             $where[] = array(
@@ -169,16 +169,16 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             );
         }
         $resultQuery = Appointments::join('users', function ($join) {
-                    $join->on('users.id', '=', 'appointments.patient_id')
+                $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->where(function ($query) {
-            $query->whereIn('appointments.city_id', ACL::getUserCities());
-            $query->whereIn('appointments.location_id', ACL::getUserCentres());
-           
+        $query->whereIn('appointments.city_id', ACL::getUserCities());
+        $query->whereIn('appointments.location_id', ACL::getUserCentres());
+
         });
-       
+
         $results = $resultQuery->where($where)->get();
-       
+
         return $results;
      }
 

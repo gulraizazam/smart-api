@@ -363,6 +363,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::post('leads/junk_datatable', [LeadsController::class, 'junkDatatable'])->name('leads.junk_datatable');
 
+    Route::get('leads/edit/service/{id}/{service_id}', [LeadsController::class, 'editService'])->name('leads.edit.service');
     Route::get('leads/showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('leads.showleadstatus');
     Route::put('leads/storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('leads.storeleadstatus');
     Route::get('leads/detail/{id}', [LeadsController::class, 'detail'])->name('leads.detail');
