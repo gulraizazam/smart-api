@@ -912,64 +912,6 @@ class LeadsController extends Controller
             'lead_status_id' => $data['lead_status_id'],
             'referred_by' => $data['referred_by'],
         ]);
-        /* foreach($request->service_id as $service){
-            $lead_check = Leads::with(['lead_service' => function($q) use($service){
-                $q->where(['service_id' => $service]);
-            }])
-            ->where(['id' => $id, 'account_id' => Auth::User()->account_id])
-            ->first();
-            //dd($lead_check->lead_service->count(), $service);
-            if($lead_check->lead_service->count()){
-                foreach($request->child_service_id as $child_service){
-                    //dd($lead->lead_service, $child_service);
-                    $child_service_check = $lead_check->lead_service->where(['service_id' => $service])->whereIn('child_service_id', [$child_service]);
-                    //dd($lead_check->lead_service->toArray(), $child_service_check->count() == 0, $child_service, $child_service_check);
-                    //dd($child_service_check->count());
-                    if($child_service_check->count() == 0){
-                        $data['updated_by'] = Auth::User()->id;
-                        //$lead = Leads::where(['id' => $id])->update($data);
-
-                        $lead_services = LeadsServices::updateOrCreate([
-                            'lead_id' => $id,
-                            'service_id' => $service,
-                            'child_service_id' => $child_service,
-                        ],[
-                            'lead_id' => $id,
-                            'service_id' => $service,
-                            'child_service_id' => $child_service,
-                            'status' => 1
-                        ]);
-                        LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $id])->update([
-                            'status' => 0
-                        ]);
-                    }
-                }
-            } else {dd(('ya'));
-                $data['updated_by'] = Auth::User()->id;
-                //$lead = Leads::updateRecord($id, $data);
-                $lead = Leads::where(['id' => $id])->update([
-                    'name' => $data['name'],
-                    'gender' => $data['gender'],
-                    'city_id' => $data['city_id'],
-                    'location_id' => $data['location_id'],
-                    'lead_source_id' => $data['lead_source_id'],
-                    'lead_status_id' => $data['lead_status_id'],
-                    'referred_by' => $data['referred_by'],
-                ]);
-                foreach($request->child_service_id as $child_service){
-                    $lead_services = LeadsServices::create([
-                        'lead_id' => $id,
-                        'service_id' => $service,
-                        'child_service_id' => $child_service,
-                        'status' => 1
-                    ]);
-                    LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $id])->update([
-                        'status' => 0
-                    ]);
-                }
-
-            }
-        } */
         return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
 
