@@ -19,8 +19,10 @@ class CreateLeadsServicesTable extends Migration
             $table->foreign('lead_id')->references('id')->on('leads');
             $table->unsignedInteger('service_id');
             $table->foreign('service_id')->references('id')->on('services');
-            $table->unsignedInteger('child_service_id');
+            $table->unsignedInteger('child_service_id')->nullable();
             $table->foreign('child_service_id')->references('id')->on('services');
+            $table->unsignedInteger('consultancy_id')->nullable();
+            $table->foreign('consultancy_id')->references('id')->on('appointments');
             $table->integer('status')->default(0);
             $table->timestamps();
         });
