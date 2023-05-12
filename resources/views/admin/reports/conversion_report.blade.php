@@ -71,34 +71,107 @@
                     </table>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">Highest Conversion Value</td>
+                                <td class="bg-light" style="text-align:right;">PKR:{{$maxConversion }}</td>
+                            </tr>
+                           
+                            
+                        </thead>
+                    </table>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <table class="table border">
+                        <thead>
+                             <tr class="">
+                                <td class="border-top bg-light" >Lowest Conversion Value</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                PKR:{{ number_format($minConversion,2) }}
+                                </td>
+                            </tr>
+                            
+                        </thead>
+                    </table>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">Average Conversion Value</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{ number_format($average_client_coversion,2) }}</td>
+                            </tr>
+                            
+                        </thead>
+                    </table>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">Arrival to Conversion Ratio</td>
+                                <td class="bg-light" style="text-align:right;">{{ number_format($arrival_to_conversion_ratio,2) }} %</td>
+                            </tr>
+                            
+                        </thead>
+                    </table>
+                </div>
+            </div>
+            <div class="row">
+                @foreach($CategoryConversionData as $key => $conversion)
+               
+                <div class="col-md-4 mb-3">
+                    <table class="table border">
+                        <thead>
+                            <tr class="">
+                                <td class="bg-light">{{$conversion['service']}}</td>
+                                <td class="bg-light" style="text-align:right;"></td>
+                            </tr>
+                            <tr class="">
+                                <td class="bg-light" style="text-align:right;">Total Conversion Value</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{$conversion['sum']}}</td>
+                            </tr>
+                            <tr class="">
+                                <td class="bg-light" style="text-align:right;">Average Conversion Value</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{number_format($conversion['avg'],2)}}</td>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                @endforeach
+            </div>
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="conversion_table">
                     <thead>
-                        <th>Patient ID</th>
-                        <th>Doctor</th>
-                        <th>Patient</th>
-                        <th>Service</th>
-                        <th>Conversion Spend</th>
-                        <th>Conversion Date</th>
-                        <th>Location</th>
+                    <th>Patient ID</th>
+                    <th>Doctor</th>
+                    <th>Patient</th>
+                    <th>Service</th>
+                    <th>Conversion Spend</th>
+                    <th>Conversion Date</th>
+                    <th>Location</th>
+                    <th>Client Value</th>
                     </thead>
                     <tbody>
                     @php
                         $total = 0;
                         $count = 0;
                     @endphp
-                    @if(count($report_data) > 0)
+                    @if(count($report_data))
                         @foreach($report_data as $appointment)
-                            @if($appointment['converted'] != '')
+                            @if($appointment['converted'] != '' && $appointment['conversion_spend'] > 0)
                                 <tr>
-                                    
                                     <td>{{ $appointment['patient_id'] }}</td>
                                     <td>{{$appointment['doctor']}}</td>
                                     <td>{{$appointment['client']}}</td>
                                     <td>{{$appointment['service']}}</td>
-                                    <td style="text-align: right">{{$appointment['conversion_spend']}}</td>
-                                    <td>{{ \Carbon\Carbon::parse($appointment['conversion_date'])->format('F j,Y')}}</td>
+                                    <td style="text-align: center">PKR: {{$appointment['conversion_spend']}}</td>
+                                    <td>{{ \Carbon\Carbon::parse($appointment['conversion_date'])}}</td>
                                     <td>{{$appointment['centre']}}</td>
+                                    <td>PKR: {{$conversionsByPatient[$appointment['patient_id']]}}</td>
                                 </tr>
                                 @php
                                     $total += $appointment['conversion_spend']?$appointment['conversion_spend']:0 ;
@@ -115,6 +188,7 @@
                             <td colspan="12" align="center"></td>
                             <td colspan="12" align="center"></td>
                             <td colspan="12" align="center"></td>
+                            <td colspan="12" align="center"></td>
                         </tr>
                     @endif
                     </tbody>
@@ -123,27 +197,21 @@
                     <table class="table border">
                         <thead>
                             <tr class="">
-                                <td class="bg-light">Total</td>
-                                <td class="bg-light" style="text-align:right;">{{ number_format($total,2) }}</td>
+                                <td class="bg-light">Total Conversions Value</td>
+                                <td class="bg-light" style="text-align:right;"> PKR: {{ number_format($total,2) }}</td>
                             </tr>
-                                <tr class="">
-                                    <td class="border-top bg-light" >Converted Count	</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                    {{ $count }}
-                                    </td>
-                                </tr>
-                                <tr class="">
-                                    <td class="border-top bg-light" >Converted Ratio	</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                    {{ $count > 0 ? number_format($count / count($report_data) * 100, 2) : 0}} %
-                                    </td>
-                                </tr>
-                                <tr class="">
-                                    <td class="border-top bg-light" >Conversion Average</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                    {{ $total > 0 ? number_format($total / $count, 2) : 0}}
-                                    </td>
-                                </tr>
+                            <tr class="">
+                                <td class="border-top bg-light" >Total Conversions</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                {{ $count }}
+                                </td>
+                            </tr>
+                            <tr class="">
+                                <td class="border-top bg-light" >Average client value </td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                PKR: {{  number_format($avg_cxlient_valu, 2) }}
+                                </td>
+                            </tr>
                         </thead>
                     </table>
                 </div>
