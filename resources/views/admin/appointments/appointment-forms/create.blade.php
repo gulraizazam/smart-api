@@ -31,10 +31,6 @@
             <input type="hidden" id="consultancy_start" name="start">
             <input type="hidden" id="consultancy_resource_id" name="resource_id">
             <input type="hidden" id="consultancy_appointment_type" name="appointment_type" value="consulting">
-            {{-- <input type="hidden" id="consultancy_cnic" name="cnic">
-            <input type="hidden" id="consultancy_email" name="email">
-            <input type="hidden" id="consultancy_dob" name="dob">
-            <input type="hidden" id="consultancy_address" name="address"> --}}
             <input type="hidden" id="consultancy_town_id" name="town_id">
 
 
@@ -63,16 +59,6 @@
                                 <ul class="suggestion-list"></ul>
                             </div>
                         </div>
-                        <!-- <div style="display:none;">
-                        <input type="hidden" onchange="getPatientDetail($(this))"  name="patient_id" class="filter-field search_field" id="create_patient_search">
-                        </div>
-
-                        <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <select id="patient_search_id_selector" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_search_id_selector">
-                            </select>
-                        </div> -->
-
                         <div class="fv-row col-md-12 new_patient_text mt-10" style="display: none;">
                             <h3 style="color: red; text-align: center;">You are going to create new patient</h3>
                         </div>

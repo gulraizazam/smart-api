@@ -621,14 +621,11 @@ function setEditData(response) {
         let lead_statuses = response.data.lead_statuses;
         let lead = response.data.lead;
         let service_option_select = (services == "") ? "selected" : "";
-        //let service_options = '<option value="" ' + service_option_select + '>Select Service</option>';
         let service_list = '';
         let child_service_list = '';
         let service_edit = '';
         let service_options = '';
         let child_service_options = '';
-        /* let service_options = '<option value="">Select Service</option>';
-        let child_service_options = '<option value="">Select Child Service</option>'; */
         let city_options = '<option value="">Select a City</option>';
         let location_options = '<option value="">Select a Location</option>';
         let employee_options = '<option value="">Select a Referrer</option>';
@@ -639,10 +636,7 @@ function setEditData(response) {
             let parentServiceNames = [];
             let parentServiceButton = [];
             lead.lead_service.forEach(function(service) {
-                /* services.push(service.service_id);
-                child_services.push(service.child_service_id); */
                 service_list += '<tr>'; // Start a new row
-
                 // Check if service name already exists in parentServiceNames array
                 if (!parentServiceNames.includes(service.service.name)) {
                   parentServiceNames.push(service.service.name); // Add service name to the array
@@ -671,21 +665,6 @@ function setEditData(response) {
             });
 
         }
-
-        /* if (Services) {
-            Object.entries(Services).forEach(function(service) {
-                if(jQuery.inArray(Number(service[0]), services) != -1){
-                    service_options += '<option value="' + service[0] + '" selected>' + service[1] + '</option>';
-                } else {
-                    service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
-                }
-            });
-        }
-        if (Childservices) {
-            Object.entries(Childservices).forEach(function(childservice) {
-                child_service_options += '<option value="' + childservice[0] + '" selected>' + childservice[1] + '</option>';
-            });
-        } */
         if (cities) {
             Object.entries(cities).forEach(function(city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
@@ -726,7 +705,6 @@ function setEditData(response) {
         $("#edit_gender_id").html(gender_options);
         $("#edit_lead_source_id").html(lead_sources_options);
         $("#edit_lead_status_id").html(lead_statuses_options);
-        //$("#edit_child_service_id").val(lead.child_service_id);
         $("#edit_city_id").val(lead.city_id);
         $("#edit_location_id").val(lead.location_id);
         if (lead?.referred_by && lead?.referred_by != 0) {
@@ -958,9 +936,6 @@ function newLead() {
             $("#add_phone").attr("readonly",false);
             $("#add_full_name").attr("readonly",false);
             $("#add_gender_id").attr("readonly",false);
-           /* $("#modal_add_leads_form").find('input').val('');
-            $("#modal_edit_leads_form").find('input').val('');
-            $(".select2").val(null).trigger("change");*/
         } else {
             $('.new_lead').val('0');
             $('.msg_new_lead').hide();
