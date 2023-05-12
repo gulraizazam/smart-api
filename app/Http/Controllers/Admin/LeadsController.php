@@ -127,113 +127,67 @@ class LeadsController extends Controller
                 }
             }
             if (hasFilter($filters, 'lead_id')) {
-                $where[] = array(
-                    'id',
-                    '=',
-                    $filters['lead_id']
-                    //GeneralFunctions::patientSearch($filters['patient_id'])
-                );
+                $where[] = array('id', '=', $filters['lead_id']);
                 Filters::put(Auth::User()->id, $filename, 'lead_id', $filters['lead_id']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'lead_id');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'lead_id')) {
-                        $where[] = array(
-                            'id',
-                            '=',
-                            Filters::get(Auth::User()->id, $filename, 'lead_id')
-                        );
+                        $where[] = array('id', '=', Filters::get(Auth::User()->id, $filename, 'lead_id'));
                     }
                 }
             }
             if (hasFilter($filters, 'name')) {
-                $where[] = array(
-                    'name',
-                    'like',
-                    '%' . $filters['name'] . '%'
-                );
-
+                $where[] = array('name', 'like', '%' . $filters['name'] . '%');
                 Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'name');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'name')) {
-                        $where[] = array(
-                            'name',
-                            'like',
-                            '%' . Filters::get(Auth::User()->id, $filename, 'name') . '%'
-                        );
+                        $where[] = array('name', 'like', '%' . Filters::get(Auth::User()->id, $filename, 'name') . '%');
                     }
                 }
             }
             if (hasFilter($filters, 'phone')) {
-                $where[] = array(
-                    'phone',
-                    'like',
-                    '%' . GeneralFunctions::cleanNumber($filters['phone']) . '%'
-                );
-
+                $where[] = array('phone', 'like', '%' . GeneralFunctions::cleanNumber($filters['phone']) . '%');
                 Filters::put(Auth::User()->id, $filename, 'phone', GeneralFunctions::cleanNumber($filters['phone']));
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'phone');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'phone')) {
-                        $where[] = array(
-                            'phone',
-                            'like',
-                            '%' . GeneralFunctions::cleanNumber(Filters::get(Auth::User()->id, 'leads', 'phone')) . '%'
-                        );
+                        $where[] = array('phone', 'like', '%' . GeneralFunctions::cleanNumber(Filters::get(Auth::User()->id, 'leads', 'phone')) . '%');
                     }
                 }
             }
             if (hasFilter($filters, 'city_id')) {
-                $where[] = array(
-                    'city_id',
-                    '=',
-                    $filters['city_id']
-                );
+                $where[] = array('city_id', '=', $filters['city_id']);
                 Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'city_id');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'city_id')) {
-                        $where[] = array(
-                            'city_id',
-                            '=',
-                            Filters::get(Auth::User()->id, $filename, 'city_id')
-                        );
+                        $where[] = array('city_id', '=',Filters::get(Auth::User()->id, $filename, 'city_id'));
                     }
                 }
             }
             if (hasFilter($filters, 'location_id')) {
-                $where[] = array(
-                    'leads.location_id',
-                    '=',
-                    $filters['location_id']
-                );
+                $where[] = array('leads.location_id', '=', $filters['location_id']);
                 Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'location_id');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'location_id')) {
-                        $where[] = array(
-                            'leads.location_id',
-                            '=',
-                            Filters::get(Auth::User()->id, $filename, 'location_id')
-                        );
+                        $where[] = array('leads.location_id', '=', Filters::get(Auth::User()->id, $filename, 'location_id'));
                     }
                 }
             }
             if (hasFilter($filters, 'gender_id')) {
-                $where[] = array(
-                    'gender',
-                    '=',
-                    $filters['gender_id']
+                $where[] = array('gender', '=', $filters['gender_id']
                 );
                 Filters::put(Auth::User()->id, $filename, 'gender_id', $filters['gender_id']);
             } else {
@@ -241,137 +195,79 @@ class LeadsController extends Controller
                     Filters::forget(Auth::User()->id, $filename, 'gender_id');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'gender_id')) {
-                        $where[] = array(
-                            'gender',
-                            '=',
-                            Filters::get(Auth::User()->id, $filename, 'gender_id')
-                        );
+                        $where[] = array('gender', '=', Filters::get(Auth::User()->id, $filename, 'gender_id'));
                     }
                 }
             }
             if (hasFilter($filters, 'region_id')) {
-                $where[] = array(
-                    'region_id',
-                    '=',
-                    $filters['region_id']
-                );
-
+                $where[] = array('region_id', '=', $filters['region_id']);
                 Filters::put(Auth::User()->id, $filename, 'region_id', $filters['region_id']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'region_id');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'region_id')) {
-                        $where[] = array(
-                            'region_id',
-                            '=',
-                            Filters::get(Auth::User()->id, $filename, 'region_id')
-                        );
+                        $where[] = array('region_id', '=', Filters::get(Auth::User()->id, $filename, 'region_id'));
                     }
                 }
             }
             if (hasFilter($filters, 'lead_status_id')) {
-                $where[] = array(
-                    'lead_status_id',
-                    '=',
-                    $filters['lead_status_id']
-                );
-
+                $where[] = array('lead_status_id', '=', $filters['lead_status_id']);
                 Filters::put(Auth::User()->id, $filename, 'lead_status_id', $filters['lead_status_id']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'lead_status_id');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'lead_status_id')) {
-                        $where[] = array(
-                            'lead_status_id',
-                            '=',
-                            Filters::get(Auth::User()->id, $filename, 'lead_status_id')
-                        );
+                        $where[] = array('lead_status_id', '=', Filters::get(Auth::User()->id, $filename, 'lead_status_id'));
                     }
                 }
             }
             if (hasFilter($filters, 'service_id')) {
-                $where_service[] = array(
-                    'service_id',
-                    '=',
-                    $filters['service_id']
-                );
-
+                $where_service[] = array('service_id', '=', $filters['service_id']);
                 Filters::put(Auth::User()->id, $filename, 'service_id', $filters['service_id']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'service_id');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'service_id')) {
-                        $where_service[] = array(
-                            'service_id',
-                            '=',
-                            Filters::get(Auth::User()->id, $filename, 'service_id')
-                        );
+                        $where_service[] = array('service_id', '=', Filters::get(Auth::User()->id, $filename, 'service_id'));
                     }
                 }
             }
             if (hasFilter($filters, 'created_by')) {
-                $where[] = array(
-                    'leads.created_by',
-                    '=',
-                    $filters['created_by']
-                );
-
+                $where[] = array('leads.created_by', '=', $filters['created_by']);
                 Filters::put(Auth::User()->id, $filename, 'created_by', $filters['created_by']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'created_by');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'created_by')) {
-                        $where[] = array(
-                            'leads.created_by',
-                            '=',
-                            Filters::get(Auth::User()->id, $filename, 'created_by')
-                        );
+                        $where[] = array('leads.created_by', '=', Filters::get(Auth::User()->id, $filename, 'created_by'));
                     }
                 }
             }
             if (hasFilter($filters, 'date_from')) {
-                $where[] = array(
-                    'leads.created_at',
-                    '>=',
-                    $filters['date_from'] . ' 00:00:00'
-                );
-
+                $where[] = array('leads.created_at', '>=', $filters['date_from'] . '00:00:00');
                 Filters::put(Auth::User()->id, $filename, 'date_from', $filters['date_from']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'date_from');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'date_from')) {
-                        $where[] = array(
-                            'leads.created_at',
-                            '>=',
-                            Filters::get(Auth::User()->id, $filename, 'date_from') . ' 00:00:00'
-                        );
+                        $where[] = array('leads.created_at', '>=', Filters::get(Auth::User()->id, $filename, 'date_from') . '00:00:00');
                     }
                 }
             }
             if (hasFilter($filters, 'date_to')) {
-                $where[] = array(
-                    'leads.created_at',
-                    '<=',
-                    $filters['date_to'] . ' 23:59:59'
-                );
-
+                $where[] = array('leads.created_at', '<=', $filters['date_to'] . '23:59:59');
                 Filters::put(Auth::User()->id, $filename, 'date_to', $filters['date_to']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'date_to');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'date_to')) {
-                        $where[] = array(
-                            'leads.created_at',
-                            '<=',
-                            Filters::get(Auth::User()->id, $filename, 'date_to') . ' 23:59:59'
-                        );
+                        $where[] = array('leads.created_at', '<=', Filters::get(Auth::User()->id, $filename, 'date_to') . '23:59:59');
                     }
                 }
             }
@@ -380,11 +276,7 @@ class LeadsController extends Controller
                 'account_id' => Auth::User()->account_id,
                 'is_junk' => 1,
             ))->first();
-            $countQuery = Leads::with('lead_service')->where(function ($query) {
-                    $query->whereIn('leads.city_id', ACL::getUserCities());
-                    $query->orWhereNull('leads.city_id');
-                });
-                //dd($where);
+            $countQuery = Leads::with('lead_service')->whereIn('leads.city_id', ACL::getUserCities())->orWhereNull('leads.city_id');
             if (count($where)) {
                 $countQuery->where($where);
             }
@@ -466,7 +358,6 @@ class LeadsController extends Controller
                     $child_services = implode(",", $child_service);
                     $service_actives = implode(",", $service_active);
 
-                    //dd($services);
                     //check lead s lead status has parent or not if yes than get parent data and if no than get simple that row data
                     if (array_key_exists($lead->lead_status_id, $lead_status)) {
                         if ($lead_status[$lead->lead_status_id]->parent_id == 0) {
@@ -478,7 +369,6 @@ class LeadsController extends Controller
                     $records["data"][$index] = array(
                         'id' => $lead->id,
                         'lead_id' => $lead->lead_id,
-                        //'PatientId' => GeneralFunctions::patientSearchStringAdd($lead->PatientId),
                         'name' => $lead->name,
                         'gender'=>$lead->gender==1 ? 'Male' : 'Female',
                         'active' => $lead->active,
@@ -562,9 +452,7 @@ class LeadsController extends Controller
         }
 
         $records['active_filters'] = $filters;
-
         return $records;
-
     }
 
     /**
@@ -588,8 +476,6 @@ class LeadsController extends Controller
         // Create an empty Patient Object
         $lead = new \stdClass();
         $lead->id = null;
-        //$lead->patient = new \stdClass();
-        //$lead->id = null;
         $lead->name = null;
         $lead->email = null;
         $lead->phone = null;
@@ -652,8 +538,6 @@ class LeadsController extends Controller
         // Create an empty Patient Object
         $lead = new \stdClass();
         $lead->id = null;
-        //$lead->patient = new \stdClass();
-        //$lead->patient->id = null;
         $lead->name = null;
         $lead->email = null;
         $lead->phone = null;
@@ -741,7 +625,6 @@ class LeadsController extends Controller
                 ->first();
                 if($lead_check->lead_service->count()){
                     $child_service_check = $lead_check->lead_service->whereIn('child_service_id', $data['child_service_id']);
-                    //dd($child_service_check->count());
                     if($child_service_check->count()){
                         return ApiHelper::apiResponse($this->error, 'Service and child service already exist.');
                     } else {
@@ -773,19 +656,10 @@ class LeadsController extends Controller
                     ]);
                 }
             }
-            //Appointments::where('patient_id', '=', $lead->patient_id)->update(['name' => $data['name']]);
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
-    }
-    private function existingLead(Request $request) {
-        $phoneNo = $request->phone;
-        if ($phoneNo == '***********') {
-            $phoneNo = $request->old_phone;
-        }
-        $phone = GeneralFunctions::cleanNumber($phoneNo);
-        return Leads::where(['phone' => $phone, 'account_id' => Auth::User()->account_id])->first(['id', 'phone']);
     }
 
     /**
@@ -991,7 +865,6 @@ class LeadsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //dd($request->all(), $request->service_id, $request->get('service_id') == null);
         if (!Gate::allows('leads_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -1000,14 +873,8 @@ class LeadsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         $lead = Leads::findOrFail($id);
-        /* if($request->input('phone') == '***********'){
-            $request->merge(['phone' => $request->input('old_phone')]);
-        }
-        $request->request->remove('old_phone'); */
         // Get all request data into a var
         $data = $request->all();
-        //dd($data);
-        //$data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
         $data['updated_by'] = Auth::user()->id;
         $data['account_id'] = Auth::User()->account_id;
         /*
