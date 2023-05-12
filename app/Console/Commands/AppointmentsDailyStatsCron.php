@@ -3,11 +3,16 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Appointments;
 use App\Models\AppointmentTypes;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentsDailyStats;
+use App\Models\Locations;
 use Carbon\Carbon;
+use App\Models\Cities;
+use App\Models\Locations;
+use App\Helpers\ACL;
 
 class AppointmentsDailyStatsCron extends Command
 {
@@ -43,15 +48,20 @@ class AppointmentsDailyStatsCron extends Command
     public function handle()
     {
         $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first()->id;
-        $treatmentslug = AppointmentTypes::where(['slug' => 'treatment'])->first()->id;
-        $appointmentpending = AppointmentStatuses::where(['name' => 'Pending'])->first()->id;
-        $appointmentarrived = AppointmentStatuses::where(['name' => 'Arrived'])->first()->id;
-        $consultationscheduled = Appointments::where(['scheduled_date' => Carbon::now()->format("Y-m-d"), 'appointment_status_id' => $appointmentpending, 'appointment_type_id' => $consultancyslug])->count();
-        $consultationarrived = Appointments::where(['scheduled_date' => Carbon::now()->format("Y-m-d"), 'appointment_status_id' => $appointmentarrived, 'appointment_type_id' => $consultancyslug])->count();
-        // Treatment
-        $treatmentscheduled = Appointments::where(['scheduled_date' => Carbon::now()->format("Y-m-d"), 'appointment_status_id' => $appointmentpending, 'appointment_type_id' => $treatmentslug])->count();
-        $treatmentarrived = Appointments::where(['scheduled_date' => Carbon::now()->format("Y-m-d"), 'appointment_status_id' => $appointmentarrived, 'appointment_type_id' => $treatmentslug])->count();
-        $appointmentdailystats = AppointmentsDailyStats::create(['consultation_scheduled_count' => $consultationscheduled, 'consultation_arrived_count' => $consultationarrived, 'treatment_scheduled_count' => $treatmentscheduled, 'treatment_arrived_count' => $treatmentarrived, 'cron_current_date' => Carbon::now()]);
+        $locations = Locations::whereActive(1)->get()->pluck('id');
+        foreach($locations as $location){
+            $appointments = Appointments::where(['location_id' => $location, 'scheduled_date' => Carbon::now()->format("Y-m-d"), 'appointment_type_id' => $consultancyslug])->select('id', 'location_id', 'base_appointment_status_id', 'created_by')->get();
+            if(!$appointments->isEmpty()){
+                foreach ($appointments as $appointment){
+                    AppointmentsDailyStats::updateOrCreate(['appointment_id' => $appointment->id, 'created_at' => Carbon::now()->format("Y-m-d")],
+                    ['centre_id' => $appointment->location_id,
+                    'user_id' => $appointment->created_by,
+                    'appointment_id' => $appointment->id,
+                    'appointment_status_id' => $appointment->base_appointment_status_id,
+                    'cron_current_date' => Carbon::now()]);
+                }
+            }
+        }
         return 0;
     }
 }

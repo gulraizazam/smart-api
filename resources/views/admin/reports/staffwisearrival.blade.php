@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Daily Arrival Report'])
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Staff Wise Arrival Report'])
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
@@ -28,7 +28,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Daily Arrival Report</h3>
+                            <h3 class="card-label">Staff Wise Arrival Report</h3>
                         </div>
                     </div>
                     <div class="card-body">
@@ -59,18 +59,6 @@
                                                 <input type="text" id="appoint_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" >
                                             </div>
                                         </div>
-                                        <div class="form-group col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
-                                             id="services" >
-                                            {!! Form::label('service_id', 'Services', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="service_id" name="service_id">
-                                                <option value="">Select Service</option>
-                                                @foreach($services as $service)
-                                                    <option value="{{$service->id}}">
-                                                            <b>{!! $service['name'] !!}</b></option>
-                                                @endforeach
-                                            </select>
-                                            <span id="service_id_handler"></span>
-                                        </div>
                                         <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="users" >
                                            {!! Form::label('created_by', 'Created By', ['class' => 'control-label']) !!}
                                            <select class="form-control select2" id="created_by" name="created_by">
@@ -82,17 +70,15 @@
                                            </select>
                                            <span id="created_by_handler"></span>
                                        </div>
-
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
-                                            <a href="javascript:void(0);" onclick="loadConvertedReport($(this));" id="load_converted_report"
+                                            <a href="javascript:void(0);" onclick="loadStaffWiseArrivalReport($(this));" id="load_staff_wise_report"
                                                class="btn btn-success spinner-button">Load Report</a>
                                         </div>
                                         <div class="clear clearfix"></div>
                                         <div style="overflow: hidden; width: 100%;" id="converted_content"></div>
-                                        {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.converted_report_load'], 'id' => 'report-form']) !!}
+                                        {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.staff_wise_arrival_report'], 'id' => 'report-form']) !!}
                                         {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
-                                        {!! Form::hidden('service_id', null, ['id' => 'service_id-report']) !!}
                                         {!! Form::hidden('created_by', null, ['id' => 'created_by-report']) !!}
                                         {!! Form::close() !!}
                                     </div>
@@ -119,5 +105,4 @@
         <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
         <script src="{{asset('assets/js/dailyarrival.js')}}"></script>
     @endpush
-
 @endsection

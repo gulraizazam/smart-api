@@ -1755,12 +1755,12 @@ class AppointmentsController extends Controller
                  */
                 $patientData = $appointmentData;
                 $patient = Patients::where(['phone' => $appointmentData['phone']])->orderBy('phone', 'desc')->first();
-                $appointmentData['patient_id'] = $patient->id;
-                $appointmentData['user_type_id'] = 3;
                 if(!$patient){
+                    $appointmentData['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointmentData, 1);
                 } else {
-                    Patients::where(['phone' => $appointmentData['phone']])->orderBy('phone', 'desc')->update(['name' => $appointmentData['name']]);
+                    $appointmentData['patient_id'] = $patient->id;
+                    Patients::where(['id' => $patient->id])->update(['name' => $appointmentData['name']]);
                 }
                 LeadsServices::updateOrCreate([
                     'lead_id' => $lead->id,
@@ -1800,7 +1800,7 @@ class AppointmentsController extends Controller
             $find_cons = Appointments::latest()->first();
             //dd($appointmentData, $find_cons);
             if($find_cons){
-                $lead = Leads::where(['phone' => $phone])->update(['lead_status_id' => 4, 'location_id' => $find_cons->location_id]);
+                $lead = Leads::where(['phone' => $phone])->update(['name' => $patient->name,'lead_status_id' => 4, 'location_id' => $find_cons->location_id]);
                 $lead_services = LeadsServices::where([
                     'lead_id' => $appointmentData['lead_id'],
                     'service_id' => $find_cons->service_id,
@@ -4067,6 +4067,25 @@ class AppointmentsController extends Controller
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
             $data_package['package_id'] = $invoice_detail->package_id;
+            $data_package['package_id'] = $invoice_detail->package_id;
+            $packagebundle = PackageBundles::where([
+                'package_id' => $invoice_detail->package_id,
+                'is_allocate' => '1'
+            ])->pluck('id');
+            $GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
+            ->select('appointments.id','appointments.service_id','invoices.created_at')
+            ->where(['appointments.patient_id' => $appointmentinfo->patient_id ,'appointments.appointment_type_id' => 1 ])
+           ->latest('invoices.created_at')->first();
+            $GetInvoiceInfo = Invoices::where(['appointment_id' => $GetAppointment->id])->first();
+            $packageservicez = PackageService::with('service')
+            ->whereIn('package_bundle_id',$packagebundle)
+            ->where('created_at','>',Carbon::parse($GetInvoiceInfo->created_at))
+            ->get();
+            if(count($packageservicez)> 0){
+                $data_package['appointment_id'] = $GetAppointment->id;
+            }else{
+                $data_package['appointment_id'] = $request->appointment_id;
+            }
         } else {
             $data_package['cash_flow'] = 'in';
             $data_package['cash_amount'] = $request->cash;
@@ -4080,6 +4099,7 @@ class AppointmentsController extends Controller
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
         }
+
         $data_package['created_at'] = Filters::getCurrentTimeStamp();
         $data_package['updated_at'] =Filters::getCurrentTimeStamp();
         $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
