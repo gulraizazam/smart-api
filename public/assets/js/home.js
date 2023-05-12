@@ -595,9 +595,7 @@ function initCentreWiseArrival(period){
                     TABLE_HTML += "<div class='col-6'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td></tr></tbody></table></div></div>";
                 }
                 jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
-              }, 2000); 
-           
-           
+            }, 2000); 
         },
     });
 } 
@@ -608,7 +606,6 @@ function initUserWiseArrival(period){
    }else{
     dataID = 'All';
    }
-
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -623,9 +620,6 @@ function initUserWiseArrival(period){
         },
         success: function (response) {
             ConsultanciesByStatus(response);
-           
-           
-           
         },
     });
 } 
@@ -760,7 +754,7 @@ function ConsultanciesByStatus(bar)
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '35%',
+                columnWidth: '45%',
                 endingShape: 'rounded'
             },
         },
