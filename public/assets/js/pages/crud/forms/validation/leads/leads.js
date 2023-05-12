@@ -176,13 +176,13 @@ var EditValidation = function () {
             form,
             {
                 fields: {
-                    service_id: {
+                    /* service_id: {
                         validators: {
                             notEmpty: {
                                 message: 'The service field is required'
                             }
                         }
-                    },
+                    }, */
                     phone: {
                         validators: {
                             notEmpty: {
