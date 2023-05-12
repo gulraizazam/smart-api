@@ -79,7 +79,6 @@ class HomeController extends Controller
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
-
         return view('admin.home', $data);
     }
     public function getStats(Request $request){
