@@ -1604,7 +1604,6 @@ class AppointmentsController extends Controller
      */
     public function store(Request $request)
     {
-        //dd($request->all());
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -1682,11 +1681,6 @@ class AppointmentsController extends Controller
              * and assign this lead to current appointment.
              */
             if (!$request->get('lead_id')) {
-                /*
-                 * If Patient is from database
-                 * - if appointment already exists then do not update info
-                 * - if appointment already exists then update info
-                 */
                 $leadObj = $appointmentData;
                 // Convert Lead status to Converted
                 $DefaultConvertedLeadStatus = LeadStatuses::where(array(
@@ -2056,9 +2050,6 @@ class AppointmentsController extends Controller
                     'id' => $lead->id,
                     'name' => ($lead->lead_id) ? $lead->name : null,
                     'phone' => ($lead->lead_id) ? $lead->phone : null,
-                    /* 'dob' => ($lead->lead_id) ? $lead->dob : null,
-                    'address' => ($lead->lead_id) ? $lead->address : null,
-                    'cnic' => ($lead->lead_id) ? $lead->cnic : null, */
                     'referred_by' => ($lead->lead_id) ? $lead->referred_by : null,
                     'service_id' => $lead->service_id,
                 );
@@ -2067,9 +2058,6 @@ class AppointmentsController extends Controller
                     'id' => '',
                     'name' => '',
                     'phone' => '',
-                    /* 'dob' => '',
-                    'address' => '',
-                    'cnic' => '', */
                     'referred_by' => '',
                     'service_id' => '',
                 );
@@ -2077,12 +2065,8 @@ class AppointmentsController extends Controller
         } else {
             $lead = array(
                 'id' => '',
-                //'patient_id' => '',
                 'name' => '',
                 'phone' => '',
-                /* 'dob' => '',
-                'address' => '',
-                'cnic' => '', */
                 'referred_by' => '',
                 'service_id' => '',
             );
@@ -2256,7 +2240,6 @@ class AppointmentsController extends Controller
             'consultancy_type' => config('constants.consultancy_type_array'),
             'genders' => config('constants.gender_array')
         ]);
-        //return view('admin.appointments.consultancy.consultancy_edit', compact());
     }
     /**
      * Show the form for editing Appointment.
