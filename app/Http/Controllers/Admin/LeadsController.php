@@ -300,8 +300,6 @@ class LeadsController extends Controller
                 $resultQuery->whereHas('lead_service', function($query) use($where_service){
                     $query->where($where_service);
                 });
-            } else {
-                $resultQuery->with('lead_service');
             }
             if ($lead_type) {
                 $resultQuery->where('leads.lead_status_id', $junk_lead_statuses->id ?? 0);
@@ -322,7 +320,6 @@ class LeadsController extends Controller
                 ->orderBy($orderBy, $order)
                 ->get();
             }
-            //dd($Leads->toArray());
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $lead_status = LeadStatuses::getAllRecordsDictionary(Auth::User()->account_id);
@@ -343,9 +340,7 @@ class LeadsController extends Controller
                     $service = [];
                     $child_service = [];
                     $service_active = [];
-                    //dd($lead->toArray());
                     foreach($lead->lead_service as $data){
-                        //dd($data);
                         if(!in_array($data->service->name, $service)){
                             $service[] = $data->service->name;
                         }
@@ -480,10 +475,6 @@ class LeadsController extends Controller
         $lead->email = null;
         $lead->phone = null;
         $lead->gender = null;
-        //$lead->dob = null;
-        //$lead->address = null;
-        //$lead->cnic = null;
-        //$lead->referred_by = null;
         $employees = User::getAllActiveRecords(Auth::User()->account_id);
         if ($employees) {
             $employees = $employees->pluck('full_name', 'id');
@@ -542,10 +533,6 @@ class LeadsController extends Controller
         $lead->email = null;
         $lead->phone = null;
         $lead->gender = null;
-        //$lead->dob = null;
-        //$lead->address = null;
-        //$lead->cnic = null;
-        //$lead->referred_by = null;
 
         $employees = User::getAllActiveRecords(Auth::User()->account_id);
         if ($employees) {
@@ -672,12 +659,9 @@ class LeadsController extends Controller
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
-            /*'email' => 'sometimes|nullable|email',*/
             'phone' => 'required',
             'gender' => 'required|numeric',
             'city_id' => 'required|numeric',
-            /*'lead_source_id' => 'required|numeric',*/
-            /*'lead_status_id' => 'required|numeric',*/
         ]);
     }
 
@@ -781,7 +765,6 @@ class LeadsController extends Controller
             return abort(401);
         }
         $data = $request->all();
-        // Set Created by
         $data['created_by'] = Auth::user()->id;
         $lead = LeadComments::create($data);
         flash('Comment has been added successfully.')->success()->important();
@@ -816,7 +799,7 @@ class LeadsController extends Controller
         if (!Gate::allows('leads_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        $lead = Leads::getData($id);//dd($lead->lead_service);
+        $lead = Leads::getData($id);
         if ($lead == null) {
             return ApiHelper::apiResponse($this->success, 'Resource not found', false);
         }
