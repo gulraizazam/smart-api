@@ -30,6 +30,8 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Explode_Multi_select;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
+use App\Models\AppointmentsDailyStats;
+use App\Models\RoleHasUsers;
 use Illuminate\Support\Facades\DB;
 
 class FinanceReportController extends Controller
@@ -57,7 +59,7 @@ class FinanceReportController extends Controller
             return abort(401);
         }
         $allserviceslug = Services::where('slug', '=', 'all')->isActive()->first();
-        
+
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
         $parentGroups->build(0, Auth::User()->account_id);
@@ -1182,14 +1184,14 @@ class FinanceReportController extends Controller
     public function generalrevenuereportdetail(Request $request)
     {
         //$request->location_id_com
-        
+
         if(is_array($request->location_id_com) && count($request->location_id_com) > 1){
             $location[] = implode(',',$request->location_id_com);
-           
+
         }else{
             $location = $request->location_id_com;
         }
-        
+
         if (!Gate::allows('finance_general_revenue_reports_general_revenue__detail_report')) {
             return abort(401);
         }
@@ -1202,11 +1204,11 @@ class FinanceReportController extends Controller
             $end_date = null;
         }
         //$report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
-        
+
         if ($request->medium_type == 'web' &&  $location && count($location) > 0) {
 
             $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
-            
+
         } else if ($request->medium_type != 'web' && $location) {
 
             $location_id_com = Explode_Multi_select::explode($location);
@@ -1261,7 +1263,7 @@ class FinanceReportController extends Controller
                 return $pdf->stream('General Revenue Report', 'landscape');
                 break;
             case 'excel':
-               
+
                 self::GeneralRevenueReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date);
                 break;
             default:
@@ -1410,7 +1412,7 @@ class FinanceReportController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function generalrevenuereportsummary(Request $request)
-    { 
+    {
         if (!Gate::allows('finance_general_revenue_reports_general_revenue__summary_report')) {
             return abort(401);
         }
@@ -1423,7 +1425,7 @@ class FinanceReportController extends Controller
             $end_date = null;
         }
         $report_data = Finanaces::generalrevenuereportsummary($request->all(), Auth::User()->account_id);
-       
+
         $total_revenue_cash_in = 0;
         $total_revenue_card_in = 0;
         $total_revenue_bank_in = 0;
@@ -2342,7 +2344,7 @@ class FinanceReportController extends Controller
      */
     public function collectionbyservice(Request $request)
     {
-       
+
         if (!Gate::allows('finance_general_revenue_reports_collection_by_service')) {
             return abort(401);
         }
@@ -2357,7 +2359,7 @@ class FinanceReportController extends Controller
         }
 
         $reportData = \App\Reports\Invoices::collectionbyservice($request->all(), Auth::User()->account_id);
-        
+
         switch ($request->get('medium_type')) {
             case 'web':
                 return view('admin.reports.collectionbyservice.report', compact('reportData', 'start_date', 'end_date'));
@@ -2770,7 +2772,7 @@ class FinanceReportController extends Controller
         $services = Services::where(['parent_id' => 0])->whereNotIn('slug',['all'])->get();
         $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
         $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
-        return view('admin.reports.arrived',get_defined_vars()); 
+        return view('admin.reports.arrived',get_defined_vars());
     }
 
     public function DailyArrival()
@@ -2778,6 +2780,7 @@ class FinanceReportController extends Controller
         $services = Services::where(['parent_id'=>0])->whereNotIn('slug',['all'])->get();
         $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
         $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
+        $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
         return view('admin.reports.dailyarrival',get_defined_vars());
     }
 
@@ -2787,40 +2790,25 @@ class FinanceReportController extends Controller
         if ($request->location_id  && $request->location_id ) {
             $where[] = array(['appointments.location_id' => $request->location_id]);
         }
-
         if ($request->service_id && $request->service_id != '') {
             $where[] = array(['appointments.service_id' => $request->service_id]);
         }
-
-        if ($request->apt_type && $request->apt_type != '') {
-            $where[] = array(['appointments.appointment_type_id' => $request->apt_type]);
+        if ($request->created_by && $request->created_by != '') {
+            $where[] = array(['appointments.created_by' => $request->created_by]);
         }
-
         if ($request->date_from) {
             $where[] = array('appointments.scheduled_date', '>=', $request->date_from);
         }
-
         if ($request->date_to) {
             $where[] = array('appointments.scheduled_date', '<=', $request->date_to);
         }
-
         $records = array();
-        $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first();
-        $treatmentslug = AppointmentTypes::where(['slug' => 'treatment'])->first();
         $records["data"] = array();
         if (Gate::allows('appointments_consultancy')) {
             $resultQuery = Appointments::join('users', function ($query) {
                 $query->on('users.id', 'appointments.patient_id')
                     ->where(['users.user_type_id' => config('constants.patient_id')]);
-            })->where(['appointments.appointment_type_id' =>  $consultancyslug->id])
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        if (Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::join('users', function ($query) {
-                $query->on('users.id', 'appointments.patient_id')
-                    ->where(['users.user_type_id' => config('constants.patient_id')]);
-            })->where(['appointments.appointment_type_id' =>  $treatmentslug->id])
+            })->where(['appointments.appointment_type_id' =>  1])
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
@@ -2831,17 +2819,7 @@ class FinanceReportController extends Controller
             })->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (!Gate::allows('appointments_consultancy') && !Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::join('users', function ($query) {
-                $query->on('users.id', 'appointments.patient_id')
-                    ->where(['users.user_type_id' => config('constants.patient_id')]);
-            })->where([
-                ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-                ['appointments.appointment_type_id', '!=', $treatmentslug->id]
-            ])
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+
         if (count($where)) {
             $resultQuery->where($where);
         }
@@ -2850,5 +2828,72 @@ class FinanceReportController extends Controller
         ->get();
         $arrived = $resultQuery->where(['base_appointment_status_id' => 2])->count();
         return view('admin.reports.daily_arrived',get_defined_vars());
+    }
+    public function staffWiseArrival()
+    {
+        $locations = Locations::getActiveRecordsByCity('',ACL::getUserCentres(), Auth::User()->account_id);
+        $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+        return view('admin.reports.staffwisearrival',get_defined_vars());
+    }
+    public function staffWiseArrivalReport(Request $request)
+    {
+        $where = array();
+        if ($request->location_id  && $request->location_id ) {
+            $where[] = array(['centre_id' => $request->location_id]);
+            $where_walkin[] = array(['centre_id' => $request->location_id]);
+        }
+        if ($request->created_by && $request->created_by != '') {
+            $where[] = array(['user_id' => $request->created_by]);
+        }
+        if ($request->date_from) {
+            $where[] = array('cron_current_date', '>=', $request->date_from);
+        }
+        if ($request->date_to) {
+            $where[] = array('cron_current_date', '<=', $request->date_to);
+        }
+        $records = array();
+        $records["data"] = array();
+       
+        $fdm_users = RoleHasUsers::where('role_id',4)->pluck('user_id');
+        if (Gate::allows('appointments_consultancy')) {
+            $resultQuery = AppointmentsDailyStats::whereIn('centre_id', ACL::getUserCentres());
+        }
+        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
+            $resultQuery = AppointmentsDailyStats::whereIn('centre_id', ACL::getUserCentres());
+        }
+        if (count($where)) {
+            $resultQuery->where($where);
+        }
+        if(!$request->created_by){
+            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)->count();
+        }
+        if($request->location_id  && $request->location_id != ''  && !$request->created_by){
+                $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+                ->where('centre_id',$request->location_id)
+                ->count();
+        }
+        if($request->date_from && $request->date_to && !$request->created_by){
+            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+            ->whereDate('cron_current_date', '>=', $request->date_from)
+            ->whereDate('cron_current_date', '<=', $request->date_to)
+            ->count();
+        }
+        if($request->location_id  && $request->location_id != '' && $request->date_from && $request->date_to && !$request->created_by){
+            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+            ->where('centre_id',$request->location_id)
+            ->whereDate('cron_current_date', '>=', $request->date_from)
+            ->whereDate('cron_current_date', '<=', $request->date_to)
+            ->count();
+        }
+        $Appointments = $resultQuery->with(['user', 'appointment' => function($q){
+            $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+            ->orderBy("appointments.created_at", "DESC");
+        }])
+        ->get();
+        
+        $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
+        $user = User::where(['id' => $request->created_by])->first()->name ?? '';
+        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
+        return view('admin.reports.staff_wise_arrived',get_defined_vars());
     }
 }

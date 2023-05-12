@@ -718,7 +718,7 @@ class LeadsController extends Controller
             /*
              * Check if laad already exists or not
              */
-            $lead = $this->existingLead($request);
+            $lead = Leads::where(['phone' => $data['phone'], 'account_id' => Auth::User()->account_id])->first();;
             if ($request->new_lead == '1') {
                 $data['created_by'] = Auth::User()->id;
                 $data['updated_by'] = Auth::User()->id;
@@ -2573,6 +2573,9 @@ class LeadsController extends Controller
         }
         if($request->region_id != null || $request->region_id != ''){
             $resultQuery->where('leads.region_id', $request->region_id);
+        }
+        if($request->gender_id != null || $request->gender_id != ''){
+            $resultQuery->where('users.gender', $request->gender_id);
         }
         if($request->created_by != null || $request->created_by != ''){
             $resultQuery->where('leads.created_by', $request->created_by);

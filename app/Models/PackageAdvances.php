@@ -20,7 +20,7 @@
 		protected $table = 'package_advances';
 
 		protected static $_table = 'package_advances';
-
+		
 		/*
 		 * get the payment modes
 		 * */
@@ -78,12 +78,22 @@
 		 * */
 		static public function createRecord($data, $parent_data)
 		{
+			
 			$parent_id = $parent_data->id;
-
-			$record = self::create($data);
-
+			$record = new PackageAdvances();
+			$record->cash_flow = 'in';
+			$record->cash_amount = $data['cash_amount'];
+			$record->account_id = Auth::User()->account_id;
+			$record->patient_id = $data['patient_id'];
+			$record->payment_mode_id = $data['payment_mode_id'];
+			$record->created_by = Auth::User()->id;
+			$record->updated_by = Auth::User()->id;
+			$record->package_id = $data['package_id'];
+			$record->location_id = $data['location_id'];
+			$record->updated_at = Filters::getCurrentTimeStamp();
+			$record->appointment_id = $parent_data->appointment_id;
+			$record->save();
 			AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parent_id);
-
 			return $record;
 		}
 
@@ -114,11 +124,49 @@
 		 * */
 		static public function updateRecord($data, $parent_data)
 		{
-
+			$packagebundleIds = PackageBundles::where([
+				'package_id' => $data['package_id'],
+				'is_allocate' => '1'
+			])->pluck('id');
+			
+			$GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
+			->where(['appointments.patient_id' => $data['patient_id'] , 'appointments.appointment_type_id' => 1])
+			->select('appointments.id')
+			->latest('invoices.created_at')->first();
+			$GetInvoiceInfo = Invoices::where(['appointment_id' => $GetAppointment->id])->first();
+			$packageservicez = PackageService::with('service')->whereIn('package_bundle_id',$packagebundleIds)
+			->where('created_at','>',Carbon::parse($GetInvoiceInfo->created_at))
+			->get();
 			$id = $parent_data->id;
-
-			$record = self::create($data);
-
+			if(count($packageservicez)  > 0){
+				$record = new PackageAdvances();
+				$record->cash_flow = 'in';
+				$record->cash_amount = $data['cash_amount'];
+				$record->account_id = Auth::User()->account_id;
+				$record->patient_id = $data['patient_id'];
+				$record->payment_mode_id = $data['payment_mode_id'];
+				$record->created_by = Auth::User()->id;
+				$record->updated_by = Auth::User()->id;
+				$record->package_id = $data['package_id'];
+				$record->location_id = $data['location_id'];
+				$record->updated_at = Filters::getCurrentTimeStamp();
+				$record->appointment_id = $GetAppointment->id;
+				$record->save();
+			}else{
+				$record = new PackageAdvances();
+				$record->cash_flow = 'in';
+				$record->cash_amount = $data['cash_amount'];
+				$record->account_id = Auth::User()->account_id;
+				$record->patient_id = $data['patient_id'];
+				$record->payment_mode_id = $data['payment_mode_id'];
+				$record->created_by = Auth::User()->id;
+				$record->updated_by = Auth::User()->id;
+				$record->package_id = $data['package_id'];
+				$record->location_id = $data['location_id'];
+				$record->updated_at = Filters::getCurrentTimeStamp();
+				$record->appointment_id = $parent_data->appointment_id;
+				$record->save();
+			}
 			$old_data = '0';
 
 			AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
