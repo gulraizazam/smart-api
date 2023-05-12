@@ -98,6 +98,13 @@
         line-height: 18px;
         white-space: nowrap;
     }
+    .centre-name{
+        font-size: 14px;
+        color: #3598dc;
+    }
+    .table-cols{
+        font-size: 12px;
+    }
 </style>
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb')
@@ -760,22 +767,20 @@
                                     <ul class="nav nav-tabs d-flex align-items-center">
                                         <li style="border-bottom: none;">
                                             <div class="actions action-style p-3 mr-3">
-                                            @if(Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('Super-Admin'))
-                                            @php
-                                                    $centres_array =['All Centres','All South Region','All Central Region'];
+                                            @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('CSR')) 
+                                                @php
+                                                    $centres_array =['All South Region','All Central Region'];
                                                     $locations = \App\Helpers\ACL::getUserCentres();
                                                     $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->get();
-                                            @endphp
+                                                @endphp
                                                 <div class="btn-group">
-                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                    <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
                                                     href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                     data-close-others="true" aria-expanded="false"> All
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-                                                    <li>
-                                                    <a onclick="LoadBarChart('All','yesterday')">All</a>
-                                                    </li>
+                                                    
                                                         @foreach($centres as $centre)
                                                         <li>
                                                             <a 
@@ -786,14 +791,38 @@
                                                     </ul>
                                                 </div>
                                             </div>
+                                            @elseif(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
+                                                @php
+                                                    $all_csr = \App\Models\RoleHasUsers::where('role_id',2)->pluck('user_id');
+                                                    $csr_users = \App\Models\User::whereIn('id',$all_csr)->get();
+                                                @endphp
+                                                <div class="btn-group">
+                                                    <a data-id="All" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn" 
+                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                    data-close-others="true" aria-expanded="false"> Select User
+                                                        <i class="fa fa-angle-down"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu dropdown-menu-right">
+                                                        <li>
+                                                            <a data-id="All" onclick="LoadBarChartUserWise('All','yesterday')">All CSR</a>
+                                                        </li>
+                                                        @foreach($csr_users as $user)
+                                                        <li>
+                                                            <a 
+                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'yesterday')">{{$user->name}}</a>
+                                                        </li>
+                                                        @endforeach
+                                                        
+                                                    </ul>
+                                                </div>
                                             @else
                                             @php
-                                                    $centres_array =['All Centres','All South Region','All Central Region'];
+                                                    $centres_array =['All South Region','All Central Region'];
                                                     $locations = \App\Helpers\ACL::getUserCentres();
                                                     $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->first();
                                             @endphp
                                             <div class="btn-group">
-                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                    <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
                                                     href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                     data-close-others="true" aria-expanded="false"> {{$centres->name}}
                                                         <i class="fa fa-angle-down"></i>
@@ -803,7 +832,28 @@
                                             </div>
                                             @endif
                                         </li>
-                                        
+                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
+                                        <li>
+                                            <a href="#appointment_by_status_1" data-toggle="tab"
+                                            onclick="initUserWiseArrival('yesterday');">Yesterday</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_2" data-toggle="tab"
+                                            onclick="initUserWiseArrival('last7days');">Last 7 Days</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_2" data-toggle="tab"
+                                            onclick="initUserWiseArrival('week');">This Week</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_3" data-toggle="tab"
+                                            onclick="initUserWiseArrival('thismonth');">This Month</a>
+                                        </li>
+                                        <li>
+                                            <a href="#appointment_by_status_3" data-toggle="tab"
+                                            onclick="initUserWiseArrival('lastmonth');">Last Month</a>
+                                        </li>
+                                        @else
                                         <li>
                                             <a href="#appointment_by_status_1" data-toggle="tab"
                                             onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
@@ -824,13 +874,26 @@
                                             <a href="#appointment_by_status_3" data-toggle="tab"
                                             onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
                                         </li>
+                                        @endif
                                     </ul>
                                     <div class="d-none flex-column text-right">
                                         <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
                                         <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
                                     </div>
                                 </div>
-                                <div id="centre_wise_arrival"></div>
+                                <div class="row pt-7">
+                                     <div class="col-8">
+                                        <div id="centre_wise_arrival">
+                                        
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="row" id="centre_wise_arrival_02">
+                                            
+                                        </div>   
+                                    </div>
+                                    
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -846,6 +909,12 @@
     <script src="{{asset('assets/js/jsapi.js')}}"></script>
     <script src="{{asset('assets/js/pie.js')}}"></script>
     <script>
+        jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function(){
+                var dataID = jQuery(this).attr('data-id');
+                var dataText = jQuery(this).text();
+                jQuery('.btn.arrivalbtn').attr('data-id', dataID);
+                jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>')   
+            });
         $(document).ready(function(){
             period="today";
             $.ajax({
@@ -858,6 +927,34 @@
                     $("#activitydiv").html(response);
                 },
             });
+            
+            $.ajax({
+                    url: route('admin.dashboard.centre_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+
+                        console.log(response);
+                        var TABLE_HTML = "";
+                        var barLenght = response.data.bar;
+                        for(var i = 0; i < barLenght.length; i++){
+                            var walkin = "";
+                            if(response.data.walkin[i] === undefined) {
+                                walkin = "0";
+                            } else {
+                                walkin = response.data.walkin[i];
+                            }
+                            TABLE_HTML += "<div class='col-6'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td></tr></tbody></table></div></div>";
+                        }
+                        jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
+                        BarChart(response);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
         });
         var collection_by_center= false; 
         var revenue_by_center= false;
@@ -1073,22 +1170,7 @@
                     }
                 });
             }
-            if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !centre_wise_arrival){
-                centre_wise_arrival= true; 
-                $.ajax({
-                    url: route('admin.dashboard.centre_wise_arrival'),
-                    type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2'},
-                    cache: false,
-                    success: function (response) {
-                        BarChart(response);
-                        
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
-                });
-            }
+            
         });
         function TreatmentByStatus(pie,colors) {
             google.load('visualization', '1', {
@@ -1244,7 +1326,48 @@
             var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
             chart.render();
         }
-        
+        function BarChart(service) {
+            const primary = '#6993FF';
+            const success = '#1BC5BD';
+            const info = '#8950FC';
+            const warning = '#FFA800';
+            const danger = '#F64E60';
+            var options = {
+                series: [{
+                    name: 'Total Appointments',
+                    data: service.data.total
+                }, {
+                    name: 'Arrived',
+                    data: service.data.arrived
+                },{
+                    name: 'Walk-in',
+                    data: service.data.walkin
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 350,
+                   
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '35%',
+                        endingShape: 'rounded'
+                    },
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: service.data.bar,
+                },
+                colors: [primary, success, warning]
+            };
+            var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
+            chart.render();
+        }
     </script>
 @endpush
 @endsection
