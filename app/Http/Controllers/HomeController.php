@@ -9,6 +9,7 @@ use App\Helpers\GeneralFunctions;
 use App\Models\Activity;
 use App\Models\AppointmentLog;
 use App\Models\Appointments;
+use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentStatuses;
 use App\Models\AuditTrailActions;
 use App\Models\AuditTrailChanges;
@@ -20,6 +21,7 @@ use App\Models\Leads;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\Regions;
+use App\Models\RoleHasUsers;
 use App\Models\Services;
 use App\Models\User;
 use App\Models\UserHasLocations;
@@ -77,6 +79,7 @@ class HomeController extends Controller
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+
         return view('admin.home', $data);
     }
     public function getStats(Request $request){
