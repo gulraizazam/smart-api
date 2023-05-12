@@ -25,17 +25,16 @@
         <form id="modal_create_consultancy_form" method="post" action="{{route('admin.appointments.store')}}">
 
             <input type="hidden" id="consultancy_lead_id" name="lead_id">
-            <input type="hidden" id="consultancy_patient_id" name="patient_id" value="0">
             <input type="hidden" id="consultancy_city_id" name="city_id">
             <input type="hidden" id="consultancy_location_id" name="location_id">
             <input type="hidden" id="consultancy_doctor_id" name="doctor_id">
             <input type="hidden" id="consultancy_start" name="start">
             <input type="hidden" id="consultancy_resource_id" name="resource_id">
             <input type="hidden" id="consultancy_appointment_type" name="appointment_type" value="consulting">
-            <input type="hidden" id="consultancy_cnic" name="cnic">
+            {{-- <input type="hidden" id="consultancy_cnic" name="cnic">
             <input type="hidden" id="consultancy_email" name="email">
             <input type="hidden" id="consultancy_dob" name="dob">
-            <input type="hidden" id="consultancy_address" name="address">
+            <input type="hidden" id="consultancy_address" name="address"> --}}
             <input type="hidden" id="consultancy_town_id" name="town_id">
 
 
@@ -54,12 +53,12 @@
                             <select id="create_consultancy_service" class="form-control select2" name="service_id"></select>
                         </div>
 
-                        <div class="fv-row col-md-12 mt-5" id="patient_id">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <input class="form-control patient_search_id">
+                        <div class="fv-row col-md-12 mt-5" id="lead_id">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Search </label>
+                            <input class="form-control lead_search_id">
 
-                            <input type="hidden" onchange="getPatientDetail($(this))"  name="patient_id" class="filter-field search_field" id="create_patient_search">
-                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <input type="hidden" onchange="getLeadDetail($(this))"  name="lead_id" class="filter-field search_field" id="create_lead_search">
+                            <span onclick="addLeads()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
                             <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
@@ -70,7 +69,7 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <select id="patient_search_id_selector" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_search_id_selector">     
+                            <select id="patient_search_id_selector" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_search_id_selector">
                             </select>
                         </div> -->
 
@@ -85,8 +84,8 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input readonly id="create_patient_name" class="form-control" name="name">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">User Name <span class="text text-danger">*</span> </label>
+                            <input id="create_patient_name" class="form-control" name="name">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
@@ -107,7 +106,6 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-
                             <span class="switch switch-icon mt-10">
                                 <label>
                                     <input onclick="newPatient($(this))" id="new_patient" type="checkbox" value="1" name="new_patient">
@@ -115,9 +113,7 @@
                                 </label>
                                 <span>&nbsp; I would like to</span><strong>&nbsp; Create New Patient</strong>
                             </span>
-
                         </div>
-
                     </div>
                 </div>
 

@@ -50,7 +50,6 @@ $(document).ready( function () {
 var lead;
 
 function loadLeadData(value) {
-
     $.ajax({
         type: 'get',
         url: route('admin.leads.get_lead_number'),
@@ -113,9 +112,7 @@ function loadEditLeadData(value) {
 }
 
 function loadLead(patient, type = 'add_') {
-
     if (typeof patient !== "undefined" && patient !== null) {
-
         $.ajax({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

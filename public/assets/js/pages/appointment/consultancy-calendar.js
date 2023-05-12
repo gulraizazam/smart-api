@@ -4,17 +4,17 @@ var calendar;
 var start_date;
 function patient_search_func() {
     $("#patient_search_id_selector").select2({
-        ajax: { 
+        ajax: {
         type: "GET",
         url: route('admin.users.getpatient.id'),
         dataType: 'json',
         delay: 250,
-        data: function (params) {            
+        data: function (params) {
         return {
             search: params.term // search term
         };
-        },         
-        processResults: function (response) {           
+        },
+        processResults: function (response) {
         return {
             results: response.data.patients,
         };
@@ -24,10 +24,10 @@ function patient_search_func() {
         placeholder: 'Search for a repository',
         templateResult:  formatRepo,
         templateSelection: formatRepoSelection
-        
+
     });
-    
-    $("#patient_search_id_selector").on("select2:select", function (e) { 
+
+    $("#patient_search_id_selector").on("select2:select", function (e) {
         var thisID = $(this).val();
         $(this).parent().parent('div').find('.search_field').val(thisID).change();
     });
@@ -38,14 +38,14 @@ function patient_search_func() {
             $container = $(
                 "<div class='select2-result-repository__avatar'>Searching</div>"
             );
-        } else{   
+        } else{
             $container = $(
                 '<div class="select2-result-repository__avatar tst">' + repo.name + " - C " + repo.id +"</div>"
             );
         }
         return $container;
     }
-    
+
     function formatRepoSelection (repo) {
         return repo.name || repo.text;
     }
@@ -114,7 +114,7 @@ var ConsultancyCalendar = function() {
                             type: 'GET',
                             data: {
                                 location_id: $('#consultancy_location_filter').val(),
-                                doctor_id: $('#consultancy_doctor_filter').val().length !== 'undefined' ? $('#consultancy_doctor_filter').val() : 
+                                doctor_id: $('#consultancy_doctor_filter').val().length !== 'undefined' ? $('#consultancy_doctor_filter').val() :
                                 '',
                                 start: formatDate(event.start, 'YYYY-MM-DDTHH:mm:ss'),
                                 end: formatDate(event.end, 'YYYY-MM-DDTHH:mm:ss'),
@@ -323,7 +323,7 @@ var ConsultancyCalendar = function() {
             }else{
                 toastr.error("Please select doctor first");
             }
-            
+
         },
         setEventId: function(eventId) {
             window.eventData.createdId = eventId;
@@ -448,11 +448,10 @@ function setComments(appointment) {
 
 
 function setCreateConsultancy(response, start) {
-
     try {
-
         $("#create_patient_search").parent("div").find(".selection").remove();
 
+        leadSearch('lead_search_id')
         patientSearch('patient_search_id')
 
         $("#modal_create_consultancy").modal("show");
