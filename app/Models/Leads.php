@@ -176,14 +176,11 @@ class Leads extends BaseModal
         } else {
             // Load Globar Setting for Head Office
             $Setting = Settings::find(5);
-
             $smsContent = str_replace('##head_office_phone##', $Setting->data, $smsContent);
-
             $lead = self::find($lead_id);
 
             if ($lead) {
                 $Patient = Patients::find($lead->patient_id);
-
                 // Replace Patient Information
                 $smsContent = str_replace('##full_name##', $Patient->full_name, $smsContent);
                 $smsContent = str_replace('##email##', $Patient->email, $smsContent);
@@ -228,7 +225,6 @@ class Leads extends BaseModal
             $data['service_id'] = $data['base_service_id'];
             $record = Leads::updateOrCreate(array(
                 'phone' => $data['phone'],
-                //'service_id' =>  $data['base_service_id'],//$data['service_id'],
                 'account_id' => Auth::User()->account_id,
                 'created_at' => Carbon::now()->timestamp
             ), $data);
@@ -242,8 +238,6 @@ class Leads extends BaseModal
             }
             $checkLeadExistance = Leads::where(array(
                 'phone' => $data['phone'],
-                /* Patient Phone and Treatment are unique to create a service */
-                //'service_id' => $data['service_id'],
                 'account_id' => Auth::User()->account_id
             ))->first();
             if(!$checkLeadExistance){
@@ -254,14 +248,9 @@ class Leads extends BaseModal
                 $checkLeadExistance->update();
                 $record = $checkLeadExistance;
                 $data['lead_id'] = $record->id;
-               /*  $service = LeadsServices::updateOrCreate([
-                    'lead_id' => $data['lead_id'],
-                    'service_id' => $data['service_id'],
-                ], $data); */
             }
             $final_data = $data;
         }
-        //$parent_id = $parent_data->id;
         AuditTrails::addEventLogger(self::$_table, 'create', $final_data, self::$_fillable, $record);
         return $record;
     }
@@ -280,7 +269,6 @@ class Leads extends BaseModal
         } else {
             $old_data = '0';
         }
-        //$parent_id = $parent_data->id;
         $record = self::where(['id' => $id])->first();
         if (!$record) {
             return null;
