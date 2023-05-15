@@ -54,6 +54,7 @@
                                     <form method="POST" action="download-filter-data" id="filtersform">
                                         @csrf
                                         <input type="hidden" id="filter_patient_id" name="filter_patient_id">
+                                        <input type="hidden" id="filter_lead_id" name="filter_lead_id">
                                         <input type="hidden" id="filter_date_from" name="filter_date_from">
                                         <input type="hidden" name="appointmenttype" value="1">
                                         <input type="hidden" name="filter_phone" id="filter_phone">
@@ -129,7 +130,7 @@
             <!--end::Container-->
         </div>
         <!--end::Entry-->
-        
+
     </div>
     <!--end::Content-->
 
@@ -143,7 +144,7 @@
             var offset = 0;
             $(document).ready(function () {
                 $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
-                
+
             });
             function changeLimitOffset($this) {
                 limit = parseInt(limit) + parseInt(appointment_limit);
@@ -161,32 +162,37 @@
             function submitFilters()
             {
                 $("#filtersform").submit();
-               
+
             }
             function SetDocId()
             {
                 $("#filter_doctor_id").val($("#appoint_search_doctor").val());
-               
+
             }
             function SetStatus()
             {
                 $("#filter_status_id").val($("#appoint_search_status").val());
-               
+
             }
             function SetCreated()
             {
                 $("#filter_created_by_id").val($("#appoint_search_created_by").val());
-               
+
             }
             function SetCenter()
             {
                 $("#filter_center_id").val($("#appoint_search_centre").val());
-               
+
             }
             function SetPatient()
             {
                 $("#filter_patient_id").val($("#appoint_search_patient").val());
-               
+
+            }
+            function SetLead()
+            {
+                $("#filter_lead_id").val($("#appoint_search_lead").val());
+
             }
             ///////advance filters////////
             function SetCity(){
@@ -220,7 +226,7 @@
              }
              function changeAppointmentStatus()
              {
-                
+
                 var appointment_id = $("#appointment_id").val();
                 var appointment_status_not_show = $("#appointment_status_not_show").val();
                 var cancellation_reason_other_reason = $("#cancellation_reason_other_reason").val();
@@ -239,7 +245,7 @@
                         errorMessage(xhr);
                     }
                 });
-                
+
              }
              </script>
              <script defer>
@@ -335,8 +341,8 @@
                     url: '{{route('admin.users.get_centers')}}',
                     type: 'GET',
                     dataType: 'json',
-                    success: function (response) { 
-                        
+                    success: function (response) {
+
                         if (response.status) {
                             $("#consultancy_location_filter").val(response.data.center).change();
                             $("#treatment_location_filter").val(response.data.center).change();

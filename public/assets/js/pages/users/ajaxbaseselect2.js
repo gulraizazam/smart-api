@@ -55,3 +55,7 @@ $(document).ready(function () {
 function addUsers() {
     $('.patient_id').val(null).trigger('change');
 }
+
+function addLeads() {
+    $('.lead_id').val(null).trigger('change');
+}
