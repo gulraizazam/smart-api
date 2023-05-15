@@ -58,7 +58,7 @@ class Appointments extends Model
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        $data['updated_by'] = Auth::User()->id;
+        $data['converted_by'] = Auth::User()->id;
 
         if (isset($data['start'])) {
             $data['scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
@@ -388,7 +388,7 @@ class Appointments extends Model
         }
 
         return Self::where($where)
-        
+
         ->when($request->start, function($query) use($request){
             return $query->where('scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d'));
         })
@@ -467,7 +467,7 @@ class Appointments extends Model
         /*
          * That function use Appointment Report (Appointment by status) and Treatment Management
          */
-        
+
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
         $parentGroups->build(($serviceId) ? $serviceId : 0, $account_id, true, true);
