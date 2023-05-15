@@ -4134,7 +4134,7 @@ class AppointmentsController extends Controller
             }
         }
         // In case of auto change status we need to update by so that s why we did
-        $appointment_data_status['converted_by'] = Auth::User()->id;
+        $appointment_data_status['updated_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
         // End
         /////Save activity////
@@ -4392,17 +4392,35 @@ class AppointmentsController extends Controller
          * and assign this lead to current appointment.
          */
         if (!$request->get('lead_id')) {
+            /*
+             * If Patient is from database
+             * - if appointment already exists then do not update info
+             * - if appointment already exists then update info
+             */
+            if (isset($appointmentData['patient_id']) && $appointmentData['patient_id'] != '') {
+                /*
+                * If appointment is for the first time then
+                * update user information, otherwise not
+                */
+
                 /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in                    * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
                  */
                 $patientData = $appointmentData;
+
+                /*if (Appointments::where(['patient_id' => $appointmentData['patient_id']])->count()) {
+                    unset($patientData['name']);
+                }*/
+
                 if ($request->new_patient == '1') {
                     $patientData['user_type_id'] = Config::get('constants.patient_id');
-                    $patient = Patients::where('phone',$appointmentData['phone'])->first();
-                    if(!$patient){
-                        $patient = Patients::createRecord($patientData);
-                    }
+                    $patient = Patients::createRecord($patientData);
+                } else {
+                    $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
                 }
+            }
             $leadObj = $appointmentData;
+            unset($leadObj['lead_id']); // Remove Lead ID index
+            $leadObj['patient_id'] = $patient->id;
             // Convert Lead status to Converted
             $DefaultConvertedLeadStatus = LeadStatuses::where(array(
                 'account_id' => Auth::User()->account_id,
@@ -4413,8 +4431,14 @@ class AppointmentsController extends Controller
             } else {
                 $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
             }
-            $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-            $lead = Leads::updateOrCreate(['phone' => $leadObj['phone']],$leadObj);
+            $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
+            if($lead){
+                $lead->lead_status_id = 4;
+                $lead->save();
+            }else{
+                $leadObj['lead_status_id'] = $default_converted_lead_status_id;
+                $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+            }
         } else {
             $lead = Leads::findOrFail($request->get('lead_id'));
             /*
@@ -4425,6 +4449,10 @@ class AppointmentsController extends Controller
             /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in patient,
              * so for now we also change it at patient, below code that I comment help me to update patient name
              */
+
+            //if (Appointments::where(['patient_id' => $appointmentData['patient_id']])->count()) {
+            //unset($patientData['name']);
+            //}
             if ($request->new_patient == '1') {
                 $patientData['user_type_id'] = Config::get('constants.patient_id');
                 $patient = Patients::createRecord($patientData);
@@ -4466,6 +4494,7 @@ class AppointmentsController extends Controller
             $leadObj['lead_status_id'] = $default_converted_lead_status_id;
             $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
         } else {
+            // If Lead ID provided then change it's status to converted
             if ($request->get('lead_id') && $request->get('lead_id')) {
                 $lead = Leads::findOrFail($request->get('lead_id'));
                 if ($lead) {
