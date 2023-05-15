@@ -263,9 +263,13 @@ function addUsers() {
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
     $('.search_field').val('').change();
+}
 
-
-
+function addLeads() {
+    $(".suggesstion-box").hide();
+    $('.lead_id').val(null).trigger('change');
+    $('.lead_search_id').val(null).trigger('change');
+    $('.search_field').val('').change();
 }
 
 // not working
@@ -628,7 +632,6 @@ function hideSpinnerRestForm(form = null, imageReset = false) {
 }
 
 function submitForm(action, method, data, callback, form = '') {
-
     showSpinner();
     $.ajax({
         headers: {
@@ -896,52 +899,97 @@ function patientSearch(search_id = 'patient_id',flag=1) {
         }
     });
     return false;
-    $("." + search_id).select2({
-        width: '100%',
-        placeholder: 'Select Patient',
-        ajax: {
-            url: route('admin.users.getpatient.id'),
-            dataType: 'json',
-            delay: 250,
-            data: function (params) {
-                return {
-                    q: params.term, // search term
-                    page: params.page
-                };
-            },
-            processResults: function (response, params) {
-                try {
-                    let data = response.data.patients;
-                    params.page = params.page || 1;
-                    return {
-                        results: $.map(data, function (item) {
-                            return {
-                                text: item.name + ' - C-' + item.id,
-                                id: item.id
-                            }
-                        }),
-                    };
-
-                } catch (error) {
-                    showException(error);
-                }
-            },
-            cache: true
-        },
-        escapeMarkup: function (markup) {
-            return markup;
-        },
-        minimumInputLength: 1,
-        templateResult: formatRepo,
-        templateSelection: formatRepoSelection
-    });
 }
 
 function selectUser(name, user_id,  search_id,flag=1) {
-
-
     $("." + search_id).parent('div').find('.search_field').val(user_id).change();
     $("#add_patient_id").val(user_id);
+   // $(".search_field").val(user_id).change();
+    $("." + search_id).val(name);
+    $(".suggesstion-box").hide();
+    $("." + search_id).focus();
+    if(flag == 1){
+        getServices('add');
+    }
+}
+
+function patientSearch(search_id = 'lead_id',flag=1) {
+    $("." + search_id).on("input",function() {
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+        if ($(this).val().length < 1) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+        if ($(this).val() != '') {
+            let form_type = $(this).parents("form").find('.form_type').val();
+            $.ajax({
+                type: "GET",
+                url: route('admin.leads.getlead.id'),
+                dataType: 'json',
+                delay: 250,
+                data: {search: $(this).val()},
+                success: function (response) {
+                    let html = '';
+                    let leads = response.data.leads;
+                    if (leads.length) {
+                        Object.values(leads).forEach(function (lead) {
+                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
+                        });
+                        $(".suggestion-list").html(html);
+                        $(".suggesstion-box").show();
+                    } else {
+                        $(".suggesstion-box").hide();
+                    }
+                }
+            });
+        } else {
+            $(".suggesstion-box").hide();
+        }
+    });
+    return false;
+}
+
+function leadSearch(search_id = 'lead_id',flag=1) {
+    $("." + search_id).on("input",function() {
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+        if ($(this).val().length < 1) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+        if ($(this).val() != '') {
+            let form_type = $(this).parents("form").find('.form_type').val();
+            $.ajax({
+                type: "GET",
+                url: route('admin.leads.getlead.id'),
+                dataType: 'json',
+                delay: 250,
+                data: {search: $(this).val()},
+                success: function (response) {
+                    let html = '';
+                    let leads = response.data.leads;
+                    if (leads.length) {
+                        Object.values(leads).forEach(function (lead) {
+                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
+                        });
+                        $(".suggestion-list").html(html);
+                        $(".suggesstion-box").show();
+                    } else {
+                        $(".suggesstion-box").hide();
+                    }
+                }
+            });
+        } else {
+            $(".suggesstion-box").hide();
+        }
+    });
+    return false;
+}
+
+function selectLead(name, lead_id,  search_id, flag=1) {
+    $("." + search_id).parent('div').find('.search_field').val(lead_id).change();
+    $("#add_lead_id").val(lead_id);
    // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
