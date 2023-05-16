@@ -4357,13 +4357,10 @@ class AppointmentsController extends Controller
         }
         // Set Appointment Type
         $appointmentData['appointment_type_id'] = config('constants.appointment_type_service');
-        // Get Location object to retrieve City
         $location = Locations::findOrFail($appointmentData['location_id']);
-        // Set City ID after retrieving from Location
         $appointmentData['city_id'] = $location->city_id;
         $appointmentData['region_id'] = $location->region_id;
         $appointmentData['account_id'] = Auth::User()->account_id;
-        /*I think this code should be outside the lead id check before, it was in below condition*/
         if ($request->get("start")) {
             $start = $request->get("start");
             $service_duration = Services::find($request->get('service_id'))->value("duration");
@@ -4387,30 +4384,9 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, "Doctor or machine is not available and Appointment is not scheduled.", false);
             }
         }
-        /*
-         * Check if Lead ID not provided then create a new lead
-         * and assign this lead to current appointment.
-         */
         if (!$request->get('lead_id')) {
-            /*
-             * If Patient is from database
-             * - if appointment already exists then do not update info
-             * - if appointment already exists then update info
-             */
             if (isset($appointmentData['patient_id']) && $appointmentData['patient_id'] != '') {
-                /*
-                * If appointment is for the first time then
-                * update user information, otherwise not
-                */
-
-                /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in                    * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
-                 */
                 $patientData = $appointmentData;
-
-                /*if (Appointments::where(['patient_id' => $appointmentData['patient_id']])->count()) {
-                    unset($patientData['name']);
-                }*/
-
                 if ($request->new_patient == '1') {
                     $patientData['user_type_id'] = Config::get('constants.patient_id');
                     $patient = Patients::createRecord($patientData);
@@ -4419,9 +4395,8 @@ class AppointmentsController extends Controller
                 }
             }
             $leadObj = $appointmentData;
-            unset($leadObj['lead_id']); // Remove Lead ID index
+            unset($leadObj['lead_id']);
             $leadObj['patient_id'] = $patient->id;
-            // Convert Lead status to Converted
             $DefaultConvertedLeadStatus = LeadStatuses::where(array(
                 'account_id' => Auth::User()->account_id,
                 'is_converted' => 1,
@@ -4431,7 +4406,7 @@ class AppointmentsController extends Controller
             } else {
                 $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
             }
-            $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
+            $lead = Leads::where(['patient_id' => $leadObj['patient_id']])->where(['service_id' => $leadObj['base_service_id']])->first();
             if($lead){
                 $lead->lead_status_id = 4;
                 $lead->save();
@@ -4441,18 +4416,7 @@ class AppointmentsController extends Controller
             }
         } else {
             $lead = Leads::findOrFail($request->get('lead_id'));
-            /*
-             * If appointment is for the first time then
-             * update user information, otherwise not
-             */
             $patientData = $appointmentData;
-            /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in patient,
-             * so for now we also change it at patient, below code that I comment help me to update patient name
-             */
-
-            //if (Appointments::where(['patient_id' => $appointmentData['patient_id']])->count()) {
-            //unset($patientData['name']);
-            //}
             if ($request->new_patient == '1') {
                 $patientData['user_type_id'] = Config::get('constants.patient_id');
                 $patient = Patients::createRecord($patientData);
@@ -4460,14 +4424,10 @@ class AppointmentsController extends Controller
                 $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
             }
         }
-        // Set Lead ID for Appointment
         $appointmentData['patient_id'] = $patient->id;
         $appointmentData['lead_id'] = $lead->id;
-        /*
-         * End Lead ID Process
-         */
-        $appointmentData['created_at'] =Filters::getCurrentTimeStamp();
-        $appointmentData['updated_at'] =Filters::getCurrentTimeStamp();
+        $appointmentData['created_at'] = Filters::getCurrentTimeStamp();
+        $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
         $appointment = Appointments::create($appointmentData);
         $find_apt = Appointments::find($appointment->id);
         $find_cons = Appointments::latest()->first();
@@ -4475,17 +4435,15 @@ class AppointmentsController extends Controller
             $parents = Services::where(['parent_id' => $find_cons->service_id])->first();
             $find_lead = Leads::where(['id' => $find_cons->lead_id])->update(['child_service_id' => $appointment->service_id]);
         }
-        /* Now We need to update name of all appointments that already in appointment table against patient*/
-        Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name'],'updated_at'=> $appointmentData['updated_at']]);
+        Appointments::where(['patient_id' => $appointmentData['patient_id']])->update(['name' => $appointmentData['name'], 'updated_at' => $appointmentData['updated_at']]);
         if ($request->new_patient == '1') {
             $leadObj = $appointmentData;
-            unset($leadObj['lead_id']); // Remove Lead ID index
+            unset($leadObj['lead_id']);
             $leadObj['patient_id'] = $patient->id;
-            // Convert Lead status to Converted
-            $DefaultConvertedLeadStatus = LeadStatuses::where(array(
+            $DefaultConvertedLeadStatus = LeadStatuses::where([
                 'account_id' => Auth::User()->account_id,
                 'is_converted' => 1,
-            ))->first();
+            ])->first();
             if ($DefaultConvertedLeadStatus) {
                 $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
             } else {
@@ -4494,11 +4452,9 @@ class AppointmentsController extends Controller
             $leadObj['lead_status_id'] = $default_converted_lead_status_id;
             $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
         } else {
-            // If Lead ID provided then change it's status to converted
             if ($request->get('lead_id') && $request->get('lead_id')) {
                 $lead = Leads::findOrFail($request->get('lead_id'));
                 if ($lead) {
-                    // Convert Lead status to Converted
                     $DefaultConvertedLeadStatus = LeadStatuses::where(array(
                         'account_id' => Auth::User()->account_id,
                         'is_converted' => 1,
@@ -4515,7 +4471,6 @@ class AppointmentsController extends Controller
                     $lead = Leads::updateRecord($lead->id, $data, $lead, $status = "Appointment");
                 }
             }
-            // Update Treatment ID as well
             if ($request->get('lead_id') && $request->get('lead_id')) {
                 $lead = Leads::findOrFail($request->get('lead_id'));
                 if ($lead) {
@@ -4523,7 +4478,6 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        // Based on allow message by status and scheduled date, allow send sms
         if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
             $appointment->update(array(
                 'send_message' => 1
@@ -4543,7 +4497,6 @@ class AppointmentsController extends Controller
                     'appointment_status_allow_message' => 0
                 ));
             } else {
-                // Set default appointment status i.e. 'pending'
                 $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
                 if ($appointment_status) {
                     $appointment->update(array(
@@ -4561,12 +4514,8 @@ class AppointmentsController extends Controller
             }
         }
         $message = 'Record has been created successfully.';
-        // Send Promotion SMS
         $this->sendPromotionSMS($appointment->id, $appointmentData['phone']);
         GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
-        /**
-         * Dispatch Elastic Search Index
-         */
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
