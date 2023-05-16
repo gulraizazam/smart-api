@@ -23,20 +23,22 @@
                    $phone = $lead->phone ?? 'N/A';
                }
             @endphp
-            <tr style="font-size: 14px; background-color: #f6f6f6;">
-                <td style="padding: 10px 5px 10px 5px;">C-{{$lead->id ?? $loop->iteration}}</td>
-                <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->name ?? 'N/A'}}</td>
-                <td style="padding: 10px 5px 10px 5px;">{{$phone ?? 'N/A'}}</td>
-                <td style="padding: 10px 5px 10px 5px;">{{$lead->gender == 1 ? 'Male' : 'Female' }}</td>
-                <td style="padding: 10px 5px 10px 5px;">{{$lead->city->name ?? 'N/A'}} </td>
-                <td style="padding: 10px 5px 10px 5px;">{{$lead->towns->name ?? 'N/A'}} </td>
-                <td style="padding: 10px 5px 10px 5px;">{{$lead->region->name ?? 'N/A'}}</td>
-                <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->lead_status->name ?? 'N/A'}}</td>
-                <td style="padding: 10px 5px 10px 5px;; width: 15%;">{{$lead->service->name ?? 'N/A'}}</td>
-                <td style="padding: 10px 5px 10px 5px;; width: 15%;">{{$lead->childservice->name ?? 'N/A'}}</td>
-                <td style="padding: 10px 5px 10px 5px;">{{\Carbon\Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A')}}</td>
-                <td style="padding: 10px 5px 10px 5px;">{{$lead->user->name ?? 'N/A'}}</td>
-            </tr>
+
+            @foreach ($lead->lead_service as $data)
+                <tr style="font-size: 14px; background-color: #f6f6f6;">
+                    <td style="padding: 10px 5px 10px 5px;">C-{{$lead->id ?? $loop->iteration}}</td>
+                    <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->name ?? 'N/A'}}</td>
+                    <td style="padding: 10px 5px 10px 5px;">{{$phone ?? 'N/A'}}</td>
+                    <td style="padding: 10px 5px 10px 5px;">{{$lead->city->name ?? 'N/A'}} </td>
+                    <td style="padding: 10px 5px 10px 5px;">{{$lead->towns->name ?? 'N/A'}} </td>
+                    <td style="padding: 10px 5px 10px 5px;">{{$lead->region->name ?? 'N/A'}}</td>
+                    <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$lead->lead_status->name ?? 'N/A'}}</td>
+                    <td style="padding: 10px 5px 10px 5px;; width: 15%;">{{$data->service->name ?? 'N/A'}}</td>
+                    <td style="padding: 10px 5px 10px 5px;; width: 15%;">{{$data->childservice->name ?? 'N/A'}}</td>
+                    <td style="padding: 10px 5px 10px 5px;">{{\Carbon\Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A')}}</td>
+                    <td style="padding: 10px 5px 10px 5px;">{{$lead->user->name ?? 'N/A'}}</td>
+                </tr>
+            @endforeach
         @endforeach
 
     </table>

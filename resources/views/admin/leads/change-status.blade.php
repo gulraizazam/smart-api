@@ -24,39 +24,30 @@
         <!--begin::Form-->
         <form id="modal_change_status_form" method="post" action="">
             <!--begin::Scroll-->
-
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-
                 <div class="form-group">
                     <div class="row">
-
                         <input type="hidden" id="lead_id">
-
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Status </label>
                             <select id="update_status_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
                         </div>
-
                         <div class="fv-row col-md-12 mt-5 d-none">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Status </label>
                             <select id="update_child_status_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
                         </div>
-
                         <div class="fv-row col-md-12 mt-5 d-none">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Comment </label>
                             <textarea id="lead_status_comment1_id" name="" placeholder="Type your comment.." class="form-control" rows="5"></textarea>
                         </div>
-
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Comment </label>
                             <textarea id="lead_status_comment2_id" name="comment2" placeholder="Type your comment.." class="form-control" rows="5"></textarea>
                         </div>
-
                     </div>
                 </div>
-
             </div>
             <!--end::Scroll-->
             <!--begin::Actions-->
