@@ -4136,9 +4136,8 @@ class AppointmentsController extends Controller
         // In case of auto change status we need to update by so that s why we did
         $appointment_data_status['updated_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
-        // End
-        /////Save activity////
 
+        ///Save activity//
         $patient = User::whereId($appointmentinfo->patient_id)->first();
         $location = Locations::whereId($appointmentinfo->location_id)->first();
         $servicename = Services::whereId($appointmentinfo->service_id)->first();
@@ -4153,7 +4152,6 @@ class AppointmentsController extends Controller
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();
-        ////
         /**
          * Dispatch Elastic Search Index
          */
@@ -4167,9 +4165,6 @@ class AppointmentsController extends Controller
                 'invoice_id' => $invoice?->id ?? 0
             ]);
 	}
-    /*Save The Invoice
-     */
-
     /**
      * Show the form for creating new Appointment.
      *
@@ -4406,7 +4401,7 @@ class AppointmentsController extends Controller
             } else {
                 $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
             }
-            $lead = Leads::where(['patient_id' => $leadObj['patient_id']])->where(['service_id' => $leadObj['base_service_id']])->first();
+            $lead = Leads::where(['patient_id' => $leadObj['patient_id'], 'service_id' => $leadObj['base_service_id']])->first();
             if($lead){
                 $lead->lead_status_id = 4;
                 $lead->save();
