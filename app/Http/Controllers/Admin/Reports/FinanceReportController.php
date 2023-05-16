@@ -2854,7 +2854,7 @@ class FinanceReportController extends Controller
         $records = array();
         $records["data"] = array();
        
-        $fdm_users = RoleHasUsers::where('role_id',4)->pluck('user_id');
+        $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
         if (Gate::allows('appointments_consultancy')) {
             $resultQuery = AppointmentsDailyStats::whereIn('centre_id', ACL::getUserCentres());
         }

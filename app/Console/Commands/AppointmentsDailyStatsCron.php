@@ -11,7 +11,6 @@ use App\Models\AppointmentsDailyStats;
 use App\Models\Locations;
 use Carbon\Carbon;
 use App\Models\Cities;
-use App\Models\Locations;
 use App\Helpers\ACL;
 
 class AppointmentsDailyStatsCron extends Command
