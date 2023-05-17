@@ -488,7 +488,7 @@ class RolesController extends Controller
         }
 
         $mapping = $this->getAllPermissionsMapping();
-
+        
         $Permissions = $mapping['Permissions'];
         $DashboardPermissions = $mapping['DashboardPermissions'];
         $ReportsPermissions = $mapping['ReportsPermissions'];
@@ -496,7 +496,7 @@ class RolesController extends Controller
         $permissionsMapping = $mapping['permissionsMapping'];
         $dashboardPermissionsMapping = $mapping['dashboardPermissionsMapping'];
         $reportsPermissionsMapping = $mapping['reportsPermissionsMapping'];
-
+        
         return ApiHelper::makeResponse([
             'role' => $role,
             'AllowedPermissions' => $AllowedPermissions,
@@ -573,9 +573,10 @@ class RolesController extends Controller
         $DashboardGroupPermissions = Permission::
         where(['main_group' => 1, 'status' => 1])->
         whereIn('name', $whereIn)
-            ->get();
+        ->get();
+        
         $DashboardSubPermissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereIn('name', $whereIn)->pluck('id', 'name'))->get()->keyBy('id');
-
+        
         $DashboardPermissions = array();
         if($DashboardGroupPermissions) {
             foreach($DashboardGroupPermissions as $groupPermission) {
@@ -602,7 +603,7 @@ class RolesController extends Controller
                 }
             }
         }
-
+       
         /*
          * Reports Permissions
          */
@@ -645,7 +646,7 @@ class RolesController extends Controller
         $permissionsMapping = $this->preparePermissionsMapping();
         $dashboardPermissionsMapping = $this->prepareDashboardPermissionsMapping();
         $reportsPermissionsMapping = $this->prepareReportsPermissionsMapping();
-
+        
         return array(
             'Permissions' => $Permissions,
             'DashboardPermissions' => $DashboardPermissions,
