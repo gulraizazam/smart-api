@@ -272,25 +272,15 @@
 		 * @return (mixed)
 		 */
 		static function activeRecord($id)
-
-       /*  if (hasFilter($filters, 'patient_id')) {
-            $where[] = array(['patient_id' => GeneralFunctions::patientSearch($filters['patient_id'])]);
-        } */{
-
+        {
 			$packagesadvances = PackageAdvances::getData($id);
-
 			if (!$packagesadvances) {
-
 				flash('Resource not found.')->error()->important();
 				return redirect()->route('admin.packagesadvances.index');
 			}
-
 			$record = $packagesadvances->update(['active' => 1]);
-
 			flash('Record has been activated successfully.')->success()->important();
-
 			AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
 			return $record;
 		}
 
@@ -304,30 +294,20 @@
 		static public function DeleteRecord($id)
 		{
 			$packagesadvances = PackageAdvances::getData($id);
-
 			if (!$packagesadvances) {
-
 				flash('Resource not found.')->error()->important();
 				return redirect()->route('admin.packagesadvances.index');
 			}
-
 			// Check if child records exists or not, If exist then disallow to delete it.
 			if (PackageAdvances::isChildExists($id, Auth::User()->account_id)) {
-
 				flash('Child records exist, unable to delete resource')->error()->important();
 				return redirect()->route('admin.packagesadvances.index');
 			}
-
 			$record = $packagesadvances->delete();
-
 			//log request for delete for audit trail
-
 			AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
 			flash('Record has been deleted successfully.')->success()->important();
-
 			return $record;
-
 		}
 
 		/*
