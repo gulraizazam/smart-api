@@ -20,7 +20,7 @@
 		protected $table = 'package_advances';
 
 		protected static $_table = 'package_advances';
-		
+
 		/*
 		 * get the payment modes
 		 * */
@@ -78,7 +78,7 @@
 		 * */
 		static public function createRecord($data, $parent_data)
 		{
-			
+
 			$parent_id = $parent_data->id;
 			$record = new PackageAdvances();
 			$record->cash_flow = 'in';
@@ -128,7 +128,7 @@
 				'package_id' => $data['package_id'],
 				'is_allocate' => '1'
 			])->pluck('id');
-			
+
 			$GetAppointment = Appointments::join('invoices','appointments.id','invoices.appointment_id')
 			->where(['appointments.patient_id' => $data['patient_id'] , 'appointments.appointment_type_id' => 1])
 			->select('appointments.id')
@@ -184,7 +184,7 @@
 
 		static public function updateRecordFinanceedit($request,$account_id,$amount_status)
 		{
-			
+
 			$old_data = (self::find($request->package_advances_id))->toArray();
 			if($amount_status){
 				$data['cash_amount'] = $request->cash_amount;
@@ -272,7 +272,10 @@
 		 * @return (mixed)
 		 */
 		static function activeRecord($id)
-		{
+
+       /*  if (hasFilter($filters, 'patient_id')) {
+            $where[] = array(['patient_id' => GeneralFunctions::patientSearch($filters['patient_id'])]);
+        } */{
 
 			$packagesadvances = PackageAdvances::getData($id);
 
@@ -402,13 +405,9 @@
 		 */
 		static public function getTotalRecords(Request $request, $account_id = false, $id = false, $apply_filter = false, $filename )
 		{
-
-			$where = self::filters_packageAdvances( $request , $account_id , $id , $apply_filter,$filename ) ;
-
+			$where = self::filters_packageAdvances($request, $account_id, $id, $apply_filter, $filename);
 			if (count($where)) {
-				return self::where($where)
-				//->where('cash_amount', '!=', 0)
-				->count();
+				return self::where($where)->count();
 			} else {
 				return self::where('cash_amount', '!=', 0)->count();
 			}
@@ -436,181 +435,82 @@
 			}
 		}
 
-		static public function filters_packageAdvances( $request , $account_id , $id = false , $apply_filter = false,$filename ){
-
-
+		static public function filters_packageAdvances($request, $account_id, $id = false, $apply_filter = false, $filename){
             $where = array();
-
             $filters = getFilters($request->all());
-
 			if($id != false){
-				$where[] = array(
-					'patient_id',
-					'=',
-					$id
-				);
-				Filters::put(Auth::user()->id , $filename, 'id', $id ) ;
+				$where[] = array('patient_id', '=', $id);
+				Filters::put(Auth::user()->id , $filename, 'id', $id) ;
 			} else {
 				if ($apply_filter){
 					Filters::forget(Auth::user()->id , $filename, 'id');
 				} else {
 					if (Filters::get(Auth::user()->id, $filename, 'id')){
-						$where[] = array(
-							'patient_id',
-							'=',
-							Filters::get(Auth::user()->id , $filename, 'id')
-						);
+						$where[] = array('patient_id', '=', Filters::get(Auth::user()->id, $filename, 'id'));
 					}
 				}
 			}
-
 			if ($account_id) {
-				$where[] = array(
-					'account_id',
-					'=',
-					$account_id
-				);
+				$where[] = array('account_id', '=', $account_id);
 				Filters::put(Auth::user()->id , $filename, 'account_id' , $account_id);
 			} else {
 				if ($apply_filter){
 					Filters::forget( Auth::user()->id , $filename , 'account_id') ;
 				} else {
 					if (Filters::get(Auth::user()->id , $filename, 'account_id')){
-						$where[] = array(
-							'account_id',
-							'=',
-							Filters::get(Auth::user()->id , $filename, 'account_id')
-						);
+						$where[] = array('account_id', '=', Filters::get(Auth::user()->id , $filename, 'account_id'));
 					}
 				}
 			}
 			if (hasFilter($filters, 'patient_id')) {
-				$where[] = array(
-					'patient_id',
-					'=',
-                    $filters['patient_id']
-				);
+				$where[] = array('patient_id', '=', GeneralFunctions::patientSearch($filters['patient_id']));
 				Filters::put(Auth::user()->id , $filename, 'patient_id',  $filters['patient_id']);
 			} else {
 				if ( $apply_filter ){
 					Filters::forget( Auth::user()->id , $filename, 'patient_id');
 				} else {
 					if (Filters::get(Auth::user()->id , $filename , 'patient_id')){
-						$where[] = array(
-							'patient_id',
-							'=',
-							Filters::get(Auth::user()->id , $filename, 'patient_id')
-						);
+						$where[] = array('patient_id', '=', Filters::get(Auth::user()->id , $filename, 'patient_id'));
 					}
 				}
 			}
 			if (hasFilter($filters, 'package_id')) {
-				$where[] = array(
-					'package_id',
-					'like',
-					'%' . $filters['package_id'] . '%'
-				);
+				$where[] = array('package_id', 'like', '%' . $filters['package_id'] . '%');
 			}
-
-            /*if (hasFilter($filters, 'id')) {
-				$where[] = array(
-					'patient_id',
-					'like',
-					'%' . \App\Helpers\GeneralFunctions::patientSearch($filters['id']) . '%'
-				);
-			}*/
-
-
-            if (hasFilter($filters, 'id')) {
-                $where[] = array(
-                    'patient_id',
-                    'like',
-                    '%' . GeneralFunctions::patientSearch($filters['id']) . '%'
-                );
-                Filters::put(Auth::user()->id , $filename, 'id',  $filters['id']);
-            } else {
-                if ( $apply_filter ){
-                    Filters::forget( Auth::user()->id , $filename, 'id');
-                } else {
-                    if (Filters::get(Auth::user()->id , $filename , 'id')){
-                        $where[] = array(
-                            'patient_id',
-                            'like',
-                            '%' . GeneralFunctions::patientSearch(Filters::get(Auth::user()->id , $filename, 'id')) . '%'
-                        );
-                    }
-                }
-            }
-
-
 			if (hasFilter($filters, 'cash_flow')) {
-				$where[] = array(
-					'cash_flow',
-					'like',
-					'%' . $filters['cash_flow'] . '%'
-				);
+				$where[] = array('cash_flow', 'like', '%' . $filters['cash_flow'] . '%');
 			}
 			if (hasFilter($filters, 'payment_mode_id')) {
-				$where[] = array(
-					'payment_mode_id',
-					'like',
-					'%' . $filters['payment_mode_id'] . '%'
-				);
+				$where[] = array('payment_mode_id', 'like', '%' . $filters['payment_mode_id'] . '%');
 			}
 			if (hasFilter($filters, 'is_refund')) {
-				$where[] = array(
-					'is_refund',
-					'=',
-                    $filters['is_refund']
-				);
+				$where[] = array('is_refund', '=', $filters['is_refund']);
 			}
 			if (hasFilter($filters, 'is_cancel')) {
-				$where[] = array(
-					'is_cancel',
-					'=',
-					$filters['is_cancel']
-				);
+				$where[] = array('is_cancel', '=', $filters['is_cancel']);
 			}
-
-
 			if (hasFilter($filters, 'created_from')) {
-				$where[] = array(
-					'created_at',
-					'>=',
-                    $filters['created_from'] . ' 00:00:00'
-				);
+				$where[] = array('created_at', '>=', $filters['created_from'] . ' 00:00:00');
 				Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::User()->id, $filename, 'created_from');
 				} else {
 					if (Filters::get(Auth::User()->id, $filename, 'created_from')) {
-						$where[] = array(
-							'created_at',
-							'>=',
-							Filters::get(Auth::User()->id, $filename, 'created_from')
-						);
+						$where[] = array('created_at', '>=', Filters::get(Auth::User()->id, $filename, 'created_from'));
 					}
 				}
 			}
 
 			if (hasFilter($filters, 'created_to')) {
-				$where[] = array(
-					'created_at',
-					'<=',
-                    $filters['created_to'] . ' 23:59:59'
-				);
+				$where[] = array('created_at', '<=', $filters['created_to'] . ' 23:59:59');
 				Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
 			} else {
 				if ($apply_filter) {
 					Filters::forget(Auth::User()->id, $filename, 'created_to');
 				} else {
 					if (Filters::get(Auth::User()->id, $filename, 'created_to')) {
-						$where[] = array(
-							'created_at',
-							'<=',
-							Filters::get(Auth::User()->id, $filename, 'created_to')
-						);
+						$where[] = array('created_at', '<=', Filters::get(Auth::User()->id, $filename, 'created_to'));
 					}
 				}
 			}
