@@ -806,7 +806,7 @@
                                             @elseif(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
                                                 @php
                                                     $all_csr = \App\Models\RoleHasUsers::where('role_id',2)->pluck('user_id');
-                                                    $csr_users = \App\Models\User::whereIn('id',$all_csr)->get();
+                                                    $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
                                                 @endphp
                                                 <div class="btn-group">
                                                     <a data-id="All" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn" 
