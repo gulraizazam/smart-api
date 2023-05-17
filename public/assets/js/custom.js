@@ -913,43 +913,6 @@ function selectUser(name, user_id,  search_id,flag=1) {
     }
 }
 
-function patientSearch(search_id = 'lead_id',flag=1) {
-    $("." + search_id).on("input",function() {
-        $(".suggestion-list").html('<li>Searching...</li>');
-        $(".suggesstion-box").show();
-        if ($(this).val().length < 1) {
-            $(".suggesstion-box").hide();
-            return false;
-        }
-        if ($(this).val() != '') {
-            let form_type = $(this).parents("form").find('.form_type').val();
-            $.ajax({
-                type: "GET",
-                url: route('admin.leads.getlead.id'),
-                dataType: 'json',
-                delay: 250,
-                data: {search: $(this).val()},
-                success: function (response) {
-                    let html = '';
-                    let leads = response.data.leads;
-                    if (leads.length) {
-                        Object.values(leads).forEach(function (lead) {
-                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
-                        });
-                        $(".suggestion-list").html(html);
-                        $(".suggesstion-box").show();
-                    } else {
-                        $(".suggesstion-box").hide();
-                    }
-                }
-            });
-        } else {
-            $(".suggesstion-box").hide();
-        }
-    });
-    return false;
-}
-
 function leadSearch(search_id = 'lead_id',flag=1) {
     $("." + search_id).on("input",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
