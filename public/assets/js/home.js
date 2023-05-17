@@ -556,7 +556,220 @@ function CollectionByServiceCategory(service, colors) {
     if (typeof service !== 'undefined' && service.length > 1) {
         $("#revenue-service-collection").css("height", "500px");
     }
-}   
+}  
+function initCentreWiseArrival(period){
+    var dataID ;
+   if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
+    dataID = jQuery('.btn.arrivalbtn').attr('data-id');
+   }else{
+    dataID = 'All';
+   }
+   if(dataID == 30){
+    dataID = 'All';
+   }
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.location_wise_arrival'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'centre_id':dataID
+        },
+        success: function (response) {
+            jQuery('#centre_wise_arrival_02').html('');
+            ConsultanciesByStatus(response);
+            setTimeout(function() {
+                 jQuery('#centre_wise_arrival_02').html('');
+                var TABLE_HTML = "";
+                var barLenght = response.data.bar;
+                for(var i = 0; i < barLenght.length; i++){
+                    var walkin = "";
+                    if(response.data.walkin[i] === undefined) {
+                        walkin = "0";
+                    } else {
+                        walkin = response.data.walkin[i];
+                    }
+                    TABLE_HTML += "<div class='col-6'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td></tr></tbody></table></div></div>";
+                }
+                jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
+            }, 2000); 
+        },
+    });
+} 
+function initUserWiseArrival(period){
+    var dataID ;
+   if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
+    dataID = jQuery('.btn.arrivalbtn').attr('data-id');
+   }else{
+    dataID = 'All';
+   }
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.csr_wise_arrival'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'user_id':dataID
+        },
+        success: function (response) {
+            ConsultanciesByStatus(response);
+        },
+    });
+} 
+function LoadBarChart(centreID,period){
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.centre_wise_arrival'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'centre_id':centreID
+        },
+        success: function (response) {
+           
+            ConsultanciesByStatus(response);
+            jQuery('#centre_wise_arrival_02').html('');
+            var TABLE_HTML = "";
+            var barLenght = response.data.bar;
+            for(var i = 0; i < barLenght.length; i++){
+                var walkin = "";
+                if(response.data.walkin[i] === undefined) {
+                    walkin = "0";
+                } else {
+                    walkin = response.data.walkin[i];
+                }
+                TABLE_HTML += "<div class='col-6'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td></tr></tbody></table></div></div>";
+            }
+            jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
+        },
+    });
+}
+function LoadBarChartUserWise(UserID,period){
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.user_wise_arrival'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'user_id':UserID
+        },
+        success: function (response) {
+            console.log('response',response);
+            BarChartUserWise(response);
+        },
+    });
+}
+function BarChartUserWise(bar)
+{
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    var options = {
+        series: [{
+            name: 'Total Appointments',
+            data: bar.data.total
+        }, {
+            name: 'Arrived',
+            data: bar.data.arrived
+        },],
+        chart: {
+            type: 'bar',
+            height: 350,
+           
+            
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 2,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: bar.data.bar,
+        },
+        colors: [primary, success, warning]
+    };
+    $("#centre_wise_arrival").html('');
+    var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
+    chart.render();
+}
+function ConsultanciesByStatus(bar)
+{
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    let locations = bar.data.bar;
+    let modifiedLocations;
+    if(locations.length > 0){
+        if (locations.some(str => str.includes('CUTERA,'))) {
+            modifiedLocations = locations.map(location => location.replace('CUTERA, ', ''));
+        }else{
+            modifiedLocations = locations;
+        }
+        
+    }else{
+        modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
+    }
+    
+    var options = {
+        series: [{
+            name: 'Total Appointments',
+            data: bar.data.total
+        }, {
+            name: 'Arrived',
+            data: bar.data.arrived
+        }, {
+            name: 'Walk-in',
+            data: bar.data.walkin
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
+            
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '45%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 1,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: modifiedLocations,
+        },
+        colors: [primary, success, warning]
+    };
+    $("#centre_wise_arrival").html('');
+    var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
+    chart.render();
+} 
 
 
     
