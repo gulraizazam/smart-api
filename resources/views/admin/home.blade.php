@@ -1177,6 +1177,18 @@
             const info = '#8950FC';
             const warning = '#FFA800';
             const danger = '#F64E60';
+            let locations = service.data.bar;
+            let modifiedLocations;
+            if(locations.length > 0){
+                if (locations.some(str => str.includes('CUTERA,'))) {
+                    modifiedLocations = locations.map(location => location.replace('CUTERA, ', ''));
+                }else{
+                    modifiedLocations = locations;
+                }
+                
+            }else{
+                modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
+            }
             var options = {
                 series: [{
                     name: 'Total Appointments',
