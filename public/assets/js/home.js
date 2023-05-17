@@ -647,8 +647,8 @@ function LoadBarChart(centreID,period){
                 } else {
                     walkin = response.data.walkin[i];
                 }
-                TABLE_HTML += "<div class='col-6'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td></tr></tbody></table></div></div>";
-            }
+                TABLE_HTML += "<div class='col-12'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th><th class=table-cols'>Percentage</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr></tbody></table></div></div>";
+                 }
             jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
         },
     });
@@ -666,8 +666,8 @@ function LoadBarChartUserWise(UserID,period){
             'user_id':UserID
         },
         success: function (response) {
-            console.log('response',response);
             BarChartUserWise(response);
+            
         },
     });
 }
