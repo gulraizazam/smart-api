@@ -775,7 +775,7 @@
                             <div class="card-body p-0">
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                     <span class="dashboard-counter text-uppercase">Centre Wise Arrival</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center">
+                                    <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
                                         <li style="border-bottom: none;">
                                             <div class="actions action-style p-3 mr-3">
                                             @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('CSR')) 
@@ -898,7 +898,7 @@
                                         
                                         </div>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-4 centre_wise_arrival_wrap">
                                         <div class="row" id="centre_wise_arrival_02">
                                             
                                         </div>   
@@ -924,7 +924,9 @@
                 var dataID = jQuery(this).attr('data-id');
                 var dataText = jQuery(this).text();
                 jQuery('.btn.arrivalbtn').attr('data-id', dataID);
-                jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>')   
+                jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>') 
+                jQuery('.wise_arrival_ul li a').removeClass('active');
+                jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');  
             });
         $(document).ready(function(){
             period="today";
