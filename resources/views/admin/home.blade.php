@@ -947,7 +947,7 @@
                         TABLE_HTML += "<div class='col-6'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td></tr></tbody></table></div></div>";
                     }
                     jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
-                    BarChart(response);
+                    BarChartCentre(response);
                     
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
@@ -1171,7 +1171,7 @@
                 });
             }
         });
-        function BarChart(service) {
+        function BarChartCentre(service) {
             const primary = '#6993FF';
             const success = '#1BC5BD';
             const info = '#8950FC';
@@ -1221,7 +1221,7 @@
                     colors: ['transparent']
                 },
                 xaxis: {
-                    categories: service.data.bar,
+                    categories: modifiedLocations,
                 },
                 colors: [primary, success, warning]
             };
