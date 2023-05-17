@@ -370,7 +370,6 @@
     @endpush
 
     @push('datatable-js')
-
         <script src="{{asset('assets/js/pages/appointment/datatable.js')}}"></script>
     @endpush
 
