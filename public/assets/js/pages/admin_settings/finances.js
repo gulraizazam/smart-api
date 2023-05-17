@@ -81,8 +81,8 @@ function setFilters(filter_values, active_filters) {
         $("#search_created_to").val(active_filters.created_to);
 
         let patient_options = "";
-        Object.values(patients).forEach( function (patient, index) {console.log(value, index)
-            patient_options += '<option value="' + index + '">' + patient + '-' + phone + '</option>';
+        Object.values(patients).forEach( function (value) {
+            patient_options += '<option value="'+value.id+'">'+value.name+'-'+value.phone+'</option>';
         });
         $("#search_patient").html(active_filters.created_to);
     } catch (error) {
