@@ -1,10 +1,10 @@
 @push("css")
     <style>
-       
+
        .position-relative{
             position: relative;
         }
-      
+
         .filterouterdiv .croxcli {
             position: absolute;
             bottom: 0px;
@@ -44,21 +44,6 @@
             </div>
         </div>
 
-        {{--<div class="col-lg-1 mb-lg-0 mb-0" id="patient_id">
-            <label style="width: 127%">ID:</label>
-            <input style="width: 127%" type="text" class="form-control filter-field " id="appoint_search_id" placeholder="Patient ID">
-        </div>
-
-        <div class="col-lg-2 mb-lg-0 mb-0">
-            <label>Patient:</label>
-            <input style="width: 70%;" type="text" class="form-control filter-field" id="appoint_search_patient" placeholder="Patient Name" onchange="SetPatient()">
-        </div>
-
-        <div class="col-lg-2 mb-lg-0 mb-0" style="margin-left: -6%;">
-            <label>Phone:</label>
-            <input style="width: 65%;" type="text" oninput="phoneField(this);" id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field">
-        </div>--}}
-
         <div class="filterouterdiv  mb-0" >
             <label>Scheduled:</label>
             <div class="input-daterange input-group to-from-datepicker datefromto" >
@@ -92,7 +77,7 @@
             <select class="form-control filter-field select2" id="appoint_search_status" onchange="SetStatus()"></select>
         </div>
 
-       
+
 
         <div class="  mt-8" >
 
@@ -104,7 +89,7 @@
 
     <hr class="advance-filters" style="display: none;">
     <div class="row mb-8 advance-filters" style="display: none;">
-       
+
         <div class="col-lg-2 mb-lg-0 mt-6">
             <label >Doctor:</label>
             <br>

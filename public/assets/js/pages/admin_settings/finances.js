@@ -44,22 +44,17 @@ var table_columns = [
     }];
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
-
         let filters =  {
             delete: '',
-            id: $("#search_patient_id").val(),
-            patient_id: $("#search_patient").val(),
+            id: $("#add_patient_id").val(),
+            patient_id: $("#add_patient_id").val(),
             created_from: $("#search_created_from").val(),
             created_to: $("#search_created_to").val(),
             filter: 'filter',
         }
-
         datatable.search(filters, 'search');
-
     });
-
 }
 
 function resetAllFilters(datatable) {
@@ -79,11 +74,8 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
     try {
-
         let patients = filter_values.patient;
-
         $("#search_patient_id").val(active_filters.id);
         $("#search_created_from").val(active_filters.created_from);
         $("#search_created_to").val(active_filters.created_to);
@@ -93,18 +85,16 @@ function setFilters(filter_values, active_filters) {
             patient_options += '<option value="'+value.id+'">'+value.name+'-'+value.phone+'</option>';
         });
         $("#search_patient").html(active_filters.created_to);
-
     } catch (error) {
         showException(error);
     }
 }
 
 function resetCustomFilters() {
-
     $('.patient_search_id').val(null).trigger('change');
+    $('#add_patient_id').val(null).trigger('change');
     $(".filter-field").val('');
     $('.select2').val(null).trigger('change');
-
 }
 
 
