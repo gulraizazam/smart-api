@@ -1178,6 +1178,7 @@
             const warning = '#FFA800';
             const danger = '#F64E60';
             let locations = service.data.bar;
+            console.log(locations);
             let modifiedLocations;
             if(locations.length > 0){
                 if (locations.some(str => str.includes('CUTERA'))) {
