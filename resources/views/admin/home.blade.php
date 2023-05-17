@@ -109,12 +109,13 @@
         height: 480px;
         overflow-y: scroll;
     }
-    .wise_arrival .dropdown-menu li a{
+    .wise_arrival_ul .dropdown-menu li a{
         cursor:pointer;   
     }
-    .wise_arrival .dropdown-menu li a:hover{
+    .wise_arrival_ul .dropdown-menu li a:hover{
         background:#f3f3f3;
     }
+    
 </style>
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb')
