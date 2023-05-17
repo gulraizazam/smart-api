@@ -2858,7 +2858,7 @@ class DashboardReportsController extends Controller
         if ($request->period=='last7days') {
             
             $yesterday_total_appointments = AppointmentsDailyStats::select('cron_current_date', DB::raw('count(*) as total'))
-                ->whereDate('cron_current_date', '=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
