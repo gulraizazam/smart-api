@@ -723,8 +723,8 @@ function ConsultanciesByStatus(bar)
     let locations = bar.data.bar;
     let modifiedLocations;
     if(locations.length > 0){
-        if (locations.some(str => str.includes('CUTERA,'))) {
-            modifiedLocations = locations.map(location => location.replace('CUTERA, ', ''));
+        if (locations.some(str => str.includes('CUTERA'))) {
+            modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
         }else{
             modifiedLocations = locations;
         }
