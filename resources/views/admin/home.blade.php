@@ -768,7 +768,8 @@
                             </div>
                         </div>
                     </div>
-                   
+                   @endif
+                   @if(\Illuminate\Support\Facades\Gate::allows('dashboard_staff_wise_arrival'))
                     <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
