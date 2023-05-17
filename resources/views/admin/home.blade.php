@@ -959,7 +959,7 @@
                                 walkin = response.data.walkin[i];
                             }
                             TABLE_HTML += "<div class='col-6'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td></tr></tbody></table></div></div>";
-                        }
+             }
                         jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
                         BarChart(response);
                         
@@ -1303,6 +1303,18 @@
             const info = '#8950FC';
             const warning = '#FFA800';
             const danger = '#F64E60';
+            let locations = service.data.bar;
+            let modifiedLocations;
+            if(locations.length > 0){
+                if (locations.some(str => str.includes('CUTERA,'))) {
+                    modifiedLocations = locations.map(location => location.replace('CUTERA, ', ''));
+                }else{
+                    modifiedLocations = locations;
+                }
+                
+            }else{
+                modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
+            }
             var options = {
                 series: [{
                     name: 'Total Appointments',
@@ -1339,48 +1351,7 @@
             var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
             chart.render();
         }
-        function BarChart(service) {
-            const primary = '#6993FF';
-            const success = '#1BC5BD';
-            const info = '#8950FC';
-            const warning = '#FFA800';
-            const danger = '#F64E60';
-            var options = {
-                series: [{
-                    name: 'Total Appointments',
-                    data: service.data.total
-                }, {
-                    name: 'Arrived',
-                    data: service.data.arrived
-                },{
-                    name: 'Walk-in',
-                    data: service.data.walkin
-                }],
-                chart: {
-                    type: 'bar',
-                    height: 350,
-                   
-                },
-                plotOptions: {
-                    bar: {
-                        horizontal: false,
-                        columnWidth: '35%',
-                        endingShape: 'rounded'
-                    },
-                },
-                stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ['transparent']
-                },
-                xaxis: {
-                    categories: service.data.bar,
-                },
-                colors: [primary, success, warning]
-            };
-            var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
-            chart.render();
-        }
+        
     </script>
 @endpush
 @endsection
