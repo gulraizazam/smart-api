@@ -17,13 +17,6 @@
         margin-top: 106px;
         margin-left: 244px;
     }
-    .centre-name{
-        font-size: 14px;
-        color: #3598dc;
-    }
-    .table-cols{
-        font-size: 12px;
-    }
     .nav-tabs>li {
         margin: 0;
         padding: 0;
@@ -104,6 +97,23 @@
         font-weight: 300;
         line-height: 18px;
         white-space: nowrap;
+    }
+    .centre-name{
+        font-size: 14px;
+        color: #3598dc;
+    }
+    .table-cols{
+        font-size: 12px;
+    }
+    .centre_wise_arrival_wrap{
+        height: 480px;
+        overflow-y: scroll;
+    }
+    .wise_arrival .dropdown-menu li a{
+        cursor:pointer;   
+    }
+    .wise_arrival .dropdown-menu li a:hover{
+        background:#f3f3f3;
     }
 </style>
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
