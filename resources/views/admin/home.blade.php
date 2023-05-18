@@ -988,10 +988,10 @@
                 $.ajax({
                     url: route('admin.dashboard.csr_user_wise_arrival'),
                     type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2'},
+                    data: {'period': '{{request('type')}}','type':'2','user_id':Auth::user()->id},
                     cache: false,
                     success: function (response) {
-                        console.log('res',response);
+                        
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
                         jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
