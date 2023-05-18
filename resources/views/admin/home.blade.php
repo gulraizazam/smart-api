@@ -967,6 +967,7 @@
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
+                        console.log('res',response);
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
                         jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
