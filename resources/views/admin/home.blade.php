@@ -1281,7 +1281,7 @@
                 },
                 stroke: {
                     show: true,
-                    width: 2,
+                    width: 1,
                     colors: ['transparent']
                 },
                 xaxis: {
@@ -1447,7 +1447,7 @@
                 },
                 stroke: {
                     show: true,
-                    width: 2,
+                    width: 1,
                     colors: ['transparent']
                 },
                 xaxis: {
