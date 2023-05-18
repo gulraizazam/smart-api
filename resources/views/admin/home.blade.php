@@ -813,9 +813,7 @@
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a data-id="All" onclick="LoadBarChartUserWise('All','yesterday')">All CSR</a>
-                                                        </li>
+                                                        
                                                         @foreach($csr_users as $user)
                                                         <li>
                                                             <a 
