@@ -105,10 +105,7 @@
     .table-cols{
         font-size: 12px;
     }
-    .centre_wise_arrival_wrap{
-        height: 480px;
-        overflow-y: scroll;
-    }
+    
     .wise_arrival_ul .dropdown-menu li a{
         cursor:pointer;   
     }
@@ -812,7 +809,7 @@
                                                 <div class="btn-group">
                                                     <a data-id="All" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn" 
                                                     href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false"> Select User
+                                                    data-close-others="true" aria-expanded="false">All
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
@@ -902,11 +899,32 @@
                                     </div>
                                     <div class="col-4 centre_wise_arrival_wrap">
                                         <div class="row" id="centre_wise_arrival_02">
-                                            
-                                        </div>   
-                                    </div>
+                                            <div class='table-responsive'>
+                                                <table class='table'>
+                                                    <thead>
+                                                        @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin'))
+                                                            <tr>
+                                                                <th class='table-cols'>Centre Name</th>
+                                                                <th class='table-cols'>Arrived</th>
+                                                                <th class=table-cols'>WalkIn</th>
+                                                                <th class=table-cols'>Percentage</th>
+                                                            </tr>
+                                                        @else
+                                                            <tr>
+                                                                <th class='table-cols'>CSR Name</th>
+                                                                <th class='table-cols'>Arrived</th>
+                                                                <th class=table-cols'>Percentage</th>
+                                                            </tr>
+                                                        @endif
+                                                    </thead>
+                                                    <tbody id="table-body">
+                                                        
+                                                    </tbody>
+                                                </table>
+                                            </div>   
+                                        </div>
                                     
-                                </div>
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -948,7 +966,8 @@
                 data: {'period': '{{request('type')}}','type':'2'},
                 cache: false,
                 success: function (response) {
-                    console.log(response);
+                    jQuery('.wise_arrival_ul li a').removeClass('active');
+                    jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
                     var TABLE_HTML = "";
                     var barLenght = response.data.bar;
                     for(var i = 0; i < barLenght.length; i++){
@@ -958,8 +977,12 @@
                         } else {
                             walkin = response.data.walkin[i];
                         }
-                        TABLE_HTML += "<div class='col-12'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th><th class=table-cols'>Percentage</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr></tbody></table></div></div>";  }
-                    jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
+                        let str = barLenght[i];
+                        let wordToRemove = "CUTERA ";
+                        let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                        TABLE_HTML += "<tr><td>"+centre_name+"</td><td>"+response.data.arrived[i]/response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                    }
+                    jQuery('#table-body').append(TABLE_HTML);
                     BarChartCentre(response);
                     
                 },
