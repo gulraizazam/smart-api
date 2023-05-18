@@ -19,13 +19,11 @@ use App\Helpers\ACL;
 use App;
 use App\Models\RoleHasUsers;
 use App\Models\Appointments;
-use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
-use App\Models\RoleHasUsers;
 use Illuminate\Support\Facades\DB;
 
 class DashboardReportsController extends Controller
