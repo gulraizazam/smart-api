@@ -2975,7 +2975,7 @@ class DashboardReportsController extends Controller
                 ->whereNotIn('user_id', $fdm_users)->where(['appointment_status_id' =>2])
                 ->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
-                $username = User::find($loc['user_id']);
+                $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
                     array_push($lables, $username->name); 
                 }
