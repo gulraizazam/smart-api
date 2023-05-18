@@ -776,7 +776,7 @@
                                     <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
                                         <li style="border-bottom: none;">
                                             <div class="actions action-style p-3 mr-3">
-                                            @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('CSR')) 
+                                            @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') ) 
                                                 @php
                                                     $centres_array =['All South Region','All Central Region'];
                                                     $locations = \App\Helpers\ACL::getUserCentres();
