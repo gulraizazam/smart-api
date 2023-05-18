@@ -706,6 +706,9 @@ function LoadBarChartUserWise(UserID,period){
                     csr_name = "All CSR";
                 }
                 for(var i = 0; i < barLenght.length; i++){
+                    if(response.data.arrived[i] == undefined){
+                        response.data.arrived[i] = 0;
+                    }
                     arrived += response.data.arrived[i];
                     total += response.data.total[i];
                     }
