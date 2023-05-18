@@ -2970,6 +2970,7 @@ class DashboardReportsController extends Controller
         if ($request->period == '') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
                 ->where('user_id', $request->user_id)->groupBy('user_id')->get()->toArray();
+                dd($yesterday_total_appointments);
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id , 'appointment_status_id' =>2])
                 ->groupBy('user_id')->get()->toArray();
