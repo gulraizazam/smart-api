@@ -472,34 +472,92 @@ function closeAllPopup(modal) {
     $(modal).parents(".modal").modal("hide");
 }
 
-function reInitTable(appointment = null) {
-
+function reInitTable(page = null) {
     setTimeout(function () {
-        /**
-        /*@reload has bug so we can't use this
-         */
-        //$('#kt_datatable').KTDatatable('reload');
-
-        if (appointment == 'treatment') {
+        if (page == 'treatment') {
             if (typeof datatable !== 'undefined') {
                 treatmentFilters();
             }
-        } else if(appointment == 'consultancy') {
+        } else if(page == 'consultancy') {
             if (typeof datatable !== 'undefined') {
                 consultancyFilters();
             }
-        } else {
-            /*this is for reload datatable*/
+        } else if(page == "user"){
+            if (typeof datatable !== 'undefined') {
+                userFilters();
+            }
+        } else if(page == "doctor"){
+            if (typeof datatable !== 'undefined') {
+                doctorFilters();
+            }
+        } else if(page == "permission"){
+            if (typeof datatable !== 'undefined') {
+                permissionFilters();
+            }
+        } else if(page == "userType"){
+            if (typeof datatable !== 'undefined') {
+                userTypeFilters();
+            }
+        } else if(page == "patient"){
+            if (typeof datatable !== 'undefined') {
+                patientFilters();
+            }
+        } else if(page == "lead"){
+            if (typeof datatable !== 'undefined') {
+                leadFilters();
+            }
+        } else if(page == "plan"){
+            if (typeof datatable !== 'undefined') {
+                planFilters();
+            }
+        } else if(page == "service"){
+            if (typeof datatable !== 'undefined') {
+                serviceFilters();
+            }
+        } else if(page == "bundles"){
+            if (typeof datatable !== 'undefined') {
+                bundlesFilters();
+            }
+        } else if(page == "discount"){
+            if (typeof datatable !== 'undefined') {
+                discountFilters();
+            }
+        } else if(page == "rota"){
             if (typeof datatable !== 'undefined') {
                 rotaFilters();
             }
+        } else if(page == "globalSetting"){
+            if (typeof datatable !== 'undefined') {
+                globalSettingFilters();
+            }
+        } else if(page == "operatorSetting"){
+            if (typeof datatable !== 'undefined') {
+                operatorSettingFilters();
+            }
+        } else if(page == "payment"){
+            if (typeof datatable !== 'undefined') {
+                paymentFilters();
+            }
+        } else if(page == "town"){
+            if (typeof datatable !== 'undefined') {
+                townFilters();
+            }
+        } else if(page == "resource"){
+            if (typeof datatable !== 'undefined') {
+                resourceFilters();
+            }
+        } else if(page == "centre"){
+            if (typeof datatable !== 'undefined') {
+                centreFilters();
+            }
+        } else {
+            $('#kt_datatable').KTDatatable('reload');
         }
 
     }, 400);
 }
 
 function treatmentFilters() {
-
     let filters =  {
         delete: '',
         patient_id: $("#treatment_patient_id").val(),
@@ -518,12 +576,10 @@ function treatmentFilters() {
         updated_by: $("#treatment_search_rescheduled_by").val(),
         filter: 'filter',
     };
-
     datatable.search(filters, 'search');
 }
 
 function consultancyFilters() {
-
     let filters =  {
         delete: '',
         patient_id: $("#appointment_patient_id").val(),
@@ -544,7 +600,6 @@ function consultancyFilters() {
         updated_by: $("#appoint_search_rescheduled_by").val(),
         filter: 'filter',
     };
-
     datatable.search(filters, 'search');
 }
 function rotaFilters() {
@@ -564,6 +619,215 @@ function rotaFilters() {
     }
     datatable.search(filters, 'search');
 }
+function userFilters() {
+    let filters =  {
+        delete: '',
+        name: $("#search_name").val(),
+        email: $("#search_email").val(),
+        phone: $("#search_phone").val(),
+        location_id: $("#search_center").val(),
+        role_id: $("#search_role").val(),
+        gender: $("#search_gender").val(),
+        commission: $("#search_commission").val(),
+        status: $("#search_status").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+
+}
+function permissionFilters() {
+        let filters =  {
+            delete: '',
+            search: $("#search_search").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function userTypeFilters() {
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            type: $("#search_type").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function patientFilters(){
+    let filters =  {
+        delete: '',
+        patient_id: $("#search_patient_id").val(),
+        name: $("#search_name").val(),
+        email: $("#search_email").val(),
+        phone: $("#search_phone").val(),
+        gender: $("#search_gender").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
+function leadFilters(){
+    let filters = {
+        delete: '',
+        lead_id: $("#search_id").val(),
+        name: $("#search_full_name").val(),
+        phone: $("#search_phone").val(),
+        city_id: $("#search_city_id").val(),
+        location_id: $("#search_location_id").val(),
+        region_id: $("#search_region_id").val(),
+        service_id: $("#search_service_id").val(),
+        gender_id: $("#search_gender_id").val(),
+        created_by: $("#search_created_by").val(),
+        date_from: $("#search_created_from").val(),
+        date_to: $("#search_created_to").val(),
+        lead_status_id: $("#search_status_id").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
+function planFilters() {
+        let filters =  {
+            delete: '',
+            id: $("#search_id").val(),
+            patient_id: $("#search_patient_id").val(),
+            patient_name: $("#search_patient_id").text(),
+            package_id: $("#search_plan_id").val(),
+            location_id: $("#search_location_id").val(),
+            status: $("#search_status").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function serviceFilters() {
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            status: $("#search_status").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function bundlesFilters() {
+        let filters = {
+            delete: '',
+            name: $("#search_name").val(),
+            price: $("#search_price").val(),
+            total_services: $("#search_total_services").val(),
+            apply_discount: $("#search_apply_discount").val(),
+            startdate: $("#search_startdate").val(),
+            enddate: $("#search_enddate").val(),
+            created_from: $("#created_from").val(),
+            created_to: $("#created_to").val(),
+            status: $("#search_status").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function discountFilters() {
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            type: $("#search_type").val(),
+            amount: $("#search_amount").val(),
+            discount_type: $("#search_discount_type").val(),
+            startdate: $("#search_start").val(),
+            enddate: $("#search_end").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
+            status: $("#search_status").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function doctorFilters() {
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            email: $("#search_email").val(),
+            phone: $("#search_phone").val(),
+            role_id: $("#search_role").val(),
+            gender: $("#search_gender").val(),
+            status: $("#search_status").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function globalSettingFilters() {
+        let filters = {
+            delete: '',
+            name: $("#search_name").val(),
+            data: $("#search_data").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function operatorSettingFilters() {
+        let filters = {
+            delete: '',
+            operator_name: $("#operator_name").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function paymentFilters() {
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            type: $("#search_type").val(),
+            payment_type: $("#search_payment_type").val(),
+            status: $("#search_status").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function townFilters(){
+    let filters =  {
+        delete: '',
+        name: $("#search_name").val(),
+        city_id: $("#search_city").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
+function resourceFilters() {
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            resource_type_id: $("#search_resource_type_id").val(),
+            location_id: $("#search_location_id").val(),
+            machine_type_id: $("#search_machine_type_id").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
+            status: $("#search_status").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+function centreFilters(datatable) {
+        let filters =  {
+            delete: '',
+            name: $("#search_name").val(),
+            fdo_name: $("#search_fdo_name").val(),
+            fdo_phone: $("#search_fdo_phone").val(),
+            address: $("#search_address").val(),
+            city_id: $("#search_city").val(),
+            region_id: $("#search_region").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
+            status: $("#search_status").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+}
+
 function reloadTable(table_class) {
     patientDatatable[table_class].search({ datatable_reload: 'reload' }, 'search');
 }
