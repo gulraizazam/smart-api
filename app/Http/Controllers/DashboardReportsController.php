@@ -2962,4 +2962,35 @@ class DashboardReportsController extends Controller
             
         ]);
     }
+    public function AgentWiseArrival(Request $request)
+    {
+        $total_apts = [];
+        $arrived_apts = [];
+        $lables = [];
+        if ($request->period == '') {
+            $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
+            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
+                ->whereNotIn('user_id', $fdm_users)->groupBy('user_id')->get()->toArray();
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('cron_current_date', DB::raw('count(*) as arrived'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                ->whereNotIn('user_id', $fdm_users)->where(['appointment_status_id' =>2])
+                ->groupBy('user_id')->get()->toArray();
+            foreach($yesterday_total_appointments as $loc){
+                $username = User::find($loc['user_id']);
+                if($username){
+                    array_push($lables, $username->name); 
+                }
+                array_push($total_apts, $loc['total']);
+            }
+            foreach($yesterday_arrived_appointments as $apt){
+                array_push($arrived_apts, $apt['arrived']);
+            }    
+        }
+       
+        return ApiHelper::apiResponse($this->success, 'Agent wise arrival data', true, [
+            'bar' => $lables,
+            'total'=>$total_apts,
+            'arrived'=>$arrived_apts
+            
+        ]);
+    }
 }
