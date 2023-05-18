@@ -988,7 +988,7 @@
                 $.ajax({
                     url: route('admin.dashboard.csr_user_wise_arrival'),
                     type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2','user_id':Auth::user()->id},
+                    data: {'period': '{{request('type')}}','type':'2','user_id':'Auth::user()->id'},
                     cache: false,
                     success: function (response) {
                         
