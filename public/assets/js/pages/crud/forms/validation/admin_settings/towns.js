@@ -100,7 +100,7 @@ var EditTownValidation = function () {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('town');
                 } else {
                     toastr.error(response.message);
                 }
