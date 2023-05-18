@@ -778,7 +778,7 @@
                                             <div class="actions action-style p-3 mr-3">
                                             @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') ) 
                                                 @php
-                                                    $centres_array =['All South Region','All Central Region'];
+                                                    $centres_array =['All South Region','All Central Region','All Centres'];
                                                     $locations = \App\Helpers\ACL::getUserCentres();
                                                     $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
                                                 @endphp
@@ -813,9 +813,7 @@
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a data-id="All" onclick="LoadBarChartUserWise('All','yesterday')">All CSR</a>
-                                                        </li>
+                                                        
                                                         @foreach($csr_users as $user)
                                                         <li>
                                                             <a 
