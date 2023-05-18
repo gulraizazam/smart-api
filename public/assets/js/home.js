@@ -581,7 +581,7 @@ function initCentreWiseArrival(period){
             jQuery('#table-body').html('');
             ConsultanciesByStatus(response);
             setTimeout(function() {
-              
+                jQuery('#table-body').html('');
                 var TABLE_HTML = "";
                 var barLenght = response.data.bar;
                 for(var i = 0; i < barLenght.length; i++){
