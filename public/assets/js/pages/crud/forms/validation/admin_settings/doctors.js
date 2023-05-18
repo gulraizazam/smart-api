@@ -171,7 +171,7 @@ var EditUserValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('doctor');
                 } else {
                     toastr.error(response.message);
                 }
@@ -233,7 +233,7 @@ var PasswordValidation = function () {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('doctor');
                 } else {
                     toastr.error(response.message);
                 }
