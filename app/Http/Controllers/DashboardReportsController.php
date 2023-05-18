@@ -3069,6 +3069,7 @@ class DashboardReportsController extends Controller
                 array_push($arrived_apts, $apt['arrived']);
             }    
         }
+        dd($total_apts);
         return ApiHelper::apiResponse($this->success, 'csr wise arrival data', true, [
             'bar' => $lables,
             'total'=>$total_apts,
