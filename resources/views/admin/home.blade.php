@@ -902,7 +902,7 @@
                                             <div class='table-responsive'>
                                                 <table class='table'>
                                                     <thead>
-                                                        @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin'))
+                                                        @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('CSR'))
                                                             <tr>
                                                                 <th class='table-cols'>Centre Name</th>
                                                                 <th class='table-cols'>Arrived</th>
