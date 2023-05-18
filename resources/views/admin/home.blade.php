@@ -780,7 +780,7 @@
                                                 @php
                                                     $centres_array =['All South Region','All Central Region'];
                                                     $locations = \App\Helpers\ACL::getUserCentres();
-                                                    $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->get();
+                                                    $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
                                                 @endphp
                                                 <div class="btn-group">
                                                     <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
