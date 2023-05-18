@@ -3042,6 +3042,7 @@ class DashboardReportsController extends Controller
     }
     public function CsrUserWiseArrival(Request $request)
     {
+        dd($request->all());
         $total_apts = [];
         $arrived_apts = [];
         $lables = [];
