@@ -2974,7 +2974,8 @@ class DashboardReportsController extends Controller
                 ->where(['appointment_status_id' =>2])
                 ->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
-                $user = User::findOrFail($loc['user_id']);
+                $user = User::find($loc['user_id']);
+                dd($user);
                 if($user){
                     array_push($lables, $user->name); 
                 }
