@@ -597,6 +597,6 @@ use Illuminate\Support\Facades\DB;
         Route::get('dashboard/getchild', [DashboardReportsController::class,'getChild'])->name('dashboard.getchild');
         Route::get('dashboard/centre_wise_arrival', [DashboardReportsController::class, 'CentreWiseArrival'])->name('dashboard.centre_wise_arrival');
         Route::get('dashboard/location_wise_arrival', [DashboardReportsController::class, 'LocationWiseArrival'])->name('dashboard.location_wise_arrival');
-        Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
-        Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
+        Route::get('dashboard/call_wise_arrival', [DashboardReportsController::class, 'CallWiseArrival'])->name('dashboard.call_wise_arrival');
+        
     });
