@@ -902,18 +902,18 @@
                                             <div class='table-responsive'>
                                                 <table class='table'>
                                                     <thead>
-                                                        @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin'))
-                                                            <tr>
-                                                                <th class='table-cols'>Centre Name</th>
-                                                                <th class='table-cols'>Arrived</th>
-                                                                <th class=table-cols'>WalkIn</th>
-                                                                <th class=table-cols'>Percentage</th>
-                                                            </tr>
-                                                        @else
+                                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                             <tr>
                                                                 <th class='table-cols'>CSR Name</th>
                                                                 <th class='table-cols'>Arrived</th>
                                                                 <th class=table-cols'>Percentage</th>
+                                                            </tr>
+                                                        @else    
+                                                            <tr>
+                                                                <th class='table-cols'></th>
+                                                                <th class='table-cols'>Arrived</th>
+                                                                <th class='table-cols'>WalkIn</th>
+                                                                <th class='table-cols'>Percentage</th>
                                                             </tr>
                                                         @endif
                                                     </thead>
@@ -966,6 +966,7 @@
                 data: {'period': '{{request('type')}}','type':'2'},
                 cache: false,
                 success: function (response) {
+                    jQuery('#table-body').html("");
                     jQuery('.wise_arrival_ul li a').removeClass('active');
                     jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
                     var TABLE_HTML = "";
