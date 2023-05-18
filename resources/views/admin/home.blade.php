@@ -967,7 +967,16 @@
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
-                        console.log('res',response);
+                        BarChartCentre(response);
+                        jQuery('#table-body').html("");
+                        jQuery('.wise_arrival_ul li a').removeClass('active');
+                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
+                        var TABLE_HTML = "";
+                        var barLenght = response.data.bar;
+                        for(var i = 0; i < barLenght.length; i++){
+                            TABLE_HTML += "<tr><td>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                        }
+                        jQuery('#table-body').append(TABLE_HTML);
                         
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
