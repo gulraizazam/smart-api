@@ -813,11 +813,13 @@
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-                                                        
+                                                        <li>
+                                                            <a data-id="All" onclick="LoadBarChartUserWise('All','yesterday')">All CSR</a>
+                                                        </li>
                                                         @foreach($csr_users as $user)
                                                         <li>
                                                             <a 
-                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'yesterday')" class="{{$user->id == auth()->user()->id ? 'active' : '' }}">{{$user->name}}</a>
+                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'yesterday')" >{{$user->name}}</a>
                                                         </li>
                                                         @endforeach
                                                         
