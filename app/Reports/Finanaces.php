@@ -2658,7 +2658,7 @@ class Finanaces
         }
         $appointment_type = AppointmentTypes::whereSlug('consultancy')->first();
         $where[] = array(['appointments.appointment_type_id' => $appointment_type->id]);
-        $where[] = array('package_advances.cash_amount', '>' , 0);
+        //$where[] = array('package_advances.cash_amount', '>' , 0);
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
       
         $appointments = Appointments::with('location:id,name')
@@ -2886,10 +2886,15 @@ class Finanaces
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
-        $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
-        ->where('scheduled_date','<=',$end_date)
-        ->where(['base_appointment_status_id' => 2])
-        ->count();
+        
+            $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
+            ->where('scheduled_date','<=',$end_date)
+            ->where($where)
+            ->where('appointment_type_id','=',1)
+            ->where(['base_appointment_status_id' => 2])
+            ->count();
+       
+
         if($total_appointments > 0){
             $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
         }else{

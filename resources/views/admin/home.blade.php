@@ -105,16 +105,14 @@
     .table-cols{
         font-size: 12px;
     }
-    .centre_wise_arrival_wrap{
-        height: 480px;
-        overflow-y: scroll;
-    }
-    .wise_arrival .dropdown-menu li a{
+    
+    .wise_arrival_ul .dropdown-menu li a{
         cursor:pointer;   
     }
-    .wise_arrival .dropdown-menu li a:hover{
+    .wise_arrival_ul .dropdown-menu li a:hover{
         background:#f3f3f3;
     }
+    
 </style>
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb')
@@ -768,8 +766,8 @@
                             </div>
                         </div>
                     </div>
-                   @endif
-                   @if(\Illuminate\Support\Facades\Gate::allows('dashboard_staff_wise_arrival'))
+                    @endif
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_staff_wise_arrival'))
                     <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
@@ -777,7 +775,7 @@
                                     <span class="dashboard-counter text-uppercase">Centre Wise Arrival</span>
                                     <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
                                         <li style="border-bottom: none;">
-                                            <div class="wise_arrival actions action-style p-3 mr-3">
+                                            <div class="actions action-style p-3 mr-3">
                                             @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('CSR')) 
                                                 @php
                                                     $centres_array =['All South Region','All Central Region'];
@@ -804,13 +802,14 @@
                                             </div>
                                             @elseif(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
                                                 @php
-                                                    $all_csr = \App\Models\RoleHasUsers::where('role_id',2)->pluck('user_id');
-                                                    $csr_users = \App\Models\User::whereIn('id',$all_csr)->get();
+                                                    $all_csr = \App\Models\RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
+                                                    $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
+                                                    
                                                 @endphp
                                                 <div class="btn-group">
                                                     <a data-id="All" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn" 
                                                     href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false"> Select User
+                                                    data-close-others="true" aria-expanded="false">All
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
@@ -900,11 +899,32 @@
                                     </div>
                                     <div class="col-4 centre_wise_arrival_wrap">
                                         <div class="row" id="centre_wise_arrival_02">
-                                            
-                                        </div>   
-                                    </div>
+                                            <div class='table-responsive'>
+                                                <table class='table'>
+                                                    <thead>
+                                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
+                                                            <tr>
+                                                                <th class='table-cols'></th>
+                                                                <th class='table-cols'>Arrived</th>
+                                                                <th class='table-cols'>Percentage</th>
+                                                            </tr>  
+                                                        @else  
+                                                            <tr>
+                                                                <th class='table-cols'></th>
+                                                                <th class='table-cols'>Arrived</th>
+                                                                <th class='table-cols'>WalkIn</th>
+                                                                <th class='table-cols'>Percentage</th>
+                                                            </tr>
+                                                        @endif
+                                                    </thead>
+                                                    <tbody id="table-body">
+                                                        
+                                                    </tbody>
+                                                </table>
+                                            </div>   
+                                        </div>
                                     
-                                </div>
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -921,14 +941,13 @@
     <script src="{{asset('assets/js/pie.js')}}"></script>
     <script>
         jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function(){
-            var dataID = jQuery(this).attr('data-id');
-            var dataText = jQuery(this).text();
-            jQuery('.btn.arrivalbtn').attr('data-id', dataID);
-            jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>');
-            jQuery('.wise_arrival_ul li a').removeClass('active');
-            jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');
-
-        });
+                var dataID = jQuery(this).attr('data-id');
+                var dataText = jQuery(this).text();
+                jQuery('.btn.arrivalbtn').attr('data-id', dataID);
+                jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>') 
+                jQuery('.wise_arrival_ul li a').removeClass('active');
+                jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');  
+            });
         $(document).ready(function(){
             period="today";
             $.ajax({
@@ -941,15 +960,38 @@
                     $("#activitydiv").html(response);
                 },
             });
-            
+            @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
+                $.ajax({
+                    url: route('admin.dashboard.call_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+                        BarChartCentre(response);
+                        jQuery('#table-body').html("");
+                        jQuery('.wise_arrival_ul li a').removeClass('active');
+                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
+                        var TABLE_HTML = "";
+                        var barLenght = response.data.bar;
+                        for(var i = 0; i < barLenght.length; i++){
+                            TABLE_HTML += "<tr><td>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                        }
+                        jQuery('#table-body').append(TABLE_HTML);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
+            @else
             $.ajax({
                     url: route('admin.dashboard.centre_wise_arrival'),
                     type: "GET",
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
-
-                        console.log(response);
+                        jQuery('.wise_arrival_ul li a').removeClass('active');
+                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
                         var TABLE_HTML = "";
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
@@ -959,16 +1001,22 @@
                             } else {
                                 walkin = response.data.walkin[i];
                             }
-                            TABLE_HTML += "<div class='col-6'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td></tr></tbody></table></div></div>";
-             }
-                        jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
-                        BarChart(response);
+                            let str = barLenght[i];
+                            let wordToRemove = "CUTERA ";
+                            let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                            TABLE_HTML += "<tr><td>"+centre_name+"</td><td>"+response.data.arrived[i]/response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                        }
+                        jQuery('#table-body').append(TABLE_HTML);
+                        BarChartCentre(response);
                         
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         errorMessage(xhr);
                     }
                 });
+            
+                
+            @endif
         });
         var collection_by_center= false; 
         var revenue_by_center= false;
@@ -1186,6 +1234,63 @@
             }
             
         });
+        function BarChartCentre(service) {
+            const primary = '#6993FF';
+            const success = '#1BC5BD';
+            const info = '#8950FC';
+            const warning = '#FFA800';
+            const danger = '#F64E60';
+            let locations = service.data.bar;
+           
+            let modifiedLocations;
+            if(locations.length > 0){
+                if (locations.some(str => str.includes('CUTERA'))) {
+                    console.log("here");
+                    modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
+                }else{
+                    console.log("hssere");
+                    modifiedLocations = locations;
+                }
+                
+            }else{
+                modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
+            }
+            var options = {
+                series: [{
+                    name: 'Total Appointments',
+                    data: service.data.total
+                }, {
+                    name: 'Arrived',
+                    data: service.data.arrived
+                },{
+                    name: 'Walk-in',
+                    data: service.data.walkin
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 350,
+                   
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        endingShape: 'rounded'
+                    },
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: modifiedLocations,
+                },
+                colors: [primary, success, warning]
+            };
+            var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
+            chart.render();
+        }
         function TreatmentByStatus(pie,colors) {
             google.load('visualization', '1', {
                 packages: ['corechart', 'bar', 'line']
