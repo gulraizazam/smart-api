@@ -13,6 +13,7 @@ use App\Models\SMSTemplates;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Config;
+use Illuminate\Support\Facades\Log;
 
 class DeliverOnAppointmentBook extends Command
 {
@@ -90,8 +91,10 @@ class DeliverOnAppointmentBook extends Command
         // Get Appointment
         $appointment = Appointments::find($appointmentId);
         if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
+            Log::info($appointment);
             // SEND SMS for Appointment Booked
             if($appointment->consultancy_type == 'virtual'){
+                Log::info($appointment->consultancy_type );
                 $SMSTemplate = SMSTemplates::getBySlug('virtual-on-appointment', $account_id); // 'on-appointment' for virtual consultancy SMS
             } else {
                 $SMSTemplate = SMSTemplates::getBySlug('on-appointment', $account_id); // 'on-appointment' for Appointment SMS
@@ -100,7 +103,7 @@ class DeliverOnAppointmentBook extends Command
             // SEND SMS for Appointment Booked
             $SMSTemplate = SMSTemplates::getBySlug('treatment-on-appointment', $account_id); // 'on-appointment' for Appointment SMS
         }
-
+        Log::info($SMSTemplate);
         if (!$SMSTemplate) {
             // SMS Promotion is disabled
             return array(
@@ -115,7 +118,7 @@ class DeliverOnAppointmentBook extends Command
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
         $UserOperatorSettings = UserOperatorSettings::getRecord($account_id, $setting->data);
-
+        Log::info($UserOperatorSettings);
         if ($setting->data == 1) {
             $SMSObj = array(
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
@@ -146,7 +149,7 @@ class DeliverOnAppointmentBook extends Command
         }
         SMSLogs::create($SMSLog);
         // SEND SMS for Appointment Booked End
-
+        Log::info($response);
         return $response;
     }
 }
