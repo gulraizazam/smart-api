@@ -2975,7 +2975,10 @@ class DashboardReportsController extends Controller
                 ->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name); 
+                if($user){
+                    array_push($lables, $user->name); 
+                }
+                
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
