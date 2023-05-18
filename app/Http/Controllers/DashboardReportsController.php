@@ -2835,6 +2835,9 @@ class DashboardReportsController extends Controller
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
                 })
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
+                })
                 ->groupBy('user_id')
                 ->get();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
@@ -2844,7 +2847,9 @@ class DashboardReportsController extends Controller
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
                 })
-                
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
+                })
                 ->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
@@ -2866,6 +2871,9 @@ class DashboardReportsController extends Controller
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
                 })
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
+                })
                 ->groupBy('user_id')
                 ->get();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
@@ -2875,7 +2883,9 @@ class DashboardReportsController extends Controller
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
                 })
-                
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
+                })
                 ->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
@@ -2897,12 +2907,18 @@ class DashboardReportsController extends Controller
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
                 })
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
+                })
                 ->groupBy('user_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
+                })
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
                 })
                 ->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
@@ -2924,12 +2940,18 @@ class DashboardReportsController extends Controller
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
                 })
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
+                })
             ->groupBy('user_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
+                })
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
                 })
                 ->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
@@ -2950,12 +2972,18 @@ class DashboardReportsController extends Controller
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
                 })
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
+                })
                 ->groupBy('user_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=',Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
                 ->when($request->user_id != 'All', function ($query) use ($request) {
                     return $query->where('user_id', $request->user_id);
+                })
+                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
+                    return $query->whereIn('user_id',$csr);
                 })
                 ->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
                 
