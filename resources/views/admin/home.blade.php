@@ -960,7 +960,7 @@
                     $("#activitydiv").html(response);
                 },
             });
-            @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
+            @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                 $.ajax({
                     url: route('admin.dashboard.agent_wise_arrival'),
                     type: "GET",
@@ -984,21 +984,7 @@
                         errorMessage(xhr);
                     }
                 });
-            @elseif(Auth::user()->hasRole('CSR'))
-                var userId = {{ auth()->user()->id }};
-                $.ajax({
-                    url: route('admin.dashboard.csr_user_wise_arrival'),
-                    type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2','user_id':userId},
-                    cache: false,
-                    success: function (response) {
-                       console.log('sss',response);
-                        
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
-                });
+            
             @else
                 $.ajax({
                     url: route('admin.dashboard.centre_wise_arrival'),
