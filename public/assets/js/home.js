@@ -692,6 +692,7 @@ function LoadBarChartUserWise(UserID,period){
             'user_id':UserID
         },
         success: function (response) {
+            console.log('user',response);
             BarChartUserWise(response);
             jQuery('#table-body').html("");
             setTimeout(function() {
