@@ -776,11 +776,11 @@
                                     <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
                                         <li style="border-bottom: none;">
                                             <div class="actions action-style p-3 mr-3">
-                                            @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('CSR')) 
+                                            @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') ) 
                                                 @php
-                                                    $centres_array =['All South Region','All Central Region'];
+                                                    $centres_array =['All South Region','All Central Region','All Centres'];
                                                     $locations = \App\Helpers\ACL::getUserCentres();
-                                                    $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->get();
+                                                    $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
                                                 @endphp
                                                 <div class="btn-group">
                                                     <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
@@ -800,7 +800,7 @@
                                                     </ul>
                                                 </div>
                                             </div>
-                                            @elseif(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
+                                            @elseif(Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                 @php
                                                     $all_csr = \App\Models\RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
                                                     $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
@@ -813,13 +813,11 @@
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a data-id="All" onclick="LoadBarChartUserWise('All','yesterday')">All CSR</a>
-                                                        </li>
+                                                        
                                                         @foreach($csr_users as $user)
                                                         <li>
                                                             <a 
-                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'yesterday')">{{$user->name}}</a>
+                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'yesterday')" >{{$user->name}}</a>
                                                         </li>
                                                         @endforeach
                                                         
@@ -842,7 +840,7 @@
                                             </div>
                                             @endif
                                         </li>
-                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
+                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                         <li>
                                             <a href="#appointment_by_status_1" data-toggle="tab"
                                             onclick="initUserWiseArrival('yesterday');">Yesterday</a>
@@ -904,11 +902,11 @@
                                                     <thead>
                                                         @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                             <tr>
-                                                                <th class='table-cols'></th>
+                                                                <th class='table-cols'>CSR Name</th>
                                                                 <th class='table-cols'>Arrived</th>
                                                                 <th class='table-cols'>Percentage</th>
-                                                            </tr>  
-                                                        @else  
+                                                            </tr>
+                                                        @else    
                                                             <tr>
                                                                 <th class='table-cols'></th>
                                                                 <th class='table-cols'>Arrived</th>
@@ -962,49 +960,19 @@
             });
             @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                 $.ajax({
-                    url: route('admin.dashboard.call_wise_arrival'),
+                    url: route('admin.dashboard.agent_wise_arrival'),
                     type: "GET",
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
-                        BarChartCentre(response);
+                        
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
                         jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
                         var TABLE_HTML = "";
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
-                            TABLE_HTML += "<tr><td>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
-                        }
-                        jQuery('#table-body').append(TABLE_HTML);
-                        
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
-                });
-            @else
-            $.ajax({
-                    url: route('admin.dashboard.centre_wise_arrival'),
-                    type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2'},
-                    cache: false,
-                    success: function (response) {
-                        jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
-                        var TABLE_HTML = "";
-                        var barLenght = response.data.bar;
-                        for(var i = 0; i < barLenght.length; i++){
-                            var walkin = "";
-                            if(response.data.walkin[i] === undefined) {
-                                walkin = "0";
-                            } else {
-                                walkin = response.data.walkin[i];
-                            }
-                            let str = barLenght[i];
-                            let wordToRemove = "CUTERA ";
-                            let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                            TABLE_HTML += "<tr><td>"+centre_name+"</td><td>"+response.data.arrived[i]/response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
                         }
                         jQuery('#table-body').append(TABLE_HTML);
                         BarChartCentre(response);
@@ -1015,7 +983,44 @@
                     }
                 });
             
-                
+            @else
+                $.ajax({
+                    url: route('admin.dashboard.centre_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+                        jQuery('#table-body').html("");
+                        jQuery('.wise_arrival_ul li a').removeClass('active');
+                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
+                        var TABLE_HTML = "";
+                        var barLenght = response.data.bar;
+                        for(var i = 0; i < barLenght.length; i++){
+                            var walkin = "";
+                            var arrived = "";
+                            var total = "";
+                            if(response.data.walkin[i] === undefined) {
+                                walkin = "0";
+                                arrived = response.data.arrived[i]-walkin;
+                                total = response.data.total[i]-walkin;
+                            } else {
+                                walkin = response.data.walkin[i];
+                                arrived = response.data.arrived[i]-walkin;
+                                total = response.data.total[i]-walkin;
+                            }
+                            let str = barLenght[i];
+                            let wordToRemove = "CUTERA ";
+                            let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
+                        }
+                        jQuery('#table-body').append(TABLE_HTML);
+                        BarChartCentre(response);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
             @endif
         });
         var collection_by_center= false; 
@@ -1280,7 +1285,7 @@
                 },
                 stroke: {
                     show: true,
-                    width: 2,
+                    width: 1,
                     colors: ['transparent']
                 },
                 xaxis: {
@@ -1446,7 +1451,7 @@
                 },
                 stroke: {
                     show: true,
-                    width: 2,
+                    width: 1,
                     colors: ['transparent']
                 },
                 xaxis: {
