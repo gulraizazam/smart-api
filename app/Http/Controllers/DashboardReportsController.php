@@ -3218,7 +3218,7 @@ class DashboardReportsController extends Controller
                 array_push($arrived_apts, $apt['arrived']);
             }    
         }
-        dd($total_apts);
+        
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
             'bar' => $lables,
             'total'=>$total_apts,
