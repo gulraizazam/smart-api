@@ -3042,13 +3042,13 @@ class DashboardReportsController extends Controller
     }
     public function CsrUserWiseArrival(Request $request)
     {
-        dd($request->all());
+        
         $total_apts = [];
         $arrived_apts = [];
         $lables = [];
         $csr_users = RoleHasUsers::where(['role_id' => 2])->pluck('user_id');
         $csr = User::whereIn('id',$csr_users)->where('active',1)->pluck('id');
-        if ($request->period=='yesterday') {
+        if ($request->period=='') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
@@ -3218,6 +3218,7 @@ class DashboardReportsController extends Controller
                 array_push($arrived_apts, $apt['arrived']);
             }    
         }
+        dd($total_apts);
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
             'bar' => $lables,
             'total'=>$total_apts,
