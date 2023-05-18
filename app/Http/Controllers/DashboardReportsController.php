@@ -2969,10 +2969,12 @@ class DashboardReportsController extends Controller
         $lables = [];
         if ($request->period == '') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
+            $csr_users = RoleHasUsers::where(['role_id' => 2])->pluck('user_id');
+            $csr = User::whereIn('id',$csr_users)->where('active',1)->pluck('id');
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereNotIn('user_id', $fdm_users)->groupBy('user_id')->get()->toArray();
+                ->whereIn('user_id', $csr)->groupBy('user_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('cron_current_date', DB::raw('count(*) as arrived'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereNotIn('user_id', $fdm_users)->where(['appointment_status_id' =>2])
+                ->whereIn('user_id', $csr)->where(['appointment_status_id' =>2])
                 ->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
