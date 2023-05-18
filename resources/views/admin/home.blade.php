@@ -965,7 +965,7 @@
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
-                        console.log('res',response);
+                        
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
                         jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
@@ -997,15 +997,21 @@
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
                             var walkin = "";
+                            var arrived = "";
+                            var total = "";
                             if(response.data.walkin[i] === undefined) {
                                 walkin = "0";
+                                arrived = response.data.arrived[i]-walkin;
+                                total = response.data.total[i]-walkin;
                             } else {
                                 walkin = response.data.walkin[i];
+                                arrived = response.data.arrived[i]-walkin;
+                                total = response.data.total[i]-walkin;
                             }
                             let str = barLenght[i];
                             let wordToRemove = "CUTERA ";
                             let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
                         }
                         jQuery('#table-body').append(TABLE_HTML);
                         BarChartCentre(response);
