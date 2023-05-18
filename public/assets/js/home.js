@@ -750,7 +750,7 @@ function BarChartUserWise(bar)
         },
         stroke: {
             show: true,
-            width: 2,
+            width: 1,
             colors: ['transparent']
         },
         xaxis: {
