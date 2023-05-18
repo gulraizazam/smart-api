@@ -115,7 +115,7 @@ var EditValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('patient');
                 } else {
                     toastr.error(response.message);
                 }
