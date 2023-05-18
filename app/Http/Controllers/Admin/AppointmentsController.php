@@ -2255,7 +2255,7 @@ class AppointmentsController extends Controller
         $locationsids = array();
         $doctorids = array();
         $machineids = array();
-        $appointment = Appointments::with('patient', 'doctor', 'lead.patient')->find($id);
+        $appointment = Appointments::with('patient', 'doctor')->find($id);
         if (! $appointment) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
@@ -2349,7 +2349,7 @@ class AppointmentsController extends Controller
         $locationsids = array();
         $doctorids = array();
         $machineids = array();
-        $appointment = Appointments::with('patient', 'doctor', 'lead.patient')->find($id);
+        $appointment = Appointments::with('patient', 'doctor')->find($id);
         if (! $appointment) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
