@@ -902,18 +902,18 @@
                                             <div class='table-responsive'>
                                                 <table class='table'>
                                                     <thead>
-                                                        @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('CSR'))
+                                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                             <tr>
-                                                                <th class='table-cols'>Centre Name</th>
+                                                                <th class='table-cols'></th>
                                                                 <th class='table-cols'>Arrived</th>
-                                                                <th class=table-cols'>WalkIn</th>
-                                                                <th class=table-cols'>Percentage</th>
-                                                            </tr>
-                                                        @else
+                                                                <th class='table-cols'>Percentage</th>
+                                                            </tr>  
+                                                        @else  
                                                             <tr>
-                                                                <th class='table-cols'>CSR Name</th>
+                                                                <th class='table-cols'></th>
                                                                 <th class='table-cols'>Arrived</th>
-                                                                <th class=table-cols'>Percentage</th>
+                                                                <th class='table-cols'>WalkIn</th>
+                                                                <th class='table-cols'>Percentage</th>
                                                             </tr>
                                                         @endif
                                                     </thead>
@@ -960,36 +960,54 @@
                     $("#activitydiv").html(response);
                 },
             });
-            $.ajax({
-                url: route('admin.dashboard.centre_wise_arrival'),
-                type: "GET",
-                data: {'period': '{{request('type')}}','type':'2'},
-                cache: false,
-                success: function (response) {
-                    jQuery('.wise_arrival_ul li a').removeClass('active');
-                    jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
-                    var TABLE_HTML = "";
-                    var barLenght = response.data.bar;
-                    for(var i = 0; i < barLenght.length; i++){
-                        var walkin = "";
-                        if(response.data.walkin[i] === undefined) {
-                            walkin = "0";
-                        } else {
-                            walkin = response.data.walkin[i];
-                        }
-                        let str = barLenght[i];
-                        let wordToRemove = "CUTERA ";
-                        let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                        TABLE_HTML += "<tr><td>"+centre_name+"</td><td>"+response.data.arrived[i]/response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+            @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
+                $.ajax({
+                    url: route('admin.dashboard.call_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+                        console.log('res',response);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
                     }
-                    jQuery('#table-body').append(TABLE_HTML);
-                    BarChartCentre(response);
-                    
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
+                });
+            @else
+            $.ajax({
+                    url: route('admin.dashboard.centre_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+                        jQuery('.wise_arrival_ul li a').removeClass('active');
+                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
+                        var TABLE_HTML = "";
+                        var barLenght = response.data.bar;
+                        for(var i = 0; i < barLenght.length; i++){
+                            var walkin = "";
+                            if(response.data.walkin[i] === undefined) {
+                                walkin = "0";
+                            } else {
+                                walkin = response.data.walkin[i];
+                            }
+                            let str = barLenght[i];
+                            let wordToRemove = "CUTERA ";
+                            let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                            TABLE_HTML += "<tr><td>"+centre_name+"</td><td>"+response.data.arrived[i]/response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                        }
+                        jQuery('#table-body').append(TABLE_HTML);
+                        BarChartCentre(response);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
+            
+                
+            @endif
         });
         var collection_by_center= false; 
         var revenue_by_center= false;
