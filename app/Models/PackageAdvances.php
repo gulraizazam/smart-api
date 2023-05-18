@@ -20,7 +20,7 @@
 		protected $table = 'package_advances';
 
 		protected static $_table = 'package_advances';
-
+		
 		/*
 		 * get the payment modes
 		 * */
