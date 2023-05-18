@@ -800,7 +800,7 @@
                                                     </ul>
                                                 </div>
                                             </div>
-                                            @elseif(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
+                                            @elseif(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead')|| Auth::user()->hasRole('CSR'))
                                                 @php
                                                     $all_csr = \App\Models\RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
                                                     $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
@@ -842,7 +842,7 @@
                                             </div>
                                             @endif
                                         </li>
-                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
+                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                         <li>
                                             <a href="#appointment_by_status_1" data-toggle="tab"
                                             onclick="initUserWiseArrival('yesterday');">Yesterday</a>
@@ -906,7 +906,7 @@
                                                             <tr>
                                                                 <th class='table-cols'>CSR Name</th>
                                                                 <th class='table-cols'>Arrived</th>
-                                                                <th class=table-cols'>Percentage</th>
+                                                                <th class='table-cols'>Percentage</th>
                                                             </tr>
                                                         @else    
                                                             <tr>
@@ -963,6 +963,30 @@
             @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
                 $.ajax({
                     url: route('admin.dashboard.agent_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+                        console.log('res',response);
+                        jQuery('#table-body').html("");
+                        jQuery('.wise_arrival_ul li a').removeClass('active');
+                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
+                        var TABLE_HTML = "";
+                        var barLenght = response.data.bar;
+                        for(var i = 0; i < barLenght.length; i++){
+                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                        }
+                        jQuery('#table-body').append(TABLE_HTML);
+                        BarChartCentre(response);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
+            @elseif(Auth::user()->hasRole('CSR'))
+                $.ajax({
+                    url: route('admin.dashboard.csr_user_wise_arrival'),
                     type: "GET",
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
