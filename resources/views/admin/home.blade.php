@@ -985,10 +985,11 @@
                     }
                 });
             @elseif(Auth::user()->hasRole('CSR'))
+                var userId = {{ auth()->user()->id }};
                 $.ajax({
                     url: route('admin.dashboard.csr_user_wise_arrival'),
                     type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2','user_id':'Auth::user()->id'},
+                    data: {'period': '{{request('type')}}','type':'2','user_id':userId},
                     cache: false,
                     success: function (response) {
                         
