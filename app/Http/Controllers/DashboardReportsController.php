@@ -2962,4 +2962,118 @@ class DashboardReportsController extends Controller
             
         ]);
     }
+    public function CallWiseArrival(Request $request)
+    {
+        $total_apts = [];
+        $arrived_apts = [];
+        $lables = [];
+        if ($request->period == '') {
+            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
+                ->where('user_id', $request->user_id)->groupBy('user_id')->get()->toArray();
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id , 'appointment_status_id' =>2])
+                ->groupBy('user_id')->get()->toArray();
+            foreach($yesterday_total_appointments as $loc){
+                $user = User::findOrFail($loc['user_id']);
+                array_push($lables, $user->name); 
+                array_push($total_apts, $loc['total']);
+            }
+            foreach($yesterday_arrived_appointments as $apt){
+                array_push($arrived_apts, $apt['arrived']);
+            }    
+        }
+        if ($request->period=='yesterday') {
+            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
+                ->where('user_id', $request->user_id)->groupBy('user_id')->get()->toArray();
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
+                ->where(['user_id' => $request->user_id , 'appointment_status_id' =>2])->groupBy('user_id')->get()->toArray();
+            foreach($yesterday_total_appointments as $loc){
+                $user = User::findOrFail($loc['user_id']);
+                array_push($lables, $user->name); 
+                array_push($total_apts, $loc['total']);
+            }
+            foreach($yesterday_arrived_appointments as $apt){
+                array_push($arrived_apts, $apt['arrived']);
+            }    
+        }
+        if ($request->period=='last7days') {
+            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id ])->groupBy('user_id')->get()->toArray();
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
+            foreach($yesterday_total_appointments as $loc){
+                $user = User::findOrFail($loc['user_id']);
+                array_push($lables, $user->name); 
+                array_push($total_apts, $loc['total']);
+                
+            }
+            foreach($yesterday_arrived_appointments as $apt){
+                array_push($arrived_apts, $apt['arrived']);
+            }
+        }
+        if ($request->period=='week') {
+            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id ])->groupBy('user_id')->get()->toArray();
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
+            foreach($yesterday_total_appointments as $loc){
+                $user = User::findOrFail($loc['user_id']);
+                array_push($lables, $user->name); 
+                array_push($total_apts, $loc['total']);
+            }
+            foreach($yesterday_arrived_appointments as $apt){
+                array_push($arrived_apts, $apt['arrived']);
+            }
+        }
+        if ($request->period=='thismonth') {
+            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id ])->groupBy('user_id')->get()->toArray();
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
+            foreach($yesterday_total_appointments as $loc){
+                $user = User::findOrFail($loc['user_id']);
+                array_push($lables, $user->name); 
+                array_push($total_apts, $loc['total']);
+            }
+            foreach($yesterday_arrived_appointments as $apt){
+                array_push($arrived_apts, $apt['arrived']);
+            }
+        }
+        if ($request->period=='lastmonth') {
+            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=',Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id ])->groupBy('user_id')->get()->toArray();
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=',Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
+                ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
+            foreach($yesterday_total_appointments as $loc){
+                $user = User::findOrFail($loc['user_id']);
+                array_push($lables, $user->name); 
+                array_push($total_apts, $loc['total']);  
+            }
+            foreach($yesterday_arrived_appointments as $apt){
+                array_push($arrived_apts, $apt['arrived']);
+            }    
+        }
+        return ApiHelper::apiResponse($this->success, 'csr wise arrival data', true, [
+            'bar' => $lables,
+            'total'=>$total_apts,
+            'arrived'=>$arrived_apts
+            
+        ]);
+    }
 }
