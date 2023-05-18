@@ -113,7 +113,7 @@ var EditPermissionValidation = function () {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('permission');
                 } else {
                     toastr.error(response.message);
                 }
