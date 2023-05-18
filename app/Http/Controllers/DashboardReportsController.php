@@ -2972,8 +2972,12 @@ class DashboardReportsController extends Controller
             $csr_users = RoleHasUsers::where(['role_id' => 2])->pluck('user_id');
             $csr = User::whereIn('id',$csr_users)->where('active',1)->pluck('id');
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                 ->whereIn('user_id', $csr)->groupBy('user_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('cron_current_date', DB::raw('count(*) as arrived'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+            $yesterday_arrived_appointments = AppointmentsDailyStats::select('cron_current_date', DB::raw('count(*) as arrived'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                 ->whereIn('user_id', $csr)->where(['appointment_status_id' =>2])
                 ->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
