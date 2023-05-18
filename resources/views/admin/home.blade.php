@@ -960,37 +960,53 @@
                     $("#activitydiv").html(response);
                 },
             });
-            $.ajax({
-                url: route('admin.dashboard.centre_wise_arrival'),
-                type: "GET",
-                data: {'period': '{{request('type')}}','type':'2'},
-                cache: false,
-                success: function (response) {
-                    jQuery('#table-body').html("");
-                    jQuery('.wise_arrival_ul li a').removeClass('active');
-                    jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
-                    var TABLE_HTML = "";
-                    var barLenght = response.data.bar;
-                    for(var i = 0; i < barLenght.length; i++){
-                        var walkin = "";
-                        if(response.data.walkin[i] === undefined) {
-                            walkin = "0";
-                        } else {
-                            walkin = response.data.walkin[i];
-                        }
-                        let str = barLenght[i];
-                        let wordToRemove = "CUTERA ";
-                        let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+            @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead'))
+                $.ajax({
+                    url: route('admin.dashboard.agent_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+                        console.log('response',response);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
                     }
-                    jQuery('#table-body').append(TABLE_HTML);
-                    BarChartCentre(response);
-                    
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
+                });
+            @else
+                $.ajax({
+                    url: route('admin.dashboard.centre_wise_arrival'),
+                    type: "GET",
+                    data: {'period': '{{request('type')}}','type':'2'},
+                    cache: false,
+                    success: function (response) {
+                        jQuery('#table-body').html("");
+                        jQuery('.wise_arrival_ul li a').removeClass('active');
+                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
+                        var TABLE_HTML = "";
+                        var barLenght = response.data.bar;
+                        for(var i = 0; i < barLenght.length; i++){
+                            var walkin = "";
+                            if(response.data.walkin[i] === undefined) {
+                                walkin = "0";
+                            } else {
+                                walkin = response.data.walkin[i];
+                            }
+                            let str = barLenght[i];
+                            let wordToRemove = "CUTERA ";
+                            let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                        }
+                        jQuery('#table-body').append(TABLE_HTML);
+                        BarChartCentre(response);
+                        
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
+            @endif
         });
         var collection_by_center= false; 
         var revenue_by_center= false;
