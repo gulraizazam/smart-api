@@ -603,11 +603,11 @@ function initCentreWiseArrival(period){
 } 
 function initUserWiseArrival(period){
     var dataID ;
-   if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
-    dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-   }else{
-    dataID = 'All';
-   }
+    if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
+        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
+    }else{
+        dataID = 'All';
+    }
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
