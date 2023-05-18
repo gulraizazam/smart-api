@@ -175,7 +175,6 @@ function initRevenueByService(today, yesterday, last7days,week, thismonth,lastmo
             'lastmonth': lastmonth,
         },
         success: function (response) {
-            console.log(response);
             let colors = response.data.colors;
             if (today != '') {
                 $(".service-title").text('Today Income');
@@ -579,10 +578,10 @@ function initCentreWiseArrival(period){
             'centre_id':dataID
         },
         success: function (response) {
-            jQuery('#centre_wise_arrival_02').html('');
+            jQuery('#table-body').html('');
             ConsultanciesByStatus(response);
             setTimeout(function() {
-                 jQuery('#centre_wise_arrival_02').html('');
+              
                 var TABLE_HTML = "";
                 var barLenght = response.data.bar;
                 for(var i = 0; i < barLenght.length; i++){
@@ -592,9 +591,12 @@ function initCentreWiseArrival(period){
                     } else {
                         walkin = response.data.walkin[i];
                     }
-                    TABLE_HTML += "<div class='col-12'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th><th class=table-cols'>Percentage</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr></tbody></table></div></div>";
+                    let str = barLenght[i];
+                    let wordToRemove = "CUTERA ";
+                    let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                    TABLE_HTML += "<tr><td>"+centre_name+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
                 }
-                jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
+                jQuery('#table-body').append(TABLE_HTML);
             }, 2000); 
         },
     });
@@ -619,6 +621,23 @@ function initUserWiseArrival(period){
         },
         success: function (response) {
             ConsultanciesByStatus(response);
+            jQuery('#table-body').html("");
+            setTimeout(function() {
+                var TABLE_HTML = "";
+                let total = 0;
+                let arrived = 0;
+                var barLenght = response.data.bar;
+                var csr_name = $('.arrivalbtn').text();
+                
+                for(var i = 0; i < barLenght.length; i++){
+                    arrived += response.data.arrived[i];
+                    total += response.data.total[i];
+                    }
+                    TABLE_HTML += "<tr><td>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
+                
+                jQuery('#table-body').append(TABLE_HTML);
+            }, 2000); 
+            
         },
     });
 } 
@@ -637,7 +656,7 @@ function LoadBarChart(centreID,period){
         success: function (response) {
            
             ConsultanciesByStatus(response);
-            jQuery('#centre_wise_arrival_02').html('');
+            jQuery('#table-body').html('');
             var TABLE_HTML = "";
             var barLenght = response.data.bar;
             for(var i = 0; i < barLenght.length; i++){
@@ -647,9 +666,12 @@ function LoadBarChart(centreID,period){
                 } else {
                     walkin = response.data.walkin[i];
                 }
-                TABLE_HTML += "<div class='col-12'><h6 class='centre-name'>"+barLenght[i]+"</h6><div class='table-responsive'><table class='table'><thead><tr><th class='table-cols'>Total</th><th class='table-cols'>Arrived</th><th class=table-cols'>Walk in</th><th class=table-cols'>Percentage</th></tr></thead><tbody><tr><td>"+response.data.total[i]+"</td><td>"+response.data.arrived[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr></tbody></table></div></div>";
-                 }
-            jQuery('#centre_wise_arrival_02').append(TABLE_HTML);
+                let str = barLenght[i];
+                let wordToRemove = "CUTERA ";
+                let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                TABLE_HTML += "<tr><td>"+centre_name+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+walkin+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                    }
+            jQuery('#table-body').append(TABLE_HTML);
         },
     });
 }
@@ -667,6 +689,24 @@ function LoadBarChartUserWise(UserID,period){
         },
         success: function (response) {
             BarChartUserWise(response);
+            jQuery('#table-body').html("");
+            setTimeout(function() {
+                var TABLE_HTML = "";
+                let total = 0;
+                let arrived = 0;
+                var barLenght = response.data.bar;
+                var csr_name = $('.arrivalbtn').text();
+                if(csr_name == "" || csr_name == "Select User"){
+                    csr_name = "All CSR";
+                }
+                for(var i = 0; i < barLenght.length; i++){
+                    arrived += response.data.arrived[i];
+                    total += response.data.total[i];
+                    }
+                    TABLE_HTML += "<tr><td>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
+                
+                jQuery('#table-body').append(TABLE_HTML);
+            }, 2000); 
             
         },
     });
