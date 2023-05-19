@@ -583,6 +583,9 @@ function initCentreWiseArrival(period){
             setTimeout(function() {
                 jQuery('#table-body').html('');
                 var TABLE_HTML = "";
+                var walkin_t = 0;
+                var arrived_t = 0;
+                var total_t = 0;
                 var barLenght = response.data.bar;
                 for(var i = 0; i < barLenght.length; i++){
                     var walkin = "";
@@ -592,16 +595,31 @@ function initCentreWiseArrival(period){
                         walkin = "0";
                         arrived = response.data.arrived[i]-walkin;
                         total = response.data.total[i]-walkin;
+                        walkin_t += 0;
+                        arrived_t += response.data.arrived[i];
+                        total_t += response.data.total[i];
                     } else {
                         walkin = response.data.walkin[i];
                         arrived = response.data.arrived[i]-walkin;
                         total = response.data.total[i]-walkin;
+                        walkin_t += response.data.walkin[i];
+                        arrived_t += response.data.arrived[i];
+                        total_t += response.data.total[i];
                     }
+                    
                     let str = barLenght[i];
                     let wordToRemove = "CUTERA ";
                     let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
                 }
+                arrived_t -= walkin_t;
+                total_t -= walkin_t;
+               
+                if(dataID == "All"){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+                
+                }
+                
                 jQuery('#table-body').append(TABLE_HTML);
             }, 2000); 
         },
