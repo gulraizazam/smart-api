@@ -105,14 +105,14 @@
     .table-cols{
         font-size: 12px;
     }
-    
+
     .wise_arrival_ul .dropdown-menu li a{
-        cursor:pointer;   
+        cursor:pointer;
     }
     .wise_arrival_ul .dropdown-menu li a:hover{
         background:#f3f3f3;
     }
-    
+
 </style>
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb')
@@ -467,7 +467,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-12 col-xxl-12">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -776,7 +776,7 @@
                                     <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
                                         <li style="border-bottom: none;">
                                             <div class="actions action-style p-3 mr-3">
-                                            @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') ) 
+                                            @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') )
                                                 @php
                                                     $centres_array =['All South Region','All Central Region','All Centres'];
                                                     $locations = \App\Helpers\ACL::getUserCentres();
@@ -789,14 +789,14 @@
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-                                                    
+
                                                         @foreach($centres as $centre)
                                                         <li>
-                                                            <a 
+                                                            <a
                                                              data-id="{{$centre->id}}" onclick="LoadBarChart({{$centre->id}},'yesterday')">{{$centre->name}}</a>
                                                         </li>
                                                         @endforeach
-                                                        
+
                                                     </ul>
                                                 </div>
                                             </div>
@@ -804,23 +804,23 @@
                                                 @php
                                                     $all_csr = \App\Models\RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
                                                     $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
-                                                    
+
                                                 @endphp
                                                 <div class="btn-group">
-                                                    <a data-id="All" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn" 
+                                                    <a data-id="All" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
                                                     href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                     data-close-others="true" aria-expanded="false">All
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-                                                        
+
                                                         @foreach($csr_users as $user)
                                                         <li>
-                                                            <a 
+                                                            <a
                                                              data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'yesterday')" >{{$user->name}}</a>
                                                         </li>
                                                         @endforeach
-                                                        
+
                                                     </ul>
                                                 </div>
                                             @else
@@ -835,53 +835,53 @@
                                                     data-close-others="true" aria-expanded="false"> {{$centres->name}}
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
-                                                    
+
                                                 </div>
                                             </div>
                                             @endif
                                         </li>
                                         @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                        <li>
-                                            <a href="#appointment_by_status_1" data-toggle="tab"
-                                            onclick="initUserWiseArrival('yesterday');">Yesterday</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initUserWiseArrival('last7days');">Last 7 Days</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initUserWiseArrival('week');">This Week</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initUserWiseArrival('thismonth');">This Month</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initUserWiseArrival('lastmonth');">Last Month</a>
-                                        </li>
+                                            <li>
+                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                onclick="initUserWiseArrival('yesterday');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initUserWiseArrival('last7days');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initUserWiseArrival('week');">This Week</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initUserWiseArrival('thismonth');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initUserWiseArrival('lastmonth');">Last Month</a>
+                                            </li>
                                         @else
-                                        <li>
-                                            <a href="#appointment_by_status_1" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('last7days');">Last 7 Days</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('week');">This Week</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('thismonth');">This Month</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
-                                        </li>
+                                            <li>
+                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initCentreWiseArrival('last7days');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initCentreWiseArrival('week');">This Week</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initCentreWiseArrival('thismonth');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
+                                            </li>
                                         @endif
                                     </ul>
                                     <div class="d-none flex-column text-right">
@@ -890,12 +890,12 @@
                                     </div>
                                 </div>
                                 <div class="row pt-7">
-                                     <div class="col-8">
+                                     <div class="col-7">
                                         <div id="centre_wise_arrival">
-                                        
+
                                         </div>
                                     </div>
-                                    <div class="col-4 centre_wise_arrival_wrap">
+                                    <div class="col-5 centre_wise_arrival_wrap">
                                         <div class="row" id="centre_wise_arrival_02">
                                             <div class='table-responsive'>
                                                 <table class='table'>
@@ -906,7 +906,7 @@
                                                                 <th class='table-cols'>Arrived</th>
                                                                 <th class='table-cols'>Percentage</th>
                                                             </tr>
-                                                        @else    
+                                                        @else
                                                             <tr>
                                                                 <th class='table-cols'></th>
                                                                 <th class='table-cols'>Arrived</th>
@@ -916,12 +916,12 @@
                                                         @endif
                                                     </thead>
                                                     <tbody id="table-body">
-                                                        
+
                                                     </tbody>
                                                 </table>
-                                            </div>   
+                                            </div>
                                         </div>
-                                    
+
                                     </div>
                             </div>
                         </div>
@@ -942,9 +942,9 @@
                 var dataID = jQuery(this).attr('data-id');
                 var dataText = jQuery(this).text();
                 jQuery('.btn.arrivalbtn').attr('data-id', dataID);
-                jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>') 
+                jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>')
                 jQuery('.wise_arrival_ul li a').removeClass('active');
-                jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');  
+                jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');
             });
         $(document).ready(function(){
             period="today";
@@ -965,24 +965,24 @@
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
-                        
+
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
+                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');
                         var TABLE_HTML = "";
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";  
+                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
                         }
                         jQuery('#table-body').append(TABLE_HTML);
                         BarChartCentre(response);
-                        
+
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         errorMessage(xhr);
                     }
                 });
-            
+
             @else
                 $.ajax({
                     url: route('admin.dashboard.centre_wise_arrival'),
@@ -992,8 +992,11 @@
                     success: function (response) {
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active'); 
+                        jQuery('.wise_arrival_ul li:nth-child(5) a').addClass('active');
                         var TABLE_HTML = "";
+                        var walkin_t = 0;
+                        var arrived_t = 0;
+                        var total_t = 0;
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
                             var walkin = "";
@@ -1003,19 +1006,28 @@
                                 walkin = "0";
                                 arrived = response.data.arrived[i]-walkin;
                                 total = response.data.total[i]-walkin;
+                                walkin_t += 0;
+                                arrived_t += response.data.arrived[i];
+                                total_t += response.data.total[i];
                             } else {
                                 walkin = response.data.walkin[i];
                                 arrived = response.data.arrived[i]-walkin;
                                 total = response.data.total[i]-walkin;
+                                walkin_t += response.data.walkin[i];
+                                arrived_t += response.data.arrived[i];
+                                total_t += response.data.total[i];
                             }
                             let str = barLenght[i];
                             let wordToRemove = "CUTERA ";
                             let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
+                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
                         }
+                        arrived_t -= walkin_t;
+                        total_t -= walkin_t;
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
                         jQuery('#table-body').append(TABLE_HTML);
                         BarChartCentre(response);
-                        
+
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         errorMessage(xhr);
@@ -1023,7 +1035,7 @@
                 });
             @endif
         });
-        var collection_by_center= false; 
+        var collection_by_center= false;
         var revenue_by_center= false;
         var revenue_by_service=false;
         var revenue_by_service_category=false;
@@ -1033,7 +1045,7 @@
         var centre_wise_arrival=false;
         $(window).scroll(function(){
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.07) && !collection_by_center){
-                collection_by_center= true; 
+                collection_by_center= true;
                 $.ajax({
                     url: route('admin.home.collectionByCentre'),
                     type: "GET",
@@ -1063,7 +1075,7 @@
                 });
             }
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.14) && !revenue_by_center){
-                revenue_by_center= true; 
+                revenue_by_center= true;
                 $.ajax({
                     url: route('admin.home.revenueByCentre'),
                     type: "GET",
@@ -1079,7 +1091,7 @@
                 });
             }
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !revenue_by_service){
-                revenue_by_service= true; 
+                revenue_by_service= true;
                 $.ajax({
                     url: route('admin.home.revenueByService'),
                     type: "GET",
@@ -1110,14 +1122,14 @@
                 });
             }
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.32) && !revenue_by_service_category){
-                revenue_by_service_category= true; 
+                revenue_by_service_category= true;
                 $.ajax({
                     url: route('admin.home.RevenueByServiceCategory'),
                     type: "GET",
                     data: {'type': '{{request('type')}}'},
                     cache: false,
                     success: function (response) {
-                    
+
                         @if(request('type') == 'today')
                             var pie = response.data.pie.today;
                         @endif
@@ -1141,7 +1153,7 @@
                 });
             }
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.33) && !collection_by_service_category){
-                collection_by_service_category= true; 
+                collection_by_service_category= true;
                 $.ajax({
                         url: route('admin.home.CollectionByServiceCategory'),
                         type: "GET",
@@ -1150,7 +1162,7 @@
                         success: function (response) {
                             let colors = response.data.colors;
                             let total = response.data.total;
-                            
+
                             @if(request('type') == 'today')
                             var pie = response.data.pie.today;
                             @endif
@@ -1174,14 +1186,14 @@
                     });
             }
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !consultancy_by_status){
-                consultancy_by_status= true; 
+                consultancy_by_status= true;
                 $.ajax({
                     url: route('admin.dashboard.appointment_by_status'),
                     type: "GET",
                     data: {'period': '{{request('type')}}','type':'1'},
                     cache: false,
                     success: function (response) {
-                        
+
                         let colors = response.data.colors;
                         @if(request('type') == 'today')
                             var pie = response.data.pie.today;
@@ -1206,14 +1218,14 @@
                 });
             }
             if (($(window).scrollTop() >= ($(document).height() - $(window).height())*0.50) && !treatment_by_status){
-                treatment_by_status= true; 
+                treatment_by_status= true;
                 $.ajax({
                     url: route('admin.dashboard.appointment_by_status'),
                     type: "GET",
                     data: {'period': '{{request('type')}}','type':'2'},
                     cache: false,
                     success: function (response) {
-                        
+
                         let colors = response.data.colors;
                         @if(request('type') == 'today')
                             var pie = response.data.pie.today;
@@ -1237,7 +1249,7 @@
                     }
                 });
             }
-            
+
         });
         function BarChartCentre(service) {
             const primary = '#6993FF';
@@ -1246,7 +1258,7 @@
             const warning = '#FFA800';
             const danger = '#F64E60';
             let locations = service.data.bar;
-           
+
             let modifiedLocations;
             if(locations.length > 0){
                 if (locations.some(str => str.includes('CUTERA'))) {
@@ -1256,7 +1268,7 @@
                     console.log("hssere");
                     modifiedLocations = locations;
                 }
-                
+
             }else{
                 modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
             }
@@ -1274,7 +1286,7 @@
                 chart: {
                     type: 'bar',
                     height: 350,
-                   
+
                 },
                 plotOptions: {
                     bar: {
@@ -1422,7 +1434,7 @@
                 }else{
                     modifiedLocations = locations;
                 }
-                
+
             }else{
                 modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
             }
@@ -1440,7 +1452,7 @@
                 chart: {
                     type: 'bar',
                     height: 350,
-                   
+
                 },
                 plotOptions: {
                     bar: {
@@ -1462,7 +1474,7 @@
             var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
             chart.render();
         }
-        
+
     </script>
 @endpush
 @endsection
