@@ -110,12 +110,12 @@ use Illuminate\Support\Facades\DB;
        ->get();
         foreach($appointments as $apt){
            PackageAdvances::where('package_id',$apt->pkg_id)->where('appointment_id',null)->update(['appointment_id' => $apt->appointment_id]);
-             
-            
-            
+
+
+
         }
         dd("ok");
-    }); 
+    });
 // Check Session
     Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
@@ -595,10 +595,6 @@ use Illuminate\Support\Facades\DB;
         Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
         Route::get('getcolor',[ServicesController::class,'GetColor'])->name('dashboard.getcolor');
         Route::get('dashboard/getchild', [DashboardReportsController::class,'getChild'])->name('dashboard.getchild');
-        Route::get('dashboard/centre_wise_arrival', [DashboardReportsController::class, 'CentreWiseArrival'])->name('dashboard.centre_wise_arrival');
-        Route::get('dashboard/location_wise_arrival', [DashboardReportsController::class, 'LocationWiseArrival'])->name('dashboard.location_wise_arrival');
-        Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
-        Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
         Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
         Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
     });

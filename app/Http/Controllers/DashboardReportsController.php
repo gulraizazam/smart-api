@@ -39,13 +39,13 @@ class DashboardReportsController extends Controller
      */
     public function __construct()
     {
-       
+
         $this->middleware('auth');
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
-    
+
     public function collectionByCentre(Request $request)
     {
         $data = array(
@@ -72,7 +72,7 @@ class DashboardReportsController extends Controller
                     foreach ($yesterdayRecords as $record) {
                         $data['yesterday'][] = $record;
                     }
-                } 
+                }
             }
             if ($request->get('last7days') != '') {
                 list( $last7dayRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
@@ -81,7 +81,7 @@ class DashboardReportsController extends Controller
                         $data['last7days'][] = $record;
                     }
                 }
-               
+
             }
             if ($request->get('week') != '') {
                 list( $weekRecords, $total) = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'week', $request);
@@ -133,7 +133,7 @@ class DashboardReportsController extends Controller
                 $today[0] = array(
                     'Task',
                     'Hours per Day'
-                ); 
+                );
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id',$service->id)->get();
                     foreach($childServices as $child){
@@ -153,7 +153,7 @@ class DashboardReportsController extends Controller
                                     $packagesadvance->cash_flow == 'in' &&
                                         $packagesadvance->is_adjustment == '0' &&
                                         $packagesadvance->is_tax == '0' &&
-                                        $packagesadvance->is_cancel == '0'    
+                                        $packagesadvance->is_cancel == '0'
                                 ) {
                                     switch ($packagesadvance->cash_flow) {
                                         case 'in':
@@ -212,7 +212,7 @@ class DashboardReportsController extends Controller
                                             $revenue_bank_in = '';
                                             $refund_out = $packagesadvance->cash_amount;
                                         }
-            
+
                                         if ($revenue_cash_in) {
                                             $total_revenue_cash_in += $revenue_cash_in;
                                         }
@@ -225,7 +225,7 @@ class DashboardReportsController extends Controller
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
                                         }
-                                    
+
                                     }
                                 }
                             }
@@ -253,7 +253,7 @@ class DashboardReportsController extends Controller
                 $yesterday[0] = array(
                     'Task',
                     'Hours per Day'
-                ); 
+                );
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id',$service->id)->get();
                     foreach($childServices as $child){
@@ -332,7 +332,7 @@ class DashboardReportsController extends Controller
                                             $revenue_bank_in = '';
                                             $refund_out = $packagesadvance->cash_amount;
                                         }
-            
+
                                         if ($revenue_cash_in) {
                                             $total_revenue_cash_in += $revenue_cash_in;
                                         }
@@ -344,7 +344,7 @@ class DashboardReportsController extends Controller
                                         }
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
-                                        }  
+                                        }
                                     }
                                 }
                             }
@@ -372,7 +372,7 @@ class DashboardReportsController extends Controller
                 $last7days[0] = array(
                     'Task',
                     'Hours per Day'
-                ); 
+                );
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id',$service->id)->get();
                     foreach($childServices as $child){
@@ -453,7 +453,7 @@ class DashboardReportsController extends Controller
                                             $revenue_bank_in = '';
                                             $refund_out = $packagesadvance->cash_amount;
                                         }
-            
+
                                         if ($revenue_cash_in) {
                                             $total_revenue_cash_in += $revenue_cash_in;
                                         }
@@ -465,7 +465,7 @@ class DashboardReportsController extends Controller
                                         }
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
-                                        }  
+                                        }
                                     }
                                 }
                             }
@@ -493,7 +493,7 @@ class DashboardReportsController extends Controller
                 $thismonth[0] = array(
                     'Task',
                     'Hours per Day'
-                ); 
+                );
                 foreach ($services as $service) {
                     $childServices = Services::where(['parent_id'=>$service->id])->get();
                     foreach($childServices as $child){
@@ -575,7 +575,7 @@ class DashboardReportsController extends Controller
                                             $revenue_bank_in = '';
                                             $refund_out = $packagesadvance->cash_amount;
                                         }
-            
+
                                         if ($revenue_cash_in) {
                                             $total_revenue_cash_in += $revenue_cash_in;
                                         }
@@ -588,7 +588,7 @@ class DashboardReportsController extends Controller
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
                                         }
-                                    
+
                                     }
                                 }
                             }
@@ -609,15 +609,15 @@ class DashboardReportsController extends Controller
                     foreach ($thismonth as $record) {
                         $data['thismonth'][] = $record;
                     }
-                }   
+                }
             }
             if ($request->lastmonth) {
-                
+
                 $total = 0;
                 $lastmonth[0] = array(
                     'Task',
                     'Hours per Day'
-                ); 
+                );
                 foreach ($services as $service) {
                     $childServices = Services::where(['parent_id' => $service->id])->get();
                     foreach($childServices as $child){
@@ -701,7 +701,7 @@ class DashboardReportsController extends Controller
                                             $revenue_bank_in = '';
                                             $refund_out = $packagesadvance->cash_amount;
                                         }
-            
+
                                         if ($revenue_cash_in) {
                                             $total_revenue_cash_in += $revenue_cash_in;
                                         }
@@ -714,7 +714,7 @@ class DashboardReportsController extends Controller
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
                                         }
-                                    
+
                                     }
                                 }
                             }
@@ -725,7 +725,7 @@ class DashboardReportsController extends Controller
                             $lastmonth[$service->id] = array(
                                 $service->name,
                                 $In_hand_balance,
-                                
+
                             );
                             $colors[] = $service->color;
                             $total += $In_hand_balance;
@@ -736,7 +736,7 @@ class DashboardReportsController extends Controller
                     foreach ($lastmonth as $record) {
                         $data['lastmonth'][] = $record;
                     }
-                }   
+                }
             }
         }
         return ApiHelper::apiResponse($this->success, 'service data', true, [
@@ -840,7 +840,7 @@ class DashboardReportsController extends Controller
                         $data['yesterday'][] = $record;
                     }
                 }
-                
+
             }
             if ($request->last7days) {
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
@@ -883,7 +883,7 @@ class DashboardReportsController extends Controller
                         $data['week'][] = $record;
                     }
                 }
-                
+
             }
             if ($request->thismonth) {
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
@@ -926,7 +926,7 @@ class DashboardReportsController extends Controller
                         $data['month'][] = $record;
                     }
                 }
-                
+
             }
             if ($request->lastmonth) {
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id',  'invoice_details.invoice_id')
@@ -969,7 +969,7 @@ class DashboardReportsController extends Controller
                         $data['lastmonth'][] = $record;
                     }
                 }
-                
+
             }
         }
         return ApiHelper::apiResponse($this->success, 'service data', true, [
@@ -1049,7 +1049,7 @@ class DashboardReportsController extends Controller
         $data = array();
         if (Gate::allows('dashboard_revenue_by_centre')) {
             $locations = ACL::getUserCentres();
-           
+
             $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
             list($start_date, $end_date) =  $this->getDates($request);
             $todayRecords = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
@@ -1217,7 +1217,7 @@ class DashboardReportsController extends Controller
                             'Hours per Day'
                         );
                         if ($yesterdayRecords) {
-                            foreach ($yesterdayRecords as $yesterdayRecord) {   
+                            foreach ($yesterdayRecords as $yesterdayRecord) {
                                 if ($yesterdayRecord->service_id == $service->id) {
                                     $yesterday[$service->id] = [
                                         $service->name,
@@ -1717,7 +1717,7 @@ class DashboardReportsController extends Controller
     }
     public function AppointmentByStatus(Request $request)
     {
-       
+
         $data = array();
         $total = 0;
         $today = array();
@@ -1751,9 +1751,9 @@ class DashboardReportsController extends Controller
                                         $today[$appointment_status->id]= [
                                             $appointment_status->name,
                                             $todayRecord->total
-                                            
+
                                         ];
-                                        
+
                                         $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                                     }
                                 }
@@ -1772,7 +1772,7 @@ class DashboardReportsController extends Controller
                 ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
-                    $todayRecords = $todayRecords->where('created_by', Auth::User()->id);  
+                    $todayRecords = $todayRecords->where('created_by', Auth::User()->id);
                 }
                 $todayRecords = $todayRecords->select('base_appointment_status_id as appointment_status_id', DB::raw("COUNT(id) AS total"))
                 ->groupBy('base_appointment_status_id')
@@ -1790,14 +1790,14 @@ class DashboardReportsController extends Controller
                                     $today[$appointment_status->id]= [
                                         $appointment_status->name,
                                         $todayRecord->total
-                                        
+
                                     ];
-                                   
+
                                     $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                                 }
                             }
                         }
-                    }   
+                    }
                 }
                 if (count($today)) {
                     foreach ($today as $record) {
@@ -1825,15 +1825,15 @@ class DashboardReportsController extends Controller
                                     $yesterday[$appointment_status->id]= [
                                         $appointment_status->name,
                                         $yestersdayRecord->total
-                                        
+
                                     ];
-                                   
+
                                     $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                                 }
                             }
                         }
                     }
-                    
+
                 }
                 if (count($yesterday)) {
                     foreach ($yesterday as $record) {
@@ -1848,7 +1848,7 @@ class DashboardReportsController extends Controller
                 ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
-                    $last7DaysRecords = $last7DaysRecords->where('created_by', Auth::User()->id); 
+                    $last7DaysRecords = $last7DaysRecords->where('created_by', Auth::User()->id);
                 }
                 $last7DaysRecords = $last7DaysRecords->select('base_appointment_status_id as appointment_status_id', DB::raw("COUNT(id) AS total"))
                 ->groupBy('base_appointment_status_id')
@@ -1866,14 +1866,14 @@ class DashboardReportsController extends Controller
                                     $last7days[$appointment_status->id]= [
                                         $appointment_status->name,
                                         $last7DayRecord->total
-                                        
+
                                     ];
-                                    
+
                                     $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                                 }
                             }
                         }
-                    }  
+                    }
                 }
                 if (count($last7days)) {
                     foreach ($last7days as $record) {
@@ -1887,7 +1887,7 @@ class DashboardReportsController extends Controller
                 ->where('appointment_type_id',$request->type)
                 ->whereIn('location_id', ACL::getUserCentres());
                 if ($request->get('performance')) {
-                    $last7DaysRecords = $last7DaysRecords->where('created_by', Auth::User()->id); 
+                    $last7DaysRecords = $last7DaysRecords->where('created_by', Auth::User()->id);
                 }
                 $last7DaysRecords = $last7DaysRecords->select('base_appointment_status_id as appointment_status_id', DB::raw("COUNT(id) AS total"))
                 ->groupBy('base_appointment_status_id')
@@ -1905,14 +1905,14 @@ class DashboardReportsController extends Controller
                                     $last7days[$appointment_status->id]= [
                                         $appointment_status->name,
                                         $last7DayRecord->total
-                                        
+
                                     ];
-                                    
+
                                     $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                                 }
                             }
                         }
-                    }  
+                    }
                 }
                 if (count($last7days)) {
                     foreach ($last7days as $record) {
@@ -1944,15 +1944,15 @@ class DashboardReportsController extends Controller
                                     $monthlyRecord[$appointment_status->id]= [
                                         $appointment_status->name,
                                         $monthRecord->total
-                                        
+
                                     ];
-                                    
+
                                     $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                                 }
                             }
                         }
                     }
-                    
+
                 }
                 if (count($monthlyRecord)) {
                     foreach ($monthlyRecord as $record) {
@@ -1984,15 +1984,15 @@ class DashboardReportsController extends Controller
                                     $monthlyRecord[$appointment_status->id]= [
                                         $appointment_status->name,
                                         $monthRecord->total
-                                        
+
                                     ];
-                                    
+
                                     $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                                 }
                             }
                         }
                     }
-                    
+
                 }
                 if (count($monthlyRecord)) {
                     foreach ($monthlyRecord as $record) {
@@ -2039,14 +2039,14 @@ class DashboardReportsController extends Controller
                             if ($todayRecord->appointment_type_id == $appointment_type->id) {
                                 $today[$appointment_type->id]= [
                                     $appointment_type->name,
-                                    $todayRecord->total        
-                                ]; 
+                                    $todayRecord->total
+                                ];
                                 $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                             }
                         }
                     }
                 }
-                        
+
             }
             if (count($today)) {
                 foreach ($today as $record) {
@@ -2077,15 +2077,15 @@ class DashboardReportsController extends Controller
                                 $today[$appointment_type->id]= [
                                     $appointment_type->name,
                                     $todayRecord->total
-                                    
+
                                 ];
-                                
+
                                 $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                             }
                         }
                     }
                 }
-                        
+
             }
             if (count($today)) {
                 foreach ($today as $record) {
@@ -2119,15 +2119,15 @@ class DashboardReportsController extends Controller
                                 $yesterday[$appointment_type->id]= [
                                     $appointment_type->name,
                                     $yesterdayRecord->total
-                                    
+
                                 ];
-                                
+
                                 $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                             }
                         }
                     }
                 }
-                
+
             }
             if (count($yesterday)) {
                 foreach ($yesterday as $record) {
@@ -2160,15 +2160,15 @@ class DashboardReportsController extends Controller
                                 $last7days[$appointment_type->id]= [
                                     $appointment_type->name,
                                     $weeklyRecord->total
-                                    
+
                                 ];
-                                
+
                                 $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                             }
                         }
                     }
                 }
-                
+
             }
             if (count($last7days)) {
                 foreach ($last7days as $record) {
@@ -2200,21 +2200,21 @@ class DashboardReportsController extends Controller
                                 $month[$appointment_type->id]= [
                                     $appointment_type->name,
                                     $monthlyRecord->total
-                                    
-                                ]; 
+
+                                ];
                                 $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                             }
                         }
                     }
                 }
-                
+
             }
             if (count($month)) {
                 foreach ($month as $record) {
                     $data['thismonth'][] = $record;
                 }
             }
-            
+
         }
         if ($request->period=='lastmonth') {
             $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
@@ -2240,21 +2240,21 @@ class DashboardReportsController extends Controller
                                 $month[$appointment_type->id]= [
                                     $appointment_type->name,
                                     $monthlyRecord->total
-                                    
+
                                 ];
                                 $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
                             }
                         }
                     }
                 }
-                
+
             }
             if (count($month)) {
                 foreach ($month as $record) {
                     $data['lastmonth'][] = $record;
                 }
             }
-            
+
         }
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -2282,27 +2282,7 @@ class DashboardReportsController extends Controller
         $walkin_apts = [];
         $lables = [];
         if ($request->period == '') {
-            $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
-            $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
-                ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->groupBy('centre_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
-                ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
-            $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
-                ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
-            foreach($yesterday_total_appointments as $loc){
-                $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
-                array_push($total_apts, $loc['total']);
-            }
-            foreach($yesterday_arrived_appointments as $apt){
-                array_push($arrived_apts, $apt['arrived']);
-            }
-            foreach($yesterday_walkin_appointments as $apt){
-                array_push($walkin_apts, $apt['walkin']);   
-            } 
+            $request['period'] = 'thismonth';
         }
         if ($request->period=='yesterday') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
@@ -2313,7 +2293,7 @@ class DashboardReportsController extends Controller
                 $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
                     ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where(['centre_id' => $request->centre_id])->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
-                
+
                 $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                     ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where('centre_id',$request->centre_id)->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
@@ -2324,14 +2304,14 @@ class DashboardReportsController extends Controller
                 $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
                     ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
-                
+
                     $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                     ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             }
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2357,7 +2337,7 @@ class DashboardReportsController extends Controller
                 ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2365,7 +2345,7 @@ class DashboardReportsController extends Controller
             }
             foreach($yesterday_walkin_appointments as $apt){
                 array_push($walkin_apts, $apt['walkin']);
-            }     
+            }
         }
         if ($request->period=='week') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
@@ -2383,7 +2363,7 @@ class DashboardReportsController extends Controller
                 ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2391,7 +2371,7 @@ class DashboardReportsController extends Controller
             }
             foreach($yesterday_walkin_appointments as $apt){
                 array_push($walkin_apts, $apt['walkin']);
-            }     
+            }
         }
         if ($request->period=='thismonth') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
@@ -2409,7 +2389,7 @@ class DashboardReportsController extends Controller
                 ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2417,7 +2397,7 @@ class DashboardReportsController extends Controller
             }
             foreach($yesterday_walkin_appointments as $apt){
                 array_push($walkin_apts, $apt['walkin']);
-            }    
+            }
         }
         if ($request->period=='lastmonth') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
@@ -2435,15 +2415,15 @@ class DashboardReportsController extends Controller
                 ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
-                array_push($total_apts, $loc['total']);  
+                array_push($lables, $centre->name);
+                array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
             }
             foreach($yesterday_walkin_appointments as $apt){
                 array_push($walkin_apts, $apt['walkin']);
-            }     
+            }
         }
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
             'bar' => $lables,
@@ -2466,21 +2446,21 @@ class DashboardReportsController extends Controller
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                 ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
-           
+
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                 ->whereIn('centre_id', ACL::getUserCentres())
                 ->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
             }
             foreach($yesterday_walkin_appointments as $apt){
-                array_push($walkin_apts, $apt['walkin']);   
-            } 
+                array_push($walkin_apts, $apt['walkin']);
+            }
         }
         if ($request->period=='yesterday') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
@@ -2513,7 +2493,7 @@ class DashboardReportsController extends Controller
                 ->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2557,7 +2537,7 @@ class DashboardReportsController extends Controller
                 ->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2565,7 +2545,7 @@ class DashboardReportsController extends Controller
             }
             foreach($yesterday_walkin_appointments as $apt){
                 array_push($walkin_apts, $apt['walkin']);
-            }     
+            }
         }
         if ($request->period=='week') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
@@ -2601,7 +2581,7 @@ class DashboardReportsController extends Controller
                 ->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2609,7 +2589,7 @@ class DashboardReportsController extends Controller
             }
             foreach($yesterday_walkin_appointments as $apt){
                 array_push($walkin_apts, $apt['walkin']);
-            }     
+            }
         }
         if ($request->period=='thismonth') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
@@ -2643,10 +2623,10 @@ class DashboardReportsController extends Controller
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
-            
+
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2654,7 +2634,7 @@ class DashboardReportsController extends Controller
             }
             foreach($yesterday_walkin_appointments as $apt){
                 array_push($walkin_apts, $apt['walkin']);
-            }    
+            }
         }
         if ($request->period=='lastmonth') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
@@ -2688,18 +2668,18 @@ class DashboardReportsController extends Controller
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
-            
+
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
-                array_push($total_apts, $loc['total']);  
+                array_push($lables, $centre->name);
+                array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
             }
             foreach($yesterday_walkin_appointments as $apt){
                 array_push($walkin_apts, $apt['walkin']);
-            }     
+            }
         }
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
             'bar' => $lables,
@@ -2720,12 +2700,12 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id , 'appointment_status_id' =>2])
                 ->groupBy('cron_current_date')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
-                array_push($lables, $loc['cron_current_date']); 
+                array_push($lables, $loc['cron_current_date']);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
         if ($request->period=='yesterday') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('cron_current_date', DB::raw('count(*) as total'))
@@ -2738,7 +2718,7 @@ class DashboardReportsController extends Controller
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
         if ($request->period=='last7days') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
@@ -2751,9 +2731,9 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
-                
+
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
@@ -2770,7 +2750,7 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2788,7 +2768,7 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
+                array_push($lables, $centre->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2806,18 +2786,18 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name); 
-                array_push($total_apts, $loc['total']);  
+                array_push($lables, $centre->name);
+                array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
             'bar' => $lables,
             'total'=>$total_apts,
             'arrived'=>$arrived_apts
-            
+
         ]);
     }
     public function CSRWiseArrival(Request $request)
@@ -2828,7 +2808,7 @@ class DashboardReportsController extends Controller
         $csr_users = RoleHasUsers::where(['role_id' => 2])->pluck('user_id');
         $csr = User::whereIn('id',$csr_users)->where('active',1)->pluck('id');
         if ($request->period=='yesterday') {
-            
+
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
@@ -2854,17 +2834,17 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
-            
+            }
+
         }
         if ($request->period=='last7days') {
-            
+
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
@@ -2890,17 +2870,17 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
                 array_push($total_apts, $loc['total']);
-                
+
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
             }
         }
         if ($request->period=='week') {
-            
+
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
@@ -2924,14 +2904,14 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
             }
-            
+
         }
         if ($request->period=='thismonth') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
@@ -2957,8 +2937,8 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
-                } 
+                    array_push($lables, $username->name);
+                }
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -2986,23 +2966,23 @@ class DashboardReportsController extends Controller
                     return $query->whereIn('user_id',$csr);
                 })
                 ->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
-                
+
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
-                array_push($total_apts, $loc['total']);  
+                array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
             'bar' => $lables,
             'total'=>$total_apts,
             'arrived'=>$arrived_apts
-            
+
         ]);
     }
     public function AgentWiseArrival(Request $request)
@@ -3024,25 +3004,25 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
-       
+
         return ApiHelper::apiResponse($this->success, 'Agent wise arrival data', true, [
             'bar' => $lables,
             'total'=>$total_apts,
             'arrived'=>$arrived_apts
-            
+
         ]);
     }
     public function CsrUserWiseArrival(Request $request)
     {
-        
+
         $total_apts = [];
         $arrived_apts = [];
         $lables = [];
@@ -3074,17 +3054,17 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
-            
+            }
+
         }
         if ($request->period=='last7days') {
-            
+
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
@@ -3110,17 +3090,17 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
                 array_push($total_apts, $loc['total']);
-                
+
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
             }
         }
         if ($request->period=='week') {
-            
+
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
@@ -3144,14 +3124,14 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
             }
-            
+
         }
         if ($request->period=='thismonth') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
@@ -3177,8 +3157,8 @@ class DashboardReportsController extends Controller
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
-                } 
+                    array_push($lables, $username->name);
+                }
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -3206,24 +3186,24 @@ class DashboardReportsController extends Controller
                     return $query->whereIn('user_id',$csr);
                 })
                 ->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
-                
+
             foreach($yesterday_total_appointments as $loc){
                 $username = User::whereId($loc['user_id'])->where('active',1)->first();
                 if($username){
-                    array_push($lables, $username->name); 
+                    array_push($lables, $username->name);
                 }
-                array_push($total_apts, $loc['total']);  
+                array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
-        
+
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
             'bar' => $lables,
             'total'=>$total_apts,
             'arrived'=>$arrived_apts
-            
+
         ]);
     }
     public function CallWiseArrival(Request $request)
@@ -3240,16 +3220,16 @@ class DashboardReportsController extends Controller
                 ->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $user = User::find($loc['user_id']);
-                
+
                 if($user){
-                    array_push($lables, $user->name); 
+                    array_push($lables, $user->name);
                 }
-                
+
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
         if ($request->period=='yesterday') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
@@ -3258,12 +3238,12 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id , 'appointment_status_id' =>2])->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name); 
+                array_push($lables, $user->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
         if ($request->period=='last7days') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
@@ -3276,9 +3256,9 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name); 
+                array_push($lables, $user->name);
                 array_push($total_apts, $loc['total']);
-                
+
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
@@ -3295,7 +3275,7 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name); 
+                array_push($lables, $user->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -3313,7 +3293,7 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name); 
+                array_push($lables, $user->name);
                 array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
@@ -3331,19 +3311,19 @@ class DashboardReportsController extends Controller
                 ->where(['user_id' => $request->user_id ])->where(['appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name); 
-                array_push($total_apts, $loc['total']);  
+                array_push($lables, $user->name);
+                array_push($total_apts, $loc['total']);
             }
             foreach($yesterday_arrived_appointments as $apt){
                 array_push($arrived_apts, $apt['arrived']);
-            }    
+            }
         }
 
         return ApiHelper::apiResponse($this->success, 'csr wise arrival data', true, [
             'bar' => $lables,
             'total'=>$total_apts,
             'arrived'=>$arrived_apts
-            
+
         ]);
     }
 }
