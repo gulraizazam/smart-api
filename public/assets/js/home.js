@@ -579,7 +579,7 @@ function initCentreWiseArrival(period) {
         },
         success: function (response) {
             jQuery('#table-body').html('');
-            ConsultanciesByStatus(response);
+
             setTimeout(function () {
                 jQuery('#table-body').html('');
                 var TABLE_HTML = "";
@@ -615,6 +615,7 @@ function initCentreWiseArrival(period) {
                 total_t -= walkin_t;
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
                 jQuery('#table-body').append(TABLE_HTML);
+                ConsultanciesByStatus(response);
             }, 1000);
         },
     });
@@ -638,7 +639,7 @@ function initUserWiseArrival(period) {
             'user_id': dataID
         },
         success: function (response) {
-            ConsultanciesByStatus(response);
+
             jQuery('#table-body').html("");
             setTimeout(function () {
                 jQuery('#table-body').html("");
@@ -655,6 +656,7 @@ function initUserWiseArrival(period) {
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
 
                 jQuery('#table-body').append(TABLE_HTML);
+                ConsultanciesByStatus(response);
             }, 2000);
 
         },
@@ -674,7 +676,7 @@ function LoadBarChart(centreID, period) {
         },
         success: function (response) {
 
-            ConsultanciesByStatus(response);
+
             jQuery('#table-body').html('');
             setTimeout(function () {
                 jQuery('#table-body').html('');
@@ -699,6 +701,7 @@ function LoadBarChart(centreID, period) {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
                 jQuery('#table-body').append(TABLE_HTML);
+                ConsultanciesByStatus(response);
             }, 2000);
         },
     });
@@ -802,7 +805,10 @@ function ConsultanciesByStatus(bar) {
     } else {
         modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
     }
-
+    for (var i = 0; i < bar.data.walkin.length; i++) {
+        bar.data.total[i] -= bar.data.walkin[i];
+        bar.data.arrived[i] -= bar.data.walkin[i];
+    }
     var options = {
         series: [{
             name: 'Total Appointments',
