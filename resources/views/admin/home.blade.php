@@ -1272,6 +1272,10 @@
             }else{
                 modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
             }
+            for (var i = 0; i < service.data.walkin.length; i++) {
+                service.data.total[i] -= service.data.walkin[i];
+                service.data.arrived[i] -= service.data.walkin[i];
+            }
             var options = {
                 series: [{
                     name: 'Total Appointments',
@@ -1437,6 +1441,10 @@
 
             }else{
                 modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
+            }
+            for (var i = 0; i < service.data.walkin.length; i++) {
+                service.data.total[i] -= service.data.walkin[i];
+                service.data.arrived[i] -= service.data.walkin[i];
             }
             var options = {
                 series: [{
