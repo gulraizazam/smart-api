@@ -793,6 +793,7 @@ function ConsultanciesByStatus(bar) {
     let modifiedLocations;
     if (locations.length > 0) {
         if (locations.some(str => str.includes('CUTERA'))) {
+            console.log('here');
             modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
         } else {
             modifiedLocations = locations;
@@ -821,7 +822,7 @@ function ConsultanciesByStatus(bar) {
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '45%',
+                columnWidth: '55%',
                 endingShape: 'rounded'
             },
         },
