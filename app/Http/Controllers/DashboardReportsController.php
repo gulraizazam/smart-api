@@ -2277,6 +2277,7 @@ class DashboardReportsController extends Controller
     }
     public function CentreWiseArrival(Request $request)
     {
+        //dd($request->all(), $request->period == '');
         $total_apts = [];
         $arrived_apts = [];
         $walkin_apts = [];
@@ -2284,6 +2285,9 @@ class DashboardReportsController extends Controller
         if ($request->period == '') {
             $request['period'] = 'thismonth';
         }
+        /* if($request->centre_id != 'all'){
+            $where[] = array(['centre_id' => $request->centre_id])
+        } */
         if ($request->period=='yesterday') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
             if($request->centre_id && $request->centre_id != 'All'){
@@ -2296,6 +2300,7 @@ class DashboardReportsController extends Controller
 
                 $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                     ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                    ->where(['appointment_status_id' => 2])
                     ->where('centre_id',$request->centre_id)->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             }else{
                 $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
@@ -2307,6 +2312,7 @@ class DashboardReportsController extends Controller
 
                     $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                     ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                    ->where(['appointment_status_id' => 2])
                     ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             }
             foreach($yesterday_total_appointments as $loc){
@@ -2334,6 +2340,7 @@ class DashboardReportsController extends Controller
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
+                ->where(['appointment_status_id' => 2])
                 ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
@@ -2360,6 +2367,7 @@ class DashboardReportsController extends Controller
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
+                ->where(['appointment_status_id' => 2])
                 ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
@@ -2375,18 +2383,36 @@ class DashboardReportsController extends Controller
         }
         if ($request->period=='thismonth') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
-            $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
+            if($request->centre_id && $request->centre_id == 'All'){
+                $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                 ->whereIn('centre_id', ACL::getUserCentres())->groupBy('centre_id')->get()->toArray();
+                $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
+                    ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                    ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                    ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
+                $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
+                    ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                    ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                    ->where(['appointment_status_id' => 2])
+                    ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
+            } else {
+                $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
+                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->where(['centre_id' => $request->centre_id])->groupBy('centre_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
+            ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+            ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->where(['centre_id' => $request->centre_id])->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
+
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
+            ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+            ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->where(['appointment_status_id' => 2])
+                ->where('centre_id',$request->centre_id)->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
+            }
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
                 array_push($lables, $centre->name);
@@ -2412,6 +2438,7 @@ class DashboardReportsController extends Controller
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=',Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
+                ->where(['appointment_status_id' => 2])
                 ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
             foreach($yesterday_total_appointments as $loc){
                 $centre = Locations::where('id', $loc['centre_id'])->first();
@@ -2439,55 +2466,44 @@ class DashboardReportsController extends Controller
         $walkin_apts = [];
         $lables = [];
         if ($request->period == '') {
-            $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
-            $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
-                ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->groupBy('centre_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
-                ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])->groupBy('centre_id')->get()->toArray();
-
-            $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())
-                ->whereIn('user_id',$fdm_users)->groupBy('centre_id')->get()->toArray();
-            foreach($yesterday_total_appointments as $loc){
-                $centre = Locations::where('id', $loc['centre_id'])->first();
-                array_push($lables, $centre->name);
-                array_push($total_apts, $loc['total']);
-            }
-            foreach($yesterday_arrived_appointments as $apt){
-                array_push($arrived_apts, $apt['arrived']);
-            }
-            foreach($yesterday_walkin_appointments as $apt){
-                array_push($walkin_apts, $apt['walkin']);
-            }
+            $request['period'] = 'thismonth';
         }
         if ($request->period=='yesterday') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
             $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1))
-                ->whereIn('centre_id', ACL::getUserCentres())
+                //->whereIn('centre_id', ACL::getUserCentres())
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                 return $query->where(['centre_id' => $request->centre_id]);
-            })
+                })
+                ->when($request->centre_id == 'All', function ($query) use ($request) {
+                    return $query->whereIn('centre_id', ACL::getUserCentres());
+                })
             ->groupBy('centre_id')
             ->get()
             ->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])
+                ->where(['appointment_status_id' => 2])
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                 ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)
+                ->whereIn('user_id',$fdm_users)
+                ->where(['appointment_status_id' => 2])
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
@@ -2508,30 +2524,38 @@ class DashboardReportsController extends Controller
             $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])
+                ->where(['appointment_status_id' => 2])
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)
+                ->whereIn('user_id',$fdm_users)
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
@@ -2552,30 +2576,38 @@ class DashboardReportsController extends Controller
             $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
-                    return $query->where('centre_id', $request->centre_id);
-                })
+                    return $query->where(['centre_id' => $request->centre_id]);
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                     ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])
+                ->where(['appointment_status_id' => 2])
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
-                    return $query->where('centre_id', $request->centre_id);
-                })
+                    return $query->where(['centre_id' => $request->centre_id]);
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)
+                ->whereIn('user_id',$fdm_users)
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
-                    return $query->where('centre_id', $request->centre_id);
-                })
+                    return $query->where(['centre_id' => $request->centre_id]);
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
@@ -2596,30 +2628,38 @@ class DashboardReportsController extends Controller
             $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])
+                ->where(['appointment_status_id' => 2])
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)
+                ->whereIn('user_id',$fdm_users)
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
@@ -2641,30 +2681,38 @@ class DashboardReportsController extends Controller
             $yesterday_total_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as total'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
                     ->whereDate('cron_current_date', '<=',Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as arrived'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
                     ->whereDate('cron_current_date', '<=',Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->where(['appointment_status_id' => 2])
+                ->where(['appointment_status_id' => 2])
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
             $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
                     ->whereDate('cron_current_date', '<=',Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereIn('centre_id', ACL::getUserCentres())->whereIn('user_id',$fdm_users)
+                ->whereIn('user_id',$fdm_users)
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
                     return $query->where(['centre_id' => $request->centre_id]);
-                })
+                    })
+                    ->when($request->centre_id == 'All', function ($query) use ($request) {
+                        return $query->whereIn('centre_id', ACL::getUserCentres());
+                    })
                 ->groupBy('centre_id')
                 ->get()
                 ->toArray();
@@ -2685,7 +2733,8 @@ class DashboardReportsController extends Controller
             'bar' => $lables,
             'total'=>$total_apts,
             'arrived'=>$arrived_apts,
-            'walkin'=>$walkin_apts
+            'walkin'=>$walkin_apts,
+            ''
         ]);
     }
     public function UserWiseArrival(Request $request)
