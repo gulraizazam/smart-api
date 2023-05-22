@@ -789,11 +789,12 @@
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-
+                                                        <li>
+                                                            <a onclick="LoadBarChart('All', 'thismonth')">All</a>
+                                                        </li>
                                                         @foreach($centres as $centre)
                                                         <li>
-                                                            <a
-                                                             data-id="{{$centre->id}}" onclick="LoadBarChart({{$centre->id}},'yesterday')">{{$centre->name}}</a>
+                                                            <a data-id="{{$centre->id}}" onclick="LoadBarChart({{$centre->id}}, 'thismonth')">{{$centre->name}}</a>
                                                         </li>
                                                         @endforeach
 
@@ -817,7 +818,7 @@
                                                         @foreach($csr_users as $user)
                                                         <li>
                                                             <a
-                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'yesterday')" >{{$user->name}}</a>
+                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'thismonth')" >{{$user->name}}</a>
                                                         </li>
                                                         @endforeach
 
@@ -862,23 +863,23 @@
                                                 onclick="initUserWiseArrival('lastmonth');">Last Month</a>
                                             </li>
                                         @else
-                                            <li>
+                                            <li class="yesterday">
                                                 <a href="#appointment_by_status_1" data-toggle="tab"
                                                 onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
                                             </li>
-                                            <li>
+                                            <li class="last7days">
                                                 <a href="#appointment_by_status_2" data-toggle="tab"
                                                 onclick="initCentreWiseArrival('last7days');">Last 7 Days</a>
                                             </li>
-                                            <li>
+                                            <li class="week">
                                                 <a href="#appointment_by_status_2" data-toggle="tab"
                                                 onclick="initCentreWiseArrival('week');">This Week</a>
                                             </li>
-                                            <li>
+                                            <li class="thismonth">
                                                 <a href="#appointment_by_status_3" data-toggle="tab"
                                                 onclick="initCentreWiseArrival('thismonth');">This Month</a>
                                             </li>
-                                            <li>
+                                            <li class="lastmonth">
                                                 <a href="#appointment_by_status_3" data-toggle="tab"
                                                 onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
                                             </li>
@@ -944,7 +945,7 @@
                 jQuery('.btn.arrivalbtn').attr('data-id', dataID);
                 jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>')
                 jQuery('.wise_arrival_ul li a').removeClass('active');
-                jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');
+                jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
             });
         $(document).ready(function(){
             period="today";
@@ -987,12 +988,12 @@
                 $.ajax({
                     url: route('admin.dashboard.centre_wise_arrival'),
                     type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2'},
+                    data: {'period': '{{request('type')}}', 'centre_id':'All', 'type':'2'},
                     cache: false,
                     success: function (response) {
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li:nth-child(5) a').addClass('active');
+                        jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
                         var TABLE_HTML = "";
                         var walkin_t = 0;
                         var arrived_t = 0;
@@ -1287,6 +1288,16 @@
                     name: 'Walk-in',
                     data: service.data.walkin
                 }],
+                noData: {
+                    text: 'No Data',
+                    align: 'center',
+                    verticalAlign: 'top',
+                    style: {
+                        color: 'red',
+                        fontSize: '14px',
+                        fontFamily: undefined
+                    }
+                },
                 chart: {
                     type: 'bar',
                     height: 350,
