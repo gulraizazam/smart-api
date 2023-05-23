@@ -654,8 +654,9 @@ function initUserWiseArrival(period) {
                     total += response.data.total[i];
                 }
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
-
-                jQuery('#table-body').append(TABLE_HTML);
+                if(response.data.total != ''){
+                    jQuery('#table-body').append(TABLE_HTML);
+                }
                 ConsultanciesByStatus(response);
             }, 2000);
 
@@ -710,8 +711,9 @@ function LoadBarChart(centreID, period) {
                 arrived_t -= walkin_t;
                 total_t -= walkin_t;
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-
-                jQuery('#table-body').append(TABLE_HTML);
+                if(response.data.total != ''){
+                    jQuery('#table-body').append(TABLE_HTML);
+                }
                 ConsultanciesByStatus(response);
             }, 2000);
         },
@@ -749,8 +751,9 @@ function LoadBarChartUserWise(UserID, period) {
                     total += response.data.total[i];
                 }
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
-
-                jQuery('#table-body').append(TABLE_HTML);
+                if(response.data.total != ''){
+                    jQuery('#table-body').append(TABLE_HTML);
+                }
             }, 2000);
             BarChartUserWise(response);
         },
