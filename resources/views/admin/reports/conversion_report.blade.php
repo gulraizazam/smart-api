@@ -127,7 +127,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">{{$conversion['service']}}</td>
-                                <td class="bg-light" style="text-align:right;">{{ }}</td>
+                                <td class="bg-light" style="text-align:right;"></td>
                             </tr>
                             <tr class="">
                                 <td class="bg-light" style="text-align:right;">Total Conversion Value</td>
