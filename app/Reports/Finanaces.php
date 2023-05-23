@@ -1098,7 +1098,6 @@ class Finanaces
             $account_id
         );
         $location_information = ACL::getUserCentres();
-        //dd($location_information);
         $report_data = array();
         foreach($data['location_id_com'] as $location){
             $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
@@ -1120,7 +1119,7 @@ class Finanaces
                     'region' => $location_information->region->name,
                     'revenue_data' => array()
                 );
-               
+
                 foreach ($packagesadvances as $packagesadvance) {
                     if (
                         (
@@ -1147,7 +1146,7 @@ class Finanaces
                                 break;
                         }
                         $total_balance = $balance;
-                       
+
                         if ($packagesadvance->cash_amount != 0) {
                             if ($packagesadvance->package_id) {
                                 $transtype = Config::get('constants.trans_type.advance_in');
@@ -1211,7 +1210,7 @@ class Finanaces
                                 'Balance' => $balance,
                                 'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A')
                             );
-                           
+
                         }
                     }
                 }
@@ -2658,9 +2657,8 @@ class Finanaces
         }
         $appointment_type = AppointmentTypes::whereSlug('consultancy')->first();
         $where[] = array(['appointments.appointment_type_id' => $appointment_type->id]);
-        //$where[] = array('package_advances.cash_amount', '>' , 0);
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
-      
+
         $appointments = Appointments::with('location:id,name')
             ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
@@ -2668,12 +2666,11 @@ class Finanaces
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
             ->where('package_advances.cash_amount','>',0)
-           
-             ->where($where)
+            ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
+            ->limit(50)
             ->get();
-          
         $total = 0;
         $count = array();
         $arrived_count = array();
@@ -2704,28 +2701,25 @@ class Finanaces
                 $appointmentss[] = $appointment->id;
                 $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])
                ->get()->pluck('id')->toArray();
-               //dd($package_info);
                 if (count($package_info)) {
                     $actual = 0;
                     $revenue_in = 0;
                     $out = 0;
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                        // ->whereDate('created_at', '>=', $start_date)
-                        // ->whereDate('created_at', '<=', $end_date)
                         ->where('cash_flow', '=', "in")
                         ->where('cash_amount', '>', 0)
                         ->get();
-                       
+
                     if (count($packagesadvances) > 0) {
                         $check = 0;
                         $first_advance = PackageAdvances::whereIn('id', $package_info)
                             ->where('cash_amount', '>', 0)
                             ->orderBy('created_at', 'asc')
                             ->first();
-                            
-                         
+
+
                         $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
-                        
+
                         if (($date >= $start_date) && ($date <= $end_date)) {
                             $check = 1;
                         }
@@ -2754,7 +2748,7 @@ class Finanaces
                     }
                 }
             }
-           
+
             /*case 1 end*/
         }
         /*case 2 start*/
@@ -2830,7 +2824,7 @@ class Finanaces
                         'converted' => '',
                         'conversion_spend' => '',
                         'conversion_date' => '',
-                       
+
                     );
                     $package_info = Packages::where('appointment_id', '=', $appointment->id)->get()->pluck('id')->toArray();
                     if (count($package_info) == 0) {
@@ -2857,10 +2851,10 @@ class Finanaces
                 }
                 $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
                 $locationData[$appointment->location->name]['total'] = $total;
-               
+
             }
         }
-        
+
         $maxConversion1 = collect($appointments_info)->filter(function($appointment){
             if($appointment['conversion_spend'] > 0){
                 return $appointment;
@@ -2885,15 +2879,15 @@ class Finanaces
         $maxConversion = collect($appointments_info)->max('conversion_spend');
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
+
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
-        
+
             $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
             ->where('scheduled_date','<=',$end_date)
             ->where($where)
             ->where('appointment_type_id','=',1)
             ->where(['base_appointment_status_id' => 2])
             ->count();
-       
 
         if($total_appointments > 0){
             $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
@@ -2928,7 +2922,7 @@ class Finanaces
             $arrival_to_conversion_ratio,
             $returnCategoryData,
             $avg_cxlient_value
-            
+
         ];
     }
     private static function centerWiseData($appointments_info, $appointment, $centerWise, $count, $arrived_count, $total, $locationData)
@@ -3328,9 +3322,7 @@ class Finanaces
                                 }
                             }
                         }
-
                     }
-                    // dd($report_data);
                 }
             }
         }
