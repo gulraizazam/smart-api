@@ -110,11 +110,7 @@ use Illuminate\Support\Facades\DB;
        ->get();
         foreach($appointments as $apt){
            PackageAdvances::where('package_id',$apt->pkg_id)->where('appointment_id',null)->update(['appointment_id' => $apt->appointment_id]);
-
-
-
         }
-        dd("ok");
     });
 // Check Session
     Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
