@@ -983,7 +983,6 @@
                         errorMessage(xhr);
                     }
                 });
-
             @else
                 $.ajax({
                     url: route('admin.dashboard.centre_wise_arrival'),
