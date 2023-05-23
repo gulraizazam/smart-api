@@ -579,7 +579,6 @@ function initCentreWiseArrival(period) {
         },
         success: function (response) {
             jQuery('#table-body').html('');
-
             setTimeout(function () {
                 jQuery('#table-body').html('');
                 var TABLE_HTML = "";
@@ -614,7 +613,9 @@ function initCentreWiseArrival(period) {
                 arrived_t -= walkin_t;
                 total_t -= walkin_t;
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-                jQuery('#table-body').append(TABLE_HTML);
+                if(response.data.total != ''){
+                    jQuery('#table-body').append(TABLE_HTML);
+                }
                 ConsultanciesByStatus(response);
             }, 1000);
         },
