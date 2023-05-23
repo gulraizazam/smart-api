@@ -2284,9 +2284,6 @@ class DashboardReportsController extends Controller
         if ($request->period == '') {
             $request['period'] = 'thismonth';
         }
-        /* if($request->centre_id != 'all'){
-            $where[] = array(['centre_id' => $request->centre_id])
-        } */
         if ($request->period=='yesterday') {
             $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
             if($request->centre_id && $request->centre_id != 'All'){
@@ -2302,7 +2299,7 @@ class DashboardReportsController extends Controller
                 $yesterday_walkin_appointments = AppointmentsDailyStats::select('centre_id', DB::raw('count(*) as walkin'))
                     ->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->where(['appointment_status_id' => 2])
-                    ->where('centre_id',$request->centre_id)
+                    ->where(['centre_id' => $request->centre_id])
                     ->whereIn('user_id',$fdm_users)
                     ->groupBy('centre_id')->get()->toArray();
             }else{
@@ -2428,7 +2425,7 @@ class DashboardReportsController extends Controller
                     ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
                     ->where(['appointment_status_id' => 2])
-                    ->where('centre_id',$request->centre_id)
+                    ->where(['centre_id' => $request->centre_id])
                     ->whereIn('user_id',$fdm_users)
                     ->groupBy('centre_id')->get()->toArray();
             }
@@ -2599,7 +2596,7 @@ class DashboardReportsController extends Controller
                 ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                 ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
                 ->when($request->centre_id != 'All', function ($query) use ($request) {
-                    return $query->where(['centre_id' => $request->centre_id]);
+                        return $query->where(['centre_id' => $request->centre_id]);
                     })
                     ->when($request->centre_id == 'All', function ($query) use ($request) {
                         return $query->whereIn('centre_id', ACL::getUserCentres());
@@ -2759,7 +2756,6 @@ class DashboardReportsController extends Controller
             'total'=>$total_apts,
             'arrived'=>$arrived_apts,
             'walkin'=>$walkin_apts,
-            ''
         ]);
     }
     public function UserWiseArrival(Request $request)

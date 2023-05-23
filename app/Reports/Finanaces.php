@@ -1098,7 +1098,6 @@ class Finanaces
             $account_id
         );
         $location_information = ACL::getUserCentres();
-        //dd($location_information);
         $report_data = array();
         foreach($data['location_id_com'] as $location){
             $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
@@ -2672,7 +2671,6 @@ class Finanaces
             ->orderBy('appointments.created_at', 'desc')
             ->limit(50)
             ->get();
-        //dd($appointments->toSql(), $appointments->getBindings());
         $total = 0;
         $count = array();
         $arrived_count = array();
@@ -2703,14 +2701,11 @@ class Finanaces
                 $appointmentss[] = $appointment->id;
                 $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])
                ->get()->pluck('id')->toArray();
-               //dd($package_info);
                 if (count($package_info)) {
                     $actual = 0;
                     $revenue_in = 0;
                     $out = 0;
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                        // ->whereDate('created_at', '>=', $start_date)
-                        // ->whereDate('created_at', '<=', $end_date)
                         ->where('cash_flow', '=', "in")
                         ->where('cash_amount', '>', 0)
                         ->get();
@@ -2884,7 +2879,7 @@ class Finanaces
         $maxConversion = collect($appointments_info)->max('conversion_spend');
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
-        //dd($converted_Records);
+
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
 
             $total_appointments = Appointments::
@@ -2895,7 +2890,6 @@ class Finanaces
             ->where('appointment_type_id','=',1)
             ->where(['base_appointment_status_id' => 2])
             ->count();
-        //dd($total_appointments, $converted_Records);
 
         if($total_appointments > 0){
             $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
@@ -3330,9 +3324,7 @@ class Finanaces
                                 }
                             }
                         }
-
                     }
-                    // dd($report_data);
                 }
             }
         }
