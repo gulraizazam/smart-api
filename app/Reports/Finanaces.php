@@ -2699,8 +2699,7 @@ class Finanaces
                     );
                 }
                 $appointmentss[] = $appointment->id;
-                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])
-               ->get()->pluck('id')->toArray();
+                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
                 if (count($package_info)) {
                     $actual = 0;
                     $revenue_in = 0;
@@ -2864,16 +2863,26 @@ class Finanaces
         $returnCategoryData = [];
         foreach($maxConversion1 as $key => $app){
             $sum_conversion_spend = 0;
+            $sum_conversion_total = 0;
             foreach($app as $value) {
                 $name = $value['service'];
                 $sum_conversion_spend += $value['conversion_spend'];
-
+                $sum_conversion_total += 1;
             }
            $avg_by_category = ($sum_conversion_spend/count($app)) ;
+           $category_total_records = Appointments::where(['service_id' => $value['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+            ->where('scheduled_date','>=',$start_date)
+            ->where('scheduled_date','<=',$end_date)
+            ->where($where)
+            ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
+            ->count();
             $returnCategoryData[$key] = [
                 'service' => $name,
+                'service_id' => $value['service_id'],
                 'sum' => $sum_conversion_spend,
-                'avg' => $avg_by_category
+                'avg' => $avg_by_category,
+                'total_arrival' => $category_total_records,
+                'total_conversion' => $sum_conversion_total
             ];
         }
         $maxConversion = collect($appointments_info)->max('conversion_spend');
@@ -2881,12 +2890,11 @@ class Finanaces
         $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
 
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
-
-            $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
+        $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
             ->where('scheduled_date','<=',$end_date)
             ->where($where)
-            ->where('appointment_type_id','=',1)
-            ->where(['base_appointment_status_id' => 2])
+            ->when($location_ids, fn ($q) => $q->whereIn('location_id', $location_ids))
+            ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
             ->count();
 
         if($total_appointments > 0){
@@ -2920,6 +2928,8 @@ class Finanaces
             $conversionsByPatient,
             $average_client_coversion,
             $arrival_to_conversion_ratio,
+            $converted_Records,
+            $total_appointments,
             $returnCategoryData,
             $avg_cxlient_value
 
