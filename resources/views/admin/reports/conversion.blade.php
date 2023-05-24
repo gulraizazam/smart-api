@@ -7,6 +7,10 @@
             .table-wrapper {
                 overflow-x: scroll;
             }
+            .table thead th, .table thead td {
+                padding-top: 0.3rem !important;
+                padding-bottom: 0.3rem !important;
+            }
             .sn-report-head{
                 display: flex;
                 flex-wrap: wrap;
@@ -194,7 +198,8 @@
                                 'csvHtml5',
                                 'pdfHtml5',
                             ],
-                            "ordering": false
+                            "ordering": false,
+                            "pageLength": 50
                         });
                         } else {
                             return false;
