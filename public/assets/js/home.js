@@ -832,9 +832,9 @@ function initUserWiseArrival(period) {
             for (var i = 0; i < barLenght.length; i++) {
                 arrived += response.data.arrived[i];
                 total += response.data.total[i];
-                if(dataID == 'All'){
+                // if(dataID == 'All'){
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
-                }
+                //}
             }
             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
             if(response.data.total != ''){
