@@ -814,11 +814,12 @@
                                                         <i class="fa fa-angle-down"></i>
                                                     </a>
                                                     <ul class="dropdown-menu dropdown-menu-right">
-
+                                                        <li>
+                                                            <a onclick="LoadBarChartUserWise('All', 'thismonth')">All</a>
+                                                        </li>
                                                         @foreach($csr_users as $user)
                                                         <li>
-                                                            <a
-                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'thismonth')" >{{$user->name}}</a>
+                                                            <a data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'thismonth')" >{{$user->name}}</a>
                                                         </li>
                                                         @endforeach
 
@@ -842,23 +843,23 @@
                                             @endif
                                         </li>
                                         @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                            <li>
+                                            <li class="yesterday">
                                                 <a href="#appointment_by_status_1" data-toggle="tab"
                                                 onclick="initUserWiseArrival('yesterday');">Yesterday</a>
                                             </li>
-                                            <li>
+                                            <li class="last7days">
                                                 <a href="#appointment_by_status_2" data-toggle="tab"
                                                 onclick="initUserWiseArrival('last7days');">Last 7 Days</a>
                                             </li>
-                                            <li>
+                                            <li class="week">
                                                 <a href="#appointment_by_status_2" data-toggle="tab"
                                                 onclick="initUserWiseArrival('week');">This Week</a>
                                             </li>
-                                            <li>
+                                            <li class="thismonth">
                                                 <a href="#appointment_by_status_3" data-toggle="tab"
                                                 onclick="initUserWiseArrival('thismonth');">This Month</a>
                                             </li>
-                                            <li>
+                                            <li class="lastmonth">
                                                 <a href="#appointment_by_status_3" data-toggle="tab"
                                                 onclick="initUserWiseArrival('lastmonth');">Last Month</a>
                                             </li>
@@ -963,13 +964,12 @@
                 $.ajax({
                     url: route('admin.dashboard.agent_wise_arrival'),
                     type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2'},
+                    data: {'period': '{{request('type')}}', 'user_id':'All', 'type':'2'},
                     cache: false,
                     success: function (response) {
-
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');
+                        jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
                         var TABLE_HTML = "";
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
@@ -1262,19 +1262,18 @@
             let modifiedLocations;
             if(locations.length > 0){
                 if (locations.some(str => str.includes('CUTERA'))) {
-                    console.log("here");
                     modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
                 }else{
-                    console.log("hssere");
                     modifiedLocations = locations;
                 }
-
             }else{
                 modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
             }
-            for (var i = 0; i < service.data.walkin.length; i++) {
-                service.data.total[i] -= service.data.walkin[i];
-                service.data.arrived[i] -= service.data.walkin[i];
+            if(service.data.walkin != undefined){
+                for (var i = 0; i < service.data.walkin.length; i++) {
+                    service.data.total[i] -= service.data.walkin[i];
+                    service.data.arrived[i] -= service.data.walkin[i];
+                }
             }
             var options = {
                 series: [{
