@@ -1,3 +1,5 @@
+var central_wise_arrival_chart;
+
 function initCollectionByCentre(today, yesterday, last7days, week, thismonth, lastmonth) {
     $.ajax({
         headers: {
@@ -55,9 +57,9 @@ function initCollectionByCentre(today, yesterday, last7days, week, thismonth, la
             }
             collectionCentreChart(pie);
         },
-
     });
 }
+
 function collectionCentreChart(pie) {
 
     google.load('visualization', '1', {
@@ -81,6 +83,7 @@ function collectionCentreChart(pie) {
         $("#collection-by-centre").css("height", "500px");
     }
 }
+
 function initRevenueByCentre(period) {
     $.ajax({
         headers: {
@@ -134,6 +137,7 @@ function initRevenueByCentre(period) {
         },
     });
 }
+
 function revenueCentreChart(pie) {
 
     google.load('visualization', '1', {
@@ -158,6 +162,7 @@ function revenueCentreChart(pie) {
     }
 
 }
+
 function initRevenueByService(today, yesterday, last7days, week, thismonth, lastmonth) {
     $.ajax({
         headers: {
@@ -217,6 +222,7 @@ function initRevenueByService(today, yesterday, last7days, week, thismonth, last
 
     });
 }
+
 function revenueByService(service, colors) {
 
     google.load('visualization', '1', {
@@ -240,6 +246,7 @@ function revenueByService(service, colors) {
         $("#revenue-service").css("height", "500px");
     }
 }
+
 function initAppointmentsByStatus(period) {
     $.ajax({
         headers: {
@@ -272,6 +279,7 @@ function initAppointmentsByStatus(period) {
 
     });
 }
+
 function AppointmentByStatus(pie, colors) {
 
     google.load('visualization', '1', {
@@ -294,6 +302,7 @@ function AppointmentByStatus(pie, colors) {
         $("#appointment_status_today").css("height", "500px");
     }
 }
+
 function initAppointmentsByType(period) {
     $.ajax({
         headers: {
@@ -326,6 +335,7 @@ function initAppointmentsByType(period) {
 
     });
 }
+
 function AppointmentByType(pie, colors) {
 
     google.load('visualization', '1', {
@@ -348,6 +358,7 @@ function AppointmentByType(pie, colors) {
         $("#appointment_type_today").css("height", "500px");
     }
 }
+
 function initConsultancyByStatus(period, type) {
     $.ajax({
         headers: {
@@ -384,6 +395,7 @@ function initConsultancyByStatus(period, type) {
 
     });
 }
+
 function initTreatmentByStatus(period, type) {
     $.ajax({
         headers: {
@@ -419,6 +431,7 @@ function initTreatmentByStatus(period, type) {
 
     });
 }
+
 function TreatmentByStatus(pie, colors) {
     google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
@@ -435,6 +448,7 @@ function TreatmentByStatus(pie, colors) {
         $("#treatment_by_status").css("height", "500px");
     }
 }
+
 function ConsultancyByStatus(pie, colors) {
     google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
@@ -451,6 +465,7 @@ function ConsultancyByStatus(pie, colors) {
         $("#consultancy_by_status").css("height", "500px");
     }
 }
+
 function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, lastmonth) {
     $.ajax({
         headers: {
@@ -487,6 +502,7 @@ function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, la
         },
     });
 }
+
 function RevenueByServiceCategory(service, colors) {
     google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
@@ -503,6 +519,7 @@ function RevenueByServiceCategory(service, colors) {
         $("#revenue-service-category").css("height", "500px");
     }
 }
+
 function InitCollectionByServiceCategory(today, yesterday, last7days, thismonth, lastmonth) {
     $.ajax({
         headers: {
@@ -539,6 +556,7 @@ function InitCollectionByServiceCategory(today, yesterday, last7days, thismonth,
         },
     });
 }
+
 function CollectionByServiceCategory(service, colors) {
     google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
@@ -556,6 +574,7 @@ function CollectionByServiceCategory(service, colors) {
         $("#revenue-service-collection").css("height", "500px");
     }
 }
+
 function initCentreWiseArrival(period) {
     var dataID;
     if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
@@ -618,51 +637,10 @@ function initCentreWiseArrival(period) {
         },
     });
 }
-function initUserWiseArrival(period) {
-    var dataID;
-    if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
-        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-    } else {
-        dataID = 'All';
-    }
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.csr_wise_arrival'),
-        type: 'GET',
-        cache: false,
-        data: {
-            'period': period,
-            'user_id': dataID
-        },
-        success: function (response) {
-            jQuery('#table-body').html("");
-            setTimeout(function () {
-                var TABLE_HTML = "";
-                let total = 0;
-                let arrived = 0;
-                var barLenght = response.data.bar;
-                var csr_name = $('.arrivalbtn').text();
 
-                for (var i = 0; i < barLenght.length; i++) {
-                    arrived += response.data.arrived[i];
-                    total += response.data.total[i];
-                    if(dataID == 'All'){
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
-                    }
-                }
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
-                if(response.data.total != ''){
-                    jQuery('#table-body').append(TABLE_HTML);
-                }
-                ConsultanciesByStatus(response);
-            }, 2000);
-
-        },
-    });
-}
 function LoadBarChart(centreID, period) {
+    central_wise_arrival_chart.destroy();
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -676,7 +654,6 @@ function LoadBarChart(centreID, period) {
         },
         success: function (response) {
             jQuery('#table-body').html('');
-            setTimeout(function () {
                 var TABLE_HTML = "";
                 var walkin_t = 0;
                 var arrived_t = 0;
@@ -713,11 +690,13 @@ function LoadBarChart(centreID, period) {
                     jQuery('#table-body').append(TABLE_HTML);
                 }
                 ConsultanciesByStatus(response);
-            }, 2000);
         },
     });
 }
+
 function LoadBarChartUserWise(UserID, period) {
+    central_wise_arrival_chart.destroy();
+
     let url;
     if(UserID == 'All'){
         url = route('admin.dashboard.csr_wise_arrival');
@@ -737,7 +716,6 @@ function LoadBarChartUserWise(UserID, period) {
         },
         success: function (response) {
             jQuery('#table-body').html("");
-            setTimeout(function () {
                 var TABLE_HTML = "";
                 let total = 0;
                 let arrived = 0;
@@ -761,10 +739,10 @@ function LoadBarChartUserWise(UserID, period) {
                     jQuery('#table-body').append(TABLE_HTML);
                 }
                 BarChartUserWise(response);
-            }, 2000);
         },
     });
 }
+
 function BarChartUserWise(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
@@ -814,6 +792,51 @@ function BarChartUserWise(bar) {
     var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
     chart.render();
 }
+
+function initUserWiseArrival(period) {
+    central_wise_arrival_chart.destroy();
+
+    var dataID;
+    if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
+        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
+    } else {
+        dataID = 'All';
+    }
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.csr_wise_arrival'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'user_id': dataID
+        },
+        success: function (response) {
+            jQuery('#table-body').html("");
+            var TABLE_HTML = "";
+            let total = 0;
+            let arrived = 0;
+            var barLenght = response.data.bar;
+            var csr_name = $('.arrivalbtn').text();
+
+            for (var i = 0; i < barLenght.length; i++) {
+                arrived += response.data.arrived[i];
+                total += response.data.total[i];
+                if(dataID == 'All'){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
+                }
+            }
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
+            if(response.data.total != ''){
+                jQuery('#table-body').append(TABLE_HTML);
+            }
+            ConsultanciesByStatus(response);
+        },
+    });
+}
+
 function ConsultanciesByStatus(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
@@ -840,13 +863,13 @@ function ConsultanciesByStatus(bar) {
     var options = {
         series: [{
             name: 'Total Appointments',
-            data: bar.data.total
+            data: bar.data.total ?? []
         }, {
             name: 'Arrived',
-            data: bar.data.arrived
+            data: bar.data.arrived ?? []
         }, {
             name: 'Walk-in',
-            data: bar.data.walkin
+            data: bar.data.walkin ?? []
         }, ],
         noData: {
             text: 'No Data',
@@ -880,9 +903,8 @@ function ConsultanciesByStatus(bar) {
         },
         colors: [primary, success, warning]
     };
-    $("#centre_wise_arrival").html('');
-    var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
-    chart.render();
+    central_wise_arrival_chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
+    central_wise_arrival_chart.render();
 }
 
 
