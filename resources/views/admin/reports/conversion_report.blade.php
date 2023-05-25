@@ -135,7 +135,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">{{$conversion['service']}}</td>
-                                <td class="bg-light" style="text-align:right;">Conversion: {{$conversion['total_conversion']}}/Total: {{$conversion['total_arrival']}}</td>
+                                <td class="bg-light" style="text-align:right;">Conversions: {{$conversion['total_conversion']}}/ {{$conversion['total_arrival']}}</td>
                             </tr>
                             <tr class="">
                                 <td class="bg-light" style="text-align:right;">Total Conversion Value</td>
