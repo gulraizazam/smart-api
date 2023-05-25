@@ -650,6 +650,9 @@ function initUserWiseArrival(period) {
                 for (var i = 0; i < barLenght.length; i++) {
                     arrived += response.data.arrived[i];
                     total += response.data.total[i];
+                    if(dataID == 'All'){
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
+                    }
                 }
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 if(response.data.total != ''){
@@ -717,11 +720,17 @@ function LoadBarChart(centreID, period) {
     });
 }
 function LoadBarChartUserWise(UserID, period) {
+    let url;
+    if(UserID == 'All'){
+        url = route('admin.dashboard.csr_wise_arrival');
+    } else {
+        url = route('admin.dashboard.user_wise_arrival');
+    }
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.dashboard.user_wise_arrival'),
+        url: url,
         type: 'GET',
         cache: false,
         data: {
@@ -745,6 +754,9 @@ function LoadBarChartUserWise(UserID, period) {
                     }
                     arrived += response.data.arrived[i];
                     total += response.data.total[i];
+                    if(UserID == 'All'){
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
+                    }
                 }
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 if(response.data.total != ''){
