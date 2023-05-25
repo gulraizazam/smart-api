@@ -997,6 +997,9 @@
                         var walkin_t = 0;
                         var arrived_t = 0;
                         var total_t = 0;
+                        var walkin_t = 0;
+                        var arrived_t = 0;
+                        var total_t = 0;
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
                             var walkin = "";
@@ -1009,10 +1012,16 @@
                                 walkin_t += 0;
                                 arrived_t += response.data.arrived[i];
                                 total_t += response.data.total[i];
+                                walkin_t += 0;
+                                arrived_t += response.data.arrived[i];
+                                total_t += response.data.total[i];
                             } else {
                                 walkin = response.data.walkin[i];
                                 arrived = response.data.arrived[i]-walkin;
                                 total = response.data.total[i]-walkin;
+                                walkin_t += response.data.walkin[i];
+                                arrived_t += response.data.arrived[i];
+                                total_t += response.data.total[i];
                                 walkin_t += response.data.walkin[i];
                                 arrived_t += response.data.arrived[i];
                                 total_t += response.data.total[i];
@@ -1262,10 +1271,10 @@
             let modifiedLocations;
             if(locations.length > 0){
                 if (locations.some(str => str.includes('CUTERA'))) {
-                    console.log("here");
+
                     modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
                 }else{
-                    console.log("hssere");
+
                     modifiedLocations = locations;
                 }
 
