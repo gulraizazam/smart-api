@@ -908,7 +908,6 @@
                     }
                 });
             @else
-                console.log("admin")
                 $.ajax({
                     url: route('admin.dashboard.centre_wise_arrival'),
                     type: "GET",
@@ -1297,7 +1296,6 @@
                 }
         }
         function BarChart(service) {
-            console.log("for admin ")
             const primary = '#6993FF';
             const success = '#1BC5BD';
             const info = '#8950FC';
