@@ -30,6 +30,10 @@
                 color: #fff !important;
                 font-weight: bold !important;
             }
+            .table thead th, .table thead td {
+                padding-top: 0.3rem !important;
+                padding-bottom: 0.3rem !important;
+            }
         </style>
     @endpush
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -194,7 +198,8 @@
                                 'csvHtml5',
                                 'pdfHtml5',
                             ],
-                            "ordering": false
+                            "ordering": false,
+                            "pageLength": 50
                         });
                         } else {
                             return false;
