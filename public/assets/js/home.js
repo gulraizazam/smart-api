@@ -580,7 +580,6 @@ function initCentreWiseArrival(period) {
         success: function (response) {
             jQuery('#table-body').html('');
             setTimeout(function () {
-                jQuery('#table-body').html('');
                 var TABLE_HTML = "";
                 var walkin_t = 0;
                 var arrived_t = 0;
@@ -642,7 +641,6 @@ function initUserWiseArrival(period) {
         success: function (response) {
             jQuery('#table-body').html("");
             setTimeout(function () {
-                jQuery('#table-body').html("");
                 var TABLE_HTML = "";
                 let total = 0;
                 let arrived = 0;
@@ -678,7 +676,6 @@ function LoadBarChart(centreID, period) {
         success: function (response) {
             jQuery('#table-body').html('');
             setTimeout(function () {
-                jQuery('#table-body').html('');
                 var TABLE_HTML = "";
                 var walkin_t = 0;
                 var arrived_t = 0;
@@ -734,7 +731,6 @@ function LoadBarChartUserWise(UserID, period) {
         success: function (response) {
             jQuery('#table-body').html("");
             setTimeout(function () {
-                jQuery('#table-body').html("");
                 var TABLE_HTML = "";
                 let total = 0;
                 let arrived = 0;
@@ -754,8 +750,8 @@ function LoadBarChartUserWise(UserID, period) {
                 if(response.data.total != ''){
                     jQuery('#table-body').append(TABLE_HTML);
                 }
+                BarChartUserWise(response);
             }, 2000);
-            BarChartUserWise(response);
         },
     });
 }
@@ -773,6 +769,16 @@ function BarChartUserWise(bar) {
             name: 'Arrived',
             data: bar.data.arrived
         },],
+        noData: {
+            text: 'No Data',
+            align: 'center',
+            verticalAlign: 'top',
+            style: {
+              color: 'red',
+              fontSize: '14px',
+              fontFamily: undefined
+            }
+        },
         chart: {
             type: 'bar',
             height: 350,
@@ -808,18 +814,18 @@ function ConsultanciesByStatus(bar) {
     let modifiedLocations;
     if (locations.length > 0) {
         if (locations.some(str => str.includes('CUTERA'))) {
-            console.log('here');
             modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
         } else {
             modifiedLocations = locations;
         }
-
     } else {
         modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
     }
-    for (var i = 0; i < bar.data.walkin.length; i++) {
-        bar.data.total[i] -= bar.data.walkin[i];
-        bar.data.arrived[i] -= bar.data.walkin[i];
+    if(bar.data?.walkin != undefined){
+        for (var i = 0; i < bar.data.walkin.length; i++) {
+            bar.data.total[i] -= bar.data.walkin[i];
+            bar.data.arrived[i] -= bar.data.walkin[i];
+        }
     }
     var options = {
         series: [{
@@ -831,7 +837,7 @@ function ConsultanciesByStatus(bar) {
         }, {
             name: 'Walk-in',
             data: bar.data.walkin
-        }],
+        }, ],
         noData: {
             text: 'No Data',
             align: 'center',
