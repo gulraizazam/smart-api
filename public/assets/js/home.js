@@ -1,3 +1,4 @@
+var central_wise_arrival_chart;
 function initCollectionByCentre(today, yesterday, last7days,week, thismonth,lastmonth) {
     $.ajax({
         headers: {
