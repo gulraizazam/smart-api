@@ -556,16 +556,17 @@ function CollectionByServiceCategory(service, colors) {
         $("#revenue-service-collection").css("height", "500px");
     }
 }  
-function initCentreWiseArrival(period){
-    var dataID ;
-   if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
-    dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-   }else{
-    dataID = 'All';
-   }
-   if(dataID == 30){
-    dataID = 'All';
-   }
+function initCentreWiseArrival(period) {
+    central_wise_arrival_chart.destroy();
+    var dataID;
+    if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
+        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
+    } else {
+        dataID = 'All';
+    }
+    if (dataID == 30) {
+        dataID = 'All';
+    }
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -575,98 +576,57 @@ function initCentreWiseArrival(period){
         cache: false,
         data: {
             'period': period,
-            'centre_id':dataID
+            'centre_id': dataID
         },
         success: function (response) {
             jQuery('#table-body').html('');
-            ConsultanciesByStatus(response);
-            setTimeout(function() {
-                jQuery('#table-body').html('');
                 var TABLE_HTML = "";
                 var walkin_t = 0;
                 var arrived_t = 0;
                 var total_t = 0;
                 var barLenght = response.data.bar;
-                for(var i = 0; i < barLenght.length; i++){
-                    var walkin = "";
-                    var arrived = "";
-                    var total = "";
-                    if(response.data.walkin[i] === undefined) {
-                        walkin = "0";
-                        arrived = response.data.arrived[i]-walkin;
-                        total = response.data.total[i]-walkin;
+                for (var i = 0; i < barLenght.length; i++) {
+                    var walkin = 0;
+                    var arrived = 0;
+                    var total = 0;
+                    if (response.data.walkin[i] === undefined) {
+                        walkin = 0;
+                        arrived = response.data.arrived[i] - walkin;
+                        total = response.data.total[i] - walkin;
                         walkin_t += 0;
                         arrived_t += response.data.arrived[i];
                         total_t += response.data.total[i];
                     } else {
                         walkin = response.data.walkin[i];
-                        arrived = response.data.arrived[i]-walkin;
-                        total = response.data.total[i]-walkin;
+                        arrived = response.data.arrived[i] - walkin;
+                        total = response.data.total[i] - walkin;
                         walkin_t += response.data.walkin[i];
                         arrived_t += response.data.arrived[i];
                         total_t += response.data.total[i];
                     }
-                    
+
                     let str = barLenght[i];
                     let wordToRemove = "CUTERA ";
                     let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
-                arrived_t -= walkin_t;
-                total_t -= walkin_t;
-               
-                if(dataID == "All"){
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+                var record_t = total_t - walkin_t;
+                var record_a = arrived_t - walkin_t;
+                if(dataID=="All"){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + record_a + "/" + record_t + "</td><td>" + walkin_t + "</td><td>" + ((record_a / record_t) * 100).toFixed(2) + "%</td></tr>";
                 
                 }
-                
-                jQuery('#table-body').append(TABLE_HTML);
-            }, 2000); 
+                if(response.data.total != ''){
+                    jQuery('#table-body').append(TABLE_HTML);
+                }
+                ConsultanciesByStatus(response);
         },
     });
-} 
-function initUserWiseArrival(period){
-    var dataID ;
-    if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
-        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-    }else{
-        dataID = 'All';
-    }
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.csr_wise_arrival'),
-        type: 'GET',
-        cache: false,
-        data: {
-            'period': period,
-            'user_id':dataID
-        },
-        success: function (response) {
-            ConsultanciesByStatus(response);
-            jQuery('#table-body').html("");
-            setTimeout(function() {
-                jQuery('#table-body').html("");
-                var TABLE_HTML = "";
-                let total = 0;
-                let arrived = 0;
-                var barLenght = response.data.bar;
-                var csr_name = $('.arrivalbtn').text();
-                
-                for(var i = 0; i < barLenght.length; i++){
-                    arrived += response.data.arrived[i];
-                    total += response.data.total[i];
-                    }
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
-                
-                jQuery('#table-body').append(TABLE_HTML);
-            }, 2000); 
-            
-        },
-    });
-} 
-function LoadBarChart(centreID,period){
+}
+
+function LoadBarChart(centreID, period) {
+    central_wise_arrival_chart.destroy();
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -676,82 +636,102 @@ function LoadBarChart(centreID,period){
         cache: false,
         data: {
             'period': period,
-            'centre_id':centreID
+            'centre_id': centreID
         },
         success: function (response) {
-           
-            ConsultanciesByStatus(response);
             jQuery('#table-body').html('');
-            setTimeout(function() {
-                jQuery('#table-body').html('');
                 var TABLE_HTML = "";
+                var walkin_t = 0;
+                var arrived_t = 0;
+                var total_t = 0;
                 var barLenght = response.data.bar;
-                for(var i = 0; i < barLenght.length; i++){
+                for (var i = 0; i < barLenght.length; i++) {
                     var walkin = "";
                     var arrived = "";
                     var total = "";
-                    if(response.data.walkin[i] === undefined) {
+                    if (response.data.walkin[i] === undefined) {
                         walkin = "0";
-                        arrived = response.data.arrived[i]-walkin;
-                        total = response.data.total[i]-walkin;
+                        arrived = response.data.arrived[i] - walkin;
+                        total = response.data.total[i] - walkin;
+                        walkin_t += 0;
+                        arrived_t += response.data.arrived[i];
+                        total_t += response.data.total[i];
                     } else {
                         walkin = response.data.walkin[i];
-                        arrived = response.data.arrived[i]-walkin;
-                        total = response.data.total[i]-walkin;
+                        arrived = response.data.arrived[i] - walkin;
+                        total = response.data.total[i] - walkin;
+                        walkin_t += response.data.walkin[i];
+                        arrived_t += response.data.arrived[i];
+                        total_t += response.data.total[i];
                     }
                     let str = barLenght[i];
                     let wordToRemove = "CUTERA ";
                     let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
-                jQuery('#table-body').append(TABLE_HTML);
-            }, 2000); 
+                arrived_t -= walkin_t;
+                total_t -= walkin_t;
+                if(centreID == 'All'){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+                }
+                if(response.data.total != ''){
+                    jQuery('#table-body').append(TABLE_HTML);
+                }
+                ConsultanciesByStatus(response);
         },
     });
 }
-function LoadBarChartUserWise(UserID,period){
+
+function LoadBarChartUserWise(UserID, period) {
+    central_wise_arrival_chart.destroy();
+
+    let url;
+    if(UserID == 'All'){
+        url = route('admin.dashboard.csr_wise_arrival');
+    } else {
+        url = route('admin.dashboard.user_wise_arrival');
+    }
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.dashboard.user_wise_arrival'),
+        url: url,
         type: 'GET',
         cache: false,
         data: {
             'period': period,
-            'user_id':UserID
+            'user_id': UserID
         },
         success: function (response) {
-           
-            BarChartUserWise(response);
             jQuery('#table-body').html("");
-            setTimeout(function() {
-                jQuery('#table-body').html("");
                 var TABLE_HTML = "";
                 let total = 0;
                 let arrived = 0;
                 var barLenght = response.data.bar;
                 var csr_name = $('.arrivalbtn').text();
-                if(csr_name == "" || csr_name == "Select User"){
+                if (csr_name == "" || csr_name == "Select User") {
                     csr_name = "All CSR";
                 }
-                for(var i = 0; i < barLenght.length; i++){
-                    if(response.data.arrived[i] == undefined){
+                for (var i = 0; i < barLenght.length; i++) {
+                    if (response.data.arrived[i] == undefined) {
                         response.data.arrived[i] = 0;
                     }
                     arrived += response.data.arrived[i];
                     total += response.data.total[i];
+                    if(UserID == 'All'){
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
                     }
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";  
-                
-                jQuery('#table-body').append(TABLE_HTML);
-            }, 2000); 
-            
+                }
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
+                if(response.data.total != ''){
+                    jQuery('#table-body').append(TABLE_HTML);
+                }
+                BarChartUserWise(response);
         },
     });
 }
-function BarChartUserWise(bar)
-{
+
+function BarChartUserWise(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
     const info = '#8950FC';
@@ -765,11 +745,19 @@ function BarChartUserWise(bar)
             name: 'Arrived',
             data: bar.data.arrived
         },],
+        noData: {
+            text: 'No Data',
+            align: 'center',
+            verticalAlign: 'top',
+            style: {
+              color: 'red',
+              fontSize: '14px',
+              fontFamily: undefined
+            }
+        },
         chart: {
             type: 'bar',
             height: 350,
-           
-            
         },
         plotOptions: {
             bar: {
@@ -792,8 +780,52 @@ function BarChartUserWise(bar)
     var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
     chart.render();
 }
-function ConsultanciesByStatus(bar)
-{
+
+function initUserWiseArrival(period) {
+    central_wise_arrival_chart.destroy();
+
+    var dataID;
+    if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
+        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
+    } else {
+        dataID = 'All';
+    }
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.csr_wise_arrival'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'user_id': dataID
+        },
+        success: function (response) {
+            jQuery('#table-body').html("");
+            var TABLE_HTML = "";
+            let total = 0;
+            let arrived = 0;
+            var barLenght = response.data.bar;
+            var csr_name = $('.arrivalbtn').text();
+
+            for (var i = 0; i < barLenght.length; i++) {
+                arrived += response.data.arrived[i];
+                total += response.data.total[i];
+                if(dataID == 'All'){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
+                }
+            }
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
+            if(response.data.total != ''){
+                jQuery('#table-body').append(TABLE_HTML);
+            }
+            ConsultanciesByStatus(response);
+        },
+    });
+}
+
+function ConsultanciesByStatus(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
     const info = '#8950FC';
@@ -801,37 +833,51 @@ function ConsultanciesByStatus(bar)
     const danger = '#F64E60';
     let locations = bar.data.bar;
     let modifiedLocations;
-    if(locations.length > 0){
+    if (locations.length > 0) {
         if (locations.some(str => str.includes('CUTERA'))) {
             modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
-        }else{
+        } else {
             modifiedLocations = locations;
         }
-        
-    }else{
-        modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
+    } else {
+        modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
     }
-    
+    if(bar.data?.walkin != undefined){
+        for (var i = 0; i < bar.data.walkin.length; i++) {
+            bar.data.total[i] -= bar.data.walkin[i];
+            bar.data.arrived[i] -= bar.data.walkin[i];
+        }
+    }
     var options = {
         series: [{
             name: 'Total Appointments',
-            data: bar.data.total
+            data: bar.data.total ?? []
         }, {
             name: 'Arrived',
-            data: bar.data.arrived
+            data: bar.data.arrived ?? []
         }, {
             name: 'Walk-in',
-            data: bar.data.walkin
-        }],
+            data: bar.data.walkin ?? []
+        }, ],
+        noData: {
+            text: 'No Data',
+            align: 'center',
+            verticalAlign: 'top',
+            style: {
+              color: 'red',
+              fontSize: '14px',
+              fontFamily: undefined
+            }
+        },
         chart: {
             type: 'bar',
             height: 350,
-            
+
         },
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '45%',
+                columnWidth: '55%',
                 endingShape: 'rounded'
             },
         },
@@ -845,10 +891,10 @@ function ConsultanciesByStatus(bar)
         },
         colors: [primary, success, warning]
     };
-    $("#centre_wise_arrival").html('');
-    var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
-    chart.render();
-} 
+    central_wise_arrival_chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
+    central_wise_arrival_chart.render();
+}
+
 
 
     
