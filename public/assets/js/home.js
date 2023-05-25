@@ -631,7 +631,11 @@ function initCentreWiseArrival(period) {
                 }
                 var record_t = total_t - walkin_t;
                 var record_a = arrived_t - walkin_t;
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + record_a + "/" + record_t + "</td><td>" + walkin_t + "</td><td>" + ((record_a / record_t) * 100).toFixed(2) + "%</td></tr>";
+                if(dataID=="All"){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + record_a + "/" + record_t + "</td><td>" + walkin_t + "</td><td>" + ((record_a / record_t) * 100).toFixed(2) + "%</td></tr>";
+                
+                }
+                
                 if(response.data.total != ''){
                     jQuery('#table-body').append(TABLE_HTML);
                 }
