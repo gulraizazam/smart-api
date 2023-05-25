@@ -232,243 +232,243 @@
                         </div>
                     </div>
                     @if(\Illuminate\Support\Facades\Gate::allows("dashboard_collection_by_centre"))
-                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="collectionbycenter">
-                            <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase" >Collection by Centre</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center">
-                                        <li style="border-bottom: none;">
-                                            <div class="actions action-style p-3 mr-3">
-                                                <div class="btn-group">
-                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false"> Report
-                                                        <i class="fa fa-angle-down"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a href="#"
-                                                            target="_blank">Today</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="#"
-                                                            target="_blank">Yesterday</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="#"
-                                                            target="_blank">Last 7 Days</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="#"
-                                                            target="_blank">This Week</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="#"
-                                                            target="_blank">This Month</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="#"
-                                                            target="_blank">Last Month</a>
-                                                        </li>
-                                                    </ul>
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="collectionbycenter">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase" >Collection by Centre</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                        data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="#"
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#"
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#"
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#"
+                                                                target="_blank">This Week</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#"
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#"
+                                                                target="_blank">Last Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </li>
-                                        <li >
-                                            <a class="active" href="#location_collection_1" data-toggle="tab"
-                                            onclick="initCollectionByCentre('today', '', '','','','');">Today</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_collection_2" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', 'yesterday', '','','','');">Yesterday</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_collection_3" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '', 'last7days','', '','');">Last 7 Days</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_collection_3" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '','', 'week', '','');">This Week</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_collection_4" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '', '','', 'thismonth','');">This Month</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_collection_4" data-toggle="tab"
-                                            onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last Month</a>
-                                        </li>
-                                    </ul>
-                                    <div class=" flex-column text-right d-none">
-                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-pie-chart"></span>
-                                        <span class="text-muted font-weight-bold mt-2 pie-income-title">Weekly Income</span>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#location_collection_1" data-toggle="tab"
+                                                onclick="initCollectionByCentre('today', '', '','','','');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_collection_2" data-toggle="tab"
+                                                onclick="initCollectionByCentre('', 'yesterday', '','','','');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_collection_3" data-toggle="tab"
+                                                onclick="initCollectionByCentre('', '', 'last7days','', '','');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_collection_3" data-toggle="tab"
+                                                onclick="initCollectionByCentre('', '','', 'week', '','');">This Week</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_collection_4" data-toggle="tab"
+                                                onclick="initCollectionByCentre('', '', '','', 'thismonth','');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_collection_4" data-toggle="tab"
+                                                onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class=" flex-column text-right d-none">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-pie-chart"></span>
+                                            <span class="text-muted font-weight-bold mt-2 pie-income-title">Weekly Income</span>
+                                        </div>
                                     </div>
+                                    <div id="collection-by-centre"></div>
                                 </div>
-                                <div id="collection-by-centre"></div>
                             </div>
                         </div>
-                    </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
-                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase" >Revenue by Centre</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center">
-                                        <li style="border-bottom: none;">
-                                            <div class="actions action-style p-3 mr-3">
-                                                <div class="btn-group">
-                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                        data-close-others="true" aria-expanded="false"> Report
-                                                        <i class="fa fa-angle-down"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Today</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Yesterday</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last 7 Days</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Week</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Month</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last Month</a>
-                                                        </li>
-                                                    </ul>
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase" >Revenue by Centre</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Week</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </li>
-                                        <li >
-                                            <a class="active" href="#location_revenue_4" data-toggle="tab"
-                                            onclick="initRevenueByCentre('today');">Today</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_revenue_1" data-toggle="tab"
-                                            onclick="initRevenueByCentre('yesterday');">Yesterday</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_revenue_2" data-toggle="tab"
-                                            onclick="initRevenueByCentre('last7days');">Last 7 Days</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_revenue_2" data-toggle="tab"
-                                            onclick="initRevenueByCentre('week');">This Week</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_revenue_3" data-toggle="tab"
-                                            onclick="initRevenueByCentre('thismonth');">This Month</a>
-                                        </li>
-                                        <li>
-                                            <a href="#location_revenue_3" data-toggle="tab"
-                                            onclick="initRevenueByCentre('lastmonth');">Last Month</a>
-                                        </li>
-                                    </ul>
-                                    <div class="d-none flex-column text-right">
-                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-centre"></span>
-                                        <span class="text-muted font-weight-bold mt-2 revenue-centre-title">Today Revenue</span>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#location_revenue_4" data-toggle="tab"
+                                                onclick="initRevenueByCentre('today');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_revenue_1" data-toggle="tab"
+                                                onclick="initRevenueByCentre('yesterday');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_revenue_2" data-toggle="tab"
+                                                onclick="initRevenueByCentre('last7days');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_revenue_2" data-toggle="tab"
+                                                onclick="initRevenueByCentre('week');">This Week</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_revenue_3" data-toggle="tab"
+                                                onclick="initRevenueByCentre('thismonth');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#location_revenue_3" data-toggle="tab"
+                                                onclick="initRevenueByCentre('lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-centre"></span>
+                                            <span class="text-muted font-weight-bold mt-2 revenue-centre-title">Today Revenue</span>
+                                        </div>
                                     </div>
+                                    <div id="revenue-centre"></div>
                                 </div>
-                                <div id="revenue-centre"></div>
                             </div>
                         </div>
-                    </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
-                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase" >Revenue by Service</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center">
-                                        <li style="border-bottom: none;">
-                                            <div class="actions action-style p-3 mr-3">
-                                                <div class="btn-group">
-                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                        data-close-others="true" aria-expanded="false"> Report
-                                                        <i class="fa fa-angle-down"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Today</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Yesterday</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last 7 Days</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Week</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Month</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">LAst Month</a>
-                                                        </li>
-                                                    </ul>
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase" >Revenue by Service</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Week</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">LAst Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </li>
-                                        <li >
-                                            <a class="active" href="#service_revenue_4" data-toggle="tab"
-                                            onclick="initRevenueByService('today', '', '','','','');">Today</a>
-                                        </li>
-                                        <li>
-                                            <a href="#service_revenue_1" data-toggle="tab"
-                                            onclick="initRevenueByService('', 'yesterday', '','', '','');">Yesterday</a>
-                                        </li>
-                                        <li>
-                                            <a href="#service_revenue_2" data-toggle="tab"
-                                            onclick="initRevenueByService('', '', 'last7days','', '','');">Last 7 Days</a>
-                                        </li>
-                                        <li>
-                                            <a href="#service_revenue_2" data-toggle="tab"
-                                            onclick="initRevenueByService('', '', '','week', '','');">This Week</a>
-                                        </li>
-                                        <li>
-                                            <a href="#service_revenue_3" data-toggle="tab"
-                                            onclick="initRevenueByService('', '', '','', 'thismonth','');">This Month</a>
-                                        </li>
-                                        <li>
-                                            <a href="#service_revenue_3" data-toggle="tab"
-                                            onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last Month</a>
-                                        </li>
-                                    </ul>
-                                    <div class="d-none flex-column text-right">
-                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
-                                        <span class="text-muted font-weight-bold mt-2 service-title"></span>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
+                                                onclick="initRevenueByService('today', '', '','','','');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_1" data-toggle="tab"
+                                                onclick="initRevenueByService('', 'yesterday', '','', '','');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_2" data-toggle="tab"
+                                                onclick="initRevenueByService('', '', 'last7days','', '','');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_2" data-toggle="tab"
+                                                onclick="initRevenueByService('', '', '','week', '','');">This Week</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="initRevenueByService('', '', '','', 'thismonth','');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
+                                            <span class="text-muted font-weight-bold mt-2 service-title"></span>
+                                        </div>
                                     </div>
+                                    <div id="revenue-service"></div>
                                 </div>
-                                <div id="revenue-service"></div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-lg-12 col-xxl-12">
+                        <div class="col-lg-12 col-xxl-12">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -538,19 +538,19 @@
                             </div>
                         </div>
                     @endif
-                    <!-- @if(\Illuminate\Support\Facades\Gate::allows('dashboard_test'))
-                    <div class="col-lg-12 col-xxl-12">
+                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase" >Collection by Service Category</span>
+                                        <span class="dashboard-counter text-uppercase">Consultancy by Status</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
                                                         <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                            data-close-others="true" aria-expanded="false"> Report
+                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                        data-close-others="true" aria-expanded="false"> Report
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right">
@@ -568,6 +568,10 @@
                                                             </li>
                                                             <li>
                                                                 <a href=""
+                                                                target="_blank">This Week</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
                                                                 target="_blank">This Month</a>
                                                             </li>
                                                             <li>
@@ -579,354 +583,273 @@
                                                 </div>
                                             </li>
                                             <li >
-                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
-                                                onclick="InitCollectionByServiceCategory('today', '', '', '','');">Today</a>
+                                                <a class="active" href="#appointment_by_status_4" data-toggle="tab"
+                                                onclick="initConsultancyByStatus('today','1');">Today</a>
                                             </li>
                                             <li>
-                                                <a href="#service_revenue_1" data-toggle="tab"
-                                                onclick="InitCollectionByServiceCategory('', 'yesterday', '', '','');">Yesterday</a>
+                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                onclick="initConsultancyByStatus('yesterday','1');">Yesterday</a>
                                             </li>
                                             <li>
-                                                <a href="#service_revenue_2" data-toggle="tab"
-                                                onclick="InitCollectionByServiceCategory('', '', 'last7days', '','');">Last 7 Days</a>
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initConsultancyByStatus('last7days','1');">Last 7 Days</a>
                                             </li>
                                             <li>
-                                                <a href="#service_revenue_3" data-toggle="tab"
-                                                onclick="InitCollectionByServiceCategory('', '', '', 'thismonth','');">This Month</a>
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initConsultancyByStatus('week','1');">This Week</a>
                                             </li>
                                             <li>
-                                                <a href="#service_revenue_3" data-toggle="tab"
-                                                onclick="InitCollectionByServiceCategory('', '', '','', 'lastmonth');">Last Month</a>
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initConsultancyByStatus('thismonth','1');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initConsultancyByStatus('lastmonth','1');">Last Month</a>
                                             </li>
                                         </ul>
                                         <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-service"></span>
-                                            <span class="text-muted font-weight-bold mt-2 service-title"></span>
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                            <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
                                         </div>
                                     </div>
-                                    <div id="revenue-service-collection"></div>
+                                    <div id="consultancy_by_status"></div>
                                 </div>
                             </div>
                         </div>
-                        @endif -->
-                    @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
-                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase">Consultancy by Status</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center">
-                                        <li style="border-bottom: none;">
-                                            <div class="actions action-style p-3 mr-3">
-                                                <div class="btn-group">
-                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false"> Report
-                                                        <i class="fa fa-angle-down"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Today</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Yesterday</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last 7 Days</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Week</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Month</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last Month</a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        <li >
-                                            <a class="active" href="#appointment_by_status_4" data-toggle="tab"
-                                            onclick="initConsultancyByStatus('today','1');">Today</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_1" data-toggle="tab"
-                                            onclick="initConsultancyByStatus('yesterday','1');">Yesterday</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initConsultancyByStatus('last7days','1');">Last 7 Days</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initConsultancyByStatus('week','1');">This Week</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initConsultancyByStatus('thismonth','1');">This Month</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initConsultancyByStatus('lastmonth','1');">Last Month</a>
-                                        </li>
-                                    </ul>
-                                    <div class="d-none flex-column text-right">
-                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
-                                        <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
-                                    </div>
-                                </div>
-                                <div id="consultancy_by_status"></div>
-                            </div>
-                        </div>
-                    </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
-                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase">Treatment by Status</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center">
-                                        <li style="border-bottom: none;">
-                                            <div class="actions action-style p-3 mr-3">
-                                                <div class="btn-group">
-                                                    <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
-                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false"> Report
-                                                        <i class="fa fa-angle-down"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Today</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Yesterday</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last 7 Days</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Week</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">This Month</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href=""
-                                                            target="_blank">Last Month</a>
-                                                        </li>
-                                                    </ul>
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Treatment by Status</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                        data-close-others="true" aria-expanded="false"> Report
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last 7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Week</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">This Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href=""
+                                                                target="_blank">Last Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </li>
-                                        <li >
-                                            <a class="active" href="#appointment_by_status_4" data-toggle="tab"
-                                            onclick="initTreatmentByStatus('today','2');">Today</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_1" data-toggle="tab"
-                                            onclick="initTreatmentByStatus('yesterday','2');">Yesterday</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initTreatmentByStatus('last7days','2');">Last 7 Days</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_2" data-toggle="tab"
-                                            onclick="initTreatmentByStatus('week','2');">This Week</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initTreatmentByStatus('thismonth','2');">This Month</a>
-                                        </li>
-                                        <li>
-                                            <a href="#appointment_by_status_3" data-toggle="tab"
-                                            onclick="initTreatmentByStatus('lastmonth','2');">Last Month</a>
-                                        </li>
-                                    </ul>
-                                    <div class="d-none flex-column text-right">
-                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
-                                        <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                            </li>
+                                            <li >
+                                                <a class="active" href="#appointment_by_status_4" data-toggle="tab"
+                                                onclick="initTreatmentByStatus('today','2');">Today</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                onclick="initTreatmentByStatus('yesterday','2');">Yesterday</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initTreatmentByStatus('last7days','2');">Last 7 Days</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initTreatmentByStatus('week','2');">This Week</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initTreatmentByStatus('thismonth','2');">This Month</a>
+                                            </li>
+                                            <li>
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initTreatmentByStatus('lastmonth','2');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                            <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                        </div>
                                     </div>
+                                    <div id="treatment_by_status"></div>
                                 </div>
-                                <div id="treatment_by_status"></div>
                             </div>
                         </div>
-                    </div>
                     @endif
                     @if(\Illuminate\Support\Facades\Gate::allows('dashboard_staff_wise_arrival'))
-                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
-                            <div class="card-body p-0">
-                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                    <span class="dashboard-counter text-uppercase">Centre Wise Arrival</span>
-                                    <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
-                                        <li style="border-bottom: none;">
-                                            <div class="actions action-style p-3 mr-3">
-                                            @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') )
-                                                @php
-                                                    $centres_array =['All South Region','All Central Region','All Centres'];
-                                                    $locations = \App\Helpers\ACL::getUserCentres();
-                                                    $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
-                                                @endphp
-                                                <div class="btn-group">
-                                                    <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
-                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false"> All
-                                                        <i class="fa fa-angle-down"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu dropdown-menu-right">
-                                                        <li>
-                                                            <a onclick="LoadBarChart('All', 'thismonth')">All</a>
-                                                        </li>
-                                                        @foreach($centres as $centre)
-                                                        <li>
-                                                            <a data-id="{{$centre->id}}" onclick="LoadBarChart({{$centre->id}}, 'thismonth')">{{$centre->name}}</a>
-                                                        </li>
-                                                        @endforeach
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Centre Wise Arrival</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                @if(Auth::user()->hasRole('Administrator')  || Auth::user()->hasRole('Super-Admin') )
+                                                    @php
+                                                        $centres_array =['All South Region','All Central Region','All Centres'];
+                                                        $locations = \App\Helpers\ACL::getUserCentres();
+                                                        $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
+                                                    @endphp
+                                                    <div class="btn-group">
+                                                        <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> All
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a onclick="LoadBarChart('All', 'thismonth')">All</a>
+                                                            </li>
+                                                            @foreach($centres as $centre)
+                                                            <li>
+                                                                <a data-id="{{$centre->id}}" onclick="LoadBarChart({{$centre->id}}, 'thismonth')">{{$centre->name}}</a>
+                                                            </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                @elseif(Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
+                                                    @php
+                                                        $all_csr = \App\Models\RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
+                                                        $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
 
-                                                    </ul>
+                                                    @endphp
+                                                    <div class="btn-group">
+                                                        <a data-id="All" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
+                                                        href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                        data-close-others="true" aria-expanded="false">All
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a onclick="LoadBarChartUserWise('All', 'thismonth')">All</a>
+                                                            </li>
+                                                            @foreach($csr_users as $user)
+                                                            <li>
+                                                                <a data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'thismonth')" >{{$user->name}}</a>
+                                                            </li>
+                                                            @endforeach
+
+                                                        </ul>
+                                                    </div>
+                                                @else
+                                                    @php
+                                                        $centres_array =['All South Region','All Central Region'];
+                                                        $locations = \App\Helpers\ACL::getUserCentres();
+                                                        $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->first();
+                                                    @endphp
+                                                    <div class="btn-group">
+                                                        <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> {{$centres->name}}
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                    </div>
+                                                @endif
                                                 </div>
-                                            </div>
-                                            @elseif(Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                                @php
-                                                    $all_csr = \App\Models\RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
-                                                    $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
-
-                                                @endphp
-                                                <div class="btn-group">
-                                                    <a data-id="All" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
-                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false">All
-                                                        <i class="fa fa-angle-down"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu dropdown-menu-right">
-
-                                                        @foreach($csr_users as $user)
-                                                        <li>
-                                                            <a
-                                                             data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'thismonth')" >{{$user->name}}</a>
-                                                        </li>
-                                                        @endforeach
-
-                                                    </ul>
-                                                </div>
+                                            </li>
+                                            @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
+                                                <li class="yesterday">
+                                                    <a href="#appointment_by_status_1" data-toggle="tab"
+                                                    onclick="initUserWiseArrival('yesterday');">Yesterday</a>
+                                                </li>
+                                                <li class="last7days">
+                                                    <a href="#appointment_by_status_2" data-toggle="tab"
+                                                    onclick="initUserWiseArrival('last7days');">Last 7 Days</a>
+                                                </li>
+                                                <li class="week">
+                                                    <a href="#appointment_by_status_2" data-toggle="tab"
+                                                    onclick="initUserWiseArrival('week');">This Week</a>
+                                                </li>
+                                                <li class="thismonth">
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initUserWiseArrival('thismonth');">This Month</a>
+                                                </li>
+                                                <li class="lastmonth">
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initUserWiseArrival('lastmonth');">Last Month</a>
+                                                </li>
                                             @else
-                                            @php
-                                                    $centres_array =['All South Region','All Central Region'];
-                                                    $locations = \App\Helpers\ACL::getUserCentres();
-                                                    $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->first();
-                                            @endphp
-                                            <div class="btn-group">
-                                                    <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
-                                                    href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                    data-close-others="true" aria-expanded="false"> {{$centres->name}}
-                                                        <i class="fa fa-angle-down"></i>
-                                                    </a>
-
+                                                <li class="yesterday">
+                                                    <a href="#appointment_by_status_1" data-toggle="tab"
+                                                    onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
+                                                </li>
+                                                <li class="last7days">
+                                                    <a href="#appointment_by_status_2" data-toggle="tab"
+                                                    onclick="initCentreWiseArrival('last7days');">Last 7 Days</a>
+                                                </li>
+                                                <li class="week">
+                                                    <a href="#appointment_by_status_2" data-toggle="tab"
+                                                    onclick="initCentreWiseArrival('week');">This Week</a>
+                                                </li>
+                                                <li class="thismonth">
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initCentreWiseArrival('thismonth');">This Month</a>
+                                                </li>
+                                                <li class="lastmonth">
+                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                    onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                            <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                        </div>
+                                    </div>
+                                    <div class="row pt-7">
+                                        <div class="col-7">
+                                            <div id="centre_wise_arrival"></div>
+                                        </div>
+                                        <div class="col-5 centre_wise_arrival_wrap">
+                                            <div class="row" id="centre_wise_arrival_02">
+                                                <div class='table-responsive'>
+                                                    <table class='table'>
+                                                        <thead>
+                                                            @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
+                                                                <tr>
+                                                                    <th class='table-cols'>CSR Name</th>
+                                                                    <th class='table-cols'>Arrived</th>
+                                                                    <th class='table-cols'>Percentage</th>
+                                                                </tr>
+                                                            @else
+                                                                <tr>
+                                                                    <th class='table-cols'></th>
+                                                                    <th class='table-cols'>Arrived</th>
+                                                                    <th class='table-cols'>WalkIn</th>
+                                                                    <th class='table-cols'>Percentage</th>
+                                                                </tr>
+                                                            @endif
+                                                        </thead>
+                                                        <tbody id="table-body"></tbody>
+                                                    </table>
                                                 </div>
                                             </div>
-                                            @endif
-                                        </li>
-                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                            <li>
-                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                onclick="initUserWiseArrival('yesterday');">Yesterday</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initUserWiseArrival('last7days');">Last 7 Days</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initUserWiseArrival('week');">This Week</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initUserWiseArrival('thismonth');">This Month</a>
-                                            </li>
-                                            <li>
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initUserWiseArrival('lastmonth');">Last Month</a>
-                                            </li>
-                                        @else
-                                            <li class="yesterday">
-                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
-                                            </li>
-                                            <li class="last7days">
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initCentreWiseArrival('last7days');">Last 7 Days</a>
-                                            </li>
-                                            <li class="week">
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initCentreWiseArrival('week');">This Week</a>
-                                            </li>
-                                            <li class="thismonth">
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initCentreWiseArrival('thismonth');">This Month</a>
-                                            </li>
-                                            <li class="lastmonth">
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                    <div class="d-none flex-column text-right">
-                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
-                                        <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="row pt-7">
-                                     <div class="col-7">
-                                        <div id="centre_wise_arrival">
-
-                                        </div>
-                                    </div>
-                                    <div class="col-5 centre_wise_arrival_wrap">
-                                        <div class="row" id="centre_wise_arrival_02">
-                                            <div class='table-responsive'>
-                                                <table class='table'>
-                                                    <thead>
-                                                        @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                                            <tr>
-                                                                <th class='table-cols'>CSR Name</th>
-                                                                <th class='table-cols'>Arrived</th>
-                                                                <th class='table-cols'>Percentage</th>
-                                                            </tr>
-                                                        @else
-                                                            <tr>
-                                                                <th class='table-cols'></th>
-                                                                <th class='table-cols'>Arrived</th>
-                                                                <th class='table-cols'>WalkIn</th>
-                                                                <th class='table-cols'>Percentage</th>
-                                                            </tr>
-                                                        @endif
-                                                    </thead>
-                                                    <tbody id="table-body">
-
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-
-                                    </div>
                             </div>
                         </div>
-                    </div>
                     @endif
                 </div>
             </div>
@@ -940,15 +863,16 @@
     <script src="{{asset('assets/js/pie.js')}}"></script>
     <script>
         jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function(){
-                var dataID = jQuery(this).attr('data-id');
-                var dataText = jQuery(this).text();
-                jQuery('.btn.arrivalbtn').attr('data-id', dataID);
-                jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>')
-                jQuery('.wise_arrival_ul li a').removeClass('active');
-                jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
-            });
+            var dataID = jQuery(this).attr('data-id');
+            var dataText = jQuery(this).text();
+            jQuery('.btn.arrivalbtn').attr('data-id', dataID);
+            jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>')
+            jQuery('.wise_arrival_ul li a').removeClass('active');
+            jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
+        });
         $(document).ready(function(){
             period="today";
+            // activities
             $.ajax({
                 url: route('admin.home.getactivity'),
                 type: "GET",
@@ -959,24 +883,24 @@
                     $("#activitydiv").html(response);
                 },
             });
+
             @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                 $.ajax({
                     url: route('admin.dashboard.agent_wise_arrival'),
                     type: "GET",
-                    data: {'period': '{{request('type')}}','type':'2'},
+                    data: {'period': '{{request('type')}}', 'user_id':'All', 'type':'2'},
                     cache: false,
                     success: function (response) {
-
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li:nth-child(2) a').addClass('active');
+                        jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
                         var TABLE_HTML = "";
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
                             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
                         }
                         jQuery('#table-body').append(TABLE_HTML);
-                        BarChartCentre(response);
+                        ConsultanciesByStatus(response);
 
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
@@ -1035,8 +959,7 @@
                         total_t -= walkin_t;
                         TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
                         jQuery('#table-body').append(TABLE_HTML);
-                        BarChartCentre(response);
-
+                        ConsultanciesByStatus(response);
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         errorMessage(xhr);
@@ -1260,77 +1183,6 @@
             }
 
         });
-        function BarChartCentre(service) {
-            const primary = '#6993FF';
-            const success = '#1BC5BD';
-            const info = '#8950FC';
-            const warning = '#FFA800';
-            const danger = '#F64E60';
-            let locations = service.data.bar;
-
-            let modifiedLocations;
-            if(locations.length > 0){
-                if (locations.some(str => str.includes('CUTERA'))) {
-
-                    modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
-                }else{
-
-                    modifiedLocations = locations;
-                }
-
-            }else{
-                modifiedLocations =['Bahadurabad Karachi','Gulshan Johar','DHA Karachi','Johar Town Lahore','Gulberg Lahore','DHA Lahore'];
-            }
-            for (var i = 0; i < service.data.walkin.length; i++) {
-                service.data.total[i] -= service.data.walkin[i];
-                service.data.arrived[i] -= service.data.walkin[i];
-            }
-            var options = {
-                series: [{
-                    name: 'Total Appointments',
-                    data: service.data.total
-                }, {
-                    name: 'Arrived',
-                    data: service.data.arrived
-                },{
-                    name: 'Walk-in',
-                    data: service.data.walkin
-                }],
-                noData: {
-                    text: 'No Data',
-                    align: 'center',
-                    verticalAlign: 'top',
-                    style: {
-                        color: 'red',
-                        fontSize: '14px',
-                        fontFamily: undefined
-                    }
-                },
-                chart: {
-                    type: 'bar',
-                    height: 350,
-
-                },
-                plotOptions: {
-                    bar: {
-                        horizontal: false,
-                        columnWidth: '55%',
-                        endingShape: 'rounded'
-                    },
-                },
-                stroke: {
-                    show: true,
-                    width: 1,
-                    colors: ['transparent']
-                },
-                xaxis: {
-                    categories: modifiedLocations,
-                },
-                colors: [primary, success, warning]
-            };
-            var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
-            chart.render();
-        }
         function TreatmentByStatus(pie,colors) {
             google.load('visualization', '1', {
                 packages: ['corechart', 'bar', 'line']
