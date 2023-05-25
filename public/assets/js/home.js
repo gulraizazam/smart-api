@@ -576,6 +576,7 @@ function CollectionByServiceCategory(service, colors) {
 }
 
 function initCentreWiseArrival(period) {
+    central_wise_arrival_chart.destroy();
     var dataID;
     if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
         dataID = jQuery('.btn.arrivalbtn').attr('data-id');
@@ -598,11 +599,7 @@ function initCentreWiseArrival(period) {
         },
         success: function (response) {
             jQuery('#table-body').html('');
-            setTimeout(function () {
                 var TABLE_HTML = "";
-                var walkin_t = 0;
-                var arrived_t = 0;
-                var total_t = 0;
                 var walkin_t = 0;
                 var arrived_t = 0;
                 var total_t = 0;
@@ -632,8 +629,13 @@ function initCentreWiseArrival(period) {
                     let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
-                jQuery('#table-body').append(TABLE_HTML);
-            }, 2000);
+                var record_t = total_t - walkin_t;
+                var record_a = arrived_t - walkin_t;
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + record_a + "/" + record_t + "</td><td>" + walkin_t + "</td><td>" + ((record_a / record_t) * 100).toFixed(2) + "%</td></tr>";
+                if(response.data.total != ''){
+                    jQuery('#table-body').append(TABLE_HTML);
+                }
+                ConsultanciesByStatus(response);
         },
     });
 }
@@ -685,7 +687,9 @@ function LoadBarChart(centreID, period) {
                 }
                 arrived_t -= walkin_t;
                 total_t -= walkin_t;
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+                if(centreID == 'All'){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+                }
                 if(response.data.total != ''){
                     jQuery('#table-body').append(TABLE_HTML);
                 }
