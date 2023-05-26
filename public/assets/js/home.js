@@ -629,13 +629,55 @@ function initCentreWiseArrival(period) {
                     let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
-                var record_t = total_t - walkin_t;
-                var record_a = arrived_t - walkin_t;
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + record_a + "/" + record_t + "</td><td>" + walkin_t + "</td><td>" + ((record_a / record_t) * 100).toFixed(2) + "%</td></tr>";
-                if(response.data.total != ''){
-                    jQuery('#table-body').append(TABLE_HTML);
+                arrived_t -= walkin_t;
+                total_t -= walkin_t;
+
+                if(dataID == "All"){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+
                 }
-                ConsultanciesByStatus(response);
+                jQuery('#table-body').append(TABLE_HTML);
+        },
+    });
+}
+function initUserWiseArrival(period){
+    var dataID ;
+    if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
+        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
+    }else{
+        dataID = 'All';
+    }
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.csr_wise_arrival'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'user_id':dataID
+        },
+        success: function (response) {
+            ConsultanciesByStatus(response);
+            jQuery('#table-body').html("");
+            setTimeout(function() {
+                jQuery('#table-body').html("");
+                var TABLE_HTML = "";
+                let total = 0;
+                let arrived = 0;
+                var barLenght = response.data.bar;
+                var csr_name = $('.arrivalbtn').text();
+
+                for(var i = 0; i < barLenght.length; i++){
+                    arrived += response.data.arrived[i];
+                    total += response.data.total[i];
+                    }
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
+
+                jQuery('#table-body').append(TABLE_HTML);
+            }, 2000);
+
         },
     });
 }
@@ -826,9 +868,12 @@ function initUserWiseArrival(period) {
             var csr_name = $('.arrivalbtn').text();
 
             for (var i = 0; i < barLenght.length; i++) {
+                if (response.data.arrived[i] == undefined) {
+                    response.data.arrived[i] = 0;
+                }
                 arrived += response.data.arrived[i];
                 total += response.data.total[i];
-                if(dataID == 'All'){
+                 if(dataID == 'All'){
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
                 }
             }
