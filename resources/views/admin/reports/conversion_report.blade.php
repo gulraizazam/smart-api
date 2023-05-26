@@ -114,14 +114,6 @@
                                 <td class="bg-light">Arrival to Conversion Ratio</td>
                                 <td class="bg-light" style="text-align:right;">{{ number_format($arrival_to_conversion_ratio,2) }} %</td>
                             </tr>
-                            <tr class="">
-                                <td class="bg-light">Total Conversion</td>
-                                <td class="bg-light" style="text-align:right;">{{ $total_conversion }}</td>
-                            </tr>
-                            <tr class="">
-                                <td class="bg-light">Total Arrival</td>
-                                <td class="bg-light" style="text-align:right;">{{ $total_arrival }}</td>
-                            </tr>
 
                         </thead>
                     </table>
@@ -135,7 +127,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">{{$conversion['service']}}</td>
-                                <td class="bg-light" style="text-align:right;">Conversion: {{$conversion['total_conversion']}}/Total: {{$conversion['total_arrival']}}</td>
+                                <td class="bg-light" style="text-align:right;">Conversions: {{$conversion['total_conversion']}}/ {{$conversion['total_arrival']}}</td>
                             </tr>
                             <tr class="">
                                 <td class="bg-light" style="text-align:right;">Total Conversion Value</td>
