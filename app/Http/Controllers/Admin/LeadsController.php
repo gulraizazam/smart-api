@@ -859,7 +859,6 @@ class LeadsController extends Controller
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
-        $lead = Leads::findOrFail($id);
         // Get all request data into a var
         $data = $request->all();
         $data['updated_by'] = Auth::user()->id;
@@ -890,15 +889,12 @@ class LeadsController extends Controller
                 ]);
             }
         }
-        $lead = Leads::where(['id' => $id])->update([
-            'name' => $data['name'],
-            'gender' => $data['gender'],
-            'city_id' => $data['city_id'],
-            'location_id' => $data['location_id'],
-            'lead_source_id' => $data['lead_source_id'],
-            'lead_status_id' => $data['lead_status_id'],
-            'referred_by' => $data['referred_by'],
-        ]);
+
+        $lead = Leads::findOrFail($id);
+        $lead = $lead->update($data);
+
+        GeneralFunctions::patientNameUpdate($data['phone'], $data['name']);
+
         return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
 
@@ -1354,13 +1350,6 @@ class LeadsController extends Controller
                         // Array to hold phone numbers which will be used to find duplicates if any
                         $dupPhone_list = array();
                         $dupPhones = array();
-                        /*
-                         * This array will contain all those patients
-                         * which are gonna be insert into database.
-                         * Why we made this array?
-                         * We want to avoid duplicates.
-                         */
-                        $piplined_patients = array();
                         // Iterate over the data
                         foreach ($SheetData as $SingleRow) {
                             // Provided Sheet columns should match
@@ -1472,8 +1461,6 @@ class LeadsController extends Controller
                             $default_lead_status_id = Config::get('constants.lead_status_open');
                         }
                         // Iterate over the data
-                        $count = 0;
-                        $items = [];
                         foreach ($SheetData as $index => $SingleRow) {
                             // Provided Sheet columns should match
                             if (
@@ -1611,11 +1598,6 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
-                            // Treatment ID is not exist and leads are exist, lets skip this record
-                            // if (!$service_id && array_key_exists($phone, $allLeadsMapping)) {
-                            //     // Skip this record.
-                            //     continue;
-                            // }
                             /*
                              * Check cases mentioned above
                              */
@@ -1668,6 +1650,8 @@ class LeadsController extends Controller
                                         LeadsServices::where([
                                             'lead_id' => $lead->id,
                                         ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
+
+                                        GeneralFunctions::patientNameUpdate($phone, $update_lead['name']);
                                         continue;
                                     }elseif($request->update_status == '1' && $request->get("update_records") != '1'){
                                         $update_lead = array();
@@ -1729,6 +1713,8 @@ class LeadsController extends Controller
                                         LeadsServices::where([
                                             'lead_id' => $lead->id,
                                         ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
+
+                                        GeneralFunctions::patientNameUpdate($phone, $update_lead['name']);
                                         continue;
                                     }
                                 }
@@ -1786,6 +1772,8 @@ class LeadsController extends Controller
                                 LeadsServices::where([
                                     'lead_id' => $lead->id,
                                 ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
+
+                                GeneralFunctions::patientNameUpdate($phone, $LeadData['name']);
                                 continue;
                             }
                         }
