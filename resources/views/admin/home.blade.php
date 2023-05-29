@@ -771,23 +771,23 @@
                                             @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                 <li class="yesterday">
                                                     <a href="#appointment_by_status_1" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('yesterday');">Yesterday</a>
+                                                    onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
                                                 </li>
                                                 <li class="last7days">
                                                     <a href="#appointment_by_status_2" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('last7days');">Last 7 Days</a>
+                                                    onclick="initUserWiseArrival('last7days', 'user');">Last 7 Days</a>
                                                 </li>
                                                 <li class="week">
                                                     <a href="#appointment_by_status_2" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('week');">This Week</a>
+                                                    onclick="initUserWiseArrival('week', 'user');">This Week</a>
                                                 </li>
                                                 <li class="thismonth">
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('thismonth');">This Month</a>
+                                                    onclick="initUserWiseArrival('thismonth', 'user');">This Month</a>
                                                 </li>
                                                 <li class="lastmonth">
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('lastmonth');">Last Month</a>
+                                                    onclick="initUserWiseArrival('lastmonth', 'user');">Last Month</a>
                                                 </li>
                                             @else
                                                 <li class="yesterday">
@@ -886,7 +886,8 @@
             });
 
             @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                $.ajax({
+                initUserWiseArrival('thismonth', '', 'firsttime');
+                /* $.ajax({
                     url: route('admin.dashboard.agent_wise_arrival'),
                     type: "GET",
                     data: {'period': '{{request('type')}}', 'user_id':'All', 'type':'2'},
@@ -907,7 +908,7 @@
                     error: function (xhr, ajaxOptions, thrownError) {
                         errorMessage(xhr);
                     }
-                });
+                }); */
             @else
                 $(document).ready(function() {
                     initCentreWiseArrival('thismonth', '', 'firsttime');
