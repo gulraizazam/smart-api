@@ -2778,7 +2778,7 @@ class DashboardReportsController extends Controller
         ]);
     }
     public function CSRWiseArrival(Request $request)
-    {
+    {//dd($request->all());
         $total_apts = [];
         $arrived_apts = [];
         $lables = [];
@@ -2788,7 +2788,7 @@ class DashboardReportsController extends Controller
         $csr = User::whereIn('id', $csr_users)->where('active', 1)->pluck('id')->toArray();
         $period = $request->period == '' ? 'thismonth' : $request->period;
         $user_id = ($request->user_id == 'All') ? $csr: [$request->user_id];
-//dd($user_id, $request->user_id, $data);
+
         $periods = [
             'yesterday' => [
                 'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
@@ -2811,18 +2811,15 @@ class DashboardReportsController extends Controller
                 'end_date' => Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d')
             ]
         ];
-
         $stats = AppointmentsDailyStats::select($data)
                 ->selectRaw('count(*) as total')
-                ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 And user_id IN ('. implode(',', $user_id) .') THEN 1 ELSE 0 END) as arrived')
+                ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
                 ->whereBetween('cron_current_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                ->whereIn('user_id', $user_id)
                 ->orderBy('user_id', 'ASC')
-                ->groupBy($data);
-                //->get()->toArray();
+                ->groupBy($data)
+                ->get()->toArray();
 
-                $query = $stats->toSql();
-                $bindings = $stats->getBindings();
- dd($query, $bindings, $stats->get()->toArray(), $user_id);
         foreach ($stats as $stat) {
             if($data == 'user_id'){
                 $username = User::whereId($stat['user_id'])->where(['active' => 1])->first();

@@ -730,8 +730,8 @@
                                                     </div>
                                                 @elseif(Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                     @php
-                                                        $all_csr = \App\Models\RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
-                                                        $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
+                                                        $all_csr = \App\Models\RoleHasUsers::whereIn('role_id', [2,3,24])->pluck('user_id');
+                                                        $csr_users = \App\Models\User::whereIn('id', $all_csr)->where('active',1)->get();
 
                                                     @endphp
                                                     <div class="btn-group">
@@ -741,12 +741,12 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right">
-                                                            <li>
-                                                                <a onclick="LoadBarChartUserWise('All', 'thismonth')">All</a>
+                                                            <li onclick="initUserWiseArrival('thismonth', 'All')">
+                                                                <a class="dropdown-item centre-item" data-id="">All</a>
                                                             </li>
                                                             @foreach($csr_users as $user)
-                                                            <li>
-                                                                <a data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'thismonth')" >{{$user->name}}</a>
+                                                            <li onclick="initUserWiseArrival('thismonth', {{$user->id}})">
+                                                                <a class="dropdown-item user-item" data-id="{{$user->id}}" data-period="thismonth">{{$user->name}}</a>
                                                             </li>
                                                             @endforeach
 
