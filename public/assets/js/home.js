@@ -638,23 +638,19 @@ function initCentreWiseArrival(period, centreID, time = '') {
         }
     });
 }
-function initUserWiseArrival(period, userID, time = 'firsttime'){
+
+function initUserWiseArrival(period, userID, time = ''){
     if(time != 'firsttime'){
         central_wise_arrival_chart.destroy();
     }
-    if(userID == 'centre'){
+    if(userID == 'user'){
         userID = $('.btn.arrivalbtn').attr('data-id');
     }
     if (userID == '' || userID == 'All') {
         userID = 'All';
     }
-console.log(userID)
-    /* var dataID ;
-    if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
-        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-    }else{
-        dataID = 'All';
-    } */
+    console.log(userID)
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -668,6 +664,8 @@ console.log(userID)
         },
         success: function (response) {
             jQuery('#table-body').html("");
+            jQuery('.wise_arrival_ul li a').removeClass('active');
+            jQuery('.wise_arrival_ul li.' + period +' a').addClass('active');
             var TABLE_HTML = "";
             let total = 0;
             let arrived = 0;
@@ -677,8 +675,13 @@ console.log(userID)
             for(var i = 0; i < barLenght.length; i++){
                 arrived += response.data.arrived[i];
                 total += response.data.total[i];
+                if(userID == 'All'){
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
+                }
             }
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
+            if(total != 0){
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
+            }
 
             jQuery('#table-body').append(TABLE_HTML);
             ConsultanciesByStatus(response);
@@ -688,65 +691,7 @@ console.log(userID)
         }
     });
 }
-
-function LoadBarChart(centreID, period) {
-    central_wise_arrival_chart.destroy();
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.centre_wise_arrival'),
-        type: 'GET',
-        cache: false,
-        data: {
-            'period': period,
-            'centre_id': centreID
-        },
-        success: function (response) {
-            jQuery('#table-body').html('');
-                var TABLE_HTML = "";
-                var walkin_t = 0;
-                var arrived_t = 0;
-                var total_t = 0;
-                var barLenght = response.data.bar;
-                for (var i = 0; i < barLenght.length; i++) {
-                    var walkin = "";
-                    var arrived = "";
-                    var total = "";
-                    if (response.data.walkin[i] === undefined) {
-                        walkin = "0";
-                        arrived = response.data.arrived[i] - walkin;
-                        total = response.data.total[i] - walkin;
-                        walkin_t += 0;
-                        arrived_t += response.data.arrived[i];
-                        total_t += response.data.total[i];
-                    } else {
-                        walkin = response.data.walkin[i];
-                        arrived = response.data.arrived[i] - walkin;
-                        total = response.data.total[i] - walkin;
-                        walkin_t += response.data.walkin[i];
-                        arrived_t += response.data.arrived[i];
-                        total_t += response.data.total[i];
-                    }
-                    let str = barLenght[i];
-                    let wordToRemove = "CUTERA ";
-                    let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
-                }
-                arrived_t -= walkin_t;
-                total_t -= walkin_t;
-                if(centreID == 'All'){
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-                }
-                if(response.data.total != ''){
-                    jQuery('#table-body').append(TABLE_HTML);
-                }
-            ConsultanciesByStatus(response);
-        },
-    });
-}
-
+/*
 function LoadBarChartUserWise(UserID, period) {
     central_wise_arrival_chart.destroy();
 
@@ -795,8 +740,8 @@ function LoadBarChartUserWise(UserID, period) {
         },
     });
 }
-
-function BarChartUserWise(bar) {
+ */
+/* function BarChartUserWise(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
     const info = '#8950FC';
@@ -844,9 +789,9 @@ function BarChartUserWise(bar) {
     $("#centre_wise_arrival").html('');
     var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
     chart.render();
-}
+} */
 
-function initUserWiseArrival(period) {
+/* function initUserWiseArrival(period) {
     central_wise_arrival_chart.destroy();
 
     var dataID;
@@ -891,7 +836,7 @@ function initUserWiseArrival(period) {
             ConsultanciesByStatus(response);
         },
     });
-}
+} */
 
 function ConsultanciesByStatus(bar) {
     const primary = '#6993FF';
