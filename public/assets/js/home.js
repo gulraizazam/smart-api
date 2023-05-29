@@ -575,69 +575,68 @@ function CollectionByServiceCategory(service, colors) {
     }
 }
 
-function initCentreWiseArrival(period) {
-    central_wise_arrival_chart.destroy();
-    var dataID;
-    if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
-        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-    } else {
-        dataID = 'All';
+function initCentreWiseArrival(period, centreID, time = '') {
+    if(time != 'firsttime'){
+        central_wise_arrival_chart.destroy();
     }
-    if (dataID == 30) {
-        dataID = 'All';
+    if(centreID == 'centre'){
+        centreID = $('.btn.arrivalbtn').attr('data-id');
     }
+    if (centreID == '' || centreID == 30) {
+        centreID = 'All';
+    }
+
+    console.log(period, centreID)
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.dashboard.location_wise_arrival'),
+        url: route('admin.dashboard.centre_wise_arrival'),
         type: 'GET',
         cache: false,
         data: {
             'period': period,
-            'centre_id': dataID
+            'centre_id': centreID
         },
         success: function (response) {
-            jQuery('#table-body').html('');
-                var TABLE_HTML = "";
-                var walkin_t = 0;
-                var arrived_t = 0;
-                var total_t = 0;
-                var barLenght = response.data.bar;
-                for (var i = 0; i < barLenght.length; i++) {
-                    var walkin = 0;
-                    var arrived = 0;
-                    var total = 0;
-                    if (response.data.walkin[i] === undefined) {
-                        walkin = 0;
-                        arrived = response.data.arrived[i] - walkin;
-                        total = response.data.total[i] - walkin;
-                        walkin_t += 0;
-                        arrived_t += response.data.arrived[i];
-                        total_t += response.data.total[i];
-                    } else {
-                        walkin = response.data.walkin[i];
-                        arrived = response.data.arrived[i] - walkin;
-                        total = response.data.total[i] - walkin;
-                        walkin_t += response.data.walkin[i];
-                        arrived_t += response.data.arrived[i];
-                        total_t += response.data.total[i];
-                    }
+            $('#table-body').html("");
+            $('.wise_arrival_ul li a').removeClass('active');
+            $('.wise_arrival_ul li.' + period +' a').addClass('active');
 
-                    let str = barLenght[i];
-                    let wordToRemove = "CUTERA ";
-                    let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+            var TABLE_HTML = "";
+            let walkin_t = 0;
+            let arrived_t = 0;
+            let total_t = 0;
+
+            var barLenght = response.data.bar;
+            for (var i = 0; i < barLenght.length; i++) {
+                let walkin = response.data.walkin[i] ?? 0;
+                let arrived = response.data.arrived[i] - walkin;
+                let total = response.data.total[i] - walkin;
+                walkin_t += walkin;
+                arrived_t += response.data.arrived[i];
+                total_t += response.data.total[i];
+
+                let str = barLenght[i];
+                let wordToRemove = "CUTERA ";
+                let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                if(total != 0){
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
-                arrived_t -= walkin_t;
-                total_t -= walkin_t;
+            }
+            arrived_t -= walkin_t;
+            total_t -= walkin_t;
 
-                if(dataID == "All"){
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+            if(centreID == "All" && total_t != 0){
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
 
-                }
-                jQuery('#table-body').append(TABLE_HTML);
+            }
+            jQuery('#table-body').append(TABLE_HTML);
+            ConsultanciesByStatus(response);
         },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
     });
 }
 function initUserWiseArrival(period){
@@ -735,7 +734,7 @@ function LoadBarChart(centreID, period) {
                 if(response.data.total != ''){
                     jQuery('#table-body').append(TABLE_HTML);
                 }
-                ConsultanciesByStatus(response);
+            ConsultanciesByStatus(response);
         },
     });
 }
@@ -892,16 +891,16 @@ function ConsultanciesByStatus(bar) {
     const info = '#8950FC';
     const warning = '#FFA800';
     const danger = '#F64E60';
-    let locations = bar.data.bar;
-    let modifiedLocations;
-    if (locations.length > 0) {
-        if (locations.some(str => str.includes('CUTERA'))) {
-            modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
+    let Data = bar.data.bar;
+    let modifiedData;
+    if (Data.length > 0) {
+        if (Data.some(str => str.includes('CUTERA'))) {
+            modifiedData = Data.map(location => location.replace('CUTERA ', ''));
         } else {
-            modifiedLocations = locations;
+            modifiedData = Data;
         }
     } else {
-        modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
+        modifiedData = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
     }
     if(bar.data?.walkin != undefined){
         for (var i = 0; i < bar.data.walkin.length; i++) {
@@ -948,7 +947,7 @@ function ConsultanciesByStatus(bar) {
             colors: ['transparent']
         },
         xaxis: {
-            categories: modifiedLocations,
+            categories: modifiedData,
         },
         colors: [primary, success, warning]
     };

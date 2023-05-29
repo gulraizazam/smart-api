@@ -718,12 +718,12 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right">
-                                                            <li>
-                                                                <a onclick="LoadBarChart('All', 'thismonth')">All</a>
+                                                            <li onclick="initCentreWiseArrival('thismonth', '')">
+                                                                <a class="dropdown-item" data-period="thismonth" data-id="">All</a>
                                                             </li>
                                                             @foreach($centres as $centre)
-                                                            <li>
-                                                                <a data-id="{{$centre->id}}" onclick="LoadBarChart({{$centre->id}}, 'thismonth')">{{$centre->name}}</a>
+                                                            <li onclick="initCentreWiseArrival('thismonth', {{$centre->id}})">
+                                                                <a class="dropdown-item centre-item" data-period="thismonth" data-id="{{$centre->id}}">{{$centre->name}}</a>
                                                             </li>
                                                             @endforeach
                                                         </ul>
@@ -792,23 +792,23 @@
                                             @else
                                                 <li class="yesterday">
                                                     <a href="#appointment_by_status_1" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
+                                                    onclick="initCentreWiseArrival('yesterday', 'centre');">Yesterday</a>
                                                 </li>
                                                 <li class="last7days">
                                                     <a href="#appointment_by_status_2" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('last7days');">Last 7 Days</a>
+                                                    onclick="initCentreWiseArrival('last7days', 'centre');">Last 7 Days</a>
                                                 </li>
                                                 <li class="week">
                                                     <a href="#appointment_by_status_2" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('week');">This Week</a>
+                                                    onclick="initCentreWiseArrival('week', 'centre');">This Week</a>
                                                 </li>
                                                 <li class="thismonth">
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('thismonth');">This Month</a>
+                                                    onclick="initCentreWiseArrival('thismonth', 'centre');">This Month</a>
                                                 </li>
                                                 <li class="lastmonth">
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
+                                                    onclick="initCentreWiseArrival('lastmonth', 'centre');">Last Month</a>
                                                 </li>
                                             @endif
                                         </ul>
@@ -870,6 +870,7 @@
             jQuery('.wise_arrival_ul li a').removeClass('active');
             jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
         });
+
         $(document).ready(function(){
             period="today";
             // activities
@@ -908,7 +909,10 @@
                     }
                 });
             @else
-                $.ajax({
+                $(document).ready(function() {
+                    initCentreWiseArrival('thismonth', '', 'firsttime');
+                });
+                /* $.ajax({
                     url: route('admin.dashboard.centre_wise_arrival'),
                     type: "GET",
                     data: {'period': '{{request('type')}}', 'centre_id':'All', 'type':'2'},
@@ -917,39 +921,21 @@
                         jQuery('#table-body').html("");
                         jQuery('.wise_arrival_ul li a').removeClass('active');
                         jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
+
                         var TABLE_HTML = "";
-                        var walkin_t = 0;
-                        var arrived_t = 0;
-                        var total_t = 0;
-                        var walkin_t = 0;
-                        var arrived_t = 0;
-                        var total_t = 0;
+                        let walkin_t = 0;
+                        let arrived_t = 0;
+                        let total_t = 0;
 
                         var barLenght = response.data.bar;
                         for(var i = 0; i < barLenght.length; i++){
-                            var walkin = "";
-                            var arrived = "";
-                            var total = "";
-                            if(response.data.walkin[i] === undefined) {
-                                walkin = "0";
-                                arrived = response.data.arrived[i]-walkin;
-                                total = response.data.total[i]-walkin;
-                                walkin_t += 0;
-                                arrived_t += response.data.arrived[i];
-                                total_t += response.data.total[i];
+                            let walkin = response.data.walkin[i] ?? 0;
+                            let arrived = response.data.arrived[i] - walkin;
+                            let total = response.data.total[i] - walkin;
+                            walkin_t += walkin;
+                            arrived_t += response.data.arrived[i];
+                            total_t += response.data.total[i];
 
-                            } else {
-                                walkin = response.data.walkin[i];
-                                arrived = response.data.arrived[i]-walkin;
-                                total = response.data.total[i]-walkin;
-
-                                walkin_t += response.data.walkin[i];
-                                arrived_t += response.data.arrived[i];
-                                total_t += response.data.total[i];
-                                walkin_t += response.data.walkin[i];
-                                arrived_t += response.data.arrived[i];
-                                total_t += response.data.total[i];
-                            }
                             let str = barLenght[i];
                             let wordToRemove = "CUTERA ";
                             let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
@@ -957,14 +943,16 @@
                         }
                         arrived_t -= walkin_t;
                         total_t -= walkin_t;
+
                         TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
                         jQuery('#table-body').append(TABLE_HTML);
+
                         ConsultanciesByStatus(response);
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         errorMessage(xhr);
                     }
-                });
+                }); */
             @endif
         });
         var collection_by_center= false;
