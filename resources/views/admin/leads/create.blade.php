@@ -64,7 +64,7 @@
                             </select>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service  </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service  <span class="text text-danger">*</span></label>
                             <select id="add_child_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="child_service_id">
                             </select>
                         </div>
