@@ -586,7 +586,6 @@ function initCentreWiseArrival(period, centreID, time = '') {
         centreID = 'All';
     }
 
-    console.log(period, centreID)
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -639,13 +638,23 @@ function initCentreWiseArrival(period, centreID, time = '') {
         }
     });
 }
-function initUserWiseArrival(period){
-    var dataID ;
+function initUserWiseArrival(period, userID, time = 'firsttime'){
+    if(time != 'firsttime'){
+        central_wise_arrival_chart.destroy();
+    }
+    if(userID == 'centre'){
+        userID = $('.btn.arrivalbtn').attr('data-id');
+    }
+    if (userID == '' || userID == 'All') {
+        userID = 'All';
+    }
+console.log(userID)
+    /* var dataID ;
     if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
         dataID = jQuery('.btn.arrivalbtn').attr('data-id');
     }else{
         dataID = 'All';
-    }
+    } */
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -655,29 +664,28 @@ function initUserWiseArrival(period){
         cache: false,
         data: {
             'period': period,
-            'user_id':dataID
+            'user_id': userID
         },
         success: function (response) {
-            ConsultanciesByStatus(response);
             jQuery('#table-body').html("");
-            setTimeout(function() {
-                jQuery('#table-body').html("");
-                var TABLE_HTML = "";
-                let total = 0;
-                let arrived = 0;
-                var barLenght = response.data.bar;
-                var csr_name = $('.arrivalbtn').text();
+            var TABLE_HTML = "";
+            let total = 0;
+            let arrived = 0;
+            var barLenght = response.data.bar;
+            var csr_name = $('.arrivalbtn').text();
 
-                for(var i = 0; i < barLenght.length; i++){
-                    arrived += response.data.arrived[i];
-                    total += response.data.total[i];
-                    }
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
+            for(var i = 0; i < barLenght.length; i++){
+                arrived += response.data.arrived[i];
+                total += response.data.total[i];
+            }
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
 
-                jQuery('#table-body').append(TABLE_HTML);
-            }, 2000);
-
+            jQuery('#table-body').append(TABLE_HTML);
+            ConsultanciesByStatus(response);
         },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
     });
 }
 
