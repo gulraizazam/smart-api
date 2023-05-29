@@ -600,7 +600,7 @@ class LeadsController extends Controller
                     $lead_services = LeadsServices::create([
                         'lead_id' => $lead->id,
                         'service_id' => $data['service_id'],
-                        'child_service_id' => $data['child_service_id'],
+                        'child_service_id' => $data['child_service_id'] ?? null,
                         'status' => 1
                     ]);
                 }
@@ -621,7 +621,7 @@ class LeadsController extends Controller
                         $lead_services = LeadsServices::create([
                             'lead_id' => $lead->id,
                             'service_id' => $data['service_id'],
-                            'child_service_id' => $data['child_service_id'],
+                            'child_service_id' => $data['child_service_id'] ?? null,
                             'status' => 1
                         ]);
                         LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
@@ -635,7 +635,7 @@ class LeadsController extends Controller
                     $lead_services = LeadsServices::create([
                             'lead_id' => $lead->id,
                             'service_id' => $data['service_id'],
-                            'child_service_id' => $data['child_service_id'],
+                            'child_service_id' => $data['child_service_id'] ?? null,
                             'status' => 1
                     ]);
                     LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
