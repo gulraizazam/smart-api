@@ -633,6 +633,7 @@ function setEditData(response) {
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
         let lead_statuses_options = '<option value="">Select a Lead Status</option>';
         if(lead){
+            console.log(lead, lead?.lead_source_id);
             let parentServiceNames = [];
             let parentServiceButton = [];
             lead.lead_service.forEach(function(service) {
@@ -705,18 +706,21 @@ function setEditData(response) {
         $("#edit_gender_id").html(gender_options);
         $("#edit_lead_source_id").html(lead_sources_options);
         $("#edit_lead_status_id").html(lead_statuses_options);
+
         $("#edit_city_id").val(lead.city_id);
-        $("#edit_location_id").val(lead.location_id);
+        if (lead?.location_id && lead?.location_id != 0) {
+            $("#edit_location_id").val(lead?.location_id).change();
+        }
         if (lead?.referred_by && lead?.referred_by != 0) {
             $("#edit_referred_by_id").val(lead?.referred_by);
         }
-        if (lead?.gender) {
+        if (lead?.gender && lead?.gender != 0) {
             $("#edit_gender_id").val(lead.gender);
         }
-        if (lead?.lead_source_id) {
-            $("#edit_lead_source_id").val(lead.lead_source_id);
+        if (lead?.lead_source_id && lead?.lead_source_id != 0) {
+            $("#edit_lead_source_id").val(lead?.lead_source_id);
         }
-        if (lead?.lead_status_id) {
+        if (lead?.lead_status_id && lead?.lead_status_id != 0) {
             $("#edit_lead_status_id").val(lead.lead_status_id);
         }
         $("#edit_full_name").val(lead.name);
