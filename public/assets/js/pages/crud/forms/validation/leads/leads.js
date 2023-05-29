@@ -198,6 +198,13 @@ var EditValidation = function () {
                             }
                         }
                     },
+                    location_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The centre field is required'
+                            }
+                        }
+                    },
                     name: {
                         validators: {
                             notEmpty: {

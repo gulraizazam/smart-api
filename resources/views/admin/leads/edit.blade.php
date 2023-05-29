@@ -81,12 +81,12 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">City</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
                             <select id="edit_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id" onchange="loadEditLocation()">
                             </select>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre <span class="text text-danger">*</span></label>
                             <select id="edit_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
                             </select>
                         </div>
