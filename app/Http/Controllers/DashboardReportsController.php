@@ -2394,59 +2394,7 @@ class DashboardReportsController extends Controller
 
         ]);
     }
-    /* public function AgentWiseArrival(Request $request)
-    {
-        $total_apts = [];
-        $arrived_apts = [];
-        $lables = [];
-        $user_list = [];
-        if ($request->period == '') {
-            $csr_users = RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
-            $csr = User::whereIn('id', $csr_users)->where('active', 1)->pluck('id');
-            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->when($request->user_id != 'All', function ($query) use ($request) {
-                    return $query->where('user_id', $request->user_id);
-                })
-                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
-                    return $query->whereIn('user_id', $csr);
-                })
-                ->orderBy('user_id', 'ASC')
-                ->groupBy('user_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->when($request->user_id != 'All', function ($query) use ($request) {
-                    return $query->where('user_id', $request->user_id);
-                })
-                ->when($request->user_id == 'All', function ($query) use ($request,$csr) {
-                    return $query->whereIn('user_id', $csr);
-                })
-                ->where(['appointment_status_id' => 2])
-                ->orderBy('user_id', 'ASC')
-                ->groupBy('user_id')->get()->toArray();
-
-            //dd($yesterday_total_appointments, $yesterday_arrived_appointments);
-
-            foreach($yesterday_total_appointments as $loc){
-                $username = User::whereId($loc['user_id'])->where('active',1)->first();
-                if($username){
-                    array_push($lables, $username->name);
-                }
-                array_push($total_apts, $loc['total']);
-            }
-
-            foreach($yesterday_arrived_appointments as $apt){
-                array_push($arrived_apts, $apt['arrived']);
-            }
-        }
-        return ApiHelper::apiResponse($this->success, 'Agent wise arrival data', true, [
-            'bar' => $lables,
-            'total'=>$total_apts,
-            'arrived'=>$arrived_apts
-        ]);
-    } */
+    
     public function CallWiseArrival(Request $request)
     {
         $total_apts = [];
