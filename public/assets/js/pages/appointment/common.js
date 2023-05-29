@@ -627,7 +627,6 @@ function loadPatient(patient) {
     }
 }
 
-var lead;
 function getLeadDetail($this) {
     $.ajax({
         type: 'get',

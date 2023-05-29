@@ -120,6 +120,8 @@ $(document).ready(function () {
     });
 
     patientSearch();
+    //leadSearch();
+    leadSearch('lead_search_id')
 
     $(".package_id").select2({
         width: '100%',

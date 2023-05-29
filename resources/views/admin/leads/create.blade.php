@@ -36,11 +36,21 @@
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-12 mt-5">
+                        {{-- <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Lead Search <span class="text text-danger">*</span></label>
-                            <input type="hidden" onchange="loadLeadData($(this).val());" name="lead_id" class="search_field" id="add_lead_id" >
-                            <input class="form-control form-control-solid mb-3 mb-lg-0 lead_id" >
+                            <input type="hidden" onchange="leadSearch()" name="lead_id" id="add_lead_id" >
+                            <input class="form-control form-control-solid mb-3 mb-lg-0 lead_id" class="search_field">
                             <span onclick="addLeads()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:36px; right:22px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+                        </div> --}}
+                        <div class="fv-row col-md-12 mt-5" id="lead_id">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Search </label>
+                            <input class="form-control lead_search_id">
+
+                            <input type="hidden" onchange="getLeadDetail($(this))" name="lead_id" class="filter-field search_field" id="create_lead_search">
+                            <span onclick="addLeads()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
                             <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
@@ -64,7 +74,7 @@
                             </select>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service  <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service </label>
                             <select id="add_child_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="child_service_id">
                             </select>
                         </div>
