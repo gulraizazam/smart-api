@@ -1646,7 +1646,7 @@ class LeadsController extends Controller
                                         );
                                         $update_lead_service = [
                                             'service_id' => $service_id,
-                                            'child_service_id'=>$child_service_id ?? '',
+                                            'child_service_id'=>$child_service_id ?? null,
                                             'created_at' => Carbon::now(),
                                             'updated_at' => Carbon::now(),
                                         ];
@@ -1703,7 +1703,7 @@ class LeadsController extends Controller
                                         );
                                         $update_lead_service = [
                                             'service_id' => $service_id,
-                                            'child_service_id'=>$child_service_id ?? '',
+                                            'child_service_id'=>$child_service_id ?? null,
                                             'created_at' => Carbon::now(),
                                             'updated_at' => Carbon::now(),
                                         ];
@@ -1761,7 +1761,7 @@ class LeadsController extends Controller
                                 );
                                 $lead_service = [
                                     'service_id' => $service_id,
-                                    'child_service_id' => $child_service_id ?? '',
+                                    'child_service_id' => $child_service_id ?? null,
                                     'created_at' => Carbon::now(),
                                     'updated_at' => Carbon::now(),
                                 ];
