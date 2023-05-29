@@ -1763,7 +1763,7 @@ class AppointmentsController extends Controller
             $appointment = Appointments::create($appointmentData);
             $find_cons = Appointments::latest()->first();
             if($find_cons){
-                $lead = Leads::where(['phone' => $phone])->update(['name' => $patient->name,'lead_status_id' => 4, 'location_id' => $find_cons->location_id]);
+                $lead = Leads::where(['phone' => $appointmentData['phone']])->update(['name' => $patient->name,'lead_status_id' => 4, 'location_id' => $find_cons->location_id]);
                 LeadsServices::where([
                     'lead_id' => $appointmentData['lead_id'],
                     'service_id' => $find_cons->service_id,
