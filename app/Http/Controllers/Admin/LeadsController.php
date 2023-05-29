@@ -611,7 +611,8 @@ class LeadsController extends Controller
                 ->where(['phone' => $data['phone'], 'account_id' => Auth::User()->account_id])
                 ->first();
                 if($lead_check->lead_service->count()){
-                    $child_service_check = $lead_check->lead_service->whereIn('child_service_id', $data['child_service_id']);
+                    $child_service_id = (array_key_exists('child_service_id', $data)) ? $data['child_service_id'] : [];
+                    $child_service_check = $lead_check->lead_service->whereIn('child_service_id', $child_service_id);
                     if($child_service_check->count()){
                         return ApiHelper::apiResponse($this->error, 'Service and child service already exist.');
                     } else {

@@ -710,13 +710,13 @@ function setEditData(response) {
         if (lead?.referred_by && lead?.referred_by != 0) {
             $("#edit_referred_by_id").val(lead?.referred_by);
         }
-        if (lead.gender) {
+        if (lead?.gender) {
             $("#edit_gender_id").val(lead.gender);
         }
-        if (lead.lead_source_id) {
+        if (lead?.lead_source_id) {
             $("#edit_lead_source_id").val(lead.lead_source_id);
         }
-        if (lead.lead_status_id) {
+        if (lead?.lead_status_id) {
             $("#edit_lead_status_id").val(lead.lead_status_id);
         }
         $("#edit_full_name").val(lead.name);
@@ -758,7 +758,6 @@ function setEditService(data, service_id){
 
     if (Lead_service) {
         Lead_service.forEach((service) => {
-            console.log('yaha', service, childServiceIDs.length);
             const serviceID = service.service.id;
             if (!serviceIDs.includes(serviceID)) {
                 serviceIDs.push(serviceID);
@@ -947,6 +946,62 @@ function newLead() {
             $("#add_gender_id").attr("readonly",true);
         }
     });
+}
+
+function getLeadDetail($this) {
+    $.ajax({
+        type: 'get',
+        url: route('admin.leads.get_lead_number'),
+        data: {
+            'lead_id': $this.val()
+        },
+        success: function (resposne) {
+            if (resposne.status && resposne.data.lead) {
+                lead = resposne.data.lead;
+                console.log(lead)
+                $('#add_phone').val(lead?.phone);
+
+                if (permissions.contact) {
+                    $('#add_phone').val(lead?.phone);
+                } else {
+                    $('#add_phone').val("***********");
+                }
+                $('#add_full_name').val(lead?.name);
+                $('#add_gender_id').val(lead?.gender).change();
+                $('#add_city_id').val(lead?.city_id).change();
+                if (isExist(lead?.referred_by)) {
+                    $('#add_referred_by_id').val(lead?.referred_by).change();
+                }
+            }
+        },
+    });
+}
+
+function loadLead(lead) {
+    if (typeof lead !== "undefined" && lead !== null) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'post',
+            url: route('admin.appointments.load_lead'),
+            data: {
+                'referred_by': lead.referred_by,
+                'service_id': $("#create_consultancy_service").val(),
+                'lead_id': lead.id,
+                'phone': lead.phone,
+            },
+            success: function (resposne) {
+                if (resposne.status) {
+                    let lead_source_id = resposne.data.lead_source_id;
+
+                    if (isExist(lead_source_id)) {
+                        $('#create_consultancy_lead').val(lead_source_id).change();
+                    }
+                }
+            },
+        });
+    }
 }
 
 function editInline($lead_id, city_id, $this) {
