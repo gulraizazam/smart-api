@@ -887,73 +887,10 @@
 
             @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                 initUserWiseArrival('thismonth', '', 'firsttime');
-                /* $.ajax({
-                    url: route('admin.dashboard.agent_wise_arrival'),
-                    type: "GET",
-                    data: {'period': '{{request('type')}}', 'user_id':'All', 'type':'2'},
-                    cache: false,
-                    success: function (response) {
-                        jQuery('#table-body').html("");
-                        jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
-                        var TABLE_HTML = "";
-                        var barLenght = response.data.bar;
-                        for(var i = 0; i < barLenght.length; i++){
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
-                        }
-                        jQuery('#table-body').append(TABLE_HTML);
-                        ConsultanciesByStatus(response);
-
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
-                }); */
             @else
                 $(document).ready(function() {
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 });
-                /* $.ajax({
-                    url: route('admin.dashboard.centre_wise_arrival'),
-                    type: "GET",
-                    data: {'period': '{{request('type')}}', 'centre_id':'All', 'type':'2'},
-                    cache: false,
-                    success: function (response) {
-                        jQuery('#table-body').html("");
-                        jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
-
-                        var TABLE_HTML = "";
-                        let walkin_t = 0;
-                        let arrived_t = 0;
-                        let total_t = 0;
-
-                        var barLenght = response.data.bar;
-                        for(var i = 0; i < barLenght.length; i++){
-                            let walkin = response.data.walkin[i] ?? 0;
-                            let arrived = response.data.arrived[i] - walkin;
-                            let total = response.data.total[i] - walkin;
-                            walkin_t += walkin;
-                            arrived_t += response.data.arrived[i];
-                            total_t += response.data.total[i];
-
-                            let str = barLenght[i];
-                            let wordToRemove = "CUTERA ";
-                            let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
-                        }
-                        arrived_t -= walkin_t;
-                        total_t -= walkin_t;
-
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-                        jQuery('#table-body').append(TABLE_HTML);
-
-                        ConsultanciesByStatus(response);
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
-                }); */
             @endif
         });
         var collection_by_center= false;
