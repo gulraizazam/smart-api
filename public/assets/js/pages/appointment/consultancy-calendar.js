@@ -452,11 +452,12 @@ function setCreateConsultancy(response, start) {
         $("#create_patient_search").parent("div").find(".selection").remove();
 
         leadSearch('lead_search_id')
-        patientSearch('patient_search_id')
+        //patientSearch('patient_search_id')
 
         $("#modal_create_consultancy").modal("show");
         $("#modal_create_consultancy_form")[0].reset();
         $('.patient_search_id').val(null).trigger('change');
+        $('.lead_search_id').val(null).trigger('change');
         $('.new_patient_text').hide();
 
         let city_id = response.data.city_id;
@@ -521,14 +522,14 @@ function setCreateConsultancy(response, start) {
                 employee_options += '<option value="'+employee[0]+'">'+employee[1]+'</option>';
             });
         }
+        var myDropDown=$("#create_consultancy_gender");
+        myDropDown.attr('size',0);
 
         $("#create_consultancy_types").html(type_options);
-
         $("#create_consultancy_service").html(service_options);
-        $("#create_consultancy_gender").html(gender_options);
         $("#create_consultancy_lead").html(source_options);
         $("#create_consultancy_referred_by").html(employee_options);
-
+        $("#create_consultancy_gender").html(gender_options);
 
         if(setting?.data == '1') {
             $(".consult-type").show();
@@ -541,8 +542,6 @@ function setCreateConsultancy(response, start) {
         setTimeout( function () {
             $(".select2-selection").removeClass("select2-is-invalid");
         }, 200);
-
-
 
     } catch (e) {
         showException(e);
