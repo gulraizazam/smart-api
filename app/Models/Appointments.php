@@ -423,7 +423,11 @@ class Appointments extends Model
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        $data['updated_by'] = Auth::User()->id;
+        if($data['reschedule'] == 1){
+            $data['converted_by'] = Auth::User()->id;
+        } else {
+            $data['updated_by'] = Auth::User()->id;
+        }
 
         if (isset($data['start'])) {
             $data['scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
