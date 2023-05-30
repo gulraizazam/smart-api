@@ -3512,6 +3512,7 @@ class AppointmentsController extends Controller
                 if ($doctor_check_availability) {
                     // Appointment Data
                     $data = $request->all();
+                    $data['reschedule'] = 1;
                     $appointment = Appointments::findOrFail($request->get('id'));
                     $data['first_scheduled_count'] = $appointment->first_scheduled_count;
                     $data['scheduled_at_count'] = $appointment->scheduled_at_count;
