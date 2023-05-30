@@ -718,20 +718,20 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right">
-                                                            <li>
-                                                                <a onclick="LoadBarChart('All', 'thismonth')">All</a>
+                                                            <li onclick="initCentreWiseArrival('thismonth', '')">
+                                                                <a class="dropdown-item" data-period="thismonth" data-id="">All</a>
                                                             </li>
                                                             @foreach($centres as $centre)
-                                                            <li>
-                                                                <a data-id="{{$centre->id}}" onclick="LoadBarChart({{$centre->id}}, 'thismonth')">{{$centre->name}}</a>
+                                                            <li onclick="initCentreWiseArrival('thismonth', {{$centre->id}})">
+                                                                <a class="dropdown-item centre-item" data-period="thismonth" data-id="{{$centre->id}}">{{$centre->name}}</a>
                                                             </li>
                                                             @endforeach
                                                         </ul>
                                                     </div>
                                                 @elseif(Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                     @php
-                                                        $all_csr = \App\Models\RoleHasUsers::whereIn('role_id',[2,3,24])->pluck('user_id');
-                                                        $csr_users = \App\Models\User::whereIn('id',$all_csr)->where('active',1)->get();
+                                                        $all_csr = \App\Models\RoleHasUsers::whereIn('role_id', [2,3,24])->pluck('user_id');
+                                                        $csr_users = \App\Models\User::whereIn('id', $all_csr)->where('active',1)->get();
 
                                                     @endphp
                                                     <div class="btn-group">
@@ -741,12 +741,12 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right">
-                                                            <li>
-                                                                <a onclick="LoadBarChartUserWise('All', 'thismonth')">All</a>
+                                                            <li onclick="initUserWiseArrival('thismonth', 'All')">
+                                                                <a class="dropdown-item centre-item" data-id="">All</a>
                                                             </li>
                                                             @foreach($csr_users as $user)
-                                                            <li>
-                                                                <a data-id="{{$user->id}}" onclick="LoadBarChartUserWise({{$user->id}},'thismonth')" >{{$user->name}}</a>
+                                                            <li onclick="initUserWiseArrival('thismonth', {{$user->id}})">
+                                                                <a class="dropdown-item user-item" data-id="{{$user->id}}" data-period="thismonth">{{$user->name}}</a>
                                                             </li>
                                                             @endforeach
 
@@ -771,44 +771,44 @@
                                             @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                 <li class="yesterday">
                                                     <a href="#appointment_by_status_1" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('yesterday');">Yesterday</a>
+                                                    onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
                                                 </li>
                                                 <li class="last7days">
                                                     <a href="#appointment_by_status_2" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('last7days');">Last 7 Days</a>
+                                                    onclick="initUserWiseArrival('last7days', 'user');">Last 7 Days</a>
                                                 </li>
                                                 <li class="week">
                                                     <a href="#appointment_by_status_2" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('week');">This Week</a>
+                                                    onclick="initUserWiseArrival('week', 'user');">This Week</a>
                                                 </li>
                                                 <li class="thismonth">
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('thismonth');">This Month</a>
+                                                    onclick="initUserWiseArrival('thismonth', 'user');">This Month</a>
                                                 </li>
                                                 <li class="lastmonth">
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
-                                                    onclick="initUserWiseArrival('lastmonth');">Last Month</a>
+                                                    onclick="initUserWiseArrival('lastmonth', 'user');">Last Month</a>
                                                 </li>
                                             @else
                                                 <li class="yesterday">
                                                     <a href="#appointment_by_status_1" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('yesterday');">Yesterday</a>
+                                                    onclick="initCentreWiseArrival('yesterday', 'centre');">Yesterday</a>
                                                 </li>
                                                 <li class="last7days">
                                                     <a href="#appointment_by_status_2" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('last7days');">Last 7 Days</a>
+                                                    onclick="initCentreWiseArrival('last7days', 'centre');">Last 7 Days</a>
                                                 </li>
                                                 <li class="week">
                                                     <a href="#appointment_by_status_2" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('week');">This Week</a>
+                                                    onclick="initCentreWiseArrival('week', 'centre');">This Week</a>
                                                 </li>
                                                 <li class="thismonth">
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('thismonth');">This Month</a>
+                                                    onclick="initCentreWiseArrival('thismonth', 'centre');">This Month</a>
                                                 </li>
                                                 <li class="lastmonth">
                                                     <a href="#appointment_by_status_3" data-toggle="tab"
-                                                    onclick="initCentreWiseArrival('lastmonth');">Last Month</a>
+                                                    onclick="initCentreWiseArrival('lastmonth', 'centre');">Last Month</a>
                                                 </li>
                                             @endif
                                         </ul>
@@ -870,6 +870,7 @@
             jQuery('.wise_arrival_ul li a').removeClass('active');
             jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
         });
+
         $(document).ready(function(){
             period="today";
             // activities
@@ -885,85 +886,10 @@
             });
 
             @if(Auth::user()->hasRole('CSR Supervisor')|| Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                $.ajax({
-                    url: route('admin.dashboard.agent_wise_arrival'),
-                    type: "GET",
-                    data: {'period': '{{request('type')}}', 'user_id':'All', 'type':'2'},
-                    cache: false,
-                    success: function (response) {
-                        jQuery('#table-body').html("");
-                        jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
-                        var TABLE_HTML = "";
-                        var barLenght = response.data.bar;
-                        for(var i = 0; i < barLenght.length; i++){
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+barLenght[i]+"</td><td>"+response.data.arrived[i]+"/"+response.data.total[i]+"</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
-                        }
-                        jQuery('#table-body').append(TABLE_HTML);
-                        ConsultanciesByStatus(response);
-
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
-                });
+                initUserWiseArrival('thismonth', '', 'firsttime');
             @else
-                $.ajax({
-                    url: route('admin.dashboard.centre_wise_arrival'),
-                    type: "GET",
-                    data: {'period': '{{request('type')}}', 'centre_id':'All', 'type':'2'},
-                    cache: false,
-                    success: function (response) {
-                        jQuery('#table-body').html("");
-                        jQuery('.wise_arrival_ul li a').removeClass('active');
-                        jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
-                        var TABLE_HTML = "";
-                        var walkin_t = 0;
-                        var arrived_t = 0;
-                        var total_t = 0;
-                        var walkin_t = 0;
-                        var arrived_t = 0;
-                        var total_t = 0;
-
-                        var barLenght = response.data.bar;
-                        for(var i = 0; i < barLenght.length; i++){
-                            var walkin = "";
-                            var arrived = "";
-                            var total = "";
-                            if(response.data.walkin[i] === undefined) {
-                                walkin = "0";
-                                arrived = response.data.arrived[i]-walkin;
-                                total = response.data.total[i]-walkin;
-                                walkin_t += 0;
-                                arrived_t += response.data.arrived[i];
-                                total_t += response.data.total[i];
-
-                            } else {
-                                walkin = response.data.walkin[i];
-                                arrived = response.data.arrived[i]-walkin;
-                                total = response.data.total[i]-walkin;
-
-                                walkin_t += response.data.walkin[i];
-                                arrived_t += response.data.arrived[i];
-                                total_t += response.data.total[i];
-                                walkin_t += response.data.walkin[i];
-                                arrived_t += response.data.arrived[i];
-                                total_t += response.data.total[i];
-                            }
-                            let str = barLenght[i];
-                            let wordToRemove = "CUTERA ";
-                            let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+centre_name+"</td><td>"+arrived+"/"+total+"</td><td>"+walkin+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
-                        }
-                        arrived_t -= walkin_t;
-                        total_t -= walkin_t;
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-                        jQuery('#table-body').append(TABLE_HTML);
-                        ConsultanciesByStatus(response);
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
+                $(document).ready(function() {
+                    initCentreWiseArrival('thismonth', '', 'firsttime');
                 });
             @endif
         });
