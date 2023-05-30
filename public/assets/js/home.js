@@ -575,115 +575,16 @@ function CollectionByServiceCategory(service, colors) {
     }
 }
 
-function initCentreWiseArrival(period) {
-    central_wise_arrival_chart.destroy();
-    var dataID;
-    if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
-        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-    } else {
-        dataID = 'All';
+function initCentreWiseArrival(period, centreID, time = '') {
+    if(time != 'firsttime'){
+        central_wise_arrival_chart.destroy();
     }
-    if (dataID == 30) {
-        dataID = 'All';
+    if(centreID == 'centre'){
+        centreID = $('.btn.arrivalbtn').attr('data-id');
     }
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.location_wise_arrival'),
-        type: 'GET',
-        cache: false,
-        data: {
-            'period': period,
-            'centre_id': dataID
-        },
-        success: function (response) {
-            jQuery('#table-body').html('');
-                var TABLE_HTML = "";
-                var walkin_t = 0;
-                var arrived_t = 0;
-                var total_t = 0;
-                var barLenght = response.data.bar;
-                for (var i = 0; i < barLenght.length; i++) {
-                    var walkin = 0;
-                    var arrived = 0;
-                    var total = 0;
-                    if (response.data.walkin[i] === undefined) {
-                        walkin = 0;
-                        arrived = response.data.arrived[i] - walkin;
-                        total = response.data.total[i] - walkin;
-                        walkin_t += 0;
-                        arrived_t += response.data.arrived[i];
-                        total_t += response.data.total[i];
-                    } else {
-                        walkin = response.data.walkin[i];
-                        arrived = response.data.arrived[i] - walkin;
-                        total = response.data.total[i] - walkin;
-                        walkin_t += response.data.walkin[i];
-                        arrived_t += response.data.arrived[i];
-                        total_t += response.data.total[i];
-                    }
-
-                    let str = barLenght[i];
-                    let wordToRemove = "CUTERA ";
-                    let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
-                }
-                arrived_t -= walkin_t;
-                total_t -= walkin_t;
-
-                if(dataID == "All"){
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-
-                }
-                jQuery('#table-body').append(TABLE_HTML);
-        },
-    });
-}
-function initUserWiseArrival(period){
-    var dataID ;
-    if(jQuery('.btn.arrivalbtn').attr('data-id') != ''){
-        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-    }else{
-        dataID = 'All';
+    if (centreID == '' || centreID == 30) {
+        centreID = 'All';
     }
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.csr_wise_arrival'),
-        type: 'GET',
-        cache: false,
-        data: {
-            'period': period,
-            'user_id':dataID
-        },
-        success: function (response) {
-            ConsultanciesByStatus(response);
-            jQuery('#table-body').html("");
-            setTimeout(function() {
-                jQuery('#table-body').html("");
-                var TABLE_HTML = "";
-                let total = 0;
-                let arrived = 0;
-                var barLenght = response.data.bar;
-                var csr_name = $('.arrivalbtn').text();
-
-                for(var i = 0; i < barLenght.length; i++){
-                    arrived += response.data.arrived[i];
-                    total += response.data.total[i];
-                    }
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
-
-                jQuery('#table-body').append(TABLE_HTML);
-            }, 2000);
-
-        },
-    });
-}
-
-function LoadBarChart(centreID, period) {
-    central_wise_arrival_chart.destroy();
 
     $.ajax({
         headers: {
@@ -697,157 +598,59 @@ function LoadBarChart(centreID, period) {
             'centre_id': centreID
         },
         success: function (response) {
-            jQuery('#table-body').html('');
-                var TABLE_HTML = "";
-                var walkin_t = 0;
-                var arrived_t = 0;
-                var total_t = 0;
-                var barLenght = response.data.bar;
-                for (var i = 0; i < barLenght.length; i++) {
-                    var walkin = "";
-                    var arrived = "";
-                    var total = "";
-                    if (response.data.walkin[i] === undefined) {
-                        walkin = "0";
-                        arrived = response.data.arrived[i] - walkin;
-                        total = response.data.total[i] - walkin;
-                        walkin_t += 0;
-                        arrived_t += response.data.arrived[i];
-                        total_t += response.data.total[i];
-                    } else {
-                        walkin = response.data.walkin[i];
-                        arrived = response.data.arrived[i] - walkin;
-                        total = response.data.total[i] - walkin;
-                        walkin_t += response.data.walkin[i];
-                        arrived_t += response.data.arrived[i];
-                        total_t += response.data.total[i];
-                    }
-                    let str = barLenght[i];
-                    let wordToRemove = "CUTERA ";
-                    let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+            $('#table-body').html("");
+            $('.wise_arrival_ul li a').removeClass('active');
+            $('.wise_arrival_ul li.' + period +' a').addClass('active');
+
+            var TABLE_HTML = "";
+            let walkin_t = 0;
+            let arrived_t = 0;
+            let total_t = 0;
+
+            var barLenght = response.data.bar;
+            for (var i = 0; i < barLenght.length; i++) {
+                let walkin = response.data.walkin[i] ?? 0;
+                let arrived = response.data.arrived[i] - walkin;
+                let total = response.data.total[i] - walkin;
+                walkin_t += walkin;
+                arrived_t += response.data.arrived[i];
+                total_t += response.data.total[i];
+
+                let str = barLenght[i];
+                let wordToRemove = "CUTERA ";
+                let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                if(total != 0){
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
-                arrived_t -= walkin_t;
-                total_t -= walkin_t;
-                if(centreID == 'All'){
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>All</td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-                }
-                if(response.data.total != ''){
-                    jQuery('#table-body').append(TABLE_HTML);
-                }
-                ConsultanciesByStatus(response);
-        },
-    });
-}
-
-function LoadBarChartUserWise(UserID, period) {
-    central_wise_arrival_chart.destroy();
-
-    let url;
-    if(UserID == 'All'){
-        url = route('admin.dashboard.csr_wise_arrival');
-    } else {
-        url = route('admin.dashboard.user_wise_arrival');
-    }
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: url,
-        type: 'GET',
-        cache: false,
-        data: {
-            'period': period,
-            'user_id': UserID
-        },
-        success: function (response) {
-            jQuery('#table-body').html("");
-                var TABLE_HTML = "";
-                let total = 0;
-                let arrived = 0;
-                var barLenght = response.data.bar;
-                var csr_name = $('.arrivalbtn').text();
-                if (csr_name == "" || csr_name == "Select User") {
-                    csr_name = "All CSR";
-                }
-                for (var i = 0; i < barLenght.length; i++) {
-                    if (response.data.arrived[i] == undefined) {
-                        response.data.arrived[i] = 0;
-                    }
-                    arrived += response.data.arrived[i];
-                    total += response.data.total[i];
-                    if(UserID == 'All'){
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
-                    }
-                }
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
-                if(response.data.total != ''){
-                    jQuery('#table-body').append(TABLE_HTML);
-                }
-                BarChartUserWise(response);
-        },
-    });
-}
-
-function BarChartUserWise(bar) {
-    const primary = '#6993FF';
-    const success = '#1BC5BD';
-    const info = '#8950FC';
-    const warning = '#FFA800';
-    const danger = '#F64E60';
-    var options = {
-        series: [{
-            name: 'Total Appointments',
-            data: bar.data.total
-        }, {
-            name: 'Arrived',
-            data: bar.data.arrived
-        },],
-        noData: {
-            text: 'No Data',
-            align: 'center',
-            verticalAlign: 'top',
-            style: {
-              color: 'red',
-              fontSize: '14px',
-              fontFamily: undefined
             }
+            arrived_t -= walkin_t;
+            total_t -= walkin_t;
+
+            if(centreID == "All" && total_t != 0){
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+
+            }
+            jQuery('#table-body').append(TABLE_HTML);
+            ConsultanciesByStatus(response);
         },
-        chart: {
-            type: 'bar',
-            height: 350,
-        },
-        plotOptions: {
-            bar: {
-                horizontal: false,
-                columnWidth: '55%',
-                endingShape: 'rounded'
-            },
-        },
-        stroke: {
-            show: true,
-            width: 1,
-            colors: ['transparent']
-        },
-        xaxis: {
-            categories: bar.data.bar,
-        },
-        colors: [primary, success, warning]
-    };
-    $("#centre_wise_arrival").html('');
-    var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
-    chart.render();
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
 }
 
-function initUserWiseArrival(period) {
-    central_wise_arrival_chart.destroy();
-
-    var dataID;
-    if (jQuery('.btn.arrivalbtn').attr('data-id') != '') {
-        dataID = jQuery('.btn.arrivalbtn').attr('data-id');
-    } else {
-        dataID = 'All';
+function initUserWiseArrival(period, userID, time = ''){
+    if(time != 'firsttime'){
+        central_wise_arrival_chart.destroy();
     }
+    if(userID == 'user'){
+        userID = $('.btn.arrivalbtn').attr('data-id');
+    }
+    if (userID == '' || userID == 'All') {
+        userID = 'All';
+    }
+    console.log(userID)
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -857,32 +660,35 @@ function initUserWiseArrival(period) {
         cache: false,
         data: {
             'period': period,
-            'user_id': dataID
+            'user_id': userID
         },
         success: function (response) {
             jQuery('#table-body').html("");
+            jQuery('.wise_arrival_ul li a').removeClass('active');
+            jQuery('.wise_arrival_ul li.' + period +' a').addClass('active');
             var TABLE_HTML = "";
             let total = 0;
             let arrived = 0;
             var barLenght = response.data.bar;
             var csr_name = $('.arrivalbtn').text();
 
-            for (var i = 0; i < barLenght.length; i++) {
-                if (response.data.arrived[i] == undefined) {
-                    response.data.arrived[i] = 0;
-                }
+            for(var i = 0; i < barLenght.length; i++){
                 arrived += response.data.arrived[i];
                 total += response.data.total[i];
-                 if(dataID == 'All'){
+                if(userID == 'All'){
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
                 }
             }
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
-            if(response.data.total != ''){
-                jQuery('#table-body').append(TABLE_HTML);
+            if(total != 0){
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
             }
+
+            jQuery('#table-body').append(TABLE_HTML);
             ConsultanciesByStatus(response);
         },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
     });
 }
 
@@ -892,16 +698,16 @@ function ConsultanciesByStatus(bar) {
     const info = '#8950FC';
     const warning = '#FFA800';
     const danger = '#F64E60';
-    let locations = bar.data.bar;
-    let modifiedLocations;
-    if (locations.length > 0) {
-        if (locations.some(str => str.includes('CUTERA'))) {
-            modifiedLocations = locations.map(location => location.replace('CUTERA ', ''));
+    let Data = bar.data.bar;
+    let modifiedData;
+    if (Data.length > 0) {
+        if (Data.some(str => str.includes('CUTERA'))) {
+            modifiedData = Data.map(location => location.replace('CUTERA ', ''));
         } else {
-            modifiedLocations = locations;
+            modifiedData = Data;
         }
     } else {
-        modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
+        modifiedData = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
     }
     if(bar.data?.walkin != undefined){
         for (var i = 0; i < bar.data.walkin.length; i++) {
@@ -948,7 +754,7 @@ function ConsultanciesByStatus(bar) {
             colors: ['transparent']
         },
         xaxis: {
-            categories: modifiedLocations,
+            categories: modifiedData,
         },
         colors: [primary, success, warning]
     };
