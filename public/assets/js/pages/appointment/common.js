@@ -635,7 +635,8 @@ function getLeadDetail($this) {
             'lead_id': $this.val()
         },
         success: function (resposne) {
-            if (resposne.status && resposne.data.lead) {console.log(resposne.data.lead, lead?.gender != '')
+            if (resposne.status && resposne.data.lead) {
+
                 lead = resposne.data.lead;
                 $('#create_old_consultancy_phone').val(lead?.phone);
 
@@ -645,8 +646,10 @@ function getLeadDetail($this) {
                     $('#create_consultancy_phone').val("***********");
                 }
                 $('#create_patient_name').val(lead?.name);
-                $('#create_consultancy_gender').val(lead?.gender).change();
-                $('#create_consultancy_gender').val(lead?.gender);
+                $('#create_consultancy_gender').val(lead?.gender).css("pointer-events","none");
+                //$('#create_consultancy_gender option').hide();
+                $('#create_consultancy_lead').val(lead?.lead_source_id).change();
+                $('#create_consultancy_referred_by').val(lead?.referred_by);
                 if (isExist(lead?.referred_by)) {
                     $('#create_consultancy_referred_by').val(lead?.referred_by).change();
                 }
@@ -672,7 +675,6 @@ function getLeadDetail($this) {
     $("#consultancy_lead_id").val($this.val() != '' ? $this.val() : '0');
 }
 
-var lead;
 function loadLead(lead) {
     if (typeof lead !== "undefined" && lead !== null) {
         $.ajax({
@@ -706,7 +708,7 @@ function newPatient() {
         $('#mess_new_pati').show();
         $('#create_patient_name').attr("readonly",false);
         $('#create_consultancy_phone').attr("readonly",false);
-        $('#create_consultancy_gender').attr("disabled",false);
+        $('#create_consultancy_gender').attr("readonly",false);
         $('#create_patient_name').val("");
         $('#create_consultancy_gender').val("");
         $('#create_consultancy_phone').val("");
@@ -715,7 +717,7 @@ function newPatient() {
         $('#mess_new_pati').hide();
         $('#create_patient_name').attr("readonly",false);
         $('#create_consultancy_phone').attr("readonly",true);
-        $('#create_consultancy_gender').attr("disabled",true);
+        $('#create_consultancy_gender').attr("readonly",true);
         $('#create_patient_name').val("");
         $('#create_consultancy_gender').val("");
         $('#create_consultancy_phone').val("");
