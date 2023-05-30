@@ -373,6 +373,7 @@
                                 dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
 
                             });
+
                             $('#edit_child_service_id').html(dropdown_options);
                         } else {
                             resetDropdowns();

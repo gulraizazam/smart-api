@@ -633,7 +633,6 @@ function setEditData(response) {
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
         let lead_statuses_options = '<option value="">Select a Lead Status</option>';
         if(lead){
-            console.log(lead, lead?.lead_source_id);
             let parentServiceNames = [];
             let parentServiceButton = [];
             lead.lead_service.forEach(function(service) {
@@ -753,6 +752,7 @@ function editService(id, service_id){
 }
 function setEditService(data, service_id){
     let Services = data.Services;
+    let ChildService = data.Child_service;
     let Lead_service = data.lead_service;
     let service_options = '';
     let child_service_options = '';
@@ -765,11 +765,10 @@ function setEditService(data, service_id){
             const serviceID = service.service.id;
             if (!serviceIDs.includes(serviceID)) {
                 serviceIDs.push(serviceID);
-                childServiceIDs.push(service.childservice?.id)
             }
 
             if (service.childservice != null) {
-                child_service_options += `<option value="${service.childservice.id}" selected>${service.childservice.name}</option>`;
+                childServiceIDs.push(service.childservice?.id)
             }
         });
     }
@@ -784,12 +783,21 @@ function setEditService(data, service_id){
         });
     }
 
+    if (ChildService) {
+        Object.entries(ChildService).forEach(function(service) {
+            if(jQuery.inArray(Number(service[0]), childServiceIDs) != -1){
+                child_service_options += '<option value="' + service[0] + '" selected>' + service[1] + '</option>';
+            } else {
+                child_service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            }
+        });
+    }
+
     $("#edit_service_id").html(service_options);
     $("#edit_child_service_id").html(child_service_options);
     $("#edit_old_service").val(service_id);
-
-
 }
+
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
         let filters = {

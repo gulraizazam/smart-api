@@ -905,9 +905,15 @@ class LeadsController extends Controller
             'parent_id' => '0',
             'active' =>'1'
         ])->get()->pluck('name', 'id');
+        $Child_service = Services::where([
+            'slug' => 'custom',
+            'parent_id' => $service_id,
+            'active' =>'1'
+        ])->get()->pluck('name', 'id');
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             "lead_service" => $lead_service,
             "Services" => $Services,
+            'Child_service' => $Child_service,
         ]);
     }
     /**

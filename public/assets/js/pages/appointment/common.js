@@ -784,7 +784,7 @@ function loadTodayAppointments(today, appointment) {
 }
 $("#modal_create_consultancy").on('hide.bs.modal', function(){
     $('#create_consultancy_phone').attr("readonly",true);
-    $('#create_consultancy_gender').attr("disabled",true);
+    $('#create_consultancy_gender').attr("readonly",true);
 });
 $(document).ready(function() {
     $("#treatment_search_service,#treatment_search_centre,#treatment_search_status,#appoint_search_service,#appoint_search_centre,#appoint_search_status").select2({dropdownCssClass : 'bigdrop'});
