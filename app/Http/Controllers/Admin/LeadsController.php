@@ -597,12 +597,15 @@ class LeadsController extends Controller
                     return ApiHelper::apiResponse($this->error, 'Phone number is already exist.');
                 } else {
                     $lead = Leads::createRecord($data, $status = "Lead");
-                    $lead_services = LeadsServices::create([
-                        'lead_id' => $lead->id,
-                        'service_id' => $data['service_id'],
-                        'child_service_id' => $data['child_service_id'] ?? null,
-                        'status' => 1
-                    ]);
+                    $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $data['service_id']])->first();
+                    if($lead_service && !isset($data['child_service_id'])){
+                        $lead_services = LeadsServices::create([
+                            'lead_id' => $lead->id,
+                            'service_id' => $data['service_id'],
+                            'child_service_id' => $data['child_service_id'] ?? null,
+                            'status' => 1
+                        ]);
+                    }
                 }
             } else {
                 $lead_check = Leads::with(['lead_service' => function($q) use($data){
@@ -619,6 +622,25 @@ class LeadsController extends Controller
                         $data['updated_by'] = Auth::User()->id;
                         $data['lead_status_id'] = 1;
                         $lead = Leads::updateRecord($lead_check->id, $data);
+                        $lead_service = LeadsServices::where(['lead_id' => $lead_check->id, 'service_id' => $data['service_id']])->first();
+                        if($lead_service && isset($data['child_service_id'])){
+                            $lead_services = LeadsServices::create([
+                                'lead_id' => $lead->id,
+                                'service_id' => $data['service_id'],
+                                'child_service_id' => $data['child_service_id'] ?? null,
+                                'status' => 1
+                            ]);
+                            LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
+                                'status' => 0
+                            ]);
+                        }
+                    }
+                } else {
+                    $data['updated_by'] = Auth::User()->id;
+                    $data['lead_status_id'] = 1;
+                    $lead = Leads::updateRecord($lead_check->id, $data);
+                    $lead_service = LeadsServices::where(['lead_id' => $lead_check->id, 'service_id' => $data['service_id']])->first();
+                    if($lead_service && isset($data['child_service_id'])){
                         $lead_services = LeadsServices::create([
                             'lead_id' => $lead->id,
                             'service_id' => $data['service_id'],
@@ -629,19 +651,6 @@ class LeadsController extends Controller
                             'status' => 0
                         ]);
                     }
-                } else {
-                    $data['updated_by'] = Auth::User()->id;
-                    $data['lead_status_id'] = 1;
-                    $lead = Leads::updateRecord($lead_check->id, $data);
-                    $lead_services = LeadsServices::create([
-                            'lead_id' => $lead->id,
-                            'service_id' => $data['service_id'],
-                            'child_service_id' => $data['child_service_id'] ?? null,
-                            'status' => 1
-                    ]);
-                    LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
-                        'status' => 0
-                    ]);
                 }
             }
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');

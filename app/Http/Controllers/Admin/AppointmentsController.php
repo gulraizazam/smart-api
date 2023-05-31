@@ -1767,7 +1767,7 @@ class AppointmentsController extends Controller
             $appointment = Appointments::create($appointmentData);
             $find_cons = Appointments::latest()->first();
             if($find_cons){
-                $lead = Leads::where(['phone' => $appointmentData['phone']])->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id]);
+                $lead = Leads::where(['phone' => $appointmentData['phone']])->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id, 'patient_id' => $appointmentData['patient_id']]);
                 LeadsServices::where([
                     'lead_id' => $appointmentData['lead_id'],
                     'service_id' => $find_cons->service_id,
@@ -4397,25 +4397,8 @@ class AppointmentsController extends Controller
             $leadObj = $appointmentData;
             unset($leadObj['lead_id']);
             $leadObj['patient_id'] = $patient->id;
-            $DefaultConvertedLeadStatus = LeadStatuses::where(array(
-                'account_id' => Auth::User()->account_id,
-                'is_converted' => 1,
-            ))->first();
-            if ($DefaultConvertedLeadStatus) {
-                $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
-            } else {
-                $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
-            }
-            $lead = Leads::where(['patient_id' => $leadObj['patient_id'], 'service_id' => $leadObj['base_service_id']])->first();
-            if($lead){
-                $lead->lead_status_id = 4;
-                $lead->save();
-            }else{
-                $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-                $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
-            }
         } else {
-            $lead = Leads::findOrFail($request->get('lead_id'));
+            $lead = Leads::where(['patient_id' => $request->get('patient_id')])->first();dd($lead);
             $patientData = $appointmentData;
             if ($request->new_patient == '1') {
                 $patientData['user_type_id'] = Config::get('constants.patient_id');
@@ -4423,7 +4406,9 @@ class AppointmentsController extends Controller
             } else {
                 $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
             }
+
         }
+        $lead = Leads::where(['patient_id' => $request->get('patient_id')])->first();
         $appointmentData['patient_id'] = $patient->id;
         $appointmentData['lead_id'] = $lead->id;
         $appointmentData['created_at'] = Filters::getCurrentTimeStamp();
@@ -4433,42 +4418,30 @@ class AppointmentsController extends Controller
         $find_cons = Appointments::latest()->first();
         if($find_cons){
             $parents = Services::where(['parent_id' => $find_cons->service_id])->first();
-            $find_lead = Leads::where(['id' => $find_cons->lead_id])->update(['child_service_id' => $appointment->service_id]);
+            $find_services = LeadsServices::updateOrCreate([
+                'lead_id' => $find_cons->lead_id,
+                'service_id' => $request->base_service_id,
+                'child_service_id' => $request->service_id,
+            ],[
+                'lead_id' => $find_cons->lead_id,
+                'service_id' => $request->base_service_id,
+                'child_service_id' => $request->service_id,
+            ]);
         }
         Appointments::where(['patient_id' => $appointmentData['patient_id']])->update(['name' => $appointmentData['name'], 'updated_at' => $appointmentData['updated_at']]);
         if ($request->new_patient == '1') {
             $leadObj = $appointmentData;
             unset($leadObj['lead_id']);
             $leadObj['patient_id'] = $patient->id;
-            $DefaultConvertedLeadStatus = LeadStatuses::where([
-                'account_id' => Auth::User()->account_id,
-                'is_converted' => 1,
-            ])->first();
-            if ($DefaultConvertedLeadStatus) {
-                $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
-            } else {
-                $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
-            }
-            $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-            $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+            $lead = Leads::createRecord($leadObj, $status = "Appointment");
         } else {
             if ($request->get('lead_id') && $request->get('lead_id')) {
                 $lead = Leads::findOrFail($request->get('lead_id'));
                 if ($lead) {
-                    $DefaultConvertedLeadStatus = LeadStatuses::where(array(
-                        'account_id' => Auth::User()->account_id,
-                        'is_converted' => 1,
-                    ))->first();
-                    if ($DefaultConvertedLeadStatus) {
-                        $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
-                    } else {
-                        $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
-                    }
                     $data = array(
-                        'lead_status_id' => $default_converted_lead_status_id,
                         'town_id' => $request->get('town_id')
                     );
-                    $lead = Leads::updateRecord($lead->id, $data, $lead, $status = "Appointment");
+                    $lead = Leads::updateRecord($lead->id, $data, $status = "Appointment");
                 }
             }
             if ($request->get('lead_id') && $request->get('lead_id')) {
