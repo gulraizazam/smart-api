@@ -341,7 +341,7 @@ class LeadsController extends Controller
                     $child_service = [];
                     $service_active = [];
                     foreach($lead->lead_service as $data){
-                        if(!in_array($data->service->name, $service)){
+                        if(isset($data->service) && !in_array($data->service->name, $service)){
                             $service[] = $data->service->name;
                         }
                         if($data->status == 1){
