@@ -346,7 +346,7 @@ class LeadsController extends Controller
                         }
                         if($data->status == 1){
                             $child_service[] = $data->childservice->name ?? '';
-                            $service_active[] = $data->service->name;
+                            $service_active[] = isset($data->service->name) ? $data->service->name : '';
                         }
                     }
                     $services = implode(",", $service);
