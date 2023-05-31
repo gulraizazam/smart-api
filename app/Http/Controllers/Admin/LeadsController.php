@@ -1356,6 +1356,7 @@ class LeadsController extends Controller
                         // Array to hold phone numbers which will be used to find duplicates if any
                         $dupPhone_list = array();
                         $dupPhones = array();
+                        $newPatientPhones = array(); /* New Patient Phones Array */
                         // Iterate over the data
                         foreach ($SheetData as $SingleRow) {
                             // Provided Sheet columns should match
@@ -1378,7 +1379,9 @@ class LeadsController extends Controller
                                 trim(strtolower($SingleRow['A'])) == '' ||
                                 trim(strtolower($SingleRow['A'])) == null ||
                                 trim(strtolower($SingleRow['C'])) == '' ||
-                                trim(strtolower($SingleRow['C'])) == null
+                                trim(strtolower($SingleRow['C'])) == null ||
+                                trim(strtolower($SingleRow['H'])) == '' ||
+                                trim(strtolower($SingleRow['H'])) == null
                             ) {
                                 /*
                                  * If Full Name and Phone are empty, Skip these records
@@ -1405,7 +1408,6 @@ class LeadsController extends Controller
                                 // Restore Old state again
                                 $dupPhones = array();
                             }
-                            $newPatientPhones = array(); /* New Patient Phones Array */
                             $found_patients = Leads::whereIn('phone', $dupPhone_list)
                             ->where('account_id', Auth::User()
                             ->account_id)->select('phone')
@@ -1488,7 +1490,9 @@ class LeadsController extends Controller
                                 trim(strtolower($SingleRow['A'])) == '' ||
                                 trim(strtolower($SingleRow['A'])) == null ||
                                 trim(strtolower($SingleRow['C'])) == '' ||
-                                trim(strtolower($SingleRow['C'])) == null
+                                trim(strtolower($SingleRow['C'])) == null ||
+                                trim(strtolower($SingleRow['H'])) == '' ||
+                                trim(strtolower($SingleRow['H'])) == null
                             ) {
                                 /*
                                  * If Full Name and Phone are empty, Skip these records
@@ -1564,7 +1568,7 @@ class LeadsController extends Controller
                             if(trim(strtolower($SingleRow['I']))==null){
                                 $SingleRow['I']='Empty';
                             }
-                            $location_id=null;
+                            $location_id = null;
                             if (isset($SingleRow['I'])) {
                                 $location = trim(strtolower($SingleRow['I']));
                             } else {
@@ -1669,31 +1673,10 @@ class LeadsController extends Controller
                                          * update_records' is checked
                                          * update records nows
                                          */
-                                        $gender = 0;
-                                        if (trim(strtolower($SingleRow['D'])) == 'male') {
-                                            $gender = 1; // 1 for Male, Check constants.php
-                                        } else if (trim(strtolower($SingleRow['D'])) == 'female') {
-                                            $gender = 2; // 2 for Female, Check constants.php
-                                        }
-                                        $update_lead = array(
-                                            'name' => trim($SingleRow['A']),
-                                            'email' => trim($SingleRow['B']),
-                                            'gender' => $gender,
-                                            'phone' => $phone,
-                                            'city_id' => $city_id,
-                                            'region_id' => $region_id,
-                                            'lead_source_id' => $lead_source_id,
-                                            'created_by' => Auth::User()->id,
-                                            'updated_by' => Auth::User()->id,
-                                            'converted_by' => Auth::User()->id,
-                                            'created_at' => Carbon::now(),
-                                            'updated_at' => Carbon::now(),
-                                            'account_id' => Auth::User()->account_id,
-                                            'location_id'=>$location_id ?? ''
-                                        );
+                                        $update_lead = array();
                                         $update_lead_service = [
                                             'service_id' => $service_id,
-                                            'child_service_id'=>$child_service_id ?? null,
+                                            'child_service_id' => $child_service_id ?? null,
                                             'created_at' => Carbon::now(),
                                             'updated_at' => Carbon::now(),
                                         ];
@@ -1720,7 +1703,6 @@ class LeadsController extends Controller
                                             'lead_id' => $lead->id,
                                         ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
 
-                                        GeneralFunctions::patientNameUpdate($phone, $update_lead['name']);
                                         continue;
                                     }
                                 }
