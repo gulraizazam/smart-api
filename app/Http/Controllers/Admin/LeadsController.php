@@ -614,23 +614,25 @@ class LeadsController extends Controller
                 ->first();
                 if($lead_check->lead_service->count()){
                     $child_service_id = (array_key_exists('child_service_id', $data)) ? $data['child_service_id'] : [];
-                    $child_service_check = $lead_check->lead_service->whereIn('child_service_id', $child_service_id);
-                    if($child_service_check->count()){
-                        return ApiHelper::apiResponse($this->error, 'Service and child service already exist.');
-                    } else {
-                        if($data['child_service_id'] != null){
-                            $data['updated_by'] = Auth::User()->id;
-                            $data['lead_status_id'] = 1;
-                            $lead = Leads::updateRecord($lead_check->id, $data);
-                            $lead_services = LeadsServices::create([
-                                'lead_id' => $lead->id,
-                                'service_id' => $data['service_id'],
-                                'child_service_id' => $data['child_service_id'] ?? null,
-                                'status' => 1
-                            ]);
-                            LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
-                                'status' => 0
-                            ]);
+                    if(array_key_exists('child_service_id', $data)){
+                        $child_service_check = $lead_check->lead_service->whereIn('child_service_id', $child_service_id);
+                        if($child_service_check->count()){
+                            return ApiHelper::apiResponse($this->error, 'Service and child service already exist.');
+                        } else {dd($data['child_service_id']);
+                            if($data['child_service_id'] != null){
+                                $data['updated_by'] = Auth::User()->id;
+                                $data['lead_status_id'] = 1;
+                                $lead = Leads::updateRecord($lead_check->id, $data);
+                                $lead_services = LeadsServices::create([
+                                    'lead_id' => $lead->id,
+                                    'service_id' => $data['service_id'],
+                                    'child_service_id' => $data['child_service_id'] ?? null,
+                                    'status' => 1
+                                ]);
+                                LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
+                                    'status' => 0
+                                ]);
+                            }
                         }
                     }
                 } else {
