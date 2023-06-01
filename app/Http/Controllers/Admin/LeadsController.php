@@ -618,7 +618,7 @@ class LeadsController extends Controller
                         $child_service_check = $lead_check->lead_service->whereIn('child_service_id', $child_service_id);
                         if($child_service_check->count()){
                             return ApiHelper::apiResponse($this->error, 'Service and child service already exist.');
-                        } else {dd($data['child_service_id']);
+                        } else {
                             if($data['child_service_id'] != null){
                                 $data['updated_by'] = Auth::User()->id;
                                 $data['lead_status_id'] = 1;
