@@ -46,12 +46,12 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('patients_create'))
+                            {{-- @if(Gate::allows('patients_create'))
                                 <a href="javascript:void(0);" onclick="createPatient('{{ route('admin.patients.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_patients">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
-                            @endif
+                            @endif --}}
 
                         <!--end::Button-->
                         </div>
