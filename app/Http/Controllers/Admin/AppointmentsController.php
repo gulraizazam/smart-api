@@ -4398,7 +4398,7 @@ class AppointmentsController extends Controller
             unset($leadObj['lead_id']);
             $leadObj['patient_id'] = $patient->id;
         } else {
-            $lead = Leads::where(['patient_id' => $request->get('patient_id')])->first();dd($lead);
+            $lead = Leads::where(['patient_id' => $request->get('patient_id')])->first();
             $patientData = $appointmentData;
             if ($request->new_patient == '1') {
                 $patientData['user_type_id'] = Config::get('constants.patient_id');

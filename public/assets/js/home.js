@@ -649,7 +649,6 @@ function initUserWiseArrival(period, userID, time = ''){
     if (userID == '' || userID == 'All') {
         userID = 'All';
     }
-    console.log(userID)
 
     $.ajax({
         headers: {

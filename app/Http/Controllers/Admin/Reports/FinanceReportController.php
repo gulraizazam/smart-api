@@ -58,7 +58,7 @@ class FinanceReportController extends Controller
         if (!Gate::allows('finance_general_revenue_reports_manage')) {
             return abort(401);
         }
-        $allserviceslug = Services::where('slug', '=', 'all')->isActive()->first();
+        $allserviceslug = Services::where(['slug' => 'all'])->isActive()->first();
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
@@ -2853,7 +2853,7 @@ class FinanceReportController extends Controller
         }
         $records = array();
         $records["data"] = array();
-       
+
         $fdm_users = RoleHasUsers::where(['role_id' => 4 ])->pluck('user_id');
         if (Gate::allows('appointments_consultancy')) {
             $resultQuery = AppointmentsDailyStats::whereIn('centre_id', ACL::getUserCentres());
@@ -2890,7 +2890,7 @@ class FinanceReportController extends Controller
             ->orderBy("appointments.created_at", "DESC");
         }])
         ->get();
-        
+
         $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
         $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
