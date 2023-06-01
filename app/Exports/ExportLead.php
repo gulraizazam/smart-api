@@ -31,7 +31,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         $resultQuery = Leads::whereIn('leads.city_id', ACL::getUserCities())->orWhereNull('leads.city_id');
 
         if($this->request->id != null || $this->request->id != ''){
-            $resultQuery->where('leads.id', $this->request->id);
+            $resultQuery->where(['leads.id' => $this->request->id]);
         }
         if($this->request->service_id != null || $this->request->service_id != ''){
             $service_id = $this->request->service_id;
@@ -42,25 +42,25 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $resultQuery->with('lead_service');
         }
         if($this->request->lead_status_id != null || $this->request->lead_status_id != ''){
-            $resultQuery->where('leads.lead_status_id', $this->request->lead_status_id);
+            $resultQuery->where(['leads.lead_status_id' => $this->request->lead_status_id]);
         }
         if($this->request->city_id != null || $this->request->city_id != ''){
-            $resultQuery->where('leads.city_id', $this->request->city_id);
+            $resultQuery->where(['leads.city_id' => $this->request->city_id]);
         }
         if($this->request->location_id != null || $this->request->location_id != ''){
-            $resultQuery->where('leads.location_id', $this->request->location_id);
+            $resultQuery->where(['leads.location_id' => $this->request->location_id]);
         }
         if($this->request->region_id != null || $this->request->region_id != ''){
-            $resultQuery->where('leads.region_id', $this->request->region_id);
+            $resultQuery->where(['leads.region_id' => $this->request->region_id]);
         }
         if($this->request->created_by != null || $this->request->created_by != ''){
-            $resultQuery->where('leads.created_by', $this->request->created_by);
+            $resultQuery->where(['leads.created_by' => $this->request->created_by]);
         }
         if($this->request->phone != null || $this->request->phone != ''){
-            $resultQuery->where('phone', $this->request->phone);
+            $resultQuery->where(['phone' => $this->request->phone]);
         }
         if($this->request->gender_id != null || $this->request->gender_id != ''){
-            $resultQuery->where('gender', $this->request->gender_id);
+            $resultQuery->where(['gender' => $this->request->gender_id]);
         }
         if($this->request->name != null || $this->request->name != ''){
             $resultQuery->where('name','like', $this->request->name.'%');
