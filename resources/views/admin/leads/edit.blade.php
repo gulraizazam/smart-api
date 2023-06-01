@@ -36,9 +36,8 @@
                     <table class="table">
                         <thead>
                           <tr>
-
                             <th>Services</th>
-                            <th>Child Services</th>
+                            <th>Treatment</th>
                             <th>Edit</th>
                           </tr>
                         </thead>
@@ -53,7 +52,7 @@
                             </select>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Treatment </label>
                             <select name="child_service_id[]" multiple="" id="edit_child_service_id" class="form-control select2 select2-hidden-accessible" data-select2-id="edit_child_service_id" tabindex="-1" aria-hidden="true">
                             </select>
                         </div>
