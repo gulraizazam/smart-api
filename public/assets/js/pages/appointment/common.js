@@ -647,7 +647,7 @@ function getLeadDetail($this) {
                 }
                 $('#create_patient_name').val(lead?.name);
                 $('#create_consultancy_gender').val(lead?.gender).css("pointer-events","none");
-                //$('#create_consultancy_gender option').hide();
+                
                 $('#create_consultancy_lead').val(lead?.lead_source_id).change();
                 $('#create_consultancy_referred_by').val(lead?.referred_by);
                 if (isExist(lead?.referred_by)) {
