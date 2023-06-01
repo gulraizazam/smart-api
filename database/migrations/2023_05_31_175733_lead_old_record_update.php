@@ -7,6 +7,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpSpreadsheet\Calculation\LookupRef\Offset;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class LeadOldRecordUpdate extends Migration
 {
@@ -21,6 +23,11 @@ class LeadOldRecordUpdate extends Migration
             ->select('id', 'patient_id', 'service_id', 'child_service_id')
             ->groupBy('patient_id')
             ->orderBy('id', 'ASC')->get();
+
+        $output = new ConsoleOutput();
+        $progress = new ProgressBar($output, count($old_leads));
+        $progress->start();
+
         foreach($old_leads as $data){
             Leads::where(['patient_id' => $data->patient_id])->update([
                 'name' => isset($data->patient) ? $data->patient->name : null,
@@ -46,7 +53,9 @@ class LeadOldRecordUpdate extends Migration
                 LeadsServices::where('id', '!=', $lead_service->id)->where(['lead_id' => $lead->id])->update([
                     'status' => 0
                 ]);
+                $progress->advance();
             }
         }
+        $progress->finish();
     }
 }
