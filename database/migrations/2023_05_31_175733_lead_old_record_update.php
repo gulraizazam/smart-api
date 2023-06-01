@@ -22,29 +22,31 @@ class LeadOldRecordUpdate extends Migration
             ->groupBy('patient_id')
             ->orderBy('id', 'ASC')->get();
         foreach($old_leads as $data){
-            $lead = Leads::where(['patient_id' => $data->patient_id])->update([
+            Leads::where(['patient_id' => $data->patient_id])->update([
                 'name' => isset($data->patient) ? $data->patient->name : null,
                 'email' => isset($data->patient) ? $data->patient->email : null,
                 'phone' => isset($data->patient) ? $data->patient->phone : null,
                 'gender' => isset($data->patient) ? $data->patient->gender : null,
                 'referred_by' => isset($data->patient) ? $data->patient->referred_by : null,
             ]);
-            $lead = Leads::where(['patient_id' => $data->patient_id])->
-            if($data->service_id != null){
-                $lead_service = LeadsServices::updateOrCreate([
-                    'lead_id' => $lead->id,
-                    'service_id' => $lead->service_id,
-                    'child_service_id' => $lead->child_service_id,
-                ], [
-                    'lead_id' => $lead->id,
-                    'service_id' => $lead->service_id,
-                    'child_service_id' => ($lead->child_service_id != 0) ? $lead->child_service_id : null,
-                    'status' => 1
+            $leads = Leads::where(['patient_id' => $data->patient_id])->get();
+            foreach($leads as $lead){
+                if($lead->service_id != null){
+                    $lead_service = LeadsServices::updateOrCreate([
+                        'lead_id' => $lead->id,
+                        'service_id' => $lead->service_id,
+                        'child_service_id' => $lead->child_service_id,
+                    ], [
+                        'lead_id' => $lead->id,
+                        'service_id' => $lead->service_id,
+                        'child_service_id' => ($lead->child_service_id != 0) ? $lead->child_service_id : null,
+                        'status' => 1
+                    ]);
+                }
+                LeadsServices::where('id', '!=', $lead_service->id)->where(['lead_id' => $lead->id])->update([
+                    'status' => 0
                 ]);
             }
-            LeadsServices::where('id', '!=', $lead_service->id)->where(['lead_id' => $lead->id])->update([
-                'status' => 0
-            ]);
         }
     }
 }
