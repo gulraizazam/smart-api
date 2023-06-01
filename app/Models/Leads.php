@@ -36,6 +36,11 @@ class Leads extends BaseModal
         return $this->hasMany(LeadsServices::class, 'lead_id')->with('service:id,name,parent_id', 'childservice:id,name,parent_id');
     }
 
+    public function patient()
+    {
+        return $this->belongsTo(Patients::class);
+    }
+
     /**
      * Get the Lead that owns the City.
      */
