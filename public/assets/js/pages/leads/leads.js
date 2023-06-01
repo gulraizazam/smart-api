@@ -379,6 +379,8 @@ function setLeadData(response) {
         $("#add_gender_id").html(gender_options);
         $("#add_lead_source_id").html(lead_sources_options);
         $("#add_lead_status_id").html(lead_statuses_options);
+        $("#add_child_service_id").val();
+        $("#add_location_id").val();
         getUserCity();
     } catch (error) {
         showException(error);
