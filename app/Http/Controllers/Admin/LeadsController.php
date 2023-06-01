@@ -597,15 +597,14 @@ class LeadsController extends Controller
                     return ApiHelper::apiResponse($this->error, 'Phone number is already exist.');
                 } else {
                     $lead = Leads::createRecord($data, $status = "Lead");
-                    $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $data['service_id']])->first();
-                    if($lead_service && !isset($data['child_service_id'])){
+
                         $lead_services = LeadsServices::create([
                             'lead_id' => $lead->id,
                             'service_id' => $data['service_id'],
                             'child_service_id' => $data['child_service_id'] ?? null,
                             'status' => 1
                         ]);
-                    }
+                    
                 }
             } else {
                 $lead_check = Leads::with(['lead_service' => function($q) use($data){
