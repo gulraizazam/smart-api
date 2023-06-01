@@ -36,11 +36,6 @@ var UpdateStatusValidation = function () {
                     closePopup(modal_id);
                     let query = get_query();
 
-                    // if (query.type == 1) {
-                    //     var appointment = 'consultancy';
-                    // } else {
-                    //     var appointment = 'treatment';
-                    // }
                     if(response.data.appontment_type_id==1){
                         var appointment = 'consultancy';
                     }else {

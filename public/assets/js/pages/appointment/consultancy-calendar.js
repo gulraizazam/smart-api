@@ -451,8 +451,7 @@ function setCreateConsultancy(response, start) {
     try {
         $("#create_patient_search").parent("div").find(".selection").remove();
 
-        leadSearch('lead_search_id')
-        //patientSearch('patient_search_id')
+        leadSearch('lead_search_id');
 
         $("#modal_create_consultancy").modal("show");
         $("#modal_create_consultancy_form")[0].reset();
