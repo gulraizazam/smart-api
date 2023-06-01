@@ -593,6 +593,7 @@ class LeadsController extends Controller
             if ($request->new_lead == '1') {
                 $data['created_at'] = Carbon::now();
                 $data['created_by'] = Auth::User()->id;
+                $data['updated_by'] = Auth::User()->id;
                 if ($lead) {
                     return ApiHelper::apiResponse($this->error, 'Phone number is already exist.');
                 } else {
@@ -621,7 +622,6 @@ class LeadsController extends Controller
                                 $data['created_at'] = Carbon::now();
                                 $data['updated_at'] = Carbon::now();
                                 $data['updated_by'] = Auth::User()->id;
-                                $data['created_by'] = Auth::User()->id;
                                 $data['lead_status_id'] = 1;
                                 $lead = Leads::updateRecord($lead_check->id, $data);
                                 $lead_services = LeadsServices::create([
@@ -640,7 +640,6 @@ class LeadsController extends Controller
                     $data['created_at'] = Carbon::now();
                     $data['updated_at'] = Carbon::now();
                     $data['updated_by'] = Auth::User()->id;
-                    $data['created_by'] = Auth::User()->id;
                     $data['lead_status_id'] = 1;
                     $lead = Leads::updateRecord($lead_check->id, $data);
                     $lead_services = LeadsServices::create([
@@ -1626,29 +1625,9 @@ class LeadsController extends Controller
                                 if (Leads::where(array(
                                     'phone' => $phone,
                                 ))->count()) {
-                                    $lead_check = Leads::with(['lead_service' => function($q) use($service_id){
-                                        $q->where(['service_id' => $service_id]);
-                                    }])
-                                    ->where(['phone' => $phone, 'account_id' => Auth::User()->account_id])
-                                    ->first();
-                                    if($lead_check->lead_service->count()){
-                                        $child_service_check = $lead_check->lead_service->whereIn('child_service_id', $child_service_id);
-                                        if($child_service_check->count() >! 0){
-                                            $update_lead['created_at'] = Carbon::now();
-                                            $update_lead['created_by'] = Auth::User()->id;
-                                            $update_lead['updated_at'] = Carbon::now();
-                                            $update_lead['updated_by'] = Auth::User()->id;
-                                        }
-                                    } else {
-                                        $update_lead['created_at'] = Carbon::now();
-                                        $update_lead['created_by'] = Auth::User()->id;
-                                        $update_lead['updated_at'] = Carbon::now();
-                                        $update_lead['updated_by'] = Auth::User()->id;
-                                    }
-
                                     if ($request->get("update_records") == '1' && $request->get("update_status") != '1') {
                                         /*
-                                         * update_records' is checked
+                                         * update_records' is not checked
                                          * update leads services
                                          */
                                         $update_lead = array(
@@ -1659,13 +1638,17 @@ class LeadsController extends Controller
                                             'city_id' => $city_id,
                                             'region_id' => $region_id,
                                             'lead_source_id' => $lead_source_id,
+                                            'created_by' => Auth::User()->id,
+                                            'updated_by' => Auth::User()->id,
                                             'converted_by' => Auth::User()->id,
+                                            'created_at' => Carbon::now(),
+                                            'updated_at' => Carbon::now(),
                                             'account_id' => Auth::User()->account_id,
                                             'location_id'=>$location_id ?? ''
                                         );
                                         $update_lead_service = [
                                             'service_id' => $service_id,
-                                            'child_service_id' => $child_service_id ?? null,
+                                            'child_service_id'=>$child_service_id ?? null,
                                             'created_at' => Carbon::now(),
                                             'updated_at' => Carbon::now(),
                                         ];
@@ -1691,16 +1674,22 @@ class LeadsController extends Controller
                                         GeneralFunctions::patientNameUpdate($phone, $update_lead['name']);
                                         continue;
                                     }elseif($request->update_status == '1' && $request->get("update_records") != '1'){
-                                        $update_lead_status = array();
-                                        $update_lead_status['lead_status_id'] = $lead_status_id;
+                                        $update_lead = array();
+                                        $update_lead['lead_status_id'] = $lead_status_id;
                                         Leads::where(['phone' => $phone])->update(['lead_status_id' => $lead_status_id]);
                                        continue;
                                     } else {
                                         /*
-                                         * update_records' is not checked but old phone number
+                                         * update_records' is checked
                                          * update records nows
                                          */
-                                        $update_lead = array();
+                                        $update_lead = array(
+                                            'created_by' => Auth::User()->id,
+                                            'updated_by' => Auth::User()->id,
+                                            'converted_by' => Auth::User()->id,
+                                            'created_at' => Carbon::now(),
+                                            'updated_at' => Carbon::now(),
+                                        );
                                         $update_lead_service = [
                                             'service_id' => $service_id,
                                             'child_service_id' => $child_service_id ?? null,
