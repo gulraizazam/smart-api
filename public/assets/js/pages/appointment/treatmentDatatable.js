@@ -1024,6 +1024,15 @@ function setSmsLogs(response) {
 
 }
 
+function resetCustomFilters() {
+
+    $('.appointment_patient_id').val(null).trigger('change');
+    $(".filter-field").val('');
+    setQueryStringParameter('type');
+    setQueryStringParameter('from');
+    setQueryStringParameter('to');
+    setQueryStringParameter('center_id');
+}
 
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
@@ -1047,7 +1056,7 @@ function applyFilters(datatable) {
             updated_by: $("#treatment_search_updated_by").val(),
             filter: 'filter',
         }
-       
+
         if($("#treatment_search_service").val() == 13){
             resetFilters(datatable);
         }
@@ -1060,7 +1069,7 @@ function applyFilters(datatable) {
 }
 function resetFilters(datatable) {
 
-    
+
     let filters =  {
         delete: '',
         patient_id: '',
