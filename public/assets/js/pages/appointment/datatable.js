@@ -1074,7 +1074,7 @@ function applyFilters(datatable) {
             filter: 'filter',
         }
         if($("#appoint_search_service").val() == 13){
-            reInitTable('consultancy');
+            resetAllFilters(datatable);
         }
         else{
             datatable.search(filters, 'search');
