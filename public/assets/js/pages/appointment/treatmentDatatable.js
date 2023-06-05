@@ -1047,11 +1047,45 @@ function applyFilters(datatable) {
             updated_by: $("#treatment_search_updated_by").val(),
             filter: 'filter',
         }
+        if($("#treatment_search_service").val() == 13){
+            resetFilters(datatable);
+        }
+        else{
+            datatable.search(filters, 'search');
+        }
         datatable.search(filters, 'search');
     });
 
 }
+function resetFilters(datatable) {
 
+    
+    let filters =  {
+        delete: '',
+        patient_id: '',
+        name: '',
+        phone: '',
+        date_from: '',
+        date_to: '',
+        appointment_type_id: '',
+        service_id: '',
+        region_id: '',
+        city_id: '',
+        location_id: '',
+        doctor_id: '',
+        appointment_status_id: '',
+        consultancy_type: '',
+        created_from: '',
+        created_to: '',
+        created_by: '',
+        converted_by: '',
+        updated_by: '',
+        filter: 'filter_cancel',
+    }
+    datatable.search(filters, 'search');
+
+
+}
 function resetAllFilters(datatable) {
 
     $('#reset-filters').on('click', function() {
