@@ -340,7 +340,7 @@ class GeneralFunctions
     {
         DB::enableQueryLog();
         $where = [];
-        $active = (Gate::allows("view_inactive_services")) ? 0 : 1;
+       
         if ($total >= 0 && $id == null) {
             
             $filename = 'services';
@@ -512,8 +512,8 @@ class GeneralFunctions
                 }
             }
            
-            $query = Services::with(['children'=> function($q) use($active){
-                $q->where('active', $active);
+            $query = Services::with(['children'=> function($q){
+                
                 $q->orderBy('name');
             }])
             ->where(['parent_id' => 0])
@@ -529,11 +529,11 @@ class GeneralFunctions
             return $services;
         } else {
             
-            $query = Services::with(['children'=> function($q) use($active){
-                $q->where('active', $active);
+            $query = Services::with(['children'=> function($q) {
+                
                 $q->orderBy('name');
             }])
-            ->where(['id' => $id, 'parent_id' => 0, 'active' => $active])
+            ->where(['id' => $id, 'parent_id' => 0])
             ->where('slug', '!=', 'all');
             $services[] = $query->first()->toArray();
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
