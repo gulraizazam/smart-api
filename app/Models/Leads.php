@@ -148,7 +148,7 @@ class Leads extends BaseModal
                     'active' => '1',
                     'account_id' => $account_id,
                     'id' => $name
-                ])->latest()->get(['name', 'id', 'phone'])->unique('phone');
+                ])->get(['name', 'id', 'phone']);
             }
             if ($leads->count() > 0) {
                 return $leads;
