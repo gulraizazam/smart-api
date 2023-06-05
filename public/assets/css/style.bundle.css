@@ -81572,6 +81572,9 @@ code {
 .select2-container--default .select2-results__options {
     padding: 0.65rem 0;
 }
+.select2-container--default .select2-results__options li[id*="bold"]{
+    font-weight:600;
+}
 .select2-container--default .select2-results__option {
     padding: 0.65rem 1rem;
 }
@@ -86114,7 +86117,7 @@ body {
     border-radius: 0 0.42rem 0.42rem 0;
 }
 .filterouterdiv .select2{
-  width: 120px !important; 
+  width: 120px !important;
 }
 .filterouterdiv .form-control{
     width: 170px;
@@ -86138,7 +86141,7 @@ body {
     .filterouterdiv .datefromto {
         width: 100%;
     }
-   
+
     .filterouterdiv .select2 {
         width: 100% !important;
     }

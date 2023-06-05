@@ -218,7 +218,6 @@
             function submitFilters()
             {
                 $("#filtersform").submit();
-               
             }
             function SetPhone()
              {
@@ -227,27 +226,22 @@
             function SetDocId()
             {
                 $("#filter_doctor_id").val($("#treatment_search_doctor").val());
-               
             }
             function SetStatus()
             {
                 $("#filter_status_id").val($("#treatment_search_status").val());
-               
             }
             function SetCreated()
             {
                 $("#filter_created_by_id").val($("#treatment_search_created_by").val());
-               
             }
             function SetCenter()
             {
                 $("#filter_center_id").val($("#treatment_search_centre").val());
-               
             }
             function SetPatient()
             {
                 $("#filter_patient_id").val($("#appoint_search_patient").val());
-               
             }
             function SetCity(){
                 $("#filter_city_id").val($("#treatment_search_city").val());
@@ -255,7 +249,6 @@
             function SetRegion(){
                 $("#filter_region_id").val($("#treatment_search_region").val());
             }
-            
             function SetUpdatedBy(){
                 $("#filter_updated_by_id").val($("#treatment_search_updated_by").val());
             }
@@ -270,16 +263,18 @@
             }
             function SetService()
              {
-                $("#filter_service_id").val($("#treatment_search_service").val());
+                let service_value = $("#treatment_search_service").val();
+                if (service_value.indexOf("bold-") !== -1) {
+                    var service = service_value.split("bold-")[1];
+                } else {
+                    var service = $("#treatment_search_service").val();
+                }
+                $("#filter_service_id").val(service);
              }
-             
-            
+
             function setDashboardFilters() {
-                
                 let result = get_query();
-
                 if(result?.type != null ) {
-
                     $("#appoint_search_type").val('{{request('type')}}').change();
                     $("#treatment_search_start").val('{{request('from')}}');
                     $("#treatment_appoint_end").val('{{request('to')}}');
@@ -304,9 +299,7 @@
             }
 
             function getUserCity() {
-
                 @if (auth()->id() != 1)
-
                     $.ajax({
                         url: '{{route('admin.users.get_cities')}}',
                         type: 'GET',
@@ -325,9 +318,7 @@
 
                         }
                     });
-
                 @endif
-
             }
 
             function getUserCentre() {
@@ -343,7 +334,6 @@
                         }
                     },
                     error: function () {
-
                     }
                 });
             }

@@ -28,48 +28,57 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function collection()
     {
-        $resultQuery = Leads::whereIn('leads.city_id', ACL::getUserCities())->orWhereNull('leads.city_id');
+        $where = [];
 
         if($this->request->id != null || $this->request->id != ''){
-            $resultQuery->where(['leads.id' => $this->request->id]);
+            $where[] = array(['id' => $this->request->id]);
+        }
+        if($this->request->lead_status_id != null || $this->request->lead_status_id != ''){
+            $where[] = array(['lead_status_id' => $this->request->lead_status_id]);
+        }
+        if($this->request->city_id != null || $this->request->city_id != ''){
+            $where[] = array(['city_id' => $this->request->city_id]);
+        }
+        if($this->request->location_id != null || $this->request->location_id != ''){
+            $where[] = array(['location_id' => $this->request->location_id]);
+        }
+        if($this->request->region_id != null || $this->request->region_id != ''){
+            $where[] = array(['region_id' => $this->request->region_id]);
+        }
+        if($this->request->created_by != null || $this->request->created_by != ''){
+            $where[] = array(['created_by' => $this->request->created_by]);
+        }
+        if($this->request->phone != null || $this->request->phone != ''){
+            $where[] = array(['phone' => $this->request->phone]);
+        }
+        if($this->request->gender_id != null || $this->request->gender_id != ''){
+            $where[] = array(['gender' => $this->request->gender_id]);
+        }
+        if($this->request->name != null || $this->request->name != ''){
+            $where[] = array('name', 'like', '%' .$this->request->name.'%');
+        }
+        if($this->request->start_date != null || $this->request->start_date != ''){
+            $where[] = array('created_at', '>=', $this->request->start_date . ' 00:00:00');
+        }
+        if($this->request->end_date != null || $this->request->end_date != ''){
+            $where[] = array('created_at', '<=', $this->request->end_date . ' 23:59:59');
+        }
+        $resultQuery = Leads::whereIn('city_id', ACL::getUserCities());
+        if(count($where)){
+            $resultQuery->where($where);
         }
         if($this->request->service_id != null || $this->request->service_id != ''){
             $service_id = $this->request->service_id;
             $resultQuery->with(['lead_service' => function($q) use($service_id){
-                $q->where(['service_id' => $service_id]);
+                $q->where(['service_id' => $service_id, 'status' => 1]);
             }]);
         } else {
-            $resultQuery->with('lead_service');
-        }
-        if($this->request->lead_status_id != null || $this->request->lead_status_id != ''){
-            $resultQuery->where(['leads.lead_status_id' => $this->request->lead_status_id]);
-        }
-        if($this->request->city_id != null || $this->request->city_id != ''){
-            $resultQuery->where(['leads.city_id' => $this->request->city_id]);
-        }
-        if($this->request->location_id != null || $this->request->location_id != ''){
-            $resultQuery->where(['leads.location_id' => $this->request->location_id]);
-        }
-        if($this->request->region_id != null || $this->request->region_id != ''){
-            $resultQuery->where(['leads.region_id' => $this->request->region_id]);
-        }
-        if($this->request->created_by != null || $this->request->created_by != ''){
-            $resultQuery->where(['leads.created_by' => $this->request->created_by]);
-        }
-        if($this->request->phone != null || $this->request->phone != ''){
-            $resultQuery->where(['phone' => $this->request->phone]);
-        }
-        if($this->request->gender_id != null || $this->request->gender_id != ''){
-            $resultQuery->where(['gender' => $this->request->gender_id]);
-        }
-        if($this->request->name != null || $this->request->name != ''){
-            $resultQuery->where('name','like', $this->request->name.'%');
-        }
-        if($this->request->start_date != null || $this->request->start_date != ''){
-            $resultQuery->whereBetween('leads.created_at', [$this->request->start_date. ' 00:00:00', $this->request->end_date. ' 23:59:59']);
+            $resultQuery->with(['lead_service' => function($q){
+                $q->where(['status' => 1]);
+            }]);
         }
         $result = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
-            ->orderBy("leads.created_at", "DESC")->get();
+            ->orderBy("created_at", "DESC")->latest()->get()->unique('phone');
 
         return $result;
     }
