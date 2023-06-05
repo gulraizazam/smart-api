@@ -1073,6 +1073,7 @@ function applyFilters(datatable) {
             updated_by: $("#appoint_search_updated_by").val(),
             filter: 'filter',
         }
+        alert($("#appoint_search_service").val());
         if($("#appoint_search_service").val() == 13){
             resetAllFilters(datatable);
         }
