@@ -1155,10 +1155,6 @@ function setFilters(filter_values, active_filters) {
                   service_options += '<option value="' + value.id + '">' + value.name + '</option>';
             } else {
                 service_options += '<option value="' + value.id + '">' + value.name + '</option>';
-                Object.values(value.children).forEach(function (child, index) {
-                    service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
-                    service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;' + child.name + '</option>';
-                });
             }
         });
 

@@ -26,6 +26,11 @@ var AddUserValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
                         }
                     },
@@ -129,6 +134,11 @@ var EditUserValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
                         }
                     },
