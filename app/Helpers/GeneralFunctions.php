@@ -341,8 +341,10 @@ class GeneralFunctions
         $where = [];
         $active = (Gate::allows("view_inactive_services")) ? 0 : 1;
         if ($total >= 0 && $id == null) {
+            dd("here");
             $filename = 'services';
             if(isset($request)){
+               
                 $filters = getFilters($request->all());
                 $filters['status'] = 0;
                 $apply_filter = checkFilters($filters, $filename);
@@ -508,6 +510,7 @@ class GeneralFunctions
                     return $mergedServices;
                 }
             }
+           
             $query = Services::with(['children'=> function($q) use($active){
                 $q->where('active', $active);
                 $q->orderBy('name');
@@ -520,6 +523,7 @@ class GeneralFunctions
             array_unshift($services, $allserviceslug);
             return $services;
         } else {
+            dd("herse");
             $query = Services::with(['children'=> function($q) use($active){
                 $q->where('active', $active);
                 $q->orderBy('name');
