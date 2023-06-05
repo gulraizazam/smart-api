@@ -1,13 +1,9 @@
 @push("css")
     <style>
-     
-     
-
-      
         .position-relative{
             position: relative;
         }
-      
+
         .filterouterdiv .croxcli {
             position: absolute;
             bottom: 0px;
@@ -81,11 +77,11 @@
             <select class="form-control filter-field select2" id="treatment_search_service" onchange="SetService()"></select>
         </div>
 
-     
+
         <div class="filterouterdiv  mb-6" >
             <label>Phone:</label>
             <input  type="text"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
-        </div> 
+        </div>
         <div class="filterouterdiv mb-6 center-filter">
             <label>Centre:</label>
             <select class="form-control filter-field select2" id="treatment_search_centre" onchange="SetCenter()"></select>
@@ -96,7 +92,7 @@
             <select class="form-control filter-field select2" id="treatment_search_status" onchange="SetStatus()"></select>
         </div>
 
-       
+
 
         <div class=" mt-8" >
 
@@ -123,7 +119,7 @@
         </div>
         <div class="col-lg-2 mb-lg-0 mt-6 appoint_search_status" >
             <label>Created By:</label>
-            <select class="form-control filter-field select2" id="treatment_search_created_by" onchange="SetCreated()"> 
+            <select class="form-control filter-field select2" id="treatment_search_created_by" onchange="SetCreated()">
             </select>
         </div>
         <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
