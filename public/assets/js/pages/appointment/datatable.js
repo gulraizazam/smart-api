@@ -1149,16 +1149,12 @@ function setFilters(filter_values, active_filters) {
             region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
         });
 
-        let service_options = '';console.log('ser', services);
+        let service_options = '';
         Object.values(services).forEach(function(value, index) {
             if (value.name == 'All Services') {
                   service_options += '<option value="' + value.id + '">' + value.name + '</option>';
             } else {
                 service_options += '<option value="' + value.id + '">' + value.name + '</option>';
-                /* Object.values(value.children).forEach(function (child, index) {
-                    service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
-                    service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;' + child.name + '</option>';
-                }); */
             }
         });
 
