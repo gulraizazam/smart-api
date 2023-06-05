@@ -1257,6 +1257,7 @@ function skipUpdateStatus($this){
         $(".update_statuss").css("opacity", 1);
     }
 }
+
 function addValidation(elem) {
     if (elem.val() == '') {
         elem.addClass("is-invalid");
@@ -1265,6 +1266,12 @@ function addValidation(elem) {
         elem.removeClass("is-invalid");
         $(".lead_file_msg").addClass("d-none");
     }
+}
+
+function cencleImport($this) {
+    $("#skip_lead_statuses").prop("disabled", true);
+    $("#skip_lead_statuses").prop("checked", false);
+    $(".skip_lead_status").css("opacity", 0.7);
 }
 
 jQuery(document).ready( function () {
