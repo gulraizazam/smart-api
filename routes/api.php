@@ -367,7 +367,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('leads/showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('leads.showleadstatus');
     Route::put('leads/storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('leads.storeleadstatus');
     Route::get('leads/detail/{id}', [LeadsController::class, 'detail'])->name('leads.detail');
-    Route::get('leads/getpatientid', [LeadsController::class, 'getleadid'])->name('leads.getlead.id');
+    Route::get('leads/getleadid', [LeadsController::class, 'getleadid'])->name('leads.getlead.id');
     Route::get('leads/get_lead_number', [LeadsController::class, 'getleadnumber'])->name('leads.get_lead_number');
     Route::get('leads/phone/search', [LeadsController::class, 'phoneSearch'])->name('leads.phone.search');
     Route::resource('leads', LeadsController::class)->except('index');
