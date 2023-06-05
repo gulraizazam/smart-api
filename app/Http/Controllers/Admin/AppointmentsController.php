@@ -707,7 +707,7 @@ class AppointmentsController extends Controller
      */
     private function getDefaultListing(Request $request)
     {
-      
+
         $where = array();
         /*
          * Reset form filter is applied
@@ -1050,7 +1050,7 @@ class AppointmentsController extends Controller
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
         ];
-        
+
         return ApiHelper::apiDataTable($records);
     }
     private function getDefaultTreatmentListing(Request $request)
@@ -1412,7 +1412,7 @@ class AppointmentsController extends Controller
         $doctors = Doctors::getActiveOnly(ACL::getUserCentres());
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         $services = GeneralFunctions::ServicesTreeList();
-        
+
         $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
         if ($appointment_statuses) {
             $appointment_statuses = $appointment_statuses->pluck('name', 'id');
@@ -1770,7 +1770,7 @@ class AppointmentsController extends Controller
             $appointment = Appointments::create($appointmentData);
             $find_cons = Appointments::latest()->first();
             if($find_cons){
-                $lead = Leads::where(['phone' => $appointmentData['phone']])->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id, 'patient_id' => $appointmentData['patient_id']]);
+                $lead = Leads::where(['phone' => $appointmentData['phone']])->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id, 'patient_id' => $appointmentData['patient_id'], 'created_at' => Carbon::now()]);
                 LeadsServices::where([
                     'lead_id' => $appointmentData['lead_id'],
                     'service_id' => $find_cons->service_id,
@@ -4421,6 +4421,7 @@ class AppointmentsController extends Controller
         $find_cons = Appointments::latest()->first();
         if($find_cons){
             $parents = Services::where(['parent_id' => $find_cons->service_id])->first();
+            Leads::where(['patient_id' => $request->get('patient_id')])->update(['created_at' => Carbon::now()]);
             $find_services = LeadsServices::updateOrCreate([
                 'lead_id' => $find_cons->lead_id,
                 'service_id' => $request->base_service_id,
