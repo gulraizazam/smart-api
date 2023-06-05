@@ -338,14 +338,10 @@ class GeneralFunctions
 
     public static function ServicesTreeList($request = null, $total = 0, $id = null)
     {
-        DB::enableQueryLog();
         $where = [];
-       
         if ($total >= 0 && $id == null) {
-            
             $filename = 'services';
             if(isset($request)){
-               
                 $filters = getFilters($request->all());
                 $filters['status'] = 0;
                 $apply_filter = checkFilters($filters, $filename);
@@ -511,26 +507,18 @@ class GeneralFunctions
                     return $mergedServices;
                 }
             }
-           
             $query = Services::with(['children'=> function($q){
-                
                 $q->orderBy('name');
             }])
             ->where(['parent_id' => 0])
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
-            
             $services = $query->get()->toArray();
-           
-            
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-            // dd(DB::getQueryLog());
             array_unshift($services, $allserviceslug);
             return $services;
         } else {
-            
             $query = Services::with(['children'=> function($q) {
-                
                 $q->orderBy('name');
             }])
             ->where(['id' => $id, 'parent_id' => 0])
