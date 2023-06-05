@@ -2378,10 +2378,8 @@ class LeadsController extends Controller
         if($request->start_date != null || $request->start_date != ''){
             $resultQuery->whereBetween('leads.created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:00']);
         }
-
         $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
         ->orderBy("leads.created_at", "DESC")->get();
-
         $customPaper = array(0,0,720,1440);
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
         return $pdf->download('leads.pdf');
