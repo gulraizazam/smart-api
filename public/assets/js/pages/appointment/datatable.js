@@ -1073,6 +1073,7 @@ function applyFilters(datatable) {
             updated_by: $("#appoint_search_updated_by").val(),
             filter: 'filter',
         }
+        alert(service_id);
         datatable.search(filters, 'search');
     });
 }
