@@ -344,7 +344,7 @@ class GeneralFunctions
             
             $filename = 'services';
             if(isset($request)){
-                dd("heres2");
+               
                 $filters = getFilters($request->all());
                 $filters['status'] = 0;
                 $apply_filter = checkFilters($filters, $filename);
@@ -510,7 +510,7 @@ class GeneralFunctions
                     return $mergedServices;
                 }
             }
-            dd("heres2ss3");
+           
             $query = Services::with(['children'=> function($q) use($active){
                 $q->where('active', $active);
                 $q->orderBy('name');
@@ -518,6 +518,7 @@ class GeneralFunctions
             ->where(['parent_id' => 0, 'active' => $active])
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
+            dd($query);
             $services = $query->get()->toArray();
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
             array_unshift($services, $allserviceslug);
