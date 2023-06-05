@@ -1059,7 +1059,6 @@ class AppointmentsController extends Controller
          */
         $filename = 'appointments';
         $filters = getFilters($request->all());
-
         if ($request->has('sort')) {
             list($orderBy, $order) = getSortBy($request, 'appointments.created_at', 'DESC', 'appointments');
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
