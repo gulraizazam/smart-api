@@ -518,8 +518,9 @@ class GeneralFunctions
             ->where(['parent_id' => 0, 'active' => $active])
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
-            dd($query);
+            
             $services = $query->get()->toArray();
+            dd($services);
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
             array_unshift($services, $allserviceslug);
             return $services;
