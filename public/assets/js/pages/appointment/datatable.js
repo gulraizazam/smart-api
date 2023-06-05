@@ -1073,9 +1073,9 @@ function applyFilters(datatable) {
             updated_by: $("#appoint_search_updated_by").val(),
             filter: 'filter',
         }
-        alert($("#appoint_search_service").val());
+        
         if($("#appoint_search_service").val() == 13){
-            resetAllFilters(datatable);
+            resetFilters(datatable);
         }
         else{
             datatable.search(filters, 'search');
@@ -1113,7 +1113,35 @@ function resetAllFilters(datatable) {
     });
 
 }
+function resetFilters(datatable) {
 
+    
+        let filters =  {
+            delete: '',
+            patient_id: '',
+            name: '',
+            phone: '',
+            date_from: '',
+            date_to: '',
+            appointment_type_id: '',
+            service_id: '',
+            region_id: '',
+            city_id: '',
+            location_id: '',
+            doctor_id: '',
+            appointment_status_id: '',
+            consultancy_type: '',
+            created_from: '',
+            created_to: '',
+            created_by: '',
+            converted_by: '',
+            updated_by: '',
+            filter: 'filter_cancel',
+        }
+        datatable.search(filters, 'search');
+    
+
+}
 function setFilters(filter_values, active_filters) {
     try {
         let appointment_statuses = filter_values.appointment_statuses;
