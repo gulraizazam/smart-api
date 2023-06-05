@@ -36,6 +36,11 @@ class Leads extends BaseModal
         return $this->hasMany(LeadsServices::class, 'lead_id')->with('service:id,name,parent_id', 'childservice:id,name,parent_id');
     }
 
+    public function active_lead_service()
+    {
+        return $this->hasMany(LeadsServices::class, 'lead_id')->where(['status' => 1]);
+    }
+
     public function patient()
     {
         return $this->belongsTo(Patients::class);
@@ -140,10 +145,10 @@ class Leads extends BaseModal
             $leads = collect();
             if (is_numeric($name)) {
                 $leads =  self::where([
-                    'active'=> '1',
-                    'account_id'=> $account_id,
-                    'id'=> $name
-                ])->select('name', 'id', 'phone')->get();
+                    'active' => '1',
+                    'account_id' => $account_id,
+                    'id' => $name
+                ])->latest()->get(['name', 'id', 'phone'])->unique('phone');
             }
             if ($leads->count() > 0) {
                 return $leads;
@@ -156,13 +161,13 @@ class Leads extends BaseModal
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
 					['phone', 'LIKE', "%{$phone}%"]
-				])->select('name', 'id', 'phone')->get();
+				])->latest()->get(['name', 'id', 'phone'])->unique('phone');
 			} else {
 				return self::where([
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
 					['name', 'LIKE', "%{$name}%"]
-				])->select('name', 'id', 'phone')->get();
+				])->latest()->get(['name', 'id', 'phone'])->unique('phone');
 			}
 		}
 

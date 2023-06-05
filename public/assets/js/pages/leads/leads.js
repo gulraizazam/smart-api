@@ -68,8 +68,6 @@ var table_columns = [{
             value.forEach((item) => {
                 if(valueActive[0] == item){
                     services += '<span class="text text-primary">' + item + '</span><br>'
-                } else {
-                    services += '<span class="text">' + item + '</span><br>'
                 }
 
             })
@@ -407,7 +405,6 @@ function viewLead(url) {
 }
 
 function setViewData(response) {
-
     try {
         let lead = response.data.lead;
         $("#full_name").text(lead?.name)
@@ -464,15 +461,30 @@ function setViewData(response) {
             lead_status = lead?.lead_status?.name;
         }
         $("#lead_status").text(lead_status);
-        let treatment = 'N/A';
+
+        let activeservice = 'N/A';
         if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
-            treatment = lead?.lead_service?.find(service => service.status == 1)?.service.name;
+            activeservice = lead?.lead_service?.find(service => service.status == 1)?.service.name;
         }
-        $("#treatment").text(treatment);
+        $("#activeservice").text(activeservice);
+
+        let allservices = 'N/A';
+        let services = lead?.lead_service;console.log('services', services)
+        let serviceNames = [];
+        services.forEach(function(service){
+            if(!serviceNames.includes(service.service.name)){
+            serviceNames.push(service.service.name);
+            }
+        })
+        allservices = serviceNames.join(", ");
+        $("#allservices").text(allservices);
+
         let child = 'N/A';
-        if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
-            child = lead?.lead_service?.find(service => service.status == 1)?.childservice?.name;
-        }
+        services.forEach(function(service){
+            if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
+                child = lead?.lead_service?.find(service => service.status == 1)?.childservice?.name;
+            }
+        })
         $("#childservice").text(child);
         $.ajax({
             url: route('admin.dashboard.getchild'),
@@ -1231,23 +1243,11 @@ function skipStatus($this) {
         }
     } else {
         $("#skip_lead_statuses").prop("disabled", true);
+        $("#skip_lead_statuses").prop("checked", false);
         $(".skip_lead_status").css("opacity", 0.7);
     }
 }
-function HideskipStatus($this){
-    if ($this.is(":checked")) {
-        $("#skip_lead_statuses").prop("disabled", true);
-        $("#update_records").prop("disabled", true);
-        $("#update_records").attr("checked", false);
-        $(".skip_lead_status").css("opacity", 0.7);
-        $(".update_records").css("opacity", 0.7);
-    } else {
-        $("#update_records").prop("disabled", false);
-        $("#skip_lead_statuses").prop("disabled", false);
-        $(".update_records").css("opacity", 1);
-        $(".skip_lead_status").css("opacity", 1);
-    }
-}
+
 function skipUpdateStatus($this){
     if ($this.is(":checked")) {
         $("#update_statuss").prop("disabled", true);

@@ -59,7 +59,7 @@
             <select class="form-control filter-field select2" id="search_region_id"></select>
         </div>
 
-        
+
 
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Service:</label>
@@ -74,7 +74,7 @@
             </select>
         </div>
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Create at:</label>
+            <label>Created at:</label>
             <div class="input-daterange input-group to-from-datepicker" >
                 <input type="text" id="search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5">
                 <div class="input-group-append">
