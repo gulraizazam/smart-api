@@ -338,6 +338,7 @@ class GeneralFunctions
 
     public static function ServicesTreeList($request = null, $total = 0, $id = null)
     {
+        DB::enableQueryLog();
         $where = [];
         $active = (Gate::allows("view_inactive_services")) ? 0 : 1;
         if ($total >= 0 && $id == null) {
@@ -516,12 +517,14 @@ class GeneralFunctions
                 $q->orderBy('name');
             }])
             ->where(['parent_id' => 0, 'active' => $active])
-            ->where('slug', '!=', 'all');
-            // ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
+            ->where('slug', '!=', 'all')
+            ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
             
             $services = $query->get()->toArray();
-            dd($where,$active, $services);
+           
+            
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
+            dd(DB::getQueryLog());
             array_unshift($services, $allserviceslug);
             return $services;
         } else {
