@@ -248,26 +248,26 @@ class LeadsController extends Controller
                 }
             }
             if (hasFilter($filters, 'date_from')) {
-                $where[] = array('leads.created_at', '>=', $filters['date_from'] . '00:00:00');
+                $where[] = array('leads.created_at', '>=', $filters['date_from'] . ' 00:00:00');
                 Filters::put(Auth::User()->id, $filename, 'date_from', $filters['date_from']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'date_from');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'date_from')) {
-                        $where[] = array('leads.created_at', '>=', Filters::get(Auth::User()->id, $filename, 'date_from') . '00:00:00');
+                        $where[] = array('leads.created_at', '>=', Filters::get(Auth::User()->id, $filename, 'date_from') . ' 00:00:00');
                     }
                 }
             }
             if (hasFilter($filters, 'date_to')) {
-                $where[] = array('leads.created_at', '<=', $filters['date_to'] . '23:59:59');
+                $where[] = array('leads.created_at', '<=', $filters['date_to'] . ' 23:59:59');
                 Filters::put(Auth::User()->id, $filename, 'date_to', $filters['date_to']);
             } else {
                 if ($apply_filter) {
                     Filters::forget(Auth::User()->id, $filename, 'date_to');
                 } else {
                     if (Filters::get(Auth::User()->id, $filename, 'date_to')) {
-                        $where[] = array('leads.created_at', '<=', Filters::get(Auth::User()->id, $filename, 'date_to') . '23:59:59');
+                        $where[] = array('leads.created_at', '<=', Filters::get(Auth::User()->id, $filename, 'date_to') . ' 23:59:59');
                     }
                 }
             }
@@ -276,16 +276,15 @@ class LeadsController extends Controller
                 'account_id' => Auth::User()->account_id,
                 'is_junk' => 1,
             ))->first();
-            $countQuery = Leads::with('lead_service')->whereIn('leads.city_id', ACL::getUserCities())->orWhereNull('leads.city_id');
+            $countQuery = Leads::with('lead_service')->whereIn('city_id', ACL::getUserCities());
             if (count($where)) {
-                $countQuery->where($where);
+                $countQuery = Leads::with('lead_service')->where($where)->whereIn('city_id', ACL::getUserCities());
+                if (count($where_service)) {
+                    $countQuery->whereHas('lead_service', function($query) use($where_service){
+                        $query->where($where_service);
+                    });
+                }
             }
-            if (count($where_service)) {
-                $countQuery->whereHas('lead_service', function($query) use($where_service){
-                    $query->where($where_service);
-                });
-            }
-
             $iTotalRecords = $countQuery->count();
 
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
@@ -2345,10 +2344,12 @@ class LeadsController extends Controller
         $resultQuery = Leads::query();
         if($request->service_id != null || $request->service_id != ''){
             $resultQuery->with(['lead_service' => function($q) use($request){
-                $q->where(['service_id' => $request->service_id]);
+                $q->where(['service_id' => $request->service_id, 'status' => 1]);
             }]);
         } else {
-            $resultQuery->with('lead_service');
+            $resultQuery->with(['lead_service' => function($q){
+                $q->where(['status' => 1]);
+            }]);
         }
         if($request->lead_status_id != null || $request->lead_status_id != ''){
             $resultQuery->where('leads.lead_status_id', $request->lead_status_id);
@@ -2375,10 +2376,12 @@ class LeadsController extends Controller
             $resultQuery->where('name','like', $request->name.'%');
         }
         if($request->start_date != null || $request->start_date != ''){
-            $resultQuery->whereBetween('leads.created_at', [$request->start_date, $request->end_date]);
+            $resultQuery->whereBetween('leads.created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:00']);
         }
+
         $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
         ->orderBy("leads.created_at", "DESC")->get();
+
         $customPaper = array(0,0,720,1440);
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
         return $pdf->download('leads.pdf');

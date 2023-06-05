@@ -217,7 +217,6 @@ function setStatusData(response, id) {
 }
 
 function editSchedule(id,doc_id,loc_id) {
-
     $("#modal_change_appointment_schedule").modal("show");
     $("#schedule_appointment_id").val(id)
     $("#schedule_doctor_id").val(doc_id)
@@ -1027,9 +1026,7 @@ function setSmsLogs(response) {
 
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
-
         let filters =  {
             delete: '',
             patient_id: $("#treatment_patient_id").val(),
@@ -1050,7 +1047,6 @@ function applyFilters(datatable) {
             updated_by: $("#treatment_search_updated_by").val(),
             filter: 'filter',
         }
-
         datatable.search(filters, 'search');
     });
 
@@ -1087,7 +1083,6 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
     try {
 
         let appointment_statuses = filter_values.appointment_statuses;
@@ -1135,10 +1130,10 @@ function setFilters(filter_values, active_filters) {
             if (service.name == 'All Services') {
                 service_options += '<option value="' + service.id + '">' + service.name + '</option>';
             } else {
-              service_options += '<option value="' + service.id + '">' + service.name + '</option>';
-              Object.values(service.children).forEach(function (child, index) {
-                  service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;'+child.name + '</option>';
-              });
+                service_options += '<option value="bold-' + service.id + '">' + service.name + '</option>';
+                Object.values(service.children).forEach(function (child, index) {
+                    service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;'+child.name + '</option>';
+                });
             }
         });
 
@@ -1230,7 +1225,7 @@ function setFilters(filter_values, active_filters) {
     }
 }
 
-function resetCustomFilters() {
+function reaCustomFilters() {
 
     $('.appointment_patient_id').val(null).trigger('change');
     $(".filter-field").val('');
