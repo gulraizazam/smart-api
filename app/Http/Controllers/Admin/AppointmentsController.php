@@ -707,6 +707,7 @@ class AppointmentsController extends Controller
      */
     private function getDefaultListing(Request $request)
     {
+      
         $where = array();
         /*
          * Reset form filter is applied
@@ -1049,6 +1050,7 @@ class AppointmentsController extends Controller
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
         ];
+        
         return ApiHelper::apiDataTable($records);
     }
     private function getDefaultTreatmentListing(Request $request)
@@ -1410,6 +1412,7 @@ class AppointmentsController extends Controller
         $doctors = Doctors::getActiveOnly(ACL::getUserCentres());
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         $services = GeneralFunctions::ServicesTreeList();
+        dd($services);
         $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
         if ($appointment_statuses) {
             $appointment_statuses = $appointment_statuses->pluck('name', 'id');
