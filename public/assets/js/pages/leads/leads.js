@@ -405,7 +405,6 @@ function viewLead(url) {
 }
 
 function setViewData(response) {
-console.log(response);
     try {
         let lead = response.data.lead;
         $("#full_name").text(lead?.name)
