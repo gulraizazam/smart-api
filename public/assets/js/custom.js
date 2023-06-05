@@ -1178,11 +1178,11 @@ function selectUser(name, user_id,  search_id,flag=1) {
     }
 }
 
-function leadSearch(search_id = 'lead_id',flag=1) {
+function leadSearch(search_id = 'lead_search_id',flag=1) {
     $("." + search_id).on("input",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
-        if ($(this).val().length < 1) {
+        if ($(this).val().length < 2) {
             $(".suggesstion-box").hide();
             return false;
         }
