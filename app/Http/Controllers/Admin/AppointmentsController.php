@@ -1412,7 +1412,7 @@ class AppointmentsController extends Controller
         $doctors = Doctors::getActiveOnly(ACL::getUserCentres());
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         $services = GeneralFunctions::ServicesTreeList();
-        dd($services);
+        
         $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
         if ($appointment_statuses) {
             $appointment_statuses = $appointment_statuses->pluck('name', 'id');
