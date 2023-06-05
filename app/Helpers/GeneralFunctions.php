@@ -516,7 +516,7 @@ class GeneralFunctions
                 $q->where('active', $active);
                 $q->orderBy('name');
             }])
-            ->where(['parent_id' => 0, 'active' => $active])
+            ->where(['parent_id' => 0])
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
             
@@ -524,7 +524,7 @@ class GeneralFunctions
            
             
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
-            dd(DB::getQueryLog());
+            // dd(DB::getQueryLog());
             array_unshift($services, $allserviceslug);
             return $services;
         } else {
