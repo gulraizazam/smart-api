@@ -29,7 +29,6 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
     public function collection()
     {
         $where = [];
-        $where_service = array();
 
         if($this->request->id != null || $this->request->id != ''){
             $where[] = array(['id' => $this->request->id]);
