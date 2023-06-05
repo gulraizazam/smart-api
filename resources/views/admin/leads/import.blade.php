@@ -58,7 +58,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel" onclick="cencleImport($(this));">Cancel</button>
                 <button type="button" onclick="importLead();" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
