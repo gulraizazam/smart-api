@@ -1047,6 +1047,7 @@ function applyFilters(datatable) {
             updated_by: $("#treatment_search_updated_by").val(),
             filter: 'filter',
         }
+        alert($("#treatment_search_service").val());
         if($("#treatment_search_service").val() == 13){
             resetFilters(datatable);
         }
