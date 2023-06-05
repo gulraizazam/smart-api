@@ -1059,6 +1059,14 @@ class AppointmentsController extends Controller
          */
         $filename = 'appointments';
         $filters = getFilters($request->all());
+        /* if(strpos($filters['service_id'], "bold-") != 0 && strpos($filters['service_id'], "bold-") == false){
+            $s = $filters['service_id'];
+        } else {
+            $s = substr($filters['service_id'], 5);
+        }
+
+        dd($request->all(), $s, strpos($filters['service_id'],"bold-")); */
+
         if ($request->has('sort')) {
             list($orderBy, $order) = getSortBy($request, 'appointments.created_at', 'DESC', 'appointments');
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
