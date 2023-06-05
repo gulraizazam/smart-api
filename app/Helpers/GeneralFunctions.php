@@ -510,7 +510,7 @@ class GeneralFunctions
                     return $mergedServices;
                 }
             }
-           
+           dd($where,$active);
             $query = Services::with(['children'=> function($q) use($active){
                 $q->where('active', $active);
                 $q->orderBy('name');
@@ -520,7 +520,7 @@ class GeneralFunctions
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
             
             $services = $query->get()->toArray();
-            dd($services);
+            
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
             array_unshift($services, $allserviceslug);
             return $services;
