@@ -1708,6 +1708,7 @@ class AppointmentsController extends Controller
                     } else {
                         return ApiHelper::apiResponse($this->success, 'Phone number already exist', false);
                     }
+
                     $checkLeadExistance = Leads::updateOrCreate([
                         'phone' => $appointmentData['phone'],
                         'account_id' => Auth::User()->account_id
@@ -1739,19 +1740,30 @@ class AppointmentsController extends Controller
                     Patients::where(['id' => $patient->id])->update([
                         'name' => $appointmentData['name'],
                         'gender' => $appointmentData['gender'],
-                        'referred_by' => $appointmentData['referred_by'],
+                        'referred_by' => $appointmentData['referred_by'] ?? null,
                     ]);
                 }
-                LeadsServices::updateOrCreate([
-                    'lead_id' => $lead->id,
-                    'service_id' => $appointmentData['service_id'],
-                ],[
-                    'lead_id' => $lead->id,
-                    'service_id' => $appointmentData['service_id'],
-                ]);
-                LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
-                $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->first();
-                $lead_service->update(['status' => 1]);
+
+                $lead_service_check = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->get()->pluck('service_id')->toArray();
+                if(count($lead_service_check)){
+                    $lead_service_update = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->orderby('id', 'desc')->first();
+                    LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->orderby('id', 'desc')->update([
+                        'lead_id' => $lead->id,
+                        'service_id' => $appointmentData['service_id'],
+                        'status' => 1,
+                    ]);
+                    LeadsServices::where(['lead_id' => $lead->id])->where('id', '!=', $lead_service_update->id)->update(['status' => 0]);
+                    $lead->update(['updated_at' => Carbon::now()]);
+                } else {
+                    $lead_service_update = LeadsServices::where(['lead_id' => $lead->id])->where('consultancy_id', '=', null)->orderby('id', 'desc')->first();
+                    LeadsServices::where(['lead_id' => $lead->id])->where('consultancy_id', '=', null)->orderby('id', 'desc')->update([
+                        'lead_id' => $lead->id,
+                        'service_id' => $appointmentData['service_id'],
+                        'status' => 1,
+                    ]);
+                    LeadsServices::where(['lead_id' => $lead->id])->where('id', '!=', $lead_service_update->id)->update(['status' => 0]);
+                    $lead->update(['created_at' => Carbon::now()]);
+                }
             }
             // Set Lead ID for Appointment
             $appointmentData['patient_id'] = $patient->id;
@@ -1770,7 +1782,7 @@ class AppointmentsController extends Controller
             $appointment = Appointments::create($appointmentData);
             $find_cons = Appointments::latest()->first();
             if($find_cons){
-                $lead = Leads::where(['phone' => $appointmentData['phone']])->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id, 'patient_id' => $appointmentData['patient_id'], 'created_at' => Carbon::now()]);
+                $lead = Leads::where(['phone' => $appointmentData['phone']])->orderBy('phone', 'desc')->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id, 'patient_id' => $appointmentData['patient_id']]);
                 LeadsServices::where([
                     'lead_id' => $appointmentData['lead_id'],
                     'service_id' => $find_cons->service_id,
@@ -4401,7 +4413,7 @@ class AppointmentsController extends Controller
             unset($leadObj['lead_id']);
             $leadObj['patient_id'] = $patient->id;
         } else {
-            $lead = Leads::where(['patient_id' => $request->get('patient_id')])->first();
+            $lead = Leads::where(['phone' => $request->get('phone')])->orderBy('id', 'desc')->first();
             $patientData = $appointmentData;
             if ($request->new_patient == '1') {
                 $patientData['user_type_id'] = Config::get('constants.patient_id');
@@ -4409,9 +4421,8 @@ class AppointmentsController extends Controller
             } else {
                 $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
             }
-
         }
-        $lead = Leads::where(['patient_id' => $request->get('patient_id')])->first();
+        $lead = Leads::where(['phone' => $request->get('phone')])->orderBy('id', 'desc')->first();
         $appointmentData['patient_id'] = $patient->id;
         $appointmentData['lead_id'] = $lead->id;
         $appointmentData['created_at'] = Filters::getCurrentTimeStamp();
@@ -4421,16 +4432,6 @@ class AppointmentsController extends Controller
         $find_cons = Appointments::latest()->first();
         if($find_cons){
             $parents = Services::where(['parent_id' => $find_cons->service_id])->first();
-            Leads::where(['patient_id' => $request->get('patient_id')])->update(['created_at' => Carbon::now()]);
-            $find_services = LeadsServices::updateOrCreate([
-                'lead_id' => $find_cons->lead_id,
-                'service_id' => $request->base_service_id,
-                'child_service_id' => $request->service_id,
-            ],[
-                'lead_id' => $find_cons->lead_id,
-                'service_id' => $request->base_service_id,
-                'child_service_id' => $request->service_id,
-            ]);
         }
         Appointments::where(['patient_id' => $appointmentData['patient_id']])->update(['name' => $appointmentData['name'], 'updated_at' => $appointmentData['updated_at']]);
         if ($request->new_patient == '1') {
