@@ -161,13 +161,13 @@ class Leads extends BaseModal
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
 					['phone', 'LIKE', "%{$phone}%"]
-				])->latest()->get(['name', 'id', 'phone'])->unique('phone');
+				])->orderBy('id', 'desc')->get(['name', 'id', 'phone'])->unique('phone');
 			} else {
 				return self::where([
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
 					['name', 'LIKE', "%{$name}%"]
-				])->latest()->get(['name', 'id', 'phone'])->unique('phone');
+				])->orderBy('id', 'desc')->get(['name', 'id', 'phone'])->unique('phone');
 			}
 		}
 
