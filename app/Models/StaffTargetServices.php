@@ -2,20 +2,16 @@
 
 namespace App\Models;
 
-use App\Models\AuditTrails;
-use Auth;
-
 class StaffTargetServices extends BaseModal
 {
-
     protected $fillable = [
         'account_id', 'location_id', 'staff_target_id', 'service_id',
-        'target_amount', 'target_services', 'month', 'year', 'created_at', 'updated_at', 'deleted_at'
+        'target_amount', 'target_services', 'month', 'year', 'created_at', 'updated_at', 'deleted_at',
     ];
 
     protected static $_fillable = [
         'account_id', 'location_id', 'staff_target_id', 'service_id',
-        'target_amount', 'target_services', 'month', 'year'
+        'target_amount', 'target_services', 'month', 'year',
     ];
 
     protected $table = 'staff_target_services';
@@ -49,11 +45,10 @@ class StaffTargetServices extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_id)
+    public static function createRecord($data, $parent_id)
     {
         $record = self::insert($data);
 
@@ -65,11 +60,10 @@ class StaffTargetServices extends BaseModal
     /**
      * update Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function updateRecord($data, $parent_data)
+    public static function updateRecord($data, $parent_data)
     {
         $record = self::insert($data);
 

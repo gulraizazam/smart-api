@@ -2,29 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Request;
-use App\Models\Stock;
 use Auth;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class OrderDetail extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['account_id','order_id','product_id','discount_id','quantity','sale_price','discount_price','sale_price_after_discount','order_type','reason'];
+    protected $fillable = ['account_id', 'order_id', 'product_id', 'discount_id', 'quantity', 'sale_price', 'discount_price', 'sale_price_after_discount', 'order_type', 'reason'];
 
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id,$order_id)
+    public static function createRecord($request, $account_id, $order_id)
     {
         $data = $request->all();
-        foreach($data['data'] as $order){
+        foreach ($data['data'] as $order) {
             // Set Account ID and Order ID
             $order['account_id'] = $account_id;
             $order['order_id'] = $order_id;
@@ -32,18 +28,17 @@ class OrderDetail extends BaseModal
             $stock = Stock::create($order);
             $record = self::create($order);
         }
-        
+
         return true;
     }
 
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (self::find($id))->toArray();
 
@@ -52,13 +47,12 @@ class OrderDetail extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -72,26 +66,23 @@ class OrderDetail extends BaseModal
      * Get Data
      *
      * @param (int) $id
-     *
      * @return (mixed)
      */
-    static public function getDetailData($id) {
+    public static function getDetailData($id)
+    {
 
-        return self::with('product','discount')->where([
-            ['order_id','=',$id],
-            ['account_id','=',Auth::user()->account_id]
+        return self::with('product', 'discount')->where([
+            ['order_id', '=', $id],
+            ['account_id', '=', Auth::user()->account_id],
         ])->get();
     }
 
-    /**
-     * 
-     */
+    public static function refund($id, $new_order_id)
+    {
 
-    static public function refund($id,$new_order_id){
-
-        $old_orders_detail=self::where('order_id',$id)->get();
-        foreach($old_orders_detail as $order_detail){
-            $new_order_detail = array();
+        $old_orders_detail = self::where('order_id', $id)->get();
+        foreach ($old_orders_detail as $order_detail) {
+            $new_order_detail = [];
             $new_order_detail['account_id'] = $order_detail->account_id;
             $new_order_detail['order_id'] = $new_order_id;
             $new_order_detail['product_id'] = $order_detail->product_id;
@@ -107,17 +98,18 @@ class OrderDetail extends BaseModal
             $stock = Stock::create($new_order_detail);
         }
     }
-    /** Get the patients of order.
-    */
-   public function product()
-   {
-       return $this->belongsTo(Product::class,'product_id');
-   }
 
    /** Get the patients of order.
     */
+   public function product()
+   {
+       return $this->belongsTo(Product::class, 'product_id');
+   }
+
+    /** Get the patients of order.
+     */
     public function discount()
     {
-        return $this->belongsTo(Discounts::class,'discount_id');
+        return $this->belongsTo(Discounts::class, 'discount_id');
     }
 }

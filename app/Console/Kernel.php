@@ -19,7 +19,6 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-
     /**
      * The Artisan commands provided by your application.
      *
@@ -33,8 +32,8 @@ class Kernel extends ConsoleKernel
         DeliverOnAppointmentBook::class,
 
         /**
-        * MySQL daily backup command
-        */
+         * MySQL daily backup command
+         */
         MySQLDump::class,
         MySQLDumpRemover::class,
         MoveBackup::class,
@@ -52,7 +51,6 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
      * @return void
      */
     protected function schedule(Schedule $schedule)
@@ -101,7 +99,6 @@ class Kernel extends ConsoleKernel
          */
         $schedule->command('db:backup-old-remove')
             ->dailyAt('23:55')->timezone($timeZone);
-
 
         /*
          * Inactive all the discounts which has previous day equals to the end date of the discount

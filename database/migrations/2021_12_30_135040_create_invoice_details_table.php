@@ -36,7 +36,6 @@ class CreateInvoiceDetailsTable extends Migration
             $table->double('tax_including_price', 11, 2)->default(0.00);
             $table->unsignedTinyInteger('is_exclusive')->nullable();
 
-
             $table->timestamps();
             $table->softDeletes();
 

@@ -3,16 +3,14 @@
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\AuditTrails;
 use Auth;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Documents extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'url', 'active', 'user_id', 'created_at','updated_at','deleted_at'];
+    protected $fillable = ['name', 'url', 'active', 'user_id', 'created_at', 'updated_at', 'deleted_at'];
 
     protected static $_fillable = ['name', 'url', 'active', 'user_id'];
 
@@ -27,7 +25,8 @@ class Documents extends BaseModal
      *
      * @return record
      */
-    static public function CreateRecord($request, $path, $id){
+    public static function CreateRecord($request, $path, $id)
+    {
 
         $data['name'] = $request->name ?? '';
         $data['url'] = $path;
@@ -43,11 +42,10 @@ class Documents extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (Documents::find($id))->toArray();
 
@@ -57,7 +55,7 @@ class Documents extends BaseModal
             'id' => $id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -72,14 +70,14 @@ class Documents extends BaseModal
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function DeleteRecord($id)
+    public static function DeleteRecord($id)
     {
         $document = Documents::find($id);
-        if (!$document) {
+        if (! $document) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.patients.document', ['id' => $document->user_id]);
         }
         $record = $document->delete();
@@ -91,18 +89,18 @@ class Documents extends BaseModal
         return $record;
 
     }
+
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords($request, $account_id = false,$id , $apply_filter = false, $filename )
+    public static function getTotalRecords($request, $account_id, $id, $apply_filter, $filename)
     {
 
-        $where = self::filters_documents( $request,$account_id,$id, $apply_filter , $filename );
+        $where = self::filters_documents($request, $account_id, $id, $apply_filter, $filename);
 
         if (count($where)) {
             return self::where($where)->count();
@@ -114,117 +112,115 @@ class Documents extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords($id,$request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false, $filename )
+    public static function getRecords($id, $request, $iDisplayStart, $iDisplayLength, $account_id, $apply_filter, $filename)
     {
-        $where = self::filters_documents( $request, $account_id, $id, $apply_filter, $filename );
+        $where = self::filters_documents($request, $account_id, $id, $apply_filter, $filename);
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         if (count($where)) {
-            return self::with('patient')->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+            return self::with('patient')->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
         } else {
-            return self::with('patient')->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+            return self::with('patient')->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
         }
     }
 
-    static public function filters_documents( $request, $account_id, $id, $apply_filter, $filename )
+    public static function filters_documents($request, $account_id, $id, $apply_filter, $filename)
     {
-        $where = array();
+        $where = [];
         $filters = getFilters($request->all());
 
-        if ($id != false )
-        {
-            $where[] = array(
+        if ($id != false) {
+            $where[] = [
                 'user_id',
                 '=',
-                $id
-            );
-            Filters::put(Auth::user()->id , $filename, 'id', $id);
+                $id,
+            ];
+            Filters::put(Auth::user()->id, $filename, 'id', $id);
         } else {
-            if ($apply_filter){
+            if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'id');
             } else {
-                if (Filters::get(Auth::user()->id, $filename, 'id')){
-                    $where[] = array(
+                if (Filters::get(Auth::user()->id, $filename, 'id')) {
+                    $where[] = [
                         'user_id',
                         '=',
-                        Filters::get(Auth::user()->id,$filename, 'id')
-                    );
+                        Filters::get(Auth::user()->id, $filename, 'id'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
         } else {
-            if ($apply_filter){
-                Filters::forget(Auth::user()->id, $filename , 'name');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, $filename, 'name');
             } else {
-                if (Filters::get(Auth::user()->id, $filename, 'name' )){
-                    $where[] = array(
+                if (Filters::get(Auth::user()->id, $filename, 'name')) {
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::user()->id, $filename, 'name').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
-            Filters::put(Auth::user()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
+                $filters['created_from'].' 00:00:00',
+            ];
+            Filters::put(Auth::user()->id, $filename, 'created_from', $filters['created_from'].' 00:00:00');
         } else {
-            if ($apply_filter){
+            if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'created_from');
             } else {
-                if (Filters::get(Auth::user()->id, $filename, 'created_from')){
-                    $where[] = array(
+                if (Filters::get(Auth::user()->id, $filename, 'created_from')) {
+                    $where[] = [
                         'created_at',
                         '>=',
-                        Filters::get(Auth::user()->id, $filename, 'created_from')
-                    );
+                        Filters::get(Auth::user()->id, $filename, 'created_from'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
-            Filters::put(Auth::user()->id , $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
+                $filters['created_to'].' 23:59:59',
+            ];
+            Filters::put(Auth::user()->id, $filename, 'created_to', $filters['created_to'].' 23:59:59');
         } else {
-            if ($apply_filter){
-                Filters::forget(Auth::user()->id, $filename , 'created_to');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, $filename, 'created_to');
             } else {
-                if (Filters::get(Auth::user()->id, $filename, 'created_to')){
-                    $where[] = array(
+                if (Filters::get(Auth::user()->id, $filename, 'created_to')) {
+                    $where[] = [
                         'created_at',
                         '<=',
-                        Filters::get(Auth::user()->id, $filename, 'created_to')
-                    );
+                        Filters::get(Auth::user()->id, $filename, 'created_to'),
+                    ];
                 }
             }
         }
 
-        return $where ;
+        return $where;
     }
 
     public function patient()

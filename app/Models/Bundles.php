@@ -3,13 +3,10 @@
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Models\AuditTrails;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-
 
 class Bundles extends BaseModal
 {
@@ -24,7 +21,7 @@ class Bundles extends BaseModal
     protected static $_table = 'bundles';
 
     protected $casts = [
-        'created_at' => 'datetime:F d,Y h:i A'
+        'created_at' => 'datetime:F d,Y h:i A',
     ];
 
     /**
@@ -78,10 +75,10 @@ class Bundles extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($bundleId = false, $get_all = false)
+    public static function getActiveSorted($bundleId = false, $get_all = false)
     {
-        if ($bundleId && !is_array($bundleId)) {
-            $bundleId = array($bundleId);
+        if ($bundleId && ! is_array($bundleId)) {
+            $bundleId = [$bundleId];
         }
         if ($bundleId) {
             return self::where(['active' => 1, 'type' => 'multiple'])->whereIn('id', $bundleId)->where('account_id', '=', Auth::User()->account_id)->get()->pluck('name', 'id');
@@ -93,41 +90,40 @@ class Bundles extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveOnly($bundleId = false)
+    public static function getActiveOnly($bundleId = false)
     {
-        if ($bundleId && !is_array($bundleId)) {
-            $bundleId = array($bundleId);
+        if ($bundleId && ! is_array($bundleId)) {
+            $bundleId = [$bundleId];
         }
         $query = self::where(['active' => 1]);
         if ($bundleId) {
             $query->whereIn('id', $bundleId);
         }
+
         return $query->OrderBy('sort_number', 'asc')->get();
     }
 
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
 
         $where = self::bundles_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_packages')) {
                 return self::where($where)->count();
-            }else{
-                return self::where($where)->where('active',1)->count();
+            } else {
+                return self::where($where)->where('active', 1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_packages')) {
                 return self::count();
-            }else{
-                return self::where('active',1)->count();
+            } else {
+                return self::where('active', 1)->count();
             }
         }
     }
@@ -135,170 +131,168 @@ class Bundles extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         $where = self::bundles_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_packages')) {
                 return self::where($where)
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderBy($orderBy, $order)
                     ->get();
-            }else{
+            } else {
                 return self::where($where)
-                ->where('active',1)
+                    ->where('active', 1)
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderBy($orderBy, $order)
                     ->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_packages")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_packages')) {
                 return self::limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderBy($orderBy, $order)
-                ->get();
-            }else{
-                return self::where('active',1)->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderBy($orderBy, $order)
-                ->get();
+                    ->offset($iDisplayStart)
+                    ->orderBy($orderBy, $order)
+                    ->get();
+            } else {
+                return self::where('active', 1)->limit($iDisplayLength)
+                    ->offset($iDisplayStart)
+                    ->orderBy($orderBy, $order)
+                    ->get();
             }
         }
     }
 
-    static public function bundles_filters($request, $account_id, $apply_filter)
+    public static function bundles_filters($request, $account_id, $apply_filter)
     {
-        $where = array();
+        $where = [];
         $filters = getFilters($request->all());
-        $where[] = array(
+        $where[] = [
             'type',
             '!=',
-            'single'
-        );
+            'single',
+        ];
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'bundles', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'bundles', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'bundles', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'bundles', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'bundles', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'bundles', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'bundles', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'bundles', 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'bundles', 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'bundles', 'name').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'price')) {
-            $where[] = array(
+            $where[] = [
                 'price',
                 '=',
-                $filters['price']
-            );
+                $filters['price'],
+            ];
             Filters::put(Auth::User()->id, 'bundles', 'price', $filters['price']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'bundles', 'price');
             } else {
                 if (Filters::get(Auth::User()->id, 'bundles', 'price')) {
-                    $where[] = array(
+                    $where[] = [
                         'price',
                         '=',
-                        Filters::get(Auth::User()->id, 'bundles', 'price')
-                    );
+                        Filters::get(Auth::User()->id, 'bundles', 'price'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'total_services')) {
-            $where[] = array(
+            $where[] = [
                 'total_services',
                 '=',
-                $filters['total_services']
-            );
+                $filters['total_services'],
+            ];
             Filters::put(Auth::User()->id, 'bundles', 'total_services', $filters['total_services']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'bundles', 'total_services');
             } else {
                 if (Filters::get(Auth::User()->id, 'bundles', 'total_services')) {
-                    $where[] = array(
+                    $where[] = [
                         'total_services',
                         '=',
-                        Filters::get(Auth::User()->id, 'bundles', 'total_services')
-                    );
+                        Filters::get(Auth::User()->id, 'bundles', 'total_services'),
+                    ];
                 }
             }
         }
 
-        if (hasFilter($filters, 'apply_discount') || ( isset($filters ['apply_discount']) && ($filters['apply_discount'] == 0 || $filters['apply_discount'] == 1))) {
-            $where[] = array(
+        if (hasFilter($filters, 'apply_discount') || (isset($filters['apply_discount']) && ($filters['apply_discount'] == 0 || $filters['apply_discount'] == 1))) {
+            $where[] = [
                 'apply_discount',
                 '=',
-                $filters['apply_discount']
-            );
+                $filters['apply_discount'],
+            ];
             Filters::put(Auth::User()->id, 'bundles', 'apply_discount', $filters['apply_discount']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'bundles', 'apply_discount');
             } else {
                 if (Filters::get(Auth::User()->id, 'bundles', 'apply_discount')) {
-                    $where[] = array(
+                    $where[] = [
                         'apply_discount',
                         '=',
-                        Filters::get(Auth::User()->id, 'bundles', 'apply_discount')
-                    );
+                        Filters::get(Auth::User()->id, 'bundles', 'apply_discount'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_from')) {
             $created_from = Carbon::createFromFormat('m/d/Y', $filters['created_from'])->startOfDay()->toDateTimeString();
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '>=',
-                $created_from
-            );
+                $created_from,
+            ];
             Filters::put(Auth::User()->id, 'bundles', 'created_from', $filters['created_from']);
         } else {
             if ($apply_filter) {
@@ -306,22 +300,22 @@ class Bundles extends BaseModal
             } else {
                 if (Filters::get(Auth::User()->id, 'bundles', 'created_from')) {
                     $created_from = Carbon::createFromFormat('m/d/Y', Filters::get(Auth::User()->id, 'bundles', 'created_from'))->startOfDay()->toDateTimeString();
-                    $where[] = array(
+                    $where[] = [
                         'created_at',
                         '>=',
-                        $created_from
-                    );
+                        $created_from,
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_to')) {
             $created_to = Carbon::createFromFormat('m/d/Y', $filters['created_to'])->endOfDay()->toDateTimeString();
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '<=',
-                $created_to
-            );
+                $created_to,
+            ];
             Filters::put(Auth::User()->id, 'bundles', 'created_to', $filters['created_to']);
         } else {
             if ($apply_filter) {
@@ -329,61 +323,61 @@ class Bundles extends BaseModal
             } else {
                 if (Filters::get(Auth::User()->id, 'bundles', 'created_to')) {
                     $created_to = Carbon::createFromFormat('m/d/Y', Filters::get(Auth::User()->id, 'bundles', 'created_to'))->endOfDay()->toDateTimeString();
-                    $where[] = array(
+                    $where[] = [
                         'created_at',
                         '<=',
-                        $created_to
-                    );
+                        $created_to,
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'startdate')) {
-            $where[] = array(
+            $where[] = [
                 'start',
                 '>=',
-                $filters['startdate']
-            );
+                $filters['startdate'],
+            ];
             Filters::put(Auth::user()->id, 'bundles', 'start', $filters['startdate']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'bundles', 'start');
             } else {
                 if (Filters::get(Auth::user()->id, 'bundles', 'start')) {
-                    $where[] = array(
+                    $where[] = [
                         'start',
                         '>=',
-                        Filters::get(Auth::user()->id, 'bundles', 'start')
-                    );
+                        Filters::get(Auth::user()->id, 'bundles', 'start'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'enddate')) {
-            $where[] = array(
+            $where[] = [
                 'end',
                 '<=',
-                $filters['enddate']
-            );
+                $filters['enddate'],
+            ];
             Filters::put(Auth::user()->id, 'bundles', 'end', $filters['enddate']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'bundles', 'end');
             } else {
                 if (Filters::get(Auth::user()->id, 'bundles', 'end') != null) {
-                    $where[] = array(
+                    $where[] = [
                         'end',
                         '<=',
-                        Filters::get(Auth::user()->id, 'bundles', 'end')
-                    );
+                        Filters::get(Auth::user()->id, 'bundles', 'end'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'bundles', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -391,11 +385,11 @@ class Bundles extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'bundles', 'status') == 0 || Filters::get(Auth::user()->id, 'bundles', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'bundles', 'status') != null) {
-                        $where[] = array(
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get(Auth::user()->id, 'bundles', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'bundles', 'status'),
+                        ];
                     }
                 }
             }
@@ -410,13 +404,12 @@ class Bundles extends BaseModal
      * @param (array) $services
      * @param (double) $services_price
      * @param (double) $price
-     *
      * @return (array) $services
      */
-    static function calculatePrices($services, $services_price, $price)
+    public static function calculatePrices($services, $services_price, $price)
     {
 
-        $calculated_services = array();
+        $calculated_services = [];
 
         /*
          * Case 1: $services_price is greater than $price
@@ -425,7 +418,7 @@ class Bundles extends BaseModal
             foreach ($services as $key => $service) {
                 $services[$key]['calculated_price'] = $services[$key]['service_price'];
             }
-        } else if ($services_price > $price) {
+        } elseif ($services_price > $price) {
             $ratio = (1 - round(($price / $services_price), 8));
             foreach ($services as $key => $service) {
                 $services[$key]['calculated_price'] = round($services[$key]['service_price'] - ($services[$key]['service_price'] * $ratio), 2);
@@ -443,11 +436,10 @@ class Bundles extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
         $data = $request->all();
 
@@ -455,9 +447,9 @@ class Bundles extends BaseModal
         $data['account_id'] = $account_id;
         $data['type'] = 'multiple';
 
-        if (!isset($data['apply_discount'])) {
+        if (! isset($data['apply_discount'])) {
             $data['apply_discount'] = 0;
-        } else if ($data['apply_discount'] == '') {
+        } elseif ($data['apply_discount'] == '') {
             $data['apply_discount'] = 0;
         }
 
@@ -479,29 +471,29 @@ class Bundles extends BaseModal
             $services = Services::whereIn('id', $data['service_id'])->where(['account_id' => $account_id])->get()->getDictionary();
 
             // Calculate New Service Prices
-            $services_calculation = array();
+            $services_calculation = [];
             foreach ($data['service_id'] as $key => $service_id) {
                 if (array_key_exists($service_id, $services)) {
-                    $services_calculation[$key] = array(
+                    $services_calculation[$key] = [
                         'service_id' => $service_id,
                         'service_price' => $data['service_price'][$key],
                         'calculated_price' => 0.00,
-                    );
+                    ];
                 }
             }
             $calculated_services = self::calculatePrices($services_calculation, $data['services_price'], $data['price']);
 
             foreach ($data['service_id'] as $key => $service_id) {
                 if (array_key_exists($service_id, $services)) {
-                    BundleHasServices::createRecord(array(
+                    BundleHasServices::createRecord([
                         'bundle_id' => $record->id,
                         'service_id' => $service_id,
                         'service_price' => $calculated_services[$key]['service_price'],
                         'calculated_price' => $calculated_services[$key]['calculated_price'],
                         'end_node' => $services[$service_id]->end_node,
-                    ), $record->id);
+                    ], $record->id);
 
-                    BundleServicesPriceHistory::createRecord(array(
+                    BundleServicesPriceHistory::createRecord([
                         'bundle_id' => $record->id,
                         'bundle_price' => $record->price,
                         'service_id' => $service_id,
@@ -510,7 +502,7 @@ class Bundles extends BaseModal
                         'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
                         'created_by' => Auth::User()->id,
                         'updated_by' => Auth::User()->id,
-                    ), $account_id);
+                    ], $account_id);
                 }
             }
         }
@@ -522,14 +514,13 @@ class Bundles extends BaseModal
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function DeleteRecord($id)
+    public static function DeleteRecord($id)
     {
         $bundle = Bundles::getData($id);
 
-        if (!$bundle) {
+        if (! $bundle) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
 
@@ -555,17 +546,17 @@ class Bundles extends BaseModal
      * inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
         $bundle = Bundles::getData($id);
-        if (!$bundle) {
+        if (! $bundle) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $bundle->update(['active' => 0]);
         AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
@@ -573,28 +564,27 @@ class Bundles extends BaseModal
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static function activeRecord($id)
+    public static function activeRecord($id)
     {
         $bundle = Bundles::getData($id);
-        if (!$bundle) {
+        if (! $bundle) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $bundle->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (Bundles::find($id))->toArray();
 
@@ -603,9 +593,9 @@ class Bundles extends BaseModal
         $data['account_id'] = $account_id;
         $data['type'] = 'multiple';
 
-        if (!isset($data['apply_discount'])) {
+        if (! isset($data['apply_discount'])) {
             $data['apply_discount'] = 0;
-        } else if ($data['apply_discount'] == '') {
+        } elseif ($data['apply_discount'] == '') {
             $data['apply_discount'] = 0;
         }
 
@@ -620,10 +610,10 @@ class Bundles extends BaseModal
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -637,49 +627,49 @@ class Bundles extends BaseModal
         // Deactivate Previous Price History
         BundleServicesPriceHistory::where(['bundle_id' => $record->id])
             ->whereNull('effective_to')
-            ->update(array(
+            ->update([
                 'effective_to' => Carbon::now()->format('Y-m-d'),
                 'active' => 0,
                 'updated_by' => Auth::User()->id,
-            ));
+            ]);
 
         // Create New Bundle Services
         if (is_array($data['service_id']) && count($data['service_id'])) {
             $services = Services::whereIn('id', $data['service_id'])->where(['account_id' => $account_id])->get()->getDictionary();
 
             // Calculate New Service Prices
-            $services_calculation = array();
+            $services_calculation = [];
             foreach ($data['service_id'] as $key => $service_id) {
                 if (array_key_exists($service_id, $services)) {
-                    $services_calculation[$key] = array(
+                    $services_calculation[$key] = [
                         'service_id' => $service_id,
                         'service_price' => $data['service_price'][$key],
                         'calculated_price' => 0.00,
-                    );
+                    ];
                 }
             }
             $calculated_services = self::calculatePrices($services_calculation, $data['services_price'], $data['price']);
 
             foreach ($data['service_id'] as $key => $service_id) {
                 if (array_key_exists($service_id, $services)) {
-                    BundleHasServices::createRecord(array(
+                    BundleHasServices::createRecord([
                         'bundle_id' => $record->id,
                         'service_id' => $service_id,
                         'service_price' => $calculated_services[$key]['service_price'],
                         'calculated_price' => $calculated_services[$key]['calculated_price'],
                         'end_node' => $services[$service_id]->end_node,
-                    ), $record->id);
+                    ], $record->id);
 
-                    BundleServicesPriceHistory::createRecord(array(
+                    BundleServicesPriceHistory::createRecord([
                         'bundle_id' => $record->id,
                         'bundle_price' => $record->price,
                         'service_id' => $service_id,
-//                        'service_price' => $data['service_price'][$key],
+                        //                        'service_price' => $data['service_price'][$key],
                         'service_price' => $calculated_services[$key]['calculated_price'],
                         'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
                         'created_by' => Auth::User()->id,
                         'updated_by' => Auth::User()->id,
-                    ), $account_id);
+                    ], $account_id);
                 }
             }
         }
@@ -691,28 +681,27 @@ class Bundles extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
-//        if (
-//            Cities::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
-//            Locations::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
-//            Leads::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
-//            Appointments::where(['bundle_id' => $id, 'account_id' => $account_id])->count()
-//        ) {
-//            return true;
-//        }
+        //        if (
+        //            Cities::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
+        //            Locations::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
+        //            Leads::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
+        //            Appointments::where(['bundle_id' => $id, 'account_id' => $account_id])->count()
+        //        ) {
+        //            return true;
+        //        }
 
         return false;
     }
 
-    static public function getBundles()
+    public static function getBundles()
     {
 
         $date = Carbon::now();
+
         return self::where([
             ['start', '<=', $date],
             ['end', '>=', $date],

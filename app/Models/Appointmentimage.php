@@ -2,12 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\GeneralFunctions;
 
 class Appointmentimage extends BaseModal
 {
@@ -21,50 +18,48 @@ class Appointmentimage extends BaseModal
 
     protected static $_table = 'appointmentimages';
 
-
     public function appointment()
     {
         return $this->belongsTo(Appointments::class);
     }
+
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false,$id = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $id = false)
     {
-        $where = array();
+        $where = [];
 
-        if($id != false){
-            $where[] = array(
+        if ($id != false) {
+            $where[] = [
                 'appointment_id',
                 '=',
-                $id
-            );
+                $id,
+            ];
         }
         if ($request->get('type')) {
-            $where[] = array(
+            $where[] = [
                 'type',
                 '=',
-                $request->get('type')
-            );
+                $request->get('type'),
+            ];
         }
         if ($request->get('created_from') && $request->get('created_from') != '') {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
-            );
+                $request->get('created_from').' 00:00:00',
+            ];
         }
         if ($request->get('created_to') && $request->get('created_to') != '') {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
-            );
+                $request->get('created_to').' 23:59:59',
+            ];
         }
         if (count($where)) {
             return self::where($where)->count();
@@ -76,61 +71,59 @@ class Appointmentimage extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false)
     {
-        $where = array();
+        $where = [];
 
         $filters = getFilters($request->all());
 
-        if($id != false){
-            $where[] = array(
+        if ($id != false) {
+            $where[] = [
                 'appointment_id',
                 '=',
-                $id
-            );
+                $id,
+            ];
         }
         if (hasFilter($filters, 'type')) {
-            $where[] = array(
+            $where[] = [
                 'type',
                 '=',
-                $filters['type']
-            );
+                $filters['type'],
+            ];
         }
         if (hasFilter($filters, 'id')) {
-            $where[] = array(
+            $where[] = [
                 'id',
                 'like',
-                '%' . $filters['id'] . '%'
-            );
+                '%'.$filters['id'].'%',
+            ];
         }
         if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
+                $filters['created_from'].' 00:00:00',
+            ];
         }
         if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
+                $filters['created_to'].' 23:59:59',
+            ];
         }
 
-        list($orderBy, $order) = getSortBy($request, 'id');
+        [$orderBy, $order] = getSortBy($request, 'id');
 
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
         }
     }
 
@@ -138,19 +131,17 @@ class Appointmentimage extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
-//        if (
-//            Locations::where(['city_id' => $id, 'account_id' => $account_id])->count() ||
-//            Leads::where(['city_id' => $id, 'account_id' => $account_id])->count() ||
-//            Appointments::where(['city_id' => $id, 'account_id' => $account_id])->count()
-//        ) {
-//            return true;
-//        }
+        //        if (
+        //            Locations::where(['city_id' => $id, 'account_id' => $account_id])->count() ||
+        //            Leads::where(['city_id' => $id, 'account_id' => $account_id])->count() ||
+        //            Appointments::where(['city_id' => $id, 'account_id' => $account_id])->count()
+        //        ) {
+        //            return true;
+        //        }
 
         return false;
     }
@@ -159,14 +150,13 @@ class Appointmentimage extends BaseModal
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function DeleteRecord($id)
+    public static function DeleteRecord($id)
     {
         $appointmentimage = Appointmentimage::find($id);
 
-        if (!$appointmentimage) {
+        if (! $appointmentimage) {
 
             return [
                 'status' => false,
@@ -200,18 +190,16 @@ class Appointmentimage extends BaseModal
      * Create Record
      *
      * @param \$data
-     *
      * @return (mixed)
      */
-    static public function createRecord($data,$id)
+    public static function createRecord($data, $id)
     {
         $record = self::create($data);
 
         //log request for Create for Audit Trail
 
-        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable,$record,$id);
+        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $id);
 
         return $record;
     }
-
 }

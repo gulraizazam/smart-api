@@ -2,32 +2,33 @@
 
 namespace App\Models;
 
+use App\Helpers\Filters;
+use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\Filters;
 
 class PaymentModes extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['account_id', 'name','type','active', 'payment_type', 'created_at', 'updated_at','sort_number'];
+    protected $fillable = ['account_id', 'name', 'type', 'active', 'payment_type', 'created_at', 'updated_at', 'sort_number'];
 
-    protected static $_fillable = ['name','type', 'active', 'payment_type'];
+    protected static $_fillable = ['name', 'type', 'active', 'payment_type'];
 
     protected $table = 'payment_modes';
 
     protected static $_table = 'payment_modes';
 
-    public function scopeActive($query, $active = 1) {
+    public function scopeActive($query, $active = 1)
+    {
         $query->where('active', $active);
     }
 
     /**
      * Get the package advaances.
      */
-    public function packageadvance(){
+    public function packageadvance()
+    {
 
         return $this->hasMany('App\Models\PackageAdvances', 'payment_mode_id');
     }
@@ -35,66 +36,66 @@ class PaymentModes extends BaseModal
     /*Relation for audit trail*/
     public function audit_field_before()
     {
-        return $this->hasMany('App\Models\AuditTrailChanges','field_before');
+        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
     }
+
     public function audit_field_after()
     {
-        return $this->hasMany('App\Models\AuditTrailChanges','field_after');
+        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
     }
     /*end*/
 
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($cityId = false)
+    public static function getActiveSorted($cityId = false)
     {
-        if($cityId && !is_array($cityId)) {
-            $cityId = array($cityId);
+        if ($cityId && ! is_array($cityId)) {
+            $cityId = [$cityId];
         }
-        if($cityId) {
-            return self::whereIn('id',$cityId)->get()->pluck('name','id');
+        if ($cityId) {
+            return self::whereIn('id', $cityId)->get()->pluck('name', 'id');
         } else {
-            return self::get()->pluck('name','id');
+            return self::get()->pluck('name', 'id');
         }
     }
 
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveOnly($cityId = false)
+    public static function getActiveOnly($cityId = false)
     {
-        if($cityId && !is_array($cityId)) {
-            $cityId = array($cityId);
+        if ($cityId && ! is_array($cityId)) {
+            $cityId = [$cityId];
         }
         $query = self::where(['active' => 1]);
-        if($cityId) {
-            $query->whereIn('id',$cityId);
+        if ($cityId) {
+            $query->whereIn('id', $cityId);
         }
-        return $query->OrderBy('sort_number','asc')->get();
+
+        return $query->OrderBy('sort_number', 'asc')->get();
     }
 
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::payment_modes_filters($request, $account_id, $apply_filter);
-        if(count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_paymentmodes")){
+        $where = self::payment_modes_filters($request, $account_id, $apply_filter);
+        if (count($where)) {
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_paymentmodes')) {
                 return self::where($where)->count();
-            }else{
-                return self::where($where)->where('active',1)->count();
+            } else {
+                return self::where($where)->where('active', 1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_paymentmodes")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_paymentmodes')) {
                 return self::count();
-            }else{
-                return self::where('active',1)->count();
+            } else {
+                return self::where('active', 1)->count();
             }
         }
     }
@@ -102,28 +103,26 @@ class PaymentModes extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::payment_modes_filters($request, $account_id, $apply_filter);
 
-        if(count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_paymentmodes")){
+        if (count($where)) {
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_paymentmodes')) {
                 return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
-            }else{
-                return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
+            } else {
+                return self::where($where)->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_paymentmodes")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_paymentmodes')) {
                 return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
-            }else{
-                return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
+            } else {
+                return self::where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }
         }
     }
@@ -131,114 +130,114 @@ class PaymentModes extends BaseModal
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $account_id Current Organization's ID
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function payment_modes_filters($request, $account_id, $apply_filter)
+    public static function payment_modes_filters($request, $account_id, $apply_filter)
     {
-        $where = array();
+        $where = [];
         $filters = getFilters($request->all());
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'payment_modes', 'account_id', $account_id);
-        }  else {
+        } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'payment_modes', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'payment_modes', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'payment_modes', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'payment_modes', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'payment_modes', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'payment_modes', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'payment_modes', 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'payment_modes', 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'payment_modes', 'name').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'payment_type')) {
-            $where[] = array(
+            $where[] = [
                 'payment_type',
                 '=',
-                $filters['payment_type']
-            );
+                $filters['payment_type'],
+            ];
             Filters::put(Auth::User()->id, 'payment_modes', 'payment_type', $filters['payment_type']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'payment_modes', 'payment_type');
             } else {
                 if (Filters::get(Auth::User()->id, 'payment_modes', 'payment_type')) {
-                    $where[] = array(
+                    $where[] = [
                         'payment_type',
                         '=',
-                        Filters::get(Auth::User()->id, 'payment_modes', 'payment_type')
-                    );
+                        Filters::get(Auth::User()->id, 'payment_modes', 'payment_type'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'type')) {
-            $where[] = array(
+            $where[] = [
                 'type',
                 '=',
-                $filters['type']
-            );
+                $filters['type'],
+            ];
             Filters::put(Auth::User()->id, 'payment_modes', 'type', $filters['type']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'payment_modes', 'type');
             } else {
                 if (Filters::get(Auth::User()->id, 'payment_modes', 'type')) {
-                    $where[] = array(
+                    $where[] = [
                         'type',
                         '=',
-                        Filters::get(Auth::User()->id, 'payment_modes', 'type')
-                    );
+                        Filters::get(Auth::User()->id, 'payment_modes', 'type'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'payment_modes', 'status', $filters['status']);
         } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, 'payment_modes', 'status');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'payment_modes', 'status');
             } else {
-                if ( Filters::get(Auth::user()->id, 'payment_modes', 'status') == 0 || Filters::get(Auth::user()->id, 'payment_modes', 'status') == 1){
-                    if ( Filters::get(Auth::user()->id, 'payment_modes', 'status') != null ){
-                        $where[] = array(
+                if (Filters::get(Auth::user()->id, 'payment_modes', 'status') == 0 || Filters::get(Auth::user()->id, 'payment_modes', 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, 'payment_modes', 'status') != null) {
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get( Auth::user()->id, 'payment_modes', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'payment_modes', 'status'),
+                        ];
                     }
                 }
             }
@@ -251,10 +250,9 @@ class PaymentModes extends BaseModal
      * Get All Records
      *
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
@@ -262,11 +260,10 @@ class PaymentModes extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
 
         $data = $request->all();
@@ -286,50 +283,49 @@ class PaymentModes extends BaseModal
     /**
      * Inactive Record
      *
-     * @param $id
      *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
         $payment_mode = PaymentModes::getData($id);
-        if (!$payment_mode) {
+        if (! $payment_mode) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $payment_mode->update(['active' => 0]);
         AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
      * active Record
      *
-     * @param $id
      *
      * @return (mixed)
      */
-    static public function activeRecord($id)
+    public static function activeRecord($id)
     {
         $payment_mode = PaymentModes::getData($id);
-        if (!$payment_mode) {
+        if (! $payment_mode) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $payment_mode->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
     /**
      * Delete Record
      *
-     * @param $id
      *
      * @return (mixed)
      */
-    static public function deleteRecord($id)
+    public static function deleteRecord($id)
     {
         $payment_mode = PaymentModes::getData($id);
-        if (!$payment_mode) {
+        if (! $payment_mode) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
@@ -338,17 +334,17 @@ class PaymentModes extends BaseModal
         }
         $record = $payment_mode->delete();
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (PaymentModes::find($id))->toArray();
 
@@ -357,19 +353,18 @@ class PaymentModes extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if(!isset($data['payment_type'])) {
+        if (! isset($data['payment_type'])) {
             $data['payment_type'] = 0;
-        } else if($data['payment_type'] == '') {
+        } elseif ($data['payment_type'] == '') {
             $data['payment_type'] = 0;
         }
 
-
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if(!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -384,11 +379,9 @@ class PaymentModes extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         return false;
     }

@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Seeder;
 use App\Models\SMSTemplates;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Config;
 
 class PlanSMSTemplatesSeed extends Seeder

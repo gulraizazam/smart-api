@@ -2,13 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Helpers\Filters;
+use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\Filters;
-
 
 class Settings extends BaseModal
 {
@@ -25,14 +22,12 @@ class Settings extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter)
+    public static function getTotalRecords(Request $request, $account_id, $apply_filter)
     {
-        $where = Self::settings_filters($request, $account_id, $apply_filter);
+        $where = self::settings_filters($request, $account_id, $apply_filter);
         if (count($where)) {
             return self::where($where)->count();
         } else {
@@ -43,96 +38,96 @@ class Settings extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::settings_filters($request, $account_id, $apply_filter);
-        list($orderBy, $order) = getSortBy($request);
-        return self::when(count($where), fn($q) => $q->where($where))
+        [$orderBy, $order] = getSortBy($request);
+
+        return self::when(count($where), fn ($q) => $q->where($where))
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
-            ->orderBy($orderBy,$order)
+            ->orderBy($orderBy, $order)
             ->get();
     }
 
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $account_id Current Organization's ID
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function settings_filters($request, $account_id, $apply_filter)
+    public static function settings_filters($request, $account_id, $apply_filter)
     {
-        $where = array();
+        $where = [];
         $filters = getFilters($request->all());
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'settings', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'settings', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'settings', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'settings', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'settings', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'settings', 'setting_name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'settings', 'setting_name');
             } else {
                 if (Filters::get(Auth::User()->id, 'settings', 'setting_name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'settings', 'setting_name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'settings', 'setting_name').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'data')) {
-            $where[] = array(
+            $where[] = [
                 'data',
                 'like',
-                '%' . $filters['data'] . '%'
-            );
+                '%'.$filters['data'].'%',
+            ];
             Filters::put(Auth::User()->id, 'settings', 'setting_data', $filters['data']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'settings', 'setting_data');
             } else {
                 if (Filters::get(Auth::User()->id, 'settings', 'setting_data')) {
-                    $where[] = array(
+                    $where[] = [
                         'data',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'settings', 'setting_data') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'settings', 'setting_data').'%',
+                    ];
                 }
             }
         }
+
         return $where;
     }
 
@@ -140,10 +135,9 @@ class Settings extends BaseModal
      * Get All Records
      *
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
@@ -151,11 +145,10 @@ class Settings extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
 
         $data = $request->all();
@@ -173,13 +166,12 @@ class Settings extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
-        
+
         $old_data = (Settings::find($id))->toArray();
 
         $data = $request->all();
@@ -187,49 +179,48 @@ class Settings extends BaseModal
         $data['account_id'] = $account_id;
 
         if ($old_data['slug'] == 'sys-discounts') {
-            $range = array($request->min, $request->max);
+            $range = [$request->min, $request->max];
             $data['data'] = implode(':', $range);
         }
         if ($old_data['slug'] == 'sys-documentationcharges') {
             $data['data'] = $request->data;
         }
         if ($old_data['slug'] == 'sys-birthdaypromotion') {
-            $range = array($request->pre, $request->post);
+            $range = [$request->pre, $request->post];
             $data['data'] = implode(':', $range);
         }
 
-        if (!isset($data['is_featured'])) {
+        if (! isset($data['is_featured'])) {
             $data['is_featured'] = 0;
-        } else if ($data['is_featured'] == '') {
+        } elseif ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
-        if(isset($data['min'])){
+        if (isset($data['min'])) {
             $data['min'] = ltrim($data['min'], '0');
         }
-        if(isset($data['max'])){
+        if (isset($data['max'])) {
             $data['max'] = ltrim($data['max'], '0');
         }
-        
 
-        $timeArray = explode(':',$data['data']);
-        
+        $timeArray = explode(':', $data['data']);
+
         $time_1 = ltrim($timeArray[0], '0');
-        if(isset($timeArray[1])){
+        if (isset($timeArray[1])) {
             $time_2 = ltrim($timeArray[1], '0');
-            $data['data'] = $time_1 .":". $time_2;
-        }else{
+            $data['data'] = $time_1.':'.$time_2;
+        } else {
             $data['data'] = $time_1;
         }
-        
+
         //$data['data'] = $time_1 .":". $time_2;
 
         $record->update($data);
@@ -242,12 +233,10 @@ class Settings extends BaseModal
     /**
      * Get active and sorted data only.
      *
-     * @param $slug
-     * @param $account_id
      *
      * @return (mixed)
      */
-    static public function getBySlug($slug, $account_id)
+    public static function getBySlug($slug, $account_id)
     {
         return self::where(['slug' => $slug, 'account_id' => $account_id])->first();
     }
@@ -256,11 +245,9 @@ class Settings extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         return false;
     }

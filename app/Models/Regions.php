@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
+use App\Helpers\Filters;
 use App\Helpers\Widgets\RegionsWidget;
-use Illuminate\Database\Eloquent\Model;
+use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\Filters;
-
 
 class Regions extends BaseModal
 {
@@ -63,14 +60,13 @@ class Regions extends BaseModal
         return $this->hasMany('App\Models\Appointments', 'region_id');
     }
 
-
     /**
      * Get the Regions.
      */
     public static function getAll($account_id, $get_slug = false, $order_by = false, $order = false, $regionids = false)
     {
-        if ($regionids && !is_array($regionids)) {
-            $regionids = array($regionids);
+        if ($regionids && ! is_array($regionids)) {
+            $regionids = [$regionids];
         }
 
         if ($regionids) {
@@ -104,14 +100,13 @@ class Regions extends BaseModal
         }
     }
 
-
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($regionId = false, $get_all = false)
+    public static function getActiveSorted($regionId = false, $get_all = false)
     {
-        if ($regionId && !is_array($regionId)) {
-            $regionId = array($regionId);
+        if ($regionId && ! is_array($regionId)) {
+            $regionId = [$regionId];
         }
         if ($regionId) {
             return self::where(['active' => 1, 'slug' => 'custom'])->whereIn('id', $regionId)->where('account_id', '=', Auth::User()->account_id)->get()->pluck('name', 'id');
@@ -123,10 +118,10 @@ class Regions extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveOnly($regionId = false, $account_id = false, $get_custom_only = false)
+    public static function getActiveOnly($regionId = false, $account_id = false, $get_custom_only = false)
     {
-        if ($regionId && !is_array($regionId)) {
-            $regionId = array($regionId);
+        if ($regionId && ! is_array($regionId)) {
+            $regionId = [$regionId];
         }
         $query = self::where(['active' => 1, 'slug' => 'custom']);
         if ($regionId) {
@@ -145,31 +140,29 @@ class Regions extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::regions_filters($request, $account_id, $apply_filter);
+        $where = self::regions_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_regions")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_regions')) {
                 return self::where([
                     [$where],
-                    ['slug', '=', 'custom']
+                    ['slug', '=', 'custom'],
                 ])->count();
-                }else{
-                    return self::where([
-                        [$where],
-                        ['slug', '=', 'custom']
-                    ])->where('active',1)->count();
-                }
+            } else {
+                return self::where([
+                    [$where],
+                    ['slug', '=', 'custom'],
+                ])->where('active', 1)->count();
+            }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_regions")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_regions')) {
                 return self::count();
-            }else{
-                return self::where('active',1)->count();
+            } else {
+                return self::where('active', 1)->count();
             }
         }
     }
@@ -177,33 +170,31 @@ class Regions extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::regions_filters($request, $account_id, $apply_filter);
+        $where = self::regions_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_regions")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_regions')) {
                 return self::where([
                     [$where],
-                    ['slug', '=', 'custom']
+                    ['slug', '=', 'custom'],
                 ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
-                }else{
-                    return self::where([
-                        [$where],
-                        ['slug', '=', 'custom']
-                    ])->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
-                }
+            } else {
+                return self::where([
+                    [$where],
+                    ['slug', '=', 'custom'],
+                ])->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
+            }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_regions")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_regions')) {
                 return self::where('slug', '=', 'custom')->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
-            }else{
-                return self::where('active',1)->where('slug', '=', 'custom')->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
+            } else {
+                return self::where('active', 1)->where('slug', '=', 'custom')->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }
         }
     }
@@ -211,21 +202,21 @@ class Regions extends BaseModal
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $account_id Current Organization's ID
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function regions_filters($request, $account_id, $apply_filter)
+    public static function regions_filters($request, $account_id, $apply_filter)
     {
         $filters = getFilters($request->all());
-        $where = array();
+        $where = [];
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'regions', 'account_id', $account_id);
         } else {
 
@@ -233,41 +224,41 @@ class Regions extends BaseModal
                 Filters::forget(Auth::User()->id, 'regions', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'regions', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'regions', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'regions', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'regions', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'regions', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'regions', 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'regions', 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'regions', 'name').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'regions', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -275,11 +266,11 @@ class Regions extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'regions', 'status') == 0 || Filters::get(Auth::user()->id, 'regions', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'regions', 'status') != null) {
-                        $where[] = array(
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get(Auth::user()->id, 'regions', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'regions', 'status'),
+                        ];
                     }
                 }
             }
@@ -292,10 +283,9 @@ class Regions extends BaseModal
      * Get All Records
      *
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
@@ -303,11 +293,10 @@ class Regions extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
 
         $data = $request->all();
@@ -334,24 +323,23 @@ class Regions extends BaseModal
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function DeleteRecord($id)
+    public static function DeleteRecord($id)
     {
         $region = Regions::getData($id);
 
-        if (!$region) {
-            return collect(['status'=>false,'message'=>'Resource not found.']);
+        if (! $region) {
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
 
         if ($region->slug == 'all') {
-            return collect(['status'=>false,'message'=>'Root region can not be deleted.']);
+            return collect(['status' => false, 'message' => 'Root region can not be deleted.']);
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (Regions::isChildExists($id, Auth::User()->account_id)) {
-            return collect(['status'=>false,'message'=>'Child records exist, unable to delete resource']);
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
 
         /*
@@ -369,25 +357,26 @@ class Regions extends BaseModal
         //log request for delete for audit trail
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-        return collect(['status'=>true,'message'=>'Record has been deleted successfully.']);
+
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
     /**
      * inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
         $region = Regions::getData($id);
-        if (!$region) {
+        if (! $region) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $region->update(['active' => 0]);
 
         AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
@@ -395,28 +384,27 @@ class Regions extends BaseModal
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static function activeRecord($id)
+    public static function activeRecord($id)
     {
         $region = Regions::getData($id);
-        if (!$region) {
+        if (! $region) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $region->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (Regions::find($id))->toArray();
 
@@ -426,10 +414,10 @@ class Regions extends BaseModal
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -447,15 +435,13 @@ class Regions extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static protected function isChildExists($id, $account_id)
+    protected static function isChildExists($id, $account_id)
     {
         if (
-//            Cities::where(['region_id' => $id, 'account_id' => $account_id])->count() ||
-//            Locations::where(['region_id' => $id, 'account_id' => $account_id])->count() ||
+            //            Cities::where(['region_id' => $id, 'account_id' => $account_id])->count() ||
+            //            Locations::where(['region_id' => $id, 'account_id' => $account_id])->count() ||
             Leads::where(['region_id' => $id, 'account_id' => $account_id])->count() ||
             Appointments::where(['region_id' => $id, 'account_id' => $account_id])->count()
         ) {
@@ -465,7 +451,7 @@ class Regions extends BaseModal
         return false;
     }
 
-    static public function getRegions()
+    public static function getRegions()
     {
 
         return self::where([

@@ -12,7 +12,6 @@ use Spatie\Valuestore\Valuestore;
 
 class Filters
 {
-
     /**
      * Base path for settings
      */
@@ -27,14 +26,16 @@ class Filters
      * Initialize files setup
      *
      * @param: $userId
+     *
      * @param: $file
      *
      * @return: void
      */
-    private static function _init($userId, $file) {
+    private static function _init($userId, $file)
+    {
         if ($file && $file != '') {
             $userId = self::randId($userId);
-            $file_with_path = storage_path(self::$base_path . DIRECTORY_SEPARATOR . $userId);
+            $file_with_path = storage_path(self::$base_path.DIRECTORY_SEPARATOR.$userId);
 
             /*
              * Check if directory exists or not
@@ -42,23 +43,24 @@ class Filters
             is_dir(storage_path(self::$base_path)) ?: mkdir(storage_path(self::$base_path), 0755, true);
             is_dir($file_with_path) ?: mkdir($file_with_path, 0755, true);
 
-            self::$valuestore = Valuestore::make(storage_path(self::$base_path . DIRECTORY_SEPARATOR . $userId . DIRECTORY_SEPARATOR . $file) . '.json');
+            self::$valuestore = Valuestore::make(storage_path(self::$base_path.DIRECTORY_SEPARATOR.$userId.DIRECTORY_SEPARATOR.$file).'.json');
         }
     }
-
 
     /**
      * Get All Keys store in file
      *
      * @param: $userId
+     *
      * @param: $file
      *
      * @return: mixed
      */
-    public static function all($userId, $file) {
+    public static function all($userId, $file)
+    {
         self::_init($userId, $file);
 
-        $values =  self::$valuestore->all();
+        $values = self::$valuestore->all();
 
         /**
          * after getting value we are now deleting these as per discussion,
@@ -73,20 +75,25 @@ class Filters
      * Store as single key or as an array
      *
      * @param: $userId
+     *
      * @param: $file
+     *
      * @param: $key
+     *
      * @param: $value
      *
      * @return: boolean
      */
-    public static function put($userId, $file, $key, $value = null) {
+    public static function put($userId, $file, $key, $value = null)
+    {
         self::_init($userId, $file);
-        if(is_array($key)) {
+        if (is_array($key)) {
             self::$valuestore->put($key);
         } else {
             self::$valuestore->put($key, $value);
         }
         Filters::RemoveEmptySubFolders(storage_path(self::$base_path));
+
         return true;
     }
 
@@ -94,11 +101,13 @@ class Filters
      * Flush all data
      *
      * @param: $userId
+     *
      * @param: $file
      *
      * @return: void
      */
-    public static function flush($userId, $file) {
+    public static function flush($userId, $file)
+    {
         self::_init($userId, $file);
 
         self::$valuestore->flush();
@@ -108,12 +117,15 @@ class Filters
      * Forget a key
      *
      * @param: $userId
+     *
      * @param: $file
+     *
      * @param: $key
      *
      * @return: void
      */
-    public static function forget($userId, $file, $key) {
+    public static function forget($userId, $file, $key)
+    {
         self::_init($userId, $file);
 
         self::$valuestore->forget($key);
@@ -123,15 +135,18 @@ class Filters
      * Get a key
      *
      * @param: $userId
+     *
      * @param: $file
+     *
      * @param: $key
      *
      * @return: void
      */
-    public static function get($userId, $file, $key) {
+    public static function get($userId, $file, $key)
+    {
         self::_init($userId, $file);
 
-        $value =  self::$valuestore->get($key);
+        $value = self::$valuestore->get($key);
 
         /**
          * after getting value we are now deleting these as per discussion,
@@ -142,27 +157,33 @@ class Filters
         return $value;
     }
 
-    public static function randId($userId) {
+    public static function randId($userId)
+    {
 
         $exist = self::getRandId($userId);
 
-        if (!$exist) {
+        if (! $exist) {
             $rand = uniqid();
             session()->put($userId, $rand);
+
             return $rand;
         }
+
         return $exist;
     }
 
-    public static function getRandId($userId) {
+    public static function getRandId($userId)
+    {
 
         if (session()->has($userId)) {
             return session($userId);
         }
+
         return false;
     }
 
-    public static function RemoveEmptySubFolders($dir) {
+    public static function RemoveEmptySubFolders($dir)
+    {
 
         try {
             return self::rmdir($dir);
@@ -172,14 +193,14 @@ class Filters
 
     }
 
-
-    public static function rmdir($path) {
+    public static function rmdir($path)
+    {
 
         $res = scandir($path);
         foreach ($res as $r) {
-            $ar = scandir($path . DIRECTORY_SEPARATOR .$r);
+            $ar = scandir($path.DIRECTORY_SEPARATOR.$r);
             if (count($ar) == 2) {
-                rmdir($path . DIRECTORY_SEPARATOR . $r);
+                rmdir($path.DIRECTORY_SEPARATOR.$r);
             }
         }
 
@@ -190,7 +211,7 @@ class Filters
     {
         try {
 
-            $dir = storage_path(self::$base_path. DIRECTORY_SEPARATOR . self::getRandId(auth()->id()));
+            $dir = storage_path(self::$base_path.DIRECTORY_SEPARATOR.self::getRandId(auth()->id()));
 
             return self::deleteDirectory($dir);
 
@@ -199,12 +220,13 @@ class Filters
         }
     }
 
-    private static function deleteDirectory($dir) {
-        if (!file_exists($dir)) {
+    private static function deleteDirectory($dir)
+    {
+        if (! file_exists($dir)) {
             return true;
         }
 
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             return unlink($dir);
         }
 
@@ -213,7 +235,7 @@ class Filters
                 continue;
             }
 
-            if (!self::deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
+            if (! self::deleteDirectory($dir.DIRECTORY_SEPARATOR.$item)) {
                 return false;
             }
 
@@ -221,9 +243,9 @@ class Filters
 
         return rmdir($dir);
     }
-    public static function getCurrentTimeStamp () {
+
+    public static function getCurrentTimeStamp()
+    {
         return date('Y-m-d H:i:s');
-       }
-
-
+    }
 }
