@@ -1025,7 +1025,6 @@ function setSmsLogs(response) {
 }
 
 function resetCustomFilters() {
-
     $('.appointment_patient_id').val(null).trigger('change');
     $(".filter-field").val('');
     setQueryStringParameter('type');
@@ -1069,7 +1068,6 @@ function applyFilters(datatable) {
 }
 function resetFilters(datatable) {
 
-
     let filters =  {
         delete: '',
         patient_id: '',
@@ -1097,8 +1095,8 @@ function resetFilters(datatable) {
 
 }
 function resetAllFilters(datatable) {
-
     $('#reset-filters').on('click', function() {
+        $('#treatment_search_service').empty();
         let filters =  {
             delete: '',
             patient_id: '',
@@ -1123,12 +1121,10 @@ function resetAllFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function setFilters(filter_values, active_filters) {
     try {
-
         let appointment_statuses = filter_values.appointment_statuses;
         let appointment_types = filter_values.appointment_types;
         let cities = filter_values.cities;
