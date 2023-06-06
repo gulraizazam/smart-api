@@ -1744,8 +1744,8 @@ class AppointmentsController extends Controller
                     ]);
                 }
 
-                $lead_service_check = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->get()->pluck('service_id')->toArray();
-                if(count($lead_service_check)){
+                $lead_service_check = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->count();
+                if($lead_service_check > 0){
                     $lead_service_update = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->orderby('id', 'desc')->first();
                     LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->orderby('id', 'desc')->update([
                         'lead_id' => $lead->id,
@@ -4413,7 +4413,7 @@ class AppointmentsController extends Controller
             unset($leadObj['lead_id']);
             $leadObj['patient_id'] = $patient->id;
         } else {
-            $lead = Leads::where(['phone' => $request->get('phone')])->orderBy('id', 'desc')->first();
+            $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
             $patientData = $appointmentData;
             if ($request->new_patient == '1') {
                 $patientData['user_type_id'] = Config::get('constants.patient_id');
