@@ -148,7 +148,7 @@ class Leads extends BaseModal
                     'active' => '1',
                     'account_id' => $account_id,
                     'id' => $name
-                ])->get(['name', 'id', 'phone']);
+                ])->select('name', 'id', 'phone')->get();
             }
             if ($leads->count() > 0) {
                 return $leads;
@@ -161,13 +161,13 @@ class Leads extends BaseModal
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
 					['phone', 'LIKE', "%{$phone}%"]
-				])->orderBy('id', 'desc')->get(['name', 'id', 'phone'])->unique('phone');
+				])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
 			} else {
 				return self::where([
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
 					['name', 'LIKE', "%{$name}%"]
-				])->orderBy('id', 'desc')->get(['name', 'id', 'phone'])->unique('phone');
+				])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
 			}
 		}
 
