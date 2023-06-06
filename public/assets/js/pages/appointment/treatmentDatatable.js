@@ -1096,6 +1096,7 @@ function resetFilters(datatable) {
 }
 function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
+        $('#treatment_search_service').empty();
         let filters =  {
             delete: '',
             patient_id: '',
