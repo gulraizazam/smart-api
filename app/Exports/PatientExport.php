@@ -2,18 +2,17 @@
 
 namespace App\Exports;
 
-use App\User;
 use Illuminate\Support\Facades\Gate;
-use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class PatientExport implements FromCollection, WithHeadings,ShouldAutoSize
+class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
 {
     use Exportable;
 
-    private $filters = array();
+    private $filters = [];
 
     public function __construct($filters)
     {
@@ -30,15 +29,15 @@ class PatientExport implements FromCollection, WithHeadings,ShouldAutoSize
         $todaydate = $this->filters['todaydate'];
         $users = $this->filters['users'];
         $count = 1;
-        foreach($this->filters['leads'] as $lead) {
+        foreach ($this->filters['leads'] as $lead) {
 
-            if (!Gate::allows('contact')) {
+            if (! Gate::allows('contact')) {
                 $phone = '***********';
             } else {
                 $phone = $lead->patient->phone ?? 'N/A';
             }
 
-            $records[] = array(
+            $records[] = [
                 '#' => $count++,
                 'name' => $lead->name,
                 'phone' => $phone,
@@ -46,9 +45,10 @@ class PatientExport implements FromCollection, WithHeadings,ShouldAutoSize
                 'lead_status' => $lead_status[$lead->lead_status_id]->name,
                 'service' => $services[$lead->service_id]->name,
                 'user' => $users[$lead->created_by]->name,
-            );
+            ];
             $collection = collect($records);
         }
+
         return $collection;
     }
 
@@ -64,5 +64,4 @@ class PatientExport implements FromCollection, WithHeadings,ShouldAutoSize
             'Created By',
         ];
     }
-
 }

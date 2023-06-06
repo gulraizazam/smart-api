@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\AuditTrails;
-use Auth;
 use App\Helpers\Filters;
+use Auth;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
 
 class LeadStatuses extends BaseModal
 {
@@ -31,20 +30,20 @@ class LeadStatuses extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($skip_ids = false, $include_ids = false, $account_id = false)
+    public static function getActiveSorted($skip_ids = false, $include_ids = false, $account_id = false)
     {
-        if ($skip_ids && !is_array($skip_ids)) {
-            $skip_ids = array($skip_ids);
+        if ($skip_ids && ! is_array($skip_ids)) {
+            $skip_ids = [$skip_ids];
         }
-        if ($include_ids && !is_array($include_ids)) {
-            $include_ids = array($include_ids);
+        if ($include_ids && ! is_array($include_ids)) {
+            $include_ids = [$include_ids];
         }
 
         if ($skip_ids && $include_ids) {
             return self::where(['active' => 1])->whereIn('id', $include_ids)->whereNotIn('id', $skip_ids)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
-        } else if ($skip_ids) {
+        } elseif ($skip_ids) {
             return self::where(['active' => 1])->whereNotIn('id', $skip_ids)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
-        } else if ($include_ids) {
+        } elseif ($include_ids) {
             return self::where(['active' => 1])->whereIn('id', $include_ids)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
         } else {
             return self::where(['active' => 1])->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
@@ -54,7 +53,7 @@ class LeadStatuses extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveOnly()
+    public static function getActiveOnly()
     {
         return self::where(['active' => 1])->OrderBy('sort_no', 'asc')->get();
     }
@@ -62,25 +61,23 @@ class LeadStatuses extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::lead_statuses_filters($request, $account_id, $apply_filter);
+        $where = self::lead_statuses_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses")){
-            return self::where($where)->count();
-            }else{
-                return self::where($where)->where('active',1)->count();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadstatuses')) {
+                return self::where($where)->count();
+            } else {
+                return self::where($where)->where('active', 1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadstatuses')) {
                 return self::count();
-            }else{
-                return self::where('active',1)->count();
+            } else {
+                return self::where('active', 1)->count();
             }
         }
     }
@@ -88,27 +85,25 @@ class LeadStatuses extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::lead_statuses_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses ")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadstatuses ')) {
                 return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
-            }else{
-                return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            } else {
+                return self::where($where)->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadstatuses")){
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
-            }else{
-                return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadstatuses')) {
+                return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            } else {
+                return self::where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
             }
         }
     }
@@ -116,21 +111,21 @@ class LeadStatuses extends BaseModal
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $account_id Current Organization's ID
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function lead_statuses_filters($request, $account_id, $apply_filter)
+    public static function lead_statuses_filters($request, $account_id, $apply_filter)
     {
-        $where = array();
+        $where = [];
         $filters = getFilters($request->all());
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'lead_statuses', 'account_id', $account_id);
         } else {
 
@@ -138,41 +133,41 @@ class LeadStatuses extends BaseModal
                 Filters::forget(Auth::User()->id, 'lead_statuses', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'lead_statuses', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'lead_statuses', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'lead_statuses', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'lead_statuses', 'lead_status_name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'lead_statuses', 'lead_status_name');
             } else {
                 if (Filters::get(Auth::User()->id, 'lead_statuses', 'lead_status_name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'lead_statuses', 'lead_status_name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'lead_statuses', 'lead_status_name').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'lead_statuses', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -180,11 +175,11 @@ class LeadStatuses extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'lead_statuses', 'status') == 0 || Filters::get(Auth::user()->id, 'lead_statuses', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'lead_statuses', 'status') != null) {
-                        $where[] = array(
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get(Auth::user()->id, 'lead_statuses', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'lead_statuses', 'status'),
+                        ];
                     }
                 }
             }
@@ -200,14 +195,13 @@ class LeadStatuses extends BaseModal
      * @param (int) $account_id Current Organization's ID
      * @param (array) $skip_ids IDs which need to skip
      * @param (int) $active_records_only Get activated records only
-     *
      * @return (mixed)
      */
-    static public function getParentRecords($prepend_dropdown_text = false, $account_id, $skip_ids = array(), $active_records_only = false)
+    public static function getParentRecords($prepend_dropdown_text, $account_id, $skip_ids = [], $active_records_only = false)
     {
         // If not an array then make it an array
-        if (!is_array($skip_ids)) {
-            $skip_ids = array($skip_ids);
+        if (! is_array($skip_ids)) {
+            $skip_ids = [$skip_ids];
         }
 
         $where = ['account_id' => $account_id, 'parent_id' => 0];
@@ -224,7 +218,6 @@ class LeadStatuses extends BaseModal
             $records = self::where($where)->get()->pluck('name', 'id');
         }
 
-
         if ($prepend_dropdown_text) {
             $records->prepend($prepend_dropdown_text, '');
         }
@@ -236,10 +229,9 @@ class LeadStatuses extends BaseModal
      * Get All Records
      *
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
@@ -247,11 +239,10 @@ class LeadStatuses extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
 
         $data = $request->all();
@@ -263,28 +254,28 @@ class LeadStatuses extends BaseModal
             $data['parent_id'] = 0;
         }
 
-        if (!isset($data['is_comment'])) {
+        if (! isset($data['is_comment'])) {
             $data['is_comment'] = 0;
         }
 
         // Default Status is set for Junk, set other statuses now
         if (isset($data['is_junk']) && $data['is_junk'] == '1') {
-            self::where(['account_id' => $account_id])->update(array('is_junk' => 0));
+            self::where(['account_id' => $account_id])->update(['is_junk' => 0]);
         }
 
         // Default Status is set for Open, set other statuses now
         if (isset($data['is_default']) && $data['is_default'] == '1') {
-            self::where(['account_id' => $account_id])->update(array('is_default' => 0));
+            self::where(['account_id' => $account_id])->update(['is_default' => 0]);
         }
 
         // Default Status is set for Arrived, set other statuses now
         if (isset($data['is_arrived']) && $data['is_arrived'] == '1') {
-            self::where(['account_id' => $account_id])->update(array('is_arrived' => 0));
+            self::where(['account_id' => $account_id])->update(['is_arrived' => 0]);
         }
 
         // Default Status is set for Converted, set other statuses now
         if (isset($data['is_converted']) && $data['is_converted'] == '1') {
-            self::where(['account_id' => $account_id])->update(array('is_converted' => 0));
+            self::where(['account_id' => $account_id])->update(['is_converted' => 0]);
         }
 
         $record = self::create($data);
@@ -301,16 +292,15 @@ class LeadStatuses extends BaseModal
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function DeleteRecord($id)
+    public static function DeleteRecord($id)
     {
 
         $lead_statuse = LeadStatuses::getData($id);
 
-        if (!$lead_statuse) {
-            return collect(['status' => false, 'message' => 'Resource not found.']);;
+        if (! $lead_statuse) {
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
         if (LeadStatuses::isChildExists($id, Auth::User()->account_id)) {
@@ -319,6 +309,7 @@ class LeadStatuses extends BaseModal
         $record = $lead_statuse->delete();
         //log request for delete for audit trail
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
@@ -326,17 +317,17 @@ class LeadStatuses extends BaseModal
      * Inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function InactiveRecord($id)
+    public static function InactiveRecord($id)
     {
         $lead_statuse = LeadStatuses::getData($id);
-        if (!$lead_statuse) {
+        if (! $lead_statuse) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $lead_statuse->update(['active' => 0]);
         AuditTrails::InactiveEventLogger(self::$_table, 'Inactive', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
@@ -344,28 +335,27 @@ class LeadStatuses extends BaseModal
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function activeRecord($id)
+    public static function activeRecord($id)
     {
         $lead_statuse = LeadStatuses::getData($id);
-        if (!$lead_statuse) {
+        if (! $lead_statuse) {
             return collect(['status' => true, 'message' => 'Resource not found.']);
         }
         $record = $lead_statuse->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         //dd($request->is_comment);
 
@@ -375,41 +365,41 @@ class LeadStatuses extends BaseModal
 
         // Default Status is set for Junk, set other statuses now
         if (isset($data['is_junk']) && $data['is_junk'] == '1') {
-            self::where(['account_id' => $account_id])->update(array('is_junk' => 0));
+            self::where(['account_id' => $account_id])->update(['is_junk' => 0]);
         }
 
         // Default Status is set for Open, set other statuses now
         if (isset($data['is_default']) && $data['is_default'] == '1') {
-            self::where(['account_id' => $account_id])->update(array('is_default' => 0));
+            self::where(['account_id' => $account_id])->update(['is_default' => 0]);
         }
 
         // Default Status is set for Arrived, set other statuses now
         if (isset($data['is_arrived']) && $data['is_arrived'] == '1') {
-            self::where(['account_id' => $account_id])->update(array('is_arrived' => 0));
+            self::where(['account_id' => $account_id])->update(['is_arrived' => 0]);
         }
 
         // Default Status is set for Converted, set other statuses now
         if (isset($data['is_converted']) && $data['is_converted'] == '1') {
-            self::where(['account_id' => $account_id])->update(array('is_converted' => 0));
+            self::where(['account_id' => $account_id])->update(['is_converted' => 0]);
         }
 
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if (!isset($data['parent_id'])) {
+        if (! isset($data['parent_id'])) {
             $data['parent_id'] = 0;
         }
 
-        if (!isset($data['is_comment'])) {
+        if (! isset($data['is_comment'])) {
             $data['is_comment'] = 0;
         }
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -424,28 +414,26 @@ class LeadStatuses extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         return self::where([
             'parent_id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->count();
     }
 
-    static public function getLeadStatuses($excludeIds = false)
+    public static function getLeadStatuses($excludeIds = false)
     {
         $where = [
             ['account_id', '=', Auth::User()->account_id],
             ['active', '=', '1'],
-            ['parent_id', '=', '0']
+            ['parent_id', '=', '0'],
         ];
 
-        if ($excludeIds && !is_array($excludeIds)) {
-            $excludeIds = array($excludeIds);
+        if ($excludeIds && ! is_array($excludeIds)) {
+            $excludeIds = [$excludeIds];
         } else {
             $excludeIds = [];
         }

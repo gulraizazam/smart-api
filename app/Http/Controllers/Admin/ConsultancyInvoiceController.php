@@ -3,59 +3,29 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
-use App\Jobs\IndexSingleAppointmentJob;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Helpers\ACL;
 use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\TelenorSMSAPI;
-use App\Helpers\Widgets\LocationsWidget;
-use App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest;
-use App\Models\AppointmentComments;
+use App\Helpers\Widgets\ConsultancyPriceCalculationWidget;
+use App\Helpers\Widgets\DiscountWidget;
+use App\Http\Controllers\Controller;
+use App\Jobs\IndexSingleAppointmentJob;
+use App\Models\Activity;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
-use App\Models\Bundles;
-use App\Models\Cities;
-use App\Models\DoctorHasLocations;
-use App\Models\Doctors;
+use App\Models\Discounts;
 use App\Models\InvoiceDetails;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Leads;
-use App\Models\LeadSources;
-use App\Models\LeadStatuses;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
-use App\Models\PackageBundles;
-use App\Models\Patients;
-use App\Models\Regions;
-use App\Models\ResourceHasRota;
-use App\Models\ResourceHasRotaDays;
-use App\Models\Resources;
+use App\Models\PaymentModes;
 use App\Models\Services;
-use App\Models\SMSLogs;
-use App\Models\SMSTemplates;
-use App\Models\UserHasLocations;
-use App\Models\UserOperatorSettings;
 use App\Models\User;
 use Auth;
-use Carbon\Carbon;
 use Config;
-use DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Validator;
-use App\Models\Packages;
-use App\Models\PackageService;
-use App\Helpers\Widgets\AppointmentCheckesWidget;
-use App\Models\Accounts;
-use App\Models\PaymentModes;
-use App\Models\Discounts;
-use App\Models\Settings;
-use App\Helpers\Widgets\DiscountWidget;
-use App\Helpers\Widgets\ConsultancyPriceCalculationWidget;
-use App\Models\Activity;
 
 class ConsultancyInvoiceController extends Controller
 {
@@ -77,7 +47,7 @@ class ConsultancyInvoiceController extends Controller
      */
     public function invoiceconsultancy($id, $type = null)
     {
-        if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
+        if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -85,7 +55,7 @@ class ConsultancyInvoiceController extends Controller
 
         $invoice = Invoices::where([
             ['appointment_id', '=', $id],
-            ['invoice_status_id', '=', $invoice_status->id]
+            ['invoice_status_id', '=', $invoice_status->id],
         ])->first();
 
         if ($invoice == null) {
@@ -172,7 +142,7 @@ class ConsultancyInvoiceController extends Controller
                 'invoice_status' => $invoice_status,
                 'discounts' => $discounts,
                 'cash' => $cash,
-                'price_tax' => $price_tax
+                'price_tax' => $price_tax,
             ]);
         }
 
@@ -194,15 +164,15 @@ class ConsultancyInvoiceController extends Controller
         if ($discount_info) {
             $data = ConsultancyPriceCalculationWidget::ConsultancyPriceCalculation($request, $price_for_calculation, $location_info, $cash, $balance);
             if ($discount_info->slug == 'custom') {
-                return response()->json(array(
+                return response()->json([
                     'status' => false,
                     'discount_ava_check' => 'true',
                     'price' => $data['price'],
                     'tax' => $data['tax'],
                     'tax_amt' => $data['tax_amt'],
                     'settleamount' => $data['settleamount'],
-                    'outstanding' => $data['outstanding']
-                ));
+                    'outstanding' => $data['outstanding'],
+                ]);
             } else {
                 /*Here We find the discounted price*/
                 if ($discount_info->type == Config::get('constants.Fixed')) {
@@ -227,7 +197,7 @@ class ConsultancyInvoiceController extends Controller
                         $price = ceil(((100 * $tax_amt) / ($location_info->tax_percentage + 100)));
                         $tax = ceil(($tax_amt - $price));
                     }
-                } else if ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                } elseif ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                     $price = $net_amount;
                     $tax = ceil(($price * ($location_info->tax_percentage / 100)));
                     $tax_amt = ceil(($price + (($price * $location_info->tax_percentage) / 100)));
@@ -247,7 +217,7 @@ class ConsultancyInvoiceController extends Controller
                 $settleamount_1 = $price - $cash;
                 $settleamount = min($settleamount_1, $balance);
 
-                return response()->json(array(
+                return response()->json([
                     'status' => true,
                     'discount_type' => $discount_type,
                     'discount_price' => $discount_price,
@@ -255,20 +225,21 @@ class ConsultancyInvoiceController extends Controller
                     'tax' => $tax,
                     'tax_amt' => $tax_amt,
                     'settleamount' => $settleamount,
-                    'outstanding' => $outstanding
-                ));
+                    'outstanding' => $outstanding,
+                ]);
             }
         } else {
             $data = ConsultancyPriceCalculationWidget::ConsultancyPriceCalculation($request, $price_for_calculation, $location_info, $cash, $balance);
-            return response()->json(array(
+
+            return response()->json([
                 'status' => false,
                 'discount_ava_check' => 'false',
                 'price' => $data['price'],
                 'tax' => $data['tax'],
                 'tax_amt' => $data['tax_amt'],
                 'settleamount' => $data['settleamount'],
-                'outstanding' => $data['outstanding']
-            ));
+                'outstanding' => $data['outstanding'],
+            ]);
         }
     }
 
@@ -323,18 +294,18 @@ class ConsultancyInvoiceController extends Controller
         if ($status == true) {
             $data = ConsultancyPriceCalculationWidget::ConsultancyPriceCalculation($request, $net_amount, $location_info, $cash, $balance);
 
-            return response()->json(array(
+            return response()->json([
                 'status' => true,
                 'price' => $data['price'],
                 'tax' => $data['tax'],
                 'tax_amt' => $data['tax_amt'],
                 'settleamount' => $data['settleamount'],
-                'outstanding' => $data['outstanding']
-            ));
+                'outstanding' => $data['outstanding'],
+            ]);
         } else {
-            return response()->json(array(
+            return response()->json([
                 'status' => false,
-            ));
+            ]);
         }
     }
 
@@ -346,18 +317,18 @@ class ConsultancyInvoiceController extends Controller
         $discount = Discounts::find($request->discount_id);
         if ($discount) {
             if ($discount->slug == 'custom') {
-                return response()->json(array(
+                return response()->json([
                     'status' => true,
-                ));
+                ]);
             } else {
-                return response()->json(array(
+                return response()->json([
                     'status' => false,
-                ));
+                ]);
             }
         } else {
-            return response()->json(array(
+            return response()->json([
                 'status' => false,
-            ));
+            ]);
         }
     }
 
@@ -369,11 +340,11 @@ class ConsultancyInvoiceController extends Controller
     {
         if ($request->amount_type == 0) {
             if ($request->cash == 0 || $request->cash < 0) {
-                return response()->json(array(
+                return response()->json([
                     'status' => true,
                     'outstdanding' => $request->outstanding,
                     'settleamount' => $request->settleamount,
-                ));
+                ]);
             }
             $outstdanding = $request->price - $request->cash - $request->balance;
 
@@ -383,19 +354,19 @@ class ConsultancyInvoiceController extends Controller
 
             $settleamount = min($settleamount, $balance);
 
-            return response()->json(array(
+            return response()->json([
                 'status' => true,
                 'outstdanding' => $outstdanding,
                 'settleamount' => $settleamount,
 
-            ));
-        }else{
-            return response()->json(array(
+            ]);
+        } else {
+            return response()->json([
                 'status' => true,
                 'outstdanding' => 0,
                 'settleamount' => 0,
 
-            ));
+            ]);
         }
     }
 
@@ -413,15 +384,14 @@ class ConsultancyInvoiceController extends Controller
         $paymentmode_settle = PaymentModes::where(['payment_type' => Config::get('constants.payment_type_settle')])->first();
         $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
-        if(!Gate::allows('appointments_log_excel')){
-            if($appointmentinfo->scheduled_date < date('Y-m-d') || $appointmentinfo->scheduled_date > date('Y-m-d'))
-            {
-                return response()->json(["message"=> 'Invoice can not be genersted in past and future dates.',"status"=>false]);
+        if (! Gate::allows('appointments_log_excel')) {
+            if ($appointmentinfo->scheduled_date < date('Y-m-d') || $appointmentinfo->scheduled_date > date('Y-m-d')) {
+                return response()->json(['message' => 'Invoice can not be genersted in past and future dates.', 'status' => false]);
             }
         }
         if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
             $is_exclusive = $request->is_exclusive;
-        } else if ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+        } elseif ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
             $is_exclusive = 1;
         } else {
             $is_exclusive = 0;
@@ -435,9 +405,8 @@ class ConsultancyInvoiceController extends Controller
         $data['location_id'] = $appointmentinfo->location_id;
         $data['doctor_id'] = $appointmentinfo->doctor_id;
         $data['is_exclusive'] = $is_exclusive;
-        $data['created_at'] = Filters::getCurrentTimeStamp();;
-        $data['updated_at'] = Filters::getCurrentTimeStamp();;
-
+        $data['created_at'] = Filters::getCurrentTimeStamp();
+        $data['updated_at'] = Filters::getCurrentTimeStamp();
 
         $invoice = Invoices::CreateRecord($data);
 
@@ -453,8 +422,8 @@ class ConsultancyInvoiceController extends Controller
         $data_detail['service_id'] = $appointmentinfo->service_id ?? 0;
         $data_detail['invoice_id'] = $invoice->id;
 
-        $data_detail['created_at'] = Filters::getCurrentTimeStamp();;
-        $data_detail['updated_at'] = Filters::getCurrentTimeStamp();;
+        $data_detail['created_at'] = Filters::getCurrentTimeStamp();
+        $data_detail['updated_at'] = Filters::getCurrentTimeStamp();
 
         $discount_info = Discounts::find($request->discount_id);
 
@@ -480,20 +449,20 @@ class ConsultancyInvoiceController extends Controller
         $data_package['created_by'] = Auth::User()->id;
         $data_package['updated_by'] = Auth::User()->id;
 
-        $data_package['created_at'] = Filters::getCurrentTimeStamp();;
-        $data_package['updated_at'] = Filters::getCurrentTimeStamp();;
+        $data_package['created_at'] = Filters::getCurrentTimeStamp();
+        $data_package['updated_at'] = Filters::getCurrentTimeStamp();
 
         $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
 
-        $out_transcation = $request->cash + $request->settle;;
+        $out_transcation = $request->cash + $request->settle;
 
         $out_transcation_price = $out_transcation - $invoice_detail->tax_price;
         $out_transcation_tax = $invoice_detail->tax_price;
 
-        $tran = array(
+        $tran = [
             '1' => $out_transcation_price,
-            '2' => $out_transcation_tax
-        );
+            '2' => $out_transcation_tax,
+        ];
         $count = 0;
         foreach ($tran as $trans) {
             if ($count == '1') {
@@ -511,9 +480,8 @@ class ConsultancyInvoiceController extends Controller
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
 
-            $data_package['created_at'] = Filters::getCurrentTimeStamp();;
-            $data_package['updated_at'] = Filters::getCurrentTimeStamp();;
-
+            $data_package['created_at'] = Filters::getCurrentTimeStamp();
+            $data_package['updated_at'] = Filters::getCurrentTimeStamp();
 
             if ($invoice_detail->package_id != null) {
                 $data_package['package_id'] = $invoice_detail->package_id;
@@ -525,9 +493,9 @@ class ConsultancyInvoiceController extends Controller
 
         $arrivedStatus = AppointmentStatuses::where('is_arrived', '=', 1)->select('id')->first();
 
-       if (!$arrivedStatus) {
-           $arrivedStatus = AppointmentStatuses::where('name', 'LIKE', "%Arrived%")->select('id')->first();
-       }
+        if (! $arrivedStatus) {
+            $arrivedStatus = AppointmentStatuses::where('name', 'LIKE', '%Arrived%')->select('id')->first();
+        }
 
         if (Appointments::where('id', '=', $request->appointment_id)->where('appointment_type_id', '=', Config::get('constants.appointment_type_consultancy'))->exists()) {
 
@@ -547,21 +515,21 @@ class ConsultancyInvoiceController extends Controller
         $appointment_data_status['converted_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
         // End
-        Leads::where('patient_id',$appointmentinfo->patient_id)->update(['lead_status_id'=>4]);
+        Leads::where('patient_id', $appointmentinfo->patient_id)->update(['lead_status_id' => 4]);
         /////Save activity////
-            $patient = User::whereId($appointmentinfo->patient_id)->first();
-            $location = Locations::whereId($appointmentinfo->location_id)->first();
-            $activity = new Activity();
-            $activity->action = 'received';
-            $activity->patient = $patient->name;
-            $activity->appointment_type = $appointmentinfo->service->name .' Consultation';
-            $activity->created_by = Auth::user()->name;
-            $activity->invoice_id = $invoice->id;
-            $activity->amount = $request->price;
-            $activity->location = $location->name;
-            $activity->created_at = Filters::getCurrentTimeStamp();;
-            $activity->updated_at = Filters::getCurrentTimeStamp();;
-            $activity->save();
+        $patient = User::whereId($appointmentinfo->patient_id)->first();
+        $location = Locations::whereId($appointmentinfo->location_id)->first();
+        $activity = new Activity();
+        $activity->action = 'received';
+        $activity->patient = $patient->name;
+        $activity->appointment_type = $appointmentinfo->service->name.' Consultation';
+        $activity->created_by = Auth::user()->name;
+        $activity->invoice_id = $invoice->id;
+        $activity->amount = $request->price;
+        $activity->location = $location->name;
+        $activity->created_at = Filters::getCurrentTimeStamp();
+        $activity->updated_at = Filters::getCurrentTimeStamp();
+        $activity->save();
         ////
 
         /**
@@ -570,12 +538,12 @@ class ConsultancyInvoiceController extends Controller
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
-                'appointment_id' => $appointmentinfo->id
+                'appointment_id' => $appointmentinfo->id,
             ])
         );
 
         return ApiHelper::apiResponse($this->success, 'Invoice created successfully', true, [
-            'invoice_id' => $invoice->id
+            'invoice_id' => $invoice->id,
         ]);
     }
 }

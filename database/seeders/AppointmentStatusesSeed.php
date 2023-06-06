@@ -67,7 +67,7 @@ class AppointmentStatusesSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -81,7 +81,7 @@ class AppointmentStatusesSeed extends Seeder
         $role->givePermissionTo('appointment_statuses_destroy');
 
         AppointmentStatuses::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'parent_id' => 0,
                 'is_comment' => 0,
@@ -96,8 +96,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            2 => array(
+            ],
+            2 => [
                 'id' => 2,
                 'parent_id' => 0,
                 'is_comment' => 0,
@@ -112,8 +112,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            3 => array(
+            ],
+            3 => [
                 'id' => 3,
                 'parent_id' => 0,
                 'is_comment' => 0,
@@ -128,8 +128,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            4 => array(
+            ],
+            4 => [
                 'id' => 4,
                 'parent_id' => 0,
                 'is_comment' => 0,
@@ -144,8 +144,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            5 => array(
+            ],
+            5 => [
                 'id' => 5,
                 'name' => 'Didn\'t Remember',
                 'parent_id' => 3,
@@ -160,8 +160,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            6 => array(
+            ],
+            6 => [
                 'id' => 6,
                 'name' => 'Not Attending Phone',
                 'parent_id' => 3,
@@ -176,8 +176,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            7 => array(
+            ],
+            7 => [
                 'id' => 7,
                 'name' => 'Not Interested',
                 'parent_id' => 3,
@@ -192,8 +192,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            8 => array(
+            ],
+            8 => [
                 'id' => 8,
                 'name' => 'Other Reason',
                 'parent_id' => 3,
@@ -208,8 +208,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            9 => array(
+            ],
+            9 => [
                 'id' => 9,
                 'name' => 'Was Busy, couldn\'t make it',
                 'parent_id' => 3,
@@ -224,8 +224,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            10 => array(
+            ],
+            10 => [
                 'id' => 10,
                 'name' => 'Too expensive',
                 'parent_id' => 3,
@@ -240,8 +240,8 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            11 => array(
+            ],
+            11 => [
                 'id' => 11,
                 'name' => 'Un-Scheduled',
                 'parent_id' => 0,
@@ -256,7 +256,7 @@ class AppointmentStatusesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
         ]);
     }
 }

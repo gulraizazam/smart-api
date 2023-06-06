@@ -13,13 +13,13 @@ class MakeAccountRelationshipsTable extends Migration
      */
     public function up()
     {
-       /* // Regions
-        Schema::table('regions', function (Blueprint $table) {
-            $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
-            $table->foreign('account_id', 'regions_account')
-                ->references('id')
-                ->on('accounts');
-        });*/
+        /* // Regions
+         Schema::table('regions', function (Blueprint $table) {
+             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
+             $table->foreign('account_id', 'regions_account')
+                 ->references('id')
+                 ->on('accounts');
+         });*/
 
         // Cities
         /*Schema::table('cities', function (Blueprint $table) {
@@ -46,12 +46,12 @@ class MakeAccountRelationshipsTable extends Migration
         });*/
 
         // Lead Statuses
-       /* Schema::table('lead_statuses', function (Blueprint $table) {
-            $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
-            $table->foreign('account_id','lead_statuses_account')
-                ->references('id')
-                ->on('accounts');
-        });*/
+        /* Schema::table('lead_statuses', function (Blueprint $table) {
+             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
+             $table->foreign('account_id','lead_statuses_account')
+                 ->references('id')
+                 ->on('accounts');
+         });*/
 
         // Leads
         /*Schema::table('leads', function (Blueprint $table) {
@@ -78,20 +78,20 @@ class MakeAccountRelationshipsTable extends Migration
         });*/
 
         // Cancellation Reasons
-       /* Schema::table('cancellation_reasons', function (Blueprint $table) {
-            $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
-            $table->foreign('account_id','cancellation_reasons_account')
-                ->references('id')
-                ->on('accounts');
-        });*/
+        /* Schema::table('cancellation_reasons', function (Blueprint $table) {
+             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
+             $table->foreign('account_id','cancellation_reasons_account')
+                 ->references('id')
+                 ->on('accounts');
+         });*/
 
         // Appointments
-       /* Schema::table('appointments', function (Blueprint $table) {
-            $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
-            $table->foreign('account_id','appointments_account')
-                ->references('id')
-                ->on('accounts');
-        });*/
+        /* Schema::table('appointments', function (Blueprint $table) {
+             $table->unsignedBigInteger('account_id')->nullable()->before('created_at');
+             $table->foreign('account_id','appointments_account')
+                 ->references('id')
+                 ->on('accounts');
+         });*/
 
         // SMS Templates
         /*Schema::table('sms_templates', function (Blueprint $table) {

@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Models\AppointmentStatuses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use App\Helpers\Filters;
 use Illuminate\Support\Facades\Validator;
 
 class AppointmentStatusesController extends Controller
 {
     protected $error;
+
     protected $success;
+
     protected $unauthorized;
 
     public function __construct()
@@ -31,23 +33,22 @@ class AppointmentStatusesController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('appointment_statuses_manage')) {
+        if (! Gate::allows('appointment_statuses_manage')) {
             return abort(401);
         }
+
         return view('admin.appointment_statuses.index');
     }
-
 
     /**
      * Display a listing of Appointment_statuse.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('appointment_statuses_manage')) {
+            if (! Gate::allows('appointment_statuses_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
 
@@ -57,17 +58,17 @@ class AppointmentStatusesController extends Controller
 
             $apply_filter = checkFilters($filters, $filename);
 
-            $records = array();
-            $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
 
-            list($orderBy, $order) = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request);
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $AppointmentStatuses = AppointmentStatuses::getBulkData($ids);
                 if ($AppointmentStatuses) {
                     foreach ($AppointmentStatuses as $appointment) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!AppointmentStatuses::isChildExists($appointment->id, Auth::User()->account_id)) {
+                        if (! AppointmentStatuses::isChildExists($appointment->id, Auth::User()->account_id)) {
                             $appointment->delete();
                         }
                     }
@@ -79,7 +80,7 @@ class AppointmentStatusesController extends Controller
             // Get Total Records
             $iTotalRecords = AppointmentStatuses::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $allAppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
 
@@ -90,8 +91,8 @@ class AppointmentStatusesController extends Controller
                 foreach ($AppointmentStatuses as $appointment_statuse) {
                     $appointment_statuse->parent_id = ($appointment_statuse->parent_id && array_key_exists($appointment_statuse->parent_id, $allAppointmentStatuses)) ? $allAppointmentStatuses[$appointment_statuse->parent_id]->name : '-';
                     $appointment_statuse->is_comment = ($appointment_statuse->is_comment) ? 'Yes' : 'No';
-                    $appointment_statuse->allow_message = ($appointment_statuse->parent_id !=0 ) ? (($appointment_statuse->allow_message) ? 'Yes' : 'No') : '-';
-                    $appointment_statuse->is_default = ($appointment_statuse->parent_id !=0 ) ? ($appointment_statuse->is_default) ? 'Yes' : 'No' : '-';
+                    $appointment_statuse->allow_message = ($appointment_statuse->parent_id != 0) ? (($appointment_statuse->allow_message) ? 'Yes' : 'No') : '-';
+                    $appointment_statuse->is_default = ($appointment_statuse->parent_id != 0) ? ($appointment_statuse->is_default) ? 'Yes' : 'No' : '-';
                     $appointment_statuse->is_arrived = ($appointment_statuse->is_arrived) ? 'Yes' : 'No';
                     $appointment_statuse->is_cancelled = ($appointment_statuse->is_cancelled) ? 'Yes' : 'No';
                     $appointment_statuse->is_unscheduled = ($appointment_statuse->is_unscheduled) ? 'Yes' : 'No';
@@ -99,7 +100,7 @@ class AppointmentStatusesController extends Controller
             }
 
             $records['data'] = $AppointmentStatuses;
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('appointment_statuses_edit'),
                 'delete' => Gate::allows('appointment_statuses_destroy'),
                 'active' => Gate::allows('appointment_statuses_active'),
@@ -108,12 +109,12 @@ class AppointmentStatusesController extends Controller
 
             $filters = Filters::all(Auth::user()->id, 'appointment_statuses');
             $records['active_filters'] = $filters;
-            $parentAppointmentStatuses = AppointmentStatuses::getParentRecords(false, Auth::User()->account_id, [] , true);
+            $parentAppointmentStatuses = AppointmentStatuses::getParentRecords(false, Auth::User()->account_id, [], true);
             $records['filter_values'] = [
                 'parents' => $parentAppointmentStatuses,
-                'status' => config('constants.status')
+                'status' => config('constants.status'),
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -135,7 +136,7 @@ class AppointmentStatusesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('appointment_statuses_create')) {
+        if (! Gate::allows('appointment_statuses_create')) {
             return abort(401);
         }
 
@@ -150,17 +151,15 @@ class AppointmentStatusesController extends Controller
         return view('admin.appointment_statuses.create', compact('parentAppointmentStatuses', 'appointment_statuse'));
     }
 
-
     /**
      * Store a newly created Appointment_statuse in storage.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('appointment_statuses_create')) {
+            if (! Gate::allows('appointment_statuses_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -170,6 +169,7 @@ class AppointmentStatusesController extends Controller
             if (AppointmentStatuses::createRecord($request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -179,7 +179,6 @@ class AppointmentStatusesController extends Controller
     /**
      * Validate form fields
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyFields(Request $request)
@@ -189,25 +188,24 @@ class AppointmentStatusesController extends Controller
         ]);
     }
 
-
     /**
      * Get data for editing Appointment_statuse.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         try {
-            if (!Gate::allows('appointment_statuses_edit')) {
+            if (! Gate::allows('appointment_statuses_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $appointment_statuse = AppointmentStatuses::getData($id);
-            if (!$appointment_statuse) {
+            if (! $appointment_statuse) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
             $parentAppointmentStatuses = AppointmentStatuses::getParentRecords(false, Auth::User()->account_id, $appointment_statuse->id, true);
             $appointment_statuse->parent_options = $parentAppointmentStatuses;
+
             return ApiHelper::apiResponse($this->success, 'Success', true, $appointment_statuse);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -217,14 +215,12 @@ class AppointmentStatusesController extends Controller
     /**
      * Update Appointment_statuse in storage.
      *
-     * @param Request $request
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('appointment_statuses_edit')) {
+            if (! Gate::allows('appointment_statuses_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -235,26 +231,26 @@ class AppointmentStatusesController extends Controller
             if (AppointmentStatuses::updateRecord($id, $request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Remove Appointment_statuse from storage.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('appointment_statuses_destroy')) {
+            if (! Gate::allows('appointment_statuses_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = AppointmentStatuses::deleteRecord($id);
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -264,27 +260,26 @@ class AppointmentStatusesController extends Controller
     /**
      * Change status of Appointment Statuses
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request)
     {
         try {
             if ($request->status == 0) {
-                if (!Gate::allows('cities_inactive')) {
+                if (! Gate::allows('cities_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = AppointmentStatuses::inactiveRecord($request->id);
             } else {
-                if (!Gate::allows('cities_active')) {
+                if (! Gate::allows('cities_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = AppointmentStatuses::activeRecord($request->id);
             }
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
-
 }

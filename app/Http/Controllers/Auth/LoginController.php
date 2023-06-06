@@ -8,9 +8,9 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Session;
 
 class LoginController extends Controller
@@ -44,7 +44,8 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
     }
-      /**
+
+    /**
      * The user has been authenticated.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -53,14 +54,15 @@ class LoginController extends Controller
      */
     protected function authenticated()
     {
-        $account_id=Auth::User()->account_id;
+        $account_id = Auth::User()->account_id;
         session(['account_id' => $account_id]);
-        $account= DB::table('accounts')->find($account_id);
+        $account = DB::table('accounts')->find($account_id);
         session(['account' => $account]);
 
     }
 
-    public function login(\Illuminate\Http\Request $request) {
+    public function login(Request $request)
+    {
 
         $this->validateLogin($request);
 
@@ -69,6 +71,7 @@ class LoginController extends Controller
         // the IP address of the client making these requests into this application.
         if ($this->hasTooManyLoginAttempts($request)) {
             $this->fireLockoutEvent($request);
+
             return $this->sendLockoutResponse($request);
         }
 
@@ -84,6 +87,7 @@ class LoginController extends Controller
                 // Increment the failed login attempts and redirect back to the
                 // login form with an error message.
                 $this->incrementLoginAttempts($request);
+
                 return redirect()
                     ->back()
                     ->withInput($request->only($this->username(), 'remember'))
@@ -117,7 +121,6 @@ class LoginController extends Controller
     /**
      * Log the user out of the application.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
     public function logout(Request $request)
@@ -138,5 +141,4 @@ class LoginController extends Controller
             ? new JsonResponse([], 204)
             : redirect('/');
     }
-
 }

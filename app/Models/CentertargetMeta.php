@@ -3,30 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use DB;
-use Session;
-use App\Models\AuditTrails;
-use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
-
 
 class CentertargetMeta extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'account_id', 'month', 'year', 'location_id', 'target_amount','centertarget_id', 'created_at', 'updated_at', 'deleted_at'
+        'account_id', 'month', 'year', 'location_id', 'target_amount', 'centertarget_id', 'created_at', 'updated_at', 'deleted_at',
     ];
 
     protected static $_fillable = [
-        'account_id', 'month', 'year', 'location_id', 'target_amount','centertarget_id'
+        'account_id', 'month', 'year', 'location_id', 'target_amount', 'centertarget_id',
     ];
 
     protected $table = 'centretargetmeta';
 
     protected static $_table = 'centretargetmeta';
-
 
     /**
      * Get the doctors for staff_target.
@@ -39,7 +32,7 @@ class CentertargetMeta extends Model
     /*
      * Create Meta data in center target
      */
-    static public function createRecord($key, $amount, $account_id, $record)
+    public static function createRecord($key, $amount, $account_id, $record)
     {
         $parent_id = $record->id;
         // Set Account ID
@@ -64,24 +57,25 @@ class CentertargetMeta extends Model
     /*
      * Update meta data in centre
      */
-    static public function updateRecord($key, $amount, $account_id, $record_parent){
+    public static function updateRecord($key, $amount, $account_id, $record_parent)
+    {
         $old_data = [];
         $parent_id = $record_parent->id;
-        $new_result =  (self::where([
-            ['location_id','=',$key],
-            ['centertarget_id','=',$record_parent->id]
+        $new_result = (self::where([
+            ['location_id', '=', $key],
+            ['centertarget_id', '=', $record_parent->id],
         ]))->first();
 
-        if($new_result){
-            $old_data= $new_result->toArray();
+        if ($new_result) {
+            $old_data = $new_result->toArray();
         }
 
         $record = self::where([
-            ['location_id','=',$key],
-            ['centertarget_id','=',$record_parent->id]
+            ['location_id', '=', $key],
+            ['centertarget_id', '=', $record_parent->id],
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return false;
         }
 
@@ -99,7 +93,7 @@ class CentertargetMeta extends Model
 
         $record = $record->update($data);
 
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable,$old_data,$data,$parent_id);
+        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $data, $parent_id);
 
         return $record;
 

@@ -3,18 +3,17 @@
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Illuminate\Database\Eloquent\Model;
+use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use Auth;
 
 class Towns extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'city_id', 'active','account_id', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['name', 'city_id', 'active', 'account_id', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['name', 'slug', 'active','account_id'];
+    protected static $_fillable = ['name', 'slug', 'active', 'account_id'];
 
     protected $table = 'towns';
 
@@ -23,26 +22,24 @@ class Towns extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::towns_filters($request, $account_id, $apply_filter);
+        $where = self::towns_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_towns")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_towns')) {
                 return self::where($where)->count();
-            }else{
-                return self::where('active',1)->where($where)->count();
+            } else {
+                return self::where('active', 1)->where($where)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_towns")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_towns')) {
                 return self::count();
-            }else{
-                return self::where('active',1)->count();
+            } else {
+                return self::where('active', 1)->count();
             }
         }
     }
@@ -50,131 +47,127 @@ class Towns extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::towns_filters($request, $account_id, $apply_filter);
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         if ($orderBy == 'status') {
             $orderBy = 'active';
         }
-        if(\Illuminate\Support\Facades\Gate::allows("view_inactive_towns")){
-            return self::with('city')->when(count($where), fn ($query) =>
-                $query->where($where)
+        if (\Illuminate\Support\Facades\Gate::allows('view_inactive_towns')) {
+            return self::with('city')->when(count($where), fn ($query) => $query->where($where)
             )->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
-        }else{
-            return self::with('city')->when(count($where), fn ($query) =>
-                $query->where($where)
-                
-            )->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+        } else {
+            return self::with('city')->when(count($where), fn ($query) => $query->where($where)
+
+            )->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         }
     }
 
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $account_id Current Organization's ID
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function towns_filters($request, $account_id, $apply_filter)
+    public static function towns_filters($request, $account_id, $apply_filter)
     {
 
-        $where = array();
+        $where = [];
 
         $filters = getFilters($request->all());
 
         $apply_filter = checkFilters($filters, 'towns');
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'towns', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'towns', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'towns', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'towns', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'towns', 'account_id'),
+                    ];
                 }
             }
         }
-        if(hasFilter($filters, 'name')) {
-            $where[] = array(
+        if (hasFilter($filters, 'name')) {
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'towns', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'towns', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'towns', 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'towns', 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'towns', 'name').'%',
+                    ];
                 }
             }
         }
-        if(hasFilter($filters, 'city_id')) {
-            $where[] = array(
+        if (hasFilter($filters, 'city_id')) {
+            $where[] = [
                 'city_id',
                 '=',
-                $filters['city_id']
-            );
+                $filters['city_id'],
+            ];
             Filters::put(Auth::User()->id, 'towns', 'city_id', $filters['city_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'towns', 'city_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'towns', 'city_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'city_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'towns', 'city_id')
-                    );
+                        Filters::get(Auth::User()->id, 'towns', 'city_id'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
 
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'towns', 'status', $filters['status']);
         } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, 'towns', 'status');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'towns', 'status');
             } else {
-                if ( Filters::get(Auth::user()->id, 'towns', 'status' ) == 0 || Filters::get(Auth::user()->id, 'towns', 'status' ) == 1 ){
-                    if ( Filters::get(Auth::user()->id, 'towns', 'status' ) != null ){
-                        $where[] = array(
+                if (Filters::get(Auth::user()->id, 'towns', 'status') == 0 || Filters::get(Auth::user()->id, 'towns', 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, 'towns', 'status') != null) {
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get( Auth::user()->id, 'towns', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'towns', 'status'),
+                        ];
                     }
                 }
             }
@@ -187,27 +180,26 @@ class Towns extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         if (
             Leads::where(['town_id' => $id, 'account_id' => $account_id])->count()
         ) {
             return true;
         }
+
         return false;
     }
+
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
         $data = $request->all();
 
@@ -225,11 +217,10 @@ class Towns extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (Towns::find($id))->toArray();
 
@@ -239,10 +230,10 @@ class Towns extends BaseModal
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -253,19 +244,17 @@ class Towns extends BaseModal
         return $record;
     }
 
-
     /**
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function DeleteRecord($id)
+    public static function DeleteRecord($id)
     {
         $town = Towns::getData($id);
 
-        if (!$town) {
+        if (! $town) {
 
             return [
                 'status' => false,
@@ -294,19 +283,20 @@ class Towns extends BaseModal
         ];
 
     }
+
     /**
      * inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
         $town = Towns::getData($id);
 
-        if (!$town) {
+        if (! $town) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.towns.index');
         }
 
@@ -323,16 +313,15 @@ class Towns extends BaseModal
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static function activeRecord($id, $status = 1)
+    public static function activeRecord($id, $status = 1)
     {
         $town = Towns::getData($id);
 
-        if (!$town) {
+        if (! $town) {
 
-           return false;
+            return false;
         }
 
         $record = $town->update(['active' => $status]);
@@ -345,9 +334,10 @@ class Towns extends BaseModal
     /**
      * Get the active towns.
      */
-    static public function getActiveTowns()
+    public static function getActiveTowns()
     {
         $query = self::where(['active' => 1, 'account_id' => 1])->get()->pluck('name', 'id');
+
         return $query;
     }
 
@@ -372,6 +362,6 @@ class Towns extends BaseModal
      */
     public function getFullNameAttribute($value)
     {
-        return ucfirst($this->city->name) . ' - ' . ucfirst($this->name);
+        return ucfirst($this->city->name).' - '.ucfirst($this->name);
     }
 }

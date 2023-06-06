@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Helpers\Widgets;
+
 use Illuminate\Support\Facades\Config;
 
 class ConsultancyPriceCalculationWidget
@@ -12,7 +13,7 @@ class ConsultancyPriceCalculationWidget
      * @return: (mixed)
      */
 
-    static function ConsultancyPriceCalculation($request, $price_for_calculation, $location_info, $cash, $balance)
+    public static function ConsultancyPriceCalculation($request, $price_for_calculation, $location_info, $cash, $balance)
     {
         if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
             if ($request->is_exclusive_consultancy == '1') {
@@ -24,7 +25,7 @@ class ConsultancyPriceCalculationWidget
                 $price = ceil(((100 * $tax_amt) / ($location_info->tax_percentage + 100)));
                 $tax = ceil(($tax_amt - $price));
             }
-        } else if ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+        } elseif ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
             $price = $price_for_calculation;
             $tax = ceil(($price * ($location_info->tax_percentage / 100)));
             $tax_amt = ceil(($price + (($price * $location_info->tax_percentage) / 100)));
@@ -43,13 +44,14 @@ class ConsultancyPriceCalculationWidget
         $settleamount_1 = $price - $cash;
         $settleamount = min($settleamount_1, $balance);
 
-        $data = array(
+        $data = [
             'price' => $price,
             'tax' => $tax,
             'tax_amt' => $tax_amt,
             'settleamount' => $settleamount,
-            'outstanding' => $outstanding
-        );
+            'outstanding' => $outstanding,
+        ];
+
         return $data;
     }
 }

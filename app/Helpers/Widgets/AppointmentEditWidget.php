@@ -26,37 +26,36 @@ class AppointmentEditWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadlocationservice_edit($location_id, $account_id, $reverse_process = false)
+    public static function loadlocationservice_edit($location_id, $account_id, $reverse_process = false)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
         // Locaton Based Services Array
-        $location_services_array = array();
+        $location_services_array = [];
 
-        $services = ServiceHasLocations
-            ::join('services', 'services.id', '=', 'service_has_locations.service_id')
-            ->where([
-                'service_has_locations.service_id' => Services::where(array(
-                    'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'service_has_locations.location_id' => $location_id
-            ])->get();
+        $services = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
+                ->where([
+                    'service_has_locations.service_id' => Services::where([
+                        'slug' => 'all',
+                        'account_id' => $account_id,
+                    ])->select('id')->first()->id,
+                    'service_has_locations.location_id' => $location_id,
+                ])->get();
 
         if ($services->count()) {
-            $ss = Services::where(array(
+            $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
                 'parent_id' => '0',
                 'active' => 1,
-            ))->select('id')->get();
+            ])->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -77,12 +76,11 @@ class AppointmentEditWidget
                 }
             }
         } else {
-            $centreServices = ServiceHasLocations
-                ::join('services', 'services.id', '=', 'service_has_locations.service_id')
-                ->where(array(
-                    'service_has_locations.account_id' => $account_id,
-                    'service_has_locations.location_id' => $location_id,
-                ))->get();
+            $centreServices = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
+                    ->where([
+                        'service_has_locations.account_id' => $account_id,
+                        'service_has_locations.location_id' => $location_id,
+                    ])->get();
 
             if ($centreServices->count()) {
                 foreach ($centreServices as $centreService) {
@@ -99,7 +97,7 @@ class AppointmentEditWidget
                         );
                     } else {
                         $rootService = self::findRoot($centreService->service_id, $searchServices);
-                        if (!in_array($rootService, $location_services_array)) {
+                        if (! in_array($rootService, $location_services_array)) {
                             $location_services_array[] = $rootService;
                         }
                     }
@@ -110,7 +108,8 @@ class AppointmentEditWidget
         if (count($location_services_array)) {
             return $location_services_array;
         }
-        return array();
+
+        return [];
     }
 
     /*
@@ -119,44 +118,44 @@ class AppointmentEditWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loaddoctorservice_edit($doctor_id, $location_id, $account_id, $reverse_process = false)
+    public static function loaddoctorservice_edit($doctor_id, $location_id, $account_id, $reverse_process = false)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
-        $doctor_services_array = array();
+        $doctor_services_array = [];
 
         // 1. Find All Centres
         $rootlocation = DoctorHasLocations::where([
-            'location_id' => Locations::where(array(
+            'location_id' => Locations::where([
                 'slug' => 'all',
-                'account_id' => $account_id
-            ))->select('id')->first()->id,
-            'user_id' => $doctor_id
+                'account_id' => $account_id,
+            ])->select('id')->first()->id,
+            'user_id' => $doctor_id,
         ])->get();
 
         if ($rootlocation->count()) {
             //      Find All Services
             $rootservice = DoctorHasLocations::where([
-                'service_id' => Services::where(array(
+                'service_id' => Services::where([
                     'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'user_id' => $doctor_id
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'user_id' => $doctor_id,
             ])->get();
 
             if ($rootservice->count()) {
-                $ss = Services::where(array(
+                $ss = Services::where([
                     'slug' => 'custom',
                     'account_id' => $account_id,
                     'parent_id' => '0',
-                ))->select('id')->get();
+                ])->select('id')->get();
 
                 if ($ss->count()) {
                     foreach ($ss as $service) {
@@ -197,7 +196,7 @@ class AppointmentEditWidget
                             );
                         } else {
                             $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                            if (!in_array($rootService, $doctor_services_array)) {
+                            if (! in_array($rootService, $doctor_services_array)) {
                                 $doctor_services_array[] = $rootService;
                             }
                         }
@@ -208,30 +207,30 @@ class AppointmentEditWidget
             // 2. Find All Regions
             $singleLocation = Locations::find($location_id);
             $regionlocation = DoctorHasLocations::where([
-                'location_id' => Locations::where(array(
+                'location_id' => Locations::where([
                     'slug' => 'region',
                     'account_id' => $account_id,
                     'region_id' => $singleLocation->region_id,
-                ))->select('id')->first()->id,
-                'user_id' => $doctor_id
+                ])->select('id')->first()->id,
+                'user_id' => $doctor_id,
             ])->get();
 
             if ($regionlocation->count()) {
                 //      Find All Services
                 $rootservice = DoctorHasLocations::where([
-                    'service_id' => Services::where(array(
+                    'service_id' => Services::where([
                         'slug' => 'all',
-                        'account_id' => $account_id
-                    ))->select('id')->first()->id,
-                    'user_id' => $doctor_id
+                        'account_id' => $account_id,
+                    ])->select('id')->first()->id,
+                    'user_id' => $doctor_id,
                 ])->get();
 
                 if ($rootservice->count()) {
-                    $ss = Services::where(array(
+                    $ss = Services::where([
                         'slug' => 'custom',
                         'account_id' => $account_id,
                         'parent_id' => '0',
-                    ))->select('id')->get();
+                    ])->select('id')->get();
 
                     if ($ss->count()) {
                         foreach ($ss as $service) {
@@ -272,7 +271,7 @@ class AppointmentEditWidget
                                 );
                             } else {
                                 $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                                if (!in_array($rootService, $doctor_services_array)) {
+                                if (! in_array($rootService, $doctor_services_array)) {
                                     $doctor_services_array[] = $rootService;
                                 }
                             }
@@ -289,20 +288,20 @@ class AppointmentEditWidget
                 if ($singlelocation->count()) {
                     //      Find All Services
                     $rootservice = DoctorHasLocations::where([
-                        'service_id' => Services::where(array(
+                        'service_id' => Services::where([
                             'slug' => 'all',
-                            'account_id' => $account_id
-                        ))->select('id')->first()->id,
+                            'account_id' => $account_id,
+                        ])->select('id')->first()->id,
                         'user_id' => $doctor_id,
                         'location_id' => $location_id,
                     ])->get();
 
                     if ($rootservice->count()) {
-                        $ss = Services::where(array(
+                        $ss = Services::where([
                             'slug' => 'custom',
                             'account_id' => $account_id,
                             'parent_id' => '0',
-                        ))->select('id')->get();
+                        ])->select('id')->get();
 
                         if ($ss->count()) {
                             foreach ($ss as $service) {
@@ -344,7 +343,7 @@ class AppointmentEditWidget
                                     );
                                 } else {
                                     $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                                    if (!in_array($rootService, $doctor_services_array)) {
+                                    if (! in_array($rootService, $doctor_services_array)) {
                                         $doctor_services_array[] = $rootService;
                                     }
                                 }
@@ -358,7 +357,8 @@ class AppointmentEditWidget
         if (count($doctor_services_array)) {
             return $doctor_services_array;
         }
-        return array();
+
+        return [];
     }
 
     /*
@@ -367,37 +367,36 @@ class AppointmentEditWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadmachinetypeservice_edit($machine_type_id, $account_id, $reverse_process = false)
+    public static function loadmachinetypeservice_edit($machine_type_id, $account_id, $reverse_process = false)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
         // machine type Based Services Array
-        $machinetype_services_array = array();
+        $machinetype_services_array = [];
 
-        $services = MachineTypeHasServices
-            ::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-            ->where([
-                'machine_type_has_services.service_id' => Services::where(array(
-                    'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'machine_type_has_services.machine_type_id' => $machine_type_id
-            ])->get();
+        $services = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
+                ->where([
+                    'machine_type_has_services.service_id' => Services::where([
+                        'slug' => 'all',
+                        'account_id' => $account_id,
+                    ])->select('id')->first()->id,
+                    'machine_type_has_services.machine_type_id' => $machine_type_id,
+                ])->get();
 
         if ($services->count()) {
-            $ss = Services::where(array(
+            $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
                 'parent_id' => '0',
                 'active' => 1,
-            ))->select('id')->get();
+            ])->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -418,11 +417,10 @@ class AppointmentEditWidget
                 }
             }
         } else {
-            $machinetypeServices = MachineTypeHasServices
-                ::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                ->where(array(
-                    'machine_type_has_services.machine_type_id' => $machine_type_id,
-                ))->get();
+            $machinetypeServices = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
+                    ->where([
+                        'machine_type_has_services.machine_type_id' => $machine_type_id,
+                    ])->get();
 
             if ($machinetypeServices->count()) {
                 foreach ($machinetypeServices as $machinetypeService) {
@@ -439,7 +437,7 @@ class AppointmentEditWidget
                         );
                     } else {
                         $rootService = self::findRoot($machinetypeService->service_id, $searchServices);
-                        if (!in_array($rootService, $machinetype_services_array)) {
+                        if (! in_array($rootService, $machinetype_services_array)) {
                             $machinetype_services_array[] = $rootService;
                         }
                     }
@@ -450,13 +448,14 @@ class AppointmentEditWidget
         if (count($machinetype_services_array)) {
             return $machinetype_services_array;
         }
-        return array();
+
+        return [];
     }
 
-    static public function findNestedServicesEndNodes($data, $nodes = array())
+    public static function findNestedServicesEndNodes($data, $nodes = [])
     {
         foreach ($data as $node) {
-            if ((isset($node['children']) && sizeof($node['children']))) {
+            if ((isset($node['children']) && count($node['children']))) {
                 $nodes = array_unique(array_merge($nodes, self::findNestedServicesEndNodes($node['children'], $nodes)));
             } else {
                 if ($node['end_node'] == '1') {
@@ -464,12 +463,13 @@ class AppointmentEditWidget
                 }
             }
         }
+
         return $nodes;
     }
 
-    static function getNestedServicesByID($service_id, $data)
+    public static function getNestedServicesByID($service_id, $data)
     {
-        $nested = array();
+        $nested = [];
 
         foreach ($data as &$s) {
             if ($s['id'] == $service_id) {
@@ -477,7 +477,7 @@ class AppointmentEditWidget
                 $nested[$s['id']] = &$s;
 
                 if ($s['end_node'] == '0') {
-                    $nested[$s['id']]['children'] = array();
+                    $nested[$s['id']]['children'] = [];
                 }
             } else {
                 $pid = $s['parent_id'];
@@ -486,12 +486,12 @@ class AppointmentEditWidget
                     // If the parent ID exists in the source array
                     // we add it to the 'children' array of the parent after initializing it.
 
-                    if ($data[$id]['end_node'] == '0' && !isset($data[$id]['children'])) {
-                        $data[$id]['children'] = array();
+                    if ($data[$id]['end_node'] == '0' && ! isset($data[$id]['children'])) {
+                        $data[$id]['children'] = [];
                     }
 
-                    if (!isset($data[$pid]['children'])) {
-                        $data[$pid]['children'] = array();
+                    if (! isset($data[$pid]['children'])) {
+                        $data[$pid]['children'] = [];
                     }
 
                     $data[$pid]['children'][$s['id']] = &$s;
@@ -502,7 +502,7 @@ class AppointmentEditWidget
         return $nested;
     }
 
-    static public function findRoot($service_id, $data)
+    public static function findRoot($service_id, $data)
     {
         if ($data[$service_id]['parent_id'] == '0') {
             return $service_id;
@@ -516,7 +516,7 @@ class AppointmentEditWidget
      *  That function give machine type If I give package id
      */
 
-    static public function LoadMachineType_machinewisecollection_report($package, $total_consume_packageservice_ids = false)
+    public static function LoadMachineType_machinewisecollection_report($package, $total_consume_packageservice_ids = false)
     {
         if ($total_consume_packageservice_ids) {
             $package_services = PackageService::where('package_id', '=', $package->id)->whereNotIn('id', $total_consume_packageservice_ids)->whereNotNull('package_id')->get();
@@ -526,21 +526,21 @@ class AppointmentEditWidget
 
         $machines = Resources::where([
             ['location_id', '=', $package->location_id],
-            ['active', '=', '1']
+            ['active', '=', '1'],
         ])->get();
 
-        $machines_ids = array();
+        $machines_ids = [];
 
         foreach ($machines as $machine) {
-            if (!in_array($machine->machine_type_id, $machines_ids)) {
+            if (! in_array($machine->machine_type_id, $machines_ids)) {
                 $machines_ids[] = $machine->machine_type_id;
             }
         }
 
         $machine_types = MachineType::whereIn('id', $machines_ids)->get();
 
-        $machine_service_allocation = array();
-        $machine_types_ids = array();
+        $machine_service_allocation = [];
+        $machine_types_ids = [];
 
         foreach ($package_services as $package_service) {
             foreach ($machine_types as $machine_type) {
@@ -551,21 +551,21 @@ class AppointmentEditWidget
 
                     $machine_types_ids[] = $machine_type->id;
 
-                    $machine_service_allocation[] = array(
+                    $machine_service_allocation[] = [
                         'Machine_type_id' => $machine_type->id,
                         'Service_id' => $package_service->service_id,
                         'Package_service_id' => $package_service->id,
-                    );
+                    ];
                 }
             }
         }
 
         $machine_types = MachineType::whereIn('id', $machine_types_ids)->get();
 
-        return array(
+        return [
             'machine_types' => $machine_types,
-            'machine_service_allocation' => $machine_service_allocation
-        );
+            'machine_service_allocation' => $machine_service_allocation,
+        ];
     }
 
     /*
@@ -574,36 +574,35 @@ class AppointmentEditWidget
      * @param:  (int) $account_id (array) $service
      * @return: (mixed)
      */
-    static function loadmachinetypeservice_machine_collection($machine_type_id, $account_id, $reverse_process = false)
+    public static function loadmachinetypeservice_machine_collection($machine_type_id, $account_id, $reverse_process = false)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
         // machine type Based Services Array
-        $machinetype_services_array = array();
+        $machinetype_services_array = [];
 
-        $services = MachineTypeHasServices
-            ::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-            ->where([
-                'machine_type_has_services.service_id' => Services::where(array(
-                    'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'machine_type_has_services.machine_type_id' => $machine_type_id
-            ])->get();
+        $services = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
+                ->where([
+                    'machine_type_has_services.service_id' => Services::where([
+                        'slug' => 'all',
+                        'account_id' => $account_id,
+                    ])->select('id')->first()->id,
+                    'machine_type_has_services.machine_type_id' => $machine_type_id,
+                ])->get();
 
         if ($services->count()) {
-            $ss = Services::where(array(
+            $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
                 'parent_id' => '0',
                 'active' => 1,
-            ))->select('id')->get();
+            ])->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -624,11 +623,10 @@ class AppointmentEditWidget
                 }
             }
         } else {
-            $machinetypeServices = MachineTypeHasServices
-                ::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                ->where(array(
-                    'machine_type_has_services.machine_type_id' => $machine_type_id,
-                ))->get();
+            $machinetypeServices = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
+                    ->where([
+                        'machine_type_has_services.machine_type_id' => $machine_type_id,
+                    ])->get();
 
             if ($machinetypeServices->count()) {
                 foreach ($machinetypeServices as $machinetypeService) {
@@ -645,7 +643,7 @@ class AppointmentEditWidget
                         );
                     } else {
                         $rootService = self::findRoot($machinetypeService->service_id, $searchServices);
-                        if (!in_array($rootService, $machinetype_services_array)) {
+                        if (! in_array($rootService, $machinetype_services_array)) {
                             $machinetype_services_array[] = $rootService;
                         }
                     }
@@ -656,8 +654,7 @@ class AppointmentEditWidget
         if (count($machinetype_services_array)) {
             return $machinetype_services_array;
         }
-        return array();
+
+        return [];
     }
-
-
 }

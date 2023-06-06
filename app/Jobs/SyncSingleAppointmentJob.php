@@ -3,15 +3,12 @@
 namespace App\Jobs;
 
 use App\Helpers\Elastic\AppointmentsElastic;
-use App\Models\Accounts;
 use App\Models\Appointments;
-use App\Models\HeavyLifter;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
 class SyncSingleAppointmentJob implements ShouldQueue
 {
@@ -19,7 +16,6 @@ class SyncSingleAppointmentJob implements ShouldQueue
 
     /**
      * Holds payload data
-     *
      */
     protected $payload;
 
