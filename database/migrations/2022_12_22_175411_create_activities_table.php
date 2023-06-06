@@ -21,7 +21,7 @@ class CreateActivitiesTable extends Migration
             $table->string('appointment_type');
             $table->string('patient_name');
             $table->string('received_by');
-            
+
             $table->timestamps();
         });
     }

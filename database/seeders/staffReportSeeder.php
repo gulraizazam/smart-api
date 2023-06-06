@@ -42,7 +42,6 @@ class staffReportSeeder extends Seeder
             ],
         ]);
 
-
         // Permissions has been added
         $MainPermission = Permission::create([
             'title' => 'Staff Revenue Reports',
@@ -71,7 +70,6 @@ class staffReportSeeder extends Seeder
                 'parent_id' => $MainPermission->id,
             ],
         ]);
-
 
         $role = Role::findOrFail(1);
         // Assign Permission to 'administrator' role

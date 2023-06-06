@@ -3,25 +3,23 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Helpers\NodesTree;
+use App\Helpers\Widgets\MachineTypeWidget;
+use App\Http\Controllers\Controller;
+use App\Models\Locations;
 use App\Models\MachineType;
 use App\Models\ResourceHasServices;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Resources\Json\Resource;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\DB;
 use App\Models\Resources;
-use App\Models\Locations;
-use App\Models\Services;
-use App\Helpers\NodesTree;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
-use Validator;
 use App\Models\ResourceTypes;
-use Carbon\Carbon;
-use App\Helpers\ACL;
-use App\Helpers\Widgets\MachineTypeWidget;
+use App\Models\Services;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\Resource;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Validator;
 
 class ResourcesController extends Controller
 {
@@ -45,7 +43,7 @@ class ResourcesController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('resources_manage')) {
+        if (! Gate::allows('resources_manage')) {
             return abort('401');
         }
 
@@ -59,7 +57,7 @@ class ResourcesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('resources_create')) {
+        if (! Gate::allows('resources_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -70,14 +68,13 @@ class ResourcesController extends Controller
             $locations = Locations::where([
                 ['active', '=', '1'],
                 ['account_id', '=', Auth::User()->account_id],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->whereIn('id', ACL::getUserCentres())->get()->pluck('full_address', 'id');
 
             $machinetypes = MachineType::where([
                 ['active', '=', '1'],
-                ['account_id', '=', '1']
+                ['account_id', '=', '1'],
             ])->get()->pluck('name', 'id');
-
 
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'resource_types' => $resource_types,
@@ -97,17 +94,17 @@ class ResourcesController extends Controller
      */
     public function get_machinetype(Request $request)
     {
-        if (!Gate::allows('resources_create')) {
+        if (! Gate::allows('resources_create')) {
             return abort('401');
         }
         $locationservice_ids = MachineTypeWidget::loadlocationservice($request->id, Auth::User()->account_id, true);
 
         $machinetypes = MachineType::where([
             ['active', '=', '1'],
-            ['account_id', '=', '1']
+            ['account_id', '=', '1'],
         ])->get();
 
-        $machinetype_ids = array();
+        $machinetype_ids = [];
 
         foreach ($machinetypes as $machinetype) {
 
@@ -122,14 +119,14 @@ class ResourcesController extends Controller
         $machinetypes = MachineType::whereIn('id', $machinetype_ids)->get();
 
         if (count($machinetypes) > 0) {
-            return response()->json(array(
+            return response()->json([
                 'status' => true,
                 'd' => view('admin.resources.services', compact('machinetypes'))->render(),
-            ));
+            ]);
         } else {
-            return response()->json(array(
+            return response()->json([
                 'status' => false,
-            ));
+            ]);
         }
     }
 
@@ -141,7 +138,7 @@ class ResourcesController extends Controller
      */
     public function get_service(Request $request)
     {
-        if (!Gate::allows('resources_create')) {
+        if (! Gate::allows('resources_create')) {
             return abort('401');
         }
 
@@ -149,7 +146,7 @@ class ResourcesController extends Controller
         $allserviceslug = Services::where('slug', '=', 'all')->first();
         $location_id = $request->id;
         $Services = [];
-        $result = array();
+        $result = [];
         $service_has_lcoation = DB::table('service_has_locations')->where('location_id', '=', $location_id)->get();
         foreach ($service_has_lcoation as $serviceall) {
             if ($serviceall->service_id == $allserviceslug->id) {
@@ -181,16 +178,17 @@ class ResourcesController extends Controller
             }
         }
         if (count($Services) > 0) {
-            return response()->json(array(
+            return response()->json([
                 'status' => true,
                 'd' => view('admin.resources.services', compact('Services', 'status_for_all'))->render(),
-            ));
+            ]);
         } else {
-            return response()->json(array(
+            return response()->json([
                 'status' => false,
-            ));
+            ]);
         }
     }
+
     /*End*/
     /*
      * Store a newly created resource in storage.
@@ -200,7 +198,7 @@ class ResourcesController extends Controller
      */
     public function store(Request $request)
     {
-        if (!Gate::allows('resources_create')) {
+        if (! Gate::allows('resources_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -213,18 +211,18 @@ class ResourcesController extends Controller
             }
             if ($resource = Resources::createRecord($request, Auth::User()->account_id)) {
                 /*For now I comment that code because that not in use*/
-//            $data = $request->all();
-//
-//            if (isset($data['services']) && count($data['services'])) {
-//                $servicesData = array();
-//                foreach ($data['services'] as $service) {
-//                    $servicesData = array(
-//                        'resource_id' => $resource->id,
-//                        'service_id' => $service,
-//                    );
-//                    ResourceHasServices::createRecord($servicesData, $resource);
-//                }
-//            }
+                //            $data = $request->all();
+                //
+                //            if (isset($data['services']) && count($data['services'])) {
+                //                $servicesData = array();
+                //                foreach ($data['services'] as $service) {
+                //                    $servicesData = array(
+                //                        'resource_id' => $resource->id,
+                //                        'service_id' => $service,
+                //                    );
+                //                    ResourceHasServices::createRecord($servicesData, $resource);
+                //                }
+                //            }
                 /*End*/
 
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
@@ -240,7 +238,6 @@ class ResourcesController extends Controller
     /**
      * Validate form fields
      *
-     * @param \Illuminate\Http\Request $request
      * @return Validator $validator;
      */
     protected function verifyFields(Request $request)
@@ -256,7 +253,7 @@ class ResourcesController extends Controller
     /**
      * Display the resources in datatable.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
@@ -270,8 +267,8 @@ class ResourcesController extends Controller
 
             $apply_filter = checkFilters($filters, $filename);
 
-            $records = array();
-            $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
 
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
@@ -279,31 +276,30 @@ class ResourcesController extends Controller
                 if ($resources) {
                     foreach ($resources as $resource) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!Resources::isChildExists($resource->id, Auth::User()->account_id)) {
+                        if (! Resources::isChildExists($resource->id, Auth::User()->account_id)) {
                             $resource->delete();
                         }
                     }
                 }
 
-                $records["status"] = true;
-                $records["message"] = "Records has been deleted successfully!";
+                $records['status'] = true;
+                $records['message'] = 'Records has been deleted successfully!';
             }
             // Get Total Records
             $iTotalRecords = Resources::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-            list($orderBy, $order) = getSortBy($request);
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$orderBy, $order] = getSortBy($request);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $resources = Resources::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-
 
             $records = $this->filtersData($records);
 
             if ($resources) {
 
-                $records["data"] = $resources;
+                $records['data'] = $resources;
 
-                $records["meta"] = [
+                $records['meta'] = [
                     'field' => $orderBy,
                     'page' => $page,
                     'pages' => $pages,
@@ -313,7 +309,7 @@ class ResourcesController extends Controller
                 ];
             }
 
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('resources_edit'),
                 'delete' => Gate::allows('resources_destroy'),
                 'active' => Gate::allows('resources_active'),
@@ -328,8 +324,8 @@ class ResourcesController extends Controller
         }
     }
 
-
-    private function filtersData($records) {
+    private function filtersData($records)
+    {
 
         //Here we get all resource except doctor
         $filters = Filters::all(Auth::User()->id, 'resources');
@@ -340,14 +336,14 @@ class ResourcesController extends Controller
 
         $machinetypes = MachineType::where([
             ['active', '=', '1'],
-            ['account_id', '=', '1']
+            ['account_id', '=', '1'],
         ])->get()->pluck('name', 'id');
 
         $records['filter_values'] = [
             'machines' => $machinetypes,
             'resource_types' => $resource_types,
             'locations' => $locations,
-            'status' => config('constants.status')
+            'status' => config('constants.status'),
         ];
 
         if (isset($filters['created_from'])) {
@@ -365,12 +361,11 @@ class ResourcesController extends Controller
     /**
      * Inactive Record from storage.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request)
     {
-        if (!Gate::allows('resources_active')) {
+        if (! Gate::allows('resources_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         try {
@@ -384,6 +379,7 @@ class ResourcesController extends Controller
             if ($response) {
                 return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -393,12 +389,12 @@ class ResourcesController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
-        if (!Gate::allows('resources_edit')) {
+        if (! Gate::allows('resources_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -408,19 +404,19 @@ class ResourcesController extends Controller
         $resource_types->prepend('Select a Resource Type', '');
 
         $locations = Locations::where([
-//            ['active', '=', '1'],
+            //            ['active', '=', '1'],
             ['account_id', '=', Auth::User()->account_id],
-            ['slug', '=', 'custom']
+            ['slug', '=', 'custom'],
         ])->whereIn('id', ACL::getUserCentres())->get()->pluck('full_address', 'id');
 
         $locationservice_ids = MachineTypeWidget::loadlocationservice($resource->location_id, Auth::User()->account_id, true);
 
         $machinetypes = MachineType::where([
             ['active', '=', '1'],
-            ['account_id', '=', '1']
+            ['account_id', '=', '1'],
         ])->get();
 
-        $machinetype_ids = array();
+        $machinetype_ids = [];
 
         foreach ($machinetypes as $machinetype) {
 
@@ -435,8 +431,8 @@ class ResourcesController extends Controller
 
         $machinetypes = MachineType::whereIn('id', $machinetype_ids)->get()->pluck('name', 'id');
 
-        if (!$resource) {
-            return ApiHelper::apiResponse($this->success, "Resource not found", false);
+        if (! $resource) {
+            return ApiHelper::apiResponse($this->success, 'Resource not found', false);
         }
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -450,52 +446,51 @@ class ResourcesController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('resources_edit')) {
+        if (! Gate::allows('resources_edit')) {
             return abort('401');
         }
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
+            return response()->json([
                 'status' => 0,
                 'message' => $validator->messages()->all(),
-            ));
+            ]);
         }
 
         if ($resource = Resources::updateRecord($id, $request, Auth::User()->account_id)) {
             /*For now I comment that code because that not in use*/
-//            $resource->resource_has_services()->delete();
-//
-//            $data = $request->all();
-//
-//            if (isset($data['services']) && count($data['services'])) {
-//                $servicesData = array();
-//                foreach ($data['services'] as $service) {
-//                    $servicesData = array(
-//                        'resource_id' => $resource->id,
-//                        'service_id' => $service,
-//                    );
-//                    ResourceHasServices::updateRecord($servicesData, $resource);
-//                }
-//            }
+            //            $resource->resource_has_services()->delete();
+            //
+            //            $data = $request->all();
+            //
+            //            if (isset($data['services']) && count($data['services'])) {
+            //                $servicesData = array();
+            //                foreach ($data['services'] as $service) {
+            //                    $servicesData = array(
+            //                        'resource_id' => $resource->id,
+            //                        'service_id' => $service,
+            //                    );
+            //                    ResourceHasServices::updateRecord($servicesData, $resource);
+            //                }
+            //            }
             /*End*/
             flash('Record has been updated successfully.')->success()->important();
 
-            return response()->json(array(
+            return response()->json([
                 'status' => 1,
                 'message' => 'Record has been updated successfully.',
-            ));
+            ]);
         } else {
-            return response()->json(array(
+            return response()->json([
                 'status' => 0,
                 'message' => 'Something went wrong, please try again later.',
-            ));
+            ]);
         }
     }
 
@@ -507,7 +502,7 @@ class ResourcesController extends Controller
      */
     public function destroy($id)
     {
-        if (!Gate::allows('resources_destroy')) {
+        if (! Gate::allows('resources_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         try {
@@ -517,6 +512,7 @@ class ResourcesController extends Controller
             if ($response['status']) {
                 return ApiHelper::apiResponse($this->success, $response['message']);
             }
+
             return ApiHelper::apiResponse($this->success, $response['message'], false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

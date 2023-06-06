@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Helpers\Filters;
+use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\Filters;
 
 class LeadSources extends BaseModal
 {
@@ -32,18 +30,18 @@ class LeadSources extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted()
+    public static function getActiveSorted()
     {
         return self::where([
             ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1']
+            ['active', '=', '1'],
         ])->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
     }
 
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveOnly()
+    public static function getActiveOnly()
     {
         return self::where(['active' => 1])->OrderBy('sort_no', 'asc')->get();
     }
@@ -51,26 +49,24 @@ class LeadSources extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::lead_sources_filters($request, $account_id, $apply_filter);
+        $where = self::lead_sources_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadsources")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadsources')) {
                 return self::where($where)->count();
-            }else{
-                return self::where($where)->where('active',1)->count();
+            } else {
+                return self::where($where)->where('active', 1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadsources")){
-            return self::count();
-            }else{
-                return self::where('active',1)->count();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadsources')) {
+                return self::count();
+            } else {
+                return self::where('active', 1)->count();
             }
         }
     }
@@ -78,27 +74,25 @@ class LeadSources extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadsources")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadsources')) {
                 return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
-            }else{
-                return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            } else {
+                return self::where($where)->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_leadsources")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadsources')) {
                 return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
-            }else{
-                return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
+            } else {
+                return self::where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
             }
         }
     }
@@ -106,21 +100,21 @@ class LeadSources extends BaseModal
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $account_id Current Organization's ID
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function lead_sources_filters($request, $account_id, $apply_filter)
+    public static function lead_sources_filters($request, $account_id, $apply_filter)
     {
-        $where = array();
+        $where = [];
         $filters = getFilters($request->all());
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'lead_sources', 'account_id', $account_id);
         } else {
 
@@ -128,41 +122,41 @@ class LeadSources extends BaseModal
                 Filters::forget(Auth::User()->id, 'lead_sources', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'lead_sources', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'lead_sources', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'lead_sources', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'lead_sources', 'lead_status_name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'lead_sources', 'lead_status_name');
             } else {
                 if (Filters::get(Auth::User()->id, 'lead_sources', 'lead_status_name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'lead_sources', 'lead_status_name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'lead_sources', 'lead_status_name').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'lead_sources', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -170,11 +164,11 @@ class LeadSources extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'lead_sources', 'status') == 0 || Filters::get(Auth::user()->id, 'lead_sources', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'lead_sources', 'status') != null) {
-                        $where[] = array(
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get(Auth::user()->id, 'lead_sources', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'lead_sources', 'status'),
+                        ];
                     }
                 }
             }
@@ -187,10 +181,9 @@ class LeadSources extends BaseModal
      * Get All Records
      *
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
@@ -198,11 +191,10 @@ class LeadSources extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
         $data = $request->all();
         // Set Account ID
@@ -211,6 +203,7 @@ class LeadSources extends BaseModal
         $record->update(['sort_no' => $record->id]);
         //log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+
         return $record;
     }
 
@@ -218,13 +211,12 @@ class LeadSources extends BaseModal
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function DeleteRecord($id)
+    public static function DeleteRecord($id)
     {
         $lead_source = LeadSources::getData($id);
-        if (!$lead_source) {
+        if (! $lead_source) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
@@ -233,6 +225,7 @@ class LeadSources extends BaseModal
         }
         $record = $lead_source->delete();
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
@@ -240,17 +233,17 @@ class LeadSources extends BaseModal
      * inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function InactiveRecord($id)
+    public static function InactiveRecord($id)
     {
         $lead_source = LeadSources::getData($id);
-        if (!$lead_source) {
+        if (! $lead_source) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $lead_source->update(['active' => 0]);
         AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
@@ -258,28 +251,27 @@ class LeadSources extends BaseModal
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function activeRecord($id)
+    public static function activeRecord($id)
     {
         $lead_source = LeadSources::getData($id);
-        if (!$lead_source) {
+        if (! $lead_source) {
             return collect(['status' => true, 'message' => 'Resource not found.']);
         }
         $record = $lead_source->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (LeadSources::find($id))->toArray();
 
@@ -288,13 +280,12 @@ class LeadSources extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -310,11 +301,9 @@ class LeadSources extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         return false;
     }

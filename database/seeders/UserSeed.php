@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Seeder;
 use App\User;
+use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -76,7 +76,7 @@ class UserSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -94,11 +94,11 @@ class UserSeed extends Seeder
             'name' => 'Admin',
             'email' => 'admin@admin.com',
             'phone' => '3214466754',
-            'gender'=>'1',
-            'user_type_id'=>'1',
-            'account_id'=>'1',
-            'main_account'=>'1',
-            'password' => bcrypt('password')
+            'gender' => '1',
+            'user_type_id' => '1',
+            'account_id' => '1',
+            'main_account' => '1',
+            'password' => bcrypt('password'),
         ]);
         $user->assignRole('administrator');
 

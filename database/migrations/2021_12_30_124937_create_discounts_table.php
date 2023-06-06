@@ -17,7 +17,7 @@ class CreateDiscountsTable extends Migration
             $table->id();
             $table->string('slug', 40)->default('default');
             $table->String('name')->nullable();
-            $table->enum('type', array('Fixed', 'Percentage'));
+            $table->enum('type', ['Fixed', 'Percentage']);
             $table->double('amount', 11, 2)->nullabale();
             $table->String('description')->nullable();
             $table->string('discount_type')->nullable();

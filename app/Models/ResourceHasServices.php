@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\AuditTrails;
-use Auth;
 
 class ResourceHasServices extends Model
 {
@@ -21,11 +19,10 @@ class ResourceHasServices extends Model
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_data)
+    public static function createRecord($data, $parent_data)
     {
         $record = self::insert($data);
 
@@ -35,14 +32,14 @@ class ResourceHasServices extends Model
 
         return $record;
     }
+
     /**
      * update Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function updateRecord($data, $parent_data)
+    public static function updateRecord($data, $parent_data)
     {
         $record = self::insert($data);
 
@@ -54,5 +51,4 @@ class ResourceHasServices extends Model
 
         return $record;
     }
-
 }

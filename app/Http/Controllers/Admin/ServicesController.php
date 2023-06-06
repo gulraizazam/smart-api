@@ -7,16 +7,14 @@ use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\GroupsTree;
 use App\Helpers\NodesTree;
-use App\Models\Services;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreUpdateServicesRequest;
 use App\Models\Appointments;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Validator;
+use App\Models\Services;
 use App\Models\TaxTreatmentType;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Validator;
 
 class ServicesController extends Controller
 {
@@ -40,7 +38,7 @@ class ServicesController extends Controller
      */
     public function index(Request $request)
     {
-        if (!Gate::allows('services_manage')) {
+        if (! Gate::allows('services_manage')) {
             return abort(401);
         }
 
@@ -51,31 +49,31 @@ class ServicesController extends Controller
     {
         try {
             $filters = getFilters($request->all());
-            $records = array();
-            $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Locations = Services::getBulkData($ids);
                 if ($Locations) {
                     foreach ($Locations as $Location) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!Services::isChildExists($Location->id, Auth::User()->account_id)) {
+                        if (! Services::isChildExists($Location->id, Auth::User()->account_id)) {
                             $Location->delete();
                         }
                     }
                 }
-                $records["status"] = true;
-                $records["message"] = "Records has been deleted successfully!";
+                $records['status'] = true;
+                $records['message'] = 'Records has been deleted successfully!';
             }
-            list($orderBy, $order) = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request);
             // Get Total Records
             $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
             $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
             $records = $this->getExtraData($records);
-            if (!empty($Services)) {
-                $records["data"] = $Services;
-                $records["permissions"] = [
+            if (! empty($Services)) {
+                $records['data'] = $Services;
+                $records['permissions'] = [
                     'edit' => Gate::allows('services_edit'),
                     'delete' => Gate::allows('services_destroy'),
                     'active' => Gate::allows('services_active'),
@@ -83,7 +81,7 @@ class ServicesController extends Controller
                     'create' => Gate::allows('services_create'),
                     'sort' => Gate::allows('services_sort'),
                 ];
-                $records["meta"] = [
+                $records['meta'] = [
                     'field' => $orderBy,
                     'page' => $page,
                     'pages' => $pages,
@@ -93,13 +91,15 @@ class ServicesController extends Controller
                 ];
 
             } //end
+
             return ApiHelper::apiDataTable($records);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    private function getExtraData($records = []) {
+    private function getExtraData($records = [])
+    {
 
         $filters = Filters::all(Auth::User()->id, 'services');
 
@@ -113,14 +113,14 @@ class ServicesController extends Controller
 
         $records['filter_values'] = [
             'services' => $Services,
-            'status' => config('constants.status')
+            'status' => config('constants.status'),
         ];
 
         $records['active_filters'] = $filters;
 
         return $records;
     }
-   
+
     /**
      * Show the form for creating new Permission.
      *
@@ -128,7 +128,7 @@ class ServicesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('services_create')) {
+        if (! Gate::allows('services_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -149,20 +149,19 @@ class ServicesController extends Controller
             'service' => $service,
             'durations' => $durations,
             'tax_treatment_types' => $tax_treatment_types,
-            'select_tax_treatment_type' => $select_tax_treatment_type
+            'select_tax_treatment_type' => $select_tax_treatment_type,
         ]);
     }
 
     /**
      * Store a newly created Permission in storage.
      *
-     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
 
-        if (!Gate::allows('services_create')) {
+        if (! Gate::allows('services_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -184,7 +183,6 @@ class ServicesController extends Controller
     /**
      * Validate form fields
      *
-     * @param \Illuminate\Http\Request $request
      * @return Validator $validator;
      */
     protected function verifyFields(Request $request)
@@ -195,16 +193,15 @@ class ServicesController extends Controller
         ]);
     }
 
-
     /**
      * Show the form for editing Permission.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
-        if (!Gate::allows('services_edit')) {
+        if (! Gate::allows('services_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -235,20 +232,19 @@ class ServicesController extends Controller
             'service' => $service,
             'durations' => $durations,
             'tax_treatment_types' => $tax_treatment_types,
-            'select_tax_treatment_type' => $select_tax_treatment_type
+            'select_tax_treatment_type' => $select_tax_treatment_type,
         ]);
     }
 
     /**
      * Update Permission in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('services_edit')) {
+        if (! Gate::allows('services_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $validator = $this->verifyFields($request);
@@ -256,16 +252,15 @@ class ServicesController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         $service = Services::findOrFail($id);
-        if($service->parent_id > 0 && $request->parent_id == 0)
-        {
+        if ($service->parent_id > 0 && $request->parent_id == 0) {
             $check_appointment = Appointments::whereServiceId($id)->count();
-            if($check_appointment > 0){
+            if ($check_appointment > 0) {
                 return ApiHelper::apiResponse($this->error, 'Service can not be updated due to one or more treatments are associated with it.', false);
             }
         }
         if (
             Services::isChildExists($id, Auth::User()->account_id) &&
-            ($service->parent_id != $request->get('parent_id') || $service->end_node != (int)$request->get('end_node'))
+            ($service->parent_id != $request->get('parent_id') || $service->end_node != (int) $request->get('end_node'))
         ) {
             return ApiHelper::apiResponse($this->success, 'Parent Service can not be changed due to one or more services are associated with it.', false);
         }
@@ -278,16 +273,15 @@ class ServicesController extends Controller
         }
     }
 
-
     /**
      * Remove Permission from storage.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
-        if (!Gate::allows('services_destroy')) {
+        if (! Gate::allows('services_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -296,20 +290,20 @@ class ServicesController extends Controller
         if ($result['status']) {
             return ApiHelper::apiResponse($this->success, $result['message']);
         }
+
         return ApiHelper::apiResponse($this->success, $result['message'], false);
     }
 
     /**
      * Inactive Record from storage.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request)
     {
         try {
 
-            if (!Gate::allows('services_active') && !Gate::allows('services_inactive')) {
+            if (! Gate::allows('services_active') && ! Gate::allows('services_inactive')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
@@ -329,13 +323,15 @@ class ServicesController extends Controller
         }
 
     }
+
     public function GetColor(Request $request)
     {
-        if($request->service != 0){
-            $service = Services::where('id',$request->service)->first();
-            return response()->json(['color'=>$service->color]);
-        }else{
-            return response()->json(['color'=>"#000"]);
+        if ($request->service != 0) {
+            $service = Services::where('id', $request->service)->first();
+
+            return response()->json(['color' => $service->color]);
+        } else {
+            return response()->json(['color' => '#000']);
         }
-    } 
+    }
 }

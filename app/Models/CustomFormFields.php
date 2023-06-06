@@ -13,32 +13,36 @@ class CustomFormFields extends BaseModal
     use SoftDeletes;
 
     const sort_field = 'sort_number';
-    protected $fillable = ['account_id', 'name', "description", "field_type", 'content', 'section_id', 'active', 'user_form_id', 'sort_number', 'created_by', 'updated_by', 'created_at', 'updated_at','form_type'];
+
+    protected $fillable = ['account_id', 'name', 'description', 'field_type', 'content', 'section_id', 'active', 'user_form_id', 'sort_number', 'created_by', 'updated_by', 'created_at', 'updated_at', 'form_type'];
 
     protected $table = 'custom_form_fields';
 
-    protected static $_fillable = ['name', "description", "field_type", 'content', 'section_id', 'active', 'user_form_id', 'sort_number','form_type'];
+    protected static $_fillable = ['name', 'description', 'field_type', 'content', 'section_id', 'active', 'user_form_id', 'sort_number', 'form_type'];
 
     /**
      * Logable
+     *
      * @var array
      */
-    public  $__fillable = ['name', "description", "field_type", 'content', 'section_id', 'active', 'user_form_id', 'sort_number','form_type'];
+    public $__fillable = ['name', 'description', 'field_type', 'content', 'section_id', 'active', 'user_form_id', 'sort_number', 'form_type'];
 
-    protected static $_table = "custom_form_fields";
+    protected static $_table = 'custom_form_fields';
 
     /**
      * Logable through event
+     *
      * @var string
      */
-    public $__table = "custom_form_fields";
+    public $__table = 'custom_form_fields';
+
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($cityId = false)
+    public static function getActiveSorted($cityId = false)
     {
-        if ($cityId && !is_array($cityId)) {
-            $cityId = array($cityId);
+        if ($cityId && ! is_array($cityId)) {
+            $cityId = [$cityId];
         }
         if ($cityId) {
             return self::whereIn('id', $cityId)->get()->pluck('name', 'id');
@@ -47,52 +51,50 @@ class CustomFormFields extends BaseModal
         }
     }
 
-
-
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveFeaturedOnly($cityId = false, $account_id)
+    public static function getActiveFeaturedOnly($cityId, $account_id)
     {
-        if ($cityId && !is_array($cityId)) {
-            $cityId = array($cityId);
+        if ($cityId && ! is_array($cityId)) {
+            $cityId = [$cityId];
         }
 
         $query = self::where(['active' => 1, 'is_featured' => 1, 'account_id' => $account_id]);
         if ($cityId) {
             $query->whereIn('id', $cityId);
         }
+
         return $query->OrderBy('sort_number', 'asc');
     }
-
 
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id, $user_id, $form_id)
+    public static function createRecord($request, $account_id, $user_id, $form_id)
     {
         $data = [];
-        $title = $request->get("question");
-        $options = $request->get("field");
-        $field_type = $request->get("field_type");
-        $description = $request->get("description");
+        $title = $request->get('question');
+        $options = $request->get('field');
+        $field_type = $request->get('field_type');
+        $description = $request->get('description');
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        $data["content"] = CustomFormHelper::getContentJson($request);
+        $data['content'] = CustomFormHelper::getContentJson($request);
 
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['user_form_id'] = $form_id;
-        $data["field_type"] = $field_type;
-        $data["created_by"] = $user_id;
+        $data['field_type'] = $field_type;
+        $data['created_by'] = $user_id;
         $record = self::create($data);
 
         $record->update([self::sort_field => $record->id]);
+
         return $record;
 
     }
@@ -100,25 +102,20 @@ class CustomFormFields extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
-     * @param $account_id
-     * @param $user_id
-     * @param $form_id
-     * @param $field_id
+     * @param  \Illuminate\Http\Request  $request
      * @return null (mixed)
      */
-    static public function updateRecord($request, $account_id, $user_id, $form_id, $field_id)
+    public static function updateRecord($request, $account_id, $user_id, $form_id, $field_id)
     {
 
         $old_data = (self::find($field_id))->toArray();
         $record = self::where([
             'id' => $field_id,
             'user_form_id' => $form_id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -127,10 +124,11 @@ class CustomFormFields extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        $data["content"] = CustomFormHelper::getContentJson($request);
-        $data["updated_by"] = $user_id;
+        $data['content'] = CustomFormHelper::getContentJson($request);
+        $data['updated_by'] = $user_id;
 
         $record->update($data);
+
         return $record;
     }
 
@@ -138,11 +136,9 @@ class CustomFormFields extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         if (
             Locations::where(['city_id' => $id, 'account_id' => $account_id])->count() ||
@@ -158,18 +154,19 @@ class CustomFormFields extends BaseModal
     public static function sortFields(Request $request, $id, $account_id, $user_id)
     {
 
-        if ($request->has("cs_field")) {
-            $fields = $request->get("cs_field");
+        if ($request->has('cs_field')) {
+            $fields = $request->get('cs_field');
             foreach ($fields as $order_no => $field_id) {
                 $custom_field = self::where([
                     'id' => $field_id,
                     'user_form_id' => $id,
-                    'account_id' => $account_id
+                    'account_id' => $account_id,
                 ])->first();
-                $data["updated_by"] = $user_id;
+                $data['updated_by'] = $user_id;
 
                 $custom_field->update([self::sort_field => $order_no]);
             }
+
             return true;
         } else {
             return null;
@@ -178,8 +175,6 @@ class CustomFormFields extends BaseModal
 
     /**
      * Delete field
-     * @param $form_id
-     * @param $field_id
      */
     public static function deleteRecord($form_id, $field_id)
     {
@@ -191,30 +186,24 @@ class CustomFormFields extends BaseModal
     /**
      * Model boot for database events
      */
-
-    public static function boot() {
-
-
+    public static function boot()
+    {
 
         parent::boot();
 
-
-        static::created(function($item) {
+        static::created(function ($item) {
 
             Event::dispatch('custom_form_field.created', $item);
 
         });
 
-
-        static::updating(function($item) {
+        static::updating(function ($item) {
 
             Event::dispatch('custom_form_field.updating', $item);
 
         });
 
-
-
-        static::deleting(function($item) {
+        static::deleting(function ($item) {
 
             Event::dispatch('custom_form_field.deleting', $item);
 

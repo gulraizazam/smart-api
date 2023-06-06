@@ -2,24 +2,11 @@
 
 namespace App\Reports;
 
-use App\Helpers\GeneralFunctions;
-use App\Models\AppointmentStatuses;
-use App\Models\Invoices;
-use App\Models\InvoiceStatuses;
-use App\Models\Patients;
-use App\Models\Services;
-use Carbon\Carbon;
-use DB;
-use App\Helpers\ACL;
-use App\Models\PackageAdvances;
 use App\Models\Locations;
-use Config;
+use App\Models\PackageAdvances;
 use Auth;
-use App\Models\Appointments;
-use Illuminate\Support\Facades\Gate;
-use App\User;
-
-
+use Carbon\Carbon;
+use Config;
 
 class dashboardreport
 {
@@ -27,14 +14,14 @@ class dashboardreport
      * Collection by centre widgets calculation
      */
 
-    public static function CollectionByRevenueWidgets($location_informations, $account_id, $where,$request)
+    public static function CollectionByRevenueWidgets($location_informations, $account_id, $where, $request)
     {
         $total = 0;
-        $report_data = array();
-        $wherecondtion = array();
+        $report_data = [];
+        $wherecondtion = [];
         $report_data[] = [
             'Task',
-            'Hours per Day'
+            'Hours per Day',
         ];
         $counter = 0;
         foreach ($location_informations as $key => $location_infomation) {
@@ -59,11 +46,11 @@ class dashboardreport
                         ['account_id', '=', $account_id],
                         ['location_id', '=', $location_infomation],
                     ])->get();
-                    
+
             }
             if ($where == 'week') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
-                    ->whereDate('created_at', '<=',Carbon::now()->endOfWeek()->format('Y-m-d'))
+                    ->whereDate('created_at', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
                         ['location_id', '=', $location_infomation],
@@ -86,7 +73,7 @@ class dashboardreport
                     ])->get();
             }
             $location_single_info = Locations::find($location_infomation);
-            
+
             if ($packagesadvances) {
                 $balance = 0;
                 $total_balance = 0;
@@ -95,7 +82,7 @@ class dashboardreport
                 $total_refund_out = 0;
 
                 foreach ($packagesadvances as $packagesadvance) {
-                    
+
                     if (
                         $packagesadvance->cash_flow == 'in' &&
                         $packagesadvance->is_adjustment == '0' &&
@@ -105,11 +92,11 @@ class dashboardreport
                         switch ($packagesadvance->cash_flow) {
                             case 'in':
                                 $balance = $balance + $packagesadvance->cash_amount;
-                                
+
                                 break;
                             case 'out':
                                 $balance = $balance - $packagesadvance->cash_amount;
-                                
+
                                 break;
                             default:
                                 break;
@@ -181,42 +168,43 @@ class dashboardreport
             }
             $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
             $In_hand_balance = $total_revenue - $total_refund_out;
-                if ($In_hand_balance > 0) {
-                    $report_data[$location_infomation] = array(
-                        $location_single_info->city->name . ' - ' . $location_single_info->name,
-                        $In_hand_balance,
-                    );
-                    $total += $In_hand_balance;
-                }
+            if ($In_hand_balance > 0) {
+                $report_data[$location_infomation] = [
+                    $location_single_info->city->name.' - '.$location_single_info->name,
+                    $In_hand_balance,
+                ];
+                $total += $In_hand_balance;
+            }
             $counter++;
         }
+
         return [
             $report_data,
-            $total
+            $total,
         ];
     }
 
-    public static function MyCollectionByRevenueWidgets($location_information, $account_id, $where,$request)
+    public static function MyCollectionByRevenueWidgets($location_information, $account_id, $where, $request)
     {
-        
+
         if (auth()->id() === 1) {
             return self::CollectionByRevenueWidgets($location_information, $account_id, $where, $request);
         }
 
         $total = 0;
-        $report_data = array();
-        $wherecondtion = array();
+        $report_data = [];
+        $wherecondtion = [];
 
-        $wherecondtion[] = array(
+        $wherecondtion[] = [
             'created_by',
             '=',
-            Auth::User()->id
-        );
+            Auth::User()->id,
+        ];
         $counter = 0;
 
         $report_data[] = [
             'Task',
-            'Hours per Day'
+            'Hours per Day',
         ];
 
         foreach ($location_information as $key => $location_infomation) {
@@ -355,10 +343,10 @@ class dashboardreport
             $In_hand_balance = $total_revenue - $total_refund_out;
 
             if ($In_hand_balance > 0) {
-                $report_data[] = array(
-                    $location_single_info->city->name . ' - ' . $location_single_info->name,
+                $report_data[] = [
+                    $location_single_info->city->name.' - '.$location_single_info->name,
                     $In_hand_balance,
-                );
+                ];
 
                 $total += $In_hand_balance;
             }
@@ -368,59 +356,60 @@ class dashboardreport
 
         return [
             $report_data,
-            $total
+            $total,
         ];
     }
-    public static function collectionbycenter($location_informations, $account_id, $where,$request)
+
+    public static function collectionbycenter($location_informations, $account_id, $where, $request)
     {
         $total = 0;
-        $wherecondtion = array();
+        $wherecondtion = [];
         foreach ($location_informations as $key => $location_infomation) {
             if ($where == 'today') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
-                ->where([
-                    ['account_id', '=', $account_id],
-                    ['location_id', '=', $location_infomation],
-                ])->get();    
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $location_infomation],
+                    ])->get();
             }
             if ($where == 'yesterday') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->where([
-                    ['account_id', '=', $account_id],
-                    ['location_id', '=', $location_infomation],
-                ])->get();
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $location_infomation],
+                    ])->get();
             }
             if ($where == 'last7days') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
-                ->where([
-                    ['account_id', '=', $account_id],
-                    ['location_id', '=', $location_infomation],
-                ])->get();
+                    ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $location_infomation],
+                    ])->get();
             }
             if ($where == 'week') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfWeek())
-                ->whereDate('created_at', '<=', Carbon::now()->endOfWeek())
-                ->where([
-                    ['account_id', '=', $account_id],
-                    ['location_id', '=', $location_infomation],
-                ])->get();
+                    ->whereDate('created_at', '<=', Carbon::now()->endOfWeek())
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $location_infomation],
+                    ])->get();
             }
             if ($where == 'thisMonth') {
                 $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->where([
-                    ['account_id', '=', $account_id],
-                    ['location_id', '=', $location_infomation],
-                ])->get();
+                    ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $location_infomation],
+                    ])->get();
             }
             if ($where == 'lastmonth') {
-                $packagesadvances = PackageAdvances::whereDate('created_at','>=', Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d') )
-                ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
-                ->where([
-                    ['account_id', '=', $account_id],
-                    ['location_id', '=', $location_infomation],
-                ])->get();   
+                $packagesadvances = PackageAdvances::whereDate('created_at', '>=', Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'))
+                    ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
+                    ->where([
+                        ['account_id', '=', $account_id],
+                        ['location_id', '=', $location_infomation],
+                    ])->get();
             }
             $location_single_info = Locations::find($location_infomation);
             if ($packagesadvances) {
@@ -430,7 +419,7 @@ class dashboardreport
                 $total_revenue_card_in = 0;
                 $total_refund_out = 0;
                 foreach ($packagesadvances as $packagesadvance) {
-                    if(
+                    if (
                         $packagesadvance->cash_flow == 'in' &&
                         $packagesadvance->is_adjustment == '0' &&
                         $packagesadvance->is_tax == '0' &&
@@ -439,11 +428,11 @@ class dashboardreport
                         switch ($packagesadvance->cash_flow) {
                             case 'in':
                                 $balance = $balance + $packagesadvance->cash_amount;
-                                
+
                                 break;
                             case 'out':
                                 $balance = $balance - $packagesadvance->cash_amount;
-                                
+
                                 break;
                             default:
                                 break;
@@ -515,10 +504,11 @@ class dashboardreport
             }
             $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
             $In_hand_balance = $total_revenue - $total_refund_out;
-            $total += $In_hand_balance;   
+            $total += $In_hand_balance;
         }
+
         return [
-           $total
+            $total,
         ];
-    }  
+    }
 }
