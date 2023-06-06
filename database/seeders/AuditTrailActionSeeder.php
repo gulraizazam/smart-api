@@ -16,7 +16,7 @@ class AuditTrailActionSeeder extends Seeder
     {
         $actions = $this->actions();
         foreach ($actions as $action) {
-            if (!AuditTrailActions::where($action)->exists()) {
+            if (! AuditTrailActions::where($action)->exists()) {
                 AuditTrailActions::create($action);
             }
         }

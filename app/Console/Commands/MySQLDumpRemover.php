@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\DBBackups;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Config;
 
 class MySQLDumpRemover extends Command
 {
@@ -45,9 +44,9 @@ class MySQLDumpRemover extends Command
 
             $db_backups = DBBackups::whereDate('created_at', '<=', Carbon::parse(Carbon::now())->subDays(30)->toDateString())
                 ->get();
-            if($db_backups) {
+            if ($db_backups) {
                 foreach ($db_backups as $db_backup) {
-                    @unlink($db_backup->path . $ds . $db_backup->file);
+                    @unlink($db_backup->path.$ds.$db_backup->file);
                     DBBackups::where('id', $db_backup->id)->delete();
                 }
             }

@@ -2,25 +2,26 @@
 
 namespace App\Reports;
 
+use App\Helpers\ACL;
+use App\Models\Appointments;
 use App\Models\InvoiceStatuses;
 use App\User;
 use Config;
-use App\Helpers\ACL;
-use App\Models\Appointments;
 
 class Treatments
 {
-
     /**
      * Generate General Report
+     *
      * @param (mixed) $request
      * @return (mixed)
      */
-    public static function clientcompletedtreatment($data) {
+    public static function clientcompletedtreatment($data)
+    {
 
-        $where = array();
+        $where = [];
 
-        if(isset($data['date_range']) && $data['date_range']) {
+        if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
             $end_date = date('Y-m-d', strtotime($date_range[1]));
@@ -28,52 +29,53 @@ class Treatments
             $start_date = null;
             $end_date = null;
         }
-        if(isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+        if (isset($data['patient_id']) && $data['patient_id']) {
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
-        if(isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(
+        if (isset($data['city_id']) && $data['city_id']) {
+            $where[] = [
                 'city_id',
                 '=',
-                $data['city_id']
-            );
+                $data['city_id'],
+            ];
         }
-        if(isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(
+        if (isset($data['region_id']) && $data['region_id']) {
+            $where[] = [
                 'region_id',
                 '=',
-                $data['region_id']
-            );
+                $data['region_id'],
+            ];
         }
 
-        if (isset($data['location_id']) && $data['location_id']){
-            $where[] = array(
+        if (isset($data['location_id']) && $data['location_id']) {
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
 
-        $invoicestatus = InvoiceStatuses::where('slug','=','paid')->first();
+        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
-        return Appointments::whereHas('hasInvoices', function ($query) use ($invoicestatus){
-            $query->where('invoice_status_id',$invoicestatus->id);
+        return Appointments::whereHas('hasInvoices', function ($query) use ($invoicestatus) {
+            $query->where('invoice_status_id', $invoicestatus->id);
         })
-        ->whereDate('created_at','>=', $start_date)
-        ->whereDate('created_at', '<=', $end_date)
-        ->where($where)
-        ->orderBy('created_at','asc')
-        ->get();
+            ->whereDate('created_at', '>=', $start_date)
+            ->whereDate('created_at', '<=', $end_date)
+            ->where($where)
+            ->orderBy('created_at', 'asc')
+            ->get();
     }
 
-    public static function ClientWithNocompletedtreatment($data){
-        $where = array();
+    public static function ClientWithNocompletedtreatment($data)
+    {
+        $where = [];
 
-        if(isset($data['date_range']) && $data['date_range']) {
+        if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
             $end_date = date('Y-m-d', strtotime($date_range[1]));
@@ -81,54 +83,53 @@ class Treatments
             $start_date = null;
             $end_date = null;
         }
-        if(isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+        if (isset($data['patient_id']) && $data['patient_id']) {
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
-        if(isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(
+        if (isset($data['city_id']) && $data['city_id']) {
+            $where[] = [
                 'city_id',
                 '=',
-                $data['city_id']
-            );
+                $data['city_id'],
+            ];
         }
-        if(isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(
+        if (isset($data['region_id']) && $data['region_id']) {
+            $where[] = [
                 'region_id',
                 '=',
-                $data['region_id']
-            );
+                $data['region_id'],
+            ];
         }
 
-        if (isset($data['location_id']) && $data['location_id']){
-            $where[] = array(
+        if (isset($data['location_id']) && $data['location_id']) {
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
 
-        $invoicestatus = InvoiceStatuses::where('slug','!=','paid')->pluck('id');
+        $invoicestatus = InvoiceStatuses::where('slug', '!=', 'paid')->pluck('id');
 
-        return Appointments::whereDoesntHave('hasInvoices', function ($query) use ($invoicestatus){
-            $query->whereIn('invoice_status_id',$invoicestatus);
+        return Appointments::whereDoesntHave('hasInvoices', function ($query) use ($invoicestatus) {
+            $query->whereIn('invoice_status_id', $invoicestatus);
         })
-        ->whereDate('created_at','>=', $start_date)
-        ->whereDate('created_at', '<=', $end_date)
-        ->where($where)
-        ->orderBy('created_at','desc')
-        ->get();
+            ->whereDate('created_at', '>=', $start_date)
+            ->whereDate('created_at', '<=', $end_date)
+            ->where($where)
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
-
 
     public static function clientwithtreatmentsinparticularmonth($data)
     {
-        $where = array();
+        $where = [];
 
-        if(isset($data['date_range']) && $data['date_range']) {
+        if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
             $end_date = date('Y-m-d', strtotime($date_range[1]));
@@ -136,74 +137,76 @@ class Treatments
             $start_date = null;
             $end_date = null;
         }
-        if(isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+        if (isset($data['patient_id']) && $data['patient_id']) {
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
-        if(isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(
+        if (isset($data['city_id']) && $data['city_id']) {
+            $where[] = [
                 'city_id',
                 '=',
-                $data['city_id']
-            );
+                $data['city_id'],
+            ];
         }
-        if(isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(
+        if (isset($data['region_id']) && $data['region_id']) {
+            $where[] = [
                 'region_id',
                 '=',
-                $data['region_id']
-            );
+                $data['region_id'],
+            ];
         }
 
-        if (isset($data['location_id']) && $data['location_id']){
-            $where[] = array(
+        if (isset($data['location_id']) && $data['location_id']) {
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
 
-        return Appointments::whereDate('created_at','>=', $start_date)
-        ->whereDate('created_at', '<=', $end_date)
-        ->where($where)
-        ->orderBy('created_at','desc')
-        ->get();
+        return Appointments::whereDate('created_at', '>=', $start_date)
+            ->whereDate('created_at', '<=', $end_date)
+            ->where($where)
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     /**
      * client With Birthday + X days Report
+     *
      * @param (mixed) $request
      * @return (mixed)
      */
-    public static function clientswithbirthday($data){
-        $where = array();
-        if(isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+    public static function clientswithbirthday($data)
+    {
+        $where = [];
+        if (isset($data['patient_id']) && $data['patient_id']) {
+            $where[] = [
                 'users.id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
-        if(isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(
+        if (isset($data['city_id']) && $data['city_id']) {
+            $where[] = [
                 'leads.city_id',
                 '=',
-                $data['city_id']
-            );
+                $data['city_id'],
+            ];
         }
-        if(isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(
+        if (isset($data['region_id']) && $data['region_id']) {
+            $where[] = [
                 'leads.region_id',
                 '=',
-                $data['region_id']
-            );
+                $data['region_id'],
+            ];
         }
-        if(count($where)) {
-            return User::leftjoin('leads','users.id','=','leads.patient_id')
-                ->where('users.user_type_id','=',Config::get('constants.patient_id'))
+        if (count($where)) {
+            return User::leftjoin('leads', 'users.id', '=', 'leads.patient_id')
+                ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
                 ->where($where)
                 ->where(function ($query) {
                     $query->whereIn('leads.city_id', ACL::getUserCities());
@@ -213,8 +216,8 @@ class Treatments
                 ->groupby('users.id')
                 ->get();
         } else {
-            return User::leftjoin('leads','users.id','=','leads.patient_id')
-                ->where('users.user_type_id','=',Config::get('constants.patient_id'))
+            return User::leftjoin('leads', 'users.id', '=', 'leads.patient_id')
+                ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
                 ->where(function ($query) {
                     $query->whereIn('leads.city_id', ACL::getUserCities());
                     $query->orWhereNull('leads.city_id');

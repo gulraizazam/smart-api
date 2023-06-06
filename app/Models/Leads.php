@@ -2,27 +2,23 @@
 
 namespace App\Models;
 
-use App\Models\User;
+use App\Helpers\ACL;
+use App\Helpers\GeneralFunctions;
+use App\Helpers\Widgets\LocationsWidget;
+use Auth;
+use Carbon\Carbon;
+use Config;
+use DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Config;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\ACL;
-use App\Models\Telecomprovidernumber;
-use App\Helpers\Widgets\AgeCalculatorWidget;
-use Carbon\Carbon;
-use DB;
-use App\Helpers\Widgets\LocationsWidget;
 
 class Leads extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id','child_service_id','location_id'];
+    protected $fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'child_service_id', 'location_id'];
 
-    protected static $_fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id','town_id'];
+    protected static $_fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'town_id'];
 
     protected $table = 'leads';
 
@@ -35,10 +31,12 @@ class Leads extends BaseModal
     {
         return $this->belongsTo('App\Models\Services')->withTrashed();
     }
+
     public function childservice()
     {
-        return $this->belongsTo('App\Models\Services','child_service_id')->withTrashed();
+        return $this->belongsTo('App\Models\Services', 'child_service_id')->withTrashed();
     }
+
     /**
      * Get the Patient that owns the Lead.
      */
@@ -108,17 +106,18 @@ class Leads extends BaseModal
      */
     public function towns()
     {
-        return $this->belongsTo('App\Models\Locations','location_id', 'id')->withTrashed();
+        return $this->belongsTo('App\Models\Locations', 'location_id', 'id')->withTrashed();
     }
+
     /**
-     * @param $id
      * @return \Illuminate\Database\Eloquent\Builder|Model|object|null
      */
-    static public function getData($id) {
+    public static function getData($id)
+    {
 
         return self::with('patient')->where([
-            ['id','=',$id],
-            ['account_id','=',Auth::user()->account_id]
+            ['id', '=', $id],
+            ['account_id', '=', Auth::user()->account_id],
         ])->first();
     }
 
@@ -126,13 +125,14 @@ class Leads extends BaseModal
      * Prepare SMS Contnet for Delivery
      *
      * @param: int $lead_id
+     *
      * @param: int $smsContent
      *
      * @return: string
      */
-    static public function prepareSMSContent($lead_id = false, $smsContent)
+    public static function prepareSMSContent($lead_id, $smsContent)
     {
-        if (!$lead_id) {
+        if (! $lead_id) {
             return $smsContent;
         } else {
             // Load Globar Setting for Head Office
@@ -179,35 +179,34 @@ class Leads extends BaseModal
      * Create Record
      *
      * @param data,parent_data
-     *
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_data, $status)
+    public static function createRecord($data, $parent_data, $status)
     {
 
-        if ($status == "Appointment") {
+        if ($status == 'Appointment') {
             $data['service_id'] = $data['base_service_id'];
-            $record = Leads::updateOrCreate(array(
+            $record = Leads::updateOrCreate([
                 'patient_id' => $parent_data->id,
-                'service_id' =>  $data['base_service_id'],//$data['service_id'],
+                'service_id' => $data['base_service_id'], //$data['service_id'],
                 'account_id' => Auth::User()->account_id,
-                'created_at' => Carbon::now()->timestamp
-            ), $data);
+                'created_at' => Carbon::now()->timestamp,
+            ], $data);
             $final_data = $record;
         } else {
             if (isset($data['city_id']) && $data['city_id']) {
                 // Set Region ID
                 $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
             }
-            $checkLeadExistance=Leads::where(array(
+            $checkLeadExistance = Leads::where([
                 'patient_id' => $parent_data->id,
                 /* Patient Phone and Treatment are unique to create a service */
                 'service_id' => $data['service_id'],
-                'account_id' => Auth::User()->account_id
-            ))->first();
-            if(!$checkLeadExistance){
+                'account_id' => Auth::User()->account_id,
+            ])->first();
+            if (! $checkLeadExistance) {
                 $record = Leads::create($data);
-            }else{
+            } else {
                 $checkLeadExistance->lead_status_id = 1;
                 $checkLeadExistance->created_at = Carbon::now()->timestamp;
                 $checkLeadExistance->update();
@@ -217,6 +216,7 @@ class Leads extends BaseModal
         }
         $parent_id = $parent_data->id;
         AuditTrails::addEventLogger(self::$_table, 'create', $final_data, self::$_fillable, $record, $parent_id);
+
         return $record;
     }
 
@@ -224,19 +224,18 @@ class Leads extends BaseModal
      * Create Record
      *
      * @param data,parent_data
-     *
      * @return (mixed)
      */
-    static public function updateRecord($id, $data, $parent_data, $status = false)
+    public static function updateRecord($id, $data, $parent_data, $status = false)
     {
-        if ($status == "Appointment") {
+        if ($status == 'Appointment') {
             $old_data = (Leads::find($id))->toArray();
         } else {
             $old_data = '0';
         }
         $parent_id = $parent_data->id;
         $record = self::where(['id' => $id])->first();
-        if (!$record) {
+        if (! $record) {
             return null;
         }
         if (isset($data['city_id']) && $data['city_id']) {
@@ -258,10 +257,10 @@ class Leads extends BaseModal
      *
      * @return mixed
      * */
-    static public function getLeadReport($data)
+    public static function getLeadReport($data)
     {
 
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -272,93 +271,93 @@ class Leads extends BaseModal
             $end_date = null;
         }
         if (isset($data['cnic']) && $data['cnic']) {
-            $where[] = array(
+            $where[] = [
                 'users.cnic',
                 '=',
-                $data['cnic']
-            );
+                $data['cnic'],
+            ];
         }
         if (isset($data['dob']) && $data['dob']) {
-            $where[] = array(
+            $where[] = [
                 'users.dob',
                 '=',
-                $data['dob']
-            );
+                $data['dob'],
+            ];
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'users.id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['email']) && $data['email']) {
-            $where[] = array(
+            $where[] = [
                 'users.email',
                 'like',
-                '%' . $data['email'] . '%'
-            );
+                '%'.$data['email'].'%',
+            ];
         }
         if (isset($data['gender_id']) && $data['gender_id']) {
-            $where[] = array(
+            $where[] = [
                 'users.gender',
                 '=',
-                $data['gender_id']
-            );
+                $data['gender_id'],
+            ];
         }
         if (isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.region_id',
                 '=',
-                $data['region_id']
-            );
+                $data['region_id'],
+            ];
         }
         if (isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.city_id',
                 '=',
-                $data['city_id']
-            );
+                $data['city_id'],
+            ];
         }
         if (isset($data['lead_status_id']) && $data['lead_status_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.lead_status_id',
                 '=',
-                $data['lead_status_id']
-            );
+                $data['lead_status_id'],
+            ];
         }
         if (isset($data['service_id']) && $data['service_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.service_id',
                 '=',
-                $data['service_id']
-            );
+                $data['service_id'],
+            ];
         }
         if (isset($data['phone']) && $data['phone']) {
-            $where[] = array(
+            $where[] = [
                 'users.phone',
                 'like',
-                '%' . GeneralFunctions::cleanNumber($data['phone']) . '%'
-            );
+                '%'.GeneralFunctions::cleanNumber($data['phone']).'%',
+            ];
         }
         if (isset($data['user_id']) && $data['user_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.created_by',
                 '=',
-                $data['user_id']
-            );
+                $data['user_id'],
+            ];
         }
         if (isset($data['town_id']) && $data['town_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.town_id',
                 '=',
-                $data['town_id']
-            );
+                $data['town_id'],
+            ];
         }
         if (isset($data['age_group_range']) && $data['age_group_range']) {
             $age_range = explode(':', $data['age_group_range']);
-            $from = Carbon::now()->subYears((int)$age_range[1])->toDateString();
-            $to = Carbon::now()->subYears((int)$age_range[0])->toDateString();
+            $from = Carbon::now()->subYears((int) $age_range[1])->toDateString();
+            $to = Carbon::now()->subYears((int) $age_range[0])->toDateString();
         }
         $resultQuery = self::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
@@ -387,12 +386,13 @@ class Leads extends BaseModal
             foreach ($newPrefix as $prefix) {
                 $y++;
                 if ($y == 1) {
-                    $resultQuery->where('users.phone', 'like', $prefix . '%');
+                    $resultQuery->where('users.phone', 'like', $prefix.'%');
                 } else {
-                    $resultQuery->orWhere('users.phone', 'like', $prefix . '%');
+                    $resultQuery->orWhere('users.phone', 'like', $prefix.'%');
                 }
             }
         }
+
         return $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')->get();
     }
 
@@ -401,10 +401,10 @@ class Leads extends BaseModal
      * @param $request
      * @return mixed
      */
-    static public function getMarketingReport($data)
+    public static function getMarketingReport($data)
     {
 
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -415,81 +415,81 @@ class Leads extends BaseModal
             $end_date = null;
         }
         if (isset($data['cnic']) && $data['cnic']) {
-            $where[] = array(
+            $where[] = [
                 'users.cnic',
                 '=',
-                $data['cnic']
-            );
+                $data['cnic'],
+            ];
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'users.id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['email']) && $data['email']) {
-            $where[] = array(
+            $where[] = [
                 'users.email',
                 'like',
-                '%' . $data['email'] . '%'
-            );
+                '%'.$data['email'].'%',
+            ];
         }
         if (isset($data['gender_id']) && $data['gender_id']) {
-            $where[] = array(
+            $where[] = [
                 'users.gender',
                 '=',
-                $data['gender_id']
-            );
+                $data['gender_id'],
+            ];
         }
         if (isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.region_id',
                 '=',
-                $data['region_id']
-            );
+                $data['region_id'],
+            ];
         }
         if (isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.city_id',
                 '=',
-                $data['city_id']
-            );
+                $data['city_id'],
+            ];
         }
         if (isset($data['lead_status_id']) && $data['lead_status_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.lead_status_id',
                 '=',
-                $data['lead_status_id']
-            );
+                $data['lead_status_id'],
+            ];
         }
         if (isset($data['phone']) && $data['phone']) {
-            $where[] = array(
+            $where[] = [
                 'users.phone',
                 'like',
-                '%' . GeneralFunctions::cleanNumber($data['phone']) . '%'
-            );
+                '%'.GeneralFunctions::cleanNumber($data['phone']).'%',
+            ];
         }
         if (isset($data['user_id']) && $data['user_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.created_by',
                 '=',
-                $data['user_id']
-            );
+                $data['user_id'],
+            ];
         }
         if (isset($data['referred_id']) && $data['referred_id']) {
-            $where[] = array(
+            $where[] = [
                 'users.referred_by',
                 '=',
-                $data['referred_id']
-            );
+                $data['referred_id'],
+            ];
         }
 
         // Process Lead Status
-        $DefaultJunkLeadStatus = LeadStatuses::where(array(
+        $DefaultJunkLeadStatus = LeadStatuses::where([
             'account_id' => Auth::User()->account_id,
             'is_junk' => 1,
-        ))->first();
+        ])->first();
 
         if ($DefaultJunkLeadStatus) {
             $default_junk_lead_status_id = $DefaultJunkLeadStatus->id;
@@ -505,7 +505,7 @@ class Leads extends BaseModal
             })
             ->whereDate('users.created_at', '>=', $start_date)
             ->whereDate('users.created_at', '<=', $end_date)
-            ->whereNotIn('leads.lead_status_id', array($default_junk_lead_status_id));
+            ->whereNotIn('leads.lead_status_id', [$default_junk_lead_status_id]);
 
         if (count($where)) {
             $resultQuery->where($where);
@@ -521,10 +521,10 @@ class Leads extends BaseModal
     *
     * @return mixed
     * */
-    static public function getLeadSummaryReport($data)
+    public static function getLeadSummaryReport($data)
     {
 
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -535,18 +535,18 @@ class Leads extends BaseModal
             $end_date = null;
         }
         if (isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.region_id',
                 '=',
-                $data['region_id']
-            );
+                $data['region_id'],
+            ];
         }
         if (isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(
+            $where[] = [
                 'leads.city_id',
                 '=',
-                $data['city_id']
-            );
+                $data['city_id'],
+            ];
         }
         $resultQuery = self::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
@@ -560,11 +560,13 @@ class Leads extends BaseModal
         if (count($where)) {
             $resultQuery->where($where);
         }
+
         return $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')->get();
     }
 
     /**
      * Conversation Rate a notion wide Centers
+     *
      * @param (mixed) $request
      * @return (mixed)
      */
@@ -580,9 +582,9 @@ class Leads extends BaseModal
      *
      * @return mixed
      * */
-    static public function getNowReport($data, $account_id)
+    public static function getNowReport($data, $account_id)
     {
-        $where = array();
+        $where = [];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -602,7 +604,7 @@ class Leads extends BaseModal
         ORDER BY A.created_at DESC"));*/
         $appointment_info = DB::table('leads')->join('appointments', 'leads.id', '=', 'appointments.lead_id')->where([
             ['leads.lead_status_id', '!=', $junk_status->id],
-            ['appointments.base_appointment_status_id', '=', Config::get('constants.appointment_status_not_show')]
+            ['appointments.base_appointment_status_id', '=', Config::get('constants.appointment_status_not_show')],
         ])
             ->whereDate('appointments.created_at', '>=', $start_date)
             ->whereDate('appointments.created_at', '<=', $end_date)
@@ -611,9 +613,9 @@ class Leads extends BaseModal
             ->orderby('appointments.created_at', 'DESC')
             ->get();
 
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         $arrived = AppointmentStatuses::where('is_arrived', '=', '1')->first();
         $pending = AppointmentStatuses::where('is_default', '=', '1')->first();
@@ -639,6 +641,7 @@ class Leads extends BaseModal
                 }
             }
         }
+
         return $appointment_info;
     }
 }

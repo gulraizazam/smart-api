@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleSeed extends Seeder
 {
@@ -40,24 +40,24 @@ class RoleSeed extends Seeder
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
             ],
-//            [
-//                'title' => 'Activate',
-//                'name' => 'roles_active',
-//                'guard_name' => 'web',
-//                'main_group' => 0,
-//                'created_at' => \Carbon\Carbon::now(),
-//                'updated_at' => \Carbon\Carbon::now(),
-//                'parent_id' => $MainPermission->id,
-//            ],
-//            [
-//                'title' => 'Inactivate',
-//                'name' => 'roles_inactive',
-//                'guard_name' => 'web',
-//                'main_group' => 0,
-//                'created_at' => \Carbon\Carbon::now(),
-//                'updated_at' => \Carbon\Carbon::now(),
-//                'parent_id' => $MainPermission->id,
-//            ],
+            //            [
+            //                'title' => 'Activate',
+            //                'name' => 'roles_active',
+            //                'guard_name' => 'web',
+            //                'main_group' => 0,
+            //                'created_at' => \Carbon\Carbon::now(),
+            //                'updated_at' => \Carbon\Carbon::now(),
+            //                'parent_id' => $MainPermission->id,
+            //            ],
+            //            [
+            //                'title' => 'Inactivate',
+            //                'name' => 'roles_inactive',
+            //                'guard_name' => 'web',
+            //                'main_group' => 0,
+            //                'created_at' => \Carbon\Carbon::now(),
+            //                'updated_at' => \Carbon\Carbon::now(),
+            //                'parent_id' => $MainPermission->id,
+            //            ],
             [
                 'title' => 'Delete',
                 'name' => 'roles_destroy',
@@ -75,7 +75,7 @@ class RoleSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -83,8 +83,8 @@ class RoleSeed extends Seeder
         $role->givePermissionTo('roles_manage');
         $role->givePermissionTo('roles_create');
         $role->givePermissionTo('roles_edit');
-//        $role->givePermissionTo('roles_active');
-//        $role->givePermissionTo('roles_inactive');
+        //        $role->givePermissionTo('roles_active');
+        //        $role->givePermissionTo('roles_inactive');
         $role->givePermissionTo('roles_destroy');
         $role->givePermissionTo('roles_destroy_bulk');
     }

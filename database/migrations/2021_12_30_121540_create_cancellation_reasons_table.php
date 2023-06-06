@@ -25,7 +25,7 @@ class CreateCancellationReasonsTable extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('account_id','cancellation_reasons_account')
+            $table->foreign('account_id', 'cancellation_reasons_account')
                 ->references('id')
                 ->on('accounts');
             $table->foreign('appointment_type_id',

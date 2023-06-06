@@ -2,13 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Helpers\Filters;
+use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\ACL;
-use App\Helpers\Filters;
 
 class Cities extends BaseModal
 {
@@ -81,20 +78,20 @@ class Cities extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($cityId = false)
+    public static function getActiveSorted($cityId = false)
     {
-        if ($cityId && !is_array($cityId)) {
-            $cityId = array($cityId);
+        if ($cityId && ! is_array($cityId)) {
+            $cityId = [$cityId];
         }
         if ($cityId) {
             return self::whereIn('id', $cityId)->where([
                 ['account_id', '=', Auth::User()->account_id],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->get()->pluck('name', 'id');
         } else {
             return self::where([
                 ['account_id', '=', Auth::User()->account_id],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->pluck('name', 'id');
         }
     }
@@ -102,26 +99,27 @@ class Cities extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSortedFeatured($cityId = false, $name = 'name')
+    public static function getActiveSortedFeatured($cityId = false, $name = 'name')
     {
-        if ($cityId && !is_array($cityId)) {
-            $cityId = array($cityId);
+        if ($cityId && ! is_array($cityId)) {
+            $cityId = [$cityId];
         }
 
         $query = self::where(['active' => 1, 'is_featured' => 1]);
         if ($cityId) {
             $query->whereIn('id', $cityId);
         }
+
         return $query->get()->pluck($name, 'id');
     }
 
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveOnly($cityId = false, $account_id = false)
+    public static function getActiveOnly($cityId = false, $account_id = false)
     {
-        if ($cityId && !is_array($cityId)) {
-            $cityId = array($cityId);
+        if ($cityId && ! is_array($cityId)) {
+            $cityId = [$cityId];
         }
         $query = self::where(['active' => 1]);
         if ($cityId) {
@@ -130,9 +128,10 @@ class Cities extends BaseModal
         if ($account_id) {
             $query->where([
                 ['account_id', '=', $account_id],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ]);
         }
+
         return $query->OrderBy('sort_number', 'asc')->get();
     }
 
@@ -141,48 +140,47 @@ class Cities extends BaseModal
      */
     public function getFullNameAttribute($value)
     {
-        return ucfirst($this->region->name) . ' - ' . ucfirst($this->name);
+        return ucfirst($this->region->name).' - '.ucfirst($this->name);
     }
 
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveFeaturedOnly($cityId = false, $account_id)
+    public static function getActiveFeaturedOnly($cityId, $account_id)
     {
-        if ($cityId && !is_array($cityId)) {
-            $cityId = array($cityId);
+        if ($cityId && ! is_array($cityId)) {
+            $cityId = [$cityId];
         }
 
         $query = self::where(['active' => 1, 'is_featured' => 1, 'account_id' => $account_id]);
         if ($cityId) {
             $query->whereIn('id', $cityId);
         }
+
         return $query->OrderBy('sort_number', 'asc');
     }
 
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::cities_filters($request, $account_id, $apply_filter);
+        $where = self::cities_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_cities")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_cities')) {
                 return self::where($where)->count();
-            }else{
-                return self::where($where)->where('active',1)->count();
+            } else {
+                return self::where($where)->where('active', 1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_cities")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_cities')) {
                 return self::count();
-            }else{
-                return self::where('active',1)->count();
+            } else {
+                return self::where('active', 1)->count();
             }
         }
     }
@@ -190,28 +188,26 @@ class Cities extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
      * @param (int) $iDisplayStart Start Index
      * @param (int) $iDisplayLength Total Records Length
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::cities_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_cities")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_cities')) {
                 return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
-            }else{
-                return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
+            } else {
+                return self::where($where)->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_cities")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_cities')) {
                 return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
-            }else{
-                return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
+            } else {
+                return self::where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_number')->get();
             }
         }
     }
@@ -219,108 +215,108 @@ class Cities extends BaseModal
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @param (int) $account_id Current Organization's ID
      * @param (boolean) $apply_filter
      * @return (mixed)
      */
-    static public function cities_filters($request, $account_id, $apply_filter)
+    public static function cities_filters($request, $account_id, $apply_filter)
     {
 
-        $where = array();
+        $where = [];
         $filters = getFilters($request->all());
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'cities', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'cities', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'cities', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'cities', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'cities', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'cities', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'cities', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'cities', 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'cities', 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'cities', 'name').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'is_featured')) {
-            $where[] = array(
+            $where[] = [
                 'is_featured',
                 '=',
-                $filters['is_featured']
-            );
+                $filters['is_featured'],
+            ];
             Filters::put(Auth::User()->id, 'cities', 'is_featured', $filters['is_featured']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'cities', 'is_featured');
             } else {
                 if (Filters::get(Auth::User()->id, 'cities', 'is_featured')) {
-                    $where[] = array(
+                    $where[] = [
                         'is_featured',
                         '=',
-                        Filters::get(Auth::User()->id, 'cities', 'is_featured')
-                    );
+                        Filters::get(Auth::User()->id, 'cities', 'is_featured'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'region_id')) {
-            $where[] = array(
+            $where[] = [
                 'region_id',
                 '=',
-                $filters['region_id']
-            );
+                $filters['region_id'],
+            ];
             Filters::put(Auth::User()->id, 'cities', 'region_id', $filters['region_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'cities', 'region_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'cities', 'region_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'region_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'cities', 'region_id')
-                    );
+                        Filters::get(Auth::User()->id, 'cities', 'region_id'),
+                    ];
                 }
             }
         }
-        $where[] = array(
+        $where[] = [
             'slug',
             '=',
-            'custom'
-        );
+            'custom',
+        ];
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'cities', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -328,30 +324,29 @@ class Cities extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'cities', 'status') == 0 || Filters::get(Auth::user()->id, 'cities', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'cities', 'status') != null) {
-                        $where[] = array(
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get(Auth::user()->id, 'cities', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'cities', 'status'),
+                        ];
                     }
                 }
             }
         }
+
         return $where;
     }
-
 
     /**
      * Get All Records
      *
      * @param (int) $account_id Current Organization's ID
-     *
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id, $citiesids = false)
+    public static function getAllRecordsDictionary($account_id, $citiesids = false)
     {
-        if ($citiesids && !is_array($citiesids)) {
-            $citiesids = array($citiesids);
+        if ($citiesids && ! is_array($citiesids)) {
+            $citiesids = [$citiesids];
         }
         if ($citiesids) {
             return self::where(['account_id' => $account_id])->whereIn('id', $citiesids)->get()->getDictionary();
@@ -363,11 +358,10 @@ class Cities extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
 
         $data = $request->all();
@@ -375,9 +369,9 @@ class Cities extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if (!isset($data['is_featured'])) {
+        if (! isset($data['is_featured'])) {
             $data['is_featured'] = 0;
-        } else if ($data['is_featured'] == '') {
+        } elseif ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
 
@@ -396,13 +390,12 @@ class Cities extends BaseModal
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function DeleteRecord($id)
+    public static function DeleteRecord($id)
     {
         $citie = Cities::getData($id);
-        if (!$citie) {
+        if (! $citie) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
 
@@ -416,6 +409,7 @@ class Cities extends BaseModal
         //log request for delete for audit trail
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
@@ -423,17 +417,17 @@ class Cities extends BaseModal
      * inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
         $citie = Cities::getData($id);
-        if (!$citie) {
+        if (! $citie) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $citie->update(['active' => 0]);
         AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
     }
 
@@ -441,28 +435,27 @@ class Cities extends BaseModal
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static function activeRecord($id)
+    public static function activeRecord($id)
     {
         $citie = Cities::getData($id);
-        if (!$citie) {
+        if (! $citie) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $citie->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
     }
 
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (Cities::find($id))->toArray();
 
@@ -470,19 +463,18 @@ class Cities extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if (!isset($data['is_featured'])) {
+        if (! isset($data['is_featured'])) {
             $data['is_featured'] = 0;
-        } else if ($data['is_featured'] == '') {
+        } elseif ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
 
-
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -497,11 +489,9 @@ class Cities extends BaseModal
      * Check if child records exist
      *
      * @param (int) $id
-     * @param
-     *
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         if (
             Locations::where(['city_id' => $id, 'account_id' => $account_id])->count() ||
@@ -514,7 +504,7 @@ class Cities extends BaseModal
         return false;
     }
 
-    static public function getCities()
+    public static function getCities()
     {
 
         return self::where([

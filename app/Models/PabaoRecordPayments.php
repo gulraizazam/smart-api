@@ -4,14 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Symfony\Component\HttpFoundation\Request;
 
 class PabaoRecordPayments extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'amount', 'date_paid', 'pabao_record_id', 'created_by','updated_by', 'account_id','created_at','updated_at','deleted_at'
+        'amount', 'date_paid', 'pabao_record_id', 'created_by', 'updated_by', 'account_id', 'created_at', 'updated_at', 'deleted_at',
     ];
 
     protected $table = 'pabao_record_payments';
@@ -35,7 +34,8 @@ class PabaoRecordPayments extends Model
     /*
      * Save reocord in payment record module
      */
-    static public function CreateRecord($request,$account_id,$user_id){
+    public static function CreateRecord($request, $account_id, $user_id)
+    {
 
         $data['amount'] = $request->amount;
         $data['date_paid'] = $request->date_paid;
@@ -49,12 +49,14 @@ class PabaoRecordPayments extends Model
         return $record;
     }
 
-    static public function DeleteRecord($id){
+    public static function DeleteRecord($id)
+    {
 
         $payment_record = self::find($id);
-        if($payment_record){
+        if ($payment_record) {
 
             $payment_record->delete();
+
             return true;
         } else {
             return false;
