@@ -1268,6 +1268,11 @@ function addValidation(elem) {
     }
 }
 
+function cencleLead($this) {
+    $(".msg_new_lead").hide();
+    $(".new_lead").prop("checked", false);
+}
+
 function cencleImport($this) {
     $("#skip_lead_statuses").prop("disabled", true);
     $("#skip_lead_statuses").prop("checked", false);
