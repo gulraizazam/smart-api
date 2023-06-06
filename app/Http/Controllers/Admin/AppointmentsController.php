@@ -4422,7 +4422,7 @@ class AppointmentsController extends Controller
                 $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
             }
         }
-        $lead = Leads::where(['phone' => $request->get('phone')])->orderBy('id', 'desc')->first();
+        $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
         $appointmentData['patient_id'] = $patient->id;
         $appointmentData['lead_id'] = $lead->id;
         $appointmentData['created_at'] = Filters::getCurrentTimeStamp();
