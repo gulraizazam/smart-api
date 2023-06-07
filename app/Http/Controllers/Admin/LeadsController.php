@@ -609,6 +609,7 @@ class LeadsController extends Controller
                     $q->where(['service_id' => $data['service_id']]);
                 }])
                 ->where(['phone' => $data['phone'], 'account_id' => Auth::User()->account_id])
+                ->orderBy('id', 'desc')
                 ->first();
                 if($lead_check->lead_service->count()){
                     $child_service_id = (array_key_exists('child_service_id', $data)) ? $data['child_service_id'] : [];
