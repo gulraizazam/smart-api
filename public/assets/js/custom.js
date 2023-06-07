@@ -1130,7 +1130,7 @@ function get_query(){
     return result;
 }
 function patientSearch(search_id = 'patient_id',flag=1) {
-    $("." + search_id).on("input",function() {
+    $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
         if ($(this).val().length < 2) {
@@ -1143,13 +1143,12 @@ function patientSearch(search_id = 'patient_id',flag=1) {
                 type: "GET",
                 url: route('admin.users.getpatient.id'),
                 dataType: 'json',
-                delay: 250,
                 data: {search: $(this).val()},
                 success: function (response) {
                     let html = '';
                     let patients = response.data.patients;
                     if (patients.length) {
-                        Object.values(patients).forEach(function (patient) {
+                        patients.forEach(function (patient) {
                             html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
                         });
                         $(".suggestion-list").html(html);
@@ -1179,9 +1178,10 @@ function selectUser(name, user_id,  search_id,flag=1) {
 }
 
 function leadSearch(search_id = 'lead_search_id',flag=1) {
-    $("." + search_id).on("input",function() {
+    $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
+        console.log($(this).val());
         if ($(this).val().length < 2) {
             $(".suggesstion-box").hide();
             return false;
@@ -1198,7 +1198,7 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                     let html = '';
                     let leads = response.data.leads;
                     if (leads.length) {
-                        Object.values(leads).forEach(function (lead) {
+                        leads.forEach(function (lead) {
                             html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
                         });
                         $(".suggestion-list").html(html);
