@@ -1747,21 +1747,23 @@ class AppointmentsController extends Controller
                 $lead_service_check = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->count();
                 if($lead_service_check > 0){
                     $lead_service_update = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->orderby('id', 'desc')->first();
-                    LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->orderby('id', 'desc')->update([
+                    $lead_service_update->update([
                         'lead_id' => $lead->id,
                         'service_id' => $appointmentData['service_id'],
                         'status' => 1,
                     ]);
-                    LeadsServices::where(['lead_id' => $lead->id])->where('id', '!=', $lead_service_update->id)->update(['status' => 0]);
+                    $lead_service_u = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointmentData['service_id']])->orderby('id', 'desc')->first();
+                    LeadsServices::where(['lead_id' => $lead->id])->where('id', '!=', $lead_service_u->id)->update(['status' => 0]);
                     $lead->update(['updated_at' => Carbon::now()]);
                 } else {
                     $lead_service_update = LeadsServices::where(['lead_id' => $lead->id])->where('consultancy_id', '=', null)->orderby('id', 'desc')->first();
-                    LeadsServices::where(['lead_id' => $lead->id])->where('consultancy_id', '=', null)->orderby('id', 'desc')->update([
+                    $lead_service_update->update([
                         'lead_id' => $lead->id,
                         'service_id' => $appointmentData['service_id'],
                         'status' => 1,
                     ]);
-                    LeadsServices::where(['lead_id' => $lead->id])->where('id', '!=', $lead_service_update->id)->update(['status' => 0]);
+                    $lead_service_u = LeadsServices::where(['lead_id' => $lead->id])->where('consultancy_id', '=', null)->orderby('id', 'desc')->first();
+                    LeadsServices::where(['lead_id' => $lead->id])->where('id', '!=', $lead_service_u->id)->update(['status' => 0]);
                     $lead->update(['created_at' => Carbon::now()]);
                 }
             }
