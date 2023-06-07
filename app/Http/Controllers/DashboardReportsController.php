@@ -2304,8 +2304,8 @@ class DashboardReportsController extends Controller
                 'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
             ],
             'lastmonth' => [
-                'start_date' => Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d')
+                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')
             ]
         ];
 
@@ -2362,8 +2362,8 @@ class DashboardReportsController extends Controller
                 'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
             ],
             'lastmonth' => [
-                'start_date' => Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d')
+                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')
             ]
         ];
         $stats = AppointmentsDailyStats::select($data)
