@@ -1178,7 +1178,7 @@ function selectUser(name, user_id,  search_id,flag=1) {
 }
 
 function leadSearch(search_id = 'lead_search_id',flag=1) {
-    $("." + search_id).on("keyup",function() {
+    $("." + search_id).on("input",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
         console.log($(this).val());
