@@ -2418,8 +2418,9 @@ class LeadsController extends Controller
         set_time_limit(0);
         $resultQuery = Leads::query();
         if($request->service_id != null || $request->service_id != ''){
-            $resultQuery->with(['lead_service' => function($q) use($request){
-                $q->where(['service_id' => $request->service_id, 'status' => 1]);
+            $service_id = $request->service_id;
+            $resultQuery->with(['lead_service' => function($q) use($service_id){
+                $q->where(['service_id' => $service_id, 'status' => 1]);
             }]);
         } else {
             $resultQuery->with(['lead_service' => function($q){
@@ -2454,7 +2455,7 @@ class LeadsController extends Controller
             $resultQuery->whereBetween('leads.created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:00']);
         }
         $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
-        ->orderBy("leads.created_at", "DESC")->get();
+        ->orderBy("id", "DESC")->get();
         $customPaper = array(0,0,720,1440);
         $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
         return $pdf->download('leads.pdf');
