@@ -1849,8 +1849,9 @@ class LeadsController extends Controller
                                     continue;
                                 }
                             }
+                            $msg = (count($un_validService_list)) ? '. In_valid service list: ' . implode(", ", $un_validService_list) : '';
                             // Invalid data is provided
-                            return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($newPatientPhones) . ', Duplicates: ' . count($dupPhones). '. In_valid service list: ' . implode(", ", $un_validService_list));
+                            return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($newPatientPhones) . ', Duplicates: ' . count($dupPhones) . $msg);
                         } else {
                             return ApiHelper::apiResponse($this->success, 'Sheet contains in_valid list. phone: ' . implode(", ", $un_validPhone_list) . ', service: ' . implode(", ", $un_validService_list), false);
                         }
