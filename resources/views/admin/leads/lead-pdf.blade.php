@@ -4,7 +4,6 @@
             <th style="padding: 10px 15px 10px 15px; color: #fff;">ID</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Full Name</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Phone</th>
-            <th style="padding: 10px 15px 10px 15px; color: #fff;">Gender</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">City</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Centre</th>
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Region</th>
