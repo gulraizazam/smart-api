@@ -1138,7 +1138,6 @@ function patientSearch(search_id = 'patient_id',flag=1) {
             return false;
         }
         if ($(this).val() != '') {
-            let form_type = $(this).parents("form").find('.form_type').val();
             $.ajax({
                 type: "GET",
                 url: route('admin.users.getpatient.id'),
@@ -1146,6 +1145,7 @@ function patientSearch(search_id = 'patient_id',flag=1) {
                 data: {search: $(this).val()},
                 success: function (response) {
                     let html = '';
+                    $(".suggestion-list").html(html);
                     let patients = response.data.patients;
                     if (patients.length) {
                         patients.forEach(function (patient) {
