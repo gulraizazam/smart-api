@@ -1415,6 +1415,21 @@ class LeadsController extends Controller
                                  */
                                 continue;
                             }
+                            $service_id = null;
+                            $service = null;
+                            if (isset($SingleRow['H'])) {
+                                $service = trim(strtolower($SingleRow['H']));
+                            }
+                            if ($Treatments && $service) {
+                                foreach ($Treatments as $Name => $Id) {
+                                    if (trim(strtolower($service)) == trim(strtolower($Name))) {
+                                        $service_id = $Id;
+                                    }
+                                }
+                            }
+                            if ($service_id == null) {
+                                continue;
+                            }
                             if(strlen(trim($SingleRow['C'])) >= 10 && strlen(trim($SingleRow['C'])) <= 13) {
                                 // Process Phone Number
                                 $dupPhone_list[] = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
