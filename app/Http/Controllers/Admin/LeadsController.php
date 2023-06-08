@@ -282,6 +282,7 @@ class LeadsController extends Controller
                 if (count($where_service)) {
                     $countQuery->whereHas('lead_service', function($query) use($where_service){
                         $query->where($where_service);
+                        $query->where(['status' => 1]);
                     });
                 }
             }
@@ -298,6 +299,7 @@ class LeadsController extends Controller
             if (count($where_service)) {
                 $resultQuery->whereHas('lead_service', function($query) use($where_service){
                     $query->where($where_service);
+                    $query->where(['status' => 1]);
                 });
             }
             if ($lead_type) {
