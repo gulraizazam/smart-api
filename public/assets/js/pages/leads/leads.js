@@ -463,26 +463,20 @@ function setViewData(response) {
         $("#lead_status").text(lead_status);
 
         let activeservice = 'N/A';
-        if(service.name != ""){
-            if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
-                activeservice = lead?.lead_service?.find(service => service.status == 1)?.service.name;
-            }
+        if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
+            activeservice = lead?.lead_service?.find(service => service.status == 1)?.service.name;
         }
-        
         $("#activeservice").text(activeservice);
 
         let allservices = 'N/A';
         let services = lead?.lead_service;console.log('services', services)
         let serviceNames = [];
-        if(services.length > 0){
-            services.forEach(function(service){
-                if(!serviceNames.includes(service.service.name)){
-                serviceNames.push(service.service.name);
-                }
-            })
-            allservices = serviceNames.join(", ");
-            
-        }
+        services.forEach(function(service){
+            if(!serviceNames.includes(service.service.name)){
+            serviceNames.push(service.service.name);
+            }
+        })
+        allservices = serviceNames.join(", ");
         $("#allservices").text(allservices);
 
         let child = 'N/A';
