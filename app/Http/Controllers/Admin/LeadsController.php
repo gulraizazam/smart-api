@@ -1470,7 +1470,7 @@ class LeadsController extends Controller
                             $dupPhones = Leads::whereIn('phone', $dupPhone_list)
                             ->where('account_id', Auth::User()->account_id)
                             ->select('phone', 'id')
-                            ->get()
+                            ->orderBy('id', 'desc')->get()->unique('phone')
                             ->keyBy('phone');
                             if ($dupPhones) {
                                 $dupPhones = $dupPhones->toArray();
@@ -1481,7 +1481,7 @@ class LeadsController extends Controller
                             $found_patients = Leads::whereIn('phone', $dupPhone_list)
                             ->where('account_id', Auth::User()
                             ->account_id)->select('phone')
-                            ->get()
+                            ->orderBy('id', 'desc')->get()->unique('phone')
                             ->pluck('phone');
                             if ($found_patients) {
                                 $newPatientPhones = array_diff($dupPhone_list, $found_patients->toArray());
@@ -1512,7 +1512,7 @@ class LeadsController extends Controller
                          */
                         if(!count($un_validPhone_list)){
                             $allLeadsMapping = Leads::whereIn('phone', $dupPhone_list)
-                            ->where(['account_id' => Auth::User()->account_id])->select('phone')->get()->keyBy('phone');
+                            ->where(['account_id' => Auth::User()->account_id])->select('phone')->orderBy('id', 'desc')->get()->unique('phone')->keyBy('phone');
                             if (count($allLeadsMapping)) {
                                 $allLeadsMapping = $allLeadsMapping->toArray();
                             } else {
@@ -1724,7 +1724,7 @@ class LeadsController extends Controller
                                                 $update_lead['lead_status_id'] = $lead_status_id;
                                             }
 
-                                            $lead = Leads::updateOrCreate([
+                                            $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
                                                 'phone' => $phone
                                             ], $update_lead);
 
@@ -1744,7 +1744,7 @@ class LeadsController extends Controller
                                         }elseif($request->update_status == '1' && $request->get("update_records") != '1'){
                                             $update_lead = array();
                                             $update_lead['lead_status_id'] = $lead_status_id;
-                                            Leads::where(['phone' => $phone])->update(['lead_status_id' => $lead_status_id]);
+                                            Leads::orderBy('id', 'desc')->where(['phone' => $phone])->update(['lead_status_id' => $lead_status_id]);
                                         continue;
                                         } else {
                                             /*
@@ -1772,7 +1772,7 @@ class LeadsController extends Controller
                                                 $update_lead['lead_status_id'] = $lead_status_id;
                                             }
 
-                                            $lead = Leads::updateOrCreate([
+                                            $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
                                                 'phone' => $phone
                                             ], $update_lead);
 
