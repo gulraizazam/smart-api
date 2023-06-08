@@ -950,6 +950,7 @@ function hideShowAdvanceFilters(active_filters) {
 function newLead() {
     $('.new_lead').change(function () {
         if ($(this).is(":checked")) {
+            $('.lead_search_id').attr('readonly',true);
             $('.new_lead').val('1');
             $('.msg_new_lead').show();
             $("#add_phone").removeAttr("readonly");
@@ -962,6 +963,7 @@ function newLead() {
             $("#add_full_name").attr("readonly",false);
             $("#add_gender_id").attr("readonly",false);
         } else {
+            $('.lead_search_id').attr('readonly',false);
             $('.new_lead').val('0');
             $('.msg_new_lead').hide();
             $("#add_phone").val("");
