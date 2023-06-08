@@ -2416,50 +2416,6 @@ class LeadsController extends Controller
     public function exportPdf(Request $request) {
         ini_set('memory_limit', '-1');
         set_time_limit(0);
-        /* $resultQuery = Leads::query();
-        if($request->service_id != null || $request->service_id != ''){
-            $service_id = $request->service_id;
-            $resultQuery->with(['lead_service' => function($q) use($service_id){
-                $q->where(['service_id' => $service_id, 'status' => 1]);
-                $q->where('service_id', '!=', null);
-            }]);
-        } else {
-            $resultQuery->with(['lead_service' => function($q){
-                $q->where(['status' => 1]);
-                $q->where('service_id', '!=', null);
-            }]);
-        }
-        if($request->lead_status_id != null || $request->lead_status_id != ''){
-            $resultQuery->where('leads.lead_status_id', $request->lead_status_id);
-        }
-        if($request->city_id != null || $request->city_id != ''){
-            $resultQuery->where('leads.city_id', $request->city_id);
-        }
-        if($request->location_id != null || $request->location_id != ''){
-            $resultQuery->where('leads.location_id', $request->location_id);
-        }
-        if($request->region_id != null || $request->region_id != ''){
-            $resultQuery->where('leads.region_id', $request->region_id);
-        }
-        if($request->gender_id != null || $request->gender_id != ''){
-            $resultQuery->where('users.gender', $request->gender_id);
-        }
-        if($request->created_by != null || $request->created_by != ''){
-            $resultQuery->where('leads.created_by', $request->created_by);
-        }
-        if($request->name != null || $request->name != ''){
-            $resultQuery->where('name','like', $request->name.'%');
-        }
-        if($request->name != null || $request->name != ''){
-            $resultQuery->where('name','like', $request->name.'%');
-        }
-        if($request->start_date != null || $request->start_date != ''){
-            $resultQuery->whereBetween('leads.created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:00']);
-        }
-        $leads = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
-        ->orderBy("id", "DESC");
-        //->get();
-        dd($leads->toSql()); */
         $where = [];
 
         if($request->id != null || $request->id != ''){
