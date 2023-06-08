@@ -1384,6 +1384,9 @@ class LeadsController extends Controller
                         $dupPhone_list = array();
                         $dupPhones = array();
                         $un_validPhone_list = array();
+                        $un_validService_list = array();
+                        $un_validCity_list = array();
+                        $un_validCentre_list = array();
                         $newPatientPhones = array(); /* New Patient Phones Array */
                         // Iterate over the data
                         foreach ($SheetData as $SingleRow) {
@@ -1428,14 +1431,16 @@ class LeadsController extends Controller
                                     }
                                 }
                             }
-                            if ($service_id == null) {
+                            if($service_id == null) {
+                                $un_validService_list[] = $service;
                                 continue;
                             }
+
                             if(strlen(trim($SingleRow['C'])) >= 10 && strlen(trim($SingleRow['C'])) <= 13) {
                                 // Process Phone Number
                                 $dupPhone_list[] = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
                             } else {
-                                $un_validPhone_list['phone'] = trim($SingleRow['C']);
+                                $un_validPhone_list[] = trim($SingleRow['C']);
                             }
                         }
                         /*
@@ -1639,6 +1644,10 @@ class LeadsController extends Controller
                                         }
                                     }
                                 }
+                                if($service_id == null) {
+                                    //$un_validService_list[] = $service;
+                                    continue;
+                                }
                                 $child_service_id=null;
                                 if ($child_Services && $childservice) {
                                     foreach ($child_Services as $childName => $childId) {
@@ -1823,9 +1832,9 @@ class LeadsController extends Controller
                                 }
                             }
                             // Invalid data is provided
-                            return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($newPatientPhones) . ', Duplicates: ' . count($dupPhones));
+                            return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($newPatientPhones) . ', Duplicates: ' . count($dupPhones). '. In_valid service list: ' . implode(", ", $un_validService_list));
                         } else {
-                            return ApiHelper::apiResponse($this->success, 'Sheet contains in_valid phone numbers. phone: ' . implode(", ", $un_validPhone_list), false);
+                            return ApiHelper::apiResponse($this->success, 'Sheet contains in_valid list. phone: ' . implode(", ", $un_validPhone_list) . ', service: ' . implode(", ", $un_validService_list), false);
                         }
                     } else {
                         return ApiHelper::apiResponse($this->success, 'Invalid data provided. Pattern should: Full Name, Email, Phone, Gender, City, Lead Source, Lead Status');
