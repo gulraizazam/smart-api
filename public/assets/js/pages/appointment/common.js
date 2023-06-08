@@ -647,7 +647,7 @@ function getLeadDetail($this) {
                 }
                 $('#create_patient_name').val(lead?.name);
                 $('#create_consultancy_gender').val(lead?.gender).css("pointer-events","none");
-                
+
                 $('#create_consultancy_lead').val(lead?.lead_source_id).change();
                 $('#create_consultancy_referred_by').val(lead?.referred_by);
                 if (isExist(lead?.referred_by)) {
@@ -702,13 +702,14 @@ function loadLead(lead) {
     }
 }
 
-function newPatient() {
+function newPatient() {alert($("#new_patient").is(":checked"));
     if ($("#new_patient").is(":checked")) {
         $('#new_patient').val('1');
         $('#mess_new_pati').show();
         $('#create_patient_name').attr("readonly",false);
         $('#create_consultancy_phone').attr("readonly",false);
         $('#create_consultancy_gender').attr("readonly",false);
+        $('#lead_search_id').attr("disabled", true);
         $('#create_patient_name').val("");
         $('#create_consultancy_gender').val("");
         $('#create_consultancy_phone').val("");
