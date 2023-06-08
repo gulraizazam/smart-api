@@ -883,6 +883,7 @@ class LeadsController extends Controller
          * Check if laad already exists or not
          */
         if($request->get('service_id') != null){
+            LeadsServices::where(['lead_id' => $id, 'service_id' => $request->old_service, 'consultancy_id' => null])->delete();
             if(count($data['child_service_id'])){
                 foreach($data['child_service_id'] as $child_service_id){
                     $lead_service = LeadsServices::updateOrCreate([
@@ -1434,7 +1435,7 @@ class LeadsController extends Controller
                                 // Process Phone Number
                                 $dupPhone_list[] = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
                             } else {
-                                $un_validPhone_list[] = trim($SingleRow['C']);
+                                $un_validPhone_list['phone'] = trim($SingleRow['C']);
                             }
                         }
                         /*
