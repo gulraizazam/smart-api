@@ -1137,27 +1137,30 @@ function patientSearch(search_id = 'patient_id',flag=1) {
             $(".suggesstion-box").hide();
             return false;
         }
+        var that = $(this);
         if ($(this).val() != '') {
-            $.ajax({
-                type: "GET",
-                url: route('admin.users.getpatient.id'),
-                dataType: 'json',
-                data: {search: $(this).val()},
-                success: function (response) {
-                    let html = '';
-                    $(".suggestion-list").html(html);
-                    let patients = response.data.patients;
-                    if (patients.length) {
-                        patients.forEach(function (patient) {
-                            html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
-                        });
+            setTimeout(function(){
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: {search: that.val()},
+                    success: function (response) {
+                        let html = '';
                         $(".suggestion-list").html(html);
-                        $(".suggesstion-box").show();
-                    } else {
-                        $(".suggesstion-box").hide();
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                        } else {
+                            $(".suggesstion-box").hide();
+                        }
                     }
-                }
-            });
+                });
+            },1000);
         } else {
             $(".suggesstion-box").hide();
         }
