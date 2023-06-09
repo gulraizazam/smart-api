@@ -235,14 +235,13 @@ class PackageAdvancesController extends Controller
 
         $patient_id = $this->getPatientId();
         // Get Total Records
-        $iTotalRecords = PackageAdvances::getTotalRecords($request, Auth::user()->account_id, $patient_id , $apply_filter, $jason_var);
+        $iTotalRecords = PackageAdvances::getTotalRecords($request, Auth::user()->account_id, $patient_id, $apply_filter, $jason_var);
 
         [$orderBy, $order] = getSortBy($request, 'created_at', 'DESC');
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $packagesadvances = PackageAdvances::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $patient_id, $apply_filter, $jason_var );
+        $packagesadvances = PackageAdvances::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $patient_id, $apply_filter, $jason_var);
         $records = $this->getFilterData($records, $jason_var);
-
 
         if ($packagesadvances) {
             $balance = 0;
@@ -303,7 +302,7 @@ class PackageAdvancesController extends Controller
                 ];
             }
 
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,

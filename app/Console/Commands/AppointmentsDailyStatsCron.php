@@ -2,15 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Appointments;
 use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentTypes;
 use App\Models\Locations;
 use Carbon\Carbon;
-use App\Models\Cities;
-use App\Helpers\ACL;
+use Illuminate\Console\Command;
 
 class AppointmentsDailyStatsCron extends Command
 {
@@ -57,7 +54,7 @@ class AppointmentsDailyStatsCron extends Command
                             'user_id' => $appointment->created_by,
                             'appointment_id' => $appointment->id,
                             'appointment_status_id' => $appointment->base_appointment_status_id,
-                            'cron_current_date' => Carbon::now()
+                            'cron_current_date' => Carbon::now(),
                         ]);
                 }
             }

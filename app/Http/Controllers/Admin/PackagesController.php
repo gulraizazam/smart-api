@@ -1142,11 +1142,11 @@ class PackagesController extends Controller
     }
 
     /**
-         * calculate the grand total
-         *
-         * @param request
-         * @return mixed
-         */
+     * calculate the grand total
+     *
+     * @param request
+     * @return mixed
+     */
     public function getgrandtotal_update(Request $request)
     {
         $package = Packages::where('random_id', '=', $request->random_id)->first();

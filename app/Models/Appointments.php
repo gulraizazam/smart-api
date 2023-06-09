@@ -397,24 +397,23 @@ class Appointments extends Model
             $where[] = ['appointment_type_id', '=', $appointment_type_id];
         }
 
-        return Self::where($where)
+        return self::where($where)
+            ->when($request->start, function ($query) use ($request) {
+                return $query->where('scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d'));
+            })
+            ->when($request->location_id, function ($query) use ($request) {
+                return $query->where('location_id', '=', $request->get('location_id'));
+            })
+            ->when($request->machine_id || $request->doctor_id, function ($query) use ($request) {
+                return $query->where(function ($q) use ($request) {
+                    $q->where('resource_id', '=', $request->machine_id)
+                        ->orWhere('doctor_id', '=', $request->doctor_id);
+                });
+            })
+            ->whereNotNull('scheduled_date')
+            ->whereNotNull('scheduled_time')
+            ->get();
 
-        ->when($request->start, function($query) use($request){
-            return $query->where('scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d'));
-        })
-        ->when($request->location_id, function($query) use($request){
-            return $query->where('location_id', '=', $request->get('location_id'));
-        })
-
-        ->when($request->machine_id || $request->doctor_id, function($query) use($request){
-            return $query->where(function($q)use($request){
-                $q->where('resource_id', '=', $request->machine_id)
-                ->orWhere('doctor_id', '=', $request->doctor_id);
-            });
-        })
-        ->whereNotNull('scheduled_date')
-        ->whereNotNull('scheduled_time')
-        ->get();
         return self::where($where)
             ->whereNotNull('scheduled_date')
             ->whereNotNull('scheduled_time')
@@ -432,7 +431,7 @@ class Appointments extends Model
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        if($data['reschedule'] == 1){
+        if ($data['reschedule'] == 1) {
             $data['converted_by'] = Auth::User()->id;
         } else {
             $data['updated_by'] = Auth::User()->id;

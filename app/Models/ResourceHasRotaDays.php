@@ -481,26 +481,26 @@ class ResourceHasRotaDays extends Model
 
         if ($location_id) {
             $resource_has_rota = ResourceHasRota::where('location_id', '=', $location_id)
-                    ->where('account_id', '=', $account_id)
-                    ->where('resource_id', '=', $resource_id)
-                    ->whereDate('start', '<=', $date)
-                    ->whereDate('end', '>=', $date)
-                    ->where('active', '=', 1)
-                    ->first();
+                ->where('account_id', '=', $account_id)
+                ->where('resource_id', '=', $resource_id)
+                ->whereDate('start', '<=', $date)
+                ->whereDate('end', '>=', $date)
+                ->where('active', '=', 1)
+                ->first();
         } else {
             $resource_has_rota = ResourceHasRota::where('account_id', '=', $account_id)
-                    ->where('resource_id', '=', $resource_id)
-                    ->whereDate('start', '<=', $date)
-                    ->whereDate('end', '>=', $date)
-                    ->where('active', '=', 1)
-                    ->first();
+                ->where('resource_id', '=', $resource_id)
+                ->whereDate('start', '<=', $date)
+                ->whereDate('end', '>=', $date)
+                ->where('active', '=', 1)
+                ->first();
         }
 
         if ($resource_has_rota) {
             $resource_has_rota_day = self::where('resource_has_rota_id', '=', $resource_has_rota->id)
-                    ->whereDate('date', '=', $date)
-                    ->where('active', '=', 1)
-                    ->first();
+                ->whereDate('date', '=', $date)
+                ->where('active', '=', 1)
+                ->first();
 
             if ($resource_has_rota_day) {
                 return $resource_has_rota_day->toArray();

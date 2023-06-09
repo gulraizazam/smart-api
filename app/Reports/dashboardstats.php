@@ -483,10 +483,10 @@ class dashboardreport
             ];
         }
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                ->whereDate('appointments.created_at', '>=', $start_date)
-                ->whereDate('appointments.created_at', '<=', $end_date)
-                ->whereIn('appointments.location_id', ACL::getUserCentres())
-                ->where($where);
+            ->whereDate('appointments.created_at', '>=', $start_date)
+            ->whereDate('appointments.created_at', '<=', $end_date)
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->where($where);
 
         $appointments = $appointments->select('appointments.*', 'users.name as username', 'users.email', 'users.phone', 'users.referred_by')->get();
         $report_data = [];

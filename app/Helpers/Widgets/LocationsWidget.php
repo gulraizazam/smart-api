@@ -635,10 +635,10 @@ class LocationsWidget
             }
         } else {
             $centreServices = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
-                    ->where([
-                        'service_has_locations.account_id' => $account_id,
-                        'service_has_locations.location_id' => $location_id,
-                    ])->get();
+                ->where([
+                    'service_has_locations.account_id' => $account_id,
+                    'service_has_locations.location_id' => $location_id,
+                ])->get();
 
             if ($centreServices->count()) {
                 foreach ($centreServices as $centreService) {
@@ -1009,14 +1009,14 @@ class LocationsWidget
         $machinetype = MachineType::find($resoruce_info->machine_type_id);
 
         $rootservice = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                ->where([
-                    'machine_type_has_services.service_id' => Services::where([
-                        'slug' => 'all',
-                        'account_id' => $account_id,
-                    ])->select('id')->first()->id,
-                    'services.active' => 1,
-                    'machine_type_has_services.machine_type_id' => $machinetype->id,
-                ])->get();
+            ->where([
+                'machine_type_has_services.service_id' => Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'services.active' => 1,
+                'machine_type_has_services.machine_type_id' => $machinetype->id,
+            ])->get();
 
         if ($rootservice->count()) {
             $ss = Services::where([
@@ -1034,11 +1034,11 @@ class LocationsWidget
         } else {
             //      Find Allocated Services
             $machineervices = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                    ->where([
-                        'machine_type_has_services.machine_type_id' => $machinetype->id,
-                        'services.active' => 1,
-                    ])
-                    ->get();
+                ->where([
+                    'machine_type_has_services.machine_type_id' => $machinetype->id,
+                    'services.active' => 1,
+                ])
+                ->get();
 
             if ($machineervices->count()) {
                 foreach ($machineervices as $resourceservice) {

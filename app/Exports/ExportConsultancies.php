@@ -19,7 +19,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
 
     private $offset = 0;
 
-    public function __construct($limit = 1000, $offset = 0, $request)
+    public function __construct($limit, $offset, $request)
     {
         $this->limit = $limit;
         $this->offset = $offset;
@@ -33,23 +33,23 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             $where[] = [
                 'appointments.scheduled_date',
                 '>=',
-                $this->request->filter_date_from
-            );
+                $this->request->filter_date_from,
+            ];
         }
 
         if ($this->request->filter_date_to) {
             $where[] = [
                 'appointments.scheduled_date',
                 '<=',
-                $this->request->filter_date_to
-            );
+                $this->request->filter_date_to,
+            ];
         }
         if ($this->request->appointmenttype) {
             $where[] = [
                 'appointment_type_id',
                 '=',
-                $this->request->appointmenttype
-            );
+                $this->request->appointmenttype,
+            ];
         }
         if ($this->request->filter_doctor_id) {
             $where[] = [
