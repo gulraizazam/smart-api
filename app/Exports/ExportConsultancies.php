@@ -19,7 +19,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
 
     private $offset = 0;
 
-    public function __construct($limit, $offset, $request)
+    public function __construct($limit = 1000, $offset = 0, $request)
     {
         $this->limit = $limit;
         $this->offset = $offset;
@@ -33,26 +33,23 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             $where[] = [
                 'appointments.scheduled_date',
                 '>=',
-                $this->request->filter_date_from,
-            ];
-
+                $this->request->filter_date_from
+            );
         }
 
         if ($this->request->filter_date_to) {
             $where[] = [
                 'appointments.scheduled_date',
                 '<=',
-                $this->request->filter_date_to,
-            ];
-
+                $this->request->filter_date_to
+            );
         }
         if ($this->request->appointmenttype) {
             $where[] = [
                 'appointment_type_id',
                 '=',
-                $this->request->appointmenttype,
-            ];
-
+                $this->request->appointmenttype
+            );
         }
         if ($this->request->filter_doctor_id) {
             $where[] = [
@@ -67,7 +64,6 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                     'base_appointment_status_id' => $this->request->filter_status_id,
                 ],
             ];
-
         }
         if ($this->request->filter_created_by_id) {
             $where[] = [
@@ -161,16 +157,12 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $phone,
             ];
         }
-        $resultQuery = Appointments::join('users', function ($join) {
-            $join->on('users.id', '=', 'appointments.patient_id')
-                ->where('users.user_type_id', '=', config('constants.patient_id'));
-        })->where(function ($query) {
-            $query->whereIn('appointments.city_id', ACL::getUserCities());
-            $query->whereIn('appointments.location_id', ACL::getUserCentres());
-
-        });
-
-        $results = $resultQuery->where($where)->get();
+        $results = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
+            ->where(['users.user_type_id' => config('constants.patient_id')])
+            ->whereIn('appointments.city_id', ACL::getUserCities())
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->where($where)
+            ->get();
 
         return $results;
     }
