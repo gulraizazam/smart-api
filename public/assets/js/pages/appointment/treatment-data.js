@@ -54,7 +54,7 @@ jQuery(document).ready(function() {
 
 });
     var counter = 0;
-    var treatmentDoctorListener = function (doctorId) { 
+    var treatmentDoctorListener = function (doctorId) {
     setQueryStringParameter('doctor_id', doctorId);
     $("#treatment_doctor_filter").val(doctorId);
     if (typeof treatment_calendar !== "undefined") { /*if already initiate then destroy first*/
@@ -109,7 +109,7 @@ let loadMachine = function(locationId) {
                 if (typeof result.machine_id !== "undefined" && $("#treatment_resource_filter").val() === '') {
                     $("#treatment_resource_filter").val(result.machine_id).select2();
                 }
-                
+
             } else {
                 resetDoctors();
             }
@@ -136,18 +136,17 @@ let machineListener = function (machineId) {
 
 function checkingtest() {
     $("#patient_search_selector").select2({
-       
-        ajax: { 
+        ajax: {
         type: "GET",
         url: route('admin.users.getpatient.id'),
         dataType: 'json',
         delay: 250,
-        data: function (params) {            
+        data: function (params) {
         return {
             search: params.term // search term
         };
-        },         
-        processResults: function (response) {           
+        },
+        processResults: function (response) {
         return {
             results: response.data.patients,
         };
@@ -157,10 +156,10 @@ function checkingtest() {
         placeholder: 'Search for a repository',
         templateResult:  formatRepo,
         templateSelection: formatRepoSelection
-        
+
     });
-    
-    $("#patient_search_selector").on("select2:select", function (e) { 
+
+    $("#patient_search_selector").on("select2:select", function (e) {
         var thisID = $(this).val();
         $(this).parent().parent('div').find('.search_field').val(thisID).change();
     });
@@ -171,14 +170,14 @@ function checkingtest() {
             $container = $(
                 "<div class='select2-result-repository__avatar'>Searching</div>"
             );
-        } else{   
+        } else{
             $container = $(
                 '<div class="select2-result-repository__avatar tst">' + repo.name + " - C " + repo.id +"</div>"
             );
         }
         return $container;
     }
-    
+
     function formatRepoSelection (repo) {
         return repo.name || repo.text;
     }
@@ -187,10 +186,9 @@ function checkingtest() {
 
 
 function loadCalendar() {
-     checkingtest();     
+     checkingtest();
     if (typeof treatment_calendar !== "undefined") { /*if already initiate then destroy first*/
         treatment_calendar.destroy();
-
     }
 
     var result = get_query();
@@ -250,7 +248,6 @@ var loadEndServices = function (baseServiceId) {
 }
 
 function getTreatmentPatientDetail($this) {
-
     if ($this.val() != '') {
         $this.parent("div").find(".select2-selection").removeClass("select2-is-invalid");
         $this.parent("div").find(".fv-help-block").text("");

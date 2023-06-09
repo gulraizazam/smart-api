@@ -40,17 +40,19 @@
                 <td id="gender"></td>
                 <th>Lead Source</th>
                 <td id="lead_source"></td>
-                
+
             </tr>
             <tr>
                 <th>Lead Status</th>
                 <td id="lead_status"></td>
-                <th>Service</th>
-                <td id="treatment"></td>
+                <th>Active Service</th>
+                <td id="activeservice"></td>
                 <th>SMS Status</th>
                 <td id="sms_status"></td>
             </tr>
             <tr>
+                <th>All Service</th>
+                <td id="allservices"></td>
                 <th>Treatment</th>
                 <td id="childservice"></td>
             </tr>

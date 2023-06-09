@@ -11,7 +11,7 @@
         <div class="sn-title">
             <h1>{{ 'Daily Arrival Report' }}</h1>
         </div>
-       
+
     </div>
 </div>
 <div class="panel-body sn-table-body">
@@ -38,7 +38,7 @@
                                 <td class="border-top bg-light"> Arrived</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$arrived ?? 0}}</td>
                             </tr>
-                            
+
                                 <tr class="">
                                     <td class="border-top bg-light" >Arrival Ratio</td>
                                     <td class="border-top bg-light" style="text-align:right;">
@@ -51,7 +51,7 @@
                                         ?>
                                     </td>
                                 </tr>
-                           
+
                         </thead>
                     </table>
                 </div>
@@ -67,6 +67,7 @@
                             <th>Service</th>
                             <th>Centre</th>
                             <th>Scheduled Date</th>
+                            <th>Created By</th>
                             <th>Appointment Status</th>
                         </tr>
                     </thead>
@@ -78,7 +79,8 @@
                                 <td>{{$patient['phone']}}</td>
                                 <td>{{$patient->service->name}}</td>
                                 <td>{{$patient->location->name}}</td>
-                                <td>{{$patient['scheduled_date']}}</td> 
+                                <td>{{$patient['scheduled_date']}}</td>
+                                <td>{{$patient->user->name}}</td>
                                 <td>@if($patient['base_appointment_status_id'] == 1)
                                     <label class="label label-warning" style="width:100px;border-radius:2px">Pending</label>
                                     @endif
@@ -91,7 +93,7 @@
                                     @if($patient['base_appointment_status_id'] == 4)
                                     <label class="label label-danger" style="width:100px;border-radius:2px">Cancelled</label>
                                     @endif
-                                </td> 
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
