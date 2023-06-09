@@ -49,6 +49,7 @@ class ServicesController extends Controller
 
     public function datatable(Request $request)
     {
+        //dd($request->all());
         try {
             $filters = getFilters($request->all());
             $records = array();
@@ -120,7 +121,7 @@ class ServicesController extends Controller
 
         return $records;
     }
-   
+
     /**
      * Show the form for creating new Permission.
      *
@@ -337,5 +338,5 @@ class ServicesController extends Controller
         }else{
             return response()->json(['color'=>"#000"]);
         }
-    } 
+    }
 }
