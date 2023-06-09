@@ -133,7 +133,7 @@ class DashboardReportsController extends Controller
                 $total = 0;
                 $today[0] = [
                     'Task',
-                    'Hours per Day'
+                    'Hours per Day',
                 ];
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id', $service->id)->get();
@@ -253,7 +253,7 @@ class DashboardReportsController extends Controller
                 $total = 0;
                 $yesterday[0] = [
                     'Task',
-                    'Hours per Day'
+                    'Hours per Day',
                 ];
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id', $service->id)->get();
@@ -372,7 +372,7 @@ class DashboardReportsController extends Controller
                 $total = 0;
                 $last7days[0] = [
                     'Task',
-                    'Hours per Day'
+                    'Hours per Day',
                 ];
                 foreach ($services as $service) {
                     $childServices = Services::where('parent_id', $service->id)->get();
@@ -493,7 +493,7 @@ class DashboardReportsController extends Controller
                 $total = 0;
                 $thismonth[0] = [
                     'Task',
-                    'Hours per Day'
+                    'Hours per Day',
                 ];
                 foreach ($services as $service) {
                     $childServices = Services::where(['parent_id' => $service->id])->get();
@@ -617,7 +617,7 @@ class DashboardReportsController extends Controller
                 $total = 0;
                 $lastmonth[0] = [
                     'Task',
-                    'Hours per Day'
+                    'Hours per Day',
                 ];
                 foreach ($services as $service) {
                     $childServices = Services::where(['parent_id' => $service->id])->get();
@@ -1735,7 +1735,7 @@ class DashboardReportsController extends Controller
     public function AppointmentByStatus(Request $request)
     {
 
-        $data = array();
+        $data = [];
         $total = 0;
         $today = [];
         $colors = [];
@@ -1752,31 +1752,31 @@ class DashboardReportsController extends Controller
                 if ($request->get('performance')) {
                     $todayRecords = $todayRecords->where('created_by', Auth::User()->id);
                 }
-                $todayRecords = $todayRecords->select('base_appointment_status_id as appointment_status_id', DB::raw("COUNT(id) AS total"))
-                ->groupBy('base_appointment_status_id')
-                ->get();
-                    if ($appointment_statuses) {
-                        $total = 0;
-                        foreach ($appointment_statuses as $appointment_status) {
-                            $today[0] = array(
-                                'Task',
-                                'Hours per Day'
-                            );
-                            if ($todayRecords) {
-                                foreach ($todayRecords as $todayRecord) {
-                                    if ($todayRecord->appointment_status_id == $appointment_status->id) {
-                                        $today[$appointment_status->id]= [
-                                            $appointment_status->name,
-                                            $todayRecord->total
+                $todayRecords = $todayRecords->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
+                    ->groupBy('base_appointment_status_id')
+                    ->get();
+                if ($appointment_statuses) {
+                    $total = 0;
+                    foreach ($appointment_statuses as $appointment_status) {
+                        $today[0] = [
+                            'Task',
+                            'Hours per Day',
+                        ];
+                        if ($todayRecords) {
+                            foreach ($todayRecords as $todayRecord) {
+                                if ($todayRecord->appointment_status_id == $appointment_status->id) {
+                                    $today[$appointment_status->id] = [
+                                        $appointment_status->name,
+                                        $todayRecord->total,
 
-                                        ];
+                                    ];
 
-                                        $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
-                                    }
+                                    $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                                 }
                             }
                         }
                     }
+                }
                 if (count($today)) {
                     foreach ($today as $record) {
                         $data['today'][] = $record;
@@ -1805,11 +1805,11 @@ class DashboardReportsController extends Controller
                                 if ($todayRecord->appointment_status_id == $appointment_status->id) {
                                     $today[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $todayRecord->total
+                                        $todayRecord->total,
 
                                     ];
 
-                                    $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                    $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                                 }
                             }
                         }
@@ -1840,11 +1840,11 @@ class DashboardReportsController extends Controller
                                 if ($yestersdayRecord->appointment_status_id == $appointment_status->id) {
                                     $yesterday[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $yestersdayRecord->total
+                                        $yestersdayRecord->total,
 
                                     ];
 
-                                    $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                    $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                                 }
                             }
                         }
@@ -1881,11 +1881,11 @@ class DashboardReportsController extends Controller
                                 if ($last7DayRecord->appointment_status_id == $appointment_status->id) {
                                     $last7days[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $last7DayRecord->total
+                                        $last7DayRecord->total,
 
                                     ];
 
-                                    $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                    $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                                 }
                             }
                         }
@@ -1920,11 +1920,11 @@ class DashboardReportsController extends Controller
                                 if ($last7DayRecord->appointment_status_id == $appointment_status->id) {
                                     $last7days[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $last7DayRecord->total
+                                        $last7DayRecord->total,
 
                                     ];
 
-                                    $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                    $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                                 }
                             }
                         }
@@ -1959,11 +1959,11 @@ class DashboardReportsController extends Controller
                                 if ($monthRecord->appointment_status_id == $appointment_status->id) {
                                     $monthlyRecord[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $monthRecord->total
+                                        $monthRecord->total,
 
                                     ];
 
-                                    $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                    $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                                 }
                             }
                         }
@@ -1999,11 +1999,11 @@ class DashboardReportsController extends Controller
                                 if ($monthRecord->appointment_status_id == $appointment_status->id) {
                                     $monthlyRecord[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $monthRecord->total
+                                        $monthRecord->total,
 
                                     ];
 
-                                    $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                    $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                                 }
                             }
                         }
@@ -2057,9 +2057,9 @@ class DashboardReportsController extends Controller
                             if ($todayRecord->appointment_type_id == $appointment_type->id) {
                                 $today[$appointment_type->id] = [
                                     $appointment_type->name,
-                                    $todayRecord->total
+                                    $todayRecord->total,
                                 ];
-                                $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                             }
                         }
                     }
@@ -2094,11 +2094,11 @@ class DashboardReportsController extends Controller
                             if ($todayRecord->appointment_type_id == $appointment_type->id) {
                                 $today[$appointment_type->id] = [
                                     $appointment_type->name,
-                                    $todayRecord->total
+                                    $todayRecord->total,
 
                                 ];
 
-                                $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                             }
                         }
                     }
@@ -2136,11 +2136,11 @@ class DashboardReportsController extends Controller
                             if ($yesterdayRecord->appointment_type_id == $appointment_type->id) {
                                 $yesterday[$appointment_type->id] = [
                                     $appointment_type->name,
-                                    $yesterdayRecord->total
+                                    $yesterdayRecord->total,
 
                                 ];
 
-                                $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                             }
                         }
                     }
@@ -2177,11 +2177,11 @@ class DashboardReportsController extends Controller
                             if ($weeklyRecord->appointment_type_id == $appointment_type->id) {
                                 $last7days[$appointment_type->id] = [
                                     $appointment_type->name,
-                                    $weeklyRecord->total
+                                    $weeklyRecord->total,
 
                                 ];
 
-                                $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                             }
                         }
                     }
@@ -2217,10 +2217,10 @@ class DashboardReportsController extends Controller
                             if ($monthlyRecord->appointment_type_id == $appointment_type->id) {
                                 $month[$appointment_type->id] = [
                                     $appointment_type->name,
-                                    $monthlyRecord->total
+                                    $monthlyRecord->total,
 
                                 ];
-                                $colors=["#3375de","#c8cf19","#cf7a19","#cf1931","#19cf43","#a119cf"];
+                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
                             }
                         }
                     }
@@ -2257,7 +2257,7 @@ class DashboardReportsController extends Controller
                             if ($monthlyRecord->appointment_type_id == $appointment_type->id) {
                                 $month[$appointment_type->id] = [
                                     $appointment_type->name,
-                                    $monthlyRecord->total
+                                    $monthlyRecord->total,
 
                                 ];
                                 $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
@@ -2328,8 +2328,8 @@ class DashboardReportsController extends Controller
             ],
             'lastmonth' => [
                 'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')
-            ]
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'),
+            ],
         ];
 
         $stats = AppointmentsDailyStats::select('centre_id')
@@ -2388,8 +2388,8 @@ class DashboardReportsController extends Controller
             ],
             'lastmonth' => [
                 'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')
-            ]
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'),
+            ],
         ];
         $stats = AppointmentsDailyStats::select($data)
             ->selectRaw('count(*) as total')
@@ -2420,7 +2420,7 @@ class DashboardReportsController extends Controller
 
         ]);
     }
-    
+
     public function CallWiseArrival(Request $request)
     {
         $total_apts = [];
