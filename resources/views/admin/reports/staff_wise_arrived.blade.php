@@ -36,8 +36,14 @@
                                 <td class="border-top bg-light"> Arrived</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$arrived ?? 0}}</td>
                             </tr>
+                            @if(isset($walkin_customers))
+                            <tr class="">
+                                <td class="border-top bg-light"> Walk-In Customers</td>
+                                <td class="border-top bg-light" style="text-align:right;">{{$walkin_customers ?? 0}}</td>
+                            </tr>
+                            @endif
                                 <tr class="">
-                                    <td class="border-top bg-light" >Arrival Ratio</td>
+                                    <td class="border-top bg-light" >Arrival Ratio With Walk-In</td>
                                     <td class="border-top bg-light" style="text-align:right;">
                                         <?php
                                         if (isset($arrived) && isset($Appointments)) {
@@ -48,6 +54,22 @@
                                         ?>
                                     </td>
                                 </tr>
+
+                                @if(isset($walkin_customers))
+                                <tr class="">
+                                    <td class="border-top bg-light" >Arrival Ratio Without Walk-In</td>
+                                    <td class="border-top bg-light" style="text-align:right;">
+                                        <?php
+                                       
+                                        if (isset($arrived) && isset($Appointments) && isset($walkin_customers) && count($Appointments) > 0 ) {
+                                            echo number_format(((($arrived) - $walkin_customers) / (count($Appointments) - $walkin_customers ?? 0)) * 100, 2) . '%';
+                                        } else {
+                                            echo '00.00 %';
+                                        }
+                                        ?>
+                                    </td>
+                                </tr>
+                                @endif
                         </thead>
                     </table>
                 </div>
@@ -64,22 +86,36 @@
                                 <td class="border-top bg-light"> Arrived</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$arrived ?? 0}}</td>
                             </tr>
-                                <tr class="">
-                                    <td class="border-top bg-light" >Arrival Ratio</td>
+                            <tr class="">
+                                <td class="border-top bg-light"> Walk-In Customers</td>
+                                <td class="border-top bg-light" style="text-align:right;">{{$walkin_customers ?? 0}}</td>
+                            </tr>
+                            <tr class="">
+                                    <td class="border-top bg-light" >Arrival Ratio With Walk-In</td>
                                     <td class="border-top bg-light" style="text-align:right;">
                                         <?php
-                                        if (count($Appointments) > 0) {
-                                            if (isset($arrived) && isset($Appointments)) {
-                                                echo number_format(($arrived / count($Appointments)) * 100, 2) . '%';
-                                            } else {
-                                                echo '00.00 %';
-                                            }
-                                        } else{
+                                        if (isset($arrived) && isset($Appointments) && count($Appointments) > 0) {
+                                            echo number_format(($arrived / count($Appointments)) * 100, 2) . '%';
+                                        } else {
                                             echo '00.00 %';
                                         }
                                         ?>
                                     </td>
                                 </tr>
+                                @if(isset($walkin_customers))
+                                <tr class="">
+                                    <td class="border-top bg-light" >Arrival Ratio Without Walk-In</td>
+                                    <td class="border-top bg-light" style="text-align:right;">
+                                        <?php
+                                        if (isset($arrived) && isset($Appointments) && isset($walkin_customers) && count($Appointments) > 0) {
+                                            echo number_format(((($arrived) - $walkin_customers) / (count($Appointments) - $walkin_customers ?? 0)) * 100, 2) . '%';
+                                        } else {
+                                            echo '00.00 %';
+                                        }
+                                        ?>
+                                    </td>
+                                </tr>
+                                @endif
                         </thead>
                     </table>
                 </div>

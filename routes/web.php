@@ -73,14 +73,14 @@ Route::get('/', function () {
 
 Auth::routes();
 // Authentication Routes...
-Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
+    Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
 
-Route::get('/deliver-on-appointment-book', function () {
-    \Artisan::call('appointment:deliver-on-appointment-book');
-});
-Route::get('/2nd-message-on-appointment-day', function () {
-    \Artisan::call('appointment:2nd-message-on-appointment-day');
+    Route::get('/deliver-on-appointment-book', function () {
+        \Artisan::call('appointment:deliver-on-appointment-book');
+    });
+    Route::get('/2nd-message-on-appointment-day', function () {
+        \Artisan::call('appointment:2nd-message-on-appointment-day');
 
 });
 Route::get('/3rd-message-before-appointment', function () {
@@ -103,13 +103,11 @@ Route::get('/update_apt', function () {
         ->select('packages.appointment_id', 'packages.id as pkg_id')
         ->orderBy('appointments.created_at', 'asc')
        // ->paginate(50);
-        ->get();
-    foreach ($appointments as $apt) {
-        PackageAdvances::where('package_id', $apt->pkg_id)->where('appointment_id', null)->update(['appointment_id' => $apt->appointment_id]);
-
-    }
-    dd('ok');
-});
+       ->get();
+        foreach($appointments as $apt){
+           PackageAdvances::where('package_id',$apt->pkg_id)->where('appointment_id',null)->update(['appointment_id' => $apt->appointment_id]);
+        }
+    });
 // Check Session
 Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
@@ -132,7 +130,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
             ->select('leads.lead_status_id', 'leads.active', 'leads.city_id', 'leads.service_id', 'leads.active', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId', 'users.*')
             ->get();
 
-        return view('admin.records', compact('rr'));
+       return view('admin.records',compact('rr'));
 
     });
     Route::get('error-logs', [LogViewerController::class, 'index']);
@@ -300,24 +298,25 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     Route::get('leads/junk', [LeadsController::class, 'junk'])->name('leads.junk');
 
-    Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
+        Route::post('leads/load_child_services', [LeadsController::class, 'LoadChildServices'])->name('leads.load_child_services');
+        Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
 
     Route::post('leads/status', [LeadsController::class, 'status'])->name('leads.status');
 
     Route::get('LeadCommentStore', [LeadsController::class, 'LeadStoreComment'])->name('leads.storecomment');
 
-    Route::get('LeadEditDetail', [LeadsController::class, 'LeadEditDetailAjax'])->name('leads.LeadEditDetail');
+        Route::get('LeadCommentStore',[LeadsController::class, 'LeadStoreComment'])->name('leads.storecomment');
+        Route::get('LeadEditDetail',[LeadsController::class, 'LeadEditDetailAjax'])->name('leads.LeadEditDetail');
 
-    //Lead Import
-    Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
+        //Lead Import
+        Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
+        Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
 
-    Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
 
-    Route::resource('leads', LeadsController::class)->only('index');
-
-    Route::post('leads/comment_store', [LeadsController::class, 'comment_store'])->name('leads.comment_store');
-    // Load and Save Lead Statuses
-    Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
+        Route::resource('leads', LeadsController::class)->only('index');
+        Route::post('leads/comment_store', [LeadsController:: class, 'comment_store'])->name('leads.comment_store');
+        // Load and Save Lead Statuses
+        Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
 
     Route::put('leads_save_status', [LeadsController::class, 'saveLeadStatus'])->name('leads.save_status');
     // Load and Save Treatments
@@ -543,25 +542,31 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::post('reports/staff_wise_arrival_report', [FinanceReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
     //Route end for Operations reports
 
-    /////////////////Dashboard Stats//////
+        /////////////////Dashboard Stats//////
 
-    Route::get('dashboard/collection-by-centre', [DashboardReportsController::class, 'collectionByCentre'])->name('dashboard.collection_by_centre');
-    Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
-    Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
-    Route::get('dashboard/revenue-by-service-category', [DashboardReportsController::class, 'RevenueByServiceCategory'])->name('dashboard.revenueByServiceCategory');
-    Route::get('dashboard/collection-by-service-category', [DashboardReportsController::class, 'CollectionByServiceCategory'])->name('dashboard.CollectionByServiceCategory');
-    Route::get('dashboard/my-revenue-by-centre', [DashboardReportsController::class, 'myRevenueByCentre'])->name('dashboard.myRevenueByCentre');
-    Route::get('dashboard/revenue-by-service', [DashboardReportsController::class, 'revenueByService'])->name('dashboard.revenueByService');
-    Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
-    Route::get('dashboard/appointment-by-status', [DashboardReportsController::class, 'AppointmentByStatus'])->name('dashboard.appointment_by_status');
-    Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
-    Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class, 'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
-    Route::get('getcolor', [ServicesController::class, 'GetColor'])->name('dashboard.getcolor');
-    Route::get('dashboard/getchild', [DashboardReportsController::class, 'getChild'])->name('dashboard.getchild');
-    Route::get('dashboard/centre_wise_arrival', [DashboardReportsController::class, 'CentreWiseArrival'])->name('dashboard.centre_wise_arrival');
-    Route::get('dashboard/location_wise_arrival', [DashboardReportsController::class, 'LocationWiseArrival'])->name('dashboard.location_wise_arrival');
-    Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
-    Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
-    Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
-    Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
-});
+        Route::get('dashboard/collection-by-centre', [DashboardReportsController::class,'collectionByCentre'])->name('dashboard.collection_by_centre');
+        Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
+        Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
+        Route::get('dashboard/revenue-by-service-category', [DashboardReportsController::class, 'RevenueByServiceCategory'])->name('dashboard.revenueByServiceCategory');
+        Route::get('dashboard/collection-by-service-category', [DashboardReportsController::class, 'CollectionByServiceCategory'])->name('dashboard.CollectionByServiceCategory');
+        Route::get('dashboard/my-revenue-by-centre', [DashboardReportsController::class, 'myRevenueByCentre'])->name('dashboard.myRevenueByCentre');
+        Route::get('dashboard/revenue-by-service', [DashboardReportsController::class, 'revenueByService'])->name('dashboard.revenueByService');
+        Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
+        Route::get('dashboard/appointment-by-status', [DashboardReportsController::class, 'AppointmentByStatus'])->name('dashboard.appointment_by_status');
+        Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
+        // Dashboard CENTRE WISE ARRIVAL
+        Route::get('dashboard/centre_wise_arrival', [DashboardReportsController::class, 'CentreWiseArrival'])->name('dashboard.centre_wise_arrival');
+
+        Route::get('dashboard/location_wise_arrival', [DashboardReportsController::class, 'LocationWiseArrival'])->name('dashboard.location_wise_arrival');
+        Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
+        // Dashboard CSR WISE ARRIVAL
+        Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
+
+        Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
+        Route::get('getcolor',[ServicesController::class,'GetColor'])->name('dashboard.getcolor');
+        Route::get('dashboard/getchild', [DashboardReportsController::class,'getChild'])->name('dashboard.getchild');
+
+        Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
+
+        Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
+    });

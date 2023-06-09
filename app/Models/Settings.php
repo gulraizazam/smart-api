@@ -171,7 +171,6 @@ class Settings extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id)
     {
-
         $old_data = (Settings::find($id))->toArray();
 
         $data = $request->all();
@@ -210,18 +209,6 @@ class Settings extends BaseModal
         if (isset($data['max'])) {
             $data['max'] = ltrim($data['max'], '0');
         }
-
-        $timeArray = explode(':', $data['data']);
-
-        $time_1 = ltrim($timeArray[0], '0');
-        if (isset($timeArray[1])) {
-            $time_2 = ltrim($timeArray[1], '0');
-            $data['data'] = $time_1.':'.$time_2;
-        } else {
-            $data['data'] = $time_1;
-        }
-
-        //$data['data'] = $time_1 .":". $time_2;
 
         $record->update($data);
 
