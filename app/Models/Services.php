@@ -160,7 +160,7 @@ class Services extends BaseModal
      */
     static public function getTotalRecords(Request $request, $account_id = false)
     {
-        
+
         $where = array();
         $filters = getFilters($request->all());
         //dd($filters);
@@ -192,7 +192,7 @@ class Services extends BaseModal
                 '%' . $request->get('lead_status_name') . '%'
             );
         }
-        
+
         if (count($where)) {
             if(\Illuminate\Support\Facades\Gate::allows("view_inactive_records")){
                 return self::where($where)->count();
@@ -531,7 +531,7 @@ class Services extends BaseModal
      */
     static public function updateRecord($id, $request, $account_id)
     {
-       
+
         $old_data = (Services::find($id))->toArray();
         $service = Services::find($id);
         $data = $request->all();
@@ -546,7 +546,7 @@ class Services extends BaseModal
         if (!isset($data['end_node']) || !$data['end_node']) {
             $data['end_node'] = 0;
         }
-        
+
         if (!isset($data['complimentory']) || !$data['complimentory']) {
             $data['complimentory'] = 0;
         }
@@ -558,7 +558,7 @@ class Services extends BaseModal
         if (!$record) {
             return null;
         }
-        
+
         $record->update($data);
 
         AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
