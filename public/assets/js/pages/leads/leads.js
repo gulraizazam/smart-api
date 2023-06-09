@@ -11,7 +11,7 @@ var table_columns = [{
         return childCheckbox(data, data.lead_id);
     }
 }, {
-    field: 'PatientId',
+    field: 'lead_id',
     title: 'ID',
     sortable: false,
     width: 60,
@@ -61,11 +61,20 @@ var table_columns = [{
     sortable: false,
     width: 110,
     template: function (data) {
+        let value = data.service_id.split(",");
+        let valueActive = data.service_active.split(",");
+        let services = '';
         if(data.service_id != ""){
-            return data.service_id;
+            value.forEach((item) => {
+                if(valueActive[0] == item){
+                    services += '<span class="text text-primary">' + item + '</span><br>'
+                }
+
+            })
         }else{
-            return '<span class="text text-danger">Empty</span>';
-        }  
+            services += '<span class="text text-danger">Empty</span>'
+        }
+        return services;
     }
 },{
     field: 'lead_status_id',
@@ -149,7 +158,7 @@ var table_columns = [{
             return data.child_service;
         }else{
             return '<span class="text text-danger">Empty</span>';
-        } 
+        }
     }
 }];
 
@@ -368,6 +377,8 @@ function setLeadData(response) {
         $("#add_gender_id").html(gender_options);
         $("#add_lead_source_id").html(lead_sources_options);
         $("#add_lead_status_id").html(lead_statuses_options);
+        $("#add_child_service_id").val();
+        $("#add_location_id").val();
         getUserCity();
     } catch (error) {
         showException(error);
@@ -396,10 +407,10 @@ function viewLead(url) {
 function setViewData(response) {
     try {
         let lead = response.data.lead;
-        $("#full_name").text(lead?.patient?.name)
+        $("#full_name").text(lead?.name)
         let email = 'N/A';
-        if(lead?.patient?.email) {
-            email = lead?.patient?.email;
+        if(lead?.email) {
+            email = lead?.email;
         }
         $("#email").text(email);
         let phone = 'N/A';
@@ -407,7 +418,7 @@ function setViewData(response) {
             phone = lead.phone;
         }
         $("#phone").text(phone);
-        $("#dob").text(lead?.patient?.dob);
+        $("#dob").text(lead?.dob);
         let gender = 'N/A';
         if(lead?.gender) {
             gender = lead?.gender;
@@ -419,8 +430,8 @@ function setViewData(response) {
         }
         $("#sms_status").text(sms);
         let address = 'N/A';
-        if(lead?.patient?.address) {
-            address = lead?.patient?.address;
+        if(lead?.address) {
+            address = lead?.address;
         }
         $("#address").text(address);
         let city = 'N/A';
@@ -450,15 +461,31 @@ function setViewData(response) {
             lead_status = lead?.lead_status?.name;
         }
         $("#lead_status").text(lead_status);
-        let treatment = 'N/A';
-        if(lead?.service_id) {
-            treatment = lead?.service?.name;
+
+        let activeservice = 'N/A';
+        if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
+            activeservice = lead?.lead_service?.find(service => service.status == 1)?.service.name;
         }
-        $("#treatment").text(treatment);
+        $("#activeservice").text(activeservice);
+
+        let allservices = 'N/A';
+        let services = lead?.lead_service;console.log('services', services)
+        let serviceNames = [];
+        services.forEach(function(service){
+            if(!serviceNames.includes(service.service.name)){
+            serviceNames.push(service.service.name);
+            }
+        })
+        allservices = serviceNames.join(", ");
+        $("#allservices").text(allservices);
+
         let child = 'N/A';
-        if(lead?.child_service_id) {
-            child = lead?.child_service_id;
-        }
+        services.forEach(function(service){
+            if(lead?.lead_service?.find(service => service.status == 1)?.service.name) {
+                child = lead?.lead_service?.find(service => service.status == 1)?.childservice?.name;
+            }
+        })
+        $("#childservice").text(child);
         $.ajax({
             url: route('admin.dashboard.getchild'),
             type: 'GET',
@@ -467,7 +494,7 @@ function setViewData(response) {
             },
             cache: false,
             success: function (response) {
-                $("#childservice").text(response.data.child);  
+                $("#childservice").text(response.data.child);
             },
         });
         $("#comment_lead_id").val(lead.id)
@@ -576,8 +603,6 @@ function commentData(user_name, created_at, comment) {
 }
 
 function editRow(url, id) {
-    $('.new_patient').prop("checked", false);
-    $('.msg_new_patient').hide();
     $("#modal_edit_leads").modal("show");
     $("#modal_edit_leads_form").attr("action", route('admin.leads.update', {id: id}));
     $.ajax({
@@ -600,6 +625,8 @@ function setEditData(response) {
     try {
         let Services = response.data.Services;
         let Childservices = response.data.child_services;
+        let services = [];
+        let child_services = [];
         let cities = response.data.cities;
         let locations = response.data.locations;
         let employees = response.data.employees;
@@ -607,30 +634,57 @@ function setEditData(response) {
         let lead_sources = response.data.lead_sources;
         let lead_statuses = response.data.lead_statuses;
         let lead = response.data.lead;
-        let service_options = '<option value="">Select Service</option>';
-        let child_service_options = '<option value="">Select Child Service</option>';
+        let service_option_select = (services == "") ? "selected" : "";
+        let service_list = '';
+        let child_service_list = '';
+        let service_edit = '';
+        let service_options = '';
+        let child_service_options = '';
         let city_options = '<option value="">Select a City</option>';
         let location_options = '<option value="">Select a Location</option>';
         let employee_options = '<option value="">Select a Referrer</option>';
         let gender_options = '<option value="">Select a Gender</option>';
         let lead_sources_options = '<option value="">Select a Lead Sources</option>';
         let lead_statuses_options = '<option value="">Select a Lead Status</option>';
-        if (Services) {
-            Object.entries(Services).forEach(function(service) {
-                service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+        if(lead){
+            let parentServiceNames = [];
+            let parentServiceButton = [];
+            lead.lead_service.forEach(function(service) {
+                service_list += '<tr>'; // Start a new row
+                // Check if service name already exists in parentServiceNames array
+                if (!parentServiceNames.includes(service.service.name)) {
+                  parentServiceNames.push(service.service.name); // Add service name to the array
+                  service_list += '<td>' + service.service.name + '</td>';
+                } else {
+                    service_list += '<td></td>';
+                }
+
+                if (service.child_service_id == null) {
+                  service_list += '<td>N/A</td>';
+                } else {
+                  service_list += '<td>' + service.childservice?.name + '</td>';
+                }
+                // Check if service name already exists in parentServiceButton array
+                if (!parentServiceButton.includes(service.service.name)) {
+                    parentServiceButton.push(service.service.name); // Add service name to the array
+                    if (service.consultancy_id == '' || service.consultancy_id == null) {
+                        service_list += '<td><a href="javascript:void(0);" onclick="editService(' + lead.id + ', ' + service.service_id + ');" class="btn btn-primary btn-sm"><i class="la la-pencil"></i></span></a></td>';
+                    } else {
+                        service_list += '<td></td>'; // Empty column for services without an edit button
+                    }
+                } else {
+                    service_list += '<td></td>';
+                }
+                service_list += '</tr>'; // End the row
             });
-        }
-        if (Childservices) {
-            Object.entries(Childservices).forEach(function(childservice) {
-                child_service_options += '<option value="' + childservice[0] + '">' + childservice[1] + '</option>';
-            });
+
         }
         if (cities) {
             Object.entries(cities).forEach(function(city) {
                 city_options += '<option value="' + city[0] + '">' + city[1] + '</option>';
             });
         }
-        if (locations) {            
+        if (locations) {
             Object.entries(locations).forEach(function(location) {
                 location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
             });
@@ -657,34 +711,36 @@ function setEditData(response) {
         }
         $("#edit_service_id").html(service_options);
         $("#edit_child_service_id").html(child_service_options);
+        $("#service_list_table").html(service_list);
+        $("#service_edit").html(service_edit);
         $("#edit_city_id").html(city_options);
         $("#edit_location_id").html(location_options);
         $("#edit_referred_by_id").html(employee_options);
         $("#edit_gender_id").html(gender_options);
         $("#edit_lead_source_id").html(lead_sources_options);
         $("#edit_lead_status_id").html(lead_statuses_options);
-        $("#edit_service_id").val(lead.service_id);
-        $("#edit_child_service_id").val(lead.child_service_id);
+
         $("#edit_city_id").val(lead.city_id);
-        $("#edit_location_id").val(lead.location_id);
-        if (lead?.patient?.referred_by && lead?.patient?.referred_by != 0) {
-            $("#edit_referred_by_id").val(lead?.patient?.referred_by);
+        if (lead?.location_id && lead?.location_id != 0) {
+            $("#edit_location_id").val(lead?.location_id).change();
         }
-        if (lead.patient.gender) {
-            $("#edit_gender_id").val(lead.patient.gender);
+        if (lead?.referred_by && lead?.referred_by != 0) {
+            $("#edit_referred_by_id").val(lead?.referred_by);
         }
-        if (lead.lead_source_id) {
-            $("#edit_lead_source_id").val(lead.lead_source_id);
+        if (lead?.gender && lead?.gender != 0) {
+            $("#edit_gender_id").val(lead.gender);
         }
-        if (lead.lead_status_id) {
+        if (lead?.lead_source_id && lead?.lead_source_id != 0) {
+            $("#edit_lead_source_id").val(lead?.lead_source_id);
+        }
+        if (lead?.lead_status_id && lead?.lead_status_id != 0) {
             $("#edit_lead_status_id").val(lead.lead_status_id);
         }
-        $("#edit_full_name").val(lead.patient.name);
-        $("#edit_patient_id").val(lead.patient.id);
+        $("#edit_full_name").val(lead.name);
         $("#edit_lead_id").val(lead.id);
-        $("#edit_old_phone").val(lead.patient.phone);
+        $("#edit_old_phone").val(lead.phone).attr("readonly", true);
         if (permissions.contact) {
-            $("#edit_phone").val(lead.patient.phone);
+            $("#edit_phone").val(lead.phone).attr("readonly", true);
         } else {
             $("#edit_phone").val("***********").attr("readonly", true);
         }
@@ -692,11 +748,75 @@ function setEditData(response) {
         showException(error);
     }
 }
+function editService(id, service_id){
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.leads.edit.service', {id: id, service_id: service_id}),
+        type: "GET",
+        cache: false,
+        success: function(response) {
+            setEditService(response.data, service_id);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
+function setEditService(data, service_id){
+    let Services = data.Services;
+    let ChildService = data.Child_service;
+    let Lead_service = data.lead_service;
+    let service_options = '';
+    let child_service_options = '';
+    let serviceIDs = [];
+    let childServiceIDs = [];
+    let save_service = '';
+
+    if (Lead_service) {
+        Lead_service.forEach((service) => {
+            const serviceID = service.service.id;
+            if (!serviceIDs.includes(serviceID)) {
+                serviceIDs.push(serviceID);
+            }
+
+            if (service.childservice != null) {
+                childServiceIDs.push(service.childservice?.id)
+            }
+        });
+    }
+
+    if (Services) {
+        Object.entries(Services).forEach(function(service) {
+            if(jQuery.inArray(Number(service[0]), serviceIDs) != -1){
+                service_options += '<option value="' + service[0] + '" selected>' + service[1] + '</option>';
+            } else {
+                service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            }
+        });
+    }
+
+    if (ChildService) {
+        Object.entries(ChildService).forEach(function(service) {
+            if(jQuery.inArray(Number(service[0]), childServiceIDs) != -1){
+                child_service_options += '<option value="' + service[0] + '" selected>' + service[1] + '</option>';
+            } else {
+                child_service_options += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            }
+        });
+    }
+
+    $("#edit_service_id").html(service_options);
+    $("#edit_child_service_id").html(child_service_options);
+    $("#edit_old_service").val(service_id);
+}
+
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
         let filters = {
             delete: '',
-            patient_id: $("#search_id").val(),
+            lead_id: $("#search_id").val(),
             name: $("#search_full_name").val(),
             phone: $("#search_phone").val(),
             city_id: $("#search_city_id").val(),
@@ -718,7 +838,7 @@ function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
         let filters = {
             delete: '',
-            patient_id: '',
+            lead_id: '',
             name: '',
             phone: '',
             city_id: '',
@@ -797,7 +917,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_region_id").html(region_options);
         $("#search_service_id").html(service_options);
         $("#search_created_by").html(user_options);
-        $("#search_id").val(active_filters.patient_id);
+        $("#search_id").val(active_filters.lead_id);
         $("#search_full_name").val(active_filters.name);
         $("#search_phone").val(active_filters.phone);
         $("#search_city_id").val(active_filters.city_id);
@@ -827,11 +947,12 @@ function hideShowAdvanceFilters(active_filters) {
     }
 }
 
-function newPatient() {
-    $('.new_patient').change(function () {
+function newLead() {
+    $('.new_lead').change(function () {
         if ($(this).is(":checked")) {
-            $('.new_patient').val('1');
-            $('.msg_new_patient').show();
+            $('.lead_search_id').attr('readonly',true);
+            $('.new_lead').val('1');
+            $('.msg_new_lead').show();
             $("#add_phone").removeAttr("readonly");
             $("#add_full_name").removeAttr("readonly");
             if ($("#add_phone").val() != '') {
@@ -841,12 +962,10 @@ function newPatient() {
             $("#add_phone").attr("readonly",false);
             $("#add_full_name").attr("readonly",false);
             $("#add_gender_id").attr("readonly",false);
-           /* $("#modal_add_leads_form").find('input').val('');
-            $("#modal_edit_leads_form").find('input').val('');
-            $(".select2").val(null).trigger("change");*/
         } else {
-            $('.new_patient').val('0');
-            $('.msg_new_patient').hide();
+            $('.lead_search_id').attr('readonly',false);
+            $('.new_lead').val('0');
+            $('.msg_new_lead').hide();
             $("#add_phone").val("");
             $("#add_full_name").val("");
             $("#add_gender_id").val("");
@@ -855,6 +974,62 @@ function newPatient() {
             $("#add_gender_id").attr("readonly",true);
         }
     });
+}
+
+function getLeadDetail($this) {
+    $.ajax({
+        type: 'get',
+        url: route('admin.leads.get_lead_number'),
+        data: {
+            'lead_id': $this.val()
+        },
+        success: function (resposne) {
+            if (resposne.status && resposne.data.lead) {
+                lead = resposne.data.lead;
+                console.log(lead)
+                $('#add_phone').val(lead?.phone);
+
+                if (permissions.contact) {
+                    $('#add_phone').val(lead?.phone);
+                } else {
+                    $('#add_phone').val("***********");
+                }
+                $('#add_full_name').val(lead?.name);
+                $('#add_gender_id').val(lead?.gender).change();
+                $('#add_city_id').val(lead?.city_id).change();
+                if (isExist(lead?.referred_by)) {
+                    $('#add_referred_by_id').val(lead?.referred_by).change();
+                }
+            }
+        },
+    });
+}
+
+function loadLead(lead) {
+    if (typeof lead !== "undefined" && lead !== null) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'post',
+            url: route('admin.appointments.load_lead'),
+            data: {
+                'referred_by': lead.referred_by,
+                'service_id': $("#create_consultancy_service").val(),
+                'lead_id': lead.id,
+                'phone': lead.phone,
+            },
+            success: function (resposne) {
+                if (resposne.status) {
+                    let lead_source_id = resposne.data.lead_source_id;
+
+                    if (isExist(lead_source_id)) {
+                        $('#create_consultancy_lead').val(lead_source_id).change();
+                    }
+                }
+            },
+        });
+    }
 }
 
 function editInline($lead_id, city_id, $this) {
@@ -1070,23 +1245,11 @@ function skipStatus($this) {
         }
     } else {
         $("#skip_lead_statuses").prop("disabled", true);
+        $("#skip_lead_statuses").prop("checked", false);
         $(".skip_lead_status").css("opacity", 0.7);
     }
 }
-function HideskipStatus($this){
-    if ($this.is(":checked")) {
-        $("#skip_lead_statuses").prop("disabled", true);
-        $("#update_records").prop("disabled", true);
-        $("#update_records").attr("checked", false);
-        $(".skip_lead_status").css("opacity", 0.7);
-        $(".update_records").css("opacity", 0.7);
-    } else {
-        $("#update_records").prop("disabled", false);
-        $("#skip_lead_statuses").prop("disabled", false);
-        $(".update_records").css("opacity", 1);
-        $(".skip_lead_status").css("opacity", 1);
-    }
-}
+
 function skipUpdateStatus($this){
     if ($this.is(":checked")) {
         $("#update_statuss").prop("disabled", true);
@@ -1096,6 +1259,7 @@ function skipUpdateStatus($this){
         $(".update_statuss").css("opacity", 1);
     }
 }
+
 function addValidation(elem) {
     if (elem.val() == '') {
         elem.addClass("is-invalid");
@@ -1104,6 +1268,17 @@ function addValidation(elem) {
         elem.removeClass("is-invalid");
         $(".lead_file_msg").addClass("d-none");
     }
+}
+
+function cencleLead($this) {
+    $(".msg_new_lead").hide();
+    $(".new_lead").prop("checked", false);
+}
+
+function cencleImport($this) {
+    $("#skip_lead_statuses").prop("disabled", true);
+    $("#skip_lead_statuses").prop("checked", false);
+    $(".skip_lead_status").css("opacity", 0.7);
 }
 
 jQuery(document).ready( function () {

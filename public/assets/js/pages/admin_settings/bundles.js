@@ -192,7 +192,7 @@ function setEditData(response) {
     $('.HR_SERVICES').remove();
 
     Object.entries(relationships).forEach(function (value, index) {
-        
+
         $('#service_body').append(setService(index+1,value[1].service_id,bundle_services[value[1].service_id].name, bundle_services[value[1].service_id].price));
     });
 

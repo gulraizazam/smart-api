@@ -183,82 +183,79 @@ class Patients extends BaseModal
         return self::where($where)->first();
     }
 
-    /**
-     * Create Record
-     *
-     * @param data
-     * @return (mixed)
-     */
-    public static function createRecord($data, $flag = 0)
-    {
-        if ($flag == 1) {
-            $patient = Patients::where('phone', $data['phone'])->first();
-            if (! $patient) {
+		/**
+		 * Create Record
+		 *
+		 * @param data
+		 *
+		 * @return (mixed)
+		 */
+		static public function createRecord($data,$flag=0)
+		{
+            if($flag == 1){
+			    $patient = Patients::where('phone',$data['phone'])->first();
+                if(!$patient){
+                    $record = Patients::create($data);
+                    AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+                    return $record;
+                }else{
+                    if($flag == 1){
+                        return 'Patient is already exist';
+                    }else{
+                    return $patient;
+                    }
+                }
+            }else{
                 $record = Patients::create($data);
                 AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
                 return $record;
-            } else {
-                if ($flag == 1) {
-                    return 'Patient is already exist';
-                } else {
-                    return $patient;
-                }
             }
-        } else {
-            $record = Patients::create($data);
-            AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+		}
 
-            return $record;
-        }
-    }
-
-    /**
-     * update Record
-     *
-     * @param data
-     * @return (mixed)
-     */
-    public static function updateRecord($id, $data, $appointmentData = false, $patientData = false)
-    {
-        if ($appointmentData) {
-            if ($appointmentData['patient_id'] != 0) {
-
-                $old_data = (Patients::find($appointmentData['patient_id']))->toArray();
-            }
-            if (isset($appointmentData['patient_id_1'])) {
-                if ($appointmentData['patient_id'] == 0) {
-                    $appointmentData['patient_id'] = $appointmentData['patient_id_1'];
-                    $patientData['patient_id'] = $patientData['patient_id_1'];
-                }
-            }
-            $record = Patients::find($appointmentData['patient_id']);
-            /* $record = Patients::updateOrCreate(array(
-                 'id' => $appointmentData['patient_id'],
-                 'phone' => $appointmentData['phone'],
-                 'user_type_id' => Config::get('constants.patient_id'),
-                 'account_id' => Auth::User()->account_id
-             ), $patientData);*/
-            $is_exist = Patients::find($appointmentData['patient_id']);
-            if ($is_exist) {
-                AuditTrails::EditEventLogger(self::$_table, 'edit', $record, self::$_fillable, $is_exist, $appointmentData['patient_id']);
-            } else {
-                AuditTrails::addEventLogger(self::$_table, 'create', $record, self::$_fillable, $record);
-            }
-
-            return $record;
-        } else {
-            $old_data = (Patients::find($id))->toArray();
-            $record = self::where(['id' => $id])->first();
-            if (! $record) {
-                return null;
-            }
-            $record->update($data);
-            AuditTrails::EditEventLogger(self::$_table, 'edit', $record, self::$_fillable, $old_data, $id);
-
-            return $record;
-        }
-    }
+		/**
+		 * update Record
+		 *
+		 * @param data
+		 *
+		 * @return (mixed)
+		 */
+		static public function updateRecord($id, $data, $appointmentData = false, $patientData = false)
+		{
+			if ($appointmentData) {
+				if ($appointmentData['patient_id'] != 0) {
+					$old_data = (Patients::find($appointmentData['patient_id']))->toArray();
+				}
+				if(isset($appointmentData['patient_id_1'])){
+					if($appointmentData['patient_id'] == 0){
+						$appointmentData['patient_id'] = $appointmentData['patient_id_1'];
+						$patientData['patient_id'] = $patientData['patient_id_1'];
+					}
+				}
+				$record = Patients::find($appointmentData['patient_id']);
+				/* $record = Patients::updateOrCreate(array(
+					 'id' => $appointmentData['patient_id'],
+					 'phone' => $appointmentData['phone'],
+					 'user_type_id' => Config::get('constants.patient_id'),
+					 'account_id' => Auth::User()->account_id
+				 ), $patientData);*/
+				$is_exist = Patients::find($appointmentData['patient_id']);
+				if ($is_exist) {
+					AuditTrails::EditEventLogger(self::$_table, 'edit', $record, self::$_fillable, $is_exist, $appointmentData['patient_id']);
+				} else {
+					AuditTrails::addEventLogger(self::$_table, 'create', $record, self::$_fillable, $record);
+				}
+				return $record;
+			} else {
+				$old_data = (Patients::find($id))->toArray();
+				$record = self::where(['id' => $id])->first();
+				if (!$record) {
+					return null;
+				}
+				$record->update($data);
+				AuditTrails::EditEventLogger(self::$_table, 'edit', $record, self::$_fillable, $old_data, $id);
+				return $record;
+			}
+		}
 
     /**
      * Get active and sorted data only.
@@ -313,27 +310,27 @@ class Patients extends BaseModal
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $apply_filter, $filename)
     {
 
-        $where = self::filters_patients($request, $account_id, $apply_filter, $filename);
+			$where = self::filters_patients($request, $account_id, $apply_filter, $filename);
 
-        [$orderBy, $order] = getSortBy($request);
+            list($orderBy, $order) = getSortBy($request);
 
-        if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            } else {
-                return self::where('active', 1)->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            }
+			if (count($where)) {
+				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
+					return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+				}else{
+					return self::where('active',1)->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+				}
 
-        //return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-        } else {
-            //return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            } else {
-                return self::where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            }
-        }
-    }
+				//return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
+			} else {
+				//return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
+				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
+					return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at", "DESC")->select('*', 'id as patient_id')->get();
+				}else{
+					return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+				}
+			}
+		}
 
     /**
      * Delete Record

@@ -1073,7 +1073,13 @@ function applyFilters(datatable) {
             updated_by: $("#appoint_search_updated_by").val(),
             filter: 'filter',
         }
-        datatable.search(filters, 'search');
+        if($("#appoint_search_service").val() == 13){
+            resetFilters(datatable);
+        }
+        else{
+            datatable.search(filters, 'search');
+        }
+       
     });
 }
 
@@ -1106,7 +1112,35 @@ function resetAllFilters(datatable) {
     });
 
 }
+function resetFilters(datatable) {
 
+    
+        let filters =  {
+            delete: '',
+            patient_id: '',
+            name: '',
+            phone: '',
+            date_from: '',
+            date_to: '',
+            appointment_type_id: '',
+            service_id: '',
+            region_id: '',
+            city_id: '',
+            location_id: '',
+            doctor_id: '',
+            appointment_status_id: '',
+            consultancy_type: '',
+            created_from: '',
+            created_to: '',
+            created_by: '',
+            converted_by: '',
+            updated_by: '',
+            filter: 'filter_cancel',
+        }
+        datatable.search(filters, 'search');
+    
+
+}
 function setFilters(filter_values, active_filters) {
     try {
         let appointment_statuses = filter_values.appointment_statuses;
@@ -1155,10 +1189,6 @@ function setFilters(filter_values, active_filters) {
                   service_options += '<option value="' + value.id + '">' + value.name + '</option>';
             } else {
                 service_options += '<option value="' + value.id + '">' + value.name + '</option>';
-                Object.values(value.children).forEach(function (child, index) {
-                    service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
-                    service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;' + child.name + '</option>';
-                });
             }
         });
 

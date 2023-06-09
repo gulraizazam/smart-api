@@ -6,7 +6,7 @@
         <h2 class="fw-bolder">Add Lead</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
-        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
+        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close" onclick="cencleLead($(this))">
             <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
             <span class="svg-icon svg-icon-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -27,7 +27,7 @@
 
             <input type="hidden" class="form_type" value="add_">
 
-            <input type="hidden" name="patient_id" id="add_patient_id" value="">
+            <input type="hidden" name="lead_id" id="add_lead_id" value="">
             <input type="hidden" name="id" id="add_lead_id" value="">
             <input type="hidden" id="add_old_phone" name="old_phone">
 
@@ -35,12 +35,12 @@
 
                 <div class="form-group">
                     <div class="row">
+                        <div class="fv-row col-md-12 mt-5" id="lead_id">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Search </label>
+                            <input class="form-control lead_search_id">
 
-                        <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
-                            <input type="hidden" onchange="loadLeadData($(this).val());" name="patient_id" class="search_field" id="add_patient_id" >
-                            <input class="form-control form-control-solid mb-3 mb-lg-0 patient_id" >
-                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:36px; right:22px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <input type="hidden" onchange="getLeadDetail($(this))" name="lead_id" class="filter-field search_field" id="create_lead_search">
+                            <span onclick="addLeads()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
                             <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
@@ -49,13 +49,13 @@
 
                         <div class="fv-row col-md-12 mt-10">
                             <label class="custom_checkbox">
-                                <input class="new_patient" name="new_patient" onclick="newPatient();" type="checkbox">
+                                <input class="new_lead" name="new_lead" onclick="newLead();" type="checkbox">
                                 <strong></strong>
-                               <span class="ml-5"> New Patient ?</span>
+                               <span class="ml-5"> New Lead ?</span>
                             </label>
                         </div>
                         <div class="fv-row col-md-12 mt-5">
-                            <h2 class="text-center text text-danger msg_new_patient " style="display: none;">You are going to create new patient</h2>
+                            <h2 class="text-center text text-danger msg_new_lead" style="display: none;">You are going to create new lead</h2>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
@@ -64,7 +64,7 @@
                             </select>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service  </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Treatment </label>
                             <select id="add_child_service_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="child_service_id">
                             </select>
                         </div>
@@ -95,7 +95,7 @@
                             </select>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre <span class="text text-danger">*</span></label>
                             <select id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
                             </select>
                         </div>
@@ -126,7 +126,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel" onclick="cencleLead($(this))">Cancel</button>
                 <button type="submit" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>
