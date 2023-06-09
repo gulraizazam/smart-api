@@ -41,13 +41,13 @@ class AppointmentEditWidget
         $location_services_array = [];
 
         $services = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
-                ->where([
-                    'service_has_locations.service_id' => Services::where([
-                        'slug' => 'all',
-                        'account_id' => $account_id,
-                    ])->select('id')->first()->id,
-                    'service_has_locations.location_id' => $location_id,
-                ])->get();
+            ->where([
+                'service_has_locations.service_id' => Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'service_has_locations.location_id' => $location_id,
+            ])->get();
 
         if ($services->count()) {
             $ss = Services::where([
@@ -77,10 +77,10 @@ class AppointmentEditWidget
             }
         } else {
             $centreServices = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
-                    ->where([
-                        'service_has_locations.account_id' => $account_id,
-                        'service_has_locations.location_id' => $location_id,
-                    ])->get();
+                ->where([
+                    'service_has_locations.account_id' => $account_id,
+                    'service_has_locations.location_id' => $location_id,
+                ])->get();
 
             if ($centreServices->count()) {
                 foreach ($centreServices as $centreService) {
@@ -382,13 +382,13 @@ class AppointmentEditWidget
         $machinetype_services_array = [];
 
         $services = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                ->where([
-                    'machine_type_has_services.service_id' => Services::where([
-                        'slug' => 'all',
-                        'account_id' => $account_id,
-                    ])->select('id')->first()->id,
-                    'machine_type_has_services.machine_type_id' => $machine_type_id,
-                ])->get();
+            ->where([
+                'machine_type_has_services.service_id' => Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'machine_type_has_services.machine_type_id' => $machine_type_id,
+            ])->get();
 
         if ($services->count()) {
             $ss = Services::where([
@@ -418,9 +418,9 @@ class AppointmentEditWidget
             }
         } else {
             $machinetypeServices = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                    ->where([
-                        'machine_type_has_services.machine_type_id' => $machine_type_id,
-                    ])->get();
+                ->where([
+                    'machine_type_has_services.machine_type_id' => $machine_type_id,
+                ])->get();
 
             if ($machinetypeServices->count()) {
                 foreach ($machinetypeServices as $machinetypeService) {
@@ -588,13 +588,13 @@ class AppointmentEditWidget
         $machinetype_services_array = [];
 
         $services = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                ->where([
-                    'machine_type_has_services.service_id' => Services::where([
-                        'slug' => 'all',
-                        'account_id' => $account_id,
-                    ])->select('id')->first()->id,
-                    'machine_type_has_services.machine_type_id' => $machine_type_id,
-                ])->get();
+            ->where([
+                'machine_type_has_services.service_id' => Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'machine_type_has_services.machine_type_id' => $machine_type_id,
+            ])->get();
 
         if ($services->count()) {
             $ss = Services::where([
@@ -624,9 +624,9 @@ class AppointmentEditWidget
             }
         } else {
             $machinetypeServices = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                    ->where([
-                        'machine_type_has_services.machine_type_id' => $machine_type_id,
-                    ])->get();
+                ->where([
+                    'machine_type_has_services.machine_type_id' => $machine_type_id,
+                ])->get();
 
             if ($machinetypeServices->count()) {
                 foreach ($machinetypeServices as $machinetypeService) {
