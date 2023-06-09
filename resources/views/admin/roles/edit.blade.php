@@ -28,29 +28,29 @@
                         </div>
                         <div class="card-body">
                             <!--begin::Form-->
-                            @if(count($DashboardPermissions))
-                                @foreach($DashboardPermissions as $Permission)
+                            @if(count($dashboard_permissions))
+                                @foreach($dashboard_permissions as $permission)
 
                                     <div class="form-group row">
 
-                                        <label class="col-2 col-form-label"><strong>{{ $Permission['title'] }}</strong></label>
-                                        <input id="allow_{{ $Permission['name'] }}" type="checkbox" name="permission[]"
-                                               class="allow_all allow {{ $Permission['name'] }} allow_{{ $Permission['name'] }}"
-                                               value="{{ $Permission['name'] }}" checked="true" style="visibility: hidden;"
-                                               onclick="FormValidation.checkMyModule(this,'allow_{{ $Permission['name'] }}');">
+                                        <label class="col-2 col-form-label"><strong>{{ $permission['title'] }}</strong></label>
+                                        <input id="allow_{{ $permission['name'] }}" type="checkbox" name="permission[]"
+                                               class="allow_all allow {{ $permission['name'] }} allow_{{ $permission['name'] }}"
+                                               value="{{ $permission['name'] }}" checked="true" style="visibility: hidden;"
+                                               onclick="FormValidation.checkMyModule(this,'allow_{{ $permission['name'] }}');">
 
                                         <div class="col-9 col-form-label">
                                             <div class="checkbox-inline">
-                                                @foreach($dashboardPermissionsMapping as $key => $name)
+                                                @foreach($dashboard_permissions_mapping as $key => $name)
 
-                                                    @if(array_key_exists($Permission['key'] . $key, $Permission['children']))
+                                                    @if(array_key_exists($permission['key'] . $key, $permission['children']))
                                                         <label class="checkbox permission_checkbox">
-                                                            <input id="sub-allow_{{ $Permission['children'][$Permission['key'] . $key]['name'] }}"
+                                                            <input id="sub-allow_{{ $permission['children'][$permission['key'] . $key]['name'] }}"
                                                                    type="checkbox" name="permission[]"
-                                                                   class="allow_all allow {{ $Permission['name'] }}  sub-allow_{{ $Permission['name'] }}"
-                                                                   value="{{ $Permission['children'][$Permission['key'] . $key]['name'] }}"
-                                                                   @if(isset($AllowedPermissions[$Permission['children'][$Permission['key'] . $key]['id']])) checked="true"
-                                                                   @endif onclick="FormValidation.checkMyParent(this,'allow_{{ $Permission['name'] }}' , 'sub-allow_{{ $Permission['name'] }}', '{{ $Permission['children'][$Permission['key'] . $key]['name'] }}' );">
+                                                                   class="allow_all allow {{ $permission['name'] }}  sub-allow_{{ $permission['name'] }}"
+                                                                   value="{{ $permission['children'][$permission['key'] . $key]['name'] }}"
+                                                                   @if(isset($allowed_permissions[$permission['children'][$permission['key'] . $key]['id']])) checked="true"
+                                                                   @endif onclick="FormValidation.checkMyParent(this,'allow_{{ $permission['name'] }}' , 'sub-allow_{{ $permission['name'] }}', '{{ $permission['children'][$permission['key'] . $key]['name'] }}' );">
                                                             <span></span>{{$name}}</label>
                                                     @endif
 
@@ -74,34 +74,34 @@
                         </div>
                         <div class="card-body">
                             <!--begin::Form-->
-                            @if(count($Permissions))
-                                @foreach($Permissions as $Permission)
+                            @if(count($permissions))
+                                @foreach($permissions as $permission)
 
                                     <div class="form-group row">
 
-                                        <label class="col-2 col-form-label"><strong>{{ $Permission['title'] }}</strong></label>
+                                        <label class="col-2 col-form-label"><strong>{{ $permission['title'] }}</strong></label>
 
                                         <div class="col-9 col-form-label">
                                             <div class="checkbox-inline">
 
                                                 <label class="checkbox permission_checkbox">
-                                                    <input id="allow_{{ $Permission['name'] }}" type="checkbox" name="permission[]"
-                                                           class="allow_all allow {{ $Permission['name'] }} allow_{{ $Permission['name'] }}"
-                                                           value="{{ $Permission['name'] }}"
-                                                           @if(isset($AllowedPermissions[$Permission['id']])) checked="true"
-                                                           @endif onclick="FormValidation.checkMyModule(this,'allow_{{ $Permission['name'] }}');">
+                                                    <input id="allow_{{ $permission['name'] }}" type="checkbox" name="permission[]"
+                                                           class="allow_all allow {{ $permission['name'] }} allow_{{ $permission['name'] }}"
+                                                           value="{{ $permission['name'] }}"
+                                                           @if(isset($allowed_permissions[$permission['id']])) checked="true"
+                                                           @endif onclick="FormValidation.checkMyModule(this,'allow_{{ $permission['name'] }}');">
                                                     <span></span>Display</label>
 
-                                                @foreach($permissionsMapping as $key => $name)
+                                                @foreach($permissions_mapping as $key => $name)
 
-                                                    @if(array_key_exists($Permission['key'] . $key, $Permission['children']))
+                                                    @if(array_key_exists($permission['key'] . $key, $permission['children']))
                                                         <label class="checkbox permission_checkbox">
-                                                            <input id="sub-allow_{{ $Permission['children'][$Permission['key'] . $key]['name'] }}"
+                                                            <input id="sub-allow_{{ $permission['children'][$permission['key'] . $key]['name'] }}"
                                                                    type="checkbox" name="permission[]"
-                                                                   class="allow_all allow {{ $Permission['name'] }}  sub-allow_{{ $Permission['name'] }}"
-                                                                   value="{{ $Permission['children'][$Permission['key'] . $key]['name'] }}"
-                                                                   @if(isset($AllowedPermissions[$Permission['children'][$Permission['key'] . $key]['id']])) checked="true"
-                                                                   @endif onclick="FormValidation.checkMyParent(this,'allow_{{ $Permission['name'] }}' , 'sub-allow_{{ $Permission['name'] }}', '{{ $Permission['children'][$Permission['key'] . $key]['name'] }}' );">
+                                                                   class="allow_all allow {{ $permission['name'] }}  sub-allow_{{ $permission['name'] }}"
+                                                                   value="{{ $permission['children'][$permission['key'] . $key]['name'] }}"
+                                                                   @if(isset($allowed_permissions[$permission['children'][$permission['key'] . $key]['id']])) checked="true"
+                                                                   @endif onclick="FormValidation.checkMyParent(this,'allow_{{ $permission['name'] }}' , 'sub-allow_{{ $permission['name'] }}', '{{ $permission['children'][$permission['key'] . $key]['name'] }}' );">
                                                             <span></span>{{$name}}</label>
                                                     @endif
 
@@ -125,33 +125,33 @@
                         </div>
                         <div class="card-body">
                             <!--begin::Form-->
-                            @if(count($ReportsPermissions))
-                                @foreach($ReportsPermissions as $Permission)
+                            @if(count($reports_permissions))
+                                @foreach($reports_permissions as $permission)
 
                                     <div class="form-group row">
 
-                                        <label class="col-2 col-form-label"><strong>{{ $Permission['title'] }}</strong></label>
+                                        <label class="col-2 col-form-label"><strong>{{ $permission['title'] }}</strong></label>
 
                                         <div class="col-9 col-form-label">
                                             <div class="checkbox-inline">
 
                                                 <label class="checkbox permission_checkbox">
-                                                    <input id="allow_{{ $Permission['name'] }}" type="checkbox" name="permission[]"
-                                                           class="allow_all allow {{ $Permission['name'] }} allow_{{ $Permission['name'] }}"
-                                                           value="{{ $Permission['name'] }}"
-                                                           @if(isset($AllowedPermissions[$Permission['id']])) checked="true"
-                                                           @endif onclick="FormValidation.checkMyModule(this,'allow_{{ $Permission['name'] }}');">
+                                                    <input id="allow_{{ $permission['name'] }}" type="checkbox" name="permission[]"
+                                                           class="allow_all allow {{ $permission['name'] }} allow_{{ $permission['name'] }}"
+                                                           value="{{ $permission['name'] }}"
+                                                           @if(isset($allowed_permissions[$permission['id']])) checked="true"
+                                                           @endif onclick="FormValidation.checkMyModule(this,'allow_{{ $permission['name'] }}');">
                                                     <span></span>Display</label>
 
-                                                @foreach($reportsPermissionsMapping as $key => $name)
-                                                    @if(array_key_exists($Permission['key'] . $key, $Permission['children']))
+                                                @foreach($reports_permissions_mapping as $key => $name)
+                                                    @if(array_key_exists($permission['key'] . $key, $permission['children']))
                                                         <label class="checkbox permission_checkbox">
-                                                            <input id="sub-allow_{{ $Permission['children'][$Permission['key'] . $key]['name'] }}"
+                                                            <input id="sub-allow_{{ $permission['children'][$permission['key'] . $key]['name'] }}"
                                                                    type="checkbox" name="permission[]"
-                                                                   class="allow_all allow {{ $Permission['name'] }}  sub-allow_{{ $Permission['name'] }}"
-                                                                   value="{{ $Permission['children'][$Permission['key'] . $key]['name'] }}"
-                                                                   @if(isset($AllowedPermissions[$Permission['children'][$Permission['key'] . $key]['id']])) checked="true"
-                                                                   @endif onclick="FormValidation.checkMyParent(this,'allow_{{ $Permission['name'] }}' , 'sub-allow_{{ $Permission['name'] }}', '{{ $Permission['children'][$Permission['key'] . $key]['name'] }}' );">
+                                                                   class="allow_all allow {{ $permission['name'] }}  sub-allow_{{ $permission['name'] }}"
+                                                                   value="{{ $permission['children'][$permission['key'] . $key]['name'] }}"
+                                                                   @if(isset($allowed_permissions[$permission['children'][$permission['key'] . $key]['id']])) checked="true"
+                                                                   @endif onclick="FormValidation.checkMyParent(this,'allow_{{ $permission['name'] }}' , 'sub-allow_{{ $permission['name'] }}', '{{ $permission['children'][$permission['key'] . $key]['name'] }}' );">
                                                             <span></span>{{$name}}</label>
                                                     @endif
 
