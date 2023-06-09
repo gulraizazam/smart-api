@@ -18,7 +18,7 @@ class Leads extends BaseModal
 
     protected $fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender', 'referred_by'];
 
-    protected static $_fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id','town_id'];
+    protected static $_fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'town_id'];
 
     protected $table = 'leads';
 
@@ -109,63 +109,65 @@ class Leads extends BaseModal
     /**
      * @return \Illuminate\Database\Eloquent\Builder|Model|object|null
      */
-    static public function getData($id) {
+    public static function getData($id)
+    {
         return self::with('lead_service')->where([
-            ['id','=',$id],
-            ['account_id','=',Auth::user()->account_id]
+            ['id', '=', $id],
+            ['account_id', '=', Auth::user()->account_id],
         ])->first();
     }
 
-    static public function getLeadPhoneAjax($phone, $account_id)
-		{
-			if (is_numeric($phone)) {
-				return self::where([
-					['active', '=', '1'],
-					['account_id', '=', $account_id],
-					['phone', 'LIKE', "%{$phone}%"]
-				])->select('name', 'id', 'phone')->get();
-			} else {
-				return self::where([
-					['active', '=', '1'],
-					['account_id', '=', $account_id],
-					['phone', 'LIKE', "%{$phone}%"]
-				])->select('name', 'id', 'phone')->get();
-			}
-		}
+    public static function getLeadPhoneAjax($phone, $account_id)
+    {
+        if (is_numeric($phone)) {
+            return self::where([
+                ['active', '=', '1'],
+                ['account_id', '=', $account_id],
+                ['phone', 'LIKE', "%{$phone}%"],
+            ])->select('name', 'id', 'phone')->get();
+        } else {
+            return self::where([
+                ['active', '=', '1'],
+                ['account_id', '=', $account_id],
+                ['phone', 'LIKE', "%{$phone}%"],
+            ])->select('name', 'id', 'phone')->get();
+        }
+    }
 
         /*
-		 * Ajax base result of patient according to id or name
-		 * */
-		static public function getLeadidAjax($name, $account_id)
-		{
+     * Ajax base result of patient according to id or name
+     * */
+        public static function getLeadidAjax($name, $account_id)
+        {
             $leads = collect();
             if (is_numeric($name)) {
-                $leads =  self::where([
+                $leads = self::where([
                     'active' => '1',
                     'account_id' => $account_id,
-                    'id' => $name
+                    'id' => $name,
                 ])->select('name', 'id', 'phone')->get();
             }
             if ($leads->count() > 0) {
                 return $leads;
             }
-		    $name = GeneralFunctions::patientSearch($name);
+            $name = GeneralFunctions::patientSearch($name);
             $phone_numeric = GeneralFunctions::clearnString($name);
-			if (is_numeric($phone_numeric)) {
+            if (is_numeric($phone_numeric)) {
                 $phone = GeneralFunctions::cleanNumber($name);
-				return self::where([
-					['active', '=', '1'],
-					['account_id', '=', $account_id],
-					['phone', 'LIKE', "%{$phone}%"]
-				])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
-			} else {
-				return self::where([
-					['active', '=', '1'],
-					['account_id', '=', $account_id],
-					['name', 'LIKE', "%{$name}%"]
-				])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
-			}
-		}
+
+                return self::where([
+                    ['active', '=', '1'],
+                    ['account_id', '=', $account_id],
+                    ['phone', 'LIKE', "%{$phone}%"],
+                ])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
+            } else {
+                return self::where([
+                    ['active', '=', '1'],
+                    ['account_id', '=', $account_id],
+                    ['name', 'LIKE', "%{$name}%"],
+                ])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
+            }
+        }
 
     /**
      * Prepare SMS Contnet for Delivery
@@ -224,16 +226,16 @@ class Leads extends BaseModal
      * @param data,parent_data
      * @return (mixed)
      */
-    static public function createRecord($data, $status = null)
+    public static function createRecord($data, $status = null)
     {
 
         if ($status == 'Appointment') {
             $data['service_id'] = $data['base_service_id'];
-            $record = Leads::updateOrCreate(array(
+            $record = Leads::updateOrCreate([
                 'phone' => $data['phone'],
                 'account_id' => Auth::User()->account_id,
                 'created_at' => Carbon::now()->timestamp,
-            ), $data);
+            ], $data);
             $final_data = $record;
             $data['lead_id'] = $final_data->id;
             $service = LeadsServices::create($data);
@@ -242,11 +244,11 @@ class Leads extends BaseModal
                 // Set Region ID
                 $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
             }
-            $checkLeadExistance = Leads::where(array(
+            $checkLeadExistance = Leads::where([
                 'phone' => $data['phone'],
-                'account_id' => Auth::User()->account_id
-            ))->first();
-            if(!$checkLeadExistance){
+                'account_id' => Auth::User()->account_id,
+            ])->first();
+            if (! $checkLeadExistance) {
                 $record = Leads::create($data);
             } else {
                 $checkLeadExistance->lead_status_id = 1;
@@ -258,6 +260,7 @@ class Leads extends BaseModal
             $final_data = $data;
         }
         AuditTrails::addEventLogger(self::$_table, 'create', $final_data, self::$_fillable, $record);
+
         return $record;
     }
 
@@ -267,7 +270,7 @@ class Leads extends BaseModal
      * @param data,parent_data
      * @return (mixed)
      */
-    static public function updateRecord($id, $data, $status = false)
+    public static function updateRecord($id, $data, $status = false)
     {
         if ($status == 'Appointment') {
             $old_data = (Leads::find($id))->toArray();
@@ -286,6 +289,7 @@ class Leads extends BaseModal
         $record->update($data);
 
         AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $record);
+
         return $record;
     }
 
@@ -298,7 +302,7 @@ class Leads extends BaseModal
      * */
     public static function getLeadReport($data)
     {
-        $where = array();
+        $where = [];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));

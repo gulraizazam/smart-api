@@ -99,12 +99,12 @@ class Appointments
         $where['appointments.account_id'] = $account_id;
 
         return \App\Models\Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
-                ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
-                ->where($where)
-                ->whereIn('appointments.location_id', ACL::getUserCentres())
-                ->select('appointments.*', 'users.referred_by')
-                ->get();
+            ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
+            ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
+            ->where($where)
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->select('appointments.*', 'users.referred_by')
+            ->get();
     }
 
     /**
@@ -185,15 +185,15 @@ class Appointments
 
         if (count($where)) {
             $recods = \App\Models\Appointments::whereDate($data['date_range_by'], '>=', $start_date)
-                    ->whereDate($data['date_range_by'], '<=', $end_date)
-                    ->where($where)
-                    ->whereIn('location_id', ACL::getUserCentres())
-                    ->get();
+                ->whereDate($data['date_range_by'], '<=', $end_date)
+                ->where($where)
+                ->whereIn('location_id', ACL::getUserCentres())
+                ->get();
         } else {
             $recods = \App\Models\Appointments::whereDate($data['date_range_by'], '>=', $start_date)
-                    ->whereDate($data['date_range_by'], '<=', $end_date)
-                    ->whereIn('location_id', ACL::getUserCentres())
-                    ->get();
+                ->whereDate($data['date_range_by'], '<=', $end_date)
+                ->whereIn('location_id', ACL::getUserCentres())
+                ->get();
         }
         $data = [];
         $created_byArray = [];
@@ -299,13 +299,13 @@ class Appointments
         $where['appointments.account_id'] = $account_id;
 
         $recods = \App\Models\Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
-                ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
-                ->where($where)
-                ->whereNotNull('users.referred_by')
-                ->whereIn('appointments.location_id', ACL::getUserCentres())
-                ->select('appointments.*', 'users.referred_by')
-                ->get();
+            ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
+            ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
+            ->where($where)
+            ->whereNotNull('users.referred_by')
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->select('appointments.*', 'users.referred_by')
+            ->get();
 
         $data = [];
         $created_byArray = [];
@@ -402,12 +402,12 @@ class Appointments
         $where['appointments.account_id'] = $account_id;
 
         $recods = \App\Models\Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
-                ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
-                ->whereIn('appointments.location_id', ACL::getUserCentres())
-                ->where($where)
-                ->select('appointments.*', 'users.referred_by')
-                ->get();
+            ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
+            ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->where($where)
+            ->select('appointments.*', 'users.referred_by')
+            ->get();
 
         $data = [];
         $created_byArray = [];
@@ -495,13 +495,13 @@ class Appointments
         $where['appointments.account_id'] = $account_id;
 
         $recods = \App\Models\Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                ->whereDate('appointments.'.$data['date_range_by_first'], '>=', $start_date)
-                ->whereDate('appointments.'.$data['date_range_by_first'], '<=', $end_date)
-                ->where($where)
-                ->whereIn('appointments.location_id', ACL::getUserCentres())
-                ->select('appointments.region_id', 'appointments.location_id', 'appointments.service_id', DB::raw('COUNT(appointments.id) as total_appointments'))
-                ->groupBy('appointments.region_id', 'appointments.location_id', 'appointments.service_id')
-                ->get();
+            ->whereDate('appointments.'.$data['date_range_by_first'], '>=', $start_date)
+            ->whereDate('appointments.'.$data['date_range_by_first'], '<=', $end_date)
+            ->where($where)
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->select('appointments.region_id', 'appointments.location_id', 'appointments.service_id', DB::raw('COUNT(appointments.id) as total_appointments'))
+            ->groupBy('appointments.region_id', 'appointments.location_id', 'appointments.service_id')
+            ->get();
 
         $data = [];
 
@@ -625,23 +625,23 @@ class Appointments
         $where['appointments.account_id'] = $account_id;
         if (count($ids)) {
             $recods = \App\Models\Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                    ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
-                    ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
-                    ->where($where)
-                    ->whereIn('appointments.service_id', $ids)
-                    ->whereIn('appointments.location_id', ACL::getUserCentres())
-                    ->select('appointments.region_id', 'appointments.location_id', 'appointments.base_appointment_status_id as appointment_status_id', DB::raw('COUNT(appointments.id) as total_appointments'))
-                    ->groupBy('appointments.region_id', 'appointments.location_id', 'appointments.base_appointment_status_id')
-                    ->get();
+                ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
+                ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
+                ->where($where)
+                ->whereIn('appointments.service_id', $ids)
+                ->whereIn('appointments.location_id', ACL::getUserCentres())
+                ->select('appointments.region_id', 'appointments.location_id', 'appointments.base_appointment_status_id as appointment_status_id', DB::raw('COUNT(appointments.id) as total_appointments'))
+                ->groupBy('appointments.region_id', 'appointments.location_id', 'appointments.base_appointment_status_id')
+                ->get();
         } else {
             $recods = \App\Models\Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                    ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
-                    ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
-                    ->where($where)
-                    ->whereIn('appointments.location_id', ACL::getUserCentres())
-                    ->select('appointments.region_id', 'appointments.location_id', 'appointments.base_appointment_status_id as appointment_status_id', DB::raw('COUNT(appointments.id) as total_appointments'))
-                    ->groupBy('appointments.region_id', 'appointments.location_id', 'appointments.base_appointment_status_id')
-                    ->get();
+                ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
+                ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
+                ->where($where)
+                ->whereIn('appointments.location_id', ACL::getUserCentres())
+                ->select('appointments.region_id', 'appointments.location_id', 'appointments.base_appointment_status_id as appointment_status_id', DB::raw('COUNT(appointments.id) as total_appointments'))
+                ->groupBy('appointments.region_id', 'appointments.location_id', 'appointments.base_appointment_status_id')
+                ->get();
         }
 
         $report = [];
@@ -783,12 +783,12 @@ class Appointments
         $where['appointments.account_id'] = $account_id;
 
         $records = \App\Models\Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
-                ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
-                ->where($where)
-                ->whereIn('appointments.location_id', ACL::getUserCentres())
-                ->select('appointments.id', 'appointments.patient_id', 'appointments.scheduled_date', 'appointments.doctor_id', 'appointments.region_id', 'appointments.city_id', 'appointments.location_id', 'appointments.appointment_status_id', 'appointments.appointment_type_id', 'appointments.created_at', 'appointments.created_by', 'users.referred_by', 'appointments.consultancy_type', DB::raw('DATE(appointments.created_at) as created_date'))
-                ->get();
+            ->whereDate('appointments.'.$data['date_range_by'], '>=', $start_date)
+            ->whereDate('appointments.'.$data['date_range_by'], '<=', $end_date)
+            ->where($where)
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->select('appointments.id', 'appointments.patient_id', 'appointments.scheduled_date', 'appointments.doctor_id', 'appointments.region_id', 'appointments.city_id', 'appointments.location_id', 'appointments.appointment_status_id', 'appointments.appointment_type_id', 'appointments.created_at', 'appointments.created_by', 'users.referred_by', 'appointments.consultancy_type', DB::raw('DATE(appointments.created_at) as created_date'))
+            ->get();
 
         $report = [];
 
@@ -1152,11 +1152,11 @@ class Appointments
         $where['appointments.account_id'] = $account_id;
 
         return \App\Models\Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-                ->whereDate('appointments.'.$data['date_range_by_first'], '>=', $start_date)
-                ->whereDate('appointments.'.$data['date_range_by_first'], '<=', $end_date)
-                ->where($where)
-                ->whereIn('appointments.location_id', ACL::getUserCentres())
-                ->select('appointments.*', 'users.referred_by')
-                ->get();
+            ->whereDate('appointments.'.$data['date_range_by_first'], '>=', $start_date)
+            ->whereDate('appointments.'.$data['date_range_by_first'], '<=', $end_date)
+            ->where($where)
+            ->whereIn('appointments.location_id', ACL::getUserCentres())
+            ->select('appointments.*', 'users.referred_by')
+            ->get();
     }
 }
