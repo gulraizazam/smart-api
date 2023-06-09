@@ -2705,20 +2705,16 @@ class Finanaces
                     $revenue_in = 0;
                     $out = 0;
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                        ->where('cash_flow', '=', "in")
+                        ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
                         ->get();
-
                     if (count($packagesadvances) > 0) {
                         $check = 0;
                         $first_advance = PackageAdvances::whereIn('id', $package_info)
                             ->where('cash_amount', '>', 0)
                             ->orderBy('created_at', 'asc')
                             ->first();
-
-
                         $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
-
                         if (($date >= $start_date) && ($date <= $end_date)) {
                             $check = 1;
                         }
@@ -2911,10 +2907,7 @@ class Finanaces
         ->map(function ($appointments_info) {
             return $appointments_info->sum('conversion_spend');
         });
-        $avg_C_val = 0;
-        foreach($conversionsByPatient as $key => $client_val){
-            $avg_C_val+=$client_val;
-        }
+        $avg_C_val = 0;->where(
         if(count($conversionsByPatient) > 0){
             $avg_cxlient_value = $avg_C_val/count($conversionsByPatient);
         }else{
