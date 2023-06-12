@@ -49,7 +49,6 @@ class ServicesController extends Controller
 
     public function datatable(Request $request)
     {
-        //dd($request->all());
         try {
             $filters = getFilters($request->all());
             $records = array();
