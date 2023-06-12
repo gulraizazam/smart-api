@@ -23,10 +23,9 @@ var loadConversionReport = function (that) {
             $("#arrived_patients_table").DataTable({
                 dom: 'Bfrtip',
                 buttons: [
-                    
                     'excelHtml5',
                     'csvHtml5',
-                    'pdfHtml5',  
+                    'pdfHtml5',
                 ],
                 "ordering": false
             });

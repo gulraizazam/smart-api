@@ -33,7 +33,7 @@ return [
     'lead_status_open' => 1,
     'lead_status_junk' => 5,
     'lead_status_converted' => 3,
-    'lead_source_social_media' => 2,
+    'lead_source_social_media' => 7,
     'appointment_status_pending' => 1,
     'appointment_status_not_show' => 3,
     'appointment_status_cancelled' => 4,

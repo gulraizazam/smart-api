@@ -30,6 +30,7 @@ use App\Models\InvoiceDetails;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Leads;
+use App\Models\LeadsServices;
 use App\Models\LeadSources;
 use App\Models\LeadStatuses;
 use App\Models\Locations;
@@ -189,22 +190,22 @@ class AppointmentsController extends Controller
          * Reset form filter is applied
          */
         $apply_filter = false;
-        if ($request->get('action')) {
-            $action = $request->get('action');
+        if ($request->action) {
+            $action = $request->action;
             if (isset($action[0]) && $action[0] == 'filter_cancel') {
                 Filters::flush(Auth::User()->id, 'appointments');
             } else if ($action == 'filter') {
                 $apply_filter = true;
             }
         }
-        if ($request->get('order')) {
-            $orderColumn = $request->get('order')[0]['column'];
-            $orderBy = $request->get('columns')[$orderColumn]['data'];
+        if ($request->order) {
+            $orderColumn = $request->order[0]['column'];
+            $orderBy = $request->columns[$orderColumn]['data'];
 
             if ($orderBy == 'scheduled_date') {
                 $orderBy = 'scheduled_datetime';
             }
-            $order = $request->get('order')[0]['dir'];
+            $order = $request->order[0]['dir'];
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'appointments', 'order', $order);
         } else {
@@ -227,13 +228,13 @@ class AppointmentsController extends Controller
                 Filters::put(Auth::User()->id, 'appointments', 'order', $order);
             }
         }
-        if ($request->get('patient_id') && $request->get('patient_id') != '') {
+        if ($request->patient_id && $request->patient_id != '') {
             $where[] = [
                 'match' => [
-                    'patient_id' => $request->get('patient_id')
+                    'patient_id' => $request->patient_id
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'patient_id', $request->get('patient_id'));
+            Filters::put(Auth::User()->id, 'appointments', 'patient_id', $request->patient_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'patient_id');
@@ -247,13 +248,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('phone') && $request->get('phone') != '') {
+        if ($request->phone && $request->phone != '') {
             $where[] = [
                 'match_phrase' => [
-                    'patient_phone' => GeneralFunctions::cleanNumber($request->get('phone'))
+                    'patient_phone' => GeneralFunctions::cleanNumber($request->phone)
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'phone', $request->get('phone'));
+            Filters::put(Auth::User()->id, 'appointments', 'phone', $request->phone);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'phone');
@@ -272,10 +273,10 @@ class AppointmentsController extends Controller
                 'scheduled_datetime' => array()
             ]
         );
-        if ($request->get('date_from') && $request->get('date_from') != '') {
-            $scheduled_date['range']['scheduled_datetime']['gte'] = strtotime($request->get('date_from') . ' 00:00:00');
+        if ($request->date_from && $request->date_from != '') {
+            $scheduled_date['range']['scheduled_datetime']['gte'] = strtotime($request->date_from . ' 00:00:00');
 
-            Filters::put(Auth::User()->id, 'appointments', 'date_from', $request->get('date_from') . '00:00:00');
+            Filters::put(Auth::User()->id, 'appointments', 'date_from', $request->date_from . '00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'date_from');
@@ -285,10 +286,10 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('date_to') && $request->get('date_to') != '') {
-            $scheduled_date['range']['scheduled_datetime']['lte'] = strtotime($request->get('date_to') . ' 23:59:59');
+        if ($request->date_to && $request->date_to != '') {
+            $scheduled_date['range']['scheduled_datetime']['lte'] = strtotime($request->date_to . ' 23:59:59');
 
-            Filters::put(Auth::User()->id, 'appointments', 'date_to', $request->get('date_to') . '23:59:59');
+            Filters::put(Auth::User()->id, 'appointments', 'date_to', $request->date_to . '23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'date_to');
@@ -301,14 +302,14 @@ class AppointmentsController extends Controller
         if (count($scheduled_date['range']['scheduled_datetime'])) {
             $filter[] = $scheduled_date;
         }
-        if ($request->get('doctor_id') && $request->get('doctor_id') != '') {
+        if ($request->doctor_id && $request->doctor_id != '') {
 
             $where[] = [
                 'match' => [
-                    'doctor_id' => $request->get('doctor_id')
+                    'doctor_id' => $request->doctor_id
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'doctor_id', $request->get('doctor_id'));
+            Filters::put(Auth::User()->id, 'appointments', 'doctor_id', $request->doctor_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'doctor_id');
@@ -322,14 +323,14 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('region_id') && $request->get('region_id') != '') {
+        if ($request->region_id && $request->region_id != '') {
 
             $where[] = [
                 'match' => [
-                    'region_id' => $request->get('region_id')
+                    'region_id' => $request->region_id
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'region_id', $request->get('region_id'));
+            Filters::put(Auth::User()->id, 'appointments', 'region_id', $request->region_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'region_id');
@@ -343,14 +344,14 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('city_id') && $request->get('city_id') != '') {
+        if ($request->city_id && $request->city_id != '') {
 
             $where[] = [
                 'match' => [
-                    'city_id' => $request->get('city_id')
+                    'city_id' => $request->city_id
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'city_id', $request->get('city_id'));
+            Filters::put(Auth::User()->id, 'appointments', 'city_id', $request->city_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'city_id');
@@ -364,13 +365,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('location_id') && $request->get('location_id') != '') {
+        if ($request->location_id && $request->location_id != '') {
             $where[] = [
                 'match' => [
-                    'location_id' => $request->get('location_id')
+                    'location_id' => $request->location_id
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'location_id', $request->get('location_id'));
+            Filters::put(Auth::User()->id, 'appointments', 'location_id', $request->location_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'location_id');
@@ -384,13 +385,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('service_id') && $request->get('service_id') != '') {
+        if ($request->service_id && $request->service_id != '') {
             $where[] = [
                 'match' => [
-                    'service_id' => $request->get('service_id')
+                    'service_id' => $request->service_id
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'service_id', $request->get('service_id'));
+            Filters::put(Auth::User()->id, 'appointments', 'service_id', $request->service_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'service_id');
@@ -404,13 +405,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('created_by') && $request->get('created_by') != '') {
+        if ($request->created_by && $request->created_by != '') {
             $where[] = [
                 'match' => [
-                    'created_by' => $request->get('created_by')
+                    'created_by' => $request->created_by
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'created_by', $request->get('created_by'));
+            Filters::put(Auth::User()->id, 'appointments', 'created_by', $request->created_by);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'created_by');
@@ -424,13 +425,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('converted_by') && $request->get('converted_by') != '') {
+        if ($request->converted_by && $request->converted_by != '') {
             $where[] = [
                 'match' => [
-                    'converted_by' => $request->get('converted_by')
+                    'converted_by' => $request->converted_by
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'converted_by', $request->get('converted_by'));
+            Filters::put(Auth::User()->id, 'appointments', 'converted_by', $request->converted_by);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'converted_by');
@@ -444,13 +445,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('updated_by') && $request->get('updated_by') != '') {
+        if ($request->updated_by && $request->updated_by != '') {
             $where[] = [
                 'match' => [
-                    'updated_by' => $request->get('updated_by')
+                    'updated_by' => $request->updated_by
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'updated_by', $request->get('updated_by'));
+            Filters::put(Auth::User()->id, 'appointments', 'updated_by', $request->updated_by);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'updated_by');
@@ -464,13 +465,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('appointment_status_id') && $request->get('appointment_status_id') != '') {
+        if ($request->appointment_status_id && $request->appointment_status_id != '') {
             $where[] = [
                 'match' => [
-                    'base_appointment_status_id' => $request->get('appointment_status_id')
+                    'base_appointment_status_id' => $request->appointment_status_id
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'appointment_status_id', $request->get('appointment_status_id'));
+            Filters::put(Auth::User()->id, 'appointments', 'appointment_status_id', $request->appointment_status_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'appointment_status_id');
@@ -484,13 +485,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('appointment_type_id') && $request->get('appointment_type_id') != '') {
+        if ($request->appointment_type_id && $request->appointment_type_id != '') {
             $where[] = [
                 'match' => [
-                    'appointment_type_id' => $request->get('appointment_type_id')
+                    'appointment_type_id' => $request->appointment_type_id
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'appointment_type_id', $request->get('appointment_type_id'));
+            Filters::put(Auth::User()->id, 'appointments', 'appointment_type_id', $request->appointment_type_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'appointment_type_id');
@@ -504,13 +505,13 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('consultancy_type') && $request->get('consultancy_type') != '') {
+        if ($request->consultancy_type && $request->consultancy_type != '') {
             $where[] = [
                 'match' => [
-                    'consultancy_type' => $request->get('consultancy_type')
+                    'consultancy_type' => $request->consultancy_type
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'consultancy_type', $request->get('consultancy_type'));
+            Filters::put(Auth::User()->id, 'appointments', 'consultancy_type', $request->consultancy_type);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'consultancy_type');
@@ -529,10 +530,10 @@ class AppointmentsController extends Controller
                 'created_at' => array()
             ]
         );
-        if ($request->get('created_from') && $request->get('created_from') != '') {
-            $created_at['range']['created_at']['gte'] = strtotime($request->get('created_from') . ' 00:00:00');
+        if ($request->created_from && $request->created_from != '') {
+            $created_at['range']['created_at']['gte'] = strtotime($request->created_from . ' 00:00:00');
 
-            Filters::put(Auth::User()->id, 'appointments', 'created_from', $request->get('created_from'));
+            Filters::put(Auth::User()->id, 'appointments', 'created_from', $request->created_from);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'created_from');
@@ -542,10 +543,10 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('created_to') && $request->get('created_to') != '') {
-            $created_at['range']['created_at']['lte'] = strtotime($request->get('created_to') . ' 23:59:59');
+        if ($request->created_to && $request->created_to != '') {
+            $created_at['range']['created_at']['lte'] = strtotime($request->created_to . ' 23:59:59');
 
-            Filters::put(Auth::User()->id, 'appointments', 'created_to', $request->get('created_to'));
+            Filters::put(Auth::User()->id, 'appointments', 'created_to', $request->created_to);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'created_to');
@@ -558,14 +559,14 @@ class AppointmentsController extends Controller
         if (count($created_at['range']['created_at'])) {
             $filter[] = $created_at;
         }
-        if ($request->get('name') && $request->get('name') != '') {
+        if ($request->name && $request->name != '') {
             $where[] = [
                 'multi_match' => [
-                    "query" => $request->get('name'),
+                    "query" => $request->name,
                     "fields" => ["patient_name", "name"]
                 ]
             ];
-            Filters::put(Auth::User()->id, 'appointments', 'name', $request->get('name'));
+            Filters::put(Auth::User()->id, 'appointments', 'name', $request->name);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'appointments', 'name');
@@ -621,10 +622,10 @@ class AppointmentsController extends Controller
         }
         $records = array();
         $records["data"] = array();
-        $iDisplayLength = intval($request->get('length'));
+        $iDisplayLength = intval($request->length);
         $iDisplayLength = $iDisplayLength < 0 ? 0 : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        $iDisplayStart = intval($request->start);
+        $sEcho = intval($request->draw);
         $results = AppointmentsElastic::getAllObjects($where, $filter, $iDisplayStart, $iDisplayLength, $orderBy, $order);
         $appointments = null;
         if (isset($results['hits']) && isset($results['hits']['total']) && isset($results['hits']['total']['value']) && $results['hits']['total']['value'] > 0) {
@@ -706,6 +707,7 @@ class AppointmentsController extends Controller
      */
     private function getDefaultListing(Request $request)
     {
+
         $where = array();
         /*
          * Reset form filter is applied
@@ -1048,6 +1050,7 @@ class AppointmentsController extends Controller
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
         ];
+
         return ApiHelper::apiDataTable($records);
     }
     private function getDefaultTreatmentListing(Request $request)
@@ -1409,6 +1412,7 @@ class AppointmentsController extends Controller
         $doctors = Doctors::getActiveOnly(ACL::getUserCentres());
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         $services = GeneralFunctions::ServicesTreeList();
+
         $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
         if ($appointment_statuses) {
             $appointment_statuses = $appointment_statuses->pluck('name', 'id');
@@ -1487,12 +1491,11 @@ class AppointmentsController extends Controller
         if (!Gate::allows('appointments_consultancy')) {
             return abort(401);
         }
-        if ($request->get('lead_id')) {
-            $lead = Leads::where(['id' => $request->get('lead_id')])->first();
+        if ($request->lead_id) {
+            $lead = Leads::where(['id' => $request->lead_id])->first();
             if ($lead) {
                 $lead = array(
                     'id' => $lead->id,
-                    'patient_id' => $lead->patient_id,
                     'name' => ($lead->patient_id) ? $lead->patient->name : null,
                     'phone' => ($lead->patient_id) ? $lead->patient->phone : null,
                     'dob' => ($lead->patient_id) ? $lead->patient->dob : null,
@@ -1504,7 +1507,6 @@ class AppointmentsController extends Controller
             } else {
                 $lead = array(
                     'id' => '',
-                    'patient_id' => '',
                     'name' => '',
                     'phone' => '',
                     'done' => '',
@@ -1517,7 +1519,6 @@ class AppointmentsController extends Controller
         } else {
             $lead = array(
                 'id' => '',
-                'patient_id' => '',
                 'name' => '',
                 'phone' => '',
                 'done' => '',
@@ -1609,7 +1610,7 @@ class AppointmentsController extends Controller
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        $validator = $this->verifyFields($request, $request->patient_id);
+        $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
@@ -1617,108 +1618,73 @@ class AppointmentsController extends Controller
         $rotaCheck = $this->scheduledConsultancy($request);
         if ($rotaCheck['status']) {
             // Store form data in a variable
-            $appointmentData = $request->all();
-            $appointmentData['account_id'] = Auth::user()->account_id;
-            $phone = $appointmentData['phone'];
-            if ($appointmentData['phone'] == '***********') {
-                $phone = $appointmentData['old_phone'];
+            if ($request->new_patient == '1') {
+                $request->request->remove('lead_id'); // Remove Lead ID index
             }
-            unset($appointmentData['old_phone']);
-            $appointmentData['phone'] = GeneralFunctions::cleanNumber($phone);
-            $appointmentData['created_by'] = Auth::user()->id;
-            if ($request->appointment_type_id = Config::get('constants.appointment_type_consultancy')) {
-                $response = Resources::getDoctorRotaHasDay($request->get("start"), $request->doctor_id);
+            $appointment_data = $request->all();
+            $appointment_data['account_id'] = Auth::user()->account_id;
+            $phone = $appointment_data['phone'];
+            if ($appointment_data['phone'] == '***********') {
+                $phone = $appointment_data['old_phone'];
+            }
+            unset($appointment_data['old_phone']);
+            $appointment_data['phone'] = GeneralFunctions::cleanNumber($phone);
+            $appointment_data['created_by'] = Auth::user()->id;
+            if ($request->appointment_type == Config::get('constants.appointment_type_consultancy_string') || $request->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
+                $response = Resources::getDoctorRotaHasDay($request->start, $request->doctor_id);
                 if (isset($response['resource_id']) && $response['resource_id']) {
-                    $appointmentData['resource_id'] = $response['resource_id'];
+                    $appointment_data['resource_id'] = $response['resource_id'];
                 }
                 if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                    $appointmentData['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
+                    $appointment_data['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
                 }
             }
             // Set default appointment status i.e. 'pending'
             $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
             if ($appointment_status) {
-                $appointmentData['appointment_status_id'] = $appointment_status->id;
-                $appointmentData['base_appointment_status_id'] = $appointment_status->id;
-                $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
+                $appointment_data['appointment_status_id'] = $appointment_status->id;
+                $appointment_data['base_appointment_status_id'] = $appointment_status->id;
+                $appointment_data['appointment_status_allow_message'] = $appointment_status->allow_message;
             } else {
-                $appointmentData['appointment_status_id'] = null;
-                $appointmentData['base_appointment_status_id'] = null;
-                $appointmentData['appointment_status_allow_message'] = 0;
+                $appointment_data['appointment_status_id'] = null;
+                $appointment_data['base_appointment_status_id'] = null;
+                $appointment_data['appointment_status_allow_message'] = 0;
             }
-            $appointmentData['appointment_type_id'] = Config::get('constants.appointment_type_consultancy');
+            $appointment_data['appointment_type_id'] = Config::get('constants.appointment_type_consultancy');
             // Get Location object to retrieve City
-            $location = Locations::findOrFail($appointmentData['location_id']);
+            $location = Locations::findOrFail($appointment_data['location_id']);
             // Set City ID after retrieving from Location
-            $appointmentData['city_id'] = $location->city_id;
-            $appointmentData['region_id'] = $location->region_id;
-            $appointmentData['account_id'] = Auth::User()->account_id;
-            $appointmentData['created_at']=Filters::getCurrentTimeStamp();
-            $appointmentData['updated_at']=Filters::getCurrentTimeStamp();
+            $appointment_data['city_id'] = $location->city_id;
+            $appointment_data['region_id'] = $location->region_id;
+            $appointment_data['account_id'] = Auth::User()->account_id;
+            $appointment_data['created_at'] = Filters::getCurrentTimeStamp();
+            $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
+            if ($request->start) {
+                $start = $request->start;
+                $service_duration = Services::find($request->service_id)->value("duration");
+                $duraton_array = explode(":", $service_duration);
+                if (count($duraton_array) == 2) {
+                    $end = Carbon::parse($start)->addHour($service_duration[0])->addMinute($duraton_array[1]);
+                    $start = Carbon::parse($start)->format("Y-m-d H:i:s");
+                }
+                $doctor_checking = Resources::checkingDoctorAvailbility($request->doctor_id, $start, $end);
+                if ($doctor_checking) {
+                    $appointment_data['scheduled_date'] = Carbon::parse($request->start)->format("Y-m-d");
+                    $appointment_data['scheduled_time'] = Carbon::parse($request->start)->format("H:i:s");
+                    $appointment_data['first_scheduled_date'] = Carbon::parse($request->start)->format("Y-m-d");
+                    $appointment_data['first_scheduled_time'] = Carbon::parse($request->start)->format("H:i:s");
+                    $appointment_data['first_scheduled_count'] = 1;
+                    if ($request->appointment_type == 'treatment') {
+                        $appointment_data['resource_id'] = $request->resource_id;
+                    }
+                }
+            }
             /*
              * Check if Lead ID not provided then create a new lead
              * and assign this lead to current appointment.
              */
-            if (!$request->get('lead_id')) {
-                /*
-                 * If Patient is from database
-                 * - if appointment already exists then do not update info
-                 * - if appointment already exists then update info
-                 */
-                if (isset($appointmentData['patient_id']) && $appointmentData['patient_id'] != '') {
-                    /*
-                    * If appointment is for the first time then
-                    * update user information, otherwise not
-                    */
-
-                    /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in patient,
-                     * so for now we also change it at patient, below code that I comment help me to update patient name
-                     */
-                    $patientData = $appointmentData;
-                    if ($request->new_patient == '1') {
-                        $patientData['user_type_id'] = Config::get('constants.patient_id');
-                        $patient = Patients::createRecord($patientData);
-                    } else {
-                        $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
-                    }
-                }else{
-                    if ($request->new_patient == '1') {
-                        $logLevelPatient = Patients::where(array(
-                            'phone' => $appointmentData['phone'],
-                            'user_type_id' => Config::get('constants.patient_id'),
-                            'account_id' => Auth::User()->account_id
-                        ))->first();
-                        $appointmentData['user_type_id'] = 3;
-                        $patient = Patients::createRecord($appointmentData);
-                    }
-                }
-                if ($request->get("start")) {
-                    $start = $request->get("start");
-                    $service_duration = Services::find($request->get('service_id'))->value("duration");
-                    $duraton_array = explode(":", $service_duration);
-                    if (count($duraton_array) == 2) {
-                        $end = Carbon::parse($start)->addHour($service_duration[0])->addMinute($duraton_array[1]);
-                        $start = Carbon::parse($start)->format("Y-m-d H:i:s");
-
-                    }
-                    $doctor_checking = Resources::checkingDoctorAvailbility($request->get("doctor_id"), $start, $end);
-
-                    if ($doctor_checking) {
-                        $appointmentData['scheduled_date'] = Carbon::parse($request->get("start"))->format("Y-m-d");
-                        $appointmentData['scheduled_time'] = Carbon::parse($request->get("start"))->format("H:i:s");
-                        $appointmentData['first_scheduled_date'] = Carbon::parse($request->get("start"))->format("Y-m-d");
-                        $appointmentData['first_scheduled_time'] = Carbon::parse($request->get("start"))->format("H:i:s");
-                        $appointmentData['first_scheduled_count'] = 1;
-                        if ($request->get("appointment_type") == 'treatment') {
-                            $appointmentData['resource_id'] = $request->get("resource_id");
-                        }
-                    }
-                }
-                $leadObj = $appointmentData;
-                unset($leadObj['lead_id']); // Remove Lead ID index
-                if(isset($patient)){
-                    $leadObj['patient_id'] = $patient->id;
-                }
+            if (!$request->lead_id) {
+                $lead_obj = $appointment_data;
                 // Convert Lead status to Converted
                 $DefaultConvertedLeadStatus = LeadStatuses::where(array(
                     'account_id' => Auth::User()->account_id,
@@ -1729,83 +1695,94 @@ class AppointmentsController extends Controller
                 } else {
                     $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
                 }
-                $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-                $leadObj['base_service_id'] = $leadObj['service_id'];
-                $leadObj['created_at']=Filters::getCurrentTimeStamp();
-                $leadObj['updated_at']=Filters::getCurrentTimeStamp();
-                $leadObj['location_id']=$request->location_id;
-                $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
-                if($lead){
-                    $lead->lead_status_id = 4;
-                    $lead->save();
-                }else{
-                    $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-                    $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+                $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
+                $lead_obj['created_at'] = Filters::getCurrentTimeStamp();
+                $lead_obj['updated_at'] = Filters::getCurrentTimeStamp();
+                $lead_obj['location_id'] = $request->location_id;
+                $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
+                $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                if ($request->new_patient == '1') {
+                    $appointment_data['user_type_id'] = 3;
+                    if(!$patient){
+                        $patient = Patients::createRecord($appointment_data, 1);
+                    } else {
+                        return ApiHelper::apiResponse($this->success, 'Phone number already exist', false);
+                    }
+
+                    $checkLeadExistance = Leads::updateOrCreate([
+                        'phone' => $appointment_data['phone'],
+                        'account_id' => Auth::User()->account_id
+                    ], $lead_obj);
+                    $lead = $checkLeadExistance;
+                    LeadsServices::updateOrCreate([
+                        'lead_id' => $lead->id,
+                        'service_id' => $appointment_data['service_id'],
+                    ],[
+                        'lead_id' => $lead->id,
+                        'service_id' => $appointment_data['service_id'],
+                    ]);
+                    LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
+                    $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
+                    $lead_service->update(['status' => 1]);
                 }
             } else {
-                if ($request->get("start")) {
-                    $start = $request->get("start");
-                    $service_duration = Services::find($request->get('service_id'))->value("duration");
-                    $duraton_array = explode(":", $service_duration);
-                    if (count($duraton_array) == 2) {
-                        $end = Carbon::parse($start)->addHour($service_duration[0])->addMinute($duraton_array[1]);
-                        $start = Carbon::parse($start)->format("Y-m-d H:i:s");
-                    }
-                    $doctor_checking = Resources::checkingDoctorAvailbility($request->get("doctor_id"), $start, $end);
-                    if ($doctor_checking) {
-                        $appointmentData['scheduled_date'] = Carbon::parse($request->get("start"))->format("Y-m-d");
-                        $appointmentData['scheduled_time'] = Carbon::parse($request->get("start"))->format("H:i:s");
-                        $appointmentData['first_scheduled_date'] = Carbon::parse($request->get("start"))->format("Y-m-d");
-                        $appointmentData['first_scheduled_time'] = Carbon::parse($request->get("start"))->format("H:i:s");
-                        $appointmentData['first_scheduled_count'] = 1;
-                        if ($request->get("appointment_type") == 'treatment') {
-                            $appointmentData['resource_id'] = $request->get("resource_id");
-                        }
-                    }
-                }
-                $lead = Leads::findOrFail($request->get('lead_id'));
+                $lead = Leads::findOrFail($request->lead_id);
                 /*
                  * If appointment is for the first time then
                  * update user information, otherwise not
                  */
-                $patientData = $appointmentData;
-                /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in patient,
-                 * so for now we also change it at patient, below code that I comment help me to update patient name
-                 */
-                /*if (Appointments::where(['patient_id' => $appointmentData['patient_id']])->count()) {
-                    unset($patientData['name']);
-                }*/
-                if ($request->new_patient == '1') {
-                    $patientData['user_type_id'] = Config::get('constants.patient_id');
-                    $patient = Patients::createRecord($patientData);
+                $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                if(!$patient){
+                    $appointment_data['user_type_id'] = 3;
+                    $patient = Patients::createRecord($appointment_data, 1);
                 } else {
-                    $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
+                    $appointment_data['patient_id'] = $patient->id;
+                    Patients::where(['id' => $patient->id])->update([
+                        'name' => $appointment_data['name'],
+                        'gender' => $appointment_data['gender'],
+                        'referred_by' => $appointment_data['referred_by'] ?? null,
+                    ]);
                 }
+
+                LeadsServices::updateOrCreate([
+                    'lead_id' => $lead->id,
+                    'service_id' => $appointment_data['service_id'],
+                ],[
+                    'lead_id' => $lead->id,
+                    'service_id' => $appointment_data['service_id'],
+                ]);
+                LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
+                $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
+                $lead_service->update(['status' => 1]);
             }
             // Set Lead ID for Appointment
-            $appointmentData['patient_id'] = $patient->id;
-            $appointmentData['lead_id'] = $lead->id;
+            $appointment_data['patient_id'] = $patient->id;
+            $appointment_data['lead_id'] = $lead->id;
             /*
              * End Lead ID Process
              */
             if ($request->scheduled_date && $request->scheduled_time) {
-                $appointmentData['scheduled_date'] = Carbon::parse($request->scheduled_date)->format("Y-m-d");
-                $appointmentData['scheduled_time'] = Carbon::parse($request->scheduled_time)->format("H:i:s");
+                $appointment_data['scheduled_date'] = Carbon::parse($request->scheduled_date)->format("Y-m-d");
+                $appointment_data['scheduled_time'] = Carbon::parse($request->scheduled_time)->format("H:i:s");
             } else {
-                $appointmentData['scheduled_date'] = Carbon::parse($request->start)->format("Y-m-d");
-                $appointmentData['scheduled_time'] = Carbon::parse($request->start)->format("H:i:s");
+                $appointment_data['scheduled_date'] = Carbon::parse($request->start)->format("Y-m-d");
+                $appointment_data['scheduled_time'] = Carbon::parse($request->start)->format("H:i:s");
             }
-            $appointmentData['appointment_status_id'] = config('constants.appointment_status_pending');
-            $appointment = Appointments::create($appointmentData);
+            $appointment_data['appointment_status_id'] = config('constants.appointment_status_pending');
+            $appointment = Appointments::create($appointment_data);
             $find_cons = Appointments::latest()->first();
             if($find_cons){
-                Leads::where('patient_id',$find_cons->patient_id)->update(['lead_status_id'=>4]);
-                $parents = Services::where(['parent_id' => $find_cons->service_id])->first();
-                $find_lead = $lead->update(['service_id' => $find_cons->service_id, 'location_id' => $find_cons->location_id]);
+                $lead = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id, 'patient_id' => $appointment_data['patient_id']]);
+                LeadsServices::where([
+                    'lead_id' => $appointment_data['lead_id'],
+                    'service_id' => $find_cons->service_id,
+                ])->update([
+                    'consultancy_id' => $find_cons->id
+                ]);
             }
             /* Now We need to update name of all appointments that already in appointment table against patient
              */
-            Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name']]);
+            Appointments::where(['patient_id' => $appointment_data['patient_id']])->update(['name' => $patient->name]);
             // Based on allow message by status and scheduled date, allow send sms
             if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
                 $appointment->update(array(
@@ -1848,7 +1825,7 @@ class AppointmentsController extends Controller
             }
             $message = 'Record has been created successfully.';
             // Send Promotion SMS
-            $this->sendPromotionSMS($appointment->id, $appointmentData['phone']);
+            $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
             /**
              * Dispatch Elastic Search Index
@@ -1857,7 +1834,7 @@ class AppointmentsController extends Controller
                 new IndexSingleAppointmentJob([
                     'account_id' => Auth::User()->account_id,
                     'appointment_id' => $appointment->id,
-                    'patient_phone'=>$appointmentData['phone']
+                    'patient_phone' => $appointment_data['phone']
                 ])
             );
             return ApiHelper::apiResponse($this->success, $message, true, [
@@ -1940,11 +1917,11 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         if (
-            $request->get("location_id") &&
-            $request->get("doctor_id")
+            $request->location_id &&
+            $request->doctor_id
         ) {
-            $location_id = $request->get("location_id");
-            $doctor_id = $request->get("doctor_id");
+            $location_id = $request->location_id;
+            $doctor_id = $request->doctor_id;
         } else {
             $city_id = 0;
             $location_id = 0;
@@ -1959,8 +1936,8 @@ class AppointmentsController extends Controller
                 'status' => true
             );
         }
-        if ($request->get('lead_id')) {
-            $lead = Leads::where(['id' => $request->get('lead_id')])->first();
+        if ($request->lead_id) {
+            $lead = Leads::where(['id' => $request->lead_id])->first();
             if ($lead) {
                 $lead = array(
                     'id' => $lead->id,
@@ -2005,12 +1982,12 @@ class AppointmentsController extends Controller
         } else {
             $employees = array();
         }
-        
-        
-        $intersect_resource_service_ids = LocationsWidget::loadAppointmentServiceByLocationResource($request->get("machine_id"), Auth::User()->account_id);
-        
-        $intersect_location_doctor_service_ids = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->get("location_id"), $request->get("doctor_id"), Auth::User()->account_id);
-       
+
+
+        $intersect_resource_service_ids = LocationsWidget::loadAppointmentServiceByLocationResource($request->machine_id, Auth::User()->account_id);
+
+        $intersect_location_doctor_service_ids = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::User()->account_id);
+
         $serviceIds = array();
         if (count($intersect_resource_service_ids) && count($intersect_location_doctor_service_ids)) {
             $serviceIds = array_intersect($intersect_resource_service_ids, $intersect_location_doctor_service_ids);
@@ -2053,16 +2030,15 @@ class AppointmentsController extends Controller
      */
     public function createConsultingAppointment(Request $request)
     {
-
         if (!Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         if (
-            $request->get("location_id") &&
-            $request->get("doctor_id")
+            $request->location_id &&
+            $request->doctor_id
         ) {
-            $location_id = $request->get("location_id");
-            $doctor_id = $request->get("doctor_id");
+            $location_id = $request->location_id;
+            $doctor_id = $request->doctor_id;
         } else {
             $city_id = 0;
             $location_id = 0;
@@ -2076,29 +2052,21 @@ class AppointmentsController extends Controller
                 'status' => true
             );
         }
-        if ($request->get('lead_id')) {
-            $lead = Leads::where(['id' => $request->get('lead_id')])->first();
+        if ($request->lead_id) {
+            $lead = Leads::where(['id' => $request->lead_id])->first();
             if ($lead) {
                 $lead = array(
                     'id' => $lead->id,
-                    'patient_id' => $lead->patient_id,
-                    'name' => ($lead->patient_id) ? $lead->patient->name : null,
-                    'phone' => ($lead->patient_id) ? $lead->patient->phone : null,
-                    'dob' => ($lead->patient_id) ? $lead->patient->dob : null,
-                    'address' => ($lead->patient_id) ? $lead->patient->address : null,
-                    'cnic' => ($lead->patient_id) ? $lead->patient->cnic : null,
-                    'referred_by' => ($lead->patient_id) ? $lead->patient->referred_by : null,
+                    'name' => ($lead->lead_id) ? $lead->name : null,
+                    'phone' => ($lead->lead_id) ? $lead->phone : null,
+                    'referred_by' => ($lead->lead_id) ? $lead->referred_by : null,
                     'service_id' => $lead->service_id,
                 );
             } else {
                 $lead = array(
                     'id' => '',
-                    'patient_id' => '',
                     'name' => '',
                     'phone' => '',
-                    'dob' => '',
-                    'address' => '',
-                    'cnic' => '',
                     'referred_by' => '',
                     'service_id' => '',
                 );
@@ -2106,12 +2074,8 @@ class AppointmentsController extends Controller
         } else {
             $lead = array(
                 'id' => '',
-                'patient_id' => '',
                 'name' => '',
                 'phone' => '',
-                'dob' => '',
-                'address' => '',
-                'cnic' => '',
                 'referred_by' => '',
                 'service_id' => '',
             );
@@ -2122,7 +2086,7 @@ class AppointmentsController extends Controller
         } else {
             $employees = array();
         }
-        $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->get("location_id"), $request->get("doctor_id"), Auth::User()->account_id);
+        $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::User()->account_id);
         if (count($serviceIds)) {
             $services = Services::whereIn("id", $serviceIds)->get()->pluck('name', 'id');
         } else {
@@ -2220,7 +2184,7 @@ class AppointmentsController extends Controller
         $locationsids = array();
         $doctorids = array();
         $reverse_process = false;
-        $appointment = Appointments::with('lead.patient')->with('patient')->find($id);
+        $appointment = Appointments::with('lead', 'patient')->find($id);
         if (!$appointment) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
@@ -2285,7 +2249,6 @@ class AppointmentsController extends Controller
             'consultancy_type' => config('constants.consultancy_type_array'),
             'genders' => config('constants.gender_array')
         ]);
-        //return view('admin.appointments.consultancy.consultancy_edit', compact());
     }
     /**
      * Show the form for editing Appointment.
@@ -2301,7 +2264,7 @@ class AppointmentsController extends Controller
         $locationsids = array();
         $doctorids = array();
         $machineids = array();
-        $appointment = Appointments::with('patient', 'doctor', 'lead.patient')->find($id);
+        $appointment = Appointments::with('patient', 'doctor')->find($id);
         if (! $appointment) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
@@ -2395,7 +2358,7 @@ class AppointmentsController extends Controller
         $locationsids = array();
         $doctorids = array();
         $machineids = array();
-        $appointment = Appointments::with('patient', 'doctor', 'lead.patient')->find($id);
+        $appointment = Appointments::with('patient', 'doctor')->find($id);
         if (! $appointment) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
@@ -2485,7 +2448,7 @@ class AppointmentsController extends Controller
             }
             $appointment = Appointments::find($id);
             $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-            if (!Gate::allows('edit_after_arrived')&&  strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
+            if (!Gate::allows('edit_after_arrived')&&  strtotime($request->scheduled_date) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
                 return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
             }
             if (!Gate::allows('edit_after_arrived')) {
@@ -2507,7 +2470,7 @@ class AppointmentsController extends Controller
             if (! $lead) {
                 return ApiHelper::apiResponse($this->success, 'Lead not found', false);
             }
-            $patient = Patients::find($lead->patient_id);
+            $patient = Patients::find($appointment->patient_id);
             if (! $patient) {
                 return ApiHelper::apiResponse($this->success, 'Patient not found', false);
             }
@@ -2517,69 +2480,69 @@ class AppointmentsController extends Controller
                 $request->merge(['phone' => $request->input('old_phone')]);
             }
             $request->request->remove('old_phone');
-            $appointmentData = $request->all();
-            $appointmentData['region_id'] = $city_info->region_id;
-            $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
+            $appointment_data = $request->all();
+            $appointment_data['region_id'] = $city_info->region_id;
+            $appointment_data['phone'] = GeneralFunctions::cleanNumber($appointment_data['phone']);
             if($appointment->scheduled_date != $request->scheduled_date ){
-                $appointmentData['converted_by'] = Auth::user()->id;
+                $appointment_data['converted_by'] = Auth::user()->id;
             }
             if($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format("H:i:s")){
-                $appointmentData['converted_by'] = Auth::user()->id;
+                $appointment_data['converted_by'] = Auth::user()->id;
             }
             if((string)$appointment->city_id !== $request->city_id || (string)$appointment->location_id !== $request->location_id || (string)$appointment->doctor_id !== $request->doctor_id || (string)$patient->gender !== $request->gender) {
-                $appointmentData['updated_by'] = Auth::user()->id;
+                $appointment_data['updated_by'] = Auth::user()->id;
             }
             if($request->has('consultancy_type')){
                 if((string)$appointment->consultancy_type !== $request->consultancy_type){
-                    $appointmentData['updated_by'] = Auth::user()->id;
+                    $appointment_data['updated_by'] = Auth::user()->id;
                 }
             }
             if($request->has('machine_id')){
                 if((string)$appointment->resource_id !== $request->machine_id){
-                    $appointmentData['updated_by'] = Auth::user()->id;
+                    $appointment_data['updated_by'] = Auth::user()->id;
                 }
             }
-            $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
-            $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
-            $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
-            $appointmentData['location_id'] = $request->location_id ?? $appointment->location_id;
+            $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
+            $appointment_data['scheduled_date'] = Carbon::parse($appointment_data['scheduled_date'])->format("Y-m-d");
+            $appointment_data['scheduled_time'] = Carbon::parse($appointment_data['scheduled_time'])->format("H:i:s");
+            $appointment_data['location_id'] = $request->location_id ?? $appointment->location_id;
             // Reset Scheduled Time to null, stop sending message
             $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
             if ($appointment_status) {
                 $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
                 if($check_invoice){
-                    $appointmentData['appointment_status_id'] = $appointment->appointment_status_id;
-                    $appointmentData['base_appointment_status_id'] = $appointment->base_appointment_status_id;
+                    $appointment_data['appointment_status_id'] = $appointment->appointment_status_id;
+                    $appointment_data['base_appointment_status_id'] = $appointment->base_appointment_status_id;
                 }else{
-                    $appointmentData['appointment_status_id'] = $appointment_status->id;
-                    $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                    $appointment_data['appointment_status_id'] = $appointment_status->id;
+                    $appointment_data['base_appointment_status_id'] = $appointment_status->id;
                 }
-                $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
-                $appointmentData['send_message'] = $appointment_status->allow_message;
+                $appointment_data['appointment_status_allow_message'] = $appointment_status->allow_message;
+                $appointment_data['send_message'] = $appointment_status->allow_message;
             }
             /*
             * Grab Rota day info and update
             */
             $resource = Resources::where([
-                'external_id' => $appointmentData['doctor_id'],
+                'external_id' => $appointment_data['doctor_id'],
                 'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
                 'account_id' => Auth::User()->account_id,
             ])->first();
             if ($resource) {
-                $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->get('scheduled_date'), Auth::User()->account_id, $appointmentData['location_id']);
+                $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->scheduled_date, Auth::User()->account_id, $appointment_data['location_id']);
                 if (count($resource_has_rota_day)) {
-                    $appointmentData['resource_id'] = $resource->id;
-                    $appointmentData['resource_has_rota_day_id'] = $resource_has_rota_day['id'];
+                    $appointment_data['resource_id'] = $resource->id;
+                    $appointment_data['resource_has_rota_day_id'] = $resource_has_rota_day['id'];
                 }
             }
             if ($appointment->appointment_type_id == Config::get('constants.appointment_type_service')) {
-                $machine_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($appointmentData['machine_id'], $request->get('scheduled_date'), Auth::User()->account_id, $appointmentData['location_id']);
+                $machine_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($appointment_data['machine_id'], $request->scheduled_date, Auth::User()->account_id, $appointment_data['location_id']);
                 if (count($machine_has_rota_day)) {
-                    $appointmentData['resource_id'] = $appointmentData['machine_id'];
-                    $appointmentData['resource_has_rota_day_id_for_machine'] = $machine_has_rota_day['id'];
+                    $appointment_data['resource_id'] = $appointment_data['machine_id'];
+                    $appointment_data['resource_has_rota_day_id_for_machine'] = $machine_has_rota_day['id'];
                 }
             }
-            $appointment->update($appointmentData);
+            $appointment->update($appointment_data);
             if (count($appointment->getChanges()) > 1) {
                 // if only doctor are going to change and first sms already sent, so we need to stop sending message again
                 if ($value_of_sending_message == '0') {
@@ -2607,25 +2570,25 @@ class AppointmentsController extends Controller
                 $scheduled_at_count = $appointment->scheduled_at_count;
                 $appointment->update(['scheduled_at_count' => $scheduled_at_count + 1]);
             }
-            Appointments::where('patient_id', '=', $appointment->patient_id)->update(['name' => $appointmentData['name']]);
-            if($appointmentData['appointment_status_id'] == 1){
-                $appointmentData['lead_status_id'] = 4;
-            }else if($appointmentData['appointment_status_id'] == 3){
-                $appointmentData['lead_status_id'] = 1;
+            Appointments::where(['patient_id' => $appointment->patient_id])->update(['name' => $patient->name]);
+            if($appointment_data['appointment_status_id'] == 1){
+                $appointment_data['lead_status_id'] = 4;
+            }else if($appointment_data['appointment_status_id'] == 3){
+                $appointment_data['lead_status_id'] = 1;
             }
-            $lead = Leads::find($appointmentData['lead_id']);
+            $lead = Leads::find($appointment_data['lead_id']);
             if (! $lead) {
                 return ApiHelper::apiResponse($this->success, 'Lead not found', false);
             }
-            $lead->update($appointmentData);
-            $patient = Patients::find($lead->patient_id);
+            $lead->update($appointment_data);
+            $patient = Patients::find($appointment->patient_id);
             if (! $patient) {
                 return ApiHelper::apiResponse($this->success, 'Patient not found', false);
             }
-            $patientData = $appointmentData;
+            $patientData = $appointment_data;
             $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
             GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
-            $patient = Patients::updateRecord($lead->patient_id, $patientData);
+            $patient = Patients::updateRecord($appointment->patient_id, $patientData);
             $patient->update($patientData);
             $this->dispatch(
                 new IndexSingleAppointmentJob([
@@ -2650,7 +2613,7 @@ class AppointmentsController extends Controller
                 }
                 $appointment = Appointments::find($id);
                 $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-                if (!Gate::allows('edit_after_arrived') &&  strtotime($request->get('scheduled_date')) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
+                if (!Gate::allows('edit_after_arrived') &&  strtotime($request->scheduled_date) < strtotime(date('Y-m-d')) && $back_date_config->data == 0 ) {
                     return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
                 }
                 if (!Gate::allows('edit_after_arrived')) {
@@ -2674,76 +2637,76 @@ class AppointmentsController extends Controller
                     $request->merge(['phone' => $request->input('old_phone')]);
                 }
                 $request->request->remove('old_phone');
-                $appointmentData = $request->all();
-                $appointmentData['region_id'] = $city_info->region_id;
-                $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
-                $lead = Leads::find($appointmentData['lead_id']);
+                $appointment_data = $request->all();
+                $appointment_data['region_id'] = $city_info->region_id;
+                $appointment_data['phone'] = GeneralFunctions::cleanNumber($appointment_data['phone']);
+                $lead = Leads::find($appointment_data['lead_id']);
                 if (! $lead) {
                     return ApiHelper::apiResponse($this->success, 'Lead not found', false);
                 }
-                $patient = Patients::find($lead->patient_id);
+                $patient = Patients::find($appointment->patient_id);
                 if (! $patient) {
                     return ApiHelper::apiResponse($this->success, 'Patient not found', false);
                 }
                 if((string)$appointment->city_id !== $request->city_id || (string)$appointment->location_id !== $request->location_id || (string)$appointment->doctor_id !== $request->doctor_id || (string)$patient->gender !== $request->gender) {
-                    $appointmentData['updated_by'] = Auth::user()->id;
+                    $appointment_data['updated_by'] = Auth::user()->id;
                 }
                 if($request->has('consultancy_type')){
                     if((string)$appointment->consultancy_type !== $request->consultancy_type){
-                        $appointmentData['updated_by'] = Auth::user()->id;
+                        $appointment_data['updated_by'] = Auth::user()->id;
                     }
                 }
                 if($request->has('machine_id')){
                     if((string)$appointment->resource_id !== $request->machine_id){
-                        $appointmentData['updated_by'] = Auth::user()->id;
+                        $appointment_data['updated_by'] = Auth::user()->id;
                     }
                 }
-                $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
+                $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
                 if($appointment->scheduled_date != $request->scheduled_date ){
-                    $appointmentData['converted_by'] = Auth::user()->id;
+                    $appointment_data['converted_by'] = Auth::user()->id;
                 }
                 if($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format("H:i:s")){
-                    $appointmentData['converted_by'] = Auth::user()->id;
+                    $appointment_data['converted_by'] = Auth::user()->id;
                 }
-                $appointmentData['scheduled_date'] = Carbon::parse($appointmentData['scheduled_date'])->format("Y-m-d");
-                $appointmentData['scheduled_time'] = Carbon::parse($appointmentData['scheduled_time'])->format("H:i:s");
+                $appointment_data['scheduled_date'] = Carbon::parse($appointment_data['scheduled_date'])->format("Y-m-d");
+                $appointment_data['scheduled_time'] = Carbon::parse($appointment_data['scheduled_time'])->format("H:i:s");
                 // Reset Scheduled Time to null, stop sending message
                 $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
                 if ($appointment_status) {
                     $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
                     if($check_invoice){
-                        $appointmentData['appointment_status_id'] = $appointment->appointment_status_id;
-                        $appointmentData['base_appointment_status_id'] = $appointment->base_appointment_status_id;
+                        $appointment_data['appointment_status_id'] = $appointment->appointment_status_id;
+                        $appointment_data['base_appointment_status_id'] = $appointment->base_appointment_status_id;
                     }else{
-                        $appointmentData['appointment_status_id'] = $appointment_status->id;
-                        $appointmentData['base_appointment_status_id'] = $appointment_status->id;
+                        $appointment_data['appointment_status_id'] = $appointment_status->id;
+                        $appointment_data['base_appointment_status_id'] = $appointment_status->id;
                     }
-                    $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
-                    $appointmentData['send_message'] = $appointment_status->allow_message;
+                    $appointment_data['appointment_status_allow_message'] = $appointment_status->allow_message;
+                    $appointment_data['send_message'] = $appointment_status->allow_message;
                 }
                 /*
                 * Grab Rota day info and update
                 */
                 $resource = Resources::where([
-                    'external_id' => $appointmentData['doctor_id'],
+                    'external_id' => $appointment_data['doctor_id'],
                     'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
                     'account_id' => Auth::User()->account_id,
                 ])->first();
                 if ($resource) {
-                    $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->get('scheduled_date'), Auth::User()->account_id, $appointmentData['location_id']);
+                    $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->scheduled_date, Auth::User()->account_id, $appointment_data['location_id']);
                     if (count($resource_has_rota_day)) {
-                        $appointmentData['resource_id'] = $resource->id;
-                        $appointmentData['resource_has_rota_day_id'] = $resource_has_rota_day['id'];
+                        $appointment_data['resource_id'] = $resource->id;
+                        $appointment_data['resource_has_rota_day_id'] = $resource_has_rota_day['id'];
                     }
                 }
                 if ($appointment->appointment_type_id == Config::get('constants.appointment_type_service')) {
-                    $machine_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($appointmentData['machine_id'], $request->get('scheduled_date'), Auth::User()->account_id, $appointmentData['location_id']);
+                    $machine_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($appointment_data['machine_id'], $request->scheduled_date, Auth::User()->account_id, $appointment_data['location_id']);
                     if (count($machine_has_rota_day)) {
-                        $appointmentData['resource_id'] = $appointmentData['machine_id'];
-                        $appointmentData['resource_has_rota_day_id_for_machine'] = $machine_has_rota_day['id'];
+                        $appointment_data['resource_id'] = $appointment_data['machine_id'];
+                        $appointment_data['resource_has_rota_day_id_for_machine'] = $machine_has_rota_day['id'];
                     }
                 }
-                $appointment->update($appointmentData);
+                $appointment->update($appointment_data);
                 if (count($appointment->getChanges()) > 1) {
                     // if only doctor are going to change and first sms already sent, so we need to stop sending message again
                     if ($value_of_sending_message == '0') {
@@ -2772,31 +2735,31 @@ class AppointmentsController extends Controller
                     $scheduled_at_count = $appointment->scheduled_at_count;
                     $appointment->update(['scheduled_at_count' => $scheduled_at_count + 1]);
                 }
-                Appointments::where('patient_id', '=', $appointment->patient_id)->update(['name' => $appointmentData['name']]);
+                Appointments::where('patient_id', '=', $appointment->patient_id)->update(['name' => $appointment_data['name']]);
                 /*
                  * Perform Lead Operations
                  */
-                if($appointmentData['appointment_status_id'] == 1){
-                    $appointmentData['lead_status_id'] = 4;
-                }else if($appointmentData['appointment_status_id'] == 3){
-                    $appointmentData['lead_status_id'] = 1;
+                if($appointment_data['appointment_status_id'] == 1){
+                    $appointment_data['lead_status_id'] = 4;
+                }else if($appointment_data['appointment_status_id'] == 3){
+                    $appointment_data['lead_status_id'] = 1;
                 }
-                $lead = Leads::find($appointmentData['lead_id']);
+                $lead = Leads::find($appointment_data['lead_id']);
                 if (! $lead) {
                     return ApiHelper::apiResponse($this->success, 'Lead not found', false);
                 }
-                $lead->update($appointmentData);
-                $patient = Patients::find($lead->patient_id);
+                $lead->update($appointment_data);
+                $patient = Patients::find($appointment->patient_id);
                 if (! $patient) {
                     return ApiHelper::apiResponse($this->success, 'Patient not found', false);
                 }
-                $patientData = $appointmentData;
+                $patientData = $appointment_data;
                 /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in
                  * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
                  */
                 $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
                 GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
-                $patient = Patients::updateRecord($lead->patient_id, $patientData);
+                $patient = Patients::updateRecord($appointment->patient_id, $patientData);
                 $patient->update($patientData);
                 $this->dispatch(
                     new IndexSingleAppointmentJob([
@@ -2884,26 +2847,26 @@ class AppointmentsController extends Controller
             'lead_source_id' => null,
         );
         if (Gate::allows('appointments_manage')) {
-            $phone = GeneralFunctions::cleanNumber($request->get('phone'));
+            $phone = GeneralFunctions::cleanNumber($request->phone);
             $patient = Patients::getByPhone($phone, Auth::User()->account_id, $request->patient_id);
             if (!$patient) {
                 $data['status'] = 1;
-                $data['service_id'] = $request->get('service_id');
-                $data['phone'] = $request->get('phone');
-                $data['dob'] = $request->get('dob');
-                $data['address'] = $request->get('address');
-                $data['cnic'] = $request->get('cnic');
-                $data['referred_by'] = $request->get('referred_by');
-                $data['gender'] = $request->get('gender');
+                $data['service_id'] = $request->service_id;
+                $data['phone'] = $request->phone;
+                $data['dob'] = $request->dob;
+                $data['address'] = $request->address;
+                $data['cnic'] = $request->cnic;
+                $data['referred_by'] = $request->referred_by;
+                $data['gender'] = $request->gender;
             } else {
-                $lead = Leads::where(['patient_id' => $patient->id, 'service_id' => $request->get('service_id')])->first();
+                $lead = Leads::where(['patient_id' => $patient->id, 'service_id' => $request->service_id])->first();
                 if ($lead) {
                     $data['service_id'] = $lead->service_id;
                     $data['lead_source_id'] = $lead->lead_source_id;
                     $data['lead_id'] = $lead->id;
                     $data['town_id'] = $lead->town_id;
                 } else {
-                    $data['service_id'] = $request->get('service_id');
+                    $data['service_id'] = $request->service_id;
                     $data['lead_id'] = '';
                 }
                 $data['patient_id'] = $patient->id;
@@ -2965,7 +2928,7 @@ class AppointmentsController extends Controller
     {
         $data = $request->all();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-        $appointment = Appointments::find($request->get('id'));
+        $appointment = Appointments::find($request->id);
         if (!$appointment) {
             return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
         }
@@ -3000,7 +2963,6 @@ class AppointmentsController extends Controller
         }
         if (!isset($data['appointment_status_id']) || $data['appointment_status_id'] == '') {
             $data['appointment_status_id'] = $data['base_appointment_status_id'];
-        } else {
         }
         // Set Comments
         if (isset($data['reason']) && !$data['reason']) {
@@ -3009,7 +2971,7 @@ class AppointmentsController extends Controller
         // Converted By
         $data['converted_by'] = Auth::User()->id;
         /*$data['updated_by'] = Auth::User()->id;*/
-        $data['updated_at'] =Filters::getCurrentTimeStamp();
+        $data['updated_at'] = Filters::getCurrentTimeStamp();
         if ($appointment_type->id == $appointment->appointment_type_id) {
             if ($data['base_appointment_status_id'] == Config::get('constants.appointment_status_not_show')) {
                 if ($appointment->counter == $counterglobal->data) {
@@ -3053,8 +3015,7 @@ class AppointmentsController extends Controller
             $lead->save();
         }
         if($data['base_appointment_status_id'] == 14){
-            $lead = Leads::where('patient_id',$appointment->patient_id)->update(['lead_status_id'=>2]);
-
+            $lead = Leads::where(['id' => $appointment->lead_id])->update(['lead_status_id'=>2]);
         }
 
         /**
@@ -3091,7 +3052,7 @@ class AppointmentsController extends Controller
     public function sendLogSMS(Request $request)
     {
         $data = $request->all();
-        $SMSLog = SMSLogs::find($request->get('id'));
+        $SMSLog = SMSLogs::find($request->id);
         if (!$SMSLog) {
             return ApiHelper::apiResponse($this->success, 'Resource not found', false);
         }
@@ -3147,15 +3108,15 @@ class AppointmentsController extends Controller
     {
 
         try {
-            if ($request->get("city_id")) {
-                if ($request->get("machine_type_allocation")) {
+            if ($request->city_id) {
+                if ($request->machine_type_allocation) {
                     if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
                         $reverse_process = true;
                     } else {
                         $reverse_process = false;
                     }
                     $locationsids = array();
-                    $locations = Locations::getActiveRecordsByCity($request->get("city_id"), ACL::getUserCentres(), Auth::User()->account_id);
+                    $locations = Locations::getActiveRecordsByCity($request->city_id, ACL::getUserCentres(), Auth::User()->account_id);
                     /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
                     foreach ($locations as $location) {
                         $location_serivce = AppointmentEditWidget::loadlocationservice_edit($location->id, Auth::User()->account_id, $reverse_process);
@@ -3169,7 +3130,7 @@ class AppointmentsController extends Controller
                     }
 
                 } else {
-                    $locations = Locations::getActiveRecordsByCity($request->get("city_id"), ACL::getUserCentres(), Auth::User()->account_id);
+                    $locations = Locations::getActiveRecordsByCity($request->city_id, ACL::getUserCentres(), Auth::User()->account_id);
                     if ($locations) {
                         $locations = $locations->pluck("name", "id");
                     }
@@ -3215,9 +3176,9 @@ class AppointmentsController extends Controller
     public function loadDoctorsByLocation(Request $request)
     {
         try {
-            if ($request->get("location_id")) {
-                if ($request->get("machine_type_allocation")) {
-                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->get("location_id"), Auth::User()->account_id);
+            if ($request->location_id) {
+                if ($request->machine_type_allocation) {
+                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
                     if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
                         $reverse_process = true;
                     } else {
@@ -3226,14 +3187,14 @@ class AppointmentsController extends Controller
                     $doctorids = array();
                     /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
                     foreach ($doctors as $key => $doctor) {
-                        $doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $request->get("location_id"), Auth::User()->account_id, $reverse_process);
+                        $doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $request->location_id, Auth::User()->account_id, $reverse_process);
                         if (in_array($request->service_id, $doctor_serivce)) {
                             $doctorids[] = $key;
                         }
                     }
                     $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
                 } else {
-                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->get("location_id"), Auth::User()->account_id);
+                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
                 }
                 foreach ($doctors_no_final as $key => $doctor) {
                     $resource = Resources::where('external_id', '=', $key)->first();
@@ -3277,9 +3238,9 @@ class AppointmentsController extends Controller
 
     public function loadServiceByLocation(Request $request)
     {
-        if ($request->get("location_id")) {
-            $doctors = LocationsWidget::loadAppointmentDoctorByLocation($request->get("location_id"), Auth::User()->account_id);
-            //$doctors = Doctors::getActiveOnly($request->get("location_id"));
+        if ($request->location_id) {
+            $doctors = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
+            //$doctors = Doctors::getActiveOnly($request->location_id);
             $doctors->prepend('Select a Doctor', '');
             return response()->json(array(
                 'status' => 1,
@@ -3303,13 +3264,13 @@ class AppointmentsController extends Controller
     public function loadRotaByDoctor(Request $request)
     {
         if (
-            $request->get("doctor_id") &&
-            $request->get("appointment_id") &&
-            $request->get("scheduled_date") &&
-            $request->get("resourceRotaDayID")
+            $request->doctor_id &&
+            $request->appointment_id &&
+            $request->scheduled_date &&
+            $request->resourceRotaDayID
         ) {
-            $appointment = Appointments::find($request->get("appointment_id"));
-            if ($request->get("resourceRotaDayID") != $appointment->resource_has_rota_day_id) {
+            $appointment = Appointments::find($request->appointment_id);
+            if ($request->resourceRotaDayID != $appointment->resource_has_rota_day_id) {
                 /*
                     * Data is changed, avoid to provide rota
                     */
@@ -3323,8 +3284,8 @@ class AppointmentsController extends Controller
             /**
              * Location Information
              */
-            $location_id = $request->get("location_id");
-            $doctor = User::findOrFail($request->get("doctor_id"));
+            $location_id = $request->location_id;
+            $doctor = User::findOrFail($request->doctor_id);
             $resource = Resources::where([
                 'external_id' => $doctor->id,
                 'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
@@ -3335,7 +3296,7 @@ class AppointmentsController extends Controller
                     /*
                      * Consultancy: Grab Rota day info
                      */
-                    $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->get('scheduled_date'), Auth::User()->account_id, $location_id);
+                    $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->scheduled_date, Auth::User()->account_id, $location_id);
                     if (count($resource_has_rota_day)) {
                         if ($resource_has_rota_day['start_time'] && $resource_has_rota_day['end_time'] && $appointment->scheduled_time) {
                             $selected = (ResourceHasRota::checkTime(Carbon::parse($appointment->scheduled_time)->format('h:i A'), $resource_has_rota_day['start_time'], $resource_has_rota_day['end_time'], true)) ? Carbon::parse($appointment->scheduled_time)->format('h:i A') : '';
@@ -3360,8 +3321,8 @@ class AppointmentsController extends Controller
                         ));
                     }
                 } else {
-                    $resource_id = $request->get("machine_id");
-                    if (($request->get("machineRotaDayID") != $appointment->resource_has_rota_day_id_for_machine) || !$resource_id) {
+                    $resource_id = $request->machine_id;
+                    if (($request->machineRotaDayID != $appointment->resource_has_rota_day_id_for_machine) || !$resource_id) {
                         /*
                          * Data is changed, avoid to provide rota
                          */
@@ -3375,8 +3336,8 @@ class AppointmentsController extends Controller
                     /*
                      * Treatment: Find overlapped doctor and machine area
                      */
-                    $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->get('scheduled_date'), Auth::User()->account_id, $location_id);
-                    $machine_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource_id, $request->get('scheduled_date'), Auth::User()->account_id, $location_id);
+                    $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $request->scheduled_date, Auth::User()->account_id, $location_id);
+                    $machine_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource_id, $request->scheduled_date, Auth::User()->account_id, $location_id);
                     if (count($resource_has_rota_day) && count($machine_has_rota_day)) {
                         if (
                             ($resource_has_rota_day['start_time'] && $resource_has_rota_day['end_time']) &&
@@ -3427,9 +3388,9 @@ class AppointmentsController extends Controller
     public function getNonScheduledAppointments(Request $request)
     {
         if (
-            $request->get("city_id") &&
-            $request->get("location_id") &&
-            $request->get("doctor_id")
+            $request->city_id &&
+            $request->location_id &&
+            $request->doctor_id
         ) {
             $appointments = Appointments::getNonScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
             if ($appointments) {
@@ -3477,14 +3438,14 @@ class AppointmentsController extends Controller
      {
          if ($request->location_id) {
              $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-             $start = $request->get("start");
-             $end = $request->get("end");
+             $start = $request->start;
+             $end = $request->end;
              if($request->doctor_id){
-                 $doctor_rotas = Resources::getDoctorWithRotas($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end"));
+                 $doctor_rotas = Resources::getDoctorWithRotas($request->location_id, $request->doctor_id, $request->start, $request->end);
              }
-             $location_id = $request->get("location_id");
-             $doctor_id = $request->get("doctor_id");
-             $machine_id = $request->get("machine_id");
+             $location_id = $request->location_id;
+             $doctor_id = $request->doctor_id;
+             $machine_id = $request->machine_id;
              $minTime = Resources::getMinTimeWithDr($location_id, $doctor_id, $start, $end);
              if ($appointments) {
                  $data = array();
@@ -3552,19 +3513,20 @@ class AppointmentsController extends Controller
         if ($appointment_checkes['status']) {
             $doctor_check_availability = Resources::checkDoctorAvailbility($request);
             if (
-                $request->get("id") &&
-                $request->get("start") &&
-                $request->get("doctor_id") &&
-                $request->get("end")
+                $request->id &&
+                $request->start &&
+                $request->doctor_id &&
+                $request->end
             ) {
                 if ($doctor_check_availability) {
                     // Appointment Data
                     $data = $request->all();
-                    $appointment = Appointments::findOrFail($request->get('id'));
+                    $data['reschedule'] = 1;
+                    $appointment = Appointments::findOrFail($request->id);
                     $data['first_scheduled_count'] = $appointment->first_scheduled_count;
                     $data['scheduled_at_count'] = $appointment->scheduled_at_count;
                     if ($appointment->appointment_type_id = Config::get('constants.appointment_type_consultancy')) {
-                        $response = Resources::getDoctorRotaHasDay($request->get("start"), $appointment->doctor_id);
+                        $response = Resources::getDoctorRotaHasDay($request->start, $appointment->doctor_id);
                         if (isset($response['resource_id']) && $response['resource_id']) {
                             $data['resource_id'] = $response['resource_id'];
                         }
@@ -3580,7 +3542,7 @@ class AppointmentsController extends Controller
                     if (count($invoice) > 0) {
                         return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
                     }
-                    $record = Appointments::updateRecord($request->get("id"), $data, Auth::User()->account_id);
+                    $record = Appointments::updateRecord($request->id, $data, Auth::User()->account_id);
                     if ($record) {
                         /*
                          * Set Appointment Status 'pending' and set send message flag
@@ -3622,9 +3584,9 @@ class AppointmentsController extends Controller
 
     public function loadAppointmentStatuses(Request $request)
     {
-        if ($request->get("appointment_status_id")) {
-            $appointment_statuses = AppointmentStatuses::getActiveSorted($request->get("appointment_status_id"), Auth::User()->account_id);
-            $appointment_status = AppointmentStatuses::find($request->get("appointment_status_id"));
+        if ($request->appointment_status_id) {
+            $appointment_statuses = AppointmentStatuses::getActiveSorted($request->appointment_status_id, Auth::User()->account_id);
+            $appointment_status = AppointmentStatuses::find($request->appointment_status_id);
             if ($appointment_status) {
                 $appointment_status = $appointment_status->toArray();
             }
@@ -3650,12 +3612,12 @@ class AppointmentsController extends Controller
 
     public function loadAppointmentStatusData(Request $request)
     {
-        if ($request->get("appointment_status_id") && $request->get("base_appointment_status_id")) {
-            $appointment_status = AppointmentStatuses::find($request->get("appointment_status_id"));
+        if ($request->appointment_status_id && $request->base_appointment_status_id) {
+            $appointment_status = AppointmentStatuses::find($request->appointment_status_id);
             if ($appointment_status) {
                 $appointment_status = $appointment_status->toArray();
             }
-            $base_appointment_status = AppointmentStatuses::find($request->get("base_appointment_status_id"));
+            $base_appointment_status = AppointmentStatuses::find($request->base_appointment_status_id);
             if ($base_appointment_status) {
                 $base_appointment_status = $base_appointment_status->toArray();
             }
@@ -4097,7 +4059,7 @@ class AppointmentsController extends Controller
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
         }
-        
+
         $data_package['created_at'] = Filters::getCurrentTimeStamp();
         $data_package['updated_at'] =Filters::getCurrentTimeStamp();
         $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
@@ -4182,11 +4144,10 @@ class AppointmentsController extends Controller
             }
         }
         // In case of auto change status we need to update by so that s why we did
-        $appointment_data_status['converted_by'] = Auth::User()->id;
+        $appointment_data_status['updated_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
-        // End
-        /////Save activity////
 
+        ///Save activity//
         $patient = User::whereId($appointmentinfo->patient_id)->first();
         $location = Locations::whereId($appointmentinfo->location_id)->first();
         $servicename = Services::whereId($appointmentinfo->service_id)->first();
@@ -4201,7 +4162,6 @@ class AppointmentsController extends Controller
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();
-        ////
         /**
          * Dispatch Elastic Search Index
          */
@@ -4215,9 +4175,6 @@ class AppointmentsController extends Controller
                 'invoice_id' => $invoice?->id ?? 0
             ]);
 	}
-    /*Save The Invoice
-     */
-
     /**
      * Show the form for creating new Appointment.
      *
@@ -4274,8 +4231,8 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if ($request->get('lead_id')) {
-            $lead = Leads::where(['id' => $request->get('lead_id')])->first();
+        if ($request->lead_id) {
+            $lead = Leads::where(['id' => $request->lead_id])->first();
             if ($lead) {
                 $lead = array(
                     'id' => $lead->id,
@@ -4370,24 +4327,24 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         // Store form data in a variable
-        $appointmentData = $request->all();
-        $phone = $appointmentData['phone'];
-        if ($appointmentData['phone'] == '***********') {
-            $phone = $appointmentData['old_phone'];
+        $appointment_data = $request->all();
+        $phone = $appointment_data['phone'];
+        if ($appointment_data['phone'] == '***********') {
+            $phone = $appointment_data['old_phone'];
         }
-        $appointmentData['phone'] = GeneralFunctions::cleanNumber($phone);
-        $appointmentData['account_id'] = Auth::User()->account_id;
-        $appointmentData['created_by'] = Auth::user()->id;
-        $appointmentData['consultancy_type'] = 'treatment';
+        $appointment_data['phone'] = GeneralFunctions::cleanNumber($phone);
+        $appointment_data['account_id'] = Auth::User()->account_id;
+        $appointment_data['created_by'] = Auth::user()->id;
+        $appointment_data['consultancy_type'] = 'treatment';
         if (GeneralFunctions::AppointmentType($request->appointment_type) == config('constants.appointment_type_service')) {
-            $response = Resources::getResourceRotaHasDay($request->get('start'), $request->resource_id);
+            $response = Resources::getResourceRotaHasDay($request->start, $request->resource_id);
             if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                $appointmentData['resource_has_rota_day_id_for_machine'] = $response['resource_has_rota_day_id'];
+                $appointment_data['resource_has_rota_day_id_for_machine'] = $response['resource_has_rota_day_id'];
             }
-            $resource_doctor = Resources::where('external_id', '=', $request->get('doctor_id'))->first();
-            $response = Resources::getResourceRotaHasDay($request->get('start'), $resource_doctor->id);
+            $resource_doctor = Resources::where('external_id', '=', $request->doctor_id)->first();
+            $response = Resources::getResourceRotaHasDay($request->start, $resource_doctor->id);
             if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                $appointmentData['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
+                $appointment_data['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
             }
         } else {
             return ApiHelper::apiResponse($this->success, "Appointment types is not set", false);
@@ -4395,183 +4352,100 @@ class AppointmentsController extends Controller
         // Set Appointment Status
         $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
         if ($appointment_status) {
-            $appointmentData['appointment_status_id'] = $appointment_status->id;
-            $appointmentData['base_appointment_status_id'] = $appointment_status->id;
-            $appointmentData['appointment_status_allow_message'] = $appointment_status->allow_message;
+            $appointment_data['appointment_status_id'] = $appointment_status->id;
+            $appointment_data['base_appointment_status_id'] = $appointment_status->id;
+            $appointment_data['appointment_status_allow_message'] = $appointment_status->allow_message;
         } else {
-            $appointmentData['appointment_status_id'] = null;
-            $appointmentData['base_appointment_status_id'] = null;
-            $appointmentData['appointment_status_allow_message'] = 0;
+            $appointment_data['appointment_status_id'] = null;
+            $appointment_data['base_appointment_status_id'] = null;
+            $appointment_data['appointment_status_allow_message'] = 0;
         }
         // Set Appointment Type
-        $appointmentData['appointment_type_id'] = config('constants.appointment_type_service');
-        // Get Location object to retrieve City
-        $location = Locations::findOrFail($appointmentData['location_id']);
-        // Set City ID after retrieving from Location
-        $appointmentData['city_id'] = $location->city_id;
-        $appointmentData['region_id'] = $location->region_id;
-        $appointmentData['account_id'] = Auth::User()->account_id;
-        /*I think this code should be outside the lead id check before, it was in below condition*/
-        if ($request->get("start")) {
-            $start = $request->get("start");
-            $service_duration = Services::find($request->get('service_id'))->value("duration");
+        $appointment_data['appointment_type_id'] = config('constants.appointment_type_service');
+        $location = Locations::findOrFail($appointment_data['location_id']);
+        $appointment_data['city_id'] = $location->city_id;
+        $appointment_data['region_id'] = $location->region_id;
+        $appointment_data['account_id'] = Auth::User()->account_id;
+        if ($request->start) {
+            $start = $request->start;
+            $service_duration = Services::find($request->service_id)->value("duration");
             $duraton_array = explode(":", $service_duration);
             if (count($duraton_array) == 2) {
                 $end = Carbon::parse($start)->addHour($service_duration[0])->addMinute($duraton_array[1]);
                 $start = Carbon::parse($start)->format("Y-m-d H:i:s");
             }
-            $doctor_checking = Resources::checkingDoctorAvailbility($request->get("doctor_id"), $start, $end);
-            $room_check_availability = Resources::checkingRoomAvailbility($request->get("resource_id"), $start, $end);
+            $doctor_checking = Resources::checkingDoctorAvailbility($request->doctor_id, $start, $end);
+            $room_check_availability = Resources::checkingRoomAvailbility($request->resource_id, $start, $end);
             if ($doctor_checking && $room_check_availability) {
-                $appointmentData['scheduled_date'] = Carbon::parse($request->get("start"))->format("Y-m-d");
-                $appointmentData['scheduled_time'] = Carbon::parse($request->get("start"))->format("H:i:s ");
-                $appointmentData['first_scheduled_date'] = Carbon::parse($request->get("start"))->format("Y-m-d");
-                $appointmentData['first_scheduled_time'] = Carbon::parse($request->get("start"))->format("H:i:s");
-                $appointmentData['first_scheduled_count'] = 1;
-                if ($request->get("appointment_type") == 'treatment') {
-                    $appointmentData['resource_id'] = $request->get("resource_id");
+                $appointment_data['scheduled_date'] = Carbon::parse($request->start)->format("Y-m-d");
+                $appointment_data['scheduled_time'] = Carbon::parse($request->start)->format("H:i:s ");
+                $appointment_data['first_scheduled_date'] = Carbon::parse($request->start)->format("Y-m-d");
+                $appointment_data['first_scheduled_time'] = Carbon::parse($request->start)->format("H:i:s");
+                $appointment_data['first_scheduled_count'] = 1;
+                if ($request->appointment_type == 'treatment') {
+                    $appointment_data['resource_id'] = $request->resource_id;
                 }
             } else {
                 return ApiHelper::apiResponse($this->success, "Doctor or machine is not available and Appointment is not scheduled.", false);
             }
         }
-        /*
-         * Check if Lead ID not provided then create a new lead
-         * and assign this lead to current appointment.
-         */
-        if (!$request->get('lead_id')) {
-            /*
-             * If Patient is from database
-             * - if appointment already exists then do not update info
-             * - if appointment already exists then update info
-             */
-            if (isset($appointmentData['patient_id']) && $appointmentData['patient_id'] != '') {
-                /*
-                * If appointment is for the first time then
-                * update user information, otherwise not
-                */
-
-                /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in                    * patient, so for now we also change it at patient, below code that I comment help me to update patient name.
-                 */
-                $patientData = $appointmentData;
-
-                /*if (Appointments::where(['patient_id' => $appointmentData['patient_id']])->count()) {
-                    unset($patientData['name']);
-                }*/
-
+        if (!$request->lead_id) {
+            if (isset($appointment_data['patient_id']) && $appointment_data['patient_id'] != '') {
+                $patientData = $appointment_data;
                 if ($request->new_patient == '1') {
                     $patientData['user_type_id'] = Config::get('constants.patient_id');
                     $patient = Patients::createRecord($patientData);
                 } else {
-                    $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
+                    $patient = Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
                 }
             }
-            $leadObj = $appointmentData;
-            unset($leadObj['lead_id']); // Remove Lead ID index
-            $leadObj['patient_id'] = $patient->id;
-            // Convert Lead status to Converted
-            $DefaultConvertedLeadStatus = LeadStatuses::where(array(
-                'account_id' => Auth::User()->account_id,
-                'is_converted' => 1,
-            ))->first();
-            if ($DefaultConvertedLeadStatus) {
-                $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
-            } else {
-                $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
-            }
-            $lead=Leads::where('patient_id',$leadObj['patient_id'])->where('service_id',$leadObj['base_service_id'])->first();
-            if($lead){
-                $lead->lead_status_id = 4;
-                $lead->save();
-            }else{
-                $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-                $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
-            }
+            $lead_obj = $appointment_data;
+            unset($lead_obj['lead_id']);
+            $lead_obj['patient_id'] = $patient->id;
         } else {
-            $lead = Leads::findOrFail($request->get('lead_id'));
-            /*
-             * If appointment is for the first time then
-             * update user information, otherwise not
-             */
-            $patientData = $appointmentData;
-            /* In our initial logic, We not change the name in patient when user search the patient and change the name so we change it in appointment but not in patient,
-             * so for now we also change it at patient, below code that I comment help me to update patient name
-             */
-
-            //if (Appointments::where(['patient_id' => $appointmentData['patient_id']])->count()) {
-            //unset($patientData['name']);
-            //}
+            $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
+            $patientData = $appointment_data;
             if ($request->new_patient == '1') {
                 $patientData['user_type_id'] = Config::get('constants.patient_id');
                 $patient = Patients::createRecord($patientData);
             } else {
-                $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
+                $patient = Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
             }
         }
-        // Set Lead ID for Appointment
-        $appointmentData['patient_id'] = $patient->id;
-        $appointmentData['lead_id'] = $lead->id;
-        /*
-         * End Lead ID Process
-         */
-        $appointmentData['created_at'] =Filters::getCurrentTimeStamp();
-        $appointmentData['updated_at'] =Filters::getCurrentTimeStamp();
-        $appointment = Appointments::create($appointmentData);
+        $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
+        $appointment_data['patient_id'] = $patient->id;
+        $appointment_data['lead_id'] = $lead->id;
+        $appointment_data['created_at'] = Filters::getCurrentTimeStamp();
+        $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
+        $appointment = Appointments::create($appointment_data);
         $find_apt = Appointments::find($appointment->id);
         $find_cons = Appointments::latest()->first();
         if($find_cons){
             $parents = Services::where(['parent_id' => $find_cons->service_id])->first();
-            $find_lead = Leads::where(['id' => $find_cons->lead_id])->update(['child_service_id' => $appointment->service_id]);
         }
-        /* Now We need to update name of all appointments that already in appointment table against patient*/
-        Appointments::where('patient_id', '=', $appointmentData['patient_id'])->update(['name' => $appointmentData['name'],'updated_at'=> $appointmentData['updated_at']]);
+        Appointments::where(['patient_id' => $appointment_data['patient_id']])->update(['name' => $appointment_data['name'], 'updated_at' => $appointment_data['updated_at']]);
         if ($request->new_patient == '1') {
-            $leadObj = $appointmentData;
-            unset($leadObj['lead_id']); // Remove Lead ID index
-            $leadObj['patient_id'] = $patient->id;
-            // Convert Lead status to Converted
-            $DefaultConvertedLeadStatus = LeadStatuses::where(array(
-                'account_id' => Auth::User()->account_id,
-                'is_converted' => 1,
-            ))->first();
-            if ($DefaultConvertedLeadStatus) {
-                $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
-            } else {
-                $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
-            }
-            $leadObj['lead_status_id'] = $default_converted_lead_status_id;
-            $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+            $lead_obj = $appointment_data;
+            unset($lead_obj['lead_id']);
+            $lead_obj['patient_id'] = $patient->id;
+            $lead = Leads::createRecord($lead_obj, $status = "Appointment");
         } else {
-            // If Lead ID provided then change it's status to converted
-            if ($request->get('lead_id') && $request->get('lead_id')) {
-                $lead = Leads::findOrFail($request->get('lead_id'));
+            if ($request->lead_id && $request->lead_id) {
+                $lead = Leads::findOrFail($request->lead_id);
                 if ($lead) {
-                    // Convert Lead status to Converted
-                    $DefaultConvertedLeadStatus = LeadStatuses::where(array(
-                        'account_id' => Auth::User()->account_id,
-                        'is_converted' => 1,
-                    ))->first();
-                    if ($DefaultConvertedLeadStatus) {
-                        $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
-                    } else {
-                        $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
-                    }
                     $data = array(
-                        'lead_status_id' => $default_converted_lead_status_id,
-                        'town_id' => $request->get('town_id')
+                        'town_id' => $request->town_id
                     );
-                    $lead = Leads::updateRecord($lead->id, $data, $lead, $status = "Appointment");
+                    $lead = Leads::updateRecord($lead->id, $data, $status = "Appointment");
                 }
             }
-            // Update Treatment ID as well
-            if ($request->get('lead_id') && $request->get('lead_id')) {
-                $lead = Leads::findOrFail($request->get('lead_id'));
+            if ($request->lead_id && $request->lead_id) {
+                $lead = Leads::findOrFail($request->lead_id);
                 if ($lead) {
-                    $lead->update(['service_id' => $request->get('service_id')]);
+                    $lead->update(['service_id' => $request->service_id]);
                 }
             }
         }
-        // Based on allow message by status and scheduled date, allow send sms
         if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
             $appointment->update(array(
                 'send_message' => 1
@@ -4591,7 +4465,6 @@ class AppointmentsController extends Controller
                     'appointment_status_allow_message' => 0
                 ));
             } else {
-                // Set default appointment status i.e. 'pending'
                 $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
                 if ($appointment_status) {
                     $appointment->update(array(
@@ -4609,12 +4482,8 @@ class AppointmentsController extends Controller
             }
         }
         $message = 'Record has been created successfully.';
-        // Send Promotion SMS
-        $this->sendPromotionSMS($appointment->id, $appointmentData['phone']);
+        $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
         GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
-        /**
-         * Dispatch Elastic Search Index
-         */
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
@@ -4658,9 +4527,9 @@ class AppointmentsController extends Controller
     public function getNonScheduledServiceAppointments(Request $request)
     {
         if (
-            $request->get("city_id") &&
-            $request->get("location_id") &&
-            $request->get("doctor_id")
+            $request->city_id &&
+            $request->location_id &&
+            $request->doctor_id
         ) {
             $appointments = Appointments::getNonScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id);
             if ($appointments) {
@@ -4706,22 +4575,22 @@ class AppointmentsController extends Controller
 
     public function getScheduledServiceAppointments(Request $request)
     {
-        $location_id = $request->get("location_id");
-        $doctor_id = $request->get("doctor_id");
-        $machine_id = $request->get("machine_id");
+        $location_id = $request->location_id;
+        $doctor_id = $request->doctor_id;
+        $machine_id = $request->machine_id;
         $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id, true);
-        $resources = Resources::getRoomsResourceRotaWithoutDays($request->get("location_id"));
-        $start = $request->get("start");
-        $end = $request->get("end");
+        $resources = Resources::getRoomsResourceRotaWithoutDays($request->location_id);
+        $start = $request->start;
+        $end = $request->end;
         $minTime = Resources::getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end);
         if ($request->has("start") && $request->has("end")) {
-            $doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->get("location_id"), $request->get("doctor_id"), $request->get("start"), $request->get("end"));
+            $doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->location_id, $request->doctor_id, $request->start, $request->end);
         } else {
             $doctor_rotas = collect();
         }
         if ($appointments) {
             $data = array();
-            if($request->get("doctor_id") != ''){
+            if($request->doctor_id != ''){
                 foreach ($appointments as $appointment) {
                     $dutation = explode(':', $appointment->service->duration);
                     $data[$appointment->id] = array(
@@ -4731,11 +4600,11 @@ class AppointmentsController extends Controller
                         'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
                         'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
                         'duration' => $appointment->service->duration,
-                        'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
+                        'editable' => ($request->doctor_id == $appointment->doctor_id) ? true : false,
                         'overlap' => false,
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-                        'color' => ($request->get("doctor_id") == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
+                        'color' => ($request->doctor_id == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
                         'resourceId' => $appointment->resource_id,
                     );
                 }
@@ -4749,7 +4618,7 @@ class AppointmentsController extends Controller
                         'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
                         'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
                         'duration' => $appointment->service->duration,
-                        'editable' => ($request->get("doctor_id") == $appointment->doctor_id) ? true : false,
+                        'editable' => ($request->doctor_id == $appointment->doctor_id) ? true : false,
                         'overlap' => false,
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d') . ' ' . Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
@@ -4814,17 +4683,17 @@ class AppointmentsController extends Controller
             $doctor_check_availability = Resources::checkDoctorAvailbility($request);
             $room_check_availability = Resources::checkRoomAvailbility($request);
             if (
-                $request->get("id") &&
-                $request->get("start") &&
-                $request->get("end") &&
-                $request->get("resourceId")
+                $request->id &&
+                $request->start &&
+                $request->end &&
+                $request->resourceId
             ) {
                 if ($doctor_check_availability) {
                     if ($room_check_availability) {
                         // Appointment Data
                         $data = $request->all();
                         $data['resource_id'] = $data['resourceId'];
-                        $appointment = Appointments::findOrFail($request->get('id'));
+                        $appointment = Appointments::findOrFail($request->id);
                         $data['first_scheduled_count'] = $appointment->first_scheduled_count;
                         $data['scheduled_at_count'] = $appointment->scheduled_at_count;
                         if ($appointment->appointment_type_id = Config::get('constants.appointment_type_service')) {
@@ -4846,7 +4715,7 @@ class AppointmentsController extends Controller
                         if (count($invoice) > 0) {
                             return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
                         }
-                        $record = Appointments::updateServiceRecord($request->get("id"), $data, Auth::User()->account_id);
+                        $record = Appointments::updateServiceRecord($request->id, $data, Auth::User()->account_id);
                         if ($record) {
                             /*
                              * Set Appointment Status 'pending' and set send message flag
@@ -4888,8 +4757,8 @@ class AppointmentsController extends Controller
     public function loadEndServiceByBaseService(Request $request)
     {
 
-        if ($request->get("service_id")) {
-            $services = Appointments::getNodeServices($request->get('service_id'), Auth::User()->account_id, true, true);
+        if ($request->service_id) {
+            $services = Appointments::getNodeServices($request->service_id, Auth::User()->account_id, true, true);
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'services' => $services
             ]);
@@ -4944,7 +4813,7 @@ class AppointmentsController extends Controller
     }
     public function center_machines(Request $request, $location_id)
     {
-        if ($request->get("machine_type_allocation")) {
+        if ($request->machine_type_allocation) {
             $machines = Resources::where([["resource_type_id", "=", config("constants.resource_room_type_id")], ["active", "=", '1'], ["location_id", "=", $location_id], ["account_id", "=", Auth::User()->account_id]])->get();
             if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
                 $reverse_process = true;
@@ -5079,32 +4948,32 @@ class AppointmentsController extends Controller
         $schedule_F = '';
         $schedule_T = '';
         $where = array();
-        if ($request->get('patient_id') && $request->get('patient_id') != '') {
-            $where[] = array(['users.id' => $request->get('patient_id')]);
+        if ($request->patient_id && $request->patient_id != '') {
+            $where[] = array(['users.id' => $request->patient_id]);
         }
-        if ($request->get('phone') && $request->get('phone') != '') {
+        if ($request->phone && $request->phone != '') {
             $where[] = array(
                 'users.phone',
                 'like',
-                '%' . GeneralFunctions::cleanNumber($request->get('phone')) . '%'
+                '%' . GeneralFunctions::cleanNumber($request->phone) . '%'
             );
         }
         if (Gate::allows('appointments_export_all')) {
-            if ($request->get('date_from') && $request->get('date_from') != '') {
+            if ($request->date_from && $request->date_from != '') {
                 $where[] = array(
                     'appointments.scheduled_date',
                     '>=',
-                    $request->get('date_from') . ' 00:00:00'
+                    $request->date_from . ' 00:00:00'
                 );
-                $schedule_F = $request->get('date_from');
+                $schedule_F = $request->date_from;
             }
-            if ($request->get('date_to') && $request->get('date_to') != '') {
+            if ($request->date_to && $request->date_to != '') {
                 $where[] = array(
                     'appointments.scheduled_date',
                     '<=',
-                    $request->get('date_to') . '23:59:59'
+                    $request->date_to . '23:59:59'
                 );
-                $schedule_T = $request->get('date_to');
+                $schedule_T = $request->date_to;
             }
         } else if (Gate::allows('appointments_export_today')) {
             $where[] = array(
@@ -5133,59 +5002,59 @@ class AppointmentsController extends Controller
             );
             $schedule_T = $today;
         }
-        if ($request->get('doctor_id') && $request->get('doctor_id') != '') {
+        if ($request->doctor_id && $request->doctor_id != '') {
             $where[] = array(
                 'doctor_id',
                 '=',
-                $request->get('doctor_id')
+                $request->doctor_id
             );
         }
-        if ($request->get('region_id') && $request->get('region_id') != '') {
-            $where[] = array(['region_id' => $request->get('region_id')]);
+        if ($request->region_id && $request->region_id != '') {
+            $where[] = array(['region_id' => $request->region_id]);
         }
-        if ($request->get('city_id') && $request->get('city_id') != '') {
-            $where[] = array(['city_id' => $request->get('city_id')]);
+        if ($request->city_id && $request->city_id != '') {
+            $where[] = array(['city_id' => $request->city_id]);
         }
-        if ($request->get('location_id') && $request->get('location_id') != '') {
-            $where[] = array(['location_id' => $request->get('location_id')]);
+        if ($request->location_id && $request->location_id != '') {
+            $where[] = array(['location_id' => $request->location_id]);
         }
-        if ($request->get('service_id') && $request->get('service_id') != '') {
-            $where[] = array(['service_id' => $request->get('service_id')]);
+        if ($request->service_id && $request->service_id != '') {
+            $where[] = array(['service_id' => $request->service_id]);
         }
-        if ($request->get('created_by') && $request->get('created_by') != '') {
-            $where[] = array(['appointments.created_by' => $request->get('created_by')]);
+        if ($request->created_by && $request->created_by != '') {
+            $where[] = array(['appointments.created_by' => $request->created_by]);
         }
-        if ($request->get('converted_by') && $request->get('converted_by') != '') {
-            $where[] = array(['appointments.converted_by' => $request->get('converted_by')]);
+        if ($request->converted_by && $request->converted_by != '') {
+            $where[] = array(['appointments.converted_by' => $request->converted_by]);
         }
-        if ($request->get('updated_by') && $request->get('updated_by') != '') {
-            $where[] = array(['appointments.updated_by' => $request->get('updated_by')]);
+        if ($request->updated_by && $request->updated_by != '') {
+            $where[] = array(['appointments.updated_by' => $request->updated_by]);
         }
-        if ($request->get('appointment_status_id') && $request->get('appointment_status_id') != '') {
-            $where[] = array(['appointments.base_appointment_status_id' => $request->get('appointment_status_id')]);
+        if ($request->appointment_status_id && $request->appointment_status_id != '') {
+            $where[] = array(['appointments.base_appointment_status_id' => $request->appointment_status_id]);
         }
-        if ($request->get('appointment_type_id') && $request->get('appointment_type_id') != '') {
-            $where[] = array(['appointments.appointment_type_id' => $request->get('appointment_type_id')]);
+        if ($request->appointment_type_id && $request->appointment_type_id != '') {
+            $where[] = array(['appointments.appointment_type_id' => $request->appointment_type_id]);
         }
-        if ($request->get('consultancy_type') && $request->get('consultancy_type') != '') {
-            $where[] = array(['appointments.consultancy_type' => $request->get('consultancy_type')]);
+        if ($request->consultancy_type && $request->consultancy_type != '') {
+            $where[] = array(['appointments.consultancy_type' => $request->consultancy_type]);
         }
         if (Gate::allows('appointments_export_all')) {
-            if ($request->get('created_from') && $request->get('created_from') != '') {
+            if ($request->created_from && $request->created_from != '') {
                 $where[] = array(
                     'appointments.created_at',
                     '>=',
-                    $request->get('created_from') . ' 00:00:00'
+                    $request->created_from . ' 00:00:00'
                 );
-                $created_F = $request->get('created_from');
+                $created_F = $request->created_from;
             }
-            if ($request->get('created_to') && $request->get('created_to') != '') {
+            if ($request->created_to && $request->created_to != '') {
                 $where[] = array(
                     'appointments.created_at',
                     '<=',
-                    $request->get('created_to') . ' 23:59:59'
+                    $request->created_to . ' 23:59:59'
                 );
-                $created_T = $request->get('created_to');
+                $created_T = $request->created_to;
             }
         }
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
@@ -5229,32 +5098,32 @@ class AppointmentsController extends Controller
         if (count($where)) {
             $resultQuery->where($where);
         }
-        if ($request->get('name') && $request->get('name') != '') {
+        if ($request->name && $request->name != '') {
             $resultQuery->where(function ($query) {
                 global $request;
                 $query->where(
                     'users.name',
                     'like',
-                    '%' . $request->get('name') . '%'
+                    '%' . $request->name . '%'
                 );
                 $query->orWhere(
                     'appointments.name',
                     'like',
-                    '%' . $request->get('name') . '%'
+                    '%' . $request->name . '%'
                 );
             });
         }
-        if ($request->get('name') && $request->get('name') != '') {
+        if ($request->name && $request->name != '') {
             $resultQuery->where(function ($query) use ($request) {
                 $query->where(
                     'users.name',
                     'like',
-                    '%' . $request->get('name') . '%'
+                    '%' . $request->name . '%'
                 );
                 $query->orWhere(
                     'appointments.name',
                     'like',
-                    '%' . $request->get('name') . '%'
+                    '%' . $request->name . '%'
                 );
             });
         }
