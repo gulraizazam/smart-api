@@ -27,10 +27,8 @@
             @csrf
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-
                 <div class="form-group">
                     <div class="row">
-
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">File <span class="text text-danger">*</span></label>
                             <input type="file" id="file" name="leads_file" class="form-control leads_file">
@@ -40,11 +38,6 @@
                         </div>
                         <div class="fv-row col-md-12 mt-5">
                             <div class="mt-checkbox-inline">
-                                <label class="custom_checkbox mt-5">
-                                    <input  type="checkbox" value="1" id="update_statuss" name="update_status" onchange="HideskipStatus($(this));">
-                                    <strong></strong>
-                                    <span class="ml-5">Only Update Status</span>
-                                </label>
                                 <label class="custom_checkbox mt-5 update_records">
                                     <input onchange="skipStatus($(this));" type="checkbox" value="1" id="update_records" name="update_records">
                                     <strong></strong>
@@ -65,7 +58,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel" onclick="cencleImport($(this));">Cancel</button>
                 <button type="button" onclick="importLead();" class="btn btn-primary spinner-button">
                     <span class="indicator-label">Submit</span>
                 </button>

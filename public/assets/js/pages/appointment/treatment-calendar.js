@@ -130,17 +130,17 @@ var TreatmentCalendar = function() {
         },
 
         async loadTreatmentEvents(response, callback) {
-           
+
             if (response.status) {
                 if($('#treatment_doctor_filter').val() !=''){
                     if (response.rotas[0].doctor_rotas.length == 0) {
                         toastr.error("Doctor rotas not defined.")
                     }
                 }
-               
+
 
                 var events = [];
-               
+
                 //  var currentDate = null;
                 $.each(response.events, function(id, appointmentObj) {
                     if (appointmentObj.id == window.eventData.id && window.eventData.firstTime == true) {
@@ -177,7 +177,7 @@ var TreatmentCalendar = function() {
                             overlap: true,
                         });
                     } else {
-                        
+
                         events.push({
                             id: appointmentObj.id,
                             title: "Name : " + appointmentObj.patient + " <br> Service: " + appointmentObj.service + " <br> Created By: " + appointmentObj.created_by, // use the element's text as the event title
@@ -436,7 +436,7 @@ var TreatmentCalendar = function() {
                     type: 'GET',
                     cache: false,
                     success: function(response) {
-                      
+
                         if (response.status) {
                            setCreateTreatment(response, start);
                         } else {
@@ -553,7 +553,6 @@ function setTreatmentDetailData(response) {
 }
 
 function setCreateTreatment(response, start) {
-
     try {
 
         patientSearch('treatment_patient_search_id');

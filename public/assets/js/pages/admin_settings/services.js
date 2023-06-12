@@ -237,20 +237,15 @@ function setEditData(response) {
 }
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
-      
         let filters =  {
             delete: '',
             name: $("#search_name").val(),
             status: $("#search_status").val(),
             filter: 'filter',
         }
-        console.log(filters);
         datatable.search(filters, 'search');
-
     });
-
 }
 
 function resetAllFilters(datatable) {

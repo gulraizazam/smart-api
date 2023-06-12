@@ -106,6 +106,11 @@ var AddValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
                         }
                     },
@@ -114,6 +119,13 @@ var AddValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The city field is required'
+                            }
+                        }
+                    },
+                    location_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The centre field is required'
                             }
                         }
                     },
@@ -150,6 +162,9 @@ var AddValidation = function () {
 
                 if (response.status) {
                     toastr.success(response.message);
+                    $('select[name="child_service_id"]').empty();
+                    $(".msg_new_lead").hide();
+                    $('select[name="location_id"]').empty();
                     closePopup(modal_id);
                     reInitTable();
                 } else {
@@ -176,17 +191,15 @@ var EditValidation = function () {
             form,
             {
                 fields: {
-                    service_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The service field is required'
-                            }
-                        }
-                    },
                     phone: {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
                         }
                     },
@@ -195,6 +208,13 @@ var EditValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The city field is required'
+                            }
+                        }
+                    },
+                    location_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The centre field is required'
                             }
                         }
                     },
@@ -232,7 +252,7 @@ var EditValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('lead');
                 } else {
                     toastr.error(response.message);
                 }

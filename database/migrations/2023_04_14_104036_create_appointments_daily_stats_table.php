@@ -15,10 +15,14 @@ class CreateAppointmentsDailyStatsTable extends Migration
     {
         Schema::create('appointments_daily_stats', function (Blueprint $table) {
             $table->id();
-            $table->integer('consultation_scheduled_count')->nullable();
-            $table->integer('consultation_arrived_count')->nullable();
-            $table->integer('treatment_scheduled_count')->nullable();
-            $table->integer('treatment_arrived_count')->nullable();
+            $table->unsignedInteger('centre_id');
+            $table->foreign('centre_id')->references('id')->on('locations');
+            $table->unsignedInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->unsignedInteger('appointment_id');
+            $table->foreign('appointment_id')->references('id')->on('appointments');
+            $table->unsignedInteger('appointment_status_id');
+            $table->foreign('appointment_status_id')->references('id')->on('appointment_statuses');
             $table->date('cron_current_date');
             $table->timestamps();
         });

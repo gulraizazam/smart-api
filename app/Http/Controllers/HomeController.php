@@ -9,6 +9,7 @@ use App\Helpers\GeneralFunctions;
 use App\Models\Activity;
 use App\Models\AppointmentLog;
 use App\Models\Appointments;
+use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentStatuses;
 use App\Models\AuditTrailActions;
 use App\Models\AuditTrailChanges;
@@ -20,6 +21,7 @@ use App\Models\Leads;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\Regions;
+use App\Models\RoleHasUsers;
 use App\Models\Services;
 use App\Models\User;
 use App\Models\UserHasLocations;
@@ -30,8 +32,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use App\Models\AppointmentsDailyStats;
-use App\Models\RoleHasUsers;
+
 
 class HomeController extends Controller
 {

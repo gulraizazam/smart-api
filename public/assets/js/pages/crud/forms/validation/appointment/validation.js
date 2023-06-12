@@ -29,18 +29,13 @@ var UpdateStatusValidation = function () {
         });
         statusValidate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-                
+
                 if (response.status) {
-                    
+
                     toastr.success(response.message);
                     closePopup(modal_id);
                     let query = get_query();
-                    
-                    // if (query.type == 1) {
-                    //     var appointment = 'consultancy';
-                    // } else {
-                    //     var appointment = 'treatment';
-                    // }
+
                     if(response.data.appontment_type_id==1){
                         var appointment = 'consultancy';
                     }else {
@@ -116,6 +111,11 @@ var EditAppointmentValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
                         }
                     },
@@ -196,7 +196,12 @@ var CreateConsultancytValidation = function () {
                     phone: {
                         validators: {
                             notEmpty: {
-                                message: 'The phone  field is required'
+                                message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
                         }
                     },
@@ -285,6 +290,11 @@ var CreateTreatmentValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
                         }
                     },

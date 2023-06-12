@@ -363,9 +363,13 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::post('leads/junk_datatable', [LeadsController::class, 'junkDatatable'])->name('leads.junk_datatable');
 
+    Route::get('leads/edit/service/{id}/{service_id}', [LeadsController::class, 'editService'])->name('leads.edit.service');
     Route::get('leads/showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('leads.showleadstatus');
     Route::put('leads/storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('leads.storeleadstatus');
     Route::get('leads/detail/{id}', [LeadsController::class, 'detail'])->name('leads.detail');
+    Route::get('leads/getleadid', [LeadsController::class, 'getleadid'])->name('leads.getlead.id');
+    Route::get('leads/get_lead_number', [LeadsController::class, 'getleadnumber'])->name('leads.get_lead_number');
+    Route::get('leads/phone/search', [LeadsController::class, 'phoneSearch'])->name('leads.phone.search');
     Route::resource('leads', LeadsController::class)->except('index');
     Route::post('leads/datatable', [LeadsController::class, 'datatable'])->name('leads.datatable');
     // Convert Lead

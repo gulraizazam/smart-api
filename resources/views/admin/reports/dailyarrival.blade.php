@@ -71,7 +71,18 @@
                                             </select>
                                             <span id="service_id_handler"></span>
                                         </div>
-                                       
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="users" >
+                                           {!! Form::label('created_by', 'Created By', ['class' => 'control-label']) !!}
+                                           <select class="form-control select2" id="created_by" name="created_by">
+                                               <option value="">All</option>
+                                               @foreach($Users as $user)
+                                                   <option value="{{$user->id}}">
+                                                           <b>{!! $user['name'] !!}</b></option>
+                                               @endforeach
+                                           </select>
+                                           <span id="created_by_handler"></span>
+                                       </div>
+
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
                                             <a href="javascript:void(0);" onclick="loadConvertedReport($(this));" id="load_converted_report"
@@ -82,6 +93,7 @@
                                         {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.converted_report_load'], 'id' => 'report-form']) !!}
                                         {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
                                         {!! Form::hidden('service_id', null, ['id' => 'service_id-report']) !!}
+                                        {!! Form::hidden('created_by', null, ['id' => 'created_by-report']) !!}
                                         {!! Form::close() !!}
                                     </div>
                                 </div>
@@ -104,8 +116,8 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script> 
-        <script src="{{asset('assets/js/dailyarrival.js')}}"></script>       
+        <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+        <script src="{{asset('assets/js/dailyarrival.js')}}"></script>
     @endpush
-    
+
 @endsection
