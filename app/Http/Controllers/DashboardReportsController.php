@@ -2278,7 +2278,6 @@ class DashboardReportsController extends Controller
     public function CentreWiseArrival(Request $request)
     {
         $lables = [];
-        $lables = [];
         $total_apts = [];
         $arrived_apts = [];
         $walkin_apts = [];
@@ -2395,7 +2394,7 @@ class DashboardReportsController extends Controller
 
         ]);
     }
-    
+
     public function CallWiseArrival(Request $request)
     {
         $total_apts = [];
