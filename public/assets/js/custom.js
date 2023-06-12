@@ -1198,13 +1198,9 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                 delay: 250,
                 data: {search: $(this).val()},
                 success: function (response) {
-                    console.log('respoinse',response);
                     let html = '';
                     let leads = response.data.leads;
                     let haveObjleads = Object.keys(leads).length;
-                    console.log("leads: ", leads)
-                    console.log("leads.length: ", leads.length)
-                    console.log("haveObjleads: ", haveObjleads)
                     if (leads.length) {
                         console.log('leads.length',leads.length);
                         leads.forEach(function (lead) {
@@ -1234,7 +1230,6 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
 function selectLead(name, lead_id,  search_id, flag=1) {
     $("." + search_id).parent('div').find('.search_field').val(lead_id).change();
     $("#add_lead_id").val(lead_id);
-   // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
