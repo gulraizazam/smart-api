@@ -58,30 +58,30 @@ class Appointments extends Model
         'consultancy_type' => 'in_person',
     ];
 
-    public static function updateServiceRecord($id, $data, $account_id)
+    public static function updateServiceRecord($id, $appointment_data, $account_id)
     {
         // Set Account ID
-        $data['account_id'] = $account_id;
-        $data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        $data['converted_by'] = Auth::User()->id;
+        $appointment_data['account_id'] = $account_id;
+        $appointment_data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
+        $appointment_data['converted_by'] = Auth::User()->id;
 
-        if (isset($data['start'])) {
-            $data['scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
-            $data['scheduled_time'] = Carbon::parse($data['start'])->format('H:i:s');
-            if ($data['first_scheduled_count'] == 0) {
-                $data['first_scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
-                $data['first_scheduled_time'] = Carbon::parse($data['start'])->format('H:i:s');
-                $data['first_scheduled_count'] = 1;
+        if (isset($appointment_data['start'])) {
+            $appointment_data['scheduled_date'] = Carbon::parse($appointment_data['start'])->format('Y-m-d');
+            $appointment_data['scheduled_time'] = Carbon::parse($appointment_data['start'])->format('H:i:s');
+            if ($appointment_data['first_scheduled_count'] == 0) {
+                $appointment_data['first_scheduled_date'] = Carbon::parse($appointment_data['start'])->format('Y-m-d');
+                $appointment_data['first_scheduled_time'] = Carbon::parse($appointment_data['start'])->format('H:i:s');
+                $appointment_data['first_scheduled_count'] = 1;
             } else {
-                $data['scheduled_at_count'] = $data['scheduled_at_count'] + 1;
+                $appointment_data['scheduled_at_count'] = $appointment_data['scheduled_at_count'] + 1;
             }
         } else {
-            $data['scheduled_date'] = null;
-            $data['scheduled_time'] = null;
-            $data['first_scheduled_at'] = null;
+            $appointment_data['scheduled_date'] = null;
+            $appointment_data['scheduled_time'] = null;
+            $appointment_data['first_scheduled_at'] = null;
         }
-        if (isset($data['resourceId'])) {
-            $data['resource_id'] = $data['resourceId'];
+        if (isset($appointment_data["resourceId"])) {
+            $appointment_data["resource_id"] = $appointment_data["resourceId"];
         }
 
         $record = self::where([
@@ -93,7 +93,7 @@ class Appointments extends Model
             return null;
         }
 
-        $record->update($data);
+        $record->update($appointment_data);
 
         return $record;
 
@@ -426,31 +426,31 @@ class Appointments extends Model
      * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    public static function updateRecord($id, $data, $account_id)
+    static public function updateRecord($id, $appointment_data, $account_id)
     {
         // Set Account ID
-        $data['account_id'] = $account_id;
-        $data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        if ($data['reschedule'] == 1) {
-            $data['converted_by'] = Auth::User()->id;
+        $appointment_data['account_id'] = $account_id;
+        $appointment_data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
+        if($appointment_data['reschedule'] == 1){
+            $appointment_data['converted_by'] = Auth::User()->id;
         } else {
-            $data['updated_by'] = Auth::User()->id;
+            $appointment_data['updated_by'] = Auth::User()->id;
         }
 
-        if (isset($data['start'])) {
-            $data['scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
-            $data['scheduled_time'] = Carbon::parse($data['start'])->format('H:i:s');
-            if ($data['first_scheduled_count'] == 0) {
-                $data['first_scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
-                $data['first_scheduled_time'] = Carbon::parse($data['start'])->format('H:i:s');
-                $data['first_scheduled_count'] = 1;
+        if (isset($appointment_data['start'])) {
+            $appointment_data['scheduled_date'] = Carbon::parse($appointment_data['start'])->format('Y-m-d');
+            $appointment_data['scheduled_time'] = Carbon::parse($appointment_data['start'])->format('H:i:s');
+            if ($appointment_data['first_scheduled_count'] == 0) {
+                $appointment_data['first_scheduled_date'] = Carbon::parse($appointment_data['start'])->format('Y-m-d');
+                $appointment_data['first_scheduled_time'] = Carbon::parse($appointment_data['start'])->format('H:i:s');
+                $appointment_data['first_scheduled_count'] = 1;
             } else {
-                $data['scheduled_at_count'] = $data['scheduled_at_count'] + 1;
+                $appointment_data['scheduled_at_count'] = $appointment_data['scheduled_at_count'] + 1;
             }
         } else {
-            $data['scheduled_date'] = null;
-            $data['scheduled_time'] = null;
-            $data['first_scheduled_at'] = null;
+            $appointment_data['scheduled_date'] = null;
+            $appointment_data['scheduled_time'] = null;
+            $appointment_data['first_scheduled_at'] = null;
         }
 
         $record = self::where([
@@ -462,7 +462,7 @@ class Appointments extends Model
             return null;
         }
 
-        $record->update($data);
+        $record->update($appointment_data);
 
         return $record;
     }

@@ -711,22 +711,22 @@ class GeneralFunctions
     public static function patientNameUpdate($phone, $name)
     {
         $accountId = Auth::user()->account_id;
-        $patientPhone = GeneralFunctions::cleanNumber($phone);
-        Leads::where(['phone' => $patientPhone])->update([
+        $patient_phone = GeneralFunctions::cleanNumber($phone);
+        Leads::where(['phone' => $patient_phone])->update([
             'name' => $name,
         ]);
 
         Patients::where([
-            'phone' => $patientPhone,
+            'phone' => $patient_phone,
             'user_type_id' => Config::get('constants.patient_id'),
             'account_id' => $accountId,
         ])->update(['name' => $name]);
 
-        Appointments::whereIn('patient_id', function ($query) use ($patientPhone, $accountId) {
+        Appointments::whereIn('patient_id', function ($query) use ($patient_phone, $accountId) {
             $query->select('id')
                 ->from('users')
                 ->where([
-                    'phone' => $patientPhone,
+                    'phone' => $patient_phone,
                     'user_type_id' => Config::get('constants.patient_id'),
                     'account_id' => $accountId,
                 ]);
