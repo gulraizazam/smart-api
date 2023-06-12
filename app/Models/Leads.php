@@ -144,7 +144,6 @@ class Leads extends BaseModal
 		{
             $leads = collect();
             if (is_numeric($name)) {
-
                 $leads =  self::where([
                     'active' => '1',
                     'account_id' => $account_id,
@@ -154,28 +153,23 @@ class Leads extends BaseModal
             if ($leads->count() > 0) {
                 return $leads;
             }
-		    $name = GeneralFunctions::patientSearch($name);
-           
-            $phone_numeric = GeneralFunctions::clearnString($name);
-			if (is_numeric($phone_numeric)) {
-                
-                $phone = GeneralFunctions::cleanNumber($name);
-				$res =  self::where([
-					['active', '=', '1'],
-					['account_id', '=', $account_id],
-					['phone', 'LIKE', "%{$phone}%"]
-				])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
-               return $res;
-			} else {
 
-				$res = self::where([
-					['active', '=', '1'],
-					['account_id', '=', $account_id],
-					['name', 'LIKE', "%{$name}%"]
-				])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
-                return $res->toArray();
+		    $name = GeneralFunctions::patientSearch($name);
+            $phone_numeric = GeneralFunctions::clearnString($name);
+
+            $condition = [];
+			if (is_numeric($phone_numeric)) {
+                $phone = GeneralFunctions::cleanNumber($name);
+                $condition[] = ['phone', 'LIKE', "%{$phone}%"];
+			} else {
+                $condition[] = ['name', 'LIKE', "%{$name}%"];
 			}
-		}
+
+            $lead_result =  Leads::where(['active' => '1', 'account_id' => $account_id])
+                ->where($condition)
+                ->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
+            return $lead_result;
+        }
 
     /**
      * Prepare SMS Contnet for Delivery
