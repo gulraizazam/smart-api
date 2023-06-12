@@ -1120,7 +1120,14 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'phone', $phone);
         }
         if (hasFilter($filters, 'service_id')) {
-            $where[] = array(['service_id' => $filters['service_id']]);
+            $service_id = Services::where(['id' => $filters['service_id']])->first();
+            dd($service_id, $filters['service_id']);
+            if($service_id->parent_id == 0){
+                $service_ids = Services::where(['parent_id' => $service_id->id])->get()->pluck('id')->toArray();
+                dd($service_ids);
+            } else {
+                $where[] = array(['service_id' => $service_id->id]);
+            }
             Filters::put(Auth::User()->id, $filename, 'service_id', $filters['service_id']);
         }
         if (hasFilter($filters, 'created_by')) {
