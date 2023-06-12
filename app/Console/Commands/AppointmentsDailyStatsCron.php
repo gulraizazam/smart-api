@@ -3,12 +3,15 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Appointments;
 use App\Models\AppointmentTypes;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentsDailyStats;
 use App\Models\Locations;
 use Carbon\Carbon;
+use App\Models\Cities;
+use App\Helpers\ACL;
 
 class AppointmentsDailyStatsCron extends Command
 {

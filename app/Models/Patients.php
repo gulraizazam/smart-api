@@ -187,24 +187,25 @@ use Illuminate\Support\Facades\Auth as FacadesAuth;
 		 * @return (mixed)
 		 */
 		static public function createRecord($data,$flag=0)
-		{   if($flag == 1){
-			$patient=Patients::where('phone',$data['phone'])->first();
-			if(!$patient){
-				$record = Patients::create($data);
-				AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-				return $record;
-			}else{
-				if($flag == 1){
-					return 'Patient is already exist';
-				}else{
-				  return $patient;
-				}
-			}
-		}else{
-			$record = Patients::create($data);
-			AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-			return $record;
-		}
+		{
+            if($flag == 1){
+			    $patient = Patients::where(['phone' => $data['phone']])->first();
+                if(!$patient){
+                    $record = Patients::create($data);
+                    AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+                    return $record;
+                }else{
+                    if($flag == 1){
+                        return 'Patient is already exist';
+                    }else{
+                    return $patient;
+                    }
+                }
+            }else{
+                $record = Patients::create($data);
+                AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+                return $record;
+            }
 		}
 
 		/**
@@ -218,7 +219,6 @@ use Illuminate\Support\Facades\Auth as FacadesAuth;
 		{
 			if ($appointmentData) {
 				if ($appointmentData['patient_id'] != 0) {
-
 					$old_data = (Patients::find($appointmentData['patient_id']))->toArray();
 				}
 				if(isset($appointmentData['patient_id_1'])){
@@ -285,13 +285,13 @@ use Illuminate\Support\Facades\Auth as FacadesAuth;
 				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
 					return self::where($where)->count();
 				}else{
-					return self::where($where)->where('active',1)->count();
+					return self::where($where)->where(['active' => 1])->count();
 				}
 			} else {
 				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
 					return self::count();
 				}else{
-					return self::where('active',1)->count();
+					return self::where(['active' => 1])->count();
 				}
 			}
 		}
@@ -310,23 +310,23 @@ use Illuminate\Support\Facades\Auth as FacadesAuth;
 		{
 
 			$where = self::filters_patients($request, $account_id, $apply_filter, $filename);
-			
+
             list($orderBy, $order) = getSortBy($request);
 
 			if (count($where)) {
 				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
 					return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
 				}else{
-					return self::where('active',1)->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+					return self::where(['active' => 1])->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
 				}
-				
+
 				//return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
 			} else {
 				//return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
 				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
 					return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at", "DESC")->select('*', 'id as patient_id')->get();
 				}else{
-					return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
+					return self::where(['active' => 1])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
 				}
 			}
 		}

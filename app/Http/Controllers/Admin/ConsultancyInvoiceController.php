@@ -544,7 +544,7 @@ class ConsultancyInvoiceController extends Controller
         }
 
         // In case of auto change status we need to update by so that s why we did
-        $appointment_data_status['converted_by'] = Auth::User()->id;
+        $appointment_data_status['updated_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
         // End
         Leads::where('patient_id',$appointmentinfo->patient_id)->update(['lead_status_id'=>4]);

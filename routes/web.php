@@ -79,7 +79,7 @@ use Illuminate\Support\Facades\DB;
 // Authentication Routes...
     Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
-    
+
     Route::get('/deliver-on-appointment-book', function () {
         \Artisan::call('appointment:deliver-on-appointment-book');
     });
@@ -110,12 +110,8 @@ use Illuminate\Support\Facades\DB;
        ->get();
         foreach($appointments as $apt){
            PackageAdvances::where('package_id',$apt->pkg_id)->where('appointment_id',null)->update(['appointment_id' => $apt->appointment_id]);
-             
-            
-            
         }
-        dd("ok");
-    }); 
+    });
 // Check Session
     Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
@@ -139,7 +135,7 @@ use Illuminate\Support\Facades\DB;
             $rr =  Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->select('leads.lead_status_id','leads.active','leads.city_id','leads.service_id','leads.active' ,'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId','users.*')
             ->get();
-       
+
        return view('admin.records',compact('rr'));
 
         });
@@ -316,24 +312,21 @@ use Illuminate\Support\Facades\DB;
 
         Route::get('leads/junk', [LeadsController::class, 'junk'])->name('leads.junk');
 
-
+        Route::post('leads/load_child_services', [LeadsController::class, 'LoadChildServices'])->name('leads.load_child_services');
         Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
 
         Route::post('leads/status', [LeadsController::class, 'status'])->name('leads.status');
 
 
         Route::get('LeadCommentStore',[LeadsController::class, 'LeadStoreComment'])->name('leads.storecomment');
-
         Route::get('LeadEditDetail',[LeadsController::class, 'LeadEditDetailAjax'])->name('leads.LeadEditDetail');
 
         //Lead Import
         Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
-
         Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
 
 
         Route::resource('leads', LeadsController::class)->only('index');
-
         Route::post('leads/comment_store', [LeadsController:: class, 'comment_store'])->name('leads.comment_store');
         // Load and Save Lead Statuses
         Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
@@ -580,7 +573,7 @@ use Illuminate\Support\Facades\DB;
         //Route end for Operations reports
 
         /////////////////Dashboard Stats//////
-        
+
         Route::get('dashboard/collection-by-centre', [DashboardReportsController::class,'collectionByCentre'])->name('dashboard.collection_by_centre');
         Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
         Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
@@ -591,13 +584,19 @@ use Illuminate\Support\Facades\DB;
         Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
         Route::get('dashboard/appointment-by-status', [DashboardReportsController::class, 'AppointmentByStatus'])->name('dashboard.appointment_by_status');
         Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
+        // Dashboard CENTRE WISE ARRIVAL
+        Route::get('dashboard/centre_wise_arrival', [DashboardReportsController::class, 'CentreWiseArrival'])->name('dashboard.centre_wise_arrival');
+
+        Route::get('dashboard/location_wise_arrival', [DashboardReportsController::class, 'LocationWiseArrival'])->name('dashboard.location_wise_arrival');
+        Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
+        // Dashboard CSR WISE ARRIVAL
+        Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
+
         Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class,'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
         Route::get('getcolor',[ServicesController::class,'GetColor'])->name('dashboard.getcolor');
         Route::get('dashboard/getchild', [DashboardReportsController::class,'getChild'])->name('dashboard.getchild');
-        Route::get('dashboard/centre_wise_arrival', [DashboardReportsController::class, 'CentreWiseArrival'])->name('dashboard.centre_wise_arrival');
-        Route::get('dashboard/location_wise_arrival', [DashboardReportsController::class, 'LocationWiseArrival'])->name('dashboard.location_wise_arrival');
-        Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
-        Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
+
         Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
+
         Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
     });

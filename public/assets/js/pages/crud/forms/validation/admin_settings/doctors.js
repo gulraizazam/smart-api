@@ -26,7 +26,17 @@ var AddUserValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
+                        },
+                        stringLength: {
+                            min: 10,
+                            max: 12,
+                            message: 'The phone number must be between 10 and 12 characters'
                         }
                     },
                     gender: {
@@ -120,7 +130,17 @@ var EditUserValidation = function () {
                         validators: {
                             notEmpty: {
                                 message: 'The phone field is required'
+                            },
+                            stringLength: {
+                                min: 10,
+                                max: 12,
+                                message: 'The phone number must be between 10 and 12 characters'
                             }
+                        },
+                        stringLength: {
+                            min: 10,
+                            max: 12,
+                            message: 'The phone number must be between 10 and 12 characters'
                         }
                     },
                     gender: {
@@ -171,7 +191,7 @@ var EditUserValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('doctor');
                 } else {
                     toastr.error(response.message);
                 }
@@ -233,7 +253,7 @@ var PasswordValidation = function () {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('doctor');
                 } else {
                     toastr.error(response.message);
                 }

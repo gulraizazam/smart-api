@@ -217,7 +217,6 @@ function setStatusData(response, id) {
 }
 
 function editSchedule(id,doc_id,loc_id) {
-
     $("#modal_change_appointment_schedule").modal("show");
     $("#schedule_appointment_id").val(id)
     $("#schedule_doctor_id").val(doc_id)
@@ -1025,11 +1024,17 @@ function setSmsLogs(response) {
 
 }
 
+function resetCustomFilters() {
+    $('.appointment_patient_id').val(null).trigger('change');
+    $(".filter-field").val('');
+    setQueryStringParameter('type');
+    setQueryStringParameter('from');
+    setQueryStringParameter('to');
+    setQueryStringParameter('center_id');
+}
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
-
         let filters =  {
             delete: '',
             patient_id: $("#treatment_patient_id").val(),
@@ -1051,14 +1056,47 @@ function applyFilters(datatable) {
             filter: 'filter',
         }
 
+        if($("#treatment_search_service").val() == 13){
+            resetFilters(datatable);
+        }
+        else{
+            datatable.search(filters, 'search');
+        }
         datatable.search(filters, 'search');
     });
 
 }
+function resetFilters(datatable) {
 
+    let filters =  {
+        delete: '',
+        patient_id: '',
+        name: '',
+        phone: '',
+        date_from: '',
+        date_to: '',
+        appointment_type_id: '',
+        service_id: '',
+        region_id: '',
+        city_id: '',
+        location_id: '',
+        doctor_id: '',
+        appointment_status_id: '',
+        consultancy_type: '',
+        created_from: '',
+        created_to: '',
+        created_by: '',
+        converted_by: '',
+        updated_by: '',
+        filter: 'filter_cancel',
+    }
+    datatable.search(filters, 'search');
+
+
+}
 function resetAllFilters(datatable) {
-
     $('#reset-filters').on('click', function() {
+        $('#treatment_search_service').empty();
         let filters =  {
             delete: '',
             patient_id: '',
@@ -1083,13 +1121,10 @@ function resetAllFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function setFilters(filter_values, active_filters) {
-
     try {
-
         let appointment_statuses = filter_values.appointment_statuses;
         let appointment_types = filter_values.appointment_types;
         let cities = filter_values.cities;
@@ -1135,10 +1170,10 @@ function setFilters(filter_values, active_filters) {
             if (service.name == 'All Services') {
                 service_options += '<option value="' + service.id + '">' + service.name + '</option>';
             } else {
-              service_options += '<option value="' + service.id + '">' + service.name + '</option>';
-              Object.values(service.children).forEach(function (child, index) {
-                  service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;'+child.name + '</option>';
-              });
+                service_options += '<option value="bold-' + service.id + '">' + service.name + '</option>';
+                Object.values(service.children).forEach(function (child, index) {
+                    service_options += '<option value="' + child.id + '">' + '\t&nbsp; \t&nbsp; \t&nbsp;'+child.name + '</option>';
+                });
             }
         });
 
@@ -1230,7 +1265,7 @@ function setFilters(filter_values, active_filters) {
     }
 }
 
-function resetCustomFilters() {
+function reaCustomFilters() {
 
     $('.appointment_patient_id').val(null).trigger('change');
     $(".filter-field").val('');

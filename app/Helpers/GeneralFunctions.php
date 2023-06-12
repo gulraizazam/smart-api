@@ -10,6 +10,7 @@ namespace App\Helpers;
 
 use App\Models\AppointmentLog;
 use App\Models\Appointments;
+use App\Models\Leads;
 use App\Models\Locations;
 use App\Models\RoleHasUsers;
 use App\Models\Services;
@@ -18,6 +19,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use App\Models\Patients;
+use Config;
 
 class GeneralFunctions
 {
@@ -60,11 +63,11 @@ class GeneralFunctions
 
     public static function prepareNumber4Call($phoneNumber, $type = 0)
     {
-        
+
         if (!Gate::allows('contact')) {
             return '***********';
         } else {
-           
+
             if(isset($phoneNumber) && $phoneNumber != ""){
                 if ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 0) {
                     return '+92' . $phoneNumber;
@@ -77,7 +80,7 @@ class GeneralFunctions
                 return $phoneNumber;
             }
             // Adjust Country Code for Pakistan
-            
+
         }
     }
 
@@ -233,10 +236,10 @@ class GeneralFunctions
                                     $children = Services::where(['parent_id' => $service->id,'active' => $filters['status']])->orderBy('name')->get();
                                 }else{
                                     $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
-                                }    
+                                }
                             }else{
                                 $children = collect($service->children)->flatten();
-                                unset($service->children);   
+                                unset($service->children);
                             }
                             $mergedServices[] = $service->toArray();
                             $children = $children->toArray();
@@ -329,14 +332,13 @@ class GeneralFunctions
                     $mergedServices[] = $child;
                 }
             }
-            return $mergedServices;   
+            return $mergedServices;
         }
     }
 
     public static function ServicesTreeList($request = null, $total = 0, $id = null)
     {
         $where = [];
-        $active = (Gate::allows("view_inactive_services")) ? 0 : 1;
         if ($total >= 0 && $id == null) {
             $filename = 'services';
             if(isset($request)){
@@ -424,11 +426,11 @@ class GeneralFunctions
                                     $children = Services::where(['parent_id' => $service->id , 'active' => $filters['status']])->orderBy('name')->get();
                                 }else{
                                     $children = Services::where(['parent_id' => $service->id,'active' => 1])->orderBy('name')->get();
-                                }    
+                                }
                             }else{
                                 $children = collect($service->children)->flatten();
                                 unset($service->children);
-                                
+
                             }
                             $mergedServices[] = $service->toArray();
                             $children = $children->toArray();
@@ -505,28 +507,26 @@ class GeneralFunctions
                     return $mergedServices;
                 }
             }
-            $query = Services::with(['children'=> function($q) use($active){
-                $q->where('active', $active);
+            $query = Services::with(['children'=> function($q){
                 $q->orderBy('name');
             }])
-            ->where(['parent_id' => 0, 'active' => $active])
+            ->where(['parent_id' => 0])
             ->where('slug', '!=', 'all')
             ->when(isset($where) && count($where) > 0, fn($q) => $q->where($where));
             $services = $query->get()->toArray();
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
             array_unshift($services, $allserviceslug);
-            return $services;   
+            return $services;
         } else {
-            $query = Services::with(['children'=> function($q) use($active){
-                $q->where('active', $active);
+            $query = Services::with(['children'=> function($q) {
                 $q->orderBy('name');
             }])
-            ->where(['id' => $id, 'parent_id' => 0, 'active' => $active])
+            ->where(['id' => $id, 'parent_id' => 0])
             ->where('slug', '!=', 'all');
             $services[] = $query->first()->toArray();
             $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
             array_unshift($services, $allserviceslug);
-            return $services;  
+            return $services;
         }
     }
 
@@ -675,7 +675,7 @@ class GeneralFunctions
     public static function getLocationIds($location_id)
     {
         if ($location_id) {
-            
+
             $location_ids = null;
             if (is_string($location_id)) {
                 $location_id = explode(',', $location_id);
@@ -689,6 +689,30 @@ class GeneralFunctions
         }
 
         return null;
+    }
+
+    public static function patientNameUpdate($phone, $name){
+        $accountId = Auth::user()->account_id;
+        $patient_phone = GeneralFunctions::cleanNumber($phone);
+        Leads::where(['phone' => $patient_phone])->update([
+            'name' => $name,
+        ]);
+
+        Patients::where([
+            'phone' => $patient_phone,
+            'user_type_id' => Config::get('constants.patient_id'),
+            'account_id' => $accountId
+        ])->update(['name' => $name]);
+
+        Appointments::whereIn('patient_id', function ($query) use ($patient_phone, $accountId) {
+            $query->select('id')
+                ->from('users')
+                ->where([
+                    'phone' => $patient_phone,
+                    'user_type_id' => Config::get('constants.patient_id'),
+                    'account_id' => $accountId
+                ]);
+        })->update(['name' => $name]);
     }
 
 }
