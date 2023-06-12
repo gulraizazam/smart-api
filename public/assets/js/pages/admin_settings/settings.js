@@ -31,7 +31,7 @@ validate.on('core.form.valid', function (event) {
         if (response.status == true) {
             toastr.success(response.message);
             closePopup(modal_id);
-            reInitTable();
+            reInitTable('globalSetting');
         } else {
             toastr.error(response.message);
         }
