@@ -144,6 +144,7 @@ class Leads extends BaseModal
 		{
             $leads = collect();
             if (is_numeric($name)) {
+
                 $leads =  self::where([
                     'active' => '1',
                     'account_id' => $account_id,
@@ -154,20 +155,25 @@ class Leads extends BaseModal
                 return $leads;
             }
 		    $name = GeneralFunctions::patientSearch($name);
+           
             $phone_numeric = GeneralFunctions::clearnString($name);
 			if (is_numeric($phone_numeric)) {
+                
                 $phone = GeneralFunctions::cleanNumber($name);
-				return self::where([
+				$res =  self::where([
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
 					['phone', 'LIKE', "%{$phone}%"]
 				])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
+               return $res;
 			} else {
-				return self::where([
+
+				$res = self::where([
 					['active', '=', '1'],
 					['account_id', '=', $account_id],
 					['name', 'LIKE', "%{$name}%"]
 				])->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
+                return $res->toArray();
 			}
 		}
 

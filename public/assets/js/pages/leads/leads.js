@@ -1273,6 +1273,7 @@ function addValidation(elem) {
 function cencleLead($this) {
     $(".msg_new_lead").hide();
     $(".new_lead").prop("checked", false);
+    $('.lead_search_id').attr('readonly',false);
 }
 
 function cencleImport($this) {
