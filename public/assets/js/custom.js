@@ -1201,14 +1201,22 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                     console.log('respoinse',response);
                     let html = '';
                     let leads = response.data.leads;
-                    // const Haveleads = Object.keys(leads).length;
-                    // console.log('Haveleads', Haveleads);
+                    let haveObjleads = Object.keys(leads).length;
+                    console.log("leads: ", leads)
+                    console.log("leads.length: ", leads.length)
+                    console.log("haveObjleads: ", haveObjleads)
                     if (leads.length) {
                         console.log('leads.length',leads.length);
                         leads.forEach(function (lead) {
                             console.log('leads.length',lead);
                             html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
                         });
+                        $(".suggestion-list").html(html);
+                        $(".suggesstion-box").show();
+                    } else if (haveObjleads) {
+                        for (const [key, lead] of Object.entries(leads)) {
+                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
+                        }
                         $(".suggestion-list").html(html);
                         $(".suggesstion-box").show();
                     } else {
