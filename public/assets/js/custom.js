@@ -1198,10 +1198,15 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                 delay: 250,
                 data: {search: $(this).val()},
                 success: function (response) {
+                    console.log('respoinse',response);
                     let html = '';
                     let leads = response.data.leads;
+                    // const Haveleads = Object.keys(leads).length;
+                    // console.log('Haveleads', Haveleads);
                     if (leads.length) {
+                        console.log('leads.length',leads.length);
                         leads.forEach(function (lead) {
+                            console.log('leads.length',lead);
                             html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
                         });
                         $(".suggestion-list").html(html);
