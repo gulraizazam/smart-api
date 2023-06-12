@@ -49,7 +49,8 @@
 
                         <div class="fv-row col-md-12 mt-10">
                             <label class="custom_checkbox">
-                                <input class="new_lead" name="new_lead" onclick="newLead();" type="checkbox">
+                                <input class="new_lead" name="new_lead" onclick="newLead();" type="checkbox" >
+                               
                                 <strong></strong>
                                <span class="ml-5"> New Lead ?</span>
                             </label>
