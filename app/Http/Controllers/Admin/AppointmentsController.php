@@ -1123,7 +1123,7 @@ class AppointmentsController extends Controller
             $service_id = GeneralFunctions::getServiceId($filters['service_id']);
             $service_check = Services::where(['id' => $service_id])->first();
             if($service_check->parent_id == 0){
-                $service_ids = Services::where(['parent_id' => $service_check->id])->get()->pluck('id')->toArray();
+                $service_ids = Services::where(['parent_id' => $service_check->id])->pluck('id')->toArray();
             } else {
                 $service_ids = [$service_check->id];
             }
