@@ -16,15 +16,16 @@ class CreateLeadsServicesTable extends Migration
         Schema::create('leads_services', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('lead_id');
-            $table->foreign('lead_id')->references('id')->on('leads');
             $table->unsignedInteger('service_id');
-            $table->foreign('service_id')->references('id')->on('services');
             $table->unsignedInteger('child_service_id')->nullable();
-            $table->foreign('child_service_id')->references('id')->on('services');
             $table->unsignedInteger('consultancy_id')->nullable();
-            $table->foreign('consultancy_id')->references('id')->on('appointments');
             $table->integer('status')->default(0);
             $table->timestamps();
+
+            $table->foreign('lead_id')->references('id')->on('leads');
+            $table->foreign('service_id')->references('id')->on('services');
+            $table->foreign('child_service_id')->references('id')->on('services');
+            $table->foreign('consultancy_id')->references('id')->on('appointments');
         });
     }
 
