@@ -4391,14 +4391,14 @@ class AppointmentsController extends Controller
         }
 
         $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
-        $patientData = $appointmentData;
-        $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
-        $appointmentData['patient_id'] = $patient->id;
-        $appointmentData['lead_id'] = $lead->id;
-        $appointmentData['created_at'] = Filters::getCurrentTimeStamp();
-        $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
+        $patientData = $appointment_data;
+        $patient = Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
+        $appointment_data['patient_id'] = $patient->id;
+        $appointment_data['lead_id'] = $lead->id;
+        $appointment_data['created_at'] = Filters::getCurrentTimeStamp();
+        $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
 
-        $appointment = Appointments::create($appointmentData);
+        $appointment = Appointments::create($appointment_data);
         $find_apt = Appointments::find($appointment->id);
         $find_cons = Appointments::latest()->first();
         if($find_cons){
@@ -4425,7 +4425,7 @@ class AppointmentsController extends Controller
             }
         }
 
-        Appointments::where(['patient_id' => $appointmentData['patient_id']])->update(['name' => $appointmentData['name'], 'updated_at' => $appointmentData['updated_at']]);
+        Appointments::where(['patient_id' => $appointment_data['patient_id']])->update(['name' => $appointment_data['name'], 'updated_at' => $appointment_data['updated_at']]);
         if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
             $appointment->update(array(
                 'send_message' => 1
