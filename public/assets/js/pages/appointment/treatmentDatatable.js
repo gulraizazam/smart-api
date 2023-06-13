@@ -1035,13 +1035,6 @@ function resetCustomFilters() {
 
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
-        let service_value = $("#treatment_search_service").val();
-        if (service_value.indexOf("bold-") !== -1) {
-            var service = service_value.split("bold-")[1];
-        } else {
-            var service = $("#treatment_search_service").val();
-        }
-        console.log($("#treatment_search_service").val(service));
         let filters =  {
             delete: '',
             patient_id: $("#treatment_patient_id").val(),
@@ -1050,7 +1043,7 @@ function applyFilters(datatable) {
             date_to: $("#treatment_appoint_end").val(),
             region_id: $("#treatment_search_region").val(),
             city_id: $("#treatment_search_city").val(),
-            service_id: $("#treatment_search_service").val(service),
+            service_id: $("#treatment_search_service").val(),
             location_id: $("#treatment_search_centre").val(),
             doctor_id: $("#treatment_search_doctor").val(),
             appointment_status_id: $("#treatment_search_status").val(),
