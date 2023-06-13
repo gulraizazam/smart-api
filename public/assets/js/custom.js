@@ -1131,33 +1131,37 @@ function get_query(){
 }
 function patientSearch(search_id = 'patient_id',flag=1) {
     $("." + search_id).on("keyup",function() {
+    $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
         if ($(this).val().length < 2) {
             $(".suggesstion-box").hide();
             return false;
         }
+        var that = $(this);
         if ($(this).val() != '') {
-            let form_type = $(this).parents("form").find('.form_type').val();
-            $.ajax({
-                type: "GET",
-                url: route('admin.users.getpatient.id'),
-                dataType: 'json',
-                data: {search: $(this).val()},
-                success: function (response) {
-                    let html = '';
-                    let patients = response.data.patients;
-                    if (patients.length) {
-                        patients.forEach(function (patient) {
-                            html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
-                        });
+            setTimeout(function(){
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: {search: that.val()},
+                    success: function (response) {
+                        let html = '';
                         $(".suggestion-list").html(html);
-                        $(".suggesstion-box").show();
-                    } else {
-                        $(".suggesstion-box").hide();
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                        } else {
+                            $(".suggesstion-box").hide();
+                        }
                     }
-                }
-            });
+                });
+            },1000);
         } else {
             $(".suggesstion-box").hide();
         }
@@ -1181,7 +1185,6 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
     $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
-        console.log($(this).val());
         if ($(this).val().length < 2) {
             $(".suggesstion-box").hide();
             return false;
@@ -1197,10 +1200,18 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                 success: function (response) {
                     let html = '';
                     let leads = response.data.leads;
+                    let haveObjleads = Object.keys(leads).length;
                     if (leads.length) {
+
                         leads.forEach(function (lead) {
                             html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
                         });
+                        $(".suggestion-list").html(html);
+                        $(".suggesstion-box").show();
+                    } else if (haveObjleads) {
+                        for (const [key, lead] of Object.entries(leads)) {
+                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
+                        }
                         $(".suggestion-list").html(html);
                         $(".suggesstion-box").show();
                     } else {
@@ -1218,7 +1229,6 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
 function selectLead(name, lead_id,  search_id, flag=1) {
     $("." + search_id).parent('div').find('.search_field').val(lead_id).change();
     $("#add_lead_id").val(lead_id);
-   // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();

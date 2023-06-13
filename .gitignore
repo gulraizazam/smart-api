@@ -21,3 +21,4 @@ composer.lock
 /.idea
 /.vscode
 server.php
+.sql
