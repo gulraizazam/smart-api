@@ -558,6 +558,7 @@ class LeadsController extends Controller
      */
     public function store(Request $request)
     {
+
         if (!Gate::allows('leads_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
