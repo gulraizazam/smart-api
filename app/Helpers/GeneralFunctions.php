@@ -530,6 +530,13 @@ class GeneralFunctions
         }
     }
 
+    public static function getServiceId($service_id) {
+        if(str_contains($service_id, "bold-")){
+            return str_replace("bold-", "", $service_id);
+        }
+        return $service_id;
+    }
+
     private static function appendAllService()
     {
         $allService = [];
