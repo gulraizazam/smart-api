@@ -71,7 +71,7 @@ class ServicesController extends Controller
             // Get Total Records
             $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
             list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-            $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
+            $Services = GeneralFunctions::servicesList($request, $iTotalRecords);
             $records = $this->getExtraData($records);
             if (!empty($Services)) {
                 $records["data"] = $Services;
@@ -120,7 +120,7 @@ class ServicesController extends Controller
 
         return $records;
     }
-   
+
     /**
      * Show the form for creating new Permission.
      *
@@ -337,5 +337,5 @@ class ServicesController extends Controller
         }else{
             return response()->json(['color'=>"#000"]);
         }
-    } 
+    }
 }
