@@ -4399,63 +4399,43 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, "Doctor or machine is not available and Appointment is not scheduled.", false);
             }
         }
-        if (!$request->get('lead_id')) {
-            if (isset($appointmentData['patient_id']) && $appointmentData['patient_id'] != '') {
-                $patientData = $appointmentData;
-                if ($request->new_patient == '1') {
-                    $patientData['user_type_id'] = Config::get('constants.patient_id');
-                    $patient = Patients::createRecord($patientData);
-                } else {
-                    $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
-                }
-            }
-            $leadObj = $appointmentData;
-            unset($leadObj['lead_id']);
-            $leadObj['patient_id'] = $patient->id;
-        } else {
-            $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
-            $patientData = $appointmentData;
-            if ($request->new_patient == '1') {
-                $patientData['user_type_id'] = Config::get('constants.patient_id');
-                $patient = Patients::createRecord($patientData);
-            } else {
-                $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
-            }
-        }
+
         $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
+        $patientData = $appointmentData;
+        $patient = Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $patientData);
         $appointmentData['patient_id'] = $patient->id;
         $appointmentData['lead_id'] = $lead->id;
         $appointmentData['created_at'] = Filters::getCurrentTimeStamp();
         $appointmentData['updated_at'] = Filters::getCurrentTimeStamp();
+        
         $appointment = Appointments::create($appointmentData);
         $find_apt = Appointments::find($appointment->id);
         $find_cons = Appointments::latest()->first();
         if($find_cons){
-            $parents = Services::where(['parent_id' => $find_cons->service_id])->first();
+            $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id])->first();
+            if($lead_service){
+                $lead_service_child = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id, 'child_service_id' => $request->service_id])->first();
+                if($lead_service_child){
+                    LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id, 'child_service_id' => $request->service_id])->update([
+                        'treatment_id' => $find_cons->id,
+                    ]);
+                } else {
+                    LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id])->update([
+                        'child_service_id' => $request->service_id,
+                        'treatment_id' => $find_cons->id,
+                    ]);
+                }
+            } else {
+                $lead_service_latest = LeadsServices::where(['lead_id' => $lead->id])->orderBy('id', 'desc')->first();
+                LeadsServices::where(['id' => $lead_service_latest->id, 'lead_id' => $lead->id])->update([
+                    'service_id' => $request->base_service_id,
+                    'child_service_id' => $request->service_id,
+                    'treatment_id' => $find_cons->id,
+                ]);
+            }
         }
+
         Appointments::where(['patient_id' => $appointmentData['patient_id']])->update(['name' => $appointmentData['name'], 'updated_at' => $appointmentData['updated_at']]);
-        if ($request->new_patient == '1') {
-            $leadObj = $appointmentData;
-            unset($leadObj['lead_id']);
-            $leadObj['patient_id'] = $patient->id;
-            $lead = Leads::createRecord($leadObj, $status = "Appointment");
-        } else {
-            if ($request->get('lead_id') && $request->get('lead_id')) {
-                $lead = Leads::findOrFail($request->get('lead_id'));
-                if ($lead) {
-                    $data = array(
-                        'town_id' => $request->get('town_id')
-                    );
-                    $lead = Leads::updateRecord($lead->id, $data, $status = "Appointment");
-                }
-            }
-            if ($request->get('lead_id') && $request->get('lead_id')) {
-                $lead = Leads::findOrFail($request->get('lead_id'));
-                if ($lead) {
-                    $lead->update(['service_id' => $request->get('service_id')]);
-                }
-            }
-        }
         if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
             $appointment->update(array(
                 'send_message' => 1
