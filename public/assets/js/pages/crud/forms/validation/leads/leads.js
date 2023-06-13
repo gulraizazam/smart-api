@@ -162,6 +162,9 @@ var AddValidation = function () {
 
                 if (response.status) {
                     toastr.success(response.message);
+                    $('select[name="child_service_id"]').empty();
+                    $(".msg_new_lead").hide();
+                    $('select[name="location_id"]').empty();
                     closePopup(modal_id);
                     reInitTable();
                 } else {

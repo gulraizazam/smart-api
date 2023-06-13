@@ -18,7 +18,8 @@ class AddUsersDetailsToLeadsTable extends Migration
             $table->string('email')->nullable();
             $table->string('phone')->index();
             $table->tinyInteger('gender')->default(0);
-            $table->unsignedBigInteger('referred_by')->nullable();
+            $table->unsignedInteger('referred_by');
+            $table->foreign('referred_by')->references('id')->on('users');
         });
     }
 
