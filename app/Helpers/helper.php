@@ -107,7 +107,6 @@ use App\Models\PackageAdvances;
     }
 
     function getPatientInfo() {
-
         $total_cash_in = PackageAdvances::where('cash_flow', '=', 'in')
             ->where('patient_id', request('id'))
             ->sum('cash_amount');
