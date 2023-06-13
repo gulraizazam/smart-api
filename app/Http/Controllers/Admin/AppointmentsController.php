@@ -4389,40 +4389,38 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, "Doctor or machine is not available and Appointment is not scheduled.", false);
             }
         }
-
         $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
         $patientData = $appointment_data;
-        $patient = Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
-        $appointment_data['patient_id'] = $patient->id;
+        Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
         $appointment_data['lead_id'] = $lead->id;
         $appointment_data['created_at'] = Filters::getCurrentTimeStamp();
         $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
 
         $appointment = Appointments::create($appointment_data);
-        $find_apt = Appointments::find($appointment->id);
         $find_cons = Appointments::latest()->first();
         if($find_cons){
             $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id])->first();
             if($lead_service){
-                $lead_service_child = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id, 'child_service_id' => $request->service_id])->first();
-                if($lead_service_child){
-                    LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id, 'child_service_id' => $request->service_id])->update([
-                        'treatment_id' => $find_cons->id,
-                    ]);
-                } else {
-                    LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id])->update([
-                        'child_service_id' => $request->service_id,
-                        'treatment_id' => $find_cons->id,
-                    ]);
-                }
+                $lead_service->update([
+                    'child_service_id' => $request->service_id,
+                    'treatment_id' => $find_cons->id,
+                ]);
             } else {
                 $lead_service_latest = LeadsServices::where(['lead_id' => $lead->id])->orderBy('id', 'desc')->first();
-                LeadsServices::where(['id' => $lead_service_latest->id, 'lead_id' => $lead->id])->update([
+                $lead_service_latest->update([
                     'service_id' => $request->base_service_id,
                     'child_service_id' => $request->service_id,
                     'treatment_id' => $find_cons->id,
                 ]);
             }
+            LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
+            $lead_service = LeadsServices::updateOrCreate([
+                'lead_id' => $lead->id,
+                'service_id' => $request->base_service_id,
+                'child_service_id' => $request->service_id
+            ], [
+                'status' => 1,
+            ]);
         }
 
         Appointments::where(['patient_id' => $appointment_data['patient_id']])->update(['name' => $appointment_data['name'], 'updated_at' => $appointment_data['updated_at']]);
