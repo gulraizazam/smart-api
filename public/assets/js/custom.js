@@ -1131,7 +1131,6 @@ function get_query(){
 }
 function patientSearch(search_id = 'patient_id',flag=1) {
     $("." + search_id).on("keyup",function() {
-    $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
         if ($(this).val().length < 2) {
