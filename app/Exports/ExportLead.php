@@ -63,22 +63,22 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         if($this->request->end_date != null || $this->request->end_date != ''){
             $where[] = array('created_at', '<=', $this->request->end_date . ' 23:59:59');
         }
-        $resultQuery = Leads::whereIn('city_id', ACL::getUserCities());
+        $result_query = Leads::whereIn('city_id', ACL::getUserCities());
         if(count($where)){
-            $resultQuery->where($where);
+            $result_query->where($where);
         }
         if($this->request->service_id != null || $this->request->service_id != ''){
             $service_id = $this->request->service_id;
-            $resultQuery->with(['lead_service' => function($q) use($service_id){
+            $result_query->with(['lead_service' => function($q) use($service_id){
                 $q->where(['service_id' => $service_id, 'status' => 1]);
             }]);
         } else {
-            $resultQuery->with(['lead_service' => function($q){
+            $result_query->with(['lead_service' => function($q){
                 $q->where(['status' => 1]);
             }]);
         }
-        $result = $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
-            ->orderBy("created_at", "DESC")->latest()->get()->unique('phone');
+        $result = $result_query->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
+            ->orderBy("id", "DESC")->latest()->get()->unique('phone');
 
         return $result;
     }
