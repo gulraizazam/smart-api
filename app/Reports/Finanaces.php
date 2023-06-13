@@ -2907,7 +2907,7 @@ class Finanaces
         ->map(function ($appointments_info) {
             return $appointments_info->sum('conversion_spend');
         });
-        $avg_C_val = 0;->where(
+        $avg_C_val = 0;
         if(count($conversionsByPatient) > 0){
             $avg_cxlient_value = $avg_C_val/count($conversionsByPatient);
         }else{
