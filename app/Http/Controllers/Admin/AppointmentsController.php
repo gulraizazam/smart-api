@@ -1120,13 +1120,12 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'phone', $phone);
         }
         if (hasFilter($filters, 'service_id')) {
-            $service_id = Services::where(['id' => $filters['service_id']])->first();
-            dd($service_id, $filters['service_id']);
-            if($service_id->parent_id == 0){
-                $service_ids = Services::where(['parent_id' => $service_id->id])->get()->pluck('id')->toArray();
-                dd($service_ids);
+            $service_id = GeneralFunctions::getServiceId($filters['service_id']);
+            $service_check = Services::where(['id' => $service_id])->first();
+            if($service_check->parent_id == 0){
+                $service_ids = Services::where(['parent_id' => $service_check->id])->get()->pluck('id')->toArray();
             } else {
-                $where[] = array(['service_id' => $service_id->id]);
+                $service_ids = [$service_check->id];
             }
             Filters::put(Auth::User()->id, $filename, 'service_id', $filters['service_id']);
         }
@@ -1210,6 +1209,9 @@ class AppointmentsController extends Controller
         if (count($where)) {
             $countQuery->where($where);
         }
+        if (hasFilter($filters, 'service_id')) {
+            $countQuery->whereIn('service_id', $service_ids);
+        }
         if (hasFilter($filters, 'location_id')) {
             $ids = explode(',', $filters['location_id']);
             if (count($ids) > 1) {
@@ -1275,6 +1277,9 @@ class AppointmentsController extends Controller
         $resultQuery->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $resultQuery->where($where);
+        }
+        if (hasFilter($filters, 'service_id')) {
+            $resultQuery->whereIn('service_id', $service_ids);
         }
         if (hasFilter($filters, 'location_id')) {
             $ids = explode(',', $filters['location_id']);
