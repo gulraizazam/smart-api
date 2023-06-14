@@ -2883,9 +2883,18 @@ class Finanaces
         }
         $maxConversion = collect($appointments_info)->max('conversion_spend');
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
-        $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
-
+        //$converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
+        $converted_Records = Appointments::join('package_advances','appointments.id','package_advances.appointment_id')
+        ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
+         ->where(['appointments.base_appointment_status_id'=> 2])
+        ->whereDate('package_advances.created_at', '>=', $start_date)
+        ->whereDate('package_advances.created_at', '<=', $end_date)
+        ->where('package_advances.cash_amount','>',0)
+        ->where($where)
+        ->count();
+        dd($converted_Records);
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
+
         $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
             ->where('scheduled_date','<=',$end_date)
             ->where($where)
