@@ -2890,10 +2890,10 @@ class Finanaces
         ->whereDate('package_advances.created_at', '>=', $start_date)
         ->whereDate('package_advances.created_at', '<=', $end_date)
         ->where('package_advances.cash_amount','>',0)
-        ->where('conversion_spend',"!=","")
+        
         ->where($where)
         ->count();
-        dd($converted_Records);
+        dd($location_ids);
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
 
         $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
