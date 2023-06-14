@@ -2905,12 +2905,12 @@ class Finanaces
         }else{
             $average_client_coversion = 0;
         }
-        $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->select('conversion_spend')->groupBy('patient_id')
+        $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
         ->map(function ($appointments_info) {
             return $appointments_info->sum('conversion_spend');
         });
-        dd($conversionsByPatient);
-        $avg_C_val = 0;
+   
+        $avg_C_val = array_sum($conversionsByPatient->toArray());
         if(count($conversionsByPatient) > 0){
             $avg_cxlient_value = $avg_C_val/count($conversionsByPatient);
         }else{
