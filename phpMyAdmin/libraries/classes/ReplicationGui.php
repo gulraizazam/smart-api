@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\Query\Utilities;
-
 use function __;
 use function htmlspecialchars;
 use function in_array;
 use function mb_strrpos;
 use function mb_strtolower;
 use function mb_substr;
+use PhpMyAdmin\Query\Utilities;
 use function sprintf;
 use function str_replace;
 use function strlen;
@@ -33,8 +32,8 @@ class ReplicationGui
     private $template;
 
     /**
-     * @param Replication $replication Replication instance
-     * @param Template    $template    Template instance
+     * @param  Replication  $replication Replication instance
+     * @param  Template  $template    Template instance
      */
     public function __construct(Replication $replication, Template $template)
     {
@@ -115,9 +114,8 @@ class ReplicationGui
     /**
      * returns HTML for replica replication configuration
      *
-     * @param bool  $serverReplicaStatus      Whether it is Primary or Replica
-     * @param array $serverReplicaReplication Replica replication
-     *
+     * @param  bool  $serverReplicaStatus      Whether it is Primary or Replica
+     * @param  array  $serverReplicaReplication Replica replication
      * @return string HTML code
      */
     public function getHtmlForReplicaConfiguration(
@@ -222,8 +220,7 @@ class ReplicationGui
     /**
      * returns HTML for changing primary
      *
-     * @param string $submitName submit button name
-     *
+     * @param  string  $submitName submit button name
      * @return string HTML code
      */
     public function getHtmlForReplicationChangePrimary($submitName): string
@@ -244,10 +241,9 @@ class ReplicationGui
     /**
      * This function returns html code for table with replication status.
      *
-     * @param string $type     either primary or replica
-     * @param bool   $isHidden if true, then default style is set to hidden, default value false
-     * @param bool   $hasTitle if true, then title is displayed, default true
-     *
+     * @param  string  $type     either primary or replica
+     * @param  bool  $isHidden if true, then default style is set to hidden, default value false
+     * @param  bool  $hasTitle if true, then title is displayed, default true
      * @return string HTML code
      */
     public function getHtmlForReplicationStatusTable(
@@ -436,7 +432,7 @@ class ReplicationGui
             $_SESSION['replication']['sr_action_status'] = 'error';
             $_SESSION['replication']['sr_action_info'] = __(
                 'Connection to server is disabled, please enable'
-                . ' $cfg[\'AllowArbitraryServer\'] in phpMyAdmin configuration.'
+                .' $cfg[\'AllowArbitraryServer\'] in phpMyAdmin configuration.'
             );
         } elseif (isset($_POST['replica_changeprimary'])) {
             $result = $this->handleRequestForReplicaChangePrimary();
@@ -479,7 +475,7 @@ class ReplicationGui
             } else {
                 Core::sendHeaderLocation(
                     './index.php?route=/server/replication'
-                    . Url::getCommonRaw($GLOBALS['urlParams'], '&')
+                    .Url::getCommonRaw($GLOBALS['urlParams'], '&')
                 );
             }
         }
@@ -597,7 +593,7 @@ class ReplicationGui
         }
 
         $qStop = $this->replication->replicaControl('STOP', null, DatabaseInterface::CONNECT_USER);
-        $qSkip = $dbi->tryQuery('SET GLOBAL SQL_SLAVE_SKIP_COUNTER = ' . $count . ';');
+        $qSkip = $dbi->tryQuery('SET GLOBAL SQL_SLAVE_SKIP_COUNTER = '.$count.';');
         $qStart = $this->replication->replicaControl('START', null, DatabaseInterface::CONNECT_USER);
 
         return $qStop !== false && $qStop !== -1 &&

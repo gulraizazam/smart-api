@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
+use function __;
 use PhpMyAdmin\Html\Generator;
 use PhpMyAdmin\Query\Compatibility;
 use PhpMyAdmin\Server\Privileges;
-
-use function __;
 use function strlen;
 
 /**
@@ -20,7 +19,7 @@ class UserPassword
     private $serverPrivileges;
 
     /**
-     * @param Privileges $serverPrivileges Privileges object
+     * @param  Privileges  $serverPrivileges Privileges object
      */
     public function __construct(Privileges $serverPrivileges)
     {
@@ -61,7 +60,7 @@ class UserPassword
     /**
      * Change the password
      *
-     * @param string $password New password
+     * @param  string  $password New password
      */
     public function changePassword($password): string
     {
@@ -80,14 +79,14 @@ class UserPassword
         }
 
         $sql_query = 'SET password = '
-            . ($password == '' ? '\'\'' : $hashing_function . '(\'***\')');
+            .($password == '' ? '\'\'' : $hashing_function.'(\'***\')');
 
         $isPerconaOrMySql = Compatibility::isMySqlOrPerconaDb();
         if ($isPerconaOrMySql && $serverVersion >= 50706) {
-            $sql_query = 'ALTER USER \'' . $dbi->escapeString($username)
-                . '\'@\'' . $dbi->escapeString($hostname)
-                . '\' IDENTIFIED WITH ' . $orig_auth_plugin . ' BY '
-                . ($password == '' ? '\'\'' : '\'***\'');
+            $sql_query = 'ALTER USER \''.$dbi->escapeString($username)
+                .'\'@\''.$dbi->escapeString($hostname)
+                .'\' IDENTIFIED WITH '.$orig_auth_plugin.' BY '
+                .($password == '' ? '\'\'' : '\'***\'');
         } elseif (
             ($isPerconaOrMySql && $serverVersion >= 50507)
             || (Compatibility::isMariaDb() && $serverVersion >= 50200)
@@ -102,7 +101,7 @@ class UserPassword
                 $value = 0;
             }
 
-            $dbi->tryQuery('SET `old_passwords` = ' . $value . ';');
+            $dbi->tryQuery('SET `old_passwords` = '.$value.';');
         }
 
         $this->changePassUrlParamsAndSubmitQuery(
@@ -138,12 +137,12 @@ class UserPassword
     /**
      * Changes password for a user
      *
-     * @param string $username         Username
-     * @param string $hostname         Hostname
-     * @param string $password         Password
-     * @param string $sql_query        SQL query
-     * @param string $hashing_function Hashing function
-     * @param string $orig_auth_plugin Original Authentication Plugin
+     * @param  string  $username         Username
+     * @param  string  $hostname         Hostname
+     * @param  string  $password         Password
+     * @param  string  $sql_query        SQL query
+     * @param  string  $hashing_function Hashing function
+     * @param  string  $orig_auth_plugin Original Authentication Plugin
      */
     private function changePassUrlParamsAndSubmitQuery(
         $username,
@@ -160,12 +159,12 @@ class UserPassword
         $serverVersion = $dbi->getVersion();
 
         if (Compatibility::isMySqlOrPerconaDb() && $serverVersion >= 50706) {
-            $local_query = 'ALTER USER \'' . $dbi->escapeString($username)
-                . '\'@\'' . $dbi->escapeString($hostname) . '\''
-                . ' IDENTIFIED with ' . $orig_auth_plugin . ' BY '
-                . ($password == ''
+            $local_query = 'ALTER USER \''.$dbi->escapeString($username)
+                .'\'@\''.$dbi->escapeString($hostname).'\''
+                .' IDENTIFIED with '.$orig_auth_plugin.' BY '
+                .($password == ''
                 ? '\'\''
-                : '\'' . $dbi->escapeString($password) . '\'');
+                : '\''.$dbi->escapeString($password).'\'');
         } elseif (
             Compatibility::isMariaDb()
             && $serverVersion >= 50200
@@ -185,16 +184,16 @@ class UserPassword
             $hashedPassword = $this->serverPrivileges->getHashedPassword($_POST['pma_pw']);
 
             $local_query = 'UPDATE `mysql`.`user` SET'
-                . " `authentication_string` = '" . $hashedPassword
-                . "', `Password` = '', "
-                . " `plugin` = '" . $orig_auth_plugin . "'"
-                . " WHERE `User` = '" . $dbi->escapeString($username)
-                . "' AND Host = '" . $dbi->escapeString($hostname) . "';";
+                ." `authentication_string` = '".$hashedPassword
+                ."', `Password` = '', "
+                ." `plugin` = '".$orig_auth_plugin."'"
+                ." WHERE `User` = '".$dbi->escapeString($username)
+                ."' AND Host = '".$dbi->escapeString($hostname)."';";
         } else {
-            $local_query = 'SET password = ' . ($password == ''
+            $local_query = 'SET password = '.($password == ''
                 ? '\'\''
-                : $hashing_function . '(\''
-                    . $dbi->escapeString($password) . '\')');
+                : $hashing_function.'(\''
+                    .$dbi->escapeString($password).'\')');
         }
 
         if (! @$dbi->tryQuery($local_query)) {

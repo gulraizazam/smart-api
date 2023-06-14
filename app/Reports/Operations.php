@@ -110,7 +110,7 @@ class Operations
     /**
      * Company Health Status Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function companyHealthReport($data, $account_id)
@@ -219,7 +219,7 @@ class Operations
     /**
      * Hihest paid client Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function highestpaidclient($data, $filters, $account_id)
@@ -319,7 +319,7 @@ class Operations
     /**
      * List of service that can be offer as complimentory
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function listofservicecanoffercomplimentory($data, $account_id)
@@ -348,7 +348,7 @@ class Operations
     /**
      * List of service that can not be offer as complimentory
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function listofservicecannotoffercomplimentory($data, $account_id)
@@ -381,7 +381,7 @@ class Operations
     /**
      * Conversion report for consultancy
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function conversionreportconsultancy($data, $account_id)
@@ -561,7 +561,7 @@ class Operations
     /**
      * Conversion report for Treatment
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function conversionreporttreatment($data, $account_id)
@@ -673,7 +673,7 @@ class Operations
     /**
      * DAR Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function dar_report($data, $account_id)
@@ -903,7 +903,7 @@ class Operations
     /**
      * Complimentory Treatment Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function complimentoryreport($data, $account_id)
@@ -966,7 +966,7 @@ class Operations
     /**
      * DTR report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function dtrreport($data, $account_id, $filters)

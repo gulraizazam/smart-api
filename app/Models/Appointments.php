@@ -80,8 +80,8 @@ class Appointments extends Model
             $appointment_data['scheduled_time'] = null;
             $appointment_data['first_scheduled_at'] = null;
         }
-        if (isset($appointment_data["resourceId"])) {
-            $appointment_data["resource_id"] = $appointment_data["resourceId"];
+        if (isset($appointment_data['resourceId'])) {
+            $appointment_data['resource_id'] = $appointment_data['resourceId'];
         }
 
         $record = self::where([
@@ -426,12 +426,12 @@ class Appointments extends Model
      * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $appointment_data, $account_id)
+    public static function updateRecord($id, $appointment_data, $account_id)
     {
         // Set Account ID
         $appointment_data['account_id'] = $account_id;
         $appointment_data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        if($appointment_data['reschedule'] == 1){
+        if ($appointment_data['reschedule'] == 1) {
             $appointment_data['converted_by'] = Auth::User()->id;
         } else {
             $appointment_data['updated_by'] = Auth::User()->id;
@@ -575,7 +575,7 @@ class Appointments extends Model
     /**
      * Check if child records exist
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (boolean)
      */
     protected static function isChildExists($id, $account_id)

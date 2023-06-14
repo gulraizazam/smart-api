@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Import;
 
+use function __;
+use function header;
+use function ini_get;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\Import\Ajax;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\Template;
-
-use function __;
-use function header;
-use function ini_get;
 use function session_start;
 use function session_write_close;
 use function time;

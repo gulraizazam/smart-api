@@ -17,7 +17,7 @@ class Stock extends Model
     /**
      * Get Total Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $product_id = 0)
@@ -33,7 +33,7 @@ class Stock extends Model
     /**
      * Get SUb of product quantity
      *
-     * @param (int) $stock_type and  product_id
+     * @param  (int)  $stock_type and  product_id
      * @return (mixed)
      */
     public static function sumProductQuantity($product_id)

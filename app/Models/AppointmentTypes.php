@@ -28,7 +28,7 @@ class AppointmentTypes extends Model
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecords($account_id)

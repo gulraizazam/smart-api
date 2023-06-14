@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Schema;
 
+use function __;
 use PhpMyAdmin\Plugins\Schema\Svg\SvgRelationSchema;
 use PhpMyAdmin\Plugins\SchemaPlugin;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyMainGroup;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyRootGroup;
 use PhpMyAdmin\Properties\Options\Items\BoolPropertyItem;
 use PhpMyAdmin\Properties\Plugins\SchemaPluginProperties;
-
-use function __;
 
 /**
  * Handles the schema export for the SVG format
@@ -68,7 +67,7 @@ class SchemaSvg extends SchemaPlugin
     /**
      * Exports the schema into SVG format.
      *
-     * @param string $db database name
+     * @param  string  $db database name
      */
     public function exportSchema($db): bool
     {

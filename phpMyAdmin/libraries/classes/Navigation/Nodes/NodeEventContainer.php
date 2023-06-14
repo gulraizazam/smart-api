@@ -7,10 +7,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Navigation\Nodes;
 
-use PhpMyAdmin\Navigation\NodeFactory;
-
 use function __;
 use function _pgettext;
+use PhpMyAdmin\Navigation\NodeFactory;
 
 /**
  * Represents a container for events nodes in the navigation tree

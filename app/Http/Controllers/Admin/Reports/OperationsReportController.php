@@ -168,9 +168,9 @@ class OperationsReportController extends Controller
     /**
      * General Revnue Report Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function centretargetreportExcel($reportData, $start_date, $end_date)
@@ -286,10 +286,10 @@ class OperationsReportController extends Controller
     /**
      * Company Health Report by Month
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $month
-     * @param (mixed) $year
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $month
+     * @param  (mixed)  $year
      * @return \Illuminate\Http\Response
      */
     private static function companyHealthExcel($reportData, $month, $year, $start_date, $end_date, $remaining_days, $regions, $account)
@@ -431,10 +431,10 @@ class OperationsReportController extends Controller
     /**
      * Higest Paid Client Report Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function highestpaidclientExcel($reportData, $filters, $month, $year)
@@ -586,10 +586,10 @@ class OperationsReportController extends Controller
     /**
      * List of client who claimed refunds days base for plans excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function ListofClientswhoclaimedrefundsdaysbaseExcel($reportData, $month, $year)
@@ -666,10 +666,10 @@ class OperationsReportController extends Controller
     /**
      * List of client who claimed refunds days base for plans excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function ListofClientswhoclaimedrefundsdaybasenonplansExcel($reportData, $month, $year)
@@ -802,9 +802,9 @@ class OperationsReportController extends Controller
     /**
      * List of service that can be offer as complimentory excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $year
-     * @param (mixed) $month
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $year
+     * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
     private static function listofservicethatcanbeofferascomplimentoryExcel($reportData, $month, $year)
@@ -902,9 +902,9 @@ class OperationsReportController extends Controller
     /**
      * List of service that can not be offer as complimentory excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $year
-     * @param (mixed) $month
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $year
+     * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
     private static function listofservicethatcannotbeofferascomplimentoryExcel($reportData, $month, $year)
@@ -1001,9 +1001,9 @@ class OperationsReportController extends Controller
     /**
      * Conversion report for consultancy
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $year
-     * @param (mixed) $month
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $year
+     * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
     private static function conversionreportconsultancyExcel($reportData, $start_date, $end_date)
@@ -1132,9 +1132,9 @@ class OperationsReportController extends Controller
     /**
      * Conversion report for Treatment
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $year
-     * @param (mixed) $month
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $year
+     * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
     private static function conversionreporttreatmentExcel($reportData, $start_date, $end_date)
@@ -1339,9 +1339,9 @@ class OperationsReportController extends Controller
     /**
      * Dar Report excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $year
-     * @param (mixed) $month
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $year
+     * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
     private static function dar_report_excel($reportData, $start_date, $end_date, $locationData, $reportName = 'DAR Report', $type = 'dar')
@@ -1559,9 +1559,9 @@ class OperationsReportController extends Controller
     /**
      * List of service that can be offer as complimentory excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $year
-     * @param (mixed) $month
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $year
+     * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
     private static function complimentorytreatmentexcel($reportData, $start_date, $end_date, $filters)
@@ -1676,9 +1676,9 @@ class OperationsReportController extends Controller
     /**
      * DTR Report
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $year
-     * @param (mixed) $month
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $year
+     * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
     private static function dtrreportExcel($reportData, $month, $year)

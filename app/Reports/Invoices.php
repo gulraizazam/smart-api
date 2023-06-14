@@ -23,7 +23,7 @@ class Invoices
     /**
      * Generate Account sales Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getAccountSalesReport($data)
@@ -87,7 +87,7 @@ class Invoices
     /**
      * Generate Daily Employee Stats Summary
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getDailyEmployeeStatsSummary($data, $filters = [])
@@ -223,7 +223,7 @@ class Invoices
     /**
      * Generate Daily Employee Stats
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getDailyEmployeeStats($data, $filters = [])
@@ -328,7 +328,7 @@ class Invoices
     /**
      * Generate Sales By service category
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getSalesbyServiceCategory($data, $filters = [])
@@ -510,7 +510,7 @@ class Invoices
     /**
      * Generate Discount Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getdiscountReport($data)

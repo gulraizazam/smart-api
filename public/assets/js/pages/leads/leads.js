@@ -948,8 +948,10 @@ function hideShowAdvanceFilters(active_filters) {
 }
 
 function newLead() {
+    
     $('.new_lead').change(function () {
-        if ($(this).is(":checked")) {
+       
+        if ($(this).is(":checked")) { 
             $('.lead_search_id').attr('readonly',true);
             $('.new_lead').val('1');
             $('.msg_new_lead').show();
@@ -957,7 +959,10 @@ function newLead() {
             $("#add_full_name").removeAttr("readonly");
             if ($("#add_phone").val() != '') {
                 $(".select2").val(null).trigger("change");
-                $("input").val('');
+                $('.lead_search_id').val('');
+                $("#add_phone").val('');
+                $("#add_full_name").val('');
+                
             }
             $("#add_phone").attr("readonly",false);
             $("#add_full_name").attr("readonly",false);
@@ -1273,6 +1278,7 @@ function addValidation(elem) {
 function cencleLead($this) {
     $(".msg_new_lead").hide();
     $(".new_lead").prop("checked", false);
+    $('.lead_search_id').attr('readonly',false);
 }
 
 function cencleImport($this) {

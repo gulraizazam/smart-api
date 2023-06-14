@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function array_merge;
+use function is_array;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Gis\GisVisualization;
@@ -13,10 +16,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function array_merge;
-use function is_array;
 
 /**
  * Handles creation of the GIS visualizations.
@@ -192,8 +191,8 @@ final class GisVisualizationController extends AbstractController
     }
 
     /**
-     * @param string $filename File name
-     * @param string $format   Save format
+     * @param  string  $filename File name
+     * @param  string  $format   Save format
      */
     private function saveToFile(string $filename, string $format): void
     {

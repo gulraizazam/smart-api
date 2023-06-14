@@ -257,7 +257,7 @@ class AuditTrails extends BaseModal
      * Get Total Records
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords()
@@ -269,9 +269,9 @@ class AuditTrails extends BaseModal
      * Get Records
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords($iDisplayStart, $iDisplayLength, $account_id = false)

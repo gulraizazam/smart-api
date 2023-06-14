@@ -78,8 +78,8 @@ class ResourceTypes extends BaseModal
     /**
      * Get Records
      *
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength)
@@ -234,7 +234,7 @@ class ResourceTypes extends BaseModal
     /**
      * Check if resource type use any where.
      *
-     * @param (int) $id, $account id
+     * @param  (int)  $id, $account id
      * @return (boolean)
      */
     public static function isExists($id, $account_id)

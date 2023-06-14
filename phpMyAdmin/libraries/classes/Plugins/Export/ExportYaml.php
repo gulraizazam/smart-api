@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Export;
 
+use function __;
+use function array_key_exists;
+use function is_numeric;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\FieldMetadata;
 use PhpMyAdmin\Plugins\ExportPlugin;
@@ -14,10 +17,6 @@ use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyMainGroup;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyRootGroup;
 use PhpMyAdmin\Properties\Options\Items\HiddenPropertyItem;
 use PhpMyAdmin\Properties\Plugins\ExportPluginProperties;
-
-use function __;
-use function array_key_exists;
-use function is_numeric;
 use function str_replace;
 use function stripslashes;
 
@@ -67,7 +66,7 @@ class ExportYaml extends ExportPlugin
      */
     public function exportHeader(): bool
     {
-        $this->export->outputHandler('%YAML 1.1' . $GLOBALS['crlf'] . '---' . $GLOBALS['crlf']);
+        $this->export->outputHandler('%YAML 1.1'.$GLOBALS['crlf'].'---'.$GLOBALS['crlf']);
 
         return true;
     }
@@ -77,7 +76,7 @@ class ExportYaml extends ExportPlugin
      */
     public function exportFooter(): bool
     {
-        $this->export->outputHandler('...' . $GLOBALS['crlf']);
+        $this->export->outputHandler('...'.$GLOBALS['crlf']);
 
         return true;
     }
@@ -85,8 +84,8 @@ class ExportYaml extends ExportPlugin
     /**
      * Outputs database header
      *
-     * @param string $db      Database name
-     * @param string $dbAlias Aliases of db
+     * @param  string  $db      Database name
+     * @param  string  $dbAlias Aliases of db
      */
     public function exportDBHeader($db, $dbAlias = ''): bool
     {
@@ -96,7 +95,7 @@ class ExportYaml extends ExportPlugin
     /**
      * Outputs database footer
      *
-     * @param string $db Database name
+     * @param  string  $db Database name
      */
     public function exportDBFooter($db): bool
     {
@@ -106,9 +105,9 @@ class ExportYaml extends ExportPlugin
     /**
      * Outputs CREATE DATABASE statement
      *
-     * @param string $db         Database name
-     * @param string $exportType 'server', 'database', 'table'
-     * @param string $dbAlias    Aliases of db
+     * @param  string  $db         Database name
+     * @param  string  $exportType 'server', 'database', 'table'
+     * @param  string  $dbAlias    Aliases of db
      */
     public function exportDBCreate($db, $exportType, $dbAlias = ''): bool
     {
@@ -118,12 +117,12 @@ class ExportYaml extends ExportPlugin
     /**
      * Outputs the content of a table in JSON format
      *
-     * @param string $db       database name
-     * @param string $table    table name
-     * @param string $crlf     the end of line sequence
-     * @param string $errorUrl the url to go back in case of error
-     * @param string $sqlQuery SQL query for obtaining data
-     * @param array  $aliases  Aliases of db/table/columns
+     * @param  string  $db       database name
+     * @param  string  $table    table name
+     * @param  string  $crlf     the end of line sequence
+     * @param  string  $errorUrl the url to go back in case of error
+     * @param  string  $sqlQuery SQL query for obtaining data
+     * @param  array  $aliases  Aliases of db/table/columns
      */
     public function exportData(
         $db,
@@ -159,10 +158,10 @@ class ExportYaml extends ExportPlugin
 
             // Output table name as comment if this is the first record of the table
             if ($record_cnt == 1) {
-                $buffer = '# ' . $db_alias . '.' . $table_alias . $crlf;
-                $buffer .= '-' . $crlf;
+                $buffer = '# '.$db_alias.'.'.$table_alias.$crlf;
+                $buffer .= '-'.$crlf;
             } else {
-                $buffer = '-' . $crlf;
+                $buffer = '-'.$crlf;
             }
 
             for ($i = 0; $i < $columns_cnt; $i++) {
@@ -171,13 +170,15 @@ class ExportYaml extends ExportPlugin
                 }
 
                 if ($record[$i] === null) {
-                    $buffer .= '  ' . $columns[$i] . ': null' . $crlf;
+                    $buffer .= '  '.$columns[$i].': null'.$crlf;
+
                     continue;
                 }
 
                 $isNotString = isset($fieldsMeta[$i]) && $fieldsMeta[$i]->isNotType(FieldMetadata::TYPE_STRING);
                 if (is_numeric($record[$i]) && $isNotString) {
-                    $buffer .= '  ' . $columns[$i] . ': ' . $record[$i] . $crlf;
+                    $buffer .= '  '.$columns[$i].': '.$record[$i].$crlf;
+
                     continue;
                 }
 
@@ -196,7 +197,7 @@ class ExportYaml extends ExportPlugin
                     ],
                     $record[$i]
                 );
-                $buffer .= '  ' . $columns[$i] . ': "' . $record[$i] . '"' . $crlf;
+                $buffer .= '  '.$columns[$i].': "'.$record[$i].'"'.$crlf;
             }
 
             if (! $this->export->outputHandler($buffer)) {
@@ -210,9 +211,9 @@ class ExportYaml extends ExportPlugin
     /**
      * Outputs result raw query in YAML format
      *
-     * @param string $errorUrl the url to go back in case of error
-     * @param string $sqlQuery the rawquery to output
-     * @param string $crlf     the end of line sequence
+     * @param  string  $errorUrl the url to go back in case of error
+     * @param  string  $sqlQuery the rawquery to output
+     * @param  string  $crlf     the end of line sequence
      */
     public function exportRawQuery(string $errorUrl, string $sqlQuery, string $crlf): bool
     {

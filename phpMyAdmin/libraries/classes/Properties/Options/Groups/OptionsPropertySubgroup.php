@@ -48,7 +48,7 @@ class OptionsPropertySubgroup extends OptionsPropertyGroup
     /**
      * Sets the subgroup header
      *
-     * @param PropertyItem $subgroupHeader subgroup header
+     * @param  PropertyItem  $subgroupHeader subgroup header
      */
     public function setSubgroupHeader($subgroupHeader): void
     {

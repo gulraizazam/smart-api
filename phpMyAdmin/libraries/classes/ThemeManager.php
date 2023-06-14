@@ -7,6 +7,9 @@ namespace PhpMyAdmin;
 use function __;
 use function array_key_exists;
 use function closedir;
+use const DIRECTORY_SEPARATOR;
+use const E_USER_ERROR;
+use const E_USER_WARNING;
 use function htmlspecialchars;
 use function is_dir;
 use function ksort;
@@ -14,10 +17,6 @@ use function opendir;
 use function readdir;
 use function sprintf;
 use function trigger_error;
-
-use const DIRECTORY_SEPARATOR;
-use const E_USER_ERROR;
-use const E_USER_WARNING;
 
 /**
  * phpMyAdmin theme manager
@@ -28,6 +27,7 @@ class ThemeManager
      * ThemeManager instance
      *
      * @static
+     *
      * @var ThemeManager
      */
     private static $instance;
@@ -41,7 +41,7 @@ class ThemeManager
     /** @var array<string,Theme> available themes */
     public $themes = [];
 
-    /** @var string  cookie name */
+    /** @var string cookie name */
     public $cookieName = 'pma_theme';
 
     /** @var bool */
@@ -122,7 +122,7 @@ class ThemeManager
     /**
      * sets if there are different themes per server
      *
-     * @param bool $perServer Whether to enable per server flag
+     * @param  bool  $perServer Whether to enable per server flag
      */
     public function setThemePerServer($perServer): void
     {
@@ -132,7 +132,7 @@ class ThemeManager
     /**
      * Sets active theme
      *
-     * @param string|null $theme theme name
+     * @param  string|null  $theme theme name
      */
     public function setActiveTheme(?string $theme): bool
     {
@@ -166,7 +166,7 @@ class ThemeManager
     {
         // Allow different theme per server
         if (isset($GLOBALS['server']) && $this->perServer) {
-            return $this->cookieName . '-' . $GLOBALS['server'];
+            return $this->cookieName.'-'.$GLOBALS['server'];
         }
 
         return $this->cookieName;
@@ -221,7 +221,7 @@ class ThemeManager
         }
 
         while (($dir = readdir($dirHandle)) !== false) {
-            if ($dir === '.' || $dir === '..' || ! @is_dir($this->themesPath . $dir)) {
+            if ($dir === '.' || $dir === '..' || ! @is_dir($this->themesPath.$dir)) {
                 continue;
             }
 
@@ -229,7 +229,7 @@ class ThemeManager
                 continue;
             }
 
-            $newTheme = Theme::load($this->themesPathUrl . $dir, $this->themesPath . $dir . DIRECTORY_SEPARATOR, $dir);
+            $newTheme = Theme::load($this->themesPathUrl.$dir, $this->themesPath.$dir.DIRECTORY_SEPARATOR, $dir);
             if (! $newTheme instanceof Theme) {
                 continue;
             }
@@ -244,7 +244,7 @@ class ThemeManager
     /**
      * checks if given theme name is a known theme
      *
-     * @param string|null $theme name fo theme to check for
+     * @param  string|null  $theme name fo theme to check for
      */
     public function checkTheme(?string $theme): bool
     {
@@ -278,7 +278,7 @@ class ThemeManager
      */
     public static function getThemesFsDir(): string
     {
-        return ROOT_PATH . 'themes' . DIRECTORY_SEPARATOR;
+        return ROOT_PATH.'themes'.DIRECTORY_SEPARATOR;
     }
 
     /**
@@ -286,6 +286,6 @@ class ThemeManager
      */
     public static function getThemesDir(): string
     {
-        return './themes/';// This is an URL
+        return './themes/'; // This is an URL
     }
 }
