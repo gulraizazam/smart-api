@@ -13,7 +13,7 @@ use PhpMyAdmin\Url;
 
 if (! defined('ROOT_PATH')) {
     // phpcs:disable PSR1.Files.SideEffects
-    define('ROOT_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
+    define('ROOT_PATH', dirname(__DIR__).DIRECTORY_SEPARATOR);
     // phpcs:enable
 }
 
@@ -21,7 +21,7 @@ if (! defined('ROOT_PATH')) {
 define('PHPMYADMIN', true);
 // phpcs:enable
 
-require ROOT_PATH . 'setup/lib/common.inc.php';
+require ROOT_PATH.'setup/lib/common.inc.php';
 
 $form_display = new ConfigForm($GLOBALS['ConfigFile']);
 $form_display->save('Config');
@@ -37,7 +37,7 @@ if (isset($_POST['submit_clear']) && is_scalar($_POST['submit_clear']) ? $_POST[
     // Clear current config and return to main page
     $GLOBALS['ConfigFile']->resetConfigData();
     // drop post data
-    $response->generateHeader303('index.php' . Url::getCommonRaw());
+    $response->generateHeader303('index.php'.Url::getCommonRaw());
     exit;
 }
 
@@ -50,5 +50,5 @@ if (isset($_POST['submit_download']) && is_scalar($_POST['submit_download']) ? $
 }
 
 // Show generated config file in a <textarea>
-$response->generateHeader303('index.php' . Url::getCommonRaw(['page' => 'config']));
+$response->generateHeader303('index.php'.Url::getCommonRaw(['page' => 'config']));
 exit;

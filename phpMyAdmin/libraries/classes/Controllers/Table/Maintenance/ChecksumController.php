@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table\Maintenance;
 
+use function __;
+use function count;
 use PhpMyAdmin\Config;
 use PhpMyAdmin\Controllers\Table\AbstractController;
 use PhpMyAdmin\Dbal\DatabaseName;
@@ -16,9 +18,6 @@ use PhpMyAdmin\Table\Maintenance;
 use PhpMyAdmin\Template;
 use Webmozart\Assert\Assert;
 use Webmozart\Assert\InvalidArgumentException;
-
-use function __;
-use function count;
 
 final class ChecksumController extends AbstractController
 {

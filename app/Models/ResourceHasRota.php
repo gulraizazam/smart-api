@@ -762,7 +762,7 @@ class ResourceHasRota extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (boolean)
      */
     public static function isChildExists($id, $account_id)

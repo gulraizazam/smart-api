@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database;
 
+use function __;
+use function count;
+use function mb_strtolower;
 use PhpMyAdmin\Charsets;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\ConfigStorage\Relation;
@@ -19,10 +22,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function count;
-use function mb_strtolower;
 use function strlen;
 
 /**
@@ -169,8 +168,8 @@ class OperationsController extends AbstractController
 
                         // if someday the RENAME DATABASE reappears, do not DROP
                         $local_query = 'DROP DATABASE '
-                            . Util::backquote($db) . ';';
-                        $sql_query .= "\n" . $local_query;
+                            .Util::backquote($db).';';
+                        $sql_query .= "\n".$local_query;
                         $this->dbi->query($local_query);
 
                         $message = Message::success(
@@ -297,8 +296,8 @@ class OperationsController extends AbstractController
                 )
             );
             $message->addParamHtml(
-                '<a href="' . Url::getFromRoute('/check-relations')
-                . '" data-post="' . Url::getCommon(['db' => $db]) . '">'
+                '<a href="'.Url::getFromRoute('/check-relations')
+                .'" data-post="'.Url::getCommon(['db' => $db]).'">'
             );
             $message->addParamHtml('</a>');
             /* Show error if user has configured something, notice elsewhere */

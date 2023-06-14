@@ -4,6 +4,16 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Config;
 
+use function array_keys;
+use function count;
+use function defined;
+use const DIRECTORY_SEPARATOR;
+use function get_object_vars;
+use function in_array;
+use function is_array;
+use function is_int;
+use function is_string;
+use function min;
 use PhpMyAdmin\Config\Settings\Console;
 use PhpMyAdmin\Config\Settings\Debug;
 use PhpMyAdmin\Config\Settings\Export;
@@ -12,20 +22,8 @@ use PhpMyAdmin\Config\Settings\Schema;
 use PhpMyAdmin\Config\Settings\Server;
 use PhpMyAdmin\Config\Settings\SqlQueryBox;
 use PhpMyAdmin\Config\Settings\Transformations;
-
-use function array_keys;
-use function count;
-use function defined;
-use function get_object_vars;
-use function in_array;
-use function is_array;
-use function is_int;
-use function is_string;
-use function min;
-use function strlen;
-
-use const DIRECTORY_SEPARATOR;
 use const ROOT_PATH;
+use function strlen;
 use const TEMP_DIR;
 use const VERSION_CHECK_DEFAULT;
 
@@ -113,6 +111,7 @@ final class Settings
      * in a frame, unless that document belongs to the same domain.
      *
      * @var bool|string
+     *
      * @psalm-var bool|'sameorigin'
      */
     public $AllowThirdPartyFraming;
@@ -137,6 +136,7 @@ final class Settings
      * full server array, just define values you need to change.
      *
      * @var array<int, Server>
+     *
      * @psalm-var array<int<1, max>, Server>
      */
     public $Servers;
@@ -151,6 +151,7 @@ final class Settings
      * set to that server.
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $ServerDefault;
@@ -194,6 +195,7 @@ final class Settings
      * maximum number of db's displayed in database list
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $MaxDbList;
@@ -202,6 +204,7 @@ final class Settings
      * maximum number of tables displayed in table list
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $MaxTableList;
@@ -217,6 +220,7 @@ final class Settings
      * maximum number of characters when a SQL query is displayed
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $MaxCharactersInDisplayedSQL;
@@ -225,6 +229,7 @@ final class Settings
      * use GZIP output buffering if possible (true|false|'auto')
      *
      * @var string|bool
+     *
      * @psalm-var 'auto'|bool
      */
     public $OBGzip;
@@ -240,6 +245,7 @@ final class Settings
      * maximum execution time in seconds (0 for no limit)
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $ExecTimeLimit;
@@ -320,6 +326,7 @@ final class Settings
      * sets SameSite attribute of the Set-Cookie HTTP response header
      *
      * @var string
+     *
      * @psalm-var 'Lax'|'Strict'|'None'
      */
     public $CookieSameSite;
@@ -336,6 +343,7 @@ final class Settings
      * session.gc_maxlifetime)
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $LoginCookieValidity;
@@ -344,6 +352,7 @@ final class Settings
      * how long login cookie should be stored (in seconds)
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $LoginCookieStore;
@@ -403,6 +412,7 @@ final class Settings
      * To enable reCaptcha v2 checkbox mode if necessary
      *
      * @var string
+     *
      * @psalm-var 'invisible'|'checkbox'
      */
     public $CaptchaMethod;
@@ -476,6 +486,7 @@ final class Settings
      * maximum number of first level databases displayed in navigation panel
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $FirstLevelNavigationItems;
@@ -484,6 +495,7 @@ final class Settings
      * maximum number of items displayed in navigation panel
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $MaxNavigationItems;
@@ -515,6 +527,7 @@ final class Settings
      * by the above Separator
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $NavigationTreeTableLevel;
@@ -545,6 +558,7 @@ final class Settings
      * in a new window ('new')
      *
      * @var string
+     *
      * @psalm-var 'main'|'new'
      */
     public $NavigationLogoLinkWindow;
@@ -553,6 +567,7 @@ final class Settings
      * number of recently used tables displayed in the navigation panel
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $NumRecentTables;
@@ -561,6 +576,7 @@ final class Settings
      * number of favorite tables displayed in the navigation panel
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $NumFavoriteTables;
@@ -570,6 +586,7 @@ final class Settings
      * when more then x tables are present
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $NavigationTreeDisplayItemFilterMinimum;
@@ -593,6 +610,7 @@ final class Settings
      * when more then x databases are present
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $NavigationTreeDisplayDbFilterMinimum;
@@ -608,6 +626,7 @@ final class Settings
      * 'browse' = browse page
      *
      * @var string
+     *
      * @psalm-var 'structure'|'sql'|'search'|'insert'|'browse'
      */
     public $NavigationTreeDefaultTabTable;
@@ -624,6 +643,7 @@ final class Settings
      * '' = no link
      *
      * @var string
+     *
      * @psalm-var 'structure'|'sql'|'search'|'insert'|'browse'|''
      */
     public $NavigationTreeDefaultTabTable2;
@@ -674,6 +694,7 @@ final class Settings
      * Width of navigation panel
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $NavigationWidth;
@@ -775,6 +796,7 @@ final class Settings
      * ('text'|'icons'|'both')
      *
      * @var string
+     *
      * @psalm-var 'text'|'icons'|'both'
      */
     public $TableNavigationLinksMode;
@@ -793,6 +815,7 @@ final class Settings
      * Possible values: 25,50,100,250,500
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $MaxRows;
@@ -803,6 +826,7 @@ final class Settings
      * ascending order else-)
      *
      * @var string
+     *
      * @psalm-var 'ASC'|'DESC'|'SMART'
      */
     public $Order;
@@ -823,6 +847,7 @@ final class Settings
      * 'disabled'
      *
      * @var string
+     *
      * @psalm-var 'double-click'|'click'|'disabled'
      */
     public $GridEditing;
@@ -835,6 +860,7 @@ final class Settings
      * 'D' for display column
      *
      * @var string
+     *
      * @psalm-var 'K'|'D'
      */
     public $RelationalDisplay;
@@ -848,6 +874,7 @@ final class Settings
      *   'all'    disallow editing
      *
      * @var string|false
+     *
      * @psalm-var 'blob'|'noblob'|'all'|false
      */
     public $ProtectBinary;
@@ -872,6 +899,7 @@ final class Settings
      *  textarea - allows newlines in fields
      *
      * @var string
+     *
      * @psalm-var 'input'|'textarea'
      */
     public $CharEditing;
@@ -880,6 +908,7 @@ final class Settings
      * The minimum size for character input fields
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $MinSizeForInputField;
@@ -888,6 +917,7 @@ final class Settings
      * The maximum size for character input fields
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $MaxSizeForInputField;
@@ -896,6 +926,7 @@ final class Settings
      * How many rows can be inserted at one time
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $InsertRows;
@@ -905,6 +936,7 @@ final class Settings
      * 'content' is the referenced data, 'id' is the key value.
      *
      * @var string[]
+     *
      * @psalm-var array{0: 'content-id'|'id-content', 1?: 'content-id'|'id-content'}
      */
     public $ForeignKeyDropdownOrder;
@@ -913,6 +945,7 @@ final class Settings
      * A drop-down list will be used if fewer items are present
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $ForeignKeyMaxLimit;
@@ -921,6 +954,7 @@ final class Settings
      * Whether to disable foreign key checks while importing
      *
      * @var string
+     *
      * @psalm-var 'default'|'enable'|'disable'
      */
     public $DefaultForeignKeyChecks;
@@ -958,6 +992,7 @@ final class Settings
      * How to display the menu tabs ('icons'|'text'|'both')
      *
      * @var string
+     *
      * @psalm-var 'icons'|'text'|'both'
      */
     public $TabsMode;
@@ -966,6 +1001,7 @@ final class Settings
      * How to display various action links ('icons'|'text'|'both')
      *
      * @var string
+     *
      * @psalm-var 'icons'|'text'|'both'
      */
     public $ActionLinksMode;
@@ -975,6 +1011,7 @@ final class Settings
      * (a value larger than 1 results in some information being hidden)
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $PropertiesNumColumns;
@@ -988,6 +1025,7 @@ final class Settings
      * 'privileges' = user management
      *
      * @var string
+     *
      * @psalm-var 'welcome'|'databases'|'status'|'variables'|'privileges'
      */
     public $DefaultTabServer;
@@ -1000,6 +1038,7 @@ final class Settings
      * 'operations' = operations on database
      *
      * @var string
+     *
      * @psalm-var 'structure'|'sql'|'search'|'operations'
      */
     public $DefaultTabDatabase;
@@ -1013,6 +1052,7 @@ final class Settings
      * 'browse' = browse page
      *
      * @var string
+     *
      * @psalm-var 'structure'|'sql'|'search'|'insert'|'browse'
      */
     public $DefaultTabTable;
@@ -1022,6 +1062,7 @@ final class Settings
      * action segment. Value can be either of ``image``, ``text`` or ``both``.
      *
      * @var string
+     *
      * @psalm-var 'icons'|'text'|'both'
      */
     public $RowActionType;
@@ -1080,6 +1121,7 @@ final class Settings
      *      none   - disable encoding conversion
      *
      * @var string
+     *
      * @psalm-var 'auto'|'iconv'|'recode'|'mb'|'none'
      */
     public $RecodingEngine;
@@ -1130,6 +1172,7 @@ final class Settings
      * query textareas and (*1.25) for query window)
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $TextareaCols;
@@ -1138,6 +1181,7 @@ final class Settings
      * textarea size (rows) in edit mode
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $TextareaRows;
@@ -1160,6 +1204,7 @@ final class Settings
      * textarea size (columns) for CHAR/VARCHAR
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $CharTextareaCols;
@@ -1168,6 +1213,7 @@ final class Settings
      * textarea size (rows) for CHAR/VARCHAR
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $CharTextareaRows;
@@ -1176,6 +1222,7 @@ final class Settings
      * Max field data length in browse mode for all non-numeric fields
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $LimitChars;
@@ -1185,6 +1232,7 @@ final class Settings
      * Possible values are 'left', 'right', 'both' and 'none'.
      *
      * @var string
+     *
      * @psalm-var 'left'|'right'|'both'|'none'
      */
     public $RowActionLinks;
@@ -1201,6 +1249,7 @@ final class Settings
      * Default sort order by primary key.
      *
      * @var string
+     *
      * @psalm-var 'NONE'|'ASC'|'DESC'
      */
     public $TablePrimaryKeyOrder;
@@ -1230,6 +1279,7 @@ final class Settings
      * repeat header names every X cells? (0 = deactivate)
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $RepeatCells;
@@ -1246,6 +1296,7 @@ final class Settings
      * When using DB-based query history, how many entries should be kept?
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $QueryHistoryMax;
@@ -1261,6 +1312,7 @@ final class Settings
      * When approximate count < this, PMA will get exact count for table rows.
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $MaxExactCount;
@@ -1269,6 +1321,7 @@ final class Settings
      * Zero means that no row count is done for views; see the doc
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $MaxExactCountViews;
@@ -1285,6 +1338,7 @@ final class Settings
      * (open | closed | disabled)
      *
      * @var string
+     *
      * @psalm-var 'open'|'closed'|'disabled'
      */
     public $InitialSlidersState;
@@ -1414,6 +1468,7 @@ final class Settings
      * which is the only safe way to determine GD version.
      *
      * @var string
+     *
      * @psalm-var 'auto'|'yes'|'no'
      */
     public $GD2Available;
@@ -1445,6 +1500,7 @@ final class Settings
      * 1000 to accommodate Suhosin, see bug #3358750.
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $LinkLengthLimit;
@@ -1473,6 +1529,7 @@ final class Settings
      * (ask | always | never)
      *
      * @var string
+     *
      * @psalm-var 'ask'|'always'|'never'
      */
     public $SendErrorReports;
@@ -1507,6 +1564,7 @@ final class Settings
      * Possible values are 'production' or 'development'
      *
      * @var string
+     *
      * @psalm-var 'production'|'development'
      */
     public $environment;
@@ -1522,6 +1580,7 @@ final class Settings
      * Max rows retrieved for zoom search
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $maxRowPlotLimit;
@@ -1537,6 +1596,7 @@ final class Settings
      * MySQL minimal version required
      *
      * @var array<string, int|string>
+     *
      * @psalm-var array{internal: int, human: string}
      */
     public $MysqlMinVersion;
@@ -1568,12 +1628,13 @@ final class Settings
      * Set default for FirstDayOfCalendar
      *
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $FirstDayOfCalendar;
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     public function __construct(array $settings)
     {
@@ -1792,7 +1853,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setPmaAbsoluteUri(array $settings): string
     {
@@ -1804,7 +1865,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setAuthLog(array $settings): string
     {
@@ -1816,7 +1877,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setAuthLogSuccess(array $settings): bool
     {
@@ -1828,7 +1889,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setPmaNoRelationDisableWarning(array $settings): bool
     {
@@ -1840,7 +1901,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setSuhosinDisableWarning(array $settings): bool
     {
@@ -1852,7 +1913,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setLoginCookieValidityDisableWarning(array $settings): bool
     {
@@ -1864,7 +1925,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setReservedWordDisableWarning(array $settings): bool
     {
@@ -1876,7 +1937,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setTranslationWarningThreshold(array $settings): int
     {
@@ -1893,9 +1954,9 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return bool|string
+     *
      * @psalm-return bool|'sameorigin'
      */
     private function setAllowThirdPartyFraming(array $settings)
@@ -1912,7 +1973,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setBlowfishSecret(array $settings): string
     {
@@ -1924,9 +1985,9 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return array<int, Server>
+     *
      * @psalm-return array<int<1, max>, Server>
      */
     private function setServers(array $settings): array
@@ -1956,7 +2017,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -1972,7 +2033,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setVersionCheck(array $settings): bool
     {
@@ -1989,7 +2050,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setProxyUrl(array $settings): string
     {
@@ -2001,7 +2062,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setProxyUser(array $settings): string
     {
@@ -2013,7 +2074,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setProxyPass(array $settings): string
     {
@@ -2025,7 +2086,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2041,7 +2102,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2057,7 +2118,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowHint(array $settings): bool
     {
@@ -2069,7 +2130,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2085,9 +2146,9 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return bool|string
+     *
      * @psalm-return 'auto'|bool
      */
     private function setOBGzip(array $settings)
@@ -2100,7 +2161,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setPersistentConnections(array $settings): bool
     {
@@ -2112,7 +2173,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -2128,7 +2189,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setSessionSavePath(array $settings): string
     {
@@ -2140,8 +2201,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return string[]
      */
     private function setMysqlSslWarningSafeHosts(array $settings): array
@@ -2165,7 +2225,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setMemoryLimit(array $settings): string
     {
@@ -2177,7 +2237,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setSkipLockedTables(array $settings): bool
     {
@@ -2189,7 +2249,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowSQL(array $settings): bool
     {
@@ -2201,7 +2261,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setRetainQueryBox(array $settings): bool
     {
@@ -2213,7 +2273,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCodemirrorEnable(array $settings): bool
     {
@@ -2225,7 +2285,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setLintEnable(array $settings): bool
     {
@@ -2237,7 +2297,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setAllowUserDropDatabase(array $settings): bool
     {
@@ -2249,7 +2309,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setConfirm(array $settings): bool
     {
@@ -2261,7 +2321,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'Lax'|'Strict'|'None'
      */
@@ -2275,7 +2335,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setLoginCookieRecall(array $settings): bool
     {
@@ -2287,7 +2347,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2303,7 +2363,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -2319,7 +2379,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setLoginCookieDeleteAll(array $settings): bool
     {
@@ -2331,7 +2391,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setUseDbSearch(array $settings): bool
     {
@@ -2343,7 +2403,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setIgnoreMultiSubmitErrors(array $settings): bool
     {
@@ -2355,7 +2415,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setURLQueryEncryption(array $settings): bool
     {
@@ -2367,7 +2427,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setURLQueryEncryptionSecretKey(array $settings): string
     {
@@ -2379,7 +2439,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setAllowArbitraryServer(array $settings): bool
     {
@@ -2391,7 +2451,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setArbitraryServerRegexp(array $settings): string
     {
@@ -2403,7 +2463,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'invisible'|'checkbox'
      */
@@ -2417,7 +2477,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCaptchaApi(array $settings): string
     {
@@ -2429,20 +2489,20 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCaptchaCsp(array $settings): string
     {
         if (! isset($settings['CaptchaCsp'])) {
             return 'https://apis.google.com https://www.google.com/recaptcha/'
-                . ' https://www.gstatic.com/recaptcha/ https://ssl.gstatic.com/';
+                .' https://www.gstatic.com/recaptcha/ https://ssl.gstatic.com/';
         }
 
         return (string) $settings['CaptchaCsp'];
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCaptchaRequestParam(array $settings): string
     {
@@ -2454,7 +2514,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCaptchaResponseParam(array $settings): string
     {
@@ -2466,7 +2526,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCaptchaLoginPublicKey(array $settings): string
     {
@@ -2478,7 +2538,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCaptchaLoginPrivateKey(array $settings): string
     {
@@ -2490,7 +2550,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCaptchaSiteVerifyURL(array $settings): string
     {
@@ -2502,7 +2562,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setEnableDragDropImport(array $settings): bool
     {
@@ -2514,7 +2574,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowDatabasesNavigationAsTree(array $settings): bool
     {
@@ -2526,7 +2586,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2542,7 +2602,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2558,7 +2618,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeEnableGrouping(array $settings): bool
     {
@@ -2570,7 +2630,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeDbSeparator(array $settings): string
     {
@@ -2582,8 +2642,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return false|string|string[]
      */
     private function setNavigationTreeTableSeparator(array $settings)
@@ -2614,7 +2673,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2630,7 +2689,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationLinkWithMainPanel(array $settings): bool
     {
@@ -2642,7 +2701,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationDisplayLogo(array $settings): bool
     {
@@ -2654,7 +2713,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationLogoLink(array $settings): string
     {
@@ -2666,7 +2725,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'main'|'new'
      */
@@ -2680,7 +2739,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -2696,7 +2755,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -2712,7 +2771,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2728,7 +2787,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationDisplayServers(array $settings): bool
     {
@@ -2740,7 +2799,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDisplayServersList(array $settings): bool
     {
@@ -2752,7 +2811,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -2768,7 +2827,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'structure'|'sql'|'search'|'insert'|'browse'
      */
@@ -2801,7 +2860,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'structure'|'sql'|'search'|'insert'|'browse'|''
      */
@@ -2838,7 +2897,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeEnableExpansion(array $settings): bool
     {
@@ -2850,7 +2909,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeShowTables(array $settings): bool
     {
@@ -2862,7 +2921,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeShowViews(array $settings): bool
     {
@@ -2874,7 +2933,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeShowFunctions(array $settings): bool
     {
@@ -2886,7 +2945,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeShowProcedures(array $settings): bool
     {
@@ -2898,7 +2957,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeShowEvents(array $settings): bool
     {
@@ -2910,7 +2969,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -2926,7 +2985,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreeAutoexpandSingleDb(array $settings): bool
     {
@@ -2938,7 +2997,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowStats(array $settings): bool
     {
@@ -2950,7 +3009,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowPhpInfo(array $settings): bool
     {
@@ -2962,7 +3021,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowServerInfo(array $settings): bool
     {
@@ -2974,7 +3033,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowChgPassword(array $settings): bool
     {
@@ -2986,7 +3045,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowCreateDb(array $settings): bool
     {
@@ -2998,7 +3057,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowDbStructureCharset(array $settings): bool
     {
@@ -3010,7 +3069,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowDbStructureComment(array $settings): bool
     {
@@ -3022,7 +3081,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowDbStructureCreation(array $settings): bool
     {
@@ -3034,7 +3093,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowDbStructureLastUpdate(array $settings): bool
     {
@@ -3046,7 +3105,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowDbStructureLastCheck(array $settings): bool
     {
@@ -3058,7 +3117,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setHideStructureActions(array $settings): bool
     {
@@ -3070,7 +3129,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowColumnComments(array $settings): bool
     {
@@ -3082,7 +3141,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'text'|'icons'|'both'
      */
@@ -3099,7 +3158,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowAll(array $settings): bool
     {
@@ -3111,7 +3170,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3127,7 +3186,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'ASC'|'DESC'|'SMART'
      */
@@ -3141,7 +3200,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setSaveCellsAtOnce(array $settings): bool
     {
@@ -3153,7 +3212,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'double-click'|'click'|'disabled'
      */
@@ -3167,7 +3226,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'K'|'D'
      */
@@ -3181,9 +3240,9 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return false|string
+     *
      * @psalm-return 'blob'|'noblob'|'all'|false
      */
     private function setProtectBinary(array $settings)
@@ -3199,7 +3258,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowFunctionFields(array $settings): bool
     {
@@ -3211,7 +3270,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowFieldTypesInDataEditView(array $settings): bool
     {
@@ -3223,7 +3282,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'input'|'textarea'
      */
@@ -3237,7 +3296,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -3253,7 +3312,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3269,7 +3328,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3285,9 +3344,9 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return string[]
+     *
      * @psalm-return array{0: 'content-id'|'id-content', 1?: 'content-id'|'id-content'}
      */
     private function setForeignKeyDropdownOrder(array $settings): array
@@ -3312,7 +3371,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3328,7 +3387,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'default'|'enable'|'disable'
      */
@@ -3345,7 +3404,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setZipDump(array $settings): bool
     {
@@ -3357,7 +3416,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setGZipDump(array $settings): bool
     {
@@ -3369,7 +3428,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setBZipDump(array $settings): bool
     {
@@ -3381,7 +3440,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCompressOnFly(array $settings): bool
     {
@@ -3393,7 +3452,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'icons'|'text'|'both'
      */
@@ -3407,7 +3466,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'icons'|'text'|'both'
      */
@@ -3424,7 +3483,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3440,7 +3499,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'welcome'|'databases'|'status'|'variables'|'privileges'
      */
@@ -3473,7 +3532,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'structure'|'sql'|'search'|'operations'
      */
@@ -3502,7 +3561,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'structure'|'sql'|'search'|'insert'|'browse'
      */
@@ -3535,7 +3594,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'icons'|'text'|'both'
      */
@@ -3549,7 +3608,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setExport(array $settings): Export
     {
@@ -3561,7 +3620,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setImport(array $settings): Import
     {
@@ -3573,7 +3632,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setSchema(array $settings): Schema
     {
@@ -3585,8 +3644,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return string[]
      */
     private function setPDFPageSizes(array $settings): array
@@ -3609,7 +3667,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setPDFDefaultPageSize(array $settings): string
     {
@@ -3621,7 +3679,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDefaultLang(array $settings): string
     {
@@ -3633,7 +3691,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDefaultConnectionCollation(array $settings): string
     {
@@ -3645,7 +3703,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setLang(array $settings): string
     {
@@ -3657,7 +3715,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setFilterLanguages(array $settings): string
     {
@@ -3669,7 +3727,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'auto'|'iconv'|'recode'|'mb'|'none'
      */
@@ -3686,7 +3744,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setIconvExtraParams(array $settings): string
     {
@@ -3698,8 +3756,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return string[]
      */
     private function setAvailableCharsets(array $settings): array
@@ -3752,7 +3809,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNavigationTreePointerEnable(array $settings): bool
     {
@@ -3764,7 +3821,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setBrowsePointerEnable(array $settings): bool
     {
@@ -3776,7 +3833,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setBrowseMarkerEnable(array $settings): bool
     {
@@ -3788,7 +3845,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3804,7 +3861,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3820,7 +3877,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setLongtextDoubleTextarea(array $settings): bool
     {
@@ -3832,7 +3889,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setTextareaAutoSelect(array $settings): bool
     {
@@ -3844,7 +3901,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3860,7 +3917,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3876,7 +3933,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -3892,7 +3949,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'left'|'right'|'both'|'none'
      */
@@ -3909,7 +3966,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setRowActionLinksWithoutUnique(array $settings): bool
     {
@@ -3921,7 +3978,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'NONE'|'ASC'|'DESC'
      */
@@ -3938,7 +3995,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setRememberSorting(array $settings): bool
     {
@@ -3950,7 +4007,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowBrowseComments(array $settings): bool
     {
@@ -3962,7 +4019,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowPropertyComments(array $settings): bool
     {
@@ -3974,7 +4031,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -3990,7 +4047,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setQueryHistoryDB(array $settings): bool
     {
@@ -4002,7 +4059,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -4018,7 +4075,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setBrowseMIME(array $settings): bool
     {
@@ -4030,7 +4087,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -4046,7 +4103,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */
@@ -4062,7 +4119,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setNaturalOrder(array $settings): bool
     {
@@ -4074,7 +4131,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'open'|'closed'|'disabled'
      */
@@ -4091,8 +4148,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return string[]
      */
     private function setUserprefsDisallow(array $settings): array
@@ -4111,7 +4167,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setUserprefsDeveloperTab(array $settings): bool
     {
@@ -4123,7 +4179,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setTitleTable(array $settings): string
     {
@@ -4135,7 +4191,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setTitleDatabase(array $settings): string
     {
@@ -4147,7 +4203,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setTitleServer(array $settings): string
     {
@@ -4159,7 +4215,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setTitleDefault(array $settings): string
     {
@@ -4171,7 +4227,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setThemeManager(array $settings): bool
     {
@@ -4183,7 +4239,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setThemeDefault(array $settings): string
     {
@@ -4195,7 +4251,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setThemePerServer(array $settings): bool
     {
@@ -4207,7 +4263,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDefaultQueryTable(array $settings): string
     {
@@ -4219,7 +4275,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDefaultQueryDatabase(array $settings): string
     {
@@ -4231,7 +4287,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setSQLQuery(array $settings): SqlQueryBox
     {
@@ -4243,7 +4299,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setEnableAutocompleteForTablesAndColumns(array $settings): bool
     {
@@ -4255,7 +4311,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setUploadDir(array $settings): string
     {
@@ -4267,7 +4323,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setSaveDir(array $settings): string
     {
@@ -4279,11 +4335,11 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setTempDir(array $settings): string
     {
-        $tempDir = ROOT_PATH . 'tmp' . DIRECTORY_SEPARATOR;
+        $tempDir = ROOT_PATH.'tmp'.DIRECTORY_SEPARATOR;
         if (defined('TEMP_DIR')) {
             $tempDir = TEMP_DIR;
         }
@@ -4296,7 +4352,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'auto'|'yes'|'no'
      */
@@ -4310,8 +4366,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return array<string, string>
      */
     private function setTrustedProxies(array $settings): array
@@ -4337,7 +4392,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCheckConfigurationPermissions(array $settings): bool
     {
@@ -4349,7 +4404,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -4365,7 +4420,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setCSPAllow(array $settings): string
     {
@@ -4377,7 +4432,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDisableMultiTableMaintenance(array $settings): bool
     {
@@ -4389,7 +4444,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'ask'|'always'|'never'
      */
@@ -4406,7 +4461,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setConsoleEnterExecutes(array $settings): bool
     {
@@ -4418,7 +4473,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setZeroConf(array $settings): bool
     {
@@ -4430,7 +4485,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDBG(array $settings): Debug
     {
@@ -4442,7 +4497,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 'production'|'development'
      */
@@ -4456,8 +4511,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return array<string, string>
      */
     private function setDefaultFunctions(array $settings): array
@@ -4490,7 +4544,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return positive-int
      */
@@ -4506,7 +4560,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setShowGitRevision(array $settings): bool
     {
@@ -4518,9 +4572,9 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
-     *
+     * @param  array<int|string, mixed>  $settings
      * @return array<string, int|string>
+     *
      * @psalm-return array{internal: int, human: string}
      */
     private function setMysqlMinVersion(array $settings): array
@@ -4544,7 +4598,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDisableShortcutKeys(array $settings): bool
     {
@@ -4556,7 +4610,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setConsole(array $settings): Console
     {
@@ -4568,7 +4622,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      */
     private function setDefaultTransformations(array $settings): Transformations
     {
@@ -4580,7 +4634,7 @@ final class Settings
     }
 
     /**
-     * @param array<int|string, mixed> $settings
+     * @param  array<int|string, mixed>  $settings
      *
      * @psalm-return 0|positive-int
      */

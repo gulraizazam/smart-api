@@ -14,6 +14,8 @@ use function htmlspecialchars;
 use function implode;
 use function ini_get;
 use function ini_set;
+use const PHP_SESSION_ACTIVE;
+use const PHP_VERSION_ID;
 use function preg_replace;
 use function session_abort;
 use function session_cache_limiter;
@@ -28,9 +30,6 @@ use function session_status;
 use function session_unset;
 use function session_write_close;
 use function setcookie;
-
-use const PHP_SESSION_ACTIVE;
-use const PHP_VERSION_ID;
 
 /**
  * Session class
@@ -76,7 +75,7 @@ class Session
     /**
      * Session failed function
      *
-     * @param array $errors PhpMyAdmin\ErrorHandler array
+     * @param  array  $errors PhpMyAdmin\ErrorHandler array
      */
     private static function sessionFailed(array $errors): void
     {
@@ -107,19 +106,19 @@ class Session
          */
         Core::fatalError(
             'Error during session start; please check your PHP and/or '
-            . 'webserver log file and configure your PHP '
-            . 'installation properly. Also ensure that cookies are enabled '
-            . 'in your browser.'
-            . '<br><br>'
-            . implode('<br><br>', $messages)
+            .'webserver log file and configure your PHP '
+            .'installation properly. Also ensure that cookies are enabled '
+            .'in your browser.'
+            .'<br><br>'
+            .implode('<br><br>', $messages)
         );
     }
 
     /**
      * Set up session
      *
-     * @param Config       $config       Configuration handler
-     * @param ErrorHandler $errorHandler Error handler
+     * @param  Config  $config       Configuration handler
+     * @param  ErrorHandler  $errorHandler Error handler
      */
     public static function setUp(Config $config, ErrorHandler $errorHandler): void
     {
@@ -143,7 +142,7 @@ class Session
         $cookieSameSite = $config->get('CookieSameSite') ?? 'Strict';
         $cookiePath = $config->getRootPath();
         if (PHP_VERSION_ID < 70300) {
-            $cookiePath .= '; SameSite=' . $cookieSameSite;
+            $cookiePath .= '; SameSite='.$cookieSameSite;
         }
 
         // session cookie settings

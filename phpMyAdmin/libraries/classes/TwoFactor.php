@@ -7,18 +7,17 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
+use function array_merge;
 use BaconQrCode\Renderer\ImageRenderer;
+use function class_exists;
 use CodeLts\U2F\U2FServer\U2FServer;
+use function in_array;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Plugins\TwoFactor\Application;
 use PhpMyAdmin\Plugins\TwoFactor\Invalid;
 use PhpMyAdmin\Plugins\TwoFactor\Key;
 use PhpMyAdmin\Plugins\TwoFactorPlugin;
 use PragmaRX\Google2FAQRCode\Google2FA;
-
-use function array_merge;
-use function class_exists;
-use function in_array;
 use function ucfirst;
 
 /**
@@ -47,7 +46,7 @@ class TwoFactor
     /**
      * Creates new TwoFactor object
      *
-     * @param string $user User name
+     * @param  string  $user User name
      */
     public function __construct($user)
     {
@@ -98,9 +97,6 @@ class TwoFactor
         return $this->backend;
     }
 
-    /**
-     * @return array
-     */
     public function getAvailable(): array
     {
         return $this->available;
@@ -171,9 +167,9 @@ class TwoFactor
     /**
      * Returns class name for given name
      *
-     * @param string $name Backend name
-     *
+     * @param  string  $name Backend name
      * @return string
+     *
      * @psalm-return class-string
      */
     public function getBackendClass($name)
@@ -181,7 +177,7 @@ class TwoFactor
         $result = TwoFactorPlugin::class;
         if (in_array($name, $this->available)) {
             /** @psalm-var class-string $result */
-            $result = 'PhpMyAdmin\\Plugins\\TwoFactor\\' . ucfirst($name);
+            $result = 'PhpMyAdmin\\Plugins\\TwoFactor\\'.ucfirst($name);
         } elseif (! empty($name)) {
             $result = Invalid::class;
         }
@@ -204,7 +200,7 @@ class TwoFactor
     /**
      * Checks authentication, returns true on success
      *
-     * @param bool $skipSession Skip session cache
+     * @param  bool  $skipSession Skip session cache
      */
     public function check($skipSession = false): bool
     {
@@ -226,7 +222,7 @@ class TwoFactor
      */
     public function render()
     {
-        return $this->backend->getError() . $this->backend->render();
+        return $this->backend->getError().$this->backend->render();
     }
 
     /**
@@ -236,7 +232,7 @@ class TwoFactor
      */
     public function setup()
     {
-        return $this->backend->getError() . $this->backend->setup();
+        return $this->backend->getError().$this->backend->setup();
     }
 
     /**
@@ -255,7 +251,7 @@ class TwoFactor
      * The object might stay in partially changed setup
      * if configuration fails.
      *
-     * @param string $name Backend name
+     * @param  string  $name Backend name
      */
     public function configure($name): bool
     {

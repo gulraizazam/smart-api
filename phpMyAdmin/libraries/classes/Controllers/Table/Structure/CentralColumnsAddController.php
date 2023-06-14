@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table\Structure;
 
+use function __;
 use PhpMyAdmin\Controllers\Table\AbstractController;
 use PhpMyAdmin\Controllers\Table\StructureController;
 use PhpMyAdmin\Database\CentralColumns;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
-
-use function __;
 
 final class CentralColumnsAddController extends AbstractController
 {

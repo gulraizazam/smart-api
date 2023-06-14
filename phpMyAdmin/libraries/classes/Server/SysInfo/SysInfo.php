@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace PhpMyAdmin\Server\SysInfo;
 
 use function in_array;
-use function ucfirst;
-
 use const PHP_OS;
+use function ucfirst;
 
 /**
  * Library for extracting information about system memory and cpu.
@@ -23,8 +22,7 @@ class SysInfo
     /**
      * Returns OS type used for sysinfo class
      *
-     * @param string $php_os PHP_OS constant
-     *
+     * @param  string  $php_os PHP_OS constant
      * @return string
      */
     public static function getOs($php_os = PHP_OS)

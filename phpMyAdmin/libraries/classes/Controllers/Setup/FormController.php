@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Setup;
 
+use function __;
+use function is_string;
+use function ob_get_clean;
+use function ob_start;
 use PhpMyAdmin\Config\Forms\BaseForm;
 use PhpMyAdmin\Config\Forms\Setup\SetupFormList;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\Setup\FormProcessing;
 
-use function __;
-use function is_string;
-use function ob_get_clean;
-use function ob_start;
-
 class FormController extends AbstractController
 {
     /**
-     * @param array $params Request parameters
-     *
+     * @param  array  $params Request parameters
      * @return string HTML
      */
     public function __invoke(array $params): string

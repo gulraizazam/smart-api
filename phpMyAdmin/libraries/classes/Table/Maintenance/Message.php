@@ -32,7 +32,7 @@ final class Message
     }
 
     /**
-     * @param mixed[] $row
+     * @param  mixed[]  $row
      */
     public static function fromArray(array $row): self
     {

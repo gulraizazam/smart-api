@@ -13,7 +13,7 @@ class Treatments
     /**
      * Generate General Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function clientcompletedtreatment($data)
@@ -177,7 +177,7 @@ class Treatments
     /**
      * client With Birthday + X days Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function clientswithbirthday($data)

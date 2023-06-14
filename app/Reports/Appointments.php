@@ -19,7 +19,7 @@ class Appointments
     /**
      * Generate General Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getGeneralReport($data, $account_id)
@@ -110,7 +110,7 @@ class Appointments
     /**
      * Generate Staff Appointment Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getStaffAppointmentScheduleReport($data, $filters = [])
@@ -219,7 +219,7 @@ class Appointments
     /**
      * Generate Staff (Referred By) Appointment Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getStaffReferredByAppointmentScheduleReport($data, $filters, $account_id)
@@ -331,7 +331,7 @@ class Appointments
     /**
      * Generate Employee Appointment Summary Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getEmployeeAppointmentSummaryReport($data, $filters, $account_id)
@@ -433,7 +433,7 @@ class Appointments
     /**
      * Generate Appointment Summary by Status Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getAppointmentSummaryByServiceReport($data, $filters, $account_id)
@@ -541,7 +541,7 @@ class Appointments
     /**
      * Generate Appointment Summary by Status Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getAppointmentSummaryByStatusReport($data, $filters, $account_id)
@@ -711,7 +711,7 @@ class Appointments
     /**
      * Generate General Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function getClientByAppointmentStatusReport($data, $filters, $account_id)
@@ -912,7 +912,7 @@ class Appointments
     /**
      * Generate Compliance Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function complianceReport($data, $account_id)
@@ -1072,7 +1072,7 @@ class Appointments
     /**
      * Rescheduled Count Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function rescheduledcount($data, $account_id)
