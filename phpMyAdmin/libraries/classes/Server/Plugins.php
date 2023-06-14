@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Server;
 
-use PhpMyAdmin\DatabaseInterface;
-
 use function __;
+use PhpMyAdmin\DatabaseInterface;
 
 class Plugins
 {
@@ -14,7 +13,7 @@ class Plugins
     private $dbi;
 
     /**
-     * @param DatabaseInterface $dbi DatabaseInterface instance
+     * @param  DatabaseInterface  $dbi DatabaseInterface instance
      */
     public function __construct(DatabaseInterface $dbi)
     {
@@ -49,7 +48,7 @@ class Plugins
     {
         $result = $this->dbi->query(
             'SELECT `PLUGIN_NAME`, `PLUGIN_DESCRIPTION` FROM `information_schema`.`PLUGINS`'
-                . ' WHERE `PLUGIN_TYPE` = \'AUTHENTICATION\';'
+                .' WHERE `PLUGIN_TYPE` = \'AUTHENTICATION\';'
         );
 
         $plugins = [];
@@ -92,7 +91,7 @@ class Plugins
     }
 
     /**
-     * @param array $row Row fetched from database
+     * @param  array  $row Row fetched from database
      */
     private function mapRowToPlugin(array $row): Plugin
     {

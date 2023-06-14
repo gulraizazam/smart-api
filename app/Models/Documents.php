@@ -94,7 +94,7 @@ class Documents extends BaseModal
      * Get Total Records
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords($request, $account_id, $id, $apply_filter, $filename)
@@ -113,9 +113,9 @@ class Documents extends BaseModal
      * Get Records
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords($id, $request, $iDisplayStart, $iDisplayLength, $account_id, $apply_filter, $filename)

@@ -175,7 +175,7 @@ class RolesController extends Controller
         // Get list of all allowed permissions for current role.
         $allowed_permissions = Permission::join('role_has_permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
             ->get()->pluck('name', 'id');
-        if(!$allowed_permissions) {
+        if (! $allowed_permissions) {
             $allowed_permissions = [];
         }
 
@@ -196,7 +196,7 @@ class RolesController extends Controller
             'permissions_mapping' => $permissions_mapping,
             'dashboard_permissions_mapping' => $dashboard_permissions_mapping,
             'reports_permissions_mapping' => $reports_permissions_mapping,
-            'allowed_permissions' =>  $allowed_permissions
+            'allowed_permissions' => $allowed_permissions,
         ], 'admin.roles.create');
 
     }
@@ -479,7 +479,7 @@ class RolesController extends Controller
         $allowed_permissions = Permission::join('role_has_permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
             ->where(['role_has_permissions.role_id' => $role->id])
             ->get()->pluck('name', 'id');
-        if(!$allowed_permissions) {
+        if (! $allowed_permissions) {
             $allowed_permissions = [];
         }
 
@@ -501,7 +501,7 @@ class RolesController extends Controller
             'permissions' => $permissions,
             'permissions_mapping' => $permissions_mapping,
             'reports_permissions_mapping' => $reports_permissions_mapping,
-            'reports_permissions' => $reports_permissions
+            'reports_permissions' => $reports_permissions,
         ], 'admin.roles.edit');
 
     }
@@ -514,47 +514,47 @@ class RolesController extends Controller
      */
     protected function getAllPermissionsMapping()
     {
-        $notInArray = array(
-            'dashboard_manage', 'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage','finance_general_revenue_reports_manage','finance_revenue_breakup_reports_manage','finance_ledger_reports_manage','staff_listing_reports_manage','staff_revenue_reports_manage','marketing_reports_manage'
-        );
-        $notInNamesArray = array(
-            'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres', 'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors','view_inactive_lead_sources','view_inactive_leads','view_inactive_lead_statuses','view_inactive_machine_types','view_inactive_packages','view_inactive_patients','view_inactive_payment_modes','view_inactive_plans',
-            'view_inactive_products','view_inactive_regions','view_inactive_custom_forms','view_inactive_towns','view_inactive_resources','view_inactive_rota','view_inactive_rotas','view_inactive_services','view_inactive_sms_templates'
-        );
-        if(Auth::user()->hasRole('Super-Admin')){
+        $notInArray = [
+            'dashboard_manage', 'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage', 'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage', 'finance_ledger_reports_manage', 'staff_listing_reports_manage', 'staff_revenue_reports_manage', 'marketing_reports_manage',
+        ];
+        $notInNamesArray = [
+            'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres', 'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors', 'view_inactive_lead_sources', 'view_inactive_leads', 'view_inactive_lead_statuses', 'view_inactive_machine_types', 'view_inactive_packages', 'view_inactive_patients', 'view_inactive_payment_modes', 'view_inactive_plans',
+            'view_inactive_products', 'view_inactive_regions', 'view_inactive_custom_forms', 'view_inactive_towns', 'view_inactive_resources', 'view_inactive_rota', 'view_inactive_rotas', 'view_inactive_services', 'view_inactive_sms_templates',
+        ];
+        if (Auth::user()->hasRole('Super-Admin')) {
             $group_permissions = Permission::where(['main_group' => 1, 'status' => 1])
-            ->whereNotIn('name', $notInArray)
-            ->get();
+                ->whereNotIn('name', $notInArray)
+                ->get();
             $sub_permissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereNotIn('name', $notInArray)->pluck('id', 'name'))->get()->keyBy('id');
-        }else{
+        } else {
             $group_permissions = Permission::where(['main_group' => 1, 'status' => 1])
-            ->whereNotIn('name', $notInArray)
-            ->whereNotIn('name', $notInNamesArray)
-            ->get();
+                ->whereNotIn('name', $notInArray)
+                ->whereNotIn('name', $notInNamesArray)
+                ->get();
             $sub_permissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereNotIn('name', $notInArray)
-            ->whereNotIn('name', $notInNamesArray)
-            ->pluck('id', 'name'))->get()->keyBy('id');
+                ->whereNotIn('name', $notInNamesArray)
+                ->pluck('id', 'name'))->get()->keyBy('id');
         }
-        $permissions = array();
-        if($group_permissions) {
-            foreach($group_permissions as $group_permission) {
-                $permissions[$group_permission->id] = array(
+        $permissions = [];
+        if ($group_permissions) {
+            foreach ($group_permissions as $group_permission) {
+                $permissions[$group_permission->id] = [
                     'id' => $group_permission->id,
                     'title' => $group_permission->title,
                     'name' => $group_permission->name,
                     'parent_id' => $group_permission->parent_id,
-                    'children' => array(),
+                    'children' => [],
                     'key' => Str::replaceLast('manage', '', $group_permission->name),
-                );
-                if($sub_permissions) {
-                    foreach($sub_permissions as $sub_permission) {
-                        if(array_key_exists($sub_permission->parent_id, $permissions)) {
-                            $permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = array(
+                ];
+                if ($sub_permissions) {
+                    foreach ($sub_permissions as $sub_permission) {
+                        if (array_key_exists($sub_permission->parent_id, $permissions)) {
+                            $permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = [
                                 'id' => $sub_permission->id,
                                 'title' => $sub_permission->title,
                                 'name' => $sub_permission->name,
                                 'parent_id' => $sub_permission->parent_id,
-                            );
+                            ];
                         }
                     }
                 }
@@ -563,37 +563,36 @@ class RolesController extends Controller
         /*
          * Dashboard Permissions
          */
-        $whereIn = array(
-            'dashboard_manage'
-        );
-        $dashboard_group_permissions = Permission::
-        where(['main_group' => 1, 'status' => 1])->
+        $whereIn = [
+            'dashboard_manage',
+        ];
+        $dashboard_group_permissions = Permission::where(['main_group' => 1, 'status' => 1])->
         whereIn('name', $whereIn)
-        ->get();
+            ->get();
 
         $dashboard_sub_permissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereIn('name', $whereIn)->pluck('id', 'name'))->get()->keyBy('id');
 
-        $dashboard_permissions = array();
-        if($dashboard_group_permissions) {
-            foreach($dashboard_group_permissions as $group_permission) {
-                $dashboard_permissions[$group_permission->id] = array(
+        $dashboard_permissions = [];
+        if ($dashboard_group_permissions) {
+            foreach ($dashboard_group_permissions as $group_permission) {
+                $dashboard_permissions[$group_permission->id] = [
                     'id' => $group_permission->id,
                     'title' => $group_permission->title,
                     'name' => $group_permission->name,
                     'parent_id' => $group_permission->parent_id,
-                    'children' => array(),
+                    'children' => [],
                     'key' => Str::replaceLast('manage', '', $group_permission->name),
-                );
+                ];
 
-                if($dashboard_sub_permissions) {
-                    foreach($dashboard_sub_permissions as $sub_permission) {
-                        if(array_key_exists($sub_permission->parent_id, $dashboard_permissions)) {
-                            $dashboard_permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = array(
+                if ($dashboard_sub_permissions) {
+                    foreach ($dashboard_sub_permissions as $sub_permission) {
+                        if (array_key_exists($sub_permission->parent_id, $dashboard_permissions)) {
+                            $dashboard_permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = [
                                 'id' => $sub_permission->id,
                                 'title' => $sub_permission->title,
                                 'name' => $sub_permission->name,
                                 'parent_id' => $sub_permission->parent_id,
-                            );
+                            ];
                         }
                     }
                 }
@@ -603,36 +602,35 @@ class RolesController extends Controller
         /*
          * Reports Permissions
          */
-        $whereIn = array(
-            'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage','finance_general_revenue_reports_manage','finance_revenue_breakup_reports_manage','finance_ledger_reports_manage','staff_listing_reports_manage','staff_revenue_reports_manage','marketing_reports_manage'
-        );
-        $reports_group_permissions = Permission::
-        where(['main_group' => 1, 'status' => 1])->
+        $whereIn = [
+            'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage', 'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage', 'finance_ledger_reports_manage', 'staff_listing_reports_manage', 'staff_revenue_reports_manage', 'marketing_reports_manage',
+        ];
+        $reports_group_permissions = Permission::where(['main_group' => 1, 'status' => 1])->
         whereIn('name', $whereIn)
             ->get();
         $report_sub_permissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereIn('name', $whereIn)->pluck('id', 'name'))->get()->keyBy('id');
 
-        $reports_permissions = array();
-        if($reports_group_permissions) {
-            foreach($reports_group_permissions as $group_permission) {
-                $reports_permissions[$group_permission->id] = array(
+        $reports_permissions = [];
+        if ($reports_group_permissions) {
+            foreach ($reports_group_permissions as $group_permission) {
+                $reports_permissions[$group_permission->id] = [
                     'id' => $group_permission->id,
                     'title' => $group_permission->title,
                     'name' => $group_permission->name,
                     'parent_id' => $group_permission->parent_id,
-                    'children' => array(),
+                    'children' => [],
                     'key' => Str::replaceLast('manage', '', $group_permission->name),
-                );
+                ];
 
-                if($report_sub_permissions) {
-                    foreach($report_sub_permissions as $sub_permission) {
-                        if(array_key_exists($sub_permission->parent_id, $reports_permissions)) {
-                            $reports_permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = array(
+                if ($report_sub_permissions) {
+                    foreach ($report_sub_permissions as $sub_permission) {
+                        if (array_key_exists($sub_permission->parent_id, $reports_permissions)) {
+                            $reports_permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = [
                                 'id' => $sub_permission->id,
                                 'title' => $sub_permission->title,
                                 'name' => $sub_permission->name,
                                 'parent_id' => $sub_permission->parent_id,
-                            );
+                            ];
                         }
                     }
                 }
@@ -643,14 +641,14 @@ class RolesController extends Controller
         $dashboard_permissions_mapping = $this->prepareDashboardPermissionsMapping();
         $reports_permissions_mapping = $this->prepareReportsPermissionsMapping();
 
-        return array(
+        return [
             'permissions' => $permissions,
             'dashboard_permissions' => $dashboard_permissions,
             'reports_permissions' => $reports_permissions,
             'permissions_mapping' => $permissions_mapping,
             'dashboard_permissions_mapping' => $dashboard_permissions_mapping,
             'reports_permissions_mapping' => $reports_permissions_mapping,
-        );
+        ];
     }
 
     /**
@@ -727,7 +725,7 @@ class RolesController extends Controller
     /**
      * Check if child records exist
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (boolean)
      */
     public static function isChildExists($id, $account_id)

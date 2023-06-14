@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function array_key_exists;
+use function array_keys;
+use function array_values;
+use function mb_strtoupper;
+use function md5;
 use PhpMyAdmin\ConfigStorage\Features\DisplayFeature;
 use PhpMyAdmin\ConfigStorage\Features\RelationFeature;
 use PhpMyAdmin\ConfigStorage\Relation;
@@ -16,13 +22,6 @@ use PhpMyAdmin\Table;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Util;
 use PhpMyAdmin\Utils\ForeignKey;
-
-use function __;
-use function array_key_exists;
-use function array_keys;
-use function array_values;
-use function mb_strtoupper;
-use function md5;
 use function strtoupper;
 use function uksort;
 use function usort;
@@ -189,9 +188,9 @@ final class RelationController extends AbstractController
     /**
      * Update for FK
      *
-     * @param Table $table            Table
-     * @param array $options          Options
-     * @param array $relationsForeign External relations
+     * @param  Table  $table            Table
+     * @param  array  $options          Options
+     * @param  array  $relationsForeign External relations
      */
     private function updateForForeignKeys(Table $table, array $options, array $relationsForeign): void
     {
@@ -248,7 +247,7 @@ final class RelationController extends AbstractController
     /**
      * Update for internal relation
      *
-     * @param array $relations Relations
+     * @param  array  $relations Relations
      */
     private function updateForInternalRelation(
         Table $table,
@@ -312,7 +311,7 @@ final class RelationController extends AbstractController
     /**
      * Send database selection values for dropdown
      *
-     * @param string $storageEngine Storage engine.
+     * @param  string  $storageEngine Storage engine.
      */
     public function getDropdownValueForDatabase(string $storageEngine): void
     {
@@ -321,7 +320,7 @@ final class RelationController extends AbstractController
 
         if ($foreign) {
             $query = 'SHOW TABLE STATUS FROM '
-                . Util::backquote($_POST['foreignDb']);
+                .Util::backquote($_POST['foreignDb']);
             $tables_rs = $this->dbi->query($query);
 
             foreach ($tables_rs as $row) {
@@ -333,7 +332,7 @@ final class RelationController extends AbstractController
             }
         } else {
             $query = 'SHOW TABLES FROM '
-                . Util::backquote($_POST['foreignDb']);
+                .Util::backquote($_POST['foreignDb']);
             $tables_rs = $this->dbi->query($query);
             $tables = $tables_rs->fetchAllColumn();
         }

@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins;
 
+use function __;
+use function is_array;
+use function parse_url;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\TwoFactor;
-
-use function __;
-use function is_array;
-use function parse_url;
 use function sprintf;
 use function strlen;
 
@@ -52,7 +51,7 @@ class TwoFactorPlugin
     /**
      * Creates object
      *
-     * @param TwoFactor $twofactor TwoFactor instance
+     * @param  TwoFactor  $twofactor TwoFactor instance
      */
     public function __construct(TwoFactor $twofactor)
     {
@@ -143,8 +142,7 @@ class TwoFactorPlugin
      *
      * Either hostname or hostname with scheme.
      *
-     * @param bool $return_url Whether to generate URL
-     *
+     * @param  bool  $return_url Whether to generate URL
      * @return string
      */
     public function getAppId($return_url)
@@ -172,7 +170,7 @@ class TwoFactorPlugin
         if ($return_url) {
             $port = '';
             if (isset($parsed['port'])) {
-                $port = ':' . $parsed['port'];
+                $port = ':'.$parsed['port'];
             }
 
             return sprintf('%s://%s%s', $parsed['scheme'], $parsed['host'], $port);

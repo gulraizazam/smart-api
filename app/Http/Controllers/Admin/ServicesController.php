@@ -69,7 +69,7 @@ class ServicesController extends Controller
             // Get Total Records
             $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-            $Services = GeneralFunctions::ServicesTree($request, $iTotalRecords);
+            $Services = GeneralFunctions::servicesList($request, $iTotalRecords);
             $records = $this->getExtraData($records);
             if (! empty($Services)) {
                 $records['data'] = $Services;

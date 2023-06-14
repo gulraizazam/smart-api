@@ -183,18 +183,17 @@ class Patients extends BaseModal
         return self::where($where)->first();
     }
 
-		/**
-		 * Create Record
-		 *
-		 * @param data
-		 *
-		 * @return (mixed)
-		 */
-		static public function createRecord($data,$flag=0)
-		{
-            if($flag == 1){
-			    $patient = Patients::where(['phone' => $data['phone']])->first();
-                if(!$patient){
+        /**
+         * Create Record
+         *
+         * @param data
+         * @return (mixed)
+         */
+        public static function createRecord($data, $flag = 0)
+        {
+            if ($flag == 1) {
+                $patient = Patients::where(['phone' => $data['phone']])->first();
+                if (! $patient) {
                     $record = Patients::create($data);
                     AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
@@ -279,7 +278,7 @@ class Patients extends BaseModal
     /**
      * Get Total Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id, $apply_filter, $filename)
@@ -287,27 +286,27 @@ class Patients extends BaseModal
 
         $where = self::filters_patients($request, $account_id, $apply_filter, $filename);
 
-			if (count($where)) {
-				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
-					return self::where($where)->count();
-				}else{
-					return self::where($where)->where(['active' => 1])->count();
-				}
-			} else {
-				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
-					return self::count();
-				}else{
-					return self::where(['active' => 1])->count();
-				}
-			}
-		}
+        if (count($where)) {
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
+                return self::where($where)->count();
+            } else {
+                return self::where($where)->where(['active' => 1])->count();
+            }
+        } else {
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
+                return self::count();
+            } else {
+                return self::where(['active' => 1])->count();
+            }
+        }
+    }
 
     /**
      * Get Records
      *
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $apply_filter, $filename)
@@ -317,23 +316,23 @@ class Patients extends BaseModal
 
         [$orderBy, $order] = getSortBy($request);
 
-			if (count($where)) {
-				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
-					return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
-				}else{
-					return self::where(['active' => 1])->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
-				}
+        if (count($where)) {
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
+                return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
+            } else {
+                return self::where(['active' => 1])->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
+            }
 
-				//return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-			} else {
-				//return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-				if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients")){
-					return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at", "DESC")->select('*', 'id as patient_id')->get();
-				}else{
-					return self::where(['active' => 1])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy("created_at","DESC")->select('*', 'id as patient_id')->get();
-				}
-			}
-		}
+            //return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
+        } else {
+            //return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
+                return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
+            } else {
+                return self::where(['active' => 1])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
+            }
+        }
+    }
 
     /**
      * Delete Record
@@ -432,7 +431,7 @@ class Patients extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (boolean)
      */
     public static function isChildExists($id, $account_id)

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Transformation;
 
+use function __;
+use function define;
+use function htmlspecialchars;
+use function in_array;
+use function intval;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\Core;
@@ -14,12 +19,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Util;
-
-use function __;
-use function define;
-use function htmlspecialchars;
-use function in_array;
-use function intval;
 use function round;
 use function str_replace;
 use function stripos;
@@ -106,13 +105,13 @@ class WrapperController extends AbstractController
             }
 
             $result = $this->dbi->query(
-                'SELECT * FROM ' . Util::backquote($table)
-                . ' WHERE ' . $where_clause . ';'
+                'SELECT * FROM '.Util::backquote($table)
+                .' WHERE '.$where_clause.';'
             );
             $row = $result->fetchAssoc();
         } else {
             $result = $this->dbi->query(
-                'SELECT * FROM ' . Util::backquote($table) . ' LIMIT 1;'
+                'SELECT * FROM '.Util::backquote($table).' LIMIT 1;'
             );
             $row = $result->fetchAssoc();
         }
@@ -152,7 +151,7 @@ class WrapperController extends AbstractController
             $mime_type = (! empty($mime_map[$transform_key]['mimetype'])
                     ? str_replace('_', '/', $mime_map[$transform_key]['mimetype'])
                     : $default_ct)
-                . ($mime_options['charset'] ?? '');
+                .($mime_options['charset'] ?? '');
         }
 
         Core::downloadHeader($cn ?? '', $mime_type ?? '');

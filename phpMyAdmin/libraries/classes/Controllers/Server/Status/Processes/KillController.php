@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server\Status\Processes;
 
+use function __;
 use PhpMyAdmin\Controllers\Server\Status\AbstractController;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Http\ServerRequest;
@@ -11,8 +12,6 @@ use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Server\Status\Data;
 use PhpMyAdmin\Template;
-
-use function __;
 
 final class KillController extends AbstractController
 {
@@ -26,7 +25,7 @@ final class KillController extends AbstractController
     }
 
     /**
-     * @param array $params Request parameters
+     * @param  array  $params Request parameters
      */
     public function __invoke(ServerRequest $request, array $params): void
     {

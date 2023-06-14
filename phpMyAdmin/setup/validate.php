@@ -10,7 +10,7 @@ use PhpMyAdmin\Core;
 
 if (! defined('ROOT_PATH')) {
     // phpcs:disable PSR1.Files.SideEffects
-    define('ROOT_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
+    define('ROOT_PATH', dirname(__DIR__).DIRECTORY_SEPARATOR);
     // phpcs:enable
 }
 
@@ -18,8 +18,7 @@ if (! defined('ROOT_PATH')) {
 define('PHPMYADMIN', true);
 // phpcs:enable
 
-require ROOT_PATH . 'setup/lib/common.inc.php';
-
+require ROOT_PATH.'setup/lib/common.inc.php';
 
 Core::headerJSON();
 

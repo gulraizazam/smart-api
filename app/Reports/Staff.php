@@ -111,7 +111,7 @@ class Staff
     /**
      * Centre performance stats by revenue
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function centerStaffPerformanceStatsByRevenue($data, $filters = [])
@@ -222,7 +222,7 @@ class Staff
     /**
      * Centre performance stats by service type
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function centerPerformanceStatsByServices($data, $filters = [])

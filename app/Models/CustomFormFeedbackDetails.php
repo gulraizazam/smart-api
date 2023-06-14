@@ -28,7 +28,7 @@ class CustomFormFeedbackDetails extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id)
@@ -109,7 +109,7 @@ class CustomFormFeedbackDetails extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (boolean)
      */
     public static function isChildExists($id, $account_id)

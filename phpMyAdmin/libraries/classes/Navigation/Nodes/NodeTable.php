@@ -7,12 +7,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Navigation\Nodes;
 
-use PhpMyAdmin\Url;
-use PhpMyAdmin\Util;
-
 use function __;
 use function in_array;
 use function intval;
+use PhpMyAdmin\Url;
+use PhpMyAdmin\Util;
 
 /**
  * Represents a columns node in the navigation tree
@@ -23,6 +22,7 @@ class NodeTable extends NodeDatabaseChild
      * For the second IMG tag, used when rendering the node.
      *
      * @var array<string, string>|null
+     *
      * @psalm-var array{image: string, title: string}|null
      */
     public $secondIcon;
@@ -30,9 +30,9 @@ class NodeTable extends NodeDatabaseChild
     /**
      * Initialises the class
      *
-     * @param string $name    An identifier for the new node
-     * @param int    $type    Type of node, may be one of CONTAINER or OBJECT
-     * @param bool   $isGroup Whether this object has been created
+     * @param  string  $name    An identifier for the new node
+     * @param  int  $type    Type of node, may be one of CONTAINER or OBJECT
+     * @param  bool  $isGroup Whether this object has been created
      *                        while grouping nodes
      */
     public function __construct($name, $type = Node::OBJECT, $isGroup = false)
@@ -75,10 +75,9 @@ class NodeTable extends NodeDatabaseChild
      * This method is overridden by the PhpMyAdmin\Navigation\Nodes\NodeDatabase
      * and PhpMyAdmin\Navigation\Nodes\NodeTable classes
      *
-     * @param string $type         The type of item we are looking for
+     * @param  string  $type         The type of item we are looking for
      *                             ('columns' or 'indexes')
-     * @param string $searchClause A string used to filter the results of the query
-     *
+     * @param  string  $searchClause A string used to filter the results of the query
      * @return int
      */
     public function getPresence($type = '', $searchClause = '')
@@ -95,13 +94,13 @@ class NodeTable extends NodeDatabaseChild
                     $table = $dbi->escapeString($table);
                     $query = 'SELECT COUNT(*) ';
                     $query .= 'FROM `INFORMATION_SCHEMA`.`COLUMNS` ';
-                    $query .= "WHERE `TABLE_NAME`='" . $table . "' ";
-                    $query .= "AND `TABLE_SCHEMA`='" . $db . "'";
+                    $query .= "WHERE `TABLE_NAME`='".$table."' ";
+                    $query .= "AND `TABLE_SCHEMA`='".$db."'";
                     $retval = (int) $dbi->fetchValue($query);
                 } else {
                     $db = Util::backquote($db);
                     $table = Util::backquote($table);
-                    $query = 'SHOW COLUMNS FROM ' . $table . ' FROM ' . $db . '';
+                    $query = 'SHOW COLUMNS FROM '.$table.' FROM '.$db.'';
                     $retval = (int) $dbi->queryAndGetNumRows($query);
                 }
 
@@ -109,7 +108,7 @@ class NodeTable extends NodeDatabaseChild
             case 'indexes':
                 $db = Util::backquote($db);
                 $table = Util::backquote($table);
-                $query = 'SHOW INDEXES FROM ' . $table . ' FROM ' . $db;
+                $query = 'SHOW INDEXES FROM '.$table.' FROM '.$db;
                 $retval = (int) $dbi->queryAndGetNumRows($query);
                 break;
             case 'triggers':
@@ -119,14 +118,14 @@ class NodeTable extends NodeDatabaseChild
                     $query = 'SELECT COUNT(*) ';
                     $query .= 'FROM `INFORMATION_SCHEMA`.`TRIGGERS` ';
                     $query .= 'WHERE `EVENT_OBJECT_SCHEMA` '
-                    . Util::getCollateForIS() . "='" . $db . "' ";
+                    .Util::getCollateForIS()."='".$db."' ";
                     $query .= 'AND `EVENT_OBJECT_TABLE` '
-                    . Util::getCollateForIS() . "='" . $table . "'";
+                    .Util::getCollateForIS()."='".$table."'";
                     $retval = (int) $dbi->fetchValue($query);
                 } else {
                     $db = Util::backquote($db);
                     $table = $dbi->escapeString($table);
-                    $query = 'SHOW TRIGGERS FROM ' . $db . " WHERE `Table` = '" . $table . "'";
+                    $query = 'SHOW TRIGGERS FROM '.$db." WHERE `Table` = '".$table."'";
                     $retval = (int) $dbi->queryAndGetNumRows($query);
                 }
 
@@ -143,11 +142,10 @@ class NodeTable extends NodeDatabaseChild
      * This method is overridden by the PhpMyAdmin\Navigation\Nodes\NodeDatabase
      * and PhpMyAdmin\Navigation\Nodes\NodeTable classes
      *
-     * @param string $type         The type of item we are looking for
+     * @param  string  $type         The type of item we are looking for
      *                             ('tables', 'views', etc)
-     * @param int    $pos          The offset of the list within the results
-     * @param string $searchClause A string used to filter the results of the query
-     *
+     * @param  int  $pos          The offset of the list within the results
+     * @param  string  $searchClause A string used to filter the results of the query
      * @return array
      */
     public function getData($type, $pos, $searchClause = '')
@@ -169,17 +167,17 @@ class NodeTable extends NodeDatabaseChild
                     $query .= ',`COLUMN_DEFAULT` AS `default` ';
                     $query .= ",IF (`IS_NULLABLE` = 'NO', '', 'nullable') AS `nullable` ";
                     $query .= 'FROM `INFORMATION_SCHEMA`.`COLUMNS` ';
-                    $query .= "WHERE `TABLE_NAME`='" . $table . "' ";
-                    $query .= "AND `TABLE_SCHEMA`='" . $db . "' ";
+                    $query .= "WHERE `TABLE_NAME`='".$table."' ";
+                    $query .= "AND `TABLE_SCHEMA`='".$db."' ";
                     $query .= 'ORDER BY `COLUMN_NAME` ASC ';
-                    $query .= 'LIMIT ' . intval($pos) . ', ' . $maxItems;
+                    $query .= 'LIMIT '.intval($pos).', '.$maxItems;
                     $retval = $dbi->fetchResult($query);
                     break;
                 }
 
                 $db = Util::backquote($db);
                 $table = Util::backquote($table);
-                $query = 'SHOW COLUMNS FROM ' . $table . ' FROM ' . $db;
+                $query = 'SHOW COLUMNS FROM '.$table.' FROM '.$db;
                 $handle = $dbi->tryQuery($query);
                 if ($handle === false) {
                     break;
@@ -207,7 +205,7 @@ class NodeTable extends NodeDatabaseChild
             case 'indexes':
                 $db = Util::backquote($db);
                 $table = Util::backquote($table);
-                $query = 'SHOW INDEXES FROM ' . $table . ' FROM ' . $db;
+                $query = 'SHOW INDEXES FROM '.$table.' FROM '.$db;
                 $handle = $dbi->tryQuery($query);
                 if ($handle === false) {
                     break;
@@ -235,18 +233,18 @@ class NodeTable extends NodeDatabaseChild
                     $query = 'SELECT `TRIGGER_NAME` AS `name` ';
                     $query .= 'FROM `INFORMATION_SCHEMA`.`TRIGGERS` ';
                     $query .= 'WHERE `EVENT_OBJECT_SCHEMA` '
-                    . Util::getCollateForIS() . "='" . $db . "' ";
+                    .Util::getCollateForIS()."='".$db."' ";
                     $query .= 'AND `EVENT_OBJECT_TABLE` '
-                    . Util::getCollateForIS() . "='" . $table . "' ";
+                    .Util::getCollateForIS()."='".$table."' ";
                     $query .= 'ORDER BY `TRIGGER_NAME` ASC ';
-                    $query .= 'LIMIT ' . intval($pos) . ', ' . $maxItems;
+                    $query .= 'LIMIT '.intval($pos).', '.$maxItems;
                     $retval = $dbi->fetchResult($query);
                     break;
                 }
 
                 $db = Util::backquote($db);
                 $table = $dbi->escapeString($table);
-                $query = 'SHOW TRIGGERS FROM ' . $db . " WHERE `Table` = '" . $table . "'";
+                $query = 'SHOW TRIGGERS FROM '.$db." WHERE `Table` = '".$table."'";
                 $handle = $dbi->tryQuery($query);
                 if ($handle === false) {
                     break;
@@ -285,9 +283,9 @@ class NodeTable extends NodeDatabaseChild
     /**
      * Add an icon to navigation tree
      *
-     * @param string $page Page name to redirect
-     *
+     * @param  string  $page Page name to redirect
      * @return array<string, string>|null
+     *
      * @psalm-return array{image: string, title: string}|null
      */
     private function addIcon(string $page): ?array

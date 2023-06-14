@@ -17,7 +17,7 @@ class GlobalOperatorSettings extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary()

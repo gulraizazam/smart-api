@@ -182,9 +182,9 @@ class AppointmentsController extends Controller
     /**
      * Load Clients by Appointment Status (Date Wise) Report
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function clientByAppointmentStatusReportExcel($reportData, $filters, $start_date, $end_date)
@@ -347,9 +347,9 @@ class AppointmentsController extends Controller
     /**
      * Load Appointments Summary by Service Report in Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function appointmentSummaryByStatusReportExcel($reportData, $filters, $start_date, $end_date)
@@ -487,9 +487,9 @@ class AppointmentsController extends Controller
     /**
      * Load Appointments Summary by Service Report in Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function appointmentSummaryByServiceReportExcel($reportData, $filters, $start_date, $end_date)
@@ -629,9 +629,9 @@ class AppointmentsController extends Controller
     /**
      * Appointment Reports
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function AppointmentReportExcel($reportData, $filters, $start_date, $end_date)
@@ -923,10 +923,10 @@ class AppointmentsController extends Controller
     /**
      * Staff Appointment Schedule Report (Summary) Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function StaffReferredByAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date)
@@ -1176,10 +1176,10 @@ class AppointmentsController extends Controller
     /**
      * Employee Appointment Summary Report
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function employeeAppointmentSummary($reportData, $filters, $start_date, $end_date)
@@ -1228,10 +1228,10 @@ class AppointmentsController extends Controller
     /**
      * Staff Appointment Schedule Report (Summary) Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function StaffAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date)
@@ -1402,9 +1402,9 @@ class AppointmentsController extends Controller
     /**
      * Compliance Report
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function complianceReportExcel($reportData, $start_date, $end_date)
@@ -1547,9 +1547,9 @@ class AppointmentsController extends Controller
     /**
      * Appointment Rescheduled count report excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function RescheduledcountreportExcel($reportData, $filters, $start_date, $end_date)

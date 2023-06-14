@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server\Variables;
 
+use function header;
+use function implode;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Http\ServerRequest;
@@ -11,9 +13,6 @@ use PhpMyAdmin\Providers\ServerVariables\ServerVariablesProvider;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Util;
-
-use function header;
-use function implode;
 
 final class GetVariableController extends AbstractController
 {
@@ -27,7 +26,7 @@ final class GetVariableController extends AbstractController
     }
 
     /**
-     * @param array $params Request parameters
+     * @param  array  $params Request parameters
      */
     public function __invoke(ServerRequest $request, array $params): void
     {
@@ -41,7 +40,7 @@ final class GetVariableController extends AbstractController
         // when server is running in ANSI_QUOTES sql_mode
         $varValue = $this->dbi->fetchSingleRow(
             'SHOW GLOBAL VARIABLES WHERE Variable_name=\''
-            . $this->dbi->escapeString($params['name']) . '\';',
+            .$this->dbi->escapeString($params['name']).'\';',
             DatabaseInterface::FETCH_NUM
         );
 

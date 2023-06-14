@@ -10,7 +10,7 @@ class BaseModal extends Model
     /**
      * Get Data
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (mixed)
      */
     public static function getData($id)
