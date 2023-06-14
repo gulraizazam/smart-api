@@ -2905,7 +2905,7 @@ class Finanaces
         }else{
             $average_client_coversion = 0;
         }
-        $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
+        $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->select('conversion_spend')->groupBy('patient_id')
         ->map(function ($appointments_info) {
             return $appointments_info->sum('conversion_spend');
         });
