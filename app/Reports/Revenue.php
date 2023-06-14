@@ -17,7 +17,7 @@ class Revenue
     /**
      * Revenue Breakup Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function RevenueBreakup($data, $account_id)

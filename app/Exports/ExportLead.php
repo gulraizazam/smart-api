@@ -59,21 +59,21 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
             $where[] = ['created_at', '<=', $this->request->end_date.' 23:59:59'];
         }
         $result_query = Leads::whereIn('city_id', ACL::getUserCities());
-        if(count($where)){
+        if (count($where)) {
             $result_query->where($where);
         }
         if ($this->request->service_id != null || $this->request->service_id != '') {
             $service_id = $this->request->service_id;
-            $result_query->with(['lead_service' => function($q) use($service_id){
+            $result_query->with(['lead_service' => function ($q) use ($service_id) {
                 $q->where(['service_id' => $service_id, 'status' => 1]);
             }]);
         } else {
-            $result_query->with(['lead_service' => function($q){
+            $result_query->with(['lead_service' => function ($q) {
                 $q->where(['status' => 1]);
             }]);
         }
         $result = $result_query->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
-            ->orderBy("id", "DESC")->latest()->get()->unique('phone');
+            ->orderBy('id', 'DESC')->latest()->get()->unique('phone');
 
         return $result;
     }

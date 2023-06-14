@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Database;
 
+use function array_keys;
+use function md5;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\ConfigStorage\RelationCleanup;
 use PhpMyAdmin\DatabaseInterface;
@@ -16,9 +18,6 @@ use PhpMyAdmin\Sql;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Url;
-
-use function array_keys;
-use function md5;
 
 /**
  * Class to handle database Multi-table querying
@@ -57,10 +56,10 @@ class MultiTableQuery
     public $template;
 
     /**
-     * @param DatabaseInterface $dbi                DatabaseInterface instance
-     * @param Template          $template           Template instance
-     * @param string            $dbName             Database name
-     * @param int               $defaultNoOfColumns Default number of columns
+     * @param  DatabaseInterface  $dbi                DatabaseInterface instance
+     * @param  Template  $template           Template instance
+     * @param  string  $dbName             Database name
+     * @param  int  $defaultNoOfColumns Default number of columns
      */
     public function __construct(
         DatabaseInterface $dbi,
@@ -102,8 +101,8 @@ class MultiTableQuery
     /**
      * Displays multi-table query results
      *
-     * @param string $sqlQuery The query to parse
-     * @param string $db       The current database
+     * @param  string  $sqlQuery The query to parse
+     * @param  string  $db       The current database
      */
     public static function displayResults($sqlQuery, $db): string
     {

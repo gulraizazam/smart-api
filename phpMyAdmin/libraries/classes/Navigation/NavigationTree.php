@@ -7,6 +7,28 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Navigation;
 
+use function __;
+use function _ngettext;
+use function array_intersect_key;
+use function array_key_exists;
+use function array_keys;
+use function array_merge;
+use function array_shift;
+use function base64_decode;
+use function count;
+use const E_USER_WARNING;
+use function explode;
+use function floor;
+use function get_class;
+use function htmlspecialchars;
+use function in_array;
+use function is_array;
+use function is_bool;
+use function is_object;
+use function mb_strlen;
+use function mb_strpos;
+use function mb_substr;
+use function method_exists;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Html\Generator;
@@ -20,28 +42,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function _ngettext;
-use function array_intersect_key;
-use function array_key_exists;
-use function array_keys;
-use function array_merge;
-use function array_shift;
-use function base64_decode;
-use function count;
-use function explode;
-use function floor;
-use function get_class;
-use function htmlspecialchars;
-use function in_array;
-use function is_array;
-use function is_bool;
-use function is_object;
-use function mb_strlen;
-use function mb_strpos;
-use function mb_substr;
-use function method_exists;
 use function sort;
 use function sprintf;
 use function strcasecmp;
@@ -54,8 +54,6 @@ use function trigger_error;
 use function trim;
 use function usort;
 
-use const E_USER_WARNING;
-
 /**
  * Displays a collapsible of database objects in the navigation frame
  */
@@ -65,57 +63,67 @@ class NavigationTree
 
     /** @var Node Reference to the root node of the tree */
     private $tree;
+
     /**
      * @var array The actual paths to all expanded nodes in the tree
      *            This does not include nodes created after the grouping
      *            of nodes has been performed
      */
     private $aPath = [];
+
     /**
      * @var array The virtual paths to all expanded nodes in the tree
      *            This includes nodes created after the grouping of
      *            nodes has been performed
      */
     private $vPath = [];
+
     /**
      * @var int Position in the list of databases,
      *          used for pagination
      */
     private $pos;
+
     /**
      * @var string[] The names of the type of items that are being paginated on
      *               the second level of the navigation tree. These may be
      *               tables, views, functions, procedures or events.
      */
     private $pos2Name = [];
+
     /**
      * @var int[] The positions of nodes in the lists of tables, views,
      *            routines or events used for pagination
      */
     private $pos2Value = [];
+
     /**
      * @var string[] The names of the type of items that are being paginated
      *               on the second level of the navigation tree.
      *               These may be columns or indexes
      */
     private $pos3Name = [];
+
     /**
      * @var int[] The positions of nodes in the lists of columns or indexes
      *            used for pagination
      */
     private $pos3Value = [];
+
     /**
      * @var string The search clause to use in SQL queries for
      *             fetching databases
      *             Used by the asynchronous fast filter
      */
     private $searchClause = '';
+
     /**
      * @var string The search clause to use in SQL queries for
      *             fetching nodes
      *             Used by the asynchronous fast filter
      */
     private $searchClause2 = '';
+
     /**
      * @var bool Whether a warning was raised for large item groups
      *           which can affect performance.
@@ -129,8 +137,8 @@ class NavigationTree
     private $dbi;
 
     /**
-     * @param Template          $template Template instance
-     * @param DatabaseInterface $dbi      DatabaseInterface instance
+     * @param  Template  $template Template instance
+     * @param  DatabaseInterface  $dbi      DatabaseInterface instance
      */
     public function __construct($template, DatabaseInterface $dbi)
     {
@@ -163,16 +171,16 @@ class NavigationTree
         } else {
             if (isset($_POST['n0_aPath'])) {
                 $count = 0;
-                while (isset($_POST['n' . $count . '_aPath'])) {
-                    $this->aPath[$count] = $this->parsePath($_POST['n' . $count . '_aPath']);
-                    if (isset($_POST['n' . $count . '_pos2_name'])) {
-                        $this->pos2Name[$count] = $_POST['n' . $count . '_pos2_name'];
-                        $this->pos2Value[$count] = (int) $_POST['n' . $count . '_pos2_value'];
+                while (isset($_POST['n'.$count.'_aPath'])) {
+                    $this->aPath[$count] = $this->parsePath($_POST['n'.$count.'_aPath']);
+                    if (isset($_POST['n'.$count.'_pos2_name'])) {
+                        $this->pos2Name[$count] = $_POST['n'.$count.'_pos2_name'];
+                        $this->pos2Value[$count] = (int) $_POST['n'.$count.'_pos2_value'];
                     }
 
-                    if (isset($_POST['n' . $count . '_pos3_name'])) {
-                        $this->pos3Name[$count] = $_POST['n' . $count . '_pos3_name'];
-                        $this->pos3Value[$count] = (int) $_POST['n' . $count . '_pos3_value'];
+                    if (isset($_POST['n'.$count.'_pos3_name'])) {
+                        $this->pos3Name[$count] = $_POST['n'.$count.'_pos3_name'];
+                        $this->pos3Value[$count] = (int) $_POST['n'.$count.'_pos3_value'];
                     }
 
                     $count++;
@@ -185,8 +193,8 @@ class NavigationTree
         } else {
             if (isset($_POST['n0_vPath'])) {
                 $count = 0;
-                while (isset($_POST['n' . $count . '_vPath'])) {
-                    $this->vPath[$count] = $this->parsePath($_POST['n' . $count . '_vPath']);
+                while (isset($_POST['n'.$count.'_vPath'])) {
+                    $this->vPath[$count] = $this->parsePath($_POST['n'.$count.'_vPath']);
                     $count++;
                 }
             }
@@ -267,7 +275,7 @@ class NavigationTree
         } else {
             $databases = [];
             foreach ($GLOBALS['dbs_to_test'] as $db) {
-                $query = "SHOW DATABASES LIKE '" . $db . "'";
+                $query = "SHOW DATABASES LIKE '".$db."'";
                 $handle = $this->dbi->tryQuery($query);
                 if ($handle === false) {
                     continue;
@@ -299,9 +307,7 @@ class NavigationTree
     /**
      * Converts an encoded path to a node in string format to an array
      *
-     * @param string $string The path to parse
-     *
-     * @return array
+     * @param  string  $string The path to parse
      */
     private function parsePath($string): array
     {
@@ -353,17 +359,16 @@ class NavigationTree
     /**
      * Builds a branch of the tree
      *
-     * @param array  $path  A paths pointing to the branch
+     * @param  array  $path  A paths pointing to the branch
      *                      of the tree that needs to be built
-     * @param string $type2 The type of item being paginated on
+     * @param  string  $type2 The type of item being paginated on
      *                      the second level of the tree
-     * @param int    $pos2  The position for the pagination of
+     * @param  int  $pos2  The position for the pagination of
      *                      the branch at the second level of the tree
-     * @param string $type3 The type of item being paginated on
+     * @param  string  $type3 The type of item being paginated on
      *                      the third level of the tree
-     * @param int    $pos3  The position for the pagination of
+     * @param  int  $pos3  The position for the pagination of
      *                      the branch at the third level of the tree
-     *
      * @return Node|bool    The active node or false in case of failure, true if the path contains <= 1 items
      */
     private function buildPathPart(array $path, string $type2, int $pos2, string $type3, int $pos3)
@@ -507,15 +512,14 @@ class NavigationTree
      * References to existing children are returned
      * if this function is called twice on the same node
      *
-     * @param NodeTable $table The table node, new containers will be
+     * @param  NodeTable  $table The table node, new containers will be
      *                         attached to this node
-     * @param int       $pos2  The position for the pagination of
+     * @param  int  $pos2  The position for the pagination of
      *                         the branch at the second level of the tree
-     * @param string    $type3 The type of item being paginated on
+     * @param  string  $type3 The type of item being paginated on
      *                         the third level of the tree
-     * @param int       $pos3  The position for the pagination of
+     * @param  int  $pos3  The position for the pagination of
      *                         the branch at the third level of the tree
-     *
      * @return array An array of new nodes
      */
     private function addTableContainers(NodeTable $table, int $pos2, string $type3, int $pos3): array
@@ -562,13 +566,12 @@ class NavigationTree
      * References to existing children are returned
      * if this function is called twice on the same node
      *
-     * @param NodeDatabase $db   The database node, new containers will be
+     * @param  NodeDatabase  $db   The database node, new containers will be
      *                           attached to this node
-     * @param string       $type The type of item being paginated on
+     * @param  string  $type The type of item being paginated on
      *                           the second level of the tree
-     * @param int          $pos2 The position for the pagination of
+     * @param  int  $pos2 The position for the pagination of
      *                           the branch at the second level of the tree
-     *
      * @return array An array of new nodes
      */
     private function addDbContainers(NodeDatabase $db, string $type, int $pos2): array
@@ -641,7 +644,7 @@ class NavigationTree
     /**
      * Recursively groups tree nodes given a separator
      *
-     * @param Node $node The node to group or null
+     * @param  Node  $node The node to group or null
      *                   to group the whole tree. If
      *                   passed as an argument, $node
      *                   must be of type CONTAINER
@@ -661,7 +664,7 @@ class NavigationTree
     /**
      * Recursively groups tree nodes given a separator
      *
-     * @param Node $node The node to group
+     * @param  Node  $node The node to group
      */
     public function groupNode($node): void
     {
@@ -757,8 +760,8 @@ class NavigationTree
                 trigger_error(
                     __(
                         'There are large item groups in navigation panel which '
-                        . 'may affect the performance. Consider disabling item '
-                        . 'grouping in the navigation panel.'
+                        .'may affect the performance. Consider disabling item '
+                        .'grouping in the navigation panel.'
                     ),
                     E_USER_WARNING
                 );
@@ -772,7 +775,7 @@ class NavigationTree
                 foreach ($node->children as $child) {
                     $keySeparatorLength = mb_strlen((string) $key) + $separatorLength;
                     $nameSubstring = mb_substr((string) $child->name, 0, $keySeparatorLength);
-                    if (($nameSubstring != $key . $separator && $child->name != $key) || $child->type != Node::OBJECT) {
+                    if (($nameSubstring != $key.$separator && $child->name != $key) || $child->type != Node::OBJECT) {
                         continue;
                     }
 
@@ -815,8 +818,8 @@ class NavigationTree
             // and the new group contains all of the current node's children, combine them
             $class = get_class($node);
             if (count($newChildren) === $numChildren && substr($class, strrpos($class, '\\') + 1) === 'Node') {
-                $node->name .= $separators[0] . htmlspecialchars((string) $key);
-                $node->realName .= $separators[0] . htmlspecialchars((string) $key);
+                $node->name .= $separators[0].htmlspecialchars((string) $key);
+                $node->realName .= $separators[0].htmlspecialchars((string) $key);
                 $node->separatorDepth--;
                 foreach ($newChildren as $newChild) {
                     $node->removeChild($newChild['replaces_name']);
@@ -969,8 +972,7 @@ class NavigationTree
      * Renders the parameters that are required on the client
      * side to know which page(s) we will be requesting data from
      *
-     * @param Node $node The node to create the pagination parameters for
-     *
+     * @param  Node  $node The node to create the pagination parameters for
      * @return array<string, string>
      */
     private function getPaginationParamsHtml(Node $node): array
@@ -995,8 +997,8 @@ class NavigationTree
     /**
      * Finds whether given tree matches this tree.
      *
-     * @param array $tree  Tree to check
-     * @param array $paths Paths to check
+     * @param  array  $tree  Tree to check
+     * @param  array  $paths Paths to check
      */
     private function findTreeMatch(array $tree, array $paths): bool
     {
@@ -1019,7 +1021,7 @@ class NavigationTree
     }
 
     /**
-     * @param Node[] $children
+     * @param  Node[]  $children
      */
     private function renderNodes(array $children, bool $hasFirstClass = true): string
     {
@@ -1040,9 +1042,8 @@ class NavigationTree
     /**
      * Renders a single node or a branch of the tree
      *
-     * @param Node   $node  The node to render
-     * @param string $class An additional class for the list item
-     *
+     * @param  Node  $node  The node to render
+     * @param  string  $class An additional class for the list item
      * @return string HTML code for the tree node or branch
      */
     private function renderNode(Node $node, string $class = ''): string
@@ -1067,7 +1068,7 @@ class NavigationTree
                 return '';
             }
 
-            $liClasses = trim($class . ' ' . $node->classes);
+            $liClasses = trim($class.' '.$node->classes);
             $sterile = ['events', 'triggers', 'functions', 'procedures', 'views', 'columns', 'indexes'];
             $parentName = '';
             $parents = $node->parents(false, true);
@@ -1165,7 +1166,7 @@ class NavigationTree
                 $extraClass = ' last';
             }
 
-            $buffer .= $this->renderNode($children[$i], $children[$i]->classes . $extraClass);
+            $buffer .= $this->renderNode($children[$i], $children[$i]->classes.$extraClass);
         }
 
         if (! empty($buffer)) {
@@ -1288,8 +1289,7 @@ class NavigationTree
     /**
      * Generates the HTML code for displaying the fast filter for tables
      *
-     * @param Node $node The node for which to generate the fast filter html
-     *
+     * @param  Node  $node The node for which to generate the fast filter html
      * @return string LI element used for the fast filter
      */
     private function fastFilterHtml(Node $node): string
@@ -1368,7 +1368,7 @@ class NavigationTree
     /**
      * Generates the HTML code for displaying the list pagination
      *
-     * @param Node $node The node for whose children the page
+     * @param  Node  $node The node for whose children the page
      *                   selector will be created
      */
     private function getPageSelector(Node $node): string
@@ -1415,7 +1415,7 @@ class NavigationTree
                     Url::getFromRoute('/navigation'),
                     'frame_navigation',
                     $GLOBALS['cfg']['MaxNavigationItems'],
-                    'pos' . $level . '_value'
+                    'pos'.$level.'_value'
                 );
             }
         }
@@ -1426,9 +1426,8 @@ class NavigationTree
     /**
      * Called by usort() for sorting the nodes in a container
      *
-     * @param Node $a The first element used in the comparison
-     * @param Node $b The second element used in the comparison
-     *
+     * @param  Node  $a The first element used in the comparison
+     * @param  Node  $b The second element used in the comparison
      * @return int See strnatcmp() and strcmp()
      */
     public static function sortNode(Node $a, Node $b): int

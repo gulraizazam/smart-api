@@ -48,9 +48,9 @@ class CustomFormFeedbacks extends BaseModal
     /**
      * Get Records
      *
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $apply_filter, $id, $filename)
@@ -105,8 +105,8 @@ class CustomFormFeedbacks extends BaseModal
      * Get filters
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param (int) $account_id Current Organization's ID
-     * @param (boolean) $apply_filter
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (boolean)  $apply_filter
      * @return (mixed)
      */
     public static function custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename)
@@ -304,7 +304,7 @@ class CustomFormFeedbacks extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id)
@@ -382,7 +382,7 @@ class CustomFormFeedbacks extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (boolean)
      */
     public static function isChildExists($id, $account_id)

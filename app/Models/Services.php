@@ -155,15 +155,13 @@ class Services extends BaseModal
     /**
      * Get Total Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false)
     {
-
         $where = [];
         $filters = getFilters($request->all());
-        //dd($filters);
         if ($account_id) {
             $where[] = [
                 'account_id',
@@ -192,7 +190,6 @@ class Services extends BaseModal
                 '%'.$request->get('lead_status_name').'%',
             ];
         }
-
         if (count($where)) {
             if (\Illuminate\Support\Facades\Gate::allows('view_inactive_records')) {
                 return self::where($where)->count();
@@ -211,9 +208,9 @@ class Services extends BaseModal
     /**
      * Get Records
      *
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false)
@@ -246,10 +243,10 @@ class Services extends BaseModal
     /**
      * Get Parent Type Records
      *
-     * @param (int) $prepend_dropdown_text [Optional] Prepend Dropdown First Row
-     * @param (int) $account_id Current Organization's ID
-     * @param (array) $skip_ids IDs which need to skip
-     * @param (int) $active_records_only Get activated records only
+     * @param  (int)  $prepend_dropdown_text [Optional] Prepend Dropdown First Row
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (array)  $skip_ids IDs which need to skip
+     * @param  (int)  $active_records_only Get activated records only
      * @return (mixed)
      */
     public static function getParentRecords($prepend_dropdown_text, $account_id, $skip_ids = [], $active_records_only = false)
@@ -283,7 +280,7 @@ class Services extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id)
@@ -294,7 +291,7 @@ class Services extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionaryWithoutAll($account_id)
@@ -522,7 +519,6 @@ class Services extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id)
     {
-
         $old_data = (Services::find($id))->toArray();
         $service = Services::find($id);
         $data = $request->all();
@@ -537,7 +533,6 @@ class Services extends BaseModal
         if (! isset($data['end_node']) || ! $data['end_node']) {
             $data['end_node'] = 0;
         }
-
         if (! isset($data['complimentory']) || ! $data['complimentory']) {
             $data['complimentory'] = 0;
         }
@@ -551,9 +546,7 @@ class Services extends BaseModal
         }
 
         $record->update($data);
-
         AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
-
         // Update Bundle Service
         $bundleWithService = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
             ->where([
@@ -606,7 +599,7 @@ class Services extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (boolean)
      */
     public static function isChildExists($id, $account_id)

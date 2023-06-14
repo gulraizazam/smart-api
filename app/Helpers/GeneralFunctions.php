@@ -151,6 +151,48 @@ class GeneralFunctions
         return $appointment->appointment_type_id ?? 0;
     }
 
+    public static function servicesList($request = null, $total = 0)
+    {
+        $where = [];
+        if ($total >= 0) {
+            $filename = 'services';
+            if (isset($request)) {
+                $filters = getFilters($request->all());
+                $apply_filter = checkFilters($filters, $filename);
+                if (hasFilter($filters, 'name')) {
+                    Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
+                } else {
+                    if ($apply_filter) {
+                        Filters::forget(Auth::User()->id, $filename, 'name');
+                    }
+                }
+                if (hasFilter($filters, 'status')) {
+                    Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
+                } else {
+                    if ($apply_filter) {
+                        Filters::forget(Auth::user()->id, $filename, 'status');
+                    }
+                }
+            }
+            $services = Services::where('slug', '!=', 'all')
+                ->where(['parent_id' => 0])
+                ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%'.$filters['name'].'%'))
+                ->orderBy('id', 'asc')
+                ->get();
+            $mergedServices = [];
+            foreach ($services as $service) {
+                $children = Services::where(['parent_id' => $service->id])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('id', 'asc')->get()->toArray();
+
+                $mergedServices[] = $service->toArray();
+                foreach ($children as $child) {
+                    $mergedServices[] = $child;
+                }
+            }
+
+            return $mergedServices;
+        }
+    }
+
     public static function ServicesTree($request = null, $total = 0)
     {
         $where = [];
@@ -543,6 +585,15 @@ class GeneralFunctions
 
             return $services;
         }
+    }
+
+    public static function getServiceId($service_id)
+    {
+        if (str_contains($service_id, 'bold-')) {
+            return str_replace('bold-', '', $service_id);
+        }
+
+        return $service_id;
     }
 
     private static function appendAllService()

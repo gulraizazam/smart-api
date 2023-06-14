@@ -137,6 +137,7 @@ final class Server
      * Authentication method (valid choices: config, http, signon or cookie)
      *
      * @var string
+     *
      * @psalm-var 'config'|'http'|'signon'|'cookie'
      */
     public $auth_type;
@@ -174,6 +175,7 @@ final class Server
      * It should be an associative array matching result of session_get_cookie_params() in other system
      *
      * @var array<string, int|string|bool>
+     *
      * @psalm-var array{
      *   lifetime: 0|positive-int, path: string, domain: string, secure: bool, httponly: bool, samesite?: 'Lax'|'Strict'
      * }
@@ -415,6 +417,7 @@ final class Server
      * newest record in table_uiprefs and automatically delete older records.
      *
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $MaxTableUiprefs;
@@ -448,6 +451,7 @@ final class Server
      * Host authentication rules, leave blank for defaults
      *
      * @var array<string, string|string[]>
+     *
      * @psalm-var array{order: ''|'deny,allow'|'allow,deny'|'explicit', rules: string[]}
      */
     public $AllowDeny;
@@ -510,7 +514,7 @@ final class Server
     public $hide_connection_errors;
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     public function __construct(array $server = [])
     {
@@ -576,7 +580,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setHost(array $server): string
     {
@@ -588,7 +592,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setPort(array $server): string
     {
@@ -600,7 +604,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSocket(array $server): string
     {
@@ -612,7 +616,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSsl(array $server): bool
     {
@@ -624,7 +628,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSslKey(array $server): ?string
     {
@@ -636,7 +640,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSslCert(array $server): ?string
     {
@@ -648,7 +652,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSslCa(array $server): ?string
     {
@@ -660,7 +664,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSslCaPath(array $server): ?string
     {
@@ -672,7 +676,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSslCiphers(array $server): ?string
     {
@@ -684,7 +688,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSslVerify(array $server): bool
     {
@@ -696,7 +700,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setCompress(array $server): bool
     {
@@ -708,7 +712,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setControlhost(array $server): string
     {
@@ -720,7 +724,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setControlport(array $server): string
     {
@@ -732,7 +736,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setControluser(array $server): string
     {
@@ -744,7 +748,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setControlpass(array $server): string
     {
@@ -756,7 +760,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      *
      * @psalm-return 'config'|'http'|'signon'|'cookie'
      */
@@ -770,7 +774,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setAuthHttpRealm(array $server): string
     {
@@ -782,7 +786,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setUser(array $server): string
     {
@@ -794,7 +798,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setPassword(array $server): string
     {
@@ -806,7 +810,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSignonSession(array $server): string
     {
@@ -818,9 +822,9 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return array<string, int|string|bool>
+     *
      * @psalm-return array{
      *   lifetime: 0|positive-int, path: string, domain: string, secure: bool, httponly: bool, samesite?: 'Lax'|'Strict'
      * }
@@ -864,7 +868,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSignonScript(array $server): string
     {
@@ -876,7 +880,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSignonUrl(array $server): string
     {
@@ -888,7 +892,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setLogoutUrl(array $server): string
     {
@@ -900,8 +904,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return string|string[]
      */
     private function setOnlyDb(array $server)
@@ -923,7 +926,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setHideDb(array $server): string
     {
@@ -935,7 +938,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setVerbose(array $server): string
     {
@@ -947,7 +950,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setPmadb(array $server): string
     {
@@ -959,8 +962,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setBookmarktable(array $server)
@@ -973,8 +975,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setRelation(array $server)
@@ -987,8 +988,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setTableInfo(array $server)
@@ -1001,8 +1001,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setTableCoords(array $server)
@@ -1015,8 +1014,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setPdfPages(array $server)
@@ -1029,8 +1027,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setColumnInfo(array $server)
@@ -1043,8 +1040,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setHistory(array $server)
@@ -1057,8 +1053,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setRecent(array $server)
@@ -1071,8 +1066,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setFavorite(array $server)
@@ -1085,8 +1079,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setTableUiprefs(array $server)
@@ -1099,8 +1092,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setTracking(array $server)
@@ -1113,8 +1105,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setUserconfig(array $server)
@@ -1127,8 +1118,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setUsers(array $server)
@@ -1141,8 +1131,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setUsergroups(array $server)
@@ -1155,8 +1144,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setNavigationhiding(array $server)
@@ -1171,8 +1159,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setSavedsearches(array $server)
@@ -1185,8 +1172,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setCentralColumns(array $server)
@@ -1199,8 +1185,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setDesignerSettings(array $server)
@@ -1215,8 +1200,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return false|string
      */
     private function setExportTemplates(array $server)
@@ -1231,7 +1215,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      *
      * @psalm-return positive-int
      */
@@ -1248,7 +1232,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setSessionTimeZone(array $server): string
     {
@@ -1260,7 +1244,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setAllowRoot(array $server): bool
     {
@@ -1272,7 +1256,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setAllowNoPassword(array $server): bool
     {
@@ -1284,9 +1268,9 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
-     *
+     * @param  array<int|string, mixed>  $server
      * @return array<string, string|string[]>
+     *
      * @psalm-return array{order: ''|'deny,allow'|'allow,deny'|'explicit', rules: string[]}
      */
     private function setAllowDeny(array $server): array
@@ -1312,7 +1296,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setDisableIs(array $server): bool
     {
@@ -1324,7 +1308,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setTrackingVersionAutoCreate(array $server): bool
     {
@@ -1336,7 +1320,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setTrackingDefaultStatements(array $server): string
     {
@@ -1345,11 +1329,11 @@ final class Server
         }
 
         return 'CREATE TABLE,ALTER TABLE,DROP TABLE,RENAME TABLE,CREATE INDEX,DROP INDEX,INSERT,UPDATE,DELETE,'
-            . 'TRUNCATE,REPLACE,CREATE VIEW,ALTER VIEW,DROP VIEW,CREATE DATABASE,ALTER DATABASE,DROP DATABASE';
+            .'TRUNCATE,REPLACE,CREATE VIEW,ALTER VIEW,DROP VIEW,CREATE DATABASE,ALTER DATABASE,DROP DATABASE';
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setTrackingAddDropView(array $server): bool
     {
@@ -1361,7 +1345,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setTrackingAddDropTable(array $server): bool
     {
@@ -1373,7 +1357,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setTrackingAddDropDatabase(array $server): bool
     {
@@ -1385,7 +1369,7 @@ final class Server
     }
 
     /**
-     * @param array<int|string, mixed> $server
+     * @param  array<int|string, mixed>  $server
      */
     private function setHideConnectionErrors(array $server): bool
     {

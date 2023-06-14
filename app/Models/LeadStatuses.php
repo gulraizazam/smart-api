@@ -61,7 +61,7 @@ class LeadStatuses extends BaseModal
     /**
      * Get Total Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
@@ -85,9 +85,9 @@ class LeadStatuses extends BaseModal
     /**
      * Get Records
      *
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
@@ -112,8 +112,8 @@ class LeadStatuses extends BaseModal
      * Get filters
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param (int) $account_id Current Organization's ID
-     * @param (boolean) $apply_filter
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (boolean)  $apply_filter
      * @return (mixed)
      */
     public static function lead_statuses_filters($request, $account_id, $apply_filter)
@@ -191,10 +191,10 @@ class LeadStatuses extends BaseModal
     /**
      * Get Parent Type Records
      *
-     * @param (int) $prepend_dropdown_text [Optional] Prepend Dropdown First Row
-     * @param (int) $account_id Current Organization's ID
-     * @param (array) $skip_ids IDs which need to skip
-     * @param (int) $active_records_only Get activated records only
+     * @param  (int)  $prepend_dropdown_text [Optional] Prepend Dropdown First Row
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (array)  $skip_ids IDs which need to skip
+     * @param  (int)  $active_records_only Get activated records only
      * @return (mixed)
      */
     public static function getParentRecords($prepend_dropdown_text, $account_id, $skip_ids = [], $active_records_only = false)
@@ -228,7 +228,7 @@ class LeadStatuses extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id)
@@ -413,7 +413,7 @@ class LeadStatuses extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return (boolean)
      */
     public static function isChildExists($id, $account_id)

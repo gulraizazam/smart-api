@@ -7,12 +7,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Gis;
 
-use PhpMyAdmin\Core;
-use PhpMyAdmin\Image\ImageWrapper;
-use PhpMyAdmin\Sanitize;
-use PhpMyAdmin\Util;
-use TCPDF;
-
 use function array_merge;
 use function base64_encode;
 use function count;
@@ -25,22 +19,26 @@ use function mb_strtolower;
 use function mb_substr;
 use function ob_get_clean;
 use function ob_start;
-use function rtrim;
-
+use PhpMyAdmin\Core;
+use PhpMyAdmin\Image\ImageWrapper;
+use PhpMyAdmin\Sanitize;
+use PhpMyAdmin\Util;
 use const PNG_ALL_FILTERS;
+use function rtrim;
+use TCPDF;
 
 /**
  * Handles visualization of GIS data
  */
 class GisVisualization
 {
-    /** @var array   Raw data for the visualization */
+    /** @var array Raw data for the visualization */
     private $data;
 
     /** @var string */
     private $modifiedSql;
 
-    /** @var array   Set of default settings values are here. */
+    /** @var array Set of default settings values are here. */
     private $settings = [
         // Array of colors to be used for GIS visualizations.
         'colors' => [
@@ -62,7 +60,6 @@ class GisVisualization
             '#4C489B',
             '#87C9BF',
         ],
-
 
         // Hex values for abovementioned colours
         'colors_hex' => [
@@ -91,7 +88,7 @@ class GisVisualization
         'height' => 450,
     ];
 
-    /** @var array   Options that the user has specified. */
+    /** @var array Options that the user has specified. */
     private $userSpecifiedSettings = null;
 
     /**
@@ -107,11 +104,10 @@ class GisVisualization
     /**
      * Factory
      *
-     * @param string $sql_query SQL to fetch raw data for visualization
-     * @param array  $options   Users specified options
-     * @param int    $row       number of rows
-     * @param int    $pos       start position
-     *
+     * @param  string  $sql_query SQL to fetch raw data for visualization
+     * @param  array  $options   Users specified options
+     * @param  int  $row       number of rows
+     * @param  int  $pos       start position
      * @return GisVisualization
      */
     public static function get($sql_query, array $options, $row, $pos)
@@ -122,10 +118,9 @@ class GisVisualization
     /**
      * Get visualization
      *
-     * @param array $data    Raw data, if set, parameters other than $options will be
+     * @param  array  $data    Raw data, if set, parameters other than $options will be
      *                       ignored
-     * @param array $options Users specified options
-     *
+     * @param  array  $options Users specified options
      * @return GisVisualization
      */
     public static function getByData(array $data, array $options)
@@ -150,11 +145,11 @@ class GisVisualization
     /**
      * Stores user specified options.
      *
-     * @param string     $sql_query SQL to fetch raw data for visualization
-     * @param array      $options   Users specified options
-     * @param int        $row       number of rows
-     * @param int        $pos       start position
-     * @param array|null $data      raw data. If set, parameters other than $options
+     * @param  string  $sql_query SQL to fetch raw data for visualization
+     * @param  array  $options   Users specified options
+     * @param  int  $row       number of rows
+     * @param  int  $pos       start position
+     * @param  array|null  $data      raw data. If set, parameters other than $options
      *                              will be ignored
      */
     private function __construct($sql_query, array $options, $row, $pos, $data = null)
@@ -179,10 +174,9 @@ class GisVisualization
     /**
      * Returns sql for fetching raw data
      *
-     * @param string $sql_query The SQL to modify.
-     * @param int    $rows      Number of rows.
-     * @param int    $pos       Start position.
-     *
+     * @param  string  $sql_query The SQL to modify.
+     * @param  int  $rows      Number of rows.
+     * @param  int  $pos       Start position.
      * @return string the modified sql query.
      */
     private function modifySqlQuery($sql_query, $rows, $pos)
@@ -206,29 +200,29 @@ class GisVisualization
         // If label column is chosen add it to the query
         if (! empty($this->userSpecifiedSettings['labelColumn'])) {
             $modified_query .= Util::backquote($this->userSpecifiedSettings['labelColumn'])
-            . ', ';
+            .', ';
         }
 
         // Wrap the spatial column with 'ST_ASTEXT()' function and add it
-        $modified_query .= $spatialAsText . '('
-            . Util::backquote($this->userSpecifiedSettings['spatialColumn'])
-            . $axisOrder . ') AS ' . Util::backquote($this->userSpecifiedSettings['spatialColumn'])
-            . ', ';
+        $modified_query .= $spatialAsText.'('
+            .Util::backquote($this->userSpecifiedSettings['spatialColumn'])
+            .$axisOrder.') AS '.Util::backquote($this->userSpecifiedSettings['spatialColumn'])
+            .', ';
 
         // Get the SRID
-        $modified_query .= $spatialSrid . '('
-            . Util::backquote($this->userSpecifiedSettings['spatialColumn'])
-            . ') AS ' . Util::backquote('srid') . ' ';
+        $modified_query .= $spatialSrid.'('
+            .Util::backquote($this->userSpecifiedSettings['spatialColumn'])
+            .') AS '.Util::backquote('srid').' ';
 
         // Append the original query as the inner query
-        $modified_query .= 'FROM (' . rtrim($sql_query, ';') . ') AS '
-            . Util::backquote('temp_gis');
+        $modified_query .= 'FROM ('.rtrim($sql_query, ';').') AS '
+            .Util::backquote('temp_gis');
 
         // LIMIT clause
         if (is_numeric($rows) && $rows > 0) {
             $modified_query .= ' LIMIT ';
             if (is_numeric($pos) && $pos >= 0) {
-                $modified_query .= $pos . ', ' . $rows;
+                $modified_query .= $pos.', '.$rows;
             } else {
                 $modified_query .= $rows;
             }
@@ -271,9 +265,8 @@ class GisVisualization
     /**
      * Sanitizes the file name.
      *
-     * @param string $file_name file name
-     * @param string $ext       extension of the file
-     *
+     * @param  string  $file_name file name
+     * @param  string  $ext       extension of the file
      * @return string the sanitized file name
      */
     private function sanitizeName($file_name, $ext)
@@ -282,7 +275,7 @@ class GisVisualization
 
         // Check if the user already added extension;
         // get the substring where the extension would be if it was included
-        $required_extension = '.' . $ext;
+        $required_extension = '.'.$ext;
         $extension_length = mb_strlen($required_extension);
         $user_extension = mb_substr($file_name, -$extension_length);
         if (mb_strtolower($user_extension) != $required_extension) {
@@ -295,9 +288,9 @@ class GisVisualization
     /**
      * Handles common tasks of writing the visualization to file for various formats.
      *
-     * @param string $file_name file name
-     * @param string $type      mime type
-     * @param string $ext       extension of the file
+     * @param  string  $file_name file name
+     * @param  string  $type      mime type
+     * @param  string  $ext       extension of the file
      */
     private function writeToFile($file_name, $type, $ext): void
     {
@@ -315,12 +308,12 @@ class GisVisualization
         $this->init();
 
         $output = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'
-            . "\n"
-            . '<svg version="1.1" xmlns:svg="http://www.w3.org/2000/svg"'
-            . ' xmlns="http://www.w3.org/2000/svg"'
-            . ' width="' . intval($this->settings['width']) . '"'
-            . ' height="' . intval($this->settings['height']) . '">'
-            . '<g id="groupPanel">';
+            ."\n"
+            .'<svg version="1.1" xmlns:svg="http://www.w3.org/2000/svg"'
+            .' xmlns="http://www.w3.org/2000/svg"'
+            .' width="'.intval($this->settings['width']).'"'
+            .' height="'.intval($this->settings['height']).'">'
+            .'<g id="groupPanel">';
 
         $scale_data = $this->scaleDataSet($this->data);
         $output .= $this->prepareDataSet($this->data, $scale_data, 'svg', '');
@@ -343,7 +336,7 @@ class GisVisualization
     /**
      * Saves as a SVG image to a file.
      *
-     * @param string $file_name File name
+     * @param  string  $file_name File name
      */
     public function toFileAsSvg($file_name): void
     {
@@ -398,13 +391,13 @@ class GisVisualization
         // base64 encode
         $encoded = base64_encode((string) $output);
 
-        return '<img src="data:image/png;base64,' . $encoded . '">';
+        return '<img src="data:image/png;base64,'.$encoded.'">';
     }
 
     /**
      * Saves as a PNG image to a file.
      *
-     * @param string $file_name File name
+     * @param  string  $file_name File name
      */
     public function toFileAsPng($file_name): void
     {
@@ -430,35 +423,35 @@ class GisVisualization
         $this->init();
         $scale_data = $this->scaleDataSet($this->data);
         $output = 'function drawOpenLayers() {'
-            . 'if (typeof ol !== "undefined") {'
-            . 'var olCss = "js/vendor/openlayers/theme/ol.css";'
-            . '$(\'head\').append(\'<link rel="stylesheet" type="text/css" href=\'+olCss+\'>\');'
-            . 'var vectorLayer = new ol.source.Vector({});'
-            . 'var map = new ol.Map({'
-            . 'target: \'openlayersmap\','
-            . 'layers: ['
-            . 'new ol.layer.Tile({'
-            . 'source: new ol.source.OSM()'
-            . '}),'
-            . 'new ol.layer.Vector({'
-            . 'source: vectorLayer'
-            . '})'
-            . '],'
-            . 'view: new ol.View({'
-            . 'center: ol.proj.fromLonLat([37.41, 8.82]),'
-            . 'zoom: 4'
-            . '}),'
-            . 'controls: [new ol.control.MousePosition({'
-            . 'coordinateFormat: ol.coordinate.createStringXY(4),'
-            . 'projection: \'EPSG:4326\'}),'
-            . 'new ol.control.Zoom,'
-            . 'new ol.control.Attribution]'
-            . '});';
+            .'if (typeof ol !== "undefined") {'
+            .'var olCss = "js/vendor/openlayers/theme/ol.css";'
+            .'$(\'head\').append(\'<link rel="stylesheet" type="text/css" href=\'+olCss+\'>\');'
+            .'var vectorLayer = new ol.source.Vector({});'
+            .'var map = new ol.Map({'
+            .'target: \'openlayersmap\','
+            .'layers: ['
+            .'new ol.layer.Tile({'
+            .'source: new ol.source.OSM()'
+            .'}),'
+            .'new ol.layer.Vector({'
+            .'source: vectorLayer'
+            .'})'
+            .'],'
+            .'view: new ol.View({'
+            .'center: ol.proj.fromLonLat([37.41, 8.82]),'
+            .'zoom: 4'
+            .'}),'
+            .'controls: [new ol.control.MousePosition({'
+            .'coordinateFormat: ol.coordinate.createStringXY(4),'
+            .'projection: \'EPSG:4326\'}),'
+            .'new ol.control.Zoom,'
+            .'new ol.control.Attribution]'
+            .'});';
         $output .= $this->prepareDataSet($this->data, $scale_data, 'ol', '')
-            . 'return map;'
-            . '}'
-            . 'return undefined;'
-            . '}';
+            .'return map;'
+            .'}'
+            .'return undefined;'
+            .'}';
 
         return $output;
     }
@@ -466,7 +459,7 @@ class GisVisualization
     /**
      * Saves as a PDF to a file.
      *
-     * @param string $file_name File name
+     * @param  string  $file_name File name
      */
     public function toFileAsPdf($file_name): void
     {
@@ -496,8 +489,7 @@ class GisVisualization
     /**
      * Convert file to image
      *
-     * @param string $format Output format
-     *
+     * @param  string  $format Output format
      * @return string File
      */
     public function toImage($format)
@@ -520,8 +512,8 @@ class GisVisualization
     /**
      * Convert file to given format
      *
-     * @param string $filename Filename
-     * @param string $format   Output format
+     * @param  string  $filename Filename
+     * @param  string  $format   Output format
      */
     public function toFile($filename, $format): void
     {
@@ -537,8 +529,7 @@ class GisVisualization
     /**
      * Calculates the scale, horizontal and vertical offset that should be used.
      *
-     * @param array $data Row data
-     *
+     * @param  array  $data Row data
      * @return array an array containing the scale, x and y offsets
      */
     private function scaleDataSet(array $data)
@@ -633,12 +624,11 @@ class GisVisualization
     /**
      * Prepares and return the dataset as needed by the visualization.
      *
-     * @param array                           $data       Raw data
-     * @param array                           $scale_data Data related to scaling
-     * @param string                          $format     Format of the visualization
-     * @param ImageWrapper|TCPDF|string|false $results    Image object in the case of png
+     * @param  array  $data       Raw data
+     * @param  array  $scale_data Data related to scaling
+     * @param  string  $format     Format of the visualization
+     * @param  ImageWrapper|TCPDF|string|false  $results    Image object in the case of png
      *                                                    TCPDF object in the case of pdf
-     *
      * @return mixed the formatted array of data
      */
     private function prepareDataSet(array $data, array $scale_data, $format, $results)
@@ -714,7 +704,7 @@ class GisVisualization
     /**
      * Set user specified settings
      *
-     * @param array $userSpecifiedSettings User specified settings
+     * @param  array  $userSpecifiedSettings User specified settings
      */
     public function setUserSpecifiedSettings(array $userSpecifiedSettings): void
     {

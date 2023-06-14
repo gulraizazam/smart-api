@@ -146,7 +146,7 @@ class Doctors extends BaseModal
 
                 return $query;
             }
-        //            return self::whereIn('location_id',$locationId)->get()->pluck('name','id');
+            //            return self::whereIn('location_id',$locationId)->get()->pluck('name','id');
         } else {
             if ($account_id) {
                 if ($doctor_id) {

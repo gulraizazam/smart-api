@@ -30,7 +30,7 @@ class Finanaces
     /**
      * Centre performance stats by revenue
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function centerperformancestatsbyrevenue($data, $filters = [])
@@ -118,7 +118,7 @@ class Finanaces
     /**
      * Centre performance stats by service type
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function centerperformancestatsbyservices($data, $filters = [])
@@ -203,7 +203,7 @@ class Finanaces
     /**
      * Customer Payment Ledger Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function Customerpaymentledgerallentries($data, $account_id)
@@ -317,7 +317,7 @@ class Finanaces
     /**
      * Customer Treatment Package ledger
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function customertreatmentpackageledger($data, $account_id)
@@ -449,7 +449,7 @@ class Finanaces
     /**
      * List of advances as of today for plans
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function lsitofadvanacesoftodayplan($data, $account_id)
@@ -564,7 +564,7 @@ class Finanaces
     /**
      * List of advances as of today for non plans
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function lsitofadvanacesoftodaynonplan($data, $filters, $account_id)
@@ -673,7 +673,7 @@ class Finanaces
     /**
      * Summarized data of discounts given to customer
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function SummarizeddataofDiscountsgiventothecustomer($data, $account_id)
@@ -753,7 +753,7 @@ class Finanaces
     /**
      * List of clients who claimed refunds for plans
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function ListofClientswhoclaimedrefunds($data, $account_id)
@@ -833,7 +833,7 @@ class Finanaces
     /**
      * List of clients who claimed refunds for non plans
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function ListofClientswhoclaimedrefundsnonplans($data, $filters, $account_id)
@@ -903,7 +903,7 @@ class Finanaces
     /**
      * List of clients who claimed refunds for plans days wise
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function ListofClientswhoclaimedrefundsdaywise($data, $account_id)
@@ -987,7 +987,7 @@ class Finanaces
     /**
      * List of clients who claimed refunds days base for non plans
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function ListofClientswhoclaimedrefundsdaysbasenonplans($data, $filters, $account_id)
@@ -1092,7 +1092,7 @@ class Finanaces
     /**
      * General Reveneue report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function generalrevenuereportdetail($data, $account_id)
@@ -1239,7 +1239,7 @@ class Finanaces
     /**
      * General Reveneue report summary
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function generalrevenuereportsummary($data, $account_id)
@@ -1390,7 +1390,7 @@ class Finanaces
     /**
      * General Reveneue report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function pabaurecordrevenuereport($data, $account_id)
@@ -1486,7 +1486,7 @@ class Finanaces
     /**
      * Machine Wise Revenue Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function machinewiseinvoicerevenuereport($data, $account_id)
@@ -1613,7 +1613,7 @@ class Finanaces
     /**
      * patner Collection Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function partnercollectionreport($data, $account_id)
@@ -2059,7 +2059,7 @@ class Finanaces
     /**
      * Staff Wise Revenue Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function staffwiserevenue($data, $account_id)
@@ -2723,7 +2723,7 @@ class Finanaces
                     $revenue_in = 0;
                     $out = 0;
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                        ->where(['cash_flow' => "in"])
+                        ->where(['cash_flow' => 'in'])
                         ->where('cash_amount', '>', 0)
                         ->get();
                     if (count($packagesadvances) > 0) {
@@ -2921,14 +2921,14 @@ class Finanaces
         } else {
             $average_client_coversion = 0;
         }
-        $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
-        ->map(function ($appointments_info) {
-            return $appointments_info->sum('conversion_spend');
-        });
-        $avg_C_val = 0;->where(
-        if(count($conversionsByPatient) > 0){
-            $avg_cxlient_value = $avg_C_val/count($conversionsByPatient);
-        }else{
+        $conversionsByPatient = collect($appointments_info)->where('conversion_spend', '!=', '')->groupBy('patient_id')
+            ->map(function ($appointments_info) {
+                return $appointments_info->sum('conversion_spend');
+            });
+        $avg_C_val = 0;
+        if (count($conversionsByPatient) > 0) {
+            $avg_cxlient_value = $avg_C_val / count($conversionsByPatient);
+        } else {
             $avg_cxlient_value = 0;
         }
 
@@ -3355,7 +3355,7 @@ class Finanaces
     /**
      * Consume Revenue Plan Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function consumeplanrevenue($data, $account)
@@ -3443,7 +3443,7 @@ class Finanaces
     /**
      * Plan Maturity Report
      *
-     * @param (mixed) $request
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function planmaturityreport($data, $account_id)

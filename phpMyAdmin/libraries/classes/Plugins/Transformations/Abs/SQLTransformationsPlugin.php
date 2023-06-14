@@ -7,11 +7,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Transformations\Abs;
 
+use function __;
 use PhpMyAdmin\FieldMetadata;
 use PhpMyAdmin\Html\Generator;
 use PhpMyAdmin\Plugins\TransformationsPlugin;
-
-use function __;
 
 /**
  * Provides common methods for all of the SQL transformations plugins.
@@ -31,10 +30,9 @@ abstract class SQLTransformationsPlugin extends TransformationsPlugin
     /**
      * Does the actual work of each specific transformations plugin.
      *
-     * @param string             $buffer  text to be transformed
-     * @param array              $options transformation options
-     * @param FieldMetadata|null $meta    meta information
-     *
+     * @param  string  $buffer  text to be transformed
+     * @param  array  $options transformation options
+     * @param  FieldMetadata|null  $meta    meta information
      * @return string
      */
     public function applyTransformation($buffer, array $options = [], ?FieldMetadata $meta = null)

@@ -7,13 +7,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Config;
 
+use function __;
 use PhpMyAdmin\Config\Forms\Page\PageFormList;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\UserPreferences;
-
-use function __;
 
 /**
  * Page-related settings
@@ -52,8 +51,8 @@ class PageSettings
     private $userPreferences;
 
     /**
-     * @param string $formGroupName The name of config form group to display
-     * @param string $elemId        Id of the div containing settings
+     * @param  string  $formGroupName The name of config form group to display
+     * @param  string  $elemId        Id of the div containing settings
      */
     public function __construct($formGroupName, $elemId = null)
     {
@@ -92,9 +91,9 @@ class PageSettings
     /**
      * Process response to form
      *
-     * @param FormDisplay  $formDisplay Form
-     * @param ConfigFile   $cf          Configuration file
-     * @param Message|null $error       Error message
+     * @param  FormDisplay  $formDisplay Form
+     * @param  ConfigFile  $cf          Configuration file
+     * @param  Message|null  $error       Error message
      */
     private function processPageSettings(&$formDisplay, &$cf, &$error): void
     {
@@ -119,8 +118,8 @@ class PageSettings
     /**
      * Store errors in _errorHTML
      *
-     * @param FormDisplay  $formDisplay Form
-     * @param Message|null $error       Error message
+     * @param  FormDisplay  $formDisplay Form
+     * @param  Message|null  $error       Error message
      */
     private function storeError(&$formDisplay, &$error): void
     {
@@ -132,9 +131,9 @@ class PageSettings
         if ($formDisplay->hasErrors()) {
             // form has errors
             $retval .= '<div class="alert alert-danger config-form" role="alert">'
-                . '<b>' . __('Cannot save settings, submitted configuration form contains errors!') . '</b>'
-                . $formDisplay->displayErrors()
-                . '</div>';
+                .'<b>'.__('Cannot save settings, submitted configuration form contains errors!').'</b>'
+                .$formDisplay->displayErrors()
+                .'</div>';
         }
 
         $this->errorHTML = $retval;
@@ -143,9 +142,8 @@ class PageSettings
     /**
      * Display page-related settings
      *
-     * @param FormDisplay $formDisplay Form
-     * @param Message     $error       Error message
-     *
+     * @param  FormDisplay  $formDisplay Form
+     * @param  Message  $error       Error message
      * @return string
      */
     private function getPageSettingsDisplay(&$formDisplay, &$error)
@@ -156,7 +154,7 @@ class PageSettings
 
         $this->storeError($formDisplay, $error);
 
-        $retval .= '<div id="' . $this->elemId . '">';
+        $retval .= '<div id="'.$this->elemId.'">';
         $retval .= '<div class="page_settings">';
         $retval .= $formDisplay->getDisplay(
             false,

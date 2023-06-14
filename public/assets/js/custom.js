@@ -1181,10 +1181,9 @@ function selectUser(name, user_id,  search_id,flag=1) {
 }
 
 function leadSearch(search_id = 'lead_search_id',flag=1) {
-    $("." + search_id).on("input",function() {
+    $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
-        console.log($(this).val());
         if ($(this).val().length < 2) {
             $(".suggesstion-box").hide();
             return false;
@@ -1200,10 +1199,18 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                 success: function (response) {
                     let html = '';
                     let leads = response.data.leads;
+                    let haveObjleads = Object.keys(leads).length;
                     if (leads.length) {
+
                         leads.forEach(function (lead) {
                             html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
                         });
+                        $(".suggestion-list").html(html);
+                        $(".suggesstion-box").show();
+                    } else if (haveObjleads) {
+                        for (const [key, lead] of Object.entries(leads)) {
+                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
+                        }
                         $(".suggestion-list").html(html);
                         $(".suggesstion-box").show();
                     } else {
@@ -1221,7 +1228,6 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
 function selectLead(name, lead_id,  search_id, flag=1) {
     $("." + search_id).parent('div').find('.search_field').val(lead_id).change();
     $("#add_lead_id").val(lead_id);
-   // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();

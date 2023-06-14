@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\Config\ConfigFile;
-use PhpMyAdmin\Config\Forms\User\UserFormList;
-use PhpMyAdmin\ConfigStorage\Relation;
-use PhpMyAdmin\Dbal\DatabaseName;
-
 use function __;
 use function array_flip;
 use function array_merge;
@@ -21,6 +16,10 @@ use function is_numeric;
 use function is_string;
 use function json_decode;
 use function json_encode;
+use PhpMyAdmin\Config\ConfigFile;
+use PhpMyAdmin\Config\Forms\User\UserFormList;
+use PhpMyAdmin\ConfigStorage\Relation;
+use PhpMyAdmin\Dbal\DatabaseName;
 use function str_contains;
 use function time;
 use function urlencode;
@@ -47,7 +46,7 @@ class UserPreferences
     /**
      * Common initialization for user preferences modification pages
      *
-     * @param ConfigFile $cf Config file instance
+     * @param  ConfigFile  $cf Config file instance
      */
     public function pageInit(ConfigFile $cf): void
     {
@@ -95,13 +94,13 @@ class UserPreferences
         }
 
         // load configuration from pmadb
-        $query_table = Util::backquote($relationParameters->userPreferencesFeature->database) . '.'
-            . Util::backquote($relationParameters->userPreferencesFeature->userConfig);
+        $query_table = Util::backquote($relationParameters->userPreferencesFeature->database).'.'
+            .Util::backquote($relationParameters->userPreferencesFeature->userConfig);
         $query = 'SELECT `config_data`, UNIX_TIMESTAMP(`timevalue`) ts'
-            . ' FROM ' . $query_table
-            . ' WHERE `username` = \''
-            . $dbi->escapeString((string) $relationParameters->user)
-            . '\'';
+            .' FROM '.$query_table
+            .' WHERE `username` = \''
+            .$dbi->escapeString((string) $relationParameters->user)
+            .'\'';
         $row = $dbi->fetchSingleRow($query, DatabaseInterface::FETCH_ASSOC, DatabaseInterface::CONNECT_CONTROL);
         if (! is_array($row) || ! isset($row['config_data']) || ! isset($row['ts'])) {
             return ['config_data' => [], 'mtime' => time(), 'type' => 'db'];
@@ -119,8 +118,7 @@ class UserPreferences
     /**
      * Saves user preferences
      *
-     * @param array $config_array configuration array
-     *
+     * @param  array  $config_array configuration array
      * @return true|Message
      */
     public function save(array $config_array)
@@ -129,7 +127,7 @@ class UserPreferences
 
         $relationParameters = $this->relation->getRelationParameters();
         $server = $GLOBALS['server'] ?? $GLOBALS['cfg']['ServerDefault'];
-        $cache_key = 'server_' . $server;
+        $cache_key = 'server_'.$server;
         if (
             $relationParameters->userPreferencesFeature === null
             || $relationParameters->user === null
@@ -148,29 +146,29 @@ class UserPreferences
         }
 
         // save configuration to pmadb
-        $query_table = Util::backquote($relationParameters->userPreferencesFeature->database) . '.'
-            . Util::backquote($relationParameters->userPreferencesFeature->userConfig);
-        $query = 'SELECT `username` FROM ' . $query_table
-            . ' WHERE `username` = \''
-            . $dbi->escapeString($relationParameters->user)
-            . '\'';
+        $query_table = Util::backquote($relationParameters->userPreferencesFeature->database).'.'
+            .Util::backquote($relationParameters->userPreferencesFeature->userConfig);
+        $query = 'SELECT `username` FROM '.$query_table
+            .' WHERE `username` = \''
+            .$dbi->escapeString($relationParameters->user)
+            .'\'';
 
         $has_config = $dbi->fetchValue($query, 0, DatabaseInterface::CONNECT_CONTROL);
         $config_data = json_encode($config_array);
         if ($has_config) {
-            $query = 'UPDATE ' . $query_table
-                . ' SET `timevalue` = NOW(), `config_data` = \''
-                . $dbi->escapeString($config_data)
-                . '\''
-                . ' WHERE `username` = \''
-                . $dbi->escapeString($relationParameters->user)
-                . '\'';
+            $query = 'UPDATE '.$query_table
+                .' SET `timevalue` = NOW(), `config_data` = \''
+                .$dbi->escapeString($config_data)
+                .'\''
+                .' WHERE `username` = \''
+                .$dbi->escapeString($relationParameters->user)
+                .'\'';
         } else {
-            $query = 'INSERT INTO ' . $query_table
-                . ' (`username`, `timevalue`,`config_data`) '
-                . 'VALUES (\''
-                . $dbi->escapeString($relationParameters->user) . '\', NOW(), '
-                . '\'' . $dbi->escapeString($config_data) . '\')';
+            $query = 'INSERT INTO '.$query_table
+                .' (`username`, `timevalue`,`config_data`) '
+                .'VALUES (\''
+                .$dbi->escapeString($relationParameters->user).'\', NOW(), '
+                .'\''.$dbi->escapeString($config_data).'\')';
         }
 
         if (isset($_SESSION['cache'][$cache_key]['userprefs'])) {
@@ -202,9 +200,9 @@ class UserPreferences
     private function hasAccessToDatabase(DatabaseName $database): bool
     {
         $escapedDb = $GLOBALS['dbi']->escapeString($database->getName());
-        $query = 'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = \'' . $escapedDb . '\';';
+        $query = 'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = \''.$escapedDb.'\';';
         if ($GLOBALS['cfg']['Server']['DisableIS']) {
-            $query = 'SHOW DATABASES LIKE \'' . Util::escapeMysqlWildcards($escapedDb) . '\';';
+            $query = 'SHOW DATABASES LIKE \''.Util::escapeMysqlWildcards($escapedDb).'\';';
         }
 
         return (bool) $GLOBALS['dbi']->fetchSingleRow($query, 'ASSOC', DatabaseInterface::CONNECT_CONTROL);
@@ -214,8 +212,7 @@ class UserPreferences
      * Returns a user preferences array filtered by $cfg['UserprefsDisallow']
      * (exclude list) and keys from user preferences form (allow list)
      *
-     * @param array $config_data path => value pairs
-     *
+     * @param  array  $config_data path => value pairs
      * @return array
      */
     public function apply(array $config_data)
@@ -245,10 +242,9 @@ class UserPreferences
      *
      * No validation is done!
      *
-     * @param string $path          configuration
-     * @param mixed  $value         value
-     * @param mixed  $default_value default value
-     *
+     * @param  string  $path          configuration
+     * @param  mixed  $value         value
+     * @param  mixed  $default_value default value
      * @return true|Message
      */
     public function persistOption($path, $value, $default_value)
@@ -270,9 +266,9 @@ class UserPreferences
     /**
      * Redirects after saving new user preferences
      *
-     * @param string     $file_name Filename
-     * @param array|null $params    URL parameters
-     * @param string     $hash      Hash value
+     * @param  string  $file_name Filename
+     * @param  array|null  $params    URL parameters
+     * @param  string  $hash      Hash value
      */
     public function redirect(
         $file_name,
@@ -286,11 +282,11 @@ class UserPreferences
         }
 
         if ($hash) {
-            $hash = '#' . urlencode($hash);
+            $hash = '#'.urlencode($hash);
         }
 
-        Core::sendHeaderLocation('./' . $file_name
-            . Url::getCommonRaw($url_params, ! str_contains($file_name, '?') ? '?' : '&') . $hash);
+        Core::sendHeaderLocation('./'.$file_name
+            .Url::getCommonRaw($url_params, ! str_contains($file_name, '?') ? '?' : '&').$hash);
     }
 
     /**
@@ -308,7 +304,7 @@ class UserPreferences
         }
 
         $script_name = basename(basename($GLOBALS['PMA_PHP_SELF']));
-        $return_url = $script_name . '?' . http_build_query($_GET, '', '&');
+        $return_url = $script_name.'?'.http_build_query($_GET, '', '&');
 
         return $this->template->render('preferences/autoload', [
             'hidden_inputs' => Url::getHiddenInputs(),

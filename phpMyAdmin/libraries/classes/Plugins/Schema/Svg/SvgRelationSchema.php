@@ -7,16 +7,15 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Schema\Svg;
 
+use function __;
+use function in_array;
+use function max;
+use function min;
 use PhpMyAdmin\Plugins\Schema\Dia\TableStatsDia;
 use PhpMyAdmin\Plugins\Schema\Eps\TableStatsEps;
 use PhpMyAdmin\Plugins\Schema\ExportRelationSchema;
 use PhpMyAdmin\Plugins\Schema\Pdf\TableStatsPdf;
 use PhpMyAdmin\Version;
-
-use function __;
-use function in_array;
-use function max;
-use function min;
 use function sprintf;
 
 /**
@@ -62,7 +61,7 @@ class SvgRelationSchema extends ExportRelationSchema
      *
      * @see PMA_SVG
      *
-     * @param string $db database name
+     * @param  string  $db database name
      */
     public function __construct($db)
     {
@@ -80,7 +79,7 @@ class SvgRelationSchema extends ExportRelationSchema
                 $this->pageNumber
             )
         );
-        $this->diagram->SetAuthor('phpMyAdmin ' . Version::VERSION);
+        $this->diagram->SetAuthor('phpMyAdmin '.Version::VERSION);
         $this->diagram->setFont('Arial');
         $this->diagram->setFontSize(16);
 
@@ -186,7 +185,7 @@ class SvgRelationSchema extends ExportRelationSchema
     /**
      * Sets X and Y minimum and maximum for a table cell
      *
-     * @param TableStatsSvg $table The table
+     * @param  TableStatsSvg  $table The table
      */
     private function setMinMax($table): void
     {
@@ -202,13 +201,13 @@ class SvgRelationSchema extends ExportRelationSchema
      * @see setMinMax,TableStatsSvg::__construct(),
      *       PhpMyAdmin\Plugins\Schema\Svg\RelationStatsSvg::__construct()
      *
-     * @param string $masterTable    The master table name
-     * @param string $font           The font face
-     * @param int    $fontSize       Font size
-     * @param string $masterField    The relation field in the master table
-     * @param string $foreignTable   The foreign table name
-     * @param string $foreignField   The relation field in the foreign table
-     * @param bool   $tableDimension Whether to display table position or not
+     * @param  string  $masterTable    The master table name
+     * @param  string  $font           The font face
+     * @param  int  $fontSize       Font size
+     * @param  string  $masterField    The relation field in the master table
+     * @param  string  $foreignTable   The foreign table name
+     * @param  string  $foreignField   The relation field in the foreign table
+     * @param  bool  $tableDimension Whether to display table position or not
      */
     private function addRelation(
         $masterTable,

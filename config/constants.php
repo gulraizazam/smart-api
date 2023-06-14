@@ -1,25 +1,25 @@
 <?php
 
 return [
-    'gender_array' => array(
+    'gender_array' => [
         1 => 'Male',
         2 => 'Female',
-    ),
+    ],
 
-    'listing_array' => array(
+    'listing_array' => [
         'listing' => 'Datatable Listing',
         'elastic' => 'Elastic Search',
-    ),
+    ],
 
-    'operator_array' => array(
+    'operator_array' => [
         1 => 'Telenor Corporate SMS',
         2 => 'Jazz Corporate SMS',
-    ),
-    'invoice_consultancy_medical_form' => array(
+    ],
+    'invoice_consultancy_medical_form' => [
         1 => 'Yes',
         2 => 'No',
-    ),
-    'trans_type' => array(
+    ],
+    'trans_type' => [
         'advance_in' => 'Advance In',
         'advance_out' => 'Advance Out',
         'invoice_cancel' => 'Invoice Cancel',
@@ -28,7 +28,7 @@ return [
         'refund_out' => 'Refund Out',
         'adjustment' => 'Adjustment',
         'tax_out' => 'Tax Out',
-    ),
+    ],
 
     'lead_status_open' => 1,
     'lead_status_junk' => 5,
@@ -42,9 +42,9 @@ return [
     'appointment_status_arrived' => 2,
 
     // Appointment Types ID mapping
-    'appointment_type_consultancy_string' => "consulting",
+    'appointment_type_consultancy_string' => 'consulting',
     'appointment_type_consultancy' => 1,
-    'appointment_type_service_string' => "treatment",
+    'appointment_type_service_string' => 'treatment',
     'appointment_type_service' => 2,
     //Constant for user type start
 
@@ -68,7 +68,6 @@ return [
     'cancel_log' => '6',
     //end
 
-
     'administrator_id' => 1,
     'application_user_id' => 2,
     'patient_id' => 3,
@@ -84,45 +83,43 @@ return [
     'Consultancy' => 'Consultancy',
     'Service' => 'Treatment',
 
-
     //End
 
-    'cash_array' => array(
+    'cash_array' => [
         '' => 'All',
         'in' => 'In',
         'out' => 'out',
-    ),
+    ],
 
-    'sms_array' => array(
+    'sms_array' => [
         'sms' => '1st SMS',
         '2nd_sms' => '2nd SMS',
         '3rd_sms' => '3rd SMS',
-    ),
-    'payment_type' => array(
-        "1" => "Cash",
-        "2" => "Credit Card",
-        "3" => "Paypal",
-        "4" => "Bank/Wire Transfer",
-        "5" => "Payment Adjustment",
-        "6" => "Settle Amount"
-    ),
+    ],
+    'payment_type' => [
+        '1' => 'Cash',
+        '2' => 'Credit Card',
+        '3' => 'Paypal',
+        '4' => 'Bank/Wire Transfer',
+        '5' => 'Payment Adjustment',
+        '6' => 'Settle Amount',
+    ],
     'payment_type_settle' => 6,
 
-
-    'yesno_array' => array(
+    'yesno_array' => [
         1 => 'Yes',
         2 => 'No',
-    ),
-    "user_form_field_type" => array(
-        "1" => "Text",
-        "2" => "Paragraph",
-        "3" => "Single Select Field",
-        "4" => "Multi Select Field",
-        "5" => "Options List",
-        "6" => "Title and Description",
+    ],
+    'user_form_field_type' => [
+        '1' => 'Text',
+        '2' => 'Paragraph',
+        '3' => 'Single Select Field',
+        '4' => 'Multi Select Field',
+        '5' => 'Options List',
+        '6' => 'Title and Description',
 
-    ),
-    'months_array' => array(
+    ],
+    'months_array' => [
         1 => 'January',
         2 => 'February',
         3 => 'March',
@@ -134,25 +131,25 @@ return [
         9 => 'September',
         10 => 'October',
         11 => 'November',
-        12 => 'December'
-    ),
-    "custom_form" => array(
-        "field_types" => array(
-            "text" => "1",
-            "paragraph" => "2",
-            "single" => "3",
-            "multiple" => "4",
-            "option" => "5",
-            "title" => "6",
-            "table_input" => "7"
-        ),
-        "default_field_name" => array(
-            "option" => "field_option",
-            "table_input" => "field_option"
-        )
-    ),
+        12 => 'December',
+    ],
+    'custom_form' => [
+        'field_types' => [
+            'text' => '1',
+            'paragraph' => '2',
+            'single' => '3',
+            'multiple' => '4',
+            'option' => '5',
+            'title' => '6',
+            'table_input' => '7',
+        ],
+        'default_field_name' => [
+            'option' => 'field_option',
+            'table_input' => 'field_option',
+        ],
+    ],
 
-    'center_target_array' => array(
+    'center_target_array' => [
         '1' => '1',
         '2' => '2',
         '3' => '3',
@@ -184,35 +181,35 @@ return [
         '29' => '29',
         '30' => '30',
         '31' => '31',
-    ),
+    ],
 
-    'payment_use_type' => array(
-        "application" => "Application",
-        "system" => "System",
-    ),
+    'payment_use_type' => [
+        'application' => 'Application',
+        'system' => 'System',
+    ],
 
-    'status' => array(
+    'status' => [
         '0' => 'Inactive',
-        '1' => 'Active'
-    ),
+        '1' => 'Active',
+    ],
 
     'tax_both' => '1',
     'tax_is_exclusive' => '2',
     'tax_is_inclusive' => '3',
 
-    'consultancy_type_array' => array(
+    'consultancy_type_array' => [
         'in_person' => 'In Person',
         'virtual' => 'Virtual',
-    ),
-    'consultancy_type' => array(
+    ],
+    'consultancy_type' => [
         1 => 'Yes',
         2 => 'No',
-    ),
+    ],
 
     'user_types' => [
         'application user' => 'application user',
         'patient' => 'patient',
-        'practitioner' => 'practitioner'
+        'practitioner' => 'practitioner',
     ],
 
     'api_status' => [
@@ -232,7 +229,7 @@ return [
     ],
     'amount_types' => [
         'Fixed' => 'Fixed',
-        'Percentage' => 'Percentage'
+        'Percentage' => 'Percentage',
     ],
     'export-appointment-limit' => 1000,
     'export-lead-excel-limit' => 1000,

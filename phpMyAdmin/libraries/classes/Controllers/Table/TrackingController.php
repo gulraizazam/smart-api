@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function array_map;
+use function define;
+use function explode;
+use function htmlspecialchars;
 use PhpMyAdmin\DbTableExists;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
@@ -12,12 +17,6 @@ use PhpMyAdmin\Tracker;
 use PhpMyAdmin\Tracking;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function array_map;
-use function define;
-use function explode;
-use function htmlspecialchars;
 use function sprintf;
 use function strtotime;
 
@@ -67,7 +66,7 @@ final class TrackingController extends AbstractController
             $msg = Message::notice(
                 sprintf(
                     __('Tracking of %s is activated.'),
-                    htmlspecialchars($GLOBALS['db'] . '.' . $GLOBALS['table'])
+                    htmlspecialchars($GLOBALS['db'].'.'.$GLOBALS['table'])
                 )
             );
             $activeMessage = $msg->getDisplay();

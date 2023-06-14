@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace PhpMyAdmin;
 
 use function __;
+use const DIRECTORY_SEPARATOR;
+use const E_USER_ERROR;
 use function file_exists;
 use function file_get_contents;
 use function filemtime;
@@ -18,10 +20,6 @@ use function sprintf;
 use function trigger_error;
 use function trim;
 use function version_compare;
-
-use const DIRECTORY_SEPARATOR;
-
-use const E_USER_ERROR;
 
 /**
  * handles theme
@@ -69,7 +67,7 @@ class Theme
      */
     public function loadInfo(): bool
     {
-        $infofile = $this->getFsPath() . 'theme.json';
+        $infofile = $this->getFsPath().'theme.json';
         if (! @file_exists($infofile)) {
             return false;
         }
@@ -143,19 +141,19 @@ class Theme
     public function checkImgPath(): bool
     {
         // try current theme first
-        if (is_dir($this->getFsPath() . 'img' . DIRECTORY_SEPARATOR)) {
-            $this->setImgPath($this->getPath() . '/img/');
-            $this->setImgPathFs($this->getFsPath() . 'img' . DIRECTORY_SEPARATOR);
+        if (is_dir($this->getFsPath().'img'.DIRECTORY_SEPARATOR)) {
+            $this->setImgPath($this->getPath().'/img/');
+            $this->setImgPathFs($this->getFsPath().'img'.DIRECTORY_SEPARATOR);
 
             return true;
         }
 
         // try fallback theme
-        $fallbackFsPathThemeDir = ThemeManager::getThemesFsDir() . ThemeManager::FALLBACK_THEME
-                                  . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR;
+        $fallbackFsPathThemeDir = ThemeManager::getThemesFsDir().ThemeManager::FALLBACK_THEME
+                                  .DIRECTORY_SEPARATOR.'img'.DIRECTORY_SEPARATOR;
         if (is_dir($fallbackFsPathThemeDir)) {
-            $fallbackUrl = ThemeManager::getThemesDir() . ThemeManager::FALLBACK_THEME
-                        . '/img/';
+            $fallbackUrl = ThemeManager::getThemesDir().ThemeManager::FALLBACK_THEME
+                        .'/img/';
             $this->setImgPath($fallbackUrl);
             $this->setImgPathFs($fallbackFsPathThemeDir);
 
@@ -197,7 +195,7 @@ class Theme
     /**
      * set path to theme
      *
-     * @param string $path path to theme
+     * @param  string  $path path to theme
      */
     public function setPath($path): void
     {
@@ -207,7 +205,7 @@ class Theme
     /**
      * set file system path to the theme
      *
-     * @param string $path path to theme
+     * @param  string  $path path to theme
      */
     public function setFsPath(string $path): void
     {
@@ -217,7 +215,7 @@ class Theme
     /**
      * sets version
      *
-     * @param string $version version to set
+     * @param  string  $version version to set
      */
     public function setVersion($version): void
     {
@@ -238,7 +236,7 @@ class Theme
      * checks theme version against $version
      * returns true if theme version is equal or higher to $version
      *
-     * @param string $version version to compare to
+     * @param  string  $version version to compare to
      */
     public function checkVersion($version): bool
     {
@@ -248,7 +246,7 @@ class Theme
     /**
      * sets name
      *
-     * @param string $name name to set
+     * @param  string  $name name to set
      */
     public function setName($name): void
     {
@@ -268,7 +266,7 @@ class Theme
     /**
      * sets id
      *
-     * @param string $id new id
+     * @param  string  $id new id
      */
     public function setId($id): void
     {
@@ -288,7 +286,7 @@ class Theme
     /**
      * Sets path to images for the theme
      *
-     * @param string $path path to images for this theme as an URL path
+     * @param  string  $path path to images for this theme as an URL path
      */
     public function setImgPath($path): void
     {
@@ -298,7 +296,7 @@ class Theme
     /**
      * Sets path to images for the theme
      *
-     * @param string $path file-system path to images for this theme
+     * @param  string  $path file-system path to images for this theme
      */
     public function setImgPathFs(string $path): void
     {
@@ -310,9 +308,8 @@ class Theme
      * If filename is given, it possibly fallbacks to fallback
      * theme for it if image does not exist.
      *
-     * @param string $file     file name for image
-     * @param string $fallback fallback image
-     *
+     * @param  string  $file     file name for image
+     * @param  string  $fallback fallback image
      * @return string image path for this theme
      */
     public function getImgPath($file = null, $fallback = null)
@@ -321,14 +318,14 @@ class Theme
             return $this->imgPath;
         }
 
-        if (is_readable($this->imgPathFs . $file)) {
-            return $this->imgPath . $file;
+        if (is_readable($this->imgPathFs.$file)) {
+            return $this->imgPath.$file;
         }
 
         if ($fallback !== null) {
             return $this->getImgPath($fallback);
         }
 
-        return './themes/' . ThemeManager::FALLBACK_THEME . '/img/' . $file;
+        return './themes/'.ThemeManager::FALLBACK_THEME.'/img/'.$file;
     }
 }

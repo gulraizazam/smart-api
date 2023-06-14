@@ -210,10 +210,10 @@ class FinanceReportController extends Controller
     /**
      * Centre performance states by revenue Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function centerperformancestatsbyrevenueExcel($reportData, $filters, $start_date, $end_date)
@@ -404,10 +404,10 @@ class FinanceReportController extends Controller
     /**
      * Centre performance states by service type Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function centerperformancestatsbyservicetypeExcel($reportData, $filters, $start_date, $end_date)
@@ -573,9 +573,9 @@ class FinanceReportController extends Controller
     /**
      * Daily Employee Stats (Summary) Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function accountsalesreportReportExcel($reportData, $filters, $start_date, $end_date)
@@ -714,9 +714,9 @@ class FinanceReportController extends Controller
     /**
      * Daily Employee Stats (Summary) Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function dailyEmployeeStatsSummaryExcel($reportData, $start_date, $end_date)
@@ -822,9 +822,9 @@ class FinanceReportController extends Controller
     /**
      * Daily Employee Stats Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function dailyEmployeeStatsExcel($reportData, $start_date, $end_date)
@@ -948,9 +948,9 @@ class FinanceReportController extends Controller
     /**
      * Sales By Service Category
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function salesByServiceCategoryExcel($reportData, $start_date, $end_date)
@@ -1091,9 +1091,9 @@ class FinanceReportController extends Controller
     /**
      * Discount Report
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function discountreportexcel($reportData, $filters, $start_date, $end_date)
@@ -1276,9 +1276,9 @@ class FinanceReportController extends Controller
     /**
      * General Revnue Report Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function GeneralRevenueReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date)
@@ -1476,9 +1476,9 @@ class FinanceReportController extends Controller
     /**
      * General Revnue Report Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function GeneralRevenueSummaryReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date)
@@ -1618,9 +1618,9 @@ class FinanceReportController extends Controller
     /**
      * Pabau Record Revenue Report Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function pabaurevenuerecordreportExcel($reportData, $start_date, $end_date)
@@ -1772,9 +1772,9 @@ class FinanceReportController extends Controller
     /**
      * Machine Wise Invoice Revenue Report Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function machinewiseinvoicerevenuereportExcel($reportData, $start_date, $end_date)
@@ -1941,9 +1941,9 @@ class FinanceReportController extends Controller
     /**
      * Machine Wise Invoice Revenue Report Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function partnercollectionreportExcel($reportData, $start_date, $end_date)
@@ -2114,9 +2114,9 @@ class FinanceReportController extends Controller
     /**
      * Staff wise Revenue report
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function staffwiserevenuereportexcel($reportData, $start_date, $end_date)
@@ -2388,9 +2388,9 @@ class FinanceReportController extends Controller
     /**
      * Daily Employee Stats (Summary) Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function collectionbyservuiceExcel($reportData, $start_date, $end_date)
@@ -2486,9 +2486,9 @@ class FinanceReportController extends Controller
     /**
      * Machine Wise collection Report Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function machinewisecollectionsseportExcel($reportData, $start_date, $end_date)
@@ -2647,9 +2647,9 @@ class FinanceReportController extends Controller
     /**
      * Daily Consume Revenue Excel
      *
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function consumeplanrevenueExcel($reportData, $start_date, $end_date)
@@ -2892,10 +2892,10 @@ class FinanceReportController extends Controller
         }
         if ($request->location_id && $request->location_id != '' && $request->date_from && $request->date_to && ! $request->created_by) {
             $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
-            ->where(['centre_id' => $request->location_id])
-            ->whereDate('cron_current_date', '>=', $request->date_from)
-            ->whereDate('cron_current_date', '<=', $request->date_to)
-            ->count();
+                ->where(['centre_id' => $request->location_id])
+                ->whereDate('cron_current_date', '>=', $request->date_from)
+                ->whereDate('cron_current_date', '<=', $request->date_to)
+                ->count();
         }
         $Appointments = $resultQuery->with(['user', 'appointment' => function ($q) {
             $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')

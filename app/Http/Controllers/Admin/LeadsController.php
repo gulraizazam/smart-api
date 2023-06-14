@@ -661,7 +661,7 @@ class LeadsController extends Controller
                     LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
                         'status' => 0,
                     ]);
-                //}
+                    //}
                 } else {
                     $data['created_at'] = Carbon::now();
                     $data['updated_at'] = Carbon::now();
@@ -2386,7 +2386,7 @@ class LeadsController extends Controller
     /**
      * return ajax view when adding consulting appointment from full calendar.
      *
-     * @param (int) $id
+     * @param  (int)  $id
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\View\View|void
      */
     public function convert($id)

@@ -467,7 +467,7 @@ class User extends Authenticatable
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecords($account_id)
@@ -478,7 +478,7 @@ class User extends Authenticatable
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllPatientRecords($account_id, array $ids = [])
@@ -498,7 +498,7 @@ class User extends Authenticatable
     /**
      * Get All Active Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllActiveRecords($account_id, $locationId = false)
@@ -524,7 +524,7 @@ class User extends Authenticatable
     /**
      * Get All Active Records for employee
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllActiveEmployeeRecords($account_id, $locationId = false)
@@ -552,7 +552,7 @@ class User extends Authenticatable
     /**
      * Get All Active Records for practionars
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllActivePractionersRecords($account_id, $locationId = false)
@@ -580,7 +580,7 @@ class User extends Authenticatable
     /**
      * Get All Active Records
      *
-     * @param (int) $account_id Current Organization's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
     public static function getAllSystemUsersActiveRecords($account_id)
@@ -662,7 +662,7 @@ class User extends Authenticatable
 
                 return $query;
             }
-        //            $query = self::whereIn('location_id',$locationId)->get()->pluck('name','id');
+            //            $query = self::whereIn('location_id',$locationId)->get()->pluck('name','id');
         } else {
             if ($account_id) {
                 if ($user_id) {

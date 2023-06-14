@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Config\Forms\User;
 
-use PhpMyAdmin\Config\Forms\BaseForm;
-
 use function __;
+use PhpMyAdmin\Config\Forms\BaseForm;
 
 class ExportForm extends BaseForm
 {
@@ -22,11 +21,11 @@ class ExportForm extends BaseForm
         return [
             'Export_defaults' => [
                 'Export/method',
-                ':group:' . __('Quick'),
+                ':group:'.__('Quick'),
                 'Export/quick_export_onserver',
                 'Export/quick_export_onserver_overwrite',
                 ':group:end',
-                ':group:' . __('Custom'),
+                ':group:'.__('Custom'),
                 'Export/format',
                 'Export/compression',
                 'Export/charset',
@@ -52,7 +51,7 @@ class ExportForm extends BaseForm
                 'Export/sql_metadata',
                 'Export/sql_compatibility',
                 'Export/sql_structure_or_data',
-                ':group:' . __('Structure'),
+                ':group:'.__('Structure'),
                 'Export/sql_drop_database',
                 'Export/sql_create_database',
                 'Export/sql_drop_table',
@@ -68,7 +67,7 @@ class ExportForm extends BaseForm
                 'Export/sql_create_trigger',
                 'Export/sql_backquotes',
                 ':group:end',
-                ':group:' . __('Data'),
+                ':group:'.__('Data'),
                 'Export/sql_delayed',
                 'Export/sql_ignore',
                 'Export/sql_type',
@@ -79,7 +78,7 @@ class ExportForm extends BaseForm
             ],
             'CodeGen' => ['Export/codegen_format'],
             'Csv' => [
-                ':group:' . __('CSV'),
+                ':group:'.__('CSV'),
                 'Export/csv_separator',
                 'Export/csv_enclosed',
                 'Export/csv_escaped',
@@ -88,7 +87,7 @@ class ExportForm extends BaseForm
                 'Export/csv_removeCRLF',
                 'Export/csv_columns',
                 ':group:end',
-                ':group:' . __('CSV for MS Excel'),
+                ':group:'.__('CSV for MS Excel'),
                 'Export/excel_null',
                 'Export/excel_removeCRLF',
                 'Export/excel_columns',
@@ -97,7 +96,7 @@ class ExportForm extends BaseForm
             'Latex' => [
                 'Export/latex_caption',
                 'Export/latex_structure_or_data',
-                ':group:' . __('Structure'),
+                ':group:'.__('Structure'),
                 'Export/latex_structure_caption',
                 'Export/latex_structure_continued_caption',
                 'Export/latex_structure_label',
@@ -105,7 +104,7 @@ class ExportForm extends BaseForm
                 'Export/latex_comments',
                 'Export/latex_mime',
                 ':group:end',
-                ':group:' . __('Data'),
+                ':group:'.__('Data'),
                 'Export/latex_columns',
                 'Export/latex_data_caption',
                 'Export/latex_data_continued_caption',
@@ -113,30 +112,30 @@ class ExportForm extends BaseForm
                 'Export/latex_null',
             ],
             'Microsoft_Office' => [
-                ':group:' . __('Microsoft Word 2000'),
+                ':group:'.__('Microsoft Word 2000'),
                 'Export/htmlword_structure_or_data',
                 'Export/htmlword_null',
                 'Export/htmlword_columns',
             ],
             'Open_Document' => [
-                ':group:' . __('OpenDocument Spreadsheet'),
+                ':group:'.__('OpenDocument Spreadsheet'),
                 'Export/ods_columns',
                 'Export/ods_null',
                 ':group:end',
-                ':group:' . __('OpenDocument Text'),
+                ':group:'.__('OpenDocument Text'),
                 'Export/odt_structure_or_data',
-                ':group:' . __('Structure'),
+                ':group:'.__('Structure'),
                 'Export/odt_relation',
                 'Export/odt_comments',
                 'Export/odt_mime',
                 ':group:end',
-                ':group:' . __('Data'),
+                ':group:'.__('Data'),
                 'Export/odt_columns',
                 'Export/odt_null',
             ],
             'Texy' => [
                 'Export/texytext_structure_or_data',
-                ':group:' . __('Data'),
+                ':group:'.__('Data'),
                 'Export/texytext_null',
                 'Export/texytext_columns',
             ],

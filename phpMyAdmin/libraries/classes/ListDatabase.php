@@ -45,7 +45,7 @@ class ListDatabase extends ListAbstract
         }
 
         foreach ($this->getArrayCopy() as $key => $db) {
-            if (! preg_match('/' . $GLOBALS['cfg']['Server']['hide_db'] . '/', $db)) {
+            if (! preg_match('/'.$GLOBALS['cfg']['Server']['hide_db'].'/', $db)) {
                 continue;
             }
 
@@ -56,8 +56,7 @@ class ListDatabase extends ListAbstract
     /**
      * retrieves database list from server
      *
-     * @param string $like_db_name usually a db_name containing wildcards
-     *
+     * @param  string  $like_db_name usually a db_name containing wildcards
      * @return array
      */
     protected function retrieve($like_db_name = null)
@@ -69,13 +68,13 @@ class ListDatabase extends ListAbstract
         if (! $GLOBALS['cfg']['Server']['DisableIS']) {
             $command .= 'SELECT `SCHEMA_NAME` FROM `INFORMATION_SCHEMA`.`SCHEMATA`';
             if ($like_db_name !== null) {
-                $command .= " WHERE `SCHEMA_NAME` LIKE '" . $like_db_name . "'";
+                $command .= " WHERE `SCHEMA_NAME` LIKE '".$like_db_name."'";
             }
         } else {
             if ($GLOBALS['dbs_to_test'] === false || $like_db_name !== null) {
                 $command .= 'SHOW DATABASES';
                 if ($like_db_name !== null) {
-                    $command .= " LIKE '" . $like_db_name . "'";
+                    $command .= " LIKE '".$like_db_name."'";
                 }
             } else {
                 foreach ($GLOBALS['dbs_to_test'] as $db) {
@@ -138,6 +137,7 @@ class ListDatabase extends ListAbstract
             if (! preg_match('/(^|[^\\\\])(_|%)/', $each_only_db)) {
                 // ... not contains wildcard
                 $items[] = Util::unescapeMysqlWildcards($each_only_db);
+
                 continue;
             }
 

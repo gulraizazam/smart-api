@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Engines;
 
-use PhpMyAdmin\StorageEngine;
-
 use function __;
+use PhpMyAdmin\StorageEngine;
 
 /**
  * The BDB storage engine

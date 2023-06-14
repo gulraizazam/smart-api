@@ -7,11 +7,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\Query\Utilities;
-use PhpMyAdmin\Utils\SessionCache;
-
 use function mb_strpos;
 use function mb_substr;
+use PhpMyAdmin\Query\Utilities;
+use PhpMyAdmin\Utils\SessionCache;
 use function preg_match;
 use function preg_replace;
 use function str_contains;
@@ -25,7 +24,7 @@ class CheckUserPrivileges
     private $dbi;
 
     /**
-     * @param DatabaseInterface $dbi DatabaseInterface object
+     * @param  DatabaseInterface  $dbi DatabaseInterface object
      */
     public function __construct(DatabaseInterface $dbi)
     {
@@ -35,9 +34,7 @@ class CheckUserPrivileges
     /**
      * Extracts details from a result row of a SHOW GRANT query
      *
-     * @param string $row grant row
-     *
-     * @return array
+     * @param  string  $row grant row
      */
     public function getItemsFromShowGrantsRow(string $row): array
     {
@@ -83,9 +80,9 @@ class CheckUserPrivileges
      * Check if user has required privileges for
      * performing 'Adjust privileges' operations
      *
-     * @param string $showGrantsString    string containing grants for user
-     * @param string $showGrantsDbName    name of db extracted from grant string
-     * @param string $showGrantsTableName name of table extracted from grant string
+     * @param  string  $showGrantsString    string containing grants for user
+     * @param  string  $showGrantsDbName    name of db extracted from grant string
+     * @param  string  $showGrantsTableName name of table extracted from grant string
      */
     public function checkRequiredPrivilegesForAdjust(
         string $showGrantsString,
@@ -254,11 +251,11 @@ class CheckUserPrivileges
 
             // does this db exist?
             if (
-                (! preg_match('/' . $re0 . '%|_/', $showGrantsDbName)
+                (! preg_match('/'.$re0.'%|_/', $showGrantsDbName)
                 || preg_match('/\\\\%|\\\\_/', $showGrantsDbName))
                 && ($this->dbi->tryQuery(
-                    'USE ' . preg_replace(
-                        '/' . $re1 . '(%|_)/',
+                    'USE '.preg_replace(
+                        '/'.$re1.'(%|_)/',
                         '\\1\\3',
                         $dbNameToTest
                     )
@@ -272,16 +269,16 @@ class CheckUserPrivileges
              * Do not handle the underscore wildcard
              * (this case must be rare anyway)
              */
-            $GLOBALS['db_to_create'] = preg_replace('/' . $re0 . '%/', '\\1', $showGrantsDbName);
-            $GLOBALS['db_to_create'] = preg_replace('/' . $re1 . '(%|_)/', '\\1\\3', $GLOBALS['db_to_create']);
+            $GLOBALS['db_to_create'] = preg_replace('/'.$re0.'%/', '\\1', $showGrantsDbName);
+            $GLOBALS['db_to_create'] = preg_replace('/'.$re1.'(%|_)/', '\\1\\3', $GLOBALS['db_to_create']);
             $GLOBALS['is_create_db_priv'] = true;
 
             /**
              * @todo collect $GLOBALS['db_to_create'] into an array,
              * to display a drop-down in the "Create database" dialog
              */
-             // we don't break, we want all possible databases
-             //break;
+            // we don't break, we want all possible databases
+            //break;
         }
 
         // must also cacheUnset() them in
