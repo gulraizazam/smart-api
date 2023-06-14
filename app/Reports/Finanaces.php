@@ -2893,7 +2893,7 @@ class Finanaces
         
         ->where($where)
         ->count();
-        dd($location_ids);
+        dd($start_date,$end_date);
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
 
         $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
