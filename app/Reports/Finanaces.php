@@ -2892,7 +2892,7 @@ class Finanaces
         ->where('package_advances.cash_amount','>',0)
         
         ->where($where)
-        ->count();
+        ->toSql();
         dd($start_date,$end_date);
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
 
