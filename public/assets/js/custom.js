@@ -1181,10 +1181,9 @@ function selectUser(name, user_id,  search_id,flag=1) {
 }
 
 function leadSearch(search_id = 'lead_search_id',flag=1) {
-    $("." + search_id).on("input",function() {
+    $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
-        console.log($(this).val());
         if ($(this).val().length < 2) {
             $(".suggesstion-box").hide();
             return false;
@@ -1202,9 +1201,8 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                     let leads = response.data.leads;
                     let haveObjleads = Object.keys(leads).length;
                     if (leads.length) {
-                        console.log('leads.length',leads.length);
+
                         leads.forEach(function (lead) {
-                            console.log('leads.length',lead);
                             html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
                         });
                         $(".suggestion-list").html(html);
