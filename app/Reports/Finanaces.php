@@ -2631,6 +2631,7 @@ class Finanaces
     }
     static function LoadConversionReport($data, $account_id)
     {
+        \DB::enableQueryLog();
         $where = array();
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -2884,6 +2885,7 @@ class Finanaces
         $maxConversion = collect($appointments_info)->max('conversion_spend');
         $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
         //$converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
+        
         $converted_Records = Appointments::join('package_advances','appointments.id','package_advances.appointment_id')
         ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
          ->where(['appointments.base_appointment_status_id'=> 2])
@@ -2892,8 +2894,8 @@ class Finanaces
         ->where('package_advances.cash_amount','>',0)
         
         ->where($where)
-        ->toSql();
-        dd($converted_Records);
+        ->count();
+        dd(\DB::getQueryLog());
         $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
 
         $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
