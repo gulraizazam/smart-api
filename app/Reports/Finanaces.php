@@ -2890,6 +2890,7 @@ class Finanaces
         ->whereDate('package_advances.created_at', '>=', $start_date)
         ->whereDate('package_advances.created_at', '<=', $end_date)
         ->where('package_advances.cash_amount','>',0)
+        ->where('conversion_spend',"!=","")
         ->where($where)
         ->count();
         dd($converted_Records);
