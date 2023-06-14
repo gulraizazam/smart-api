@@ -2670,7 +2670,7 @@ class Finanaces
             ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
-            ->limit(50)
+            // ->limit(50)
             ->get();
         $total = 0;
         $count = array();
