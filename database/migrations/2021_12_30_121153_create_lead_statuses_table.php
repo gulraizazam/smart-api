@@ -31,7 +31,7 @@ class CreateLeadStatusesTable extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('account_id','lead_statuses_account')
+            $table->foreign('account_id', 'lead_statuses_account')
                 ->references('id')
                 ->on('accounts');
         });

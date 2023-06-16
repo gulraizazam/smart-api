@@ -4,14 +4,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Database\Designer;
 
-use PhpMyAdmin\ConfigStorage\Relation;
-use PhpMyAdmin\DatabaseInterface;
-use PhpMyAdmin\Index;
-use PhpMyAdmin\Query\Generator as QueryGenerator;
-use PhpMyAdmin\Table;
-use PhpMyAdmin\Util;
-use PhpMyAdmin\Utils\ForeignKey;
-
 use function __;
 use function _pgettext;
 use function array_keys;
@@ -24,6 +16,13 @@ use function is_string;
 use function json_decode;
 use function json_encode;
 use function mb_strtoupper;
+use PhpMyAdmin\ConfigStorage\Relation;
+use PhpMyAdmin\DatabaseInterface;
+use PhpMyAdmin\Index;
+use PhpMyAdmin\Query\Generator as QueryGenerator;
+use PhpMyAdmin\Table;
+use PhpMyAdmin\Util;
+use PhpMyAdmin\Utils\ForeignKey;
 use function rawurlencode;
 
 /**
@@ -38,8 +37,8 @@ class Common
     private $dbi;
 
     /**
-     * @param DatabaseInterface $dbi      DatabaseInterface object
-     * @param Relation          $relation Relation instance
+     * @param  DatabaseInterface  $dbi      DatabaseInterface object
+     * @param  Relation  $relation Relation instance
      */
     public function __construct(DatabaseInterface $dbi, Relation $relation)
     {
@@ -50,9 +49,8 @@ class Common
     /**
      * Retrieves table info and returns it
      *
-     * @param string $db    (optional) Filter only a DB ($table is required if you use $db)
-     * @param string $table (optional) Filter only a table ($db is now required)
-     *
+     * @param  string  $db    (optional) Filter only a DB ($table is required if you use $db)
+     * @param  string  $table (optional) Filter only a table ($db is now required)
      * @return DesignerTable[] with table info
      */
     public function getTablesInfo(?string $db = null, ?string $table = null): array
@@ -85,8 +83,7 @@ class Common
     /**
      * Retrieves table column info
      *
-     * @param DesignerTable[] $designerTables The designer tables
-     *
+     * @param  DesignerTable[]  $designerTables The designer tables
      * @return array table column nfo
      */
     public function getColumnsInfo(array $designerTables): array
@@ -121,8 +118,7 @@ class Common
     /**
      * Returns JavaScript code for initializing vars
      *
-     * @param DesignerTable[] $designerTables The designer tables
-     *
+     * @param  DesignerTable[]  $designerTables The designer tables
      * @return array JavaScript code
      */
     public function getScriptContr(array $designerTables): array
@@ -131,7 +127,7 @@ class Common
         $con = [];
         $con['C_NAME'] = [];
         $i = 0;
-        $alltab_rs = $this->dbi->query('SHOW TABLES FROM ' . Util::backquote($GLOBALS['db']));
+        $alltab_rs = $this->dbi->query('SHOW TABLES FROM '.Util::backquote($GLOBALS['db']));
         while ($val = $alltab_rs->fetchRow()) {
             $val = (string) $val[0];
 
@@ -139,9 +135,9 @@ class Common
 
             foreach ($row as $field => $value) {
                 $con['C_NAME'][$i] = '';
-                $con['DTN'][$i] = rawurlencode($GLOBALS['db'] . '.' . $val);
+                $con['DTN'][$i] = rawurlencode($GLOBALS['db'].'.'.$val);
                 $con['DCN'][$i] = rawurlencode((string) $field);
-                $con['STN'][$i] = rawurlencode($value['foreign_db'] . '.' . $value['foreign_table']);
+                $con['STN'][$i] = rawurlencode($value['foreign_db'].'.'.$value['foreign_table']);
                 $con['SCN'][$i] = rawurlencode($value['foreign_field']);
                 $i++;
             }
@@ -156,11 +152,11 @@ class Common
             foreach ($row['foreign_keys_data'] as $one_key) {
                 foreach ($one_key['index_list'] as $index => $one_field) {
                     $con['C_NAME'][$i] = rawurlencode($one_key['constraint']);
-                    $con['DTN'][$i] = rawurlencode($GLOBALS['db'] . '.' . $val);
+                    $con['DTN'][$i] = rawurlencode($GLOBALS['db'].'.'.$val);
                     $con['DCN'][$i] = rawurlencode($one_field);
                     $con['STN'][$i] = rawurlencode(
                         ($one_key['ref_db_name'] ?? $GLOBALS['db'])
-                        . '.' . $one_key['ref_table_name']
+                        .'.'.$one_key['ref_table_name']
                     );
                     $con['SCN'][$i] = rawurlencode($one_key['ref_index_list'][$index]);
                     $i++;
@@ -197,8 +193,7 @@ class Common
     /**
      * Returns UNIQUE and PRIMARY indices
      *
-     * @param DesignerTable[] $designerTables The designer tables
-     *
+     * @param  DesignerTable[]  $designerTables The designer tables
      * @return array unique or primary indices
      */
     public function getPkOrUniqueKeys(array $designerTables): array
@@ -209,9 +204,8 @@ class Common
     /**
      * Returns all indices
      *
-     * @param DesignerTable[] $designerTables The designer tables
-     * @param bool            $unique_only    whether to include only unique ones
-     *
+     * @param  DesignerTable[]  $designerTables The designer tables
+     * @param  bool  $unique_only    whether to include only unique ones
      * @return array indices
      */
     public function getAllKeys(array $designerTables, bool $unique_only = false): array
@@ -228,7 +222,7 @@ class Common
 
                 $columns = $index->getColumns();
                 foreach (array_keys($columns) as $column_name) {
-                    $keys[$schema . '.' . $designerTable->getTableName() . '.' . $column_name] = 1;
+                    $keys[$schema.'.'.$designerTable->getTableName().'.'.$column_name] = 1;
                 }
             }
         }
@@ -239,9 +233,7 @@ class Common
     /**
      * Return j_tab and h_tab arrays
      *
-     * @param DesignerTable[] $designerTables The designer tables
-     *
-     * @return array
+     * @param  DesignerTable[]  $designerTables The designer tables
      */
     public function getScriptTabs(array $designerTables): array
     {
@@ -262,8 +254,7 @@ class Common
     /**
      * Returns table positions of a given pdf page
      *
-     * @param int $pg pdf page id
-     *
+     * @param  int  $pg pdf page id
      * @return array|null of table positions
      */
     public function getTablePositions($pg): ?array
@@ -280,9 +271,9 @@ class Common
                 `y` AS `Y`,
                 1 AS `V`,
                 1 AS `H`
-            FROM " . Util::backquote($pdfFeature->database)
-                . '.' . Util::backquote($pdfFeature->tableCoords) . '
-            WHERE pdf_page_number = ' . intval($pg);
+            FROM ".Util::backquote($pdfFeature->database)
+                .'.'.Util::backquote($pdfFeature->tableCoords).'
+            WHERE pdf_page_number = '.intval($pg);
 
         return $this->dbi->fetchResult(
             $query,
@@ -295,8 +286,7 @@ class Common
     /**
      * Returns page name of a given pdf page
      *
-     * @param int $pg pdf page id
-     *
+     * @param  int  $pg pdf page id
      * @return string|null table name
      */
     public function getPageName($pg)
@@ -307,9 +297,9 @@ class Common
         }
 
         $query = 'SELECT `page_descr`'
-            . ' FROM ' . Util::backquote($pdfFeature->database)
-            . '.' . Util::backquote($pdfFeature->pdfPages)
-            . ' WHERE ' . Util::backquote('page_nr') . ' = ' . intval($pg);
+            .' FROM '.Util::backquote($pdfFeature->database)
+            .'.'.Util::backquote($pdfFeature->pdfPages)
+            .' WHERE '.Util::backquote('page_nr').' = '.intval($pg);
         $page_name = $this->dbi->fetchResult(
             $query,
             null,
@@ -323,7 +313,7 @@ class Common
     /**
      * Deletes a given pdf page and its corresponding coordinates
      *
-     * @param int $pg page id
+     * @param  int  $pg page id
      */
     public function deletePage($pg): bool
     {
@@ -332,14 +322,14 @@ class Common
             return false;
         }
 
-        $query = 'DELETE FROM ' . Util::backquote($pdfFeature->database)
-            . '.' . Util::backquote($pdfFeature->tableCoords)
-            . ' WHERE ' . Util::backquote('pdf_page_number') . ' = ' . intval($pg);
+        $query = 'DELETE FROM '.Util::backquote($pdfFeature->database)
+            .'.'.Util::backquote($pdfFeature->tableCoords)
+            .' WHERE '.Util::backquote('pdf_page_number').' = '.intval($pg);
         $this->dbi->queryAsControlUser($query);
 
-        $query = 'DELETE FROM ' . Util::backquote($pdfFeature->database)
-            . '.' . Util::backquote($pdfFeature->pdfPages)
-            . ' WHERE ' . Util::backquote('page_nr') . ' = ' . intval($pg);
+        $query = 'DELETE FROM '.Util::backquote($pdfFeature->database)
+            .'.'.Util::backquote($pdfFeature->pdfPages)
+            .' WHERE '.Util::backquote('page_nr').' = '.intval($pg);
         $this->dbi->queryAsControlUser($query);
 
         return true;
@@ -349,8 +339,7 @@ class Common
      * Returns the id of the default pdf page of the database.
      * Default page is the one which has the same name as the database.
      *
-     * @param string $db database
-     *
+     * @param  string  $db database
      * @return int|null id of the default pdf page for the database
      */
     public function getDefaultPage($db): ?int
@@ -361,10 +350,10 @@ class Common
         }
 
         $query = 'SELECT `page_nr`'
-            . ' FROM ' . Util::backquote($pdfFeature->database)
-            . '.' . Util::backquote($pdfFeature->pdfPages)
-            . " WHERE `db_name` = '" . $this->dbi->escapeString($db) . "'"
-            . " AND `page_descr` = '" . $this->dbi->escapeString($db) . "'";
+            .' FROM '.Util::backquote($pdfFeature->database)
+            .'.'.Util::backquote($pdfFeature->pdfPages)
+            ." WHERE `db_name` = '".$this->dbi->escapeString($db)."'"
+            ." AND `page_descr` = '".$this->dbi->escapeString($db)."'";
 
         $default_page_no = $this->dbi->fetchResult(
             $query,
@@ -384,7 +373,7 @@ class Common
      * Get the status if the page already exists
      * If no such exists, returns negative index.
      *
-     * @param string $pg name
+     * @param  string  $pg name
      */
     public function getPageExists(string $pg): bool
     {
@@ -394,9 +383,9 @@ class Common
         }
 
         $query = 'SELECT `page_nr`'
-            . ' FROM ' . Util::backquote($pdfFeature->database)
-            . '.' . Util::backquote($pdfFeature->pdfPages)
-            . " WHERE `page_descr` = '" . $this->dbi->escapeString($pg) . "'";
+            .' FROM '.Util::backquote($pdfFeature->database)
+            .'.'.Util::backquote($pdfFeature->pdfPages)
+            ." WHERE `page_descr` = '".$this->dbi->escapeString($pg)."'";
         $pageNos = $this->dbi->fetchResult(
             $query,
             null,
@@ -411,8 +400,7 @@ class Common
      * Get the id of the page to load. If a default page exists it will be returned.
      * If no such exists, returns the id of the first page of the database.
      *
-     * @param string $db database
-     *
+     * @param  string  $db database
      * @return int id of the page to load
      */
     public function getLoadingPage($db)
@@ -428,9 +416,9 @@ class Common
         }
 
         $query = 'SELECT MIN(`page_nr`)'
-            . ' FROM ' . Util::backquote($pdfFeature->database)
-            . '.' . Util::backquote($pdfFeature->pdfPages)
-            . " WHERE `db_name` = '" . $this->dbi->escapeString($db) . "'";
+            .' FROM '.Util::backquote($pdfFeature->database)
+            .'.'.Util::backquote($pdfFeature->pdfPages)
+            ." WHERE `db_name` = '".$this->dbi->escapeString($db)."'";
 
         $min_page_no = $this->dbi->fetchResult(
             $query,
@@ -446,9 +434,8 @@ class Common
     /**
      * Creates a new page and returns its auto-incrementing id
      *
-     * @param string $pageName name of the page
-     * @param string $db       name of the database
-     *
+     * @param  string  $pageName name of the page
+     * @param  string  $db       name of the database
      * @return int|null
      */
     public function createNewPage($pageName, $db)
@@ -464,7 +451,7 @@ class Common
     /**
      * Saves positions of table(s) of a given pdf page
      *
-     * @param int $pg pdf page id
+     * @param  int  $pg pdf page id
      */
     public function saveTablePositions($pg): bool
     {
@@ -476,9 +463,9 @@ class Common
         }
 
         $query = 'DELETE FROM '
-            . Util::backquote($pdfFeature->database)
-            . '.' . Util::backquote($pdfFeature->tableCoords)
-            . " WHERE `pdf_page_number` = '" . $pageId . "'";
+            .Util::backquote($pdfFeature->database)
+            .'.'.Util::backquote($pdfFeature->tableCoords)
+            ." WHERE `pdf_page_number` = '".$pageId."'";
 
         $this->dbi->queryAsControlUser($query);
 
@@ -490,15 +477,15 @@ class Common
             }
 
             $query = 'INSERT INTO '
-                . Util::backquote($pdfFeature->database) . '.'
-                . Util::backquote($pdfFeature->tableCoords)
-                . ' (`db_name`, `table_name`, `pdf_page_number`, `x`, `y`)'
-                . ' VALUES ('
-                . "'" . $this->dbi->escapeString($DB) . "', "
-                . "'" . $this->dbi->escapeString($TAB) . "', "
-                . "'" . $pageId . "', "
-                . "'" . $this->dbi->escapeString($_POST['t_x'][$key]) . "', "
-                . "'" . $this->dbi->escapeString($_POST['t_y'][$key]) . "')";
+                .Util::backquote($pdfFeature->database).'.'
+                .Util::backquote($pdfFeature->tableCoords)
+                .' (`db_name`, `table_name`, `pdf_page_number`, `x`, `y`)'
+                .' VALUES ('
+                ."'".$this->dbi->escapeString($DB)."', "
+                ."'".$this->dbi->escapeString($TAB)."', "
+                ."'".$pageId."', "
+                ."'".$this->dbi->escapeString($_POST['t_x'][$key])."', "
+                ."'".$this->dbi->escapeString($_POST['t_y'][$key])."')";
 
             $this->dbi->queryAsControlUser($query);
         }
@@ -509,11 +496,11 @@ class Common
     /**
      * Saves the display field for a table.
      *
-     * @param string $db    database name
-     * @param string $table table name
-     * @param string $field display field name
-     *
+     * @param  string  $db    database name
+     * @param  string  $table table name
+     * @param  string  $field display field name
      * @return array<int,string|bool|null>
+     *
      * @psalm-return array{0: bool, 1: string|null}
      */
     public function saveDisplayField($db, $table, $field): array
@@ -524,7 +511,7 @@ class Common
                 false,
                 _pgettext(
                     'phpMyAdmin configuration storage is not configured for'
-                        . ' "Display Features" on designer when user tries to set a display field.',
+                        .' "Display Features" on designer when user tries to set a display field.',
                     'phpMyAdmin configuration storage is not configured for "Display Features".'
                 ),
             ];
@@ -542,17 +529,17 @@ class Common
     /**
      * Adds a new foreign relation
      *
-     * @param string $db        database name
-     * @param string $T1        foreign table
-     * @param string $F1        foreign field
-     * @param string $T2        master table
-     * @param string $F2        master field
-     * @param string $on_delete on delete action
-     * @param string $on_update on update action
-     * @param string $DB1       database
-     * @param string $DB2       database
-     *
+     * @param  string  $db        database name
+     * @param  string  $T1        foreign table
+     * @param  string  $F1        foreign field
+     * @param  string  $T2        master table
+     * @param  string  $F2        master field
+     * @param  string  $on_delete on delete action
+     * @param  string  $on_update on update action
+     * @param  string  $DB1       database
+     * @param  string  $DB2       database
      * @return array<int,string|bool> array of success/failure and message
+     *
      * @psalm-return array{0: bool, 1: string}
      */
     public function addNewRelation($db, $T1, $F1, $T2, $F2, $on_delete, $on_update, $DB1, $DB2): array
@@ -578,8 +565,8 @@ class Common
             // or UNIQUE key
             // improve: check all other requirements for InnoDB relations
             $result = $this->dbi->query(
-                'SHOW INDEX FROM ' . Util::backquote($DB1)
-                . '.' . Util::backquote($T1) . ';'
+                'SHOW INDEX FROM '.Util::backquote($DB1)
+                .'.'.Util::backquote($T1).';'
             );
 
             // will be use to emphasis prim. keys in the table view
@@ -589,8 +576,8 @@ class Common
             }
 
             $result = $this->dbi->query(
-                'SHOW INDEX FROM ' . Util::backquote($DB2)
-                . '.' . Util::backquote($T2) . ';'
+                'SHOW INDEX FROM '.Util::backquote($DB2)
+                .'.'.Util::backquote($T2).';'
             );
             // will be used to emphasis prim. keys in the table view
             $index_array2 = [];
@@ -601,21 +588,21 @@ class Common
             unset($result);
 
             if (! empty($index_array1[$F1]) && ! empty($index_array2[$F2])) {
-                $upd_query = 'ALTER TABLE ' . Util::backquote($DB2)
-                    . '.' . Util::backquote($T2)
-                    . ' ADD FOREIGN KEY ('
-                    . Util::backquote($F2) . ')'
-                    . ' REFERENCES '
-                    . Util::backquote($DB1) . '.'
-                    . Util::backquote($T1) . '('
-                    . Util::backquote($F1) . ')';
+                $upd_query = 'ALTER TABLE '.Util::backquote($DB2)
+                    .'.'.Util::backquote($T2)
+                    .' ADD FOREIGN KEY ('
+                    .Util::backquote($F2).')'
+                    .' REFERENCES '
+                    .Util::backquote($DB1).'.'
+                    .Util::backquote($T1).'('
+                    .Util::backquote($F1).')';
 
                 if ($on_delete !== 'nix') {
-                    $upd_query .= ' ON DELETE ' . $on_delete;
+                    $upd_query .= ' ON DELETE '.$on_delete;
                 }
 
                 if ($on_update !== 'nix') {
-                    $upd_query .= ' ON UPDATE ' . $on_update;
+                    $upd_query .= ' ON UPDATE '.$on_update;
                 }
 
                 $upd_query .= ';';
@@ -631,7 +618,7 @@ class Common
                 return [
                     false,
                     __('Error: FOREIGN KEY relationship could not be added!')
-                    . '<br>' . $error,
+                    .'<br>'.$error,
                 ];
             }
 
@@ -653,18 +640,18 @@ class Common
         // this was checked on the interface part
 
         $q = 'INSERT INTO '
-            . Util::backquote($relationFeature->database)
-            . '.'
-            . Util::backquote($relationFeature->relation)
-            . '(master_db, master_table, master_field, '
-            . 'foreign_db, foreign_table, foreign_field)'
-            . ' values('
-            . "'" . $this->dbi->escapeString($DB2) . "', "
-            . "'" . $this->dbi->escapeString($T2) . "', "
-            . "'" . $this->dbi->escapeString($F2) . "', "
-            . "'" . $this->dbi->escapeString($DB1) . "', "
-            . "'" . $this->dbi->escapeString($T1) . "', "
-            . "'" . $this->dbi->escapeString($F1) . "')";
+            .Util::backquote($relationFeature->database)
+            .'.'
+            .Util::backquote($relationFeature->relation)
+            .'(master_db, master_table, master_field, '
+            .'foreign_db, foreign_table, foreign_field)'
+            .' values('
+            ."'".$this->dbi->escapeString($DB2)."', "
+            ."'".$this->dbi->escapeString($T2)."', "
+            ."'".$this->dbi->escapeString($F2)."', "
+            ."'".$this->dbi->escapeString($DB1)."', "
+            ."'".$this->dbi->escapeString($T1)."', "
+            ."'".$this->dbi->escapeString($F1)."')";
 
         if ($this->dbi->tryQueryAsControlUser($q)) {
             return [
@@ -678,18 +665,17 @@ class Common
         return [
             false,
             __('Error: Internal relationship could not be added!')
-            . '<br>' . $error,
+            .'<br>'.$error,
         ];
     }
 
     /**
      * Removes a foreign relation
      *
-     * @param string $T1 foreign db.table
-     * @param string $F1 foreign field
-     * @param string $T2 master db.table
-     * @param string $F2 master field
-     *
+     * @param  string  $T1 foreign db.table
+     * @param  string  $F1 foreign field
+     * @param  string  $T2 master db.table
+     * @param  string  $F2 master field
      * @return array array of success/failure and message
      */
     public function removeRelation($T1, $F1, $T2, $F2)
@@ -708,9 +694,9 @@ class Common
             $foreigner = $this->relation->searchColumnInForeigners($existrel_foreign, $F2);
 
             if (is_array($foreigner) && isset($foreigner['constraint'])) {
-                $upd_query = 'ALTER TABLE ' . Util::backquote($DB2)
-                    . '.' . Util::backquote($T2) . ' DROP FOREIGN KEY '
-                    . Util::backquote($foreigner['constraint']) . ';';
+                $upd_query = 'ALTER TABLE '.Util::backquote($DB2)
+                    .'.'.Util::backquote($T2).' DROP FOREIGN KEY '
+                    .Util::backquote($foreigner['constraint']).';';
                 $this->dbi->query($upd_query);
 
                 return [
@@ -730,14 +716,14 @@ class Common
 
         // internal relations
         $delete_query = 'DELETE FROM '
-            . Util::backquote($relationFeature->database) . '.'
-            . Util::backquote($relationFeature->relation) . ' WHERE '
-            . "master_db = '" . $this->dbi->escapeString($DB2) . "'"
-            . " AND master_table = '" . $this->dbi->escapeString($T2) . "'"
-            . " AND master_field = '" . $this->dbi->escapeString($F2) . "'"
-            . " AND foreign_db = '" . $this->dbi->escapeString($DB1) . "'"
-            . " AND foreign_table = '" . $this->dbi->escapeString($T1) . "'"
-            . " AND foreign_field = '" . $this->dbi->escapeString($F1) . "'";
+            .Util::backquote($relationFeature->database).'.'
+            .Util::backquote($relationFeature->relation).' WHERE '
+            ."master_db = '".$this->dbi->escapeString($DB2)."'"
+            ." AND master_table = '".$this->dbi->escapeString($T2)."'"
+            ." AND master_field = '".$this->dbi->escapeString($F2)."'"
+            ." AND foreign_db = '".$this->dbi->escapeString($DB1)."'"
+            ." AND foreign_table = '".$this->dbi->escapeString($T1)."'"
+            ." AND foreign_field = '".$this->dbi->escapeString($F1)."'";
 
         $result = $this->dbi->tryQueryAsControlUser($delete_query);
 
@@ -746,7 +732,7 @@ class Common
 
             return [
                 false,
-                __('Error: Internal relationship could not be removed!') . '<br>' . $error,
+                __('Error: Internal relationship could not be removed!').'<br>'.$error,
             ];
         }
 
@@ -759,8 +745,8 @@ class Common
     /**
      * Save value for a designer setting
      *
-     * @param string $index setting
-     * @param string $value value
+     * @param  string  $index setting
+     * @param  string  $value value
      */
     public function saveSetting($index, $value): bool
     {
@@ -773,10 +759,10 @@ class Common
             ];
 
             $orig_data_query = 'SELECT settings_data'
-                . ' FROM ' . Util::backquote($cfgDesigner['db'])
-                . '.' . Util::backquote($cfgDesigner['table'])
-                . " WHERE username = '"
-                . $this->dbi->escapeString($cfgDesigner['user']) . "';";
+                .' FROM '.Util::backquote($cfgDesigner['db'])
+                .'.'.Util::backquote($cfgDesigner['table'])
+                ." WHERE username = '"
+                .$this->dbi->escapeString($cfgDesigner['user'])."';";
 
             $orig_data = $this->dbi->fetchSingleRow(
                 $orig_data_query,
@@ -790,22 +776,22 @@ class Common
                 $orig_data = json_encode($orig_data);
 
                 $save_query = 'UPDATE '
-                    . Util::backquote($cfgDesigner['db'])
-                    . '.' . Util::backquote($cfgDesigner['table'])
-                    . " SET settings_data = '" . $orig_data . "'"
-                    . " WHERE username = '"
-                    . $this->dbi->escapeString($cfgDesigner['user']) . "';";
+                    .Util::backquote($cfgDesigner['db'])
+                    .'.'.Util::backquote($cfgDesigner['table'])
+                    ." SET settings_data = '".$orig_data."'"
+                    ." WHERE username = '"
+                    .$this->dbi->escapeString($cfgDesigner['user'])."';";
 
                 $this->dbi->queryAsControlUser($save_query);
             } else {
                 $save_data = [$index => $value];
 
                 $query = 'INSERT INTO '
-                    . Util::backquote($cfgDesigner['db'])
-                    . '.' . Util::backquote($cfgDesigner['table'])
-                    . ' (username, settings_data)'
-                    . " VALUES('" . $this->dbi->escapeString($cfgDesigner['user'])
-                    . "', '" . json_encode($save_data) . "');";
+                    .Util::backquote($cfgDesigner['db'])
+                    .'.'.Util::backquote($cfgDesigner['table'])
+                    .' (username, settings_data)'
+                    ." VALUES('".$this->dbi->escapeString($cfgDesigner['user'])
+                    ."', '".json_encode($save_data)."');";
 
                 $this->dbi->queryAsControlUser($query);
             }

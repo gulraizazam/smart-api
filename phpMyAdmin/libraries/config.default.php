@@ -34,6 +34,7 @@ declare(strict_types=1);
  * an error message if phpMyAdmin cannot auto-detect the correct value.
  *
  * @global string $cfg['PmaAbsoluteUri']
+ *
  * @psalm-suppress PossiblyUndefinedGlobalVariable
  */
 $cfg['PmaAbsoluteUri'] = '';
@@ -108,7 +109,6 @@ $cfg['AllowThirdPartyFraming'] = false;
  * @global string $cfg['blowfish_secret']
  */
 $cfg['blowfish_secret'] = '';
-
 
 /*******************************************************************************
  * Server(s) configuration
@@ -578,8 +578,8 @@ $cfg['Servers'][$i]['tracking_version_auto_create'] = false;
  *
  * @global string $cfg['Servers'][$i]['tracking_default_statements']
  */
-$cfg['Servers'][$i]['tracking_default_statements'] = 'CREATE TABLE,ALTER TABLE,DROP TABLE,RENAME TABLE,CREATE INDEX,' .
-      'DROP INDEX,INSERT,UPDATE,DELETE,TRUNCATE,REPLACE,CREATE VIEW,' .
+$cfg['Servers'][$i]['tracking_default_statements'] = 'CREATE TABLE,ALTER TABLE,DROP TABLE,RENAME TABLE,CREATE INDEX,'.
+      'DROP INDEX,INSERT,UPDATE,DELETE,TRUNCATE,REPLACE,CREATE VIEW,'.
       'ALTER VIEW,DROP VIEW,CREATE DATABASE,ALTER DATABASE,DROP DATABASE';
 
 /**
@@ -800,7 +800,7 @@ $cfg['Confirm'] = true;
  *
  * @global string $cfg['CookieSameSite']
  */
- $cfg['CookieSameSite'] = 'Strict';
+$cfg['CookieSameSite'] = 'Strict';
 
 /**
  * recall previous login in cookie authentication mode or not
@@ -895,7 +895,7 @@ $cfg['CaptchaApi'] = 'https://www.google.com/recaptcha/api.js';
  * @global string $cfg['CaptchaCsp']
  */
 $cfg['CaptchaCsp'] = 'https://apis.google.com https://www.google.com/recaptcha/'
-    . ' https://www.gstatic.com/recaptcha/ https://ssl.gstatic.com/';
+    .' https://www.gstatic.com/recaptcha/ https://ssl.gstatic.com/';
 
 /**
  * reCaptcha API's request parameter name
@@ -1194,7 +1194,6 @@ $cfg['ShowChgPassword'] = true;
  */
 $cfg['ShowCreateDb'] = true;
 
-
 /*******************************************************************************
  * Database structure
  */
@@ -1247,7 +1246,6 @@ $cfg['HideStructureActions'] = true;
  * @global boolean $cfg['ShowColumnComments']
  */
 $cfg['ShowColumnComments'] = true;
-
 
 /*******************************************************************************
  * In browse mode...
@@ -1316,7 +1314,6 @@ $cfg['GridEditing'] = 'double-click';
  * @global string $cfg['RelationalDisplay']
  */
 $cfg['RelationalDisplay'] = 'K';
-
 
 /*******************************************************************************
  * In edit mode...
@@ -1435,7 +1432,6 @@ $cfg['BZipDump'] = true;
  * @global boolean $cfg['CompressOnFly']
  */
 $cfg['CompressOnFly'] = true;
-
 
 /*******************************************************************************
  * Tabs display settings
@@ -2253,7 +2249,7 @@ $cfg['Schema'] = [];
  * pdf/eps/dia/svg
  *
  * @global string $cfg['Schema']['format']
-*/
+ */
 $cfg['Schema']['format'] = 'pdf';
 
 /**
@@ -2377,7 +2373,6 @@ $cfg['PDFPageSizes'] = [
  */
 $cfg['PDFDefaultPageSize'] = 'A4';
 
-
 /*******************************************************************************
  * Language and character set conversion settings
  */
@@ -2477,7 +2472,6 @@ $cfg['AvailableCharsets'] = [
     'SJIS',
     'SJIS-win',
 ];
-
 
 /*******************************************************************************
  * Customization & design
@@ -2704,7 +2698,6 @@ $cfg['TitleServer'] = '@HTTP_HOST@ / @VSERVER@ | @PHPMYADMIN@';
  */
 $cfg['TitleDefault'] = '@HTTP_HOST@ | @PHPMYADMIN@';
 
-
 /*******************************************************************************
  * theme manager
  */
@@ -2732,7 +2725,6 @@ $cfg['ThemeDefault'] = 'pmahomme';
  */
 $cfg['ThemePerServer'] = false;
 
-
 /**
  * Default query for table
  *
@@ -2746,7 +2738,6 @@ $cfg['DefaultQueryTable'] = 'SELECT * FROM @TABLE@ WHERE 1';
  * @global string $cfg['DefaultQueryDatabase']
  */
 $cfg['DefaultQueryDatabase'] = '';
-
 
 /*******************************************************************************
  * SQL Query box settings
@@ -2791,7 +2782,6 @@ $cfg['SQLQuery']['Refresh'] = true;
  */
 $cfg['EnableAutocompleteForTablesAndColumns'] = true;
 
-
 /*******************************************************************************
  * Web server upload/save/import directories
  */
@@ -2822,7 +2812,7 @@ $cfg['SaveDir'] = '';
 if (defined('TEMP_DIR')) {
     $cfg['TempDir'] = TEMP_DIR;
 } else {
-    $cfg['TempDir'] = ROOT_PATH . 'tmp' . DIRECTORY_SEPARATOR;
+    $cfg['TempDir'] = ROOT_PATH.'tmp'.DIRECTORY_SEPARATOR;
 }
 
 /**
@@ -2866,7 +2856,7 @@ $cfg['LinkLengthLimit'] = 1000;
 /**
  * Additional string to allow in CSP headers.
  */
- $cfg['CSPAllow'] = '';
+$cfg['CSPAllow'] = '';
 
 /**
  * Disable the table maintenance mass operations, like optimizing or
@@ -3009,7 +2999,6 @@ $cfg['Console'] = [
     'OrderBy' => 'exec',
     'Order' => 'asc',
 ];
-
 
 /*******************************************************************************
  * Default options for transformations

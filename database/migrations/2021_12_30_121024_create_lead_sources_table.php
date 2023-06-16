@@ -25,7 +25,7 @@ class CreateLeadSourcesTable extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('account_id','lead_sources_account')
+            $table->foreign('account_id', 'lead_sources_account')
                 ->references('id')
                 ->on('accounts');
         });

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database\Structure;
 
+use function __;
+use function count;
+use function in_array;
 use PhpMyAdmin\ConfigStorage\RelationCleanup;
 use PhpMyAdmin\Controllers\Database\AbstractController;
 use PhpMyAdmin\Controllers\Database\StructureController;
@@ -13,10 +16,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Util;
 use PhpMyAdmin\Utils\ForeignKey;
-
-use function __;
-use function count;
-use function in_array;
 
 final class DropTableController extends AbstractController
 {
@@ -77,9 +76,9 @@ final class DropTableController extends AbstractController
             $current = $selected[$i];
 
             if (! empty($views) && in_array($current, $views)) {
-                $sqlQueryViews .= (empty($sqlQueryViews) ? 'DROP VIEW ' : ', ') . Util::backquote($current);
+                $sqlQueryViews .= (empty($sqlQueryViews) ? 'DROP VIEW ' : ', ').Util::backquote($current);
             } else {
-                $sql_query .= (empty($sql_query) ? 'DROP TABLE ' : ', ') . Util::backquote($current);
+                $sql_query .= (empty($sql_query) ? 'DROP TABLE ' : ', ').Util::backquote($current);
             }
 
             $reload = 1;
@@ -88,7 +87,7 @@ final class DropTableController extends AbstractController
         if (! empty($sql_query)) {
             $sql_query .= ';';
         } elseif (! empty($sqlQueryViews)) {
-            $sql_query = $sqlQueryViews . ';';
+            $sql_query = $sqlQueryViews.';';
             unset($sqlQueryViews);
         }
 
@@ -107,7 +106,7 @@ final class DropTableController extends AbstractController
         $result = $this->dbi->tryQuery($sql_query);
 
         if ($result && ! empty($sqlQueryViews)) {
-            $sql_query .= ' ' . $sqlQueryViews . ';';
+            $sql_query .= ' '.$sqlQueryViews.';';
             $result = $this->dbi->tryQuery($sqlQueryViews);
             unset($sqlQueryViews);
         }

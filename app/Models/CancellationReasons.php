@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\AuditTrails;
 use Auth;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
 
 class CancellationReasons extends BaseModal
 {
@@ -30,45 +29,43 @@ class CancellationReasons extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted()
+    public static function getActiveSorted()
     {
-        return self::where(['active' => 1])->OrderBy('sort_no','asc')->get()->pluck('name','id');
+        return self::where(['active' => 1])->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
     }
 
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false)
+    public static function getTotalRecords(Request $request, $account_id = false)
     {
-        $where = array();
+        $where = [];
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
         }
 
         if ($request->get('name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
-            );
+                '%'.$request->get('name').'%',
+            ];
         }
 
         if ($request->get('is_featured') != '') {
-            $where[] = array(
+            $where[] = [
                 'is_featured',
                 '=',
-                $request->get('is_featured')
-            );
+                $request->get('is_featured'),
+            ];
         }
 
         if (count($where)) {
@@ -81,39 +78,37 @@ class CancellationReasons extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false)
     {
-        $where = array();
+        $where = [];
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
         }
 
         if ($request->get('name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
-            );
+                '%'.$request->get('name').'%',
+            ];
         }
 
         if ($request->get('is_featured') != '') {
-            $where[] = array(
+            $where[] = [
                 'is_featured',
                 '=',
-                $request->get('is_featured')
-            );
+                $request->get('is_featured'),
+            ];
         }
 
         if (count($where)) {
@@ -126,11 +121,10 @@ class CancellationReasons extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
@@ -138,11 +132,10 @@ class CancellationReasons extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
         $data = $request->all();
         // Set Account ID
@@ -163,17 +156,17 @@ class CancellationReasons extends BaseModal
      * Inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
 
         $cancellation_reason = CancellationReasons::getData($id);
 
-        if (!$cancellation_reason) {
+        if (! $cancellation_reason) {
 
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.cancellation_reasons.index');
         }
 
@@ -191,16 +184,16 @@ class CancellationReasons extends BaseModal
      * Active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function activeRecord($id)
+    public static function activeRecord($id)
     {
 
         $cancellation_reason = CancellationReasons::getData($id);
 
-        if (!$cancellation_reason) {
+        if (! $cancellation_reason) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.cancellation_reasons.index');
         }
 
@@ -218,22 +211,23 @@ class CancellationReasons extends BaseModal
      * Delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function deleteRecord($id)
+    public static function deleteRecord($id)
     {
 
         $cancellation_reason = CancellationReasons::getData($id);
 
-        if (!$cancellation_reason) {
+        if (! $cancellation_reason) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.cancellation_reasons.index');
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (CancellationReasons::isChildExists($id, Auth::User()->account_id)) {
             flash('Child records exist, unable to delete resource')->error()->important();
+
             return redirect()->route('admin.cancellation_reasons.index');
         }
 
@@ -250,11 +244,10 @@ class CancellationReasons extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (CancellationReasons::find($id))->toArray();
 
@@ -265,10 +258,10 @@ class CancellationReasons extends BaseModal
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -284,12 +277,10 @@ class CancellationReasons extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
-     * @param
-     *
+     * @param  (int)  $id
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         return false;
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function htmlspecialchars;
 use PhpMyAdmin\Config\PageSettings;
 use PhpMyAdmin\DbTableExists;
 use PhpMyAdmin\ResponseRenderer;
@@ -11,8 +12,6 @@ use PhpMyAdmin\SqlQueryForm;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function htmlspecialchars;
 
 /**
  * Table SQL executor

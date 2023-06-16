@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Gis;
 
-use PhpMyAdmin\Image\ImageWrapper;
-use TCPDF;
-
 use function array_merge;
 use function count;
 use function mb_strpos;
 use function mb_substr;
+use PhpMyAdmin\Image\ImageWrapper;
 use function str_split;
+use TCPDF;
 
 /**
  * Handles actions related to GIS GEOMETRYCOLLECTION objects
@@ -48,8 +47,7 @@ class GisGeometryCollection extends GisGeometry
     /**
      * Scales each row.
      *
-     * @param string $spatial spatial data of a row
-     *
+     * @param  string  $spatial spatial data of a row
      * @return array array containing the min, max values for x and y coordinates
      */
     public function scaleRow($spatial)
@@ -107,10 +105,10 @@ class GisGeometryCollection extends GisGeometry
     /**
      * Adds to the PNG image object, the data related to a row in the GIS dataset.
      *
-     * @param string      $spatial    GIS POLYGON object
-     * @param string|null $label      Label for the GIS POLYGON object
-     * @param string      $color      Color for the GIS POLYGON object
-     * @param array       $scale_data Array containing data related to scaling
+     * @param  string  $spatial    GIS POLYGON object
+     * @param  string|null  $label      Label for the GIS POLYGON object
+     * @param  string  $color      Color for the GIS POLYGON object
+     * @param  array  $scale_data Array containing data related to scaling
      */
     public function prepareRowAsPng(
         $spatial,
@@ -146,12 +144,11 @@ class GisGeometryCollection extends GisGeometry
     /**
      * Adds to the TCPDF instance, the data related to a row in the GIS dataset.
      *
-     * @param string      $spatial    GIS GEOMETRYCOLLECTION object
-     * @param string|null $label      label for the GIS GEOMETRYCOLLECTION object
-     * @param string      $color      color for the GIS GEOMETRYCOLLECTION object
-     * @param array       $scale_data array containing data related to scaling
-     * @param TCPDF       $pdf        TCPDF instance
-     *
+     * @param  string  $spatial    GIS GEOMETRYCOLLECTION object
+     * @param  string|null  $label      label for the GIS GEOMETRYCOLLECTION object
+     * @param  string  $color      color for the GIS GEOMETRYCOLLECTION object
+     * @param  array  $scale_data array containing data related to scaling
+     * @param  TCPDF  $pdf        TCPDF instance
      * @return TCPDF the modified TCPDF instance
      */
     public function prepareRowAsPdf($spatial, ?string $label, $color, array $scale_data, $pdf)
@@ -183,11 +180,10 @@ class GisGeometryCollection extends GisGeometry
     /**
      * Prepares and returns the code related to a row in the GIS dataset as SVG.
      *
-     * @param string $spatial    GIS GEOMETRYCOLLECTION object
-     * @param string $label      label for the GIS GEOMETRYCOLLECTION object
-     * @param string $color      color for the GIS GEOMETRYCOLLECTION object
-     * @param array  $scale_data array containing data related to scaling
-     *
+     * @param  string  $spatial    GIS GEOMETRYCOLLECTION object
+     * @param  string  $label      label for the GIS GEOMETRYCOLLECTION object
+     * @param  string  $color      color for the GIS GEOMETRYCOLLECTION object
+     * @param  array  $scale_data array containing data related to scaling
      * @return string the code related to a row in the GIS dataset
      */
     public function prepareRowAsSvg($spatial, $label, $color, array $scale_data)
@@ -222,12 +218,11 @@ class GisGeometryCollection extends GisGeometry
      * Prepares JavaScript related to a row in the GIS dataset
      * to visualize it with OpenLayers.
      *
-     * @param string $spatial    GIS GEOMETRYCOLLECTION object
-     * @param int    $srid       spatial reference ID
-     * @param string $label      label for the GIS GEOMETRYCOLLECTION object
-     * @param array  $color      color for the GIS GEOMETRYCOLLECTION object
-     * @param array  $scale_data array containing data related to scaling
-     *
+     * @param  string  $spatial    GIS GEOMETRYCOLLECTION object
+     * @param  int  $srid       spatial reference ID
+     * @param  string  $label      label for the GIS GEOMETRYCOLLECTION object
+     * @param  array  $color      color for the GIS GEOMETRYCOLLECTION object
+     * @param  array  $scale_data array containing data related to scaling
      * @return string JavaScript related to a row in the GIS dataset
      */
     public function prepareRowAsOl($spatial, int $srid, $label, $color, array $scale_data)
@@ -261,8 +256,7 @@ class GisGeometryCollection extends GisGeometry
     /**
      * Splits the GEOMETRYCOLLECTION object and get its constituents.
      *
-     * @param string $geom_col geometry collection string
-     *
+     * @param  string  $geom_col geometry collection string
      * @return array the constituents of the geometry collection object
      */
     private function explodeGeomCol($geom_col)
@@ -291,10 +285,9 @@ class GisGeometryCollection extends GisGeometry
     /**
      * Generates the WKT with the set of parameters passed by the GIS editor.
      *
-     * @param array       $gis_data GIS data
-     * @param int         $index    index into the parameter object
-     * @param string|null $empty    value for empty points
-     *
+     * @param  array  $gis_data GIS data
+     * @param  int  $index    index into the parameter object
+     * @param  string|null  $empty    value for empty points
      * @return string WKT with the set of parameters passed by the GIS editor
      */
     public function generateWkt(array $gis_data, $index, $empty = '')
@@ -312,21 +305,20 @@ class GisGeometryCollection extends GisGeometry
                 continue;
             }
 
-            $wkt .= $gis_obj->generateWkt($gis_data, $i, $empty) . ',';
+            $wkt .= $gis_obj->generateWkt($gis_data, $i, $empty).',';
         }
 
         if (isset($gis_data[0]['gis_type'])) {
             $wkt = mb_substr($wkt, 0, -1);
         }
 
-        return $wkt . ')';
+        return $wkt.')';
     }
 
     /**
      * Generates parameters for the GIS data editor from the value of the GIS column.
      *
-     * @param string $value of the GIS column
-     *
+     * @param  string  $value of the GIS column
      * @return array parameters for the GIS editor from the value of the GIS column
      */
     public function generateParams($value)

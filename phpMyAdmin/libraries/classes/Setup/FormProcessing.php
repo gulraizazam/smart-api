@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Setup;
 
+use function in_array;
+use function is_numeric;
+use function is_string;
 use PhpMyAdmin\Config\FormDisplay;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
-
-use function in_array;
-use function is_numeric;
-use function is_string;
 
 /**
  * PhpMyAdmin\Setup\FormProcessing class
@@ -24,7 +23,7 @@ class FormProcessing
     /**
      * Processes forms registered in $form_display, handles error correction
      *
-     * @param FormDisplay $form_display Form to display
+     * @param  FormDisplay  $form_display Form to display
      */
     public static function process(FormDisplay $form_display): void
     {
@@ -33,7 +32,7 @@ class FormProcessing
             $form_display->fixErrors();
             $response = ResponseRenderer::getInstance();
             $response->disable();
-            $response->generateHeader303('index.php' . Url::getCommonRaw());
+            $response->generateHeader303('index.php'.Url::getCommonRaw());
         }
 
         if (! $form_display->process(false)) {
@@ -47,7 +46,7 @@ class FormProcessing
         if (! $form_display->hasErrors()) {
             $response = ResponseRenderer::getInstance();
             $response->disable();
-            $response->generateHeader303('index.php' . Url::getCommonRaw());
+            $response->generateHeader303('index.php'.Url::getCommonRaw());
 
             return;
         }

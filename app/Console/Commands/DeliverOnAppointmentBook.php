@@ -7,12 +7,12 @@ use App\Helpers\JazzSMSAPI;
 use App\Helpers\TelenorSMSAPI;
 use App\Models\Appointments;
 use App\Models\Settings;
-use App\Models\UserOperatorSettings;
 use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
+use App\Models\UserOperatorSettings;
 use Carbon\Carbon;
-use Illuminate\Console\Command;
 use Config;
+use Illuminate\Console\Command;
 
 class DeliverOnAppointmentBook extends Command
 {
@@ -86,13 +86,13 @@ class DeliverOnAppointmentBook extends Command
      * @param: string $patient_phone
      * @return: array|mixture
      */
-    private function sendSMS($appointmentId, $patient_phone, $log_type = 'sms', $account_id)
+    private function sendSMS($appointmentId, $patient_phone, $log_type, $account_id)
     {
         // Get Appointment
         $appointment = Appointments::find($appointmentId);
         if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
             // SEND SMS for Appointment Booked
-            if($appointment->consultancy_type == 'virtual'){
+            if ($appointment->consultancy_type == 'virtual') {
                 $SMSTemplate = SMSTemplates::getBySlug('virtual-on-appointment', $account_id); // 'on-appointment' for virtual consultancy SMS
             } else {
                 $SMSTemplate = SMSTemplates::getBySlug('on-appointment', $account_id); // 'on-appointment' for Appointment SMS
@@ -102,13 +102,13 @@ class DeliverOnAppointmentBook extends Command
             $SMSTemplate = SMSTemplates::getBySlug('treatment-on-appointment', $account_id); // 'on-appointment' for Appointment SMS
         }
 
-        if (!$SMSTemplate) {
+        if (! $SMSTemplate) {
             // SMS Promotion is disabled
-            return array(
+            return [
                 'status' => true,
                 'sms_data' => 'SMS Promotion is disabled',
                 'error_msg' => '',
-            );
+            ];
         }
 
         $preparedText = Appointments::prepareSMSContent($appointmentId, $SMSTemplate->content);
@@ -118,24 +118,24 @@ class DeliverOnAppointmentBook extends Command
         $UserOperatorSettings = UserOperatorSettings::getRecord($account_id, $setting->data);
 
         if ($setting->data == 1) {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
                 'text' => $preparedText,
                 'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = TelenorSMSAPI::SendSMS($SMSObj);
         } else {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'from' => $UserOperatorSettings->mask,
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
                 'text' => $preparedText,
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
         $SMSLog = array_merge($SMSObj, $response);

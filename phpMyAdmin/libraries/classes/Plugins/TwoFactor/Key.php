@@ -7,8 +7,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\TwoFactor;
 
+use function __;
 use CodeLts\U2F\U2FServer\U2FException;
 use CodeLts\U2F\U2FServer\U2FServer;
+use function is_object;
+use function json_decode;
+use function json_encode;
 use PhpMyAdmin\Plugins\TwoFactorPlugin;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\TwoFactor;
@@ -17,11 +21,6 @@ use Throwable;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-
-use function __;
-use function is_object;
-use function json_decode;
-use function json_encode;
 
 /**
  * Hardware key based two-factor authentication
@@ -36,7 +35,7 @@ class Key extends TwoFactorPlugin
     /**
      * Creates object
      *
-     * @param TwoFactor $twofactor TwoFactor instance
+     * @param  TwoFactor  $twofactor TwoFactor instance
      */
     public function __construct(TwoFactor $twofactor)
     {

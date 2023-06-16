@@ -7,8 +7,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\ConfigStorage\Features\SavedQueryByExampleSearchesFeature;
-
 use function __;
 use function count;
 use function intval;
@@ -17,6 +15,7 @@ use function json_decode;
 use function json_encode;
 use function max;
 use function min;
+use PhpMyAdmin\ConfigStorage\Features\SavedQueryByExampleSearchesFeature;
 
 /**
  * Saved searches managing
@@ -61,8 +60,7 @@ class SavedSearches
     /**
      * Setter of id
      *
-     * @param int|null $searchId Id of search
-     *
+     * @param  int|null  $searchId Id of search
      * @return static
      */
     public function setId($searchId)
@@ -90,8 +88,7 @@ class SavedSearches
     /**
      * Setter of searchName
      *
-     * @param string $searchName Saved search name
-     *
+     * @param  string  $searchName Saved search name
      * @return static
      */
     public function setSearchName($searchName)
@@ -114,9 +111,8 @@ class SavedSearches
     /**
      * Setter for criterias
      *
-     * @param array|string $criterias Criterias of saved searches
-     * @param bool         $json      Criterias are in JSON format
-     *
+     * @param  array|string  $criterias Criterias of saved searches
+     * @param  bool  $json      Criterias are in JSON format
      * @return static
      */
     public function setCriterias($criterias, $json = false)
@@ -161,7 +157,7 @@ class SavedSearches
         }
 
         for ($i = 0; $i <= $data['rows']; $i++) {
-            $data['Or' . $i] = $criterias['Or' . $i];
+            $data['Or'.$i] = $criterias['Or'.$i];
         }
 
         $this->criterias = $data;
@@ -182,8 +178,7 @@ class SavedSearches
     /**
      * Setter for username
      *
-     * @param string $username Username
-     *
+     * @param  string  $username Username
      * @return static
      */
     public function setUsername($username)
@@ -206,8 +201,7 @@ class SavedSearches
     /**
      * Setter for DB name
      *
-     * @param string $dbname DB name
-     *
+     * @param  string  $dbname DB name
      * @return static
      */
     public function setDbname($dbname)
@@ -260,14 +254,14 @@ class SavedSearches
             exit;
         }
 
-        $savedSearchesTbl = Util::backquote($savedQueryByExampleSearchesFeature->database) . '.'
-            . Util::backquote($savedQueryByExampleSearchesFeature->savedSearches);
+        $savedSearchesTbl = Util::backquote($savedQueryByExampleSearchesFeature->database).'.'
+            .Util::backquote($savedQueryByExampleSearchesFeature->savedSearches);
 
         //If it's an insert.
         if ($this->getId() === null) {
             $wheres = [
-                "search_name = '" . $dbi->escapeString($this->getSearchName())
-                . "'",
+                "search_name = '".$dbi->escapeString($this->getSearchName())
+                ."'",
             ];
             $existingSearches = $this->getList($savedQueryByExampleSearchesFeature, $wheres);
 
@@ -282,14 +276,14 @@ class SavedSearches
                 exit;
             }
 
-            $sqlQuery = 'INSERT INTO ' . $savedSearchesTbl
-                . '(`username`, `db_name`, `search_name`, `search_data`)'
-                . ' VALUES ('
-                . "'" . $dbi->escapeString($this->getUsername()) . "',"
-                . "'" . $dbi->escapeString($this->getDbname()) . "',"
-                . "'" . $dbi->escapeString($this->getSearchName()) . "',"
-                . "'" . $dbi->escapeString(json_encode($this->getCriterias()))
-                . "')";
+            $sqlQuery = 'INSERT INTO '.$savedSearchesTbl
+                .'(`username`, `db_name`, `search_name`, `search_data`)'
+                .' VALUES ('
+                ."'".$dbi->escapeString($this->getUsername())."',"
+                ."'".$dbi->escapeString($this->getDbname())."',"
+                ."'".$dbi->escapeString($this->getSearchName())."',"
+                ."'".$dbi->escapeString(json_encode($this->getCriterias()))
+                ."')";
 
             $dbi->queryAsControlUser($sqlQuery);
 
@@ -300,8 +294,8 @@ class SavedSearches
 
         //Else, it's an update.
         $wheres = [
-            'id != ' . $this->getId(),
-            "search_name = '" . $dbi->escapeString($this->getSearchName()) . "'",
+            'id != '.$this->getId(),
+            "search_name = '".$dbi->escapeString($this->getSearchName())."'",
         ];
         $existingSearches = $this->getList($savedQueryByExampleSearchesFeature, $wheres);
 
@@ -316,12 +310,12 @@ class SavedSearches
             exit;
         }
 
-        $sqlQuery = 'UPDATE ' . $savedSearchesTbl
-            . "SET `search_name` = '"
-            . $dbi->escapeString($this->getSearchName()) . "', "
-            . "`search_data` = '"
-            . $dbi->escapeString(json_encode($this->getCriterias())) . "' "
-            . 'WHERE id = ' . $this->getId();
+        $sqlQuery = 'UPDATE '.$savedSearchesTbl
+            ."SET `search_name` = '"
+            .$dbi->escapeString($this->getSearchName())."', "
+            ."`search_data` = '"
+            .$dbi->escapeString(json_encode($this->getCriterias()))."' "
+            .'WHERE id = '.$this->getId();
 
         return (bool) $dbi->queryAsControlUser($sqlQuery);
     }
@@ -344,11 +338,11 @@ class SavedSearches
             exit;
         }
 
-        $savedSearchesTbl = Util::backquote($savedQueryByExampleSearchesFeature->database) . '.'
-            . Util::backquote($savedQueryByExampleSearchesFeature->savedSearches);
+        $savedSearchesTbl = Util::backquote($savedQueryByExampleSearchesFeature->database).'.'
+            .Util::backquote($savedQueryByExampleSearchesFeature->savedSearches);
 
-        $sqlQuery = 'DELETE FROM ' . $savedSearchesTbl
-            . "WHERE id = '" . $dbi->escapeString((string) $this->getId()) . "'";
+        $sqlQuery = 'DELETE FROM '.$savedSearchesTbl
+            ."WHERE id = '".$dbi->escapeString((string) $this->getId())."'";
 
         return (bool) $dbi->queryAsControlUser($sqlQuery);
     }
@@ -372,11 +366,11 @@ class SavedSearches
         }
 
         $savedSearchesTbl = Util::backquote($savedQueryByExampleSearchesFeature->database)
-            . '.'
-            . Util::backquote($savedQueryByExampleSearchesFeature->savedSearches);
+            .'.'
+            .Util::backquote($savedQueryByExampleSearchesFeature->savedSearches);
         $sqlQuery = 'SELECT id, search_name, search_data '
-            . 'FROM ' . $savedSearchesTbl . ' '
-            . "WHERE id = '" . $dbi->escapeString((string) $this->getId()) . "' ";
+            .'FROM '.$savedSearchesTbl.' '
+            ."WHERE id = '".$dbi->escapeString((string) $this->getId())."' ";
 
         $resList = $dbi->queryAsControlUser($sqlQuery);
         $oneResult = $resList->fetchAssoc();
@@ -399,8 +393,7 @@ class SavedSearches
     /**
      * Get the list of saved searches of a user on a DB
      *
-     * @param string[] $wheres List of filters
-     *
+     * @param  string[]  $wheres List of filters
      * @return array List of saved searches or empty array on failure
      */
     public function getList(SavedQueryByExampleSearchesFeature $savedQueryByExampleSearchesFeature, array $wheres = [])
@@ -412,16 +405,16 @@ class SavedSearches
         }
 
         $savedSearchesTbl = Util::backquote($savedQueryByExampleSearchesFeature->database)
-            . '.'
-            . Util::backquote($savedQueryByExampleSearchesFeature->savedSearches);
+            .'.'
+            .Util::backquote($savedQueryByExampleSearchesFeature->savedSearches);
         $sqlQuery = 'SELECT id, search_name '
-            . 'FROM ' . $savedSearchesTbl . ' '
-            . 'WHERE '
-            . "username = '" . $dbi->escapeString($this->getUsername()) . "' "
-            . "AND db_name = '" . $dbi->escapeString($this->getDbname()) . "' ";
+            .'FROM '.$savedSearchesTbl.' '
+            .'WHERE '
+            ."username = '".$dbi->escapeString($this->getUsername())."' "
+            ."AND db_name = '".$dbi->escapeString($this->getDbname())."' ";
 
         foreach ($wheres as $where) {
-            $sqlQuery .= 'AND ' . $where . ' ';
+            $sqlQuery .= 'AND '.$where.' ';
         }
 
         $sqlQuery .= 'order by search_name ASC ';

@@ -2,8 +2,10 @@
 
 namespace App\Reports;
 
+use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\AppointmentEditWidget;
+use App\Models\Appointments;
 use App\Models\AppointmentTypes;
 use App\Models\InvoiceDetails;
 use App\Models\InvoiceStatuses;
@@ -14,31 +16,26 @@ use App\Models\PabaoRecords;
 use App\Models\PackageAdvances;
 use App\Models\PackageBundles;
 use App\Models\Packages;
+use App\Models\PackageService;
 use App\Models\Resources;
 use App\User;
-use Config;
-use App\Models\Appointments;
-use Carbon\Carbon;
-use App\Helpers\ACL;
-use App\Models\PaymentModes;
-use Illuminate\Foundation\Inspiring;
-use App\Models\PackageService;
-use DB;
 use Auth;
-use Illuminate\Support\Facades\DB as FacadesDB;
-use PhpParser\Node\Expr\Cast\Object_;
+use Auth;
+use Carbon\Carbon;
+use Config;
+use DB;
 
 class Finanaces
 {
-
     /**
      * Centre performance stats by revenue
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
-    public static function centerperformancestatsbyrevenue($data, $filters = array())
+    public static function centerperformancestatsbyrevenue($data, $filters = [])
     {
-        $where = array();
+        $where = [];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -48,39 +45,39 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['appointment_type_id']) && $data['appointment_type_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointment_type_id',
                 '=',
-                $data['appointment_type_id']
-            );
+                $data['appointment_type_id'],
+            ];
         }
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
         if (isset($data['service_id']) && $data['service_id']) {
-            $where[] = array(
+            $where[] = [
                 'service_id',
                 '=',
-                $data['service_id']
-            );
+                $data['service_id'],
+            ];
         }
         if (isset($data['user_id']) && $data['user_id']) {
-            $where[] = array(
+            $where[] = [
                 'created_by',
                 '=',
-                $data['user_id']
-            );
+                $data['user_id'],
+            ];
         }
         if (count($where)) {
             $recods = Appointments::whereDate('created_at', '>=', $start_date)
@@ -94,37 +91,39 @@ class Finanaces
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->get();
         }
-        $data = array();
-        $created_byArray = array();
+        $data = [];
+        $created_byArray = [];
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (!in_array($recod->location_id, $created_byArray)) {
+                if (! in_array($recod->location_id, $created_byArray)) {
                     $created_byArray[] = $recod->location_id;
                     $locationinfo = Locations::where('id', '=', $recod->location_id)->first();
-                    $data[$recod->location_id] = array(
+                    $data[$recod->location_id] = [
                         'id' => $recod->location_id,
                         'name' => $locationinfo->name,
                         'region' => (array_key_exists($locationinfo->region_id, $filters['regions'])) ? $filters['regions'][$recod->region_id]->name : '',
                         'city' => (array_key_exists($locationinfo->city_id, $filters['cities'])) ? $filters['cities'][$recod->city_id]->name : '',
-                    );
+                    ];
                     $data[$recod->location_id]['records'][$recod->id] = $recod;
                 } else {
                     $data[$recod->location_id]['records'][$recod->id] = $recod;
                 }
             }
         }
+
         return $data;
     }
 
     /**
      * Centre performance stats by service type
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
-    public static function centerperformancestatsbyservices($data, $filters = array())
+    public static function centerperformancestatsbyservices($data, $filters = [])
     {
-        $where = array();
+        $where = [];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -134,39 +133,39 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['appointment_type_id']) && $data['appointment_type_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointment_type_id',
                 '=',
-                $data['appointment_type_id']
-            );
+                $data['appointment_type_id'],
+            ];
         }
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
         if (isset($data['service_id']) && $data['service_id']) {
-            $where[] = array(
+            $where[] = [
                 'service_id',
                 '=',
-                $data['service_id']
-            );
+                $data['service_id'],
+            ];
         }
         if (isset($data['user_id']) && $data['user_id']) {
-            $where[] = array(
+            $where[] = [
                 'created_by',
                 '=',
-                $data['user_id']
-            );
+                $data['user_id'],
+            ];
         }
         if (count($where)) {
             $recods = Appointments::whereDate('created_at', '>=', $start_date)
@@ -180,34 +179,36 @@ class Finanaces
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->get();
         }
-        $data = array();
-        $created_byArray = array();
+        $data = [];
+        $created_byArray = [];
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (!in_array($recod->appointment_type_id, $created_byArray)) {
+                if (! in_array($recod->appointment_type_id, $created_byArray)) {
                     $created_byArray[] = $recod->appointment_type_id;
                     $appointmenttype = AppointmentTypes::find($recod->appointment_type_id);
-                    $data[$recod->appointment_type_id] = array(
+                    $data[$recod->appointment_type_id] = [
                         'name' => $appointmenttype->name,
-                    );
+                    ];
                     $data[$recod->appointment_type_id]['records'][$recod->id] = $recod;
                 } else {
                     $data[$recod->appointment_type_id]['records'][$recod->id] = $recod;
                 }
             }
         }
+
         return $data;
     }
 
     /**
      * Customer Payment Ledger Report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function Customerpaymentledgerallentries($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -219,24 +220,24 @@ class Finanaces
         }
 
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
 
         $packagesadvances = PackageAdvances::whereDate('created_at', '=', $start_date)
             ->whereDate('created_at', '=', $end_date);
@@ -248,7 +249,7 @@ class Finanaces
         $packagesadvances = $packagesadvances->orderBy('created_at', 'asc')
             ->get();
 
-        $records = array();
+        $records = [];
         if ($packagesadvances) {
             $balance = 0;
             foreach ($packagesadvances as $packagesadvances) {
@@ -294,7 +295,7 @@ class Finanaces
                         $cash_out = number_format($packagesadvances->cash_amount);
                         $cash_in = '-';
                     }
-                    $records[] = array(
+                    $records[] = [
                         'patient_id' => $packagesadvances->patient_id,
                         'patient' => $packagesadvances->user->name,
                         'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
@@ -304,22 +305,24 @@ class Finanaces
                         'cash_out' => $cash_out,
                         'balance' => number_format($balance),
                         'cash_amount' => '1',
-                        'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A')
-                    );
+                        'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A'),
+                    ];
                 }
             }
+
             return $records;
         }
     }
 
     /**
      * Customer Treatment Package ledger
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function customertreatmentpackageledger($data, $account_id)
     {
-        $where = array();
+        $where = [];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -329,32 +332,32 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['location_id'])) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
         if (count($where)) {
             $packageinfo = Packages::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
         } else {
             $packageinfo = Packages::whereIn('location_id', ACL::getUserCentres())->get();
         }
-        $packagetrans = array();
+        $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
-            $packagetrans[$packagerow->id] = array(
+            $packagetrans[$packagerow->id] = [
                 'patient_id' => $packagerow->patient_id,
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
@@ -362,8 +365,8 @@ class Finanaces
                 'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
                 'location' => $packagerow->location->name,
                 'total_price' => $packagerow->total_price,
-                'children' => array(),
-            );
+                'children' => [],
+            ];
             $packagesadvances = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
                 ->whereDate('package_advances.created_at', '<=', $end_date)
                 ->where('package_id', '=', $packagerow->id)
@@ -420,7 +423,7 @@ class Finanaces
                             $cash_out = number_format($packagesadvances->cash_amount);
                             $cash_in = '-';
                         }
-                        $records = array(
+                        $records = [
                             'patient_id' => $packagesadvances->patient_id,
                             'patient' => $packagesadvances->user->name,
                             'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
@@ -429,8 +432,8 @@ class Finanaces
                             'cash_out' => $cash_out,
                             'balance' => number_format($balance),
                             'cash_amount' => '1',
-                            'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A')
-                        );
+                            'created_at' => Carbon::parse($packagesadvances->created_at)->format('F j,Y h:i A'),
+                        ];
                         $packagetrans[$packagerow->id]['children'][$packagesadvances->id] = $records;
                     }
                 }
@@ -439,17 +442,19 @@ class Finanaces
                 unset($packagetrans[$packagerow->id]);
             }
         }
+
         return $packagetrans;
     }
 
     /**
      * List of advances as of today for plans
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function lsitofadvanacesoftodayplan($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -460,32 +465,32 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
         if (count($where)) {
             $packageinfo = Packages::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
         } else {
             $packageinfo = Packages::whereIn('location_id', ACL::getUserCentres())->get();
         }
-        $packagetrans = array();
+        $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
-            $packagetrans[$packagerow->id] = array(
+            $packagetrans[$packagerow->id] = [
                 'patient_id' => $packagerow->patient_id,
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
@@ -498,7 +503,7 @@ class Finanaces
                 'outstandingbalance' => '',
                 'usedbalance' => '',
                 'unusedbalance' => '',
-            );
+            ];
             $advancebalance = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
                 ->whereDate('package_advances.created_at', '<=', $end_date)
                 ->where([
@@ -552,17 +557,19 @@ class Finanaces
                 unset($packagetrans[$packagerow->id]);
             }
         }
+
         return $packagetrans;
     }
 
     /**
      * List of advances as of today for non plans
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function lsitofadvanacesoftodaynonplan($data, $filters, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -573,31 +580,31 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
 
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
         if (count($where)) {
             $appointmentinfo = Appointments::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
         } else {
             $appointmentinfo = Appointments::whereIn('location_id', ACL::getUserCentres())->get();
         }
-        $appointmenttrans = array();
+        $appointmenttrans = [];
         foreach ($appointmentinfo as $appointment) {
             $advancebalance = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
                 ->whereDate('package_advances.created_at', '<=', $end_date)
@@ -609,13 +616,13 @@ class Finanaces
                     ['is_cancel', '=', 0],
                 ])->whereNull('package_id')->sum('cash_amount');
             if ($advancebalance) {
-                $appointmenttrans[$appointment->id] = array(
+                $appointmenttrans[$appointment->id] = [
                     'id' => $appointment->id,
                     'patient_id' => $appointment->patient_id,
                     'patient_name' => $appointment->name,
                     'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
                     'email' => $appointment->patient->email,
-                    'schedule' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor' => (array_key_exists($appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($appointment->city_id, $filters['cities'])) ? $filters['cities'][$appointment->city_id]->name : '',
                     'location' => (array_key_exists($appointment->location_id, $filters['locations'])) ? $filters['locations'][$appointment->location_id]->name : '',
@@ -624,7 +631,7 @@ class Finanaces
                     'outstandingbalance' => '',
                     'usedbalance' => '',
                     'unusedbalance' => '',
-                );
+                ];
 
                 $appointmenttrans[$appointment->id]['total_price'] = $advancebalance;
 
@@ -659,17 +666,19 @@ class Finanaces
                 $appointmenttrans[$appointment->id]['usedbalance'] = $usedbalance;
             }
         }
+
         return $appointmenttrans;
     }
 
     /**
      * Summarized data of discounts given to customer
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function SummarizeddataofDiscountsgiventothecustomer($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -680,24 +689,24 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'packages.patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'packages.account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
         if (count($where)) {
             $packageinfo = Packages::whereDate('packages.created_at', '>=', $start_date)
                 ->whereDate('packages.created_at', '<=', $end_date)
@@ -711,9 +720,9 @@ class Finanaces
                 ->get();
         }
 
-        $packagetrans = array();
+        $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
-            $packagetrans[$packagerow->id] = array(
+            $packagetrans[$packagerow->id] = [
                 'patient_id' => $packagerow->patient_id,
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
@@ -724,7 +733,7 @@ class Finanaces
                 'orignal_price' => '',
                 'discount_price' => '',
                 'tax_amt' => '',
-            );
+            ];
 
             $originalprice = PackageBundles::where('package_id', '=', $packagerow->id)->sum('service_price');
             $discountedprice = PackageBundles::where('package_id', '=', $packagerow->id)->sum('tax_exclusive_net_amount');
@@ -737,17 +746,19 @@ class Finanaces
             $packagetrans[$packagerow->id]['tax_amt'] = $tax_amt_price;
 
         }
+
         return $packagetrans;
     }
 
     /**
      * List of clients who claimed refunds for plans
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function ListofClientswhoclaimedrefunds($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -758,37 +769,37 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'account_id',
             '=',
-            $account_id
-        );
-        $where[] = array(
+            $account_id,
+        ];
+        $where[] = [
             'is_refund',
             '=',
-            '1'
-        );
+            '1',
+        ];
         if (count($where)) {
             $packageinfo = Packages::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
         } else {
             $packageinfo = Packages::whereIn('location_id', ACL::getUserCentres())->get();
         }
-        $packagetrans = array();
+        $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
-            $packagetrans[$packagerow->id] = array(
+            $packagetrans[$packagerow->id] = [
                 'patient_id' => $packagerow->patient_id,
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
@@ -798,7 +809,7 @@ class Finanaces
                 'is_refund' => $packagerow->is_refund ? 'Yes' : 'NO',
                 'total_price' => '',
                 'refund_amount' => '',
-            );
+            ];
 
             $total_price = PackageBundles::where('package_id', '=', $packagerow->id)->sum('tax_including_price');
 
@@ -806,7 +817,7 @@ class Finanaces
                 ->whereDate('created_at', '<=', $end_date)
                 ->where([
                     ['package_id', '=', $packagerow->id],
-                    ['is_refund', '=', '1']
+                    ['is_refund', '=', '1'],
                 ])
                 ->sum('cash_amount');
 
@@ -815,17 +826,19 @@ class Finanaces
             $packagetrans[$packagerow->id]['refund_amount'] = $refund_amount;
 
         }
+
         return $packagetrans;
     }
 
     /**
      * List of clients who claimed refunds for non plans
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function ListofClientswhoclaimedrefundsnonplans($data, $filters, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -836,17 +849,17 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointments.patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'appointments.account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
 
         $package_advances = PackageAdvances::with(['appointment' => function ($query) use ($where) {
             $query->where($where);
@@ -857,26 +870,26 @@ class Finanaces
             ->where('is_refund', '=', 1)
             ->whereNull('package_id')->get();
 
-        $appointmentrefund = array();
-        $appointmentids = array();
+        $appointmentrefund = [];
+        $appointmentids = [];
         $count = 0;
         if ($package_advances) {
             foreach ($package_advances as $packageadvance) {
-                if (!in_array($packageadvance->appointment->id, $appointmentids)) {
-                    $appointmentrefund[$packageadvance->appointment->id] = array(
+                if (! in_array($packageadvance->appointment->id, $appointmentids)) {
+                    $appointmentrefund[$packageadvance->appointment->id] = [
                         'id' => $packageadvance->appointment->id,
                         'patient_id' => $packageadvance->appointment->patient_id,
                         'patient_name' => $packageadvance->appointment->name,
                         'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packageadvance->appointment->patient->phone),
                         'email' => $packageadvance->appointment->patient->email,
-                        'schedule' => ($packageadvance->appointment->scheduled_date) ? \Carbon\Carbon::parse($packageadvance->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($packageadvance->appointment->scheduled_time, null)->format('h:i A') : '-',
+                        'schedule' => ($packageadvance->appointment->scheduled_date) ? \Carbon\Carbon::parse($packageadvance->appointment->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($packageadvance->appointment->scheduled_time, null)->format('h:i A') : '-',
                         'service' => (array_key_exists($packageadvance->appointment->service_id, $filters['services'])) ? $filters['services'][$packageadvance->appointment->service_id]->name : '',
                         'doctor' => (array_key_exists($packageadvance->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$packageadvance->appointment->doctor_id]->name : '',
                         'city' => (array_key_exists($packageadvance->appointment->city_id, $filters['cities'])) ? $filters['cities'][$packageadvance->appointment->city_id]->name : '',
                         'location' => (array_key_exists($packageadvance->appointment->location_id, $filters['locations'])) ? $filters['locations'][$packageadvance->appointment->location_id]->name : '',
                         'total_price' => (array_key_exists($packageadvance->appointment->service_id, $filters['services'])) ? $filters['services'][$packageadvance->appointment->service_id]->price : '',
                         'refund_amount' => $packageadvance->cash_amount,
-                    );
+                    ];
                     $appointmentids = [$packageadvance->appointment->id];
                 } else {
                     $appointmentrefund[$packageadvance->appointment->id]['refund_amount'] = $appointmentrefund[$packageadvance->appointment->id]['refund_amount'] + $packageadvance->cash_amount;
@@ -889,12 +902,13 @@ class Finanaces
 
     /**
      * List of clients who claimed refunds for plans days wise
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function ListofClientswhoclaimedrefundsdaywise($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -905,42 +919,42 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'account_id',
             '=',
-            $account_id
-        );
-        $where[] = array(
+            $account_id,
+        ];
+        $where[] = [
             'is_refund',
             '=',
-            '1'
-        );
+            '1',
+        ];
 
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
 
         $packageinfo = Packages::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
 
-        $packagetrans = array();
+        $packagetrans = [];
 
         foreach ($packageinfo as $packagerow) {
-            $packagetrans[$packagerow->id] = array(
+            $packagetrans[$packagerow->id] = [
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
                 'total_price' => '',
-                'refunds' => array()
-            );
+                'refunds' => [],
+            ];
             $total_price = PackageBundles::where('package_id', '=', $packagerow->id)->sum('net_amount');
 
             $packagetrans[$packagerow->id]['total_price'] = $total_price;
@@ -949,12 +963,11 @@ class Finanaces
                 ->whereMonth('created_at', '=', $data['month'])
                 ->where([
                     ['package_id', '=', $packagerow->id],
-                    ['is_refund', '=', '1']
+                    ['is_refund', '=', '1'],
                 ])->get();
 
-
             foreach ($refunds_info as $refunds) {
-                $packagetrans[$packagerow->id]['refunds'][$refunds->id] = array(
+                $packagetrans[$packagerow->id]['refunds'][$refunds->id] = [
                     'patient_id' => $packagerow->patient_id,
                     'id' => $refunds->id,
                     'patient' => $packagerow->user->name,
@@ -964,20 +977,22 @@ class Finanaces
                     'refund_note' => $refunds->refund_note,
                     'cash_amount' => $refunds->cash_amount,
                     'created_at' => $refunds->created_at,
-                );
+                ];
             }
         }
+
         return $packagetrans;
     }
 
     /**
      * List of clients who claimed refunds days base for non plans
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function ListofClientswhoclaimedrefundsdaysbasenonplans($data, $filters, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -988,24 +1003,24 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointments.patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'appointments.account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
 
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointments.location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
 
         $package_advances = PackageAdvances::with(['appointment' => function ($query) use ($where) {
@@ -1017,27 +1032,27 @@ class Finanaces
             ->whereNull('package_id')
             ->get();
 
-        $appointmentrefund = array();
+        $appointmentrefund = [];
         $appointmentids = [];
 
         foreach ($package_advances as $refunds) {
 
-            if (!in_array($refunds->appointment->id, $appointmentids)) {
+            if (! in_array($refunds->appointment->id, $appointmentids)) {
 
-                $appointmentrefund[$refunds->appointment->id] = array(
+                $appointmentrefund[$refunds->appointment->id] = [
                     'id' => $refunds->appointment->id,
                     'name' => $refunds->appointment->name,
                     'total_price' => (array_key_exists($refunds->appointment->service_id, $filters['services'])) ? $filters['services'][$refunds->appointment->service_id]->price : '',
-                    'refunds' => array(),
-                );
+                    'refunds' => [],
+                ];
 
-                $appointmentrefund[$refunds->appointment->id]['refunds'][$refunds->id] = array(
+                $appointmentrefund[$refunds->appointment->id]['refunds'][$refunds->id] = [
                     'id' => $refunds->id,
                     'patient_id' => $refunds->appointment->patient_id,
                     'patient_name' => $refunds->appointment->name,
                     'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($refunds->appointment->patient->phone),
                     'email' => $refunds->appointment->patient->email,
-                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
                     'service' => (array_key_exists($refunds->appointment->service_id, $filters['services'])) ? $filters['services'][$refunds->appointment->service_id]->name : '',
                     'doctor' => (array_key_exists($refunds->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$refunds->appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($refunds->appointment->city_id, $filters['cities'])) ? $filters['cities'][$refunds->appointment->city_id]->name : '',
@@ -1046,19 +1061,19 @@ class Finanaces
                     'refund_note' => $refunds->refund_note,
                     'cash_amount' => $refunds->cash_amount,
                     'created_at' => $refunds->created_at,
-                );
+                ];
 
                 $appointmentids = [$refunds->appointment->id];
 
             } else {
 
-                $appointmentrefund[$refunds->appointment->id]['refunds'][$refunds->id] = array(
+                $appointmentrefund[$refunds->appointment->id]['refunds'][$refunds->id] = [
                     'id' => $refunds->id,
                     'patient_id' => $refunds->appointment->patient_id,
                     'patient_name' => $refunds->appointment->name,
                     'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($refunds->appointment->patient->phone),
                     'email' => $refunds->appointment->patient->email,
-                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
                     'service' => (array_key_exists($refunds->appointment->service_id, $filters['services'])) ? $filters['services'][$refunds->appointment->service_id]->name : '',
                     'doctor' => (array_key_exists($refunds->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$refunds->appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($refunds->appointment->city_id, $filters['cities'])) ? $filters['cities'][$refunds->appointment->city_id]->name : '',
@@ -1067,7 +1082,7 @@ class Finanaces
                     'refund_note' => $refunds->refund_note,
                     'cash_amount' => $refunds->cash_amount,
                     'created_at' => $refunds->created_at,
-                );
+                ];
             }
         }
 
@@ -1076,12 +1091,13 @@ class Finanaces
 
     /**
      * General Reveneue report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function generalrevenuereportdetail($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -1092,17 +1108,17 @@ class Finanaces
             $end_date = null;
         }
 
-        $where[] = array(
+        $where[] = [
             'account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
         $location_information = ACL::getUserCentres();
-        $report_data = array();
-        foreach($data['location_id_com'] as $location){
+        $report_data = [];
+        foreach ($data['location_id_com'] as $location) {
             $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
-                ->where('location_id','=',$location)
+                ->where('location_id', '=', $location)
                 ->where($where)
                 ->orderBy('created_at', 'asc')
                 ->get();
@@ -1112,13 +1128,13 @@ class Finanaces
             if ($packagesadvances) {
                 $balance = 0;
                 $total_balance = 0;
-                $report_data[$location_information->id] = array(
+                $report_data[$location_information->id] = [
                     'id' => $location_information->id,
                     'name' => $location_information->name,
                     'city' => $location_information->city->name,
                     'region' => $location_information->region->name,
-                    'revenue_data' => array()
-                );
+                    'revenue_data' => [],
+                ];
 
                 foreach ($packagesadvances as $packagesadvance) {
                     if (
@@ -1195,7 +1211,7 @@ class Finanaces
                                 $refund_out = $packagesadvance->cash_amount;
                             }
 
-                            $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = array(
+                            $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = [
                                 'patient_id' => $packagesadvance->patient_id,
                                 'patient' => $packagesadvance->user->name,
                                 'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
@@ -1208,8 +1224,8 @@ class Finanaces
                                 'revenue_bank_in' => $revenue_bank_in,
                                 'refund_out' => $refund_out,
                                 'Balance' => $balance,
-                                'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A')
-                            );
+                                'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A'),
+                            ];
 
                         }
                     }
@@ -1217,14 +1233,13 @@ class Finanaces
             }
         }
 
-
-
         return $report_data;
     }
 
     /**
      * General Reveneue report summary
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function generalrevenuereportsummary($data, $account_id)
@@ -1244,7 +1259,7 @@ class Finanaces
             $location_information = Locations::getActiveSorted(ACL::getUserCentres());
         }
 
-        $report_data = array();
+        $report_data = [];
 
         foreach ($location_information as $key => $location_infomation) {
 
@@ -1356,7 +1371,7 @@ class Finanaces
                 }
             }
 
-            $report_data[$location_single_info->id] = array(
+            $report_data[$location_single_info->id] = [
                 'id' => $location_single_info->id,
                 'name' => $location_single_info->name,
                 'city' => $location_single_info->city->name,
@@ -1365,21 +1380,23 @@ class Finanaces
                 'revenue_card_in' => $total_revenue_card_in,
                 'revenue_bank_in' => $total_revenue_bank_in,
                 'refund_out' => $total_refund_out,
-                'in_hand' => ($total_revenue_cash_in + $total_revenue_card_in + $total_revenue_bank_in) - $total_refund_out
-            );
+                'in_hand' => ($total_revenue_cash_in + $total_revenue_card_in + $total_revenue_bank_in) - $total_refund_out,
+            ];
         }
+
         return $report_data;
     }
 
     /**
      * General Reveneue report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function pabaurecordrevenuereport($data, $account_id)
     {
 
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -1394,25 +1411,25 @@ class Finanaces
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
-                ['id', '=', $data['location_id']]
+                ['id', '=', $data['location_id']],
             ])->get()->pluck('name', 'id');
         } else {
             $location_info = Locations::getActiveSorted(ACL::getUserCentres());
         }
 
-        $report_data = array();
+        $report_data = [];
 
         foreach ($location_info as $key => $location) {
 
             $loc_inform = Locations::find($key);
 
-            $report_data[$loc_inform->id] = array(
+            $report_data[$loc_inform->id] = [
                 'id' => $key,
                 'name' => $location,
                 'region' => $loc_inform->region->name,
                 'city' => $loc_inform->city->name,
-                'pabau_rocord' => array(),
-            );
+                'pabau_rocord' => [],
+            ];
 
             $pabau_record = PabaoRecords::where('location_id', '=', $key)->get();
 
@@ -1420,7 +1437,7 @@ class Finanaces
                 $count = 0;
                 foreach ($pabau_record as $pabau) {
 
-                    $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id] = array(
+                    $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id] = [
                         'id' => $pabau->id,
                         'name' => $pabau->client,
                         'phone' => $pabau->phone,
@@ -1429,8 +1446,8 @@ class Finanaces
                         'paid_amount' => '',
                         'outstanding_amount' => '',
                         'issue_date' => $pabau->issue_date,
-                        'pabau_record_payment' => array(),
-                    );
+                        'pabau_record_payment' => [],
+                    ];
 
                     $pabau_record_payment = PabaoRecordPayments::whereDate('date_paid', '>=', $start_date)
                         ->whereDate('date_paid', '<=', $end_date)
@@ -1441,11 +1458,11 @@ class Finanaces
                         $count++;
                         $sum_amount = 0;
                         foreach ($pabau_record_payment as $pabau_payment) {
-                            $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]['pabau_record_payment'][$pabau_payment->id] = array(
+                            $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]['pabau_record_payment'][$pabau_payment->id] = [
                                 'id' => $pabau_payment->id,
                                 'amount' => $pabau_payment->amount,
                                 'Date' => $pabau_payment->date_paid,
-                            );
+                            ];
                             $sum_amount += $pabau_payment->amount;
                         }
                         $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]['paid_amount'] = $pabau->paid_amount + $sum_amount;
@@ -1462,12 +1479,14 @@ class Finanaces
                 unset($report_data[$loc_inform->id]);
             }
         }
+
         return $report_data;
     }
 
     /**
      * Machine Wise Revenue Report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function machinewiseinvoicerevenuereport($data, $account_id)
@@ -1481,7 +1500,7 @@ class Finanaces
             $end_date = null;
         }
 
-        $where = array();
+        $where = [];
 
         if (isset($data['region_id']) && $data['region_id']) {
             /*
@@ -1521,19 +1540,19 @@ class Finanaces
 
         $location_info = Locations::whereIn('id', $where)->get()->pluck('name', 'id');
 
-        $report_data = array();
+        $report_data = [];
 
         foreach ($location_info as $key => $location) {
 
             $loc_inform = Locations::find($key);
 
-            $report_data[$loc_inform->id] = array(
+            $report_data[$loc_inform->id] = [
                 'id' => $key,
                 'name' => $location,
                 'region' => $loc_inform->region->name,
                 'city' => $loc_inform->city->name,
-                'machine' => array(),
-            );
+                'machine' => [],
+            ];
 
             $invoice_paid = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
@@ -1545,17 +1564,17 @@ class Finanaces
 
                 foreach ($resource_location as $recource) {
 
-                    $report_data[$loc_inform->id]['machine'][$recource->id] = array(
+                    $report_data[$loc_inform->id]['machine'][$recource->id] = [
                         'id' => $recource->id,
                         'name' => $recource->name,
-                        'machine_array' => array(),
-                    );
+                        'machine_array' => [],
+                    ];
 
                     $appointment_info = Appointments::join('invoices', 'appointments.id', '=', 'invoices.appointment_id')
                         ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                         ->where([
                             ['appointments.resource_id', '=', $recource->id],
-                            ['invoices.invoice_status_id', '=', $invoice_paid->id]
+                            ['invoices.invoice_status_id', '=', $invoice_paid->id],
                         ])->whereDate('invoices.created_at', '>=', $start_date)
                         ->whereDate('invoices.created_at', '<=', $end_date)
                         ->select('invoices.created_at as Invoice_created_at', 'invoices.id as Invoice_id', 'invoice_details.*', 'appointments.name', 'appointments.id as appointmentid')
@@ -1564,7 +1583,7 @@ class Finanaces
                     if (count($appointment_info) > 0) {
                         $count++;
                         foreach ($appointment_info as $appointment) {
-                            $report_data[$loc_inform->id]['machine'][$recource->id]['machine_array'][$appointment->appointmentid] = array(
+                            $report_data[$loc_inform->id]['machine'][$recource->id]['machine_array'][$appointment->appointmentid] = [
                                 'id' => $appointment->Invoice_id,
                                 'client' => $appointment->name,
                                 'service_price' => $appointment->service_price,
@@ -1576,7 +1595,7 @@ class Finanaces
                                 'net_amount' => $appointment->tax_including_price,
                                 'is_exclusive' => $appointment->is_exclusive,
                                 'created_at' => $appointment->Invoice_created_at,
-                            );
+                            ];
                         }
                     } else {
                         unset($report_data[$loc_inform->id]['machine'][$recource->id]);
@@ -1587,15 +1606,16 @@ class Finanaces
                 unset($report_data[$loc_inform->id]);
             }
         }
+
         return $report_data;
     }
 
     /**
      * patner Collection Report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
-
     public static function partnercollectionreport($data, $account_id)
     {
 
@@ -1608,7 +1628,7 @@ class Finanaces
             $end_date = null;
         }
 
-        $where = array();
+        $where = [];
 
         if (isset($data['region_id']) && $data['region_id']) {
             /*
@@ -1648,7 +1668,7 @@ class Finanaces
 
         $location_info = Locations::whereIn('id', $where)->get();
 
-        $report_data = array();
+        $report_data = [];
 
         foreach ($location_info as $location) {
 
@@ -1656,23 +1676,23 @@ class Finanaces
                 ->whereDate('created_at', '<=', $end_date)
                 ->where([
                     ['account_id', '=', $account_id],
-                    ['location_id', '=', $location->id]
+                    ['location_id', '=', $location->id],
                 ])->orderBy('created_at', 'asc')->get();
 
             if (count($packagesadvances) > 0) {
 
-                $report_data[$location->id] = array(
+                $report_data[$location->id] = [
                     'id' => $location->id,
                     'name' => $location->name,
                     'region' => $location->region->name,
                     'city' => $location->city->name,
-                    'machine' => array(),
-                );
+                    'machine' => [],
+                ];
 
                 if ($packagesadvances) {
 
-                    $machines = array();
-                    $packageids = array();
+                    $machines = [];
+                    $packageids = [];
                     $count = 0;
 
                     foreach ($packagesadvances as $key => $packagesadvance) {
@@ -1700,7 +1720,7 @@ class Finanaces
 
                                     $appointinfor = Appointments::where([
                                         ['id', '=', $packagesadvance->appointment_id],
-                                        ['appointment_type_id', '=', '2']
+                                        ['appointment_type_id', '=', '2'],
                                     ])->first();
 
                                     $tax_percentage = $appointinfor->location->tax_percentage;
@@ -1709,15 +1729,15 @@ class Finanaces
 
                                         $resourceinfor = Resources::find($appointinfor->resource_id);
 
-                                        if (!in_array($resourceinfor->machine_type_id, $machines)) {
+                                        if (! in_array($resourceinfor->machine_type_id, $machines)) {
 
                                             $machinetype = MachineType::find($resourceinfor->machine_type_id);
 
-                                            $report_data[$location->id]['machine'][$resourceinfor->machine_type_id] = array(
+                                            $report_data[$location->id]['machine'][$resourceinfor->machine_type_id] = [
                                                 'id' => $machinetype->id,
                                                 'name' => $machinetype->name,
-                                                'transaction' => array(),
-                                            );
+                                                'transaction' => [],
+                                            ];
 
                                             $machines[] = $resourceinfor->machine_type_id;
                                         }
@@ -1734,7 +1754,7 @@ class Finanaces
 
                                         $refund = '';
 
-                                        $report_data[$location->id]['machine'][$resourceinfor->machine_type_id]['transaction'][$count++] = array(
+                                        $report_data[$location->id]['machine'][$resourceinfor->machine_type_id]['transaction'][$count++] = [
                                             'id' => $appointinfor->patient_id,
                                             'data_id' => $appointinfor->id,
                                             'name' => $appointinfor->patient->name,
@@ -1742,12 +1762,12 @@ class Finanaces
                                             'amount' => $remaining_amount,
                                             'tax' => $remaining_amount_tax,
                                             'net_amount' => $remaining_net_amount,
-                                            'amount_out' => 0
-                                        );
+                                            'amount_out' => 0,
+                                        ];
                                     }
                                 } else {
 
-                                    if (!in_array($packagesadvance->package_id, $packageids, true)) {
+                                    if (! in_array($packagesadvance->package_id, $packageids, true)) {
 
                                         $packageids[] = $packagesadvance->package_id;
 
@@ -1759,7 +1779,7 @@ class Finanaces
                                             ->whereDate('updated_at', '<=', $end_date)
                                             ->where([
                                                 ['is_consumed', '=', '1'],
-                                                ['package_id', '=', $packageinfo->id]
+                                                ['package_id', '=', $packageinfo->id],
                                             ])->whereNotNull('package_id')->get();
 
                                         if (count($total_consume_service) > 0) {
@@ -1767,15 +1787,15 @@ class Finanaces
                                                 ->whereDate('updated_at', '<=', $end_date)
                                                 ->where([
                                                     ['is_consumed', '=', '1'],
-                                                    ['package_id', '=', $packageinfo->id]
+                                                    ['package_id', '=', $packageinfo->id],
                                                 ])->whereNotNull('package_id')->get()->pluck('id')->toArray();
 
                                             $total_consume = PackageService::whereIn('id', $total_consume_packageservice_ids)->where([
                                                 ['is_consumed', '=', '1'],
-                                                ['package_id', '=', $packageinfo->id]
+                                                ['package_id', '=', $packageinfo->id],
                                             ])->whereNotNull('package_id')->sum('tax_including_price');
                                         } else {
-                                            $total_consume_packageservice_ids = array();
+                                            $total_consume_packageservice_ids = [];
                                             $total_consume = 0;
                                         }
 
@@ -1792,7 +1812,7 @@ class Finanaces
                                                     ['is_cancel', '=', '0'],
                                                     ['is_refund', '=', '0'],
                                                     ['is_adjustment', '=', '0'],
-                                                    ['cash_flow', '=', 'out']
+                                                    ['cash_flow', '=', 'out'],
                                                 ])->get();
 
                                             $appointmentids = [];
@@ -1812,14 +1832,14 @@ class Finanaces
                                                             ->where([
                                                                 ['appointments.id', '=', $consume_package->appointment_id],
                                                                 ['appointments.appointment_type_id', '=', '2'],
-                                                                ['invoices.invoice_status_id', '=', '3']
+                                                                ['invoices.invoice_status_id', '=', '3'],
                                                             ])->select('appointments.*')->first();
 
                                                         if ($appointment_for) {
 
                                                             if ($appointment_for->service_id == $consume_service->service_id) {
 
-                                                                if (!in_array($consume_package->appointment_id, $appointmentids, true)) {
+                                                                if (! in_array($consume_package->appointment_id, $appointmentids, true)) {
 
                                                                     $appointmentids[] = $consume_package->appointment_id;
 
@@ -1835,20 +1855,20 @@ class Finanaces
 
                                                                     $resource_info = Resources::find($appointment_for->resource_id);
 
-                                                                    if (!in_array($resource_info->machine_type_id, $machines)) {
+                                                                    if (! in_array($resource_info->machine_type_id, $machines)) {
 
                                                                         $machinetype = MachineType::find($resource_info->machine_type_id);
 
-                                                                        $report_data[$location->id]['machine'][$resource_info->machine_type_id] = array(
+                                                                        $report_data[$location->id]['machine'][$resource_info->machine_type_id] = [
                                                                             'id' => $machinetype->id,
                                                                             'name' => $machinetype->name,
-                                                                            'transaction' => array(),
-                                                                        );
+                                                                            'transaction' => [],
+                                                                        ];
 
                                                                         $machines[] = $resource_info->machine_type_id;
                                                                     }
                                                                     if ($remaining_amount > 0) {
-                                                                        $report_data[$location->id]['machine'][$resource_info->machine_type_id]['transaction'][$count++] = array(
+                                                                        $report_data[$location->id]['machine'][$resource_info->machine_type_id]['transaction'][$count++] = [
                                                                             'id' => $packageinfo->patient_id,
                                                                             'data_id' => $packageinfo->id,
                                                                             'name' => $packageinfo->user->name,
@@ -1856,8 +1876,8 @@ class Finanaces
                                                                             'amount' => $remaining_amount,
                                                                             'tax' => $remaining_amount_tax,
                                                                             'net_amount' => $remaining_net_amount,
-                                                                            'amount_out' => 0
-                                                                        );
+                                                                            'amount_out' => 0,
+                                                                        ];
                                                                     }
                                                                 }
                                                             }
@@ -1871,10 +1891,10 @@ class Finanaces
                                             ->where([
                                                 ['package_id', '=', $packageinfo->id],
                                                 ['is_cancel', '=', '0'],
-                                                ['cash_flow', '=', 'in']
+                                                ['cash_flow', '=', 'in'],
                                             ])->sum('cash_amount');
 
-                                        $package_service_ids = array();
+                                        $package_service_ids = [];
 
                                         foreach ($machine_types['machine_types'] as $machine_type) {
 
@@ -1884,13 +1904,13 @@ class Finanaces
                                                 }
                                             }
 
-                                            if (!in_array($machine_type->id, $machines)) {
+                                            if (! in_array($machine_type->id, $machines)) {
 
-                                                $report_data[$location->id]['machine'][$machine_type->id] = array(
+                                                $report_data[$location->id]['machine'][$machine_type->id] = [
                                                     'id' => $machine_type->id,
                                                     'name' => $machine_type->name,
-                                                    'transaction' => array(),
-                                                );
+                                                    'transaction' => [],
+                                                ];
 
                                                 $machines[] = $machine_type->id;
                                             }
@@ -1918,7 +1938,7 @@ class Finanaces
                                             }
 
                                             if ($divide_amount > 0) {
-                                                $report_data[$location->id]['machine'][$machine_type->id]['transaction'][$count++] = array(
+                                                $report_data[$location->id]['machine'][$machine_type->id]['transaction'][$count++] = [
                                                     'id' => $packageinfo->patient_id,
                                                     'data_id' => $packageinfo->id,
                                                     'name' => $packageinfo->user->name,
@@ -1926,10 +1946,10 @@ class Finanaces
                                                     'amount' => $divide_amount,
                                                     'tax' => $divide_tax,
                                                     'net_amount' => $divide_net_amount,
-                                                    'amount_out' => 0
-                                                );
+                                                    'amount_out' => 0,
+                                                ];
                                             }
-                                            $package_service_ids = array();
+                                            $package_service_ids = [];
                                         }
                                     }
                                 }
@@ -1941,20 +1961,20 @@ class Finanaces
 
                                     $resourceinfo = Resources::find($appointinfor->resource_id);
 
-                                    if (!in_array($resourceinfo->machine_type_id, $machines)) {
+                                    if (! in_array($resourceinfo->machine_type_id, $machines)) {
 
                                         $machinetype = MachineType::find($resourceinfo->machine_type_id);
 
-                                        $report_data[$location->id]['machine'][$machinetype->id] = array(
+                                        $report_data[$location->id]['machine'][$machinetype->id] = [
                                             'id' => $machinetype->id,
                                             'name' => $machinetype->name,
-                                            'transaction' => array(),
-                                        );
+                                            'transaction' => [],
+                                        ];
 
                                     }
                                     $services[] = $appointinfor->service_id;
 
-                                    $report_data[$location->id]['machine'][$resourceinfo->machine_type_id] ['transaction'][$count++] = array(
+                                    $report_data[$location->id]['machine'][$resourceinfo->machine_type_id]['transaction'][$count++] = [
                                         'id' => $appointinfor->patient_id,
                                         'data_id' => $appointinfor->id,
                                         'name' => $appointinfor->patient->name,
@@ -1962,8 +1982,8 @@ class Finanaces
                                         'amount' => 0,
                                         'tax' => 0,
                                         'net_amount' => 0,
-                                        'amount_out' => $packagesadvance->cash_amount
-                                    );
+                                        'amount_out' => $packagesadvance->cash_amount,
+                                    ];
 
                                 } else {
 
@@ -1971,12 +1991,11 @@ class Finanaces
 
                                     $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo); //$package_machine
 
-                                    $package_service_ids = array();
-
+                                    $package_service_ids = [];
 
                                     $package_machine = $package_machine_count = Resources::where([
                                         ['location_id', '=', $packageinfo->location_id],
-                                        ['active', '=', '1']
+                                        ['active', '=', '1'],
                                     ])->get();
 
                                     $package_machine_count = count($package_machine_count);
@@ -1991,13 +2010,13 @@ class Finanaces
                                             }
                                         }
 
-                                        if (!in_array($machine_type->id, $machines)) {
+                                        if (! in_array($machine_type->id, $machines)) {
 
-                                            $report_data[$location->id]['machine'][$machine_type->id] = array(
+                                            $report_data[$location->id]['machine'][$machine_type->id] = [
                                                 'id' => $machine_type->id,
                                                 'name' => $machine_type->name,
-                                                'transaction' => array(),
-                                            );
+                                                'transaction' => [],
+                                            ];
 
                                             $machines[] = $machine_type->id;
                                         }
@@ -2006,14 +2025,14 @@ class Finanaces
 
                                         $divide_amount = 0;
 
-                                        $remaining_amount = $packagesadvance->cash_amount;;
+                                        $remaining_amount = $packagesadvance->cash_amount;
 
                                         $total_amount = $packageinfo->total_price;
 
                                         $divide_amount = ($machine_service_amount * $remaining_amount) / $total_amount;
 
                                         if ($divide_amount > 0) {
-                                            $report_data[$location->id]['machine'][$machine_type->id]['transaction'][$count++] = array(
+                                            $report_data[$location->id]['machine'][$machine_type->id]['transaction'][$count++] = [
                                                 'id' => $packageinfo->patient_id,
                                                 'data_id' => $packageinfo->id,
                                                 'name' => $packageinfo->user->name,
@@ -2021,10 +2040,10 @@ class Finanaces
                                                 'amount' => 0,
                                                 'tax' => 0,
                                                 'net_amount' => 0,
-                                                'amount_out' => $divide_amount
-                                            );
+                                                'amount_out' => $divide_amount,
+                                            ];
                                         }
-                                        $package_service_ids = array();
+                                        $package_service_ids = [];
                                     }
                                 }
                             }
@@ -2033,18 +2052,19 @@ class Finanaces
                 }
             }
         }
+
         return $report_data;
     }
 
     /**
      * Staff Wise Revenue Report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
-    public
-    static function staffwiserevenue($data, $account_id)
+    public static function staffwiserevenue($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -2060,7 +2080,7 @@ class Finanaces
                 ['account_id', '=', $account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
-                ['id', '=', $data['location_id']]
+                ['id', '=', $data['location_id']],
             ])->get()->pluck('id')->toArray();
 
         } else {
@@ -2071,13 +2091,13 @@ class Finanaces
             $doctor_info = User::where([
                 ['account_id', '=', $account_id],
                 ['active', '=', '1'],
-                ['id', '=', $data['doctor_id']]
+                ['id', '=', $data['doctor_id']],
             ])->get()->pluck('id')->toArray();
         } else {
             $doctor_info = User::getAllActivePractionersRecords($account_id, ACL::getUserCentres())->pluck('id')->toArray();
         }
 
-        $report = array();
+        $report = [];
 
         /*case 1*/
         $revenue_plan_information = Appointments::join('packages', 'appointments.id', '=', 'packages.appointment_id')
@@ -2094,33 +2114,33 @@ class Finanaces
 
         if ($revenue_plan_information) {
 
-            $doctors = array();
-            $locations = array();
+            $doctors = [];
+            $locations = [];
 
             foreach ($revenue_plan_information as $revenueinformation) {
-                if (!in_array($revenueinformation->location_id, $locations)) {
-                    $report[$revenueinformation->location_id] = array(
+                if (! in_array($revenueinformation->location_id, $locations)) {
+                    $report[$revenueinformation->location_id] = [
                         'centre' => $revenueinformation->location->name,
                         'city' => $revenueinformation->location->city->name,
                         'region' => $revenueinformation->location->region->name,
-                        'doctor_info' => array(),
-                    );
+                        'doctor_info' => [],
+                    ];
 
                     $locations[] = $revenueinformation->location_id;
                 }
 
-                if (!in_array($revenueinformation->doctor_id, $doctors)) {
-                    $report[$revenueinformation->location_id]['doctor_info'][$revenueinformation->doctor_id] = array(
+                if (! in_array($revenueinformation->doctor_id, $doctors)) {
+                    $report[$revenueinformation->location_id]['doctor_info'][$revenueinformation->doctor_id] = [
                         'doctor' => $revenueinformation->doctor->name,
                         'centre' => $revenueinformation->location->name,
                         'city' => $revenueinformation->location->city->name,
                         'region' => $revenueinformation->location->region->name,
-                        'doctor_revenue' => array(),
-                    );
+                        'doctor_revenue' => [],
+                    ];
                     $doctors[] = $revenueinformation->doctor_id;
                 }
 
-                $child_array = array();
+                $child_array = [];
 
                 $child_array = self::genericfunctionforstaffwiserevenue($revenueinformation);
 
@@ -2151,13 +2171,13 @@ class Finanaces
 
                 $link_doctor_id = Appointments::where('id', '=', $revenueinformation_treat->appointmentlinkid)->first();
 
-                if (!in_array($link_doctor_id->location_id, $locations_2)) {
-                    $report[$link_doctor_id->location_id] = array(
+                if (! in_array($link_doctor_id->location_id, $locations_2)) {
+                    $report[$link_doctor_id->location_id] = [
                         'centre' => $link_doctor_id->location->name,
                         'city' => $link_doctor_id->location->city->name,
                         'region' => $link_doctor_id->location->region->name,
-                        'doctor_info' => array(),
-                    );
+                        'doctor_info' => [],
+                    ];
 
                     $locations_2[] = $link_doctor_id->location_id;
                 } else {
@@ -2166,14 +2186,14 @@ class Finanaces
                     $report[$link_doctor_id->location_id]['region'] = $link_doctor_id->location->region->name;
                 }
 
-                if (!in_array($link_doctor_id->doctor_id, $doctors_2)) {
-                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id] = array(
+                if (! in_array($link_doctor_id->doctor_id, $doctors_2)) {
+                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id] = [
                         'doctor' => $link_doctor_id->doctor->name,
                         'centre' => $link_doctor_id->location->name,
                         'city' => $link_doctor_id->location->city->name,
                         'region' => $link_doctor_id->location->region->name,
-                        'doctor_revenue' => array(),
-                    );
+                        'doctor_revenue' => [],
+                    ];
                     $doctors_2[] = $link_doctor_id->doctor_id;
                 } else {
 
@@ -2183,7 +2203,7 @@ class Finanaces
                     $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['region'] = $link_doctor_id->location->region->name;
                 }
 
-                $child_array = array();
+                $child_array = [];
 
                 $child_array = self::genericfunctionforstaffwiserevenue($revenueinformation_treat);
 
@@ -2196,21 +2216,21 @@ class Finanaces
         foreach ($report as $location_id => $data) {
             foreach ($data['doctor_info'] as $doctor_id => $value) {
 
-                if (!isset($value['doctor'])) {
+                if (! isset($value['doctor'])) {
 
                     $doctor_latest = User::find($doctor_id);
 
                     $location_latest = Locations::find($location_id);
 
-                    $report[$location_id]['doctor_info'][$doctor_id] = array(
+                    $report[$location_id]['doctor_info'][$doctor_id] = [
                         'doctor' => $doctor_latest->name,
                         'centre' => $location_latest->name,
                         'city' => $location_latest->city->name,
                         'region' => $location_latest->region->name,
                         'doctor_revenue' => $report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue'],
-                    );
+                    ];
                 }
-                if (!array_key_exists('doctor_revenue', $report[$location_id]['doctor_info'][$doctor_id]) || count($report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue']) == 0) {
+                if (! array_key_exists('doctor_revenue', $report[$location_id]['doctor_info'][$doctor_id]) || count($report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue']) == 0) {
                     unset($report[$location_id]['doctor_info'][$doctor_id]);
                 }
             }
@@ -2219,8 +2239,7 @@ class Finanaces
         return $report;
     }
 
-    public
-    static function genericfunctionforstaffwiserevenue($packagesadvance)
+    public static function genericfunctionforstaffwiserevenue($packagesadvance)
     {
         $balance = 0;
         $total_balance = 0;
@@ -2277,7 +2296,7 @@ class Finanaces
                     $revenue = '';
                     $refund_out = $packagesadvance->cash_amount;
                 }
-                $report_data = array(
+                $report_data = [
                     'patient' => $packagesadvance->user->name,
                     'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
                     'transtype' => $transtype,
@@ -2286,8 +2305,8 @@ class Finanaces
                     'revenue' => $revenue,
                     'refund_out' => $refund_out,
                     'Balance' => $balance,
-                    'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A')
-                );
+                    'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A'),
+                ];
 
                 return $report_data;
             }
@@ -2295,9 +2314,9 @@ class Finanaces
 
     }
 
-    static function conversion_report($data, $account_id)
+    public static function conversion_report($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -2309,57 +2328,57 @@ class Finanaces
         }
 
         if (isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointments.region_id',
                 '=',
-                $data['region_id']
-            );
+                $data['region_id'],
+            ];
         }
 
         if (isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointments.city_id',
                 '=',
-                $data['city_id']
-            );
+                $data['city_id'],
+            ];
         }
 
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointments.patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
 
         if (isset($data['service_id']) && $data['service_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointments.service_id',
                 '=',
-                $data['service_id']
-            );
+                $data['service_id'],
+            ];
         }
 
         if (isset($data['doctor_id']) && $data['doctor_id']) {
-            $where[] = array(
+            $where[] = [
                 'appointments.doctor_id',
                 '=',
-                $data['doctor_id']
-            );
+                $data['doctor_id'],
+            ];
         }
 
         $appointment_type = AppointmentTypes::whereSlug('consultancy')->first();
 
-        $where[] = array(
+        $where[] = [
             'appointments.appointment_type_id',
             '=',
-            $appointment_type->id
-        );
-        $where[] = array(
+            $appointment_type->id,
+        ];
+        $where[] = [
             'package_advances.cash_amount',
             '>',
-            0
-        );
+            0,
+        ];
 
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
         $appointments = Appointments::with('location:id,name')
@@ -2381,25 +2400,24 @@ class Finanaces
             ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
             ->where($where)
             ->whereNotNull('scheduled_date')
-            ->when($location_ids, fn($q) => $q->whereIn('appointments.location_id', $location_ids))
+            ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
             ->where('appointments.appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereDate('scheduled_date', '>=', $start_date)
             ->whereDate('scheduled_date', '<=', $end_date)
             ->groupBy('appointments.location_id')
             ->pluck('count', 'appointments.location_id');
 
-
         $total = 0;
-        $count = array();
-        $arrived_count = array();
-        $centerWiseData = array();
-        $appointmentss = array();
-        $appointments_info = array();
-        $locationData = array();
+        $count = [];
+        $arrived_count = [];
+        $centerWiseData = [];
+        $appointmentss = [];
+        $appointments_info = [];
+        $locationData = [];
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
-                if (!in_array($appointment->id, $appointmentss)) {
-                    $appointments_info[$appointment->id] = array(
+                if (! in_array($appointment->id, $appointmentss)) {
+                    $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
                         'doctor_id' => $appointment->doctor_id,
@@ -2414,7 +2432,7 @@ class Finanaces
                         'converted' => '',
                         'conversion_spend' => '',
                         'conversion_date' => '',
-                    );
+                    ];
                 }
                 $appointmentss[] = $appointment->id;
 
@@ -2475,11 +2493,10 @@ class Finanaces
                                 $locationData
                             );*/
 
-
                             $count[$appointment->location->id][] = 1;
 
                             $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                            if($appointment['converted'] != '') {
+                            if ($appointment['converted'] != '') {
                                 $arrived_count[$appointment->location->id][] = 1;
                                 $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
                             }
@@ -2561,8 +2578,8 @@ class Finanaces
                     $status = false;
                 }
 
-                if (!in_array($appointment->id, $appointmentss2)) {
-                    $appointments_info[$appointment->id] = array(
+                if (! in_array($appointment->id, $appointmentss2)) {
+                    $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
                         'doctor_id' => $appointment->doctor_id,
@@ -2577,7 +2594,7 @@ class Finanaces
                         'converted' => '',
                         'conversion_spend' => '',
                         'conversion_date' => '',
-                    );
+                    ];
 
                     $package_info = Packages::where('appointment_id', '=', $appointment->id)->get()->pluck('id')->toArray();
 
@@ -2593,7 +2610,7 @@ class Finanaces
                         $previouse_actual = $appointments_info[$appointment->id]['conversion_spend'];
                         $appointments_info[$appointment->id]['conversion_spend'] = $previouse_actual + $conversion_spend;
 
-                    } else if ($appointments_info[$appointment->id]['converted'] == 'No' && $status) {
+                    } elseif ($appointments_info[$appointment->id]['converted'] == 'No' && $status) {
 
                         $appointments_info[$appointment->id]['conversion_spend'] = $conversion_spend;
                         $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
@@ -2614,7 +2631,7 @@ class Finanaces
                 $count[$appointment->location->id][] = 1;
 
                 $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                if($appointment['converted'] != '') {
+                if ($appointment['converted'] != '') {
                     $arrived_count[$appointment->location->id][] = 1;
                     $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
                 }
@@ -2626,12 +2643,13 @@ class Finanaces
 
         return [
             $appointments_info,
-            $locationData
+            $locationData,
         ];
     }
-    static function LoadConversionReport($data, $account_id)
+
+    public static function LoadConversionReport($data, $account_id)
     {
-        $where = array();
+        $where = [];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -2641,46 +2659,46 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['region_id']) && $data['region_id']) {
-            $where[] = array(['appointments.region_id' => $data['region_id']]);
+            $where[] = [['appointments.region_id' => $data['region_id']]];
         }
         if (isset($data['city_id']) && $data['city_id']) {
-            $where[] = array(['appointments.city_id' => $data['city_id']]);
+            $where[] = [['appointments.city_id' => $data['city_id']]];
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(['appointments.patient_id' => $data['patient_id']]);
+            $where[] = [['appointments.patient_id' => $data['patient_id']]];
         }
         if (isset($data['service_id']) && $data['service_id']) {
-            $where[] = array(['appointments.service_id' => $data['service_id']]);
+            $where[] = [['appointments.service_id' => $data['service_id']]];
         }
         if (isset($data['doctor_id']) && $data['doctor_id']) {
-            $where[] = array(['appointments.doctor_id' => $data['doctor_id']]);
+            $where[] = [['appointments.doctor_id' => $data['doctor_id']]];
         }
         $appointment_type = AppointmentTypes::whereSlug('consultancy')->first();
-        $where[] = array(['appointments.appointment_type_id' => $appointment_type->id]);
+        $where[] = [['appointments.appointment_type_id' => $appointment_type->id]];
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
 
         $appointments = Appointments::with('location:id,name')
             ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
-            ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived')])
+            ->where(['appointments.base_appointment_status_id' => config('constants.appointment_status_arrived')])
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
-            ->where('package_advances.cash_amount','>',0)
+            ->where('package_advances.cash_amount', '>', 0)
             ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
             ->limit(50)
             ->get();
         $total = 0;
-        $count = array();
-        $arrived_count = array();
-        $appointmentss = array();
-        $appointments_info = array();
-        $locationData = array();
+        $count = [];
+        $arrived_count = [];
+        $appointmentss = [];
+        $appointments_info = [];
+        $locationData = [];
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
-                if (!in_array($appointment->id, $appointmentss)) {
-                    $appointments_info[$appointment->id] = array(
+                if (! in_array($appointment->id, $appointmentss)) {
+                    $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
                         'doctor_id' => $appointment->doctor_id,
@@ -2696,7 +2714,7 @@ class Finanaces
                         'converted' => '',
                         'conversion_spend' => '',
                         'conversion_date' => '',
-                    );
+                    ];
                 }
                 $appointmentss[] = $appointment->id;
                 $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
@@ -2705,7 +2723,7 @@ class Finanaces
                     $revenue_in = 0;
                     $out = 0;
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                        ->where(['cash_flow' => "in"])
+                        ->where(['cash_flow' => 'in'])
                         ->where('cash_amount', '>', 0)
                         ->get();
                     if (count($packagesadvances) > 0) {
@@ -2733,7 +2751,7 @@ class Finanaces
                             $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
                             $count[$appointment->location->id][] = 1;
                             $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                            if($appointment['converted'] != '') {
+                            if ($appointment['converted'] != '') {
                                 $arrived_count[$appointment->location->id][] = 1;
                                 $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
                             }
@@ -2754,7 +2772,7 @@ class Finanaces
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
             ->where($where)
-            ->where('package_advances.cash_amount','>',0)
+            ->where('package_advances.cash_amount', '>', 0)
             ->select('appointments.*', 'package_advances.cash_amount')
             ->get();
         if (count($records)) {
@@ -2765,7 +2783,7 @@ class Finanaces
                 $status = false;
                 $conversion_spend = 0;
                 $converted = '';
-                $in_appointment_info = Appointments::where(['appointment_id' =>  $appointment->id])->get()->pluck('id')->toArray();
+                $in_appointment_info = Appointments::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
                 if (count($in_appointment_info)) {
                     $packageadvance_info = PackageAdvances::whereIn('appointment_id', $in_appointment_info)
                         ->whereDate('created_at', '>=', $start_date)
@@ -2802,8 +2820,8 @@ class Finanaces
                     $conversion_spend = '0';
                     $status = false;
                 }
-                if (!in_array($appointment->id, $appointmentss2)) {
-                    $appointments_info[$appointment->id] = array(
+                if (! in_array($appointment->id, $appointmentss2)) {
+                    $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
                         'doctor_id' => $appointment->doctor_id,
@@ -2820,7 +2838,7 @@ class Finanaces
                         'conversion_spend' => '',
                         'conversion_date' => '',
 
-                    );
+                    ];
                     $package_info = Packages::where('appointment_id', '=', $appointment->id)->get()->pluck('id')->toArray();
                     if (count($package_info) == 0) {
                         $appointmentss2[] = $appointment->id;
@@ -2832,7 +2850,7 @@ class Finanaces
                     if ($appointments_info[$appointment->id]['converted'] == 'Yes' && $status) {
                         $previouse_actual = $appointments_info[$appointment->id]['conversion_spend'];
                         $appointments_info[$appointment->id]['conversion_spend'] = $previouse_actual + $conversion_spend;
-                    } else if ($appointments_info[$appointment->id]['converted'] == 'No' && $status) {
+                    } elseif ($appointments_info[$appointment->id]['converted'] == 'No' && $status) {
                         $appointments_info[$appointment->id]['conversion_spend'] = $conversion_spend;
                         $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
                         $appointments_info[$appointment->id]['converted'] = 'Yes';
@@ -2840,7 +2858,7 @@ class Finanaces
                 }
                 $count[$appointment->location->id][] = 1;
                 $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                if($appointment['converted'] != '') {
+                if ($appointment['converted'] != '') {
                     $arrived_count[$appointment->location->id][] = 1;
                     $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
                 }
@@ -2850,69 +2868,70 @@ class Finanaces
             }
         }
 
-        $maxConversion1 = collect($appointments_info)->filter(function($appointment){
-            if($appointment['conversion_spend'] > 0){
+        $maxConversion1 = collect($appointments_info)->filter(function ($appointment) {
+            if ($appointment['conversion_spend'] > 0) {
                 return $appointment;
             }
         });
         $maxConversion1 = $maxConversion1->groupBy('service_id');
         $returnCategoryData = [];
-        foreach($maxConversion1 as $key => $app){
+        foreach ($maxConversion1 as $key => $app) {
             $sum_conversion_spend = 0;
             $sum_conversion_total = 0;
-            foreach($app as $value) {
+            foreach ($app as $value) {
                 $name = $value['service'];
                 $sum_conversion_spend += $value['conversion_spend'];
                 $sum_conversion_total += 1;
             }
-           $avg_by_category = ($sum_conversion_spend/count($app)) ;
-           $category_total_records = Appointments::where(['service_id' => $value['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-            ->where('scheduled_date','>=',$start_date)
-            ->where('scheduled_date','<=',$end_date)
-            ->where($where)
-            ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
-            ->count();
+            $avg_by_category = ($sum_conversion_spend / count($app));
+            $category_total_records = Appointments::where(['service_id' => $value['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                ->where('scheduled_date', '>=', $start_date)
+                ->where('scheduled_date', '<=', $end_date)
+                ->where($where)
+                ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
+                ->count();
             $returnCategoryData[$key] = [
                 'service' => $name,
                 'service_id' => $value['service_id'],
                 'sum' => $sum_conversion_spend,
                 'avg' => $avg_by_category,
                 'total_arrival' => $category_total_records,
-                'total_conversion' => $sum_conversion_total
+                'total_conversion' => $sum_conversion_total,
             ];
         }
         $maxConversion = collect($appointments_info)->max('conversion_spend');
-        $minConversion = collect($appointments_info)->where("conversion_spend","!=","")->where("conversion_spend",">",0)->min('conversion_spend');
-        $converted_Records = collect($appointments_info)->where('conversion_spend','!=',"")->count();
+        $minConversion = collect($appointments_info)->where('conversion_spend', '!=', '')->where('conversion_spend', '>', 0)->min('conversion_spend');
+        $converted_Records = collect($appointments_info)->where('conversion_spend', '!=', '')->count();
 
-        $totalamount = collect($appointments_info)->where('conversion_spend',"!=","")->sum('conversion_spend');
-        $total_appointments = Appointments::where('scheduled_date','>=',$start_date)
-            ->where('scheduled_date','<=',$end_date)
+        $totalamount = collect($appointments_info)->where('conversion_spend', '!=', '')->sum('conversion_spend');
+        $total_appointments = Appointments::where('scheduled_date', '>=', $start_date)
+            ->where('scheduled_date', '<=', $end_date)
             ->where($where)
             ->when($location_ids, fn ($q) => $q->whereIn('location_id', $location_ids))
             ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
             ->count();
 
-        if($total_appointments > 0){
-            $arrival_to_conversion_ratio = ($converted_Records/$total_appointments) * 100;
-        }else{
-            $arrival_to_conversion_ratio= 0;
+        if ($total_appointments > 0) {
+            $arrival_to_conversion_ratio = ($converted_Records / $total_appointments) * 100;
+        } else {
+            $arrival_to_conversion_ratio = 0;
         }
-        if($converted_Records > 0){
-            $average_client_coversion = $totalamount/$converted_Records;
-        }else{
+        if ($converted_Records > 0) {
+            $average_client_coversion = $totalamount / $converted_Records;
+        } else {
             $average_client_coversion = 0;
         }
-        $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
-        ->map(function ($appointments_info) {
-            return $appointments_info->sum('conversion_spend');
-        });
-        $avg_C_val = 0;->where(
-        if(count($conversionsByPatient) > 0){
-            $avg_cxlient_value = $avg_C_val/count($conversionsByPatient);
-        }else{
+        $conversionsByPatient = collect($appointments_info)->where('conversion_spend', '!=', '')->groupBy('patient_id')
+            ->map(function ($appointments_info) {
+                return $appointments_info->sum('conversion_spend');
+            });
+        $avg_C_val = 0;
+        if (count($conversionsByPatient) > 0) {
+            $avg_cxlient_value = $avg_C_val / count($conversionsByPatient);
+        } else {
             $avg_cxlient_value = 0;
         }
+
         return [
             $appointments_info,
             $locationData,
@@ -2924,17 +2943,18 @@ class Finanaces
             $converted_Records,
             $total_appointments,
             $returnCategoryData,
-            $avg_cxlient_value
+            $avg_cxlient_value,
 
         ];
     }
+
     private static function centerWiseData($appointments_info, $appointment, $centerWise, $count, $arrived_count, $total, $locationData)
     {
         $count[$appointment->location->id][] = 1;
         dump(count($count[$appointment->location->id]));
 
         $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-        if($appointment['converted'] != '') {
+        if ($appointment['converted'] != '') {
             $arrived_count[$appointment->location->id][] = 1;
             $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
         }
@@ -2948,8 +2968,7 @@ class Finanaces
     /*
      * Machine wise Collection Report
      */
-    public
-    static function machinewisecollectionreport($data, $account_id)
+    public static function machinewisecollectionreport($data, $account_id)
     {
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -2960,7 +2979,7 @@ class Finanaces
             $end_date = null;
         }
 
-        $where = array();
+        $where = [];
 
         if (isset($data['region_id']) && $data['region_id']) {
             /*
@@ -3000,7 +3019,7 @@ class Finanaces
 
         $location_info = Locations::whereIn('id', $where)->get();
 
-        $report_data = array();
+        $report_data = [];
 
         foreach ($location_info as $location) {
 
@@ -3008,24 +3027,24 @@ class Finanaces
                 ->whereDate('created_at', '<=', $end_date)
                 ->where([
                     ['account_id', '=', $account_id],
-                    ['location_id', '=', $location->id]
+                    ['location_id', '=', $location->id],
                 ])->orderBy('created_at', 'asc')->get();
 
             if (count($packagesadvances) > 0) {
 
-                $report_data[$location->id] = array(
+                $report_data[$location->id] = [
                     'id' => $location->id,
                     'name' => $location->name,
                     'region' => $location->region->name,
                     'city' => $location->city->name,
-                    'machine_types' => array(),
-                );
+                    'machine_types' => [],
+                ];
 
                 if ($packagesadvances) {
 
-                    $packageids = array();
+                    $packageids = [];
                     $count = 0;
-                    $machines = array();
+                    $machines = [];
 
                     foreach ($packagesadvances as $key => $packagesadvance) {
                         if (
@@ -3049,36 +3068,36 @@ class Finanaces
 
                                     $appointinfor = Appointments::where([
                                         ['id', '=', $packagesadvance->appointment_id],
-                                        ['appointment_type_id', '=', '2']
+                                        ['appointment_type_id', '=', '2'],
                                     ])->first();
 
                                     if ($appointinfor) {
 
                                         $resourceinfor = Resources::find($appointinfor->resource_id);
 
-                                        if (!in_array($resourceinfor->machine_type_id, $machines)) {
+                                        if (! in_array($resourceinfor->machine_type_id, $machines)) {
 
                                             $machinetype = MachineType::find($resourceinfor->machine_type_id);
 
-                                            $report_data[$location->id]['machine_types'][$resourceinfor->machine_type_id] = array(
+                                            $report_data[$location->id]['machine_types'][$resourceinfor->machine_type_id] = [
                                                 'id' => $machinetype->id,
                                                 'name' => $machinetype->name,
-                                                'transaction' => array(),
-                                            );
+                                                'transaction' => [],
+                                            ];
                                             $machines[] = $resourceinfor->machine_type_id;
                                         }
 
-                                        $report_data[$location->id]['machine_types'][$resourceinfor->machine_type_id]['transaction'][$count++] = array(
+                                        $report_data[$location->id]['machine_types'][$resourceinfor->machine_type_id]['transaction'][$count++] = [
                                             'id' => $appointinfor->patient_id,
                                             'data_id' => $appointinfor->id,
                                             'name' => $appointinfor->patient->name,
                                             'flow' => $packagesadvance->cash_flow,
                                             'amount_in' => $packagesadvance->cash_amount,
-                                            'amount_out' => 0
-                                        );
+                                            'amount_out' => 0,
+                                        ];
                                     }
                                 } else {
-                                    if (!in_array($packagesadvance->package_id, $packageids, true)) {
+                                    if (! in_array($packagesadvance->package_id, $packageids, true)) {
 
                                         $packageids[] = $packagesadvance->package_id;
 
@@ -3088,7 +3107,7 @@ class Finanaces
                                             ->whereDate('updated_at', '<=', $end_date)
                                             ->where([
                                                 ['is_consumed', '=', '1'],
-                                                ['package_id', '=', $packageinfo->id]
+                                                ['package_id', '=', $packageinfo->id],
                                             ])->whereNotNull('package_id')->get();
 
                                         if (count($total_consume_service) > 0) {
@@ -3096,15 +3115,15 @@ class Finanaces
                                                 ->whereDate('updated_at', '<=', $end_date)
                                                 ->where([
                                                     ['is_consumed', '=', '1'],
-                                                    ['package_id', '=', $packageinfo->id]
+                                                    ['package_id', '=', $packageinfo->id],
                                                 ])->whereNotNull('package_id')->get()->pluck('id')->toArray();
 
                                             $total_consume = PackageService::whereIn('id', $total_consume_packageservice_ids)->where([
                                                 ['is_consumed', '=', '1'],
-                                                ['package_id', '=', $packageinfo->id]
+                                                ['package_id', '=', $packageinfo->id],
                                             ])->whereNotNull('package_id')->sum('tax_including_price');
                                         } else {
-                                            $total_consume_packageservice_ids = array();
+                                            $total_consume_packageservice_ids = [];
                                             $total_consume = 0;
                                         }
 
@@ -3120,7 +3139,7 @@ class Finanaces
                                                     ['is_cancel', '=', '0'],
                                                     ['is_refund', '=', '0'],
                                                     ['is_adjustment', '=', '0'],
-                                                    ['cash_flow', '=', 'out']
+                                                    ['cash_flow', '=', 'out'],
                                                 ])->get();
 
                                             $appointmentids = [];
@@ -3139,14 +3158,14 @@ class Finanaces
                                                             ->where([
                                                                 ['appointments.id', '=', $consume_package->appointment_id],
                                                                 ['appointments.appointment_type_id', '=', '2'],
-                                                                ['invoices.invoice_status_id', '=', '3']
+                                                                ['invoices.invoice_status_id', '=', '3'],
                                                             ])->select('appointments.*')->first();
 
                                                         if ($appointment_for) {
 
                                                             if ($appointment_for->service_id == $consume_service->service_id) {
 
-                                                                if (!in_array($consume_package->appointment_id, $appointmentids, true)) {
+                                                                if (! in_array($consume_package->appointment_id, $appointmentids, true)) {
                                                                     $coun++;
                                                                     $appointmentids[] = $consume_package->appointment_id;
 
@@ -3156,32 +3175,32 @@ class Finanaces
                                                                         ['is_cancel', '=', '0'],
                                                                         ['is_refund', '=', '0'],
                                                                         ['is_adjustment', '=', '0'],
-                                                                        ['cash_flow', '=', 'out']
+                                                                        ['cash_flow', '=', 'out'],
                                                                     ])->distinct('cash_amount')->orderBy('created_at', 'desc')->limit('2')->sum('cash_amount');
 
                                                                     $resource_info = Resources::find($appointment_for->resource_id);
 
-                                                                    if (!in_array($resource_info->machine_type_id, $machines)) {
+                                                                    if (! in_array($resource_info->machine_type_id, $machines)) {
 
                                                                         $machinetype = MachineType::find($resource_info->machine_type_id);
 
-                                                                        $report_data[$location->id]['machine_types'][$resource_info->machine_type_id] = array(
+                                                                        $report_data[$location->id]['machine_types'][$resource_info->machine_type_id] = [
                                                                             'id' => $machinetype->id,
                                                                             'name' => $machinetype->name,
-                                                                            'transaction' => array(),
-                                                                        );
+                                                                            'transaction' => [],
+                                                                        ];
 
                                                                         $machines[] = $resource_info->machine_type_id;
                                                                     }
                                                                     if ($divide_amount_consume > 0) {
-                                                                        $report_data[$location->id]['machine_types'][$resource_info->machine_type_id]['transaction'][$count++] = array(
+                                                                        $report_data[$location->id]['machine_types'][$resource_info->machine_type_id]['transaction'][$count++] = [
                                                                             'id' => $packageinfo->patient_id,
                                                                             'data_id' => $packageinfo->id,
                                                                             'name' => $packageinfo->user->name,
                                                                             'flow' => 'in',
                                                                             'amount_in' => $divide_amount_consume,
-                                                                            'amount_out' => 0
-                                                                        );
+                                                                            'amount_out' => 0,
+                                                                        ];
                                                                     }
                                                                 }
                                                             }
@@ -3196,10 +3215,10 @@ class Finanaces
                                             ->where([
                                                 ['package_id', '=', $packageinfo->id],
                                                 ['is_cancel', '=', '0'],
-                                                ['cash_flow', '=', 'in']
+                                                ['cash_flow', '=', 'in'],
                                             ])->sum('cash_amount');
 
-                                        $package_service_ids = array();
+                                        $package_service_ids = [];
 
                                         foreach ($machine_types['machine_types'] as $machine_type) {
 
@@ -3209,13 +3228,13 @@ class Finanaces
                                                 }
                                             }
 
-                                            if (!in_array($machine_type->id, $machines)) {
+                                            if (! in_array($machine_type->id, $machines)) {
 
-                                                $report_data[$location->id]['machine_types'][$machine_type->id] = array(
+                                                $report_data[$location->id]['machine_types'][$machine_type->id] = [
                                                     'id' => $machine_type->id,
                                                     'name' => $machine_type->name,
-                                                    'transaction' => array(),
-                                                );
+                                                    'transaction' => [],
+                                                ];
 
                                                 $machines[] = $machine_type->id;
                                             }
@@ -3230,16 +3249,16 @@ class Finanaces
                                                 $divide_amount = ($machine_service_amount * $remaining_amount) / $total_amount;
                                             }
                                             if ($divide_amount > 0) {
-                                                $report_data[$location->id]['machine_types'][$machine_type->id]['transaction'][$count++] = array(
+                                                $report_data[$location->id]['machine_types'][$machine_type->id]['transaction'][$count++] = [
                                                     'id' => $packageinfo->patient_id,
                                                     'data_id' => $packageinfo->id,
                                                     'name' => $packageinfo->user->name,
                                                     'flow' => 'in',
                                                     'amount_in' => $divide_amount,
-                                                    'amount_out' => 0
-                                                );
+                                                    'amount_out' => 0,
+                                                ];
                                             }
-                                            $package_service_ids = array();
+                                            $package_service_ids = [];
                                         }
                                     }
                                 }
@@ -3251,27 +3270,27 @@ class Finanaces
 
                                     $resourceinfo = Resources::find($appointinfor->resource_id);
 
-                                    if (!in_array($resourceinfo->machine_type_id, $machines)) {
+                                    if (! in_array($resourceinfo->machine_type_id, $machines)) {
 
                                         $machinetype = MachineType::find($resourceinfo->machine_type_id);
 
-                                        $report_data[$location->id]['machine_types'][$machinetype->id] = array(
+                                        $report_data[$location->id]['machine_types'][$machinetype->id] = [
                                             'id' => $machinetype->id,
                                             'name' => $machinetype->name,
-                                            'transaction' => array(),
-                                        );
+                                            'transaction' => [],
+                                        ];
 
                                         $machines[] = $resourceinfo->machine_type_id;
                                     }
 
-                                    $report_data[$location->id]['machine_types'][$resourceinfo->machine_type_id]['transaction'][$count++] = array(
+                                    $report_data[$location->id]['machine_types'][$resourceinfo->machine_type_id]['transaction'][$count++] = [
                                         'id' => $appointinfor->patient_id,
                                         'data_id' => $appointinfor->id,
                                         'name' => $appointinfor->patient->name,
                                         'flow' => 'out',
                                         'amount_in' => 0,
-                                        'amount_out' => $packagesadvance->cash_amount
-                                    );
+                                        'amount_out' => $packagesadvance->cash_amount,
+                                    ];
 
                                 } else {
 
@@ -3279,7 +3298,7 @@ class Finanaces
 
                                     $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo); //$package_machine
 
-                                    $package_service_ids = array();
+                                    $package_service_ids = [];
 
                                     foreach ($machine_types['machine_types'] as $machine_type) {
 
@@ -3289,13 +3308,13 @@ class Finanaces
                                             }
                                         }
 
-                                        if (!in_array($machine_type->id, $machines)) {
+                                        if (! in_array($machine_type->id, $machines)) {
 
-                                            $report_data[$location->id]['machine_types'][$machine_type->id] = array(
+                                            $report_data[$location->id]['machine_types'][$machine_type->id] = [
                                                 'id' => $machine_type->id,
                                                 'name' => $machine_type->name,
-                                                'transaction' => array(),
-                                            );
+                                                'transaction' => [],
+                                            ];
 
                                             $machines[] = $machine_type->id;
                                         }
@@ -3304,23 +3323,23 @@ class Finanaces
 
                                         $divide_amount = 0;
 
-                                        $remaining_amount = $packagesadvance->cash_amount;;
+                                        $remaining_amount = $packagesadvance->cash_amount;
 
                                         $total_amount = $packageinfo->total_price;
 
                                         $divide_amount = ($machine_service_amount * $remaining_amount) / $total_amount;
 
                                         if ($divide_amount > 0) {
-                                            $report_data[$location->id]['machine_types'][$machine_type->id]['transaction'][$count++] = array(
+                                            $report_data[$location->id]['machine_types'][$machine_type->id]['transaction'][$count++] = [
                                                 'id' => $packageinfo->patient_id,
                                                 'data_id' => $packageinfo->id,
                                                 'name' => $packageinfo->user->name,
                                                 'flow' => 'out',
                                                 'amount_in' => 0,
-                                                'amount_out' => $divide_amount
-                                            );
+                                                'amount_out' => $divide_amount,
+                                            ];
                                         }
-                                        $package_service_ids = array();
+                                        $package_service_ids = [];
                                     }
                                 }
                             }
@@ -3329,19 +3348,20 @@ class Finanaces
                 }
             }
         }
+
         return $report_data;
     }
 
     /**
      * Consume Revenue Plan Report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
-    public
-    static function consumeplanrevenue($data, $account)
+    public static function consumeplanrevenue($data, $account)
     {
-        $reportdata = array();
-        $where = array();
+        $reportdata = [];
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -3396,7 +3416,7 @@ class Finanaces
                 if ($t_count == $c_count) {
                     $invoice_information = InvoiceDetails::where('package_id', '=', $plan->id)->orderBy('created_at', 'asc')->get();
                     foreach ($invoice_information as $invoice) {
-                        $reportdata[] = array(
+                        $reportdata[] = [
                             'plan_id' => $plan->id,
                             'service' => $invoice->service->name,
                             'location' => $plan->location->name,
@@ -3408,25 +3428,27 @@ class Finanaces
                             'tax' => $invoice->tax_percenatage,
                             'tax_value' => $invoice->tax_price,
                             'tax_amount' => $invoice->tax_including_price,
-                            'is_exclusive' => $invoice->is_exclusive
-                        );
+                            'is_exclusive' => $invoice->is_exclusive,
+                        ];
                     }
                 } else {
                     continue;
                 }
             }
         }
+
         return $reportdata;
     }
 
     /**
      * Plan Maturity Report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function planmaturityreport($data, $account_id)
     {
-        $where = array();
+        $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -3437,24 +3459,24 @@ class Finanaces
             $end_date = null;
         }
         if (isset($data['patient_id']) && $data['patient_id']) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $data['patient_id']
-            );
+                $data['patient_id'],
+            ];
         }
         if (isset($data['location_id']) && $data['location_id']) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $data['location_id']
-            );
+                $data['location_id'],
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'account_id',
             '=',
-            $account_id
-        );
+            $account_id,
+        ];
         if (count($where)) {
             $packageinfo = Packages::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
@@ -3464,10 +3486,10 @@ class Finanaces
                 ->whereDate('created_at', '<=', $end_date)
                 ->whereIn('location_id', ACL::getUserCentres())->get();
         }
-        $packagetrans = array();
+        $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
 
-            $packagetrans[$packagerow->id] = array(
+            $packagetrans[$packagerow->id] = [
                 'patient_id' => $packagerow->patient_id,
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
@@ -3480,7 +3502,7 @@ class Finanaces
                 'outstandingbalance' => '',
                 'usedbalance' => '',
                 'unusedbalance' => '',
-            );
+            ];
             $advancebalance = PackageAdvances::where([
                 ['package_id', '=', $packagerow->id],
                 ['cash_flow', '=', 'in'],
@@ -3530,6 +3552,7 @@ class Finanaces
                 unset($packagetrans[$packagerow->id]);
             }
         }
+
         return $packagetrans;
     }
 }
