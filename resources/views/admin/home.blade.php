@@ -850,6 +850,91 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Doctor Wise Conversion</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center doc_wise_arrival_ul">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    @php
+                                                        $centres_array =['All South Region','All Central Region','All Centres'];
+                                                        $locations = \App\Helpers\ACL::getUserCentres();
+                                                        $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
+                                                    @endphp
+                                                    <div class="btn-group">
+                                                        <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorwiseconversion"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> All
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a class="dropdown-item" data-period="thismonth" data-id="">All</a>
+                                                            </li>
+                                                            @foreach($centres as $centre)
+                                                            <li >
+                                                                <a class="dropdown-item centre-item" data-period="yesterday" data-id="{{$centre->id}}">{{$centre->name}}</a>
+                                                            </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="yesterday">
+                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('today');">Today</a>
+                                            </li>
+                                            <li class="yesterday">
+                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('yesterday');">Yesterday</a>
+                                            </li>
+                                            <li class="last7days">
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('last7days');">Last 7 Days</a>
+                                            </li>
+                                            <li class="week">
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('week');">This Week</a>
+                                            </li>
+                                            <li class="thismonth">
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('thismonth');">This Month</a>
+                                            </li>
+                                            <li class="lastmonth">
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                            <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                        </div>
+                                    </div>
+                                    <div class="row pt-7">
+                                        <div class="col-7">
+                                            <div id="doc_wise_conversion"></div>
+                                        </div>
+                                        <div class="row" id="centre_wise_arrival_02">
+                                            <div class='table-responsive'>
+                                                <table class='table'>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class='table-cols'></th>
+                                                            <th class='table-cols'>Arrived</th>
+                                                            <th class='table-cols'>Converted</th>
+                                                           
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="categories-table-body"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -870,7 +955,14 @@
             jQuery('.wise_arrival_ul li a').removeClass('active');
             jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
         });
-
+        jQuery('.btn.doctorwiseconversion + .dropdown-menu li a').on('click', function(){
+            var dataID = jQuery(this).attr('data-id');
+            var dataText = jQuery(this).text();
+            jQuery('.btn.doctorwiseconversion').attr('data-id', dataID);
+            jQuery('.btn.doctorwiseconversion').html(dataText+'<i class="fa fa-angle-down"></i>')
+            jQuery('.doc_wise_arrival_ul li a').removeClass('active');
+            jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
+        });
         $(document).ready(function(){
             period="today";
             // activities
