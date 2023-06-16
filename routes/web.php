@@ -599,4 +599,5 @@ use Illuminate\Support\Facades\DB;
         Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
 
         Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
+        Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
     });
