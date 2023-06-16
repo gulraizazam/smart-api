@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\Config\Settings;
-
 use function __;
 use function array_filter;
+use const ARRAY_FILTER_USE_KEY;
 use function array_merge;
 use function array_replace_recursive;
 use function array_slice;
 use function count;
 use function defined;
+use const DIRECTORY_SEPARATOR;
+use const E_USER_ERROR;
 use function error_get_last;
 use function error_reporting;
 use function explode;
@@ -43,6 +44,11 @@ use function ob_end_clean;
 use function ob_get_clean;
 use function ob_start;
 use function parse_url;
+use const PHP_OS;
+use const PHP_URL_PATH;
+use const PHP_URL_SCHEME;
+use const PHP_VERSION_ID;
+use PhpMyAdmin\Config\Settings;
 use function preg_match;
 use function realpath;
 use function rtrim;
@@ -59,32 +65,24 @@ use function time;
 use function trigger_error;
 use function trim;
 
-use const ARRAY_FILTER_USE_KEY;
-use const DIRECTORY_SEPARATOR;
-use const E_USER_ERROR;
-use const PHP_OS;
-use const PHP_URL_PATH;
-use const PHP_URL_SCHEME;
-use const PHP_VERSION_ID;
-
 /**
  * Configuration handling
  */
 class Config
 {
-    /** @var array   default configuration settings */
+    /** @var array default configuration settings */
     public $default = [];
 
-    /** @var array   configuration settings, without user preferences applied */
+    /** @var array configuration settings, without user preferences applied */
     public $baseSettings = [];
 
-    /** @var array   configuration settings */
+    /** @var array configuration settings */
     public $settings = [];
 
-    /** @var string  config source */
+    /** @var string config source */
     public $source = '';
 
-    /** @var int     source modification time */
+    /** @var int source modification time */
     public $sourceMtime = 0;
 
     /** @var int */
@@ -104,7 +102,7 @@ class Config
     public $done = false;
 
     /**
-     * @param string $source source to read config from
+     * @param  string  $source source to read config from
      */
     public function __construct(?string $source = null)
     {
@@ -156,7 +154,7 @@ class Config
     /**
      * Sets the client platform based on user agent
      *
-     * @param string $user_agent the user agent
+     * @param  string  $user_agent the user agent
      */
     private function setClientPlatform(string $user_agent): void
     {
@@ -223,7 +221,7 @@ class Config
             $this->set('PMA_USR_BROWSER_AGENT', 'SAFARI');
             // older Safari
         } elseif ($is_mozilla && preg_match('@Safari/([0-9]*)@', $HTTP_USER_AGENT, $log_version)) {
-            $this->set('PMA_USR_BROWSER_VER', $mozilla_version[1] . '.' . $log_version[1]);
+            $this->set('PMA_USR_BROWSER_VER', $mozilla_version[1].'.'.$log_version[1]);
             $this->set('PMA_USR_BROWSER_AGENT', 'SAFARI');
             // Firefox
         } elseif (
@@ -340,7 +338,7 @@ class Config
      * loads configuration from $source, usually the config file
      * should be called on object creation
      *
-     * @param string $source config file
+     * @param  string  $source config file
      */
     public function load(?string $source = null): bool
     {
@@ -438,7 +436,7 @@ class Config
         $server = $GLOBALS['server'] ?? (! empty($GLOBALS['cfg']['ServerDefault'])
                 ? $GLOBALS['cfg']['ServerDefault']
                 : 0);
-        $cache_key = 'server_' . $server;
+        $cache_key = 'server_'.$server;
         if ($server > 0 && ! isset($isMinimumCommon)) {
             // cache user preferences, use database only when needed
             if (
@@ -536,11 +534,10 @@ class Config
      * global config and added to a update queue, which is processed
      * by {@link loadUserPreferences()}
      *
-     * @param string|null $cookie_name   can be null
-     * @param string      $cfg_path      configuration path
-     * @param string      $new_cfg_value new value
-     * @param string|null $default_value default value
-     *
+     * @param  string|null  $cookie_name   can be null
+     * @param  string  $cfg_path      configuration path
+     * @param  string  $new_cfg_value new value
+     * @param  string|null  $default_value default value
      * @return true|Message
      */
     public function setUserValue(
@@ -579,9 +576,8 @@ class Config
     /**
      * Reads value stored by {@link setUserValue()}
      *
-     * @param string $cookie_name cookie name
-     * @param mixed  $cfg_value   config value
-     *
+     * @param  string  $cookie_name cookie name
+     * @param  mixed  $cfg_value   config value
      * @return mixed
      */
     public function getUserValue(string $cookie_name, $cfg_value)
@@ -604,7 +600,7 @@ class Config
     /**
      * set source
      *
-     * @param string $source source
+     * @param  string  $source source
      */
     public function setSource(string $source): void
     {
@@ -696,19 +692,18 @@ class Config
             return;
         }
 
-        $error = '[strong]' . __('Failed to read configuration file!') . '[/strong]'
-            . '[br][br]'
-            . __('This usually means there is a syntax error in it, please check any errors shown below.')
-            . '[br][br]'
-            . '[conferr]';
+        $error = '[strong]'.__('Failed to read configuration file!').'[/strong]'
+            .'[br][br]'
+            .__('This usually means there is a syntax error in it, please check any errors shown below.')
+            .'[br][br]'
+            .'[conferr]';
         trigger_error($error, E_USER_ERROR);
     }
 
     /**
      * returns specific config setting
      *
-     * @param string $setting config setting
-     *
+     * @param  string  $setting config setting
      * @return mixed|null value
      */
     public function get(string $setting)
@@ -723,8 +718,8 @@ class Config
     /**
      * sets configuration variable
      *
-     * @param string $setting configuration option
-     * @param mixed  $value   new value for configuration option
+     * @param  string  $setting configuration option
+     * @param  mixed  $value   new value for configuration option
      */
     public function set(string $setting, $value): void
     {
@@ -854,7 +849,7 @@ class Config
             $path = parse_url($url, PHP_URL_PATH);
             if (! empty($path)) {
                 if (substr($path, -1) !== '/') {
-                    return $path . '/';
+                    return $path.'/';
                 }
 
                 return $path;
@@ -886,7 +881,7 @@ class Config
     /**
      * removes cookie
      *
-     * @param string $cookieName name of cookie to remove
+     * @param  string  $cookieName name of cookie to remove
      */
     public function removeCookie(string $cookieName): bool
     {
@@ -914,11 +909,11 @@ class Config
      * sets cookie if value is different from current cookie value,
      * or removes if value is equal to default
      *
-     * @param string $cookie   name of cookie to remove
-     * @param string $value    new cookie value
-     * @param string $default  default value
-     * @param int    $validity validity of cookie in seconds (default is one month)
-     * @param bool   $httponly whether cookie is only for HTTP (and not for scripts)
+     * @param  string  $cookie   name of cookie to remove
+     * @param  string  $value    new cookie value
+     * @param  string  $default  default value
+     * @param  int  $validity validity of cookie in seconds (default is one month)
+     * @param  bool  $httponly whether cookie is only for HTTP (and not for scripts)
      */
     public function setCookie(
         string $cookie,
@@ -971,7 +966,7 @@ class Config
                     $httpCookieName,
                     $value,
                     $validity,
-                    $this->getRootPath() . '; SameSite=' . $cookieSameSite,
+                    $this->getRootPath().'; SameSite='.$cookieSameSite,
                     '',
                     $this->isHttps(),
                     $httponly
@@ -997,8 +992,7 @@ class Config
     /**
      * get cookie
      *
-     * @param string $cookieName The name of the cookie to get
-     *
+     * @param  string  $cookieName The name of the cookie to get
      * @return mixed|null result of getCookie()
      */
     public function getCookie(string $cookieName)
@@ -1013,17 +1007,17 @@ class Config
     /**
      * Get the real cookie name
      *
-     * @param string $cookieName The name of the cookie
+     * @param  string  $cookieName The name of the cookie
      */
     public function getCookieName(string $cookieName): string
     {
-        return $cookieName . ( $this->isHttps() ? '_https' : '' );
+        return $cookieName.($this->isHttps() ? '_https' : '');
     }
 
     /**
      * isset cookie
      *
-     * @param string $cookieName The name of the cookie to check
+     * @param  string  $cookieName The name of the cookie to check
      */
     public function issetCookie(string $cookieName): bool
     {
@@ -1060,14 +1054,14 @@ class Config
     /**
      * Wrapper for footer/header rendering
      *
-     * @param string $filename File to check and render
-     * @param string $id       Div ID
+     * @param  string  $filename File to check and render
+     * @param  string  $id       Div ID
      */
     private static function renderCustom(string $filename, string $id): string
     {
         $retval = '';
         if (@file_exists($filename)) {
-            $retval .= '<div id="' . $id . '" class="d-print-none">';
+            $retval .= '<div id="'.$id.'" class="d-print-none">';
             ob_start();
             include $filename;
             $retval .= ob_get_clean();
@@ -1096,7 +1090,7 @@ class Config
     /**
      * Returns temporary dir path
      *
-     * @param string $name Directory name
+     * @param  string  $name Directory name
      *
      * @staticvar array<string,string|null> $temp_dir
      */
@@ -1112,7 +1106,7 @@ class Config
         if (empty($path)) {
             $path = null;
         } else {
-            $path = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
+            $path = rtrim($path, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$name;
             if (! @is_dir($path)) {
                 @mkdir($path, 0770, true);
             }
@@ -1188,7 +1182,6 @@ class Config
          * present a choice of servers in the case that there are multiple servers
          * and '$this->settings['ServerDefault'] = 0' is set.
          */
-
         if (is_numeric($request) && ! empty($request) && ! empty($this->settings['Servers'][$request])) {
             $server = $request;
             $this->settings['Server'] = $this->settings['Servers'][$server];
@@ -1250,10 +1243,9 @@ class Config
     /**
      * Return connection parameters for the database server
      *
-     * @param int        $mode   Connection mode on of CONNECT_USER, CONNECT_CONTROL
+     * @param  int  $mode   Connection mode on of CONNECT_USER, CONNECT_CONTROL
      *                           or CONNECT_AUXILIARY.
-     * @param array|null $server Server information like host/port/socket/persistent
-     *
+     * @param  array|null  $server Server information like host/port/socket/persistent
      * @return array user, host and server settings array
      */
     public static function getConnectionParams(int $mode, ?array $server = null): array
@@ -1377,7 +1369,7 @@ class Config
     {
         global $cfg;
 
-        $cacheKey = 'server_' . $server;
+        $cacheKey = 'server_'.$server;
 
         if (! isset($_SESSION['cache'][$cacheKey]['userprefs']['LoginCookieValidity'])) {
             return;

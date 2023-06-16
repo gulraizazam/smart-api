@@ -4,6 +4,17 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function array_keys;
+use function array_values;
+use function class_exists;
+use function count;
+use function implode;
+use function in_array;
+use function is_file;
+use function is_numeric;
+use function method_exists;
+use function parse_str;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Controllers\Database\SqlController as DatabaseSqlController;
 use PhpMyAdmin\Controllers\Sql\SqlController;
@@ -20,18 +31,6 @@ use PhpMyAdmin\Table;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Util;
-
-use function __;
-use function array_keys;
-use function array_values;
-use function class_exists;
-use function count;
-use function implode;
-use function in_array;
-use function is_file;
-use function is_numeric;
-use function method_exists;
-use function parse_str;
 use function sprintf;
 
 /**
@@ -220,7 +219,7 @@ final class ReplaceController extends AbstractController
         $unsaved_values = [];
         foreach ($loop_array as $rownumber => $where_clause) {
             // skip fields to be ignored
-            if (! $using_key && isset($_POST['insert_ignore_' . $where_clause])) {
+            if (! $using_key && isset($_POST['insert_ignore_'.$where_clause])) {
                 continue;
             }
 
@@ -269,8 +268,8 @@ final class ReplaceController extends AbstractController
                 // Apply Input Transformation if defined
                 if (! empty($mime_map[$column_name]) && ! empty($mime_map[$column_name]['input_transformation'])) {
                     $filename = 'libraries/classes/Plugins/Transformations/'
-                        . $mime_map[$column_name]['input_transformation'];
-                    if (is_file(ROOT_PATH . $filename)) {
+                        .$mime_map[$column_name]['input_transformation'];
+                    if (is_file(ROOT_PATH.$filename)) {
                         $classname = $this->transformations->getClassName($filename);
                         if (class_exists($classname)) {
                             /** @var IOTransformationsPlugin $transformation_plugin */
@@ -377,11 +376,11 @@ final class ReplaceController extends AbstractController
                 $value_sets[] = implode(', ', $query_values);
             } else {
                 // build update query
-                $clauseIsUnique = $_POST['clause_is_unique'] ?? '';// Should contain 0 or 1
-                $query[] = 'UPDATE ' . Util::backquote($table)
-                    . ' SET ' . implode(', ', $query_values)
-                    . ' WHERE ' . $where_clause
-                    . ($clauseIsUnique ? '' : ' LIMIT 1');
+                $clauseIsUnique = $_POST['clause_is_unique'] ?? ''; // Should contain 0 or 1
+                $query[] = 'UPDATE '.Util::backquote($table)
+                    .' SET '.implode(', ', $query_values)
+                    .' WHERE '.$where_clause
+                    .($clauseIsUnique ? '' : ' LIMIT 1');
             }
         }
 
@@ -451,7 +450,7 @@ final class ReplaceController extends AbstractController
             }
 
             /** @psalm-suppress UnresolvableInclude */
-            include ROOT_PATH . Core::securePath($goto_include);
+            include ROOT_PATH.Core::securePath($goto_include);
 
             return;
         }
@@ -534,7 +533,7 @@ final class ReplaceController extends AbstractController
                 // loop for each relation cell
                 foreach ($relation_fields as $cell_index => $curr_rel_field) {
                     foreach ($curr_rel_field as $relation_field => $relation_field_value) {
-                        $where_comparison = "='" . $relation_field_value . "'";
+                        $where_comparison = "='".$relation_field_value."'";
                         $dispval = $this->insertEdit->getDisplayValueForForeignTableColumn(
                             $where_comparison,
                             $map,
@@ -662,6 +661,6 @@ final class ReplaceController extends AbstractController
          * Load target page.
          */
         /** @psalm-suppress UnresolvableInclude */
-        require ROOT_PATH . Core::securePath($goto_include);
+        require ROOT_PATH.Core::securePath($goto_include);
     }
 }

@@ -13,12 +13,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
+use function __;
+use function htmlspecialchars;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Html\MySQLDocumentation;
 use PhpMyAdmin\Utils\ForeignKey;
-
-use function __;
-use function htmlspecialchars;
 use function sprintf;
 use function str_contains;
 use function strlen;
@@ -32,7 +31,7 @@ class SqlQueryForm
     private $template;
 
     /**
-     * @param Template $template Template object
+     * @param  Template  $template Template object
      */
     public function __construct(Template $template)
     {
@@ -42,13 +41,12 @@ class SqlQueryForm
     /**
      * return HTML for the sql query boxes
      *
-     * @param bool|string $query       query to display in the textarea
+     * @param  bool|string  $query       query to display in the textarea
      *                                 or true to display last executed
-     * @param bool|string $display_tab sql|full|false
+     * @param  bool|string  $display_tab sql|full|false
      *                                 what part to display
      *                                 false if not inside querywindow
-     * @param string      $delimiter   delimiter
-     *
+     * @param  string  $delimiter   delimiter
      * @return string
      *
      * @usedby  /server/sql
@@ -134,8 +132,7 @@ class SqlQueryForm
     /**
      * Get initial values for Sql Query Form Insert
      *
-     * @param string $query query to display in the textarea
-     *
+     * @param  string  $query query to display in the textarea
      * @return array ($legend, $query, $columns_list)
      */
     public function init($query)
@@ -158,10 +155,10 @@ class SqlQueryForm
             $db = $GLOBALS['db'];
             // if you want navigation:
             $scriptName = Util::getScriptNameForOption($GLOBALS['cfg']['DefaultTabDatabase'], 'database');
-            $tmp_db_link = '<a href="' . $scriptName
-                . Url::getCommon(['db' => $db], ! str_contains($scriptName, '?') ? '?' : '&')
-                . '">';
-            $tmp_db_link .= htmlspecialchars($db) . '</a>';
+            $tmp_db_link = '<a href="'.$scriptName
+                .Url::getCommon(['db' => $db], ! str_contains($scriptName, '?') ? '?' : '&')
+                .'">';
+            $tmp_db_link .= htmlspecialchars($db).'</a>';
             $legend = sprintf(__('Run SQL query/queries on database %s'), $tmp_db_link);
             if (empty($query)) {
                 $query = Util::expandUserString($GLOBALS['cfg']['DefaultQueryDatabase'], 'backquote');
@@ -175,15 +172,15 @@ class SqlQueryForm
             $columns_list = $dbi->getColumns($db, $GLOBALS['table'], true);
 
             $scriptName = Util::getScriptNameForOption($GLOBALS['cfg']['DefaultTabTable'], 'table');
-            $tmp_tbl_link = '<a href="' . $scriptName . Url::getCommon(['db' => $db, 'table' => $table], '&') . '">';
-            $tmp_tbl_link .= htmlspecialchars($db) . '.' . htmlspecialchars($table) . '</a>';
+            $tmp_tbl_link = '<a href="'.$scriptName.Url::getCommon(['db' => $db, 'table' => $table], '&').'">';
+            $tmp_tbl_link .= htmlspecialchars($db).'.'.htmlspecialchars($table).'</a>';
             $legend = sprintf(__('Run SQL query/queries on table %s'), $tmp_tbl_link);
             if (empty($query)) {
                 $query = Util::expandUserString($GLOBALS['cfg']['DefaultQueryTable'], 'backquote');
             }
         }
 
-        $legend .= ': ' . MySQLDocumentation::show('SELECT');
+        $legend .= ': '.MySQLDocumentation::show('SELECT');
 
         return [
             $legend,

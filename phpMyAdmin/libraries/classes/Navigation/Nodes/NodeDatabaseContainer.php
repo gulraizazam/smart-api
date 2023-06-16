@@ -7,10 +7,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Navigation\Nodes;
 
+use function _pgettext;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\Navigation\NodeFactory;
-
-use function _pgettext;
 
 /**
  * Represents a container for database nodes in the navigation tree
@@ -20,7 +19,7 @@ class NodeDatabaseContainer extends Node
     /**
      * Initialises the class
      *
-     * @param string $name An identifier for the new node
+     * @param  string  $name An identifier for the new node
      */
     public function __construct($name)
     {

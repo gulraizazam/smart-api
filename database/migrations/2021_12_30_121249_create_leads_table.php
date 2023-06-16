@@ -31,12 +31,10 @@ class CreateLeadsTable extends Migration
             $table->unsignedBigInteger('town_id')->nullable();
             $table->unsignedBigInteger('account_id')->nullable();
 
-
-
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('account_id','leads_account')
+            $table->foreign('account_id', 'leads_account')
                 ->references('id')
                 ->on('accounts');
             $table->foreign('town_id')

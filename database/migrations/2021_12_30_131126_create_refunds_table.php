@@ -23,7 +23,6 @@ class CreateRefundsTable extends Migration
             $table->unsignedBigInteger('account_id');
             $table->timestamps();
 
-
             $table->foreign('invoice_id')->references('id')->on('invoices');
             $table->foreign('package_advance_id')->references('id')->on('package_advances');
             $table->foreign('patient_id')->references('id')->on('users');

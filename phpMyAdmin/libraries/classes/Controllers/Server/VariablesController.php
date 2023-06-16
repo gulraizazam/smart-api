@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server;
 
+use function implode;
+use function in_array;
+use function is_numeric;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Html\Generator;
@@ -12,10 +15,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function implode;
-use function in_array;
-use function is_numeric;
 use function str_replace;
 use function strtolower;
 use function trim;
@@ -98,9 +97,8 @@ class VariablesController extends AbstractController
     /**
      * Format Variable
      *
-     * @param string     $name  variable name
-     * @param int|string $value variable value
-     *
+     * @param  string  $name  variable name
+     * @param  int|string  $value variable value
      * @return array formatted string and bool if string is HTML formatted
      */
     private function formatVariable($name, $value): array

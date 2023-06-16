@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table\Structure;
 
+use function __;
+use function count;
 use PhpMyAdmin\Config\PageSettings;
 use PhpMyAdmin\Controllers\Table\AbstractController;
 use PhpMyAdmin\Controllers\Table\StructureController;
@@ -19,9 +21,6 @@ use PhpMyAdmin\StorageEngine;
 use PhpMyAdmin\Table;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Util;
-
-use function __;
-use function count;
 use function strpos;
 use function strrpos;
 use function substr;
@@ -168,7 +167,7 @@ final class PartitioningController extends AbstractController
         for ($i = 0, $iMax = $partitionDetails['partition_count']; $i < $iMax; $i++) {
             if (! isset($stmt->partitions[$i])) {
                 $partitionDetails['partitions'][$i] = [
-                    'name' => 'p' . $i,
+                    'name' => 'p'.$i,
                     'value_type' => '',
                     'value' => '',
                     'engine' => '',
@@ -204,8 +203,8 @@ final class PartitioningController extends AbstractController
                 ];
             }
 
-            $partition =& $partitionDetails['partitions'][$i];
-            $partition['prefix'] = 'partitions[' . $i . ']';
+            $partition = &$partitionDetails['partitions'][$i];
+            $partition['prefix'] = 'partitions['.$i.']';
 
             if ($partitionDetails['subpartition_count'] <= 1) {
                 continue;
@@ -217,7 +216,7 @@ final class PartitioningController extends AbstractController
             for ($j = 0, $jMax = $partitionDetails['subpartition_count']; $j < $jMax; $j++) {
                 if (! isset($stmt->partitions[$i]->subpartitions[$j])) {
                     $partition['subpartitions'][$j] = [
-                        'name' => $partition['name'] . '_s' . $j,
+                        'name' => $partition['name'].'_s'.$j,
                         'engine' => '',
                         'comment' => '',
                         'data_directory' => '',
@@ -242,9 +241,9 @@ final class PartitioningController extends AbstractController
                     ];
                 }
 
-                $subpartition =& $partition['subpartitions'][$j];
-                $subpartition['prefix'] = 'partitions[' . $i . ']'
-                    . '[subpartitions][' . $j . ']';
+                $subpartition = &$partition['subpartitions'][$j];
+                $subpartition['prefix'] = 'partitions['.$i.']'
+                    .'[subpartitions]['.$j.']';
             }
         }
 
@@ -253,8 +252,8 @@ final class PartitioningController extends AbstractController
 
     private function updatePartitioning(): void
     {
-        $sql_query = 'ALTER TABLE ' . Util::backquote($this->table) . ' '
-            . $this->createAddField->getPartitionsDefinition();
+        $sql_query = 'ALTER TABLE '.Util::backquote($this->table).' '
+            .$this->createAddField->getPartitionsDefinition();
 
         // Execute alter query
         $result = $this->dbi->tryQuery($sql_query);
@@ -264,7 +263,7 @@ final class PartitioningController extends AbstractController
             $this->response->addJSON(
                 'message',
                 Message::rawError(
-                    __('Query error') . ':<br>' . $this->dbi->getError()
+                    __('Query error').':<br>'.$this->dbi->getError()
                 )
             );
 

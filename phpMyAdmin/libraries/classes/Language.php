@@ -40,11 +40,11 @@ class Language
     /**
      * Constructs the Language object
      *
-     * @param string $code   Language code
-     * @param string $name   English name
-     * @param string $native Native name
-     * @param string $regex  Match regular expression
-     * @param string $mysql  MySQL locale code
+     * @param  string  $code   Language code
+     * @param  string  $name   English name
+     * @param  string  $native Native name
+     * @param  string  $regex  Match regular expression
+     * @param  string  $mysql  MySQL locale code
      */
     public function __construct($code, $name, $native, $regex, $mysql)
     {
@@ -87,7 +87,7 @@ class Language
     public function getName()
     {
         if (! empty($this->native)) {
-            return $this->native . ' - ' . $this->name;
+            return $this->native.' - '.$this->name;
         }
 
         return $this->name;
@@ -116,8 +116,7 @@ class Language
     /**
      * Compare function used for sorting
      *
-     * @param Language $other Other object to compare
-     *
+     * @param  Language  $other Other object to compare
      * @return int same as strcmp
      */
     public function cmp(Language $other): int
@@ -136,13 +135,13 @@ class Language
     /**
      * Checks whether language matches HTTP header Accept-Language.
      *
-     * @param string $header Header content
+     * @param  string  $header Header content
      */
     public function matchesAcceptLanguage($header): bool
     {
         $pattern = '/^('
-            . addcslashes($this->regex, '/')
-            . ')(;q=[0-9]\\.[0-9])?$/i';
+            .addcslashes($this->regex, '/')
+            .')(;q=[0-9]\\.[0-9])?$/i';
 
         return (bool) preg_match($pattern, $header);
     }
@@ -150,13 +149,13 @@ class Language
     /**
      * Checks whether language matches HTTP header User-Agent
      *
-     * @param string $header Header content
+     * @param  string  $header Header content
      */
     public function matchesUserAgent($header): bool
     {
         $pattern = '/(\(|\[|;[[:space:]])('
-            . addcslashes($this->regex, '/')
-            . ')(;|\]|\))/i';
+            .addcslashes($this->regex, '/')
+            .')(;|\]|\))/i';
 
         return (bool) preg_match($pattern, $header);
     }

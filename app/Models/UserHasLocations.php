@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserHasLocations extends Model
 {
-
     protected $fillable = ['user_id', 'region_id', 'location_id'];
 
     protected static $_fillable = ['user_id', 'region_id', 'location_id'];
@@ -37,10 +36,9 @@ class UserHasLocations extends Model
      * Create Record
      *
      * @param data
-     *
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_data)
+    public static function createRecord($data, $parent_data)
     {
 
         $record = self::insert($data);
@@ -56,10 +54,9 @@ class UserHasLocations extends Model
      * update Record
      *
      * @param data ,parent_data
-     *
      * @return (mixed)
      */
-    static public function updateRecord($data, $parent_data)
+    public static function updateRecord($data, $parent_data)
     {
         $record = self::insert($data);
 

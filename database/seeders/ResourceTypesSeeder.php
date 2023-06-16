@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\ResourceTypes;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\ResourceTypes;
 
 class ResourceTypesSeeder extends Seeder
 {
@@ -67,7 +67,7 @@ class ResourceTypesSeeder extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -81,20 +81,20 @@ class ResourceTypesSeeder extends Seeder
         $role->givePermissionTo('resource_types_destroy');
 
         ResourceTypes::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'name' => 'Machine',
                 'slug' => 'Machine',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            2 => array(
+            ],
+            2 => [
                 'id' => 2,
                 'name' => 'Doctor',
                 'slug' => 'Doctor',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
         ]);
     }
 }

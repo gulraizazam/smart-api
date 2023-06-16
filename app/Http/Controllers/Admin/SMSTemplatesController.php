@@ -3,19 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
+use App\Http\Controllers\Controller;
 use App\Models\SMSTemplates;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use App\Http\Controllers\Controller;
-use App\Helpers\Filters;
 use Illuminate\Support\Facades\Validator;
 
 class SMSTemplatesController extends Controller
 {
     protected $error;
+
     protected $success;
+
     protected $unauthorized;
 
     public function __construct()
@@ -25,7 +27,6 @@ class SMSTemplatesController extends Controller
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-
     /**
      * Display a listing of Sms Templates.
      *
@@ -33,24 +34,22 @@ class SMSTemplatesController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('sms_templates_manage')) {
+        if (! Gate::allows('sms_templates_manage')) {
             return abort(401);
         }
 
         return view('admin.sms_templates.index');
     }
 
-
     /**
      * Display a listing of Sms Templates.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('sms_templates_manage')) {
+            if (! Gate::allows('sms_templates_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
 
@@ -60,10 +59,10 @@ class SMSTemplatesController extends Controller
 
             $apply_filter = checkFilters($filters, $filename);
 
-            $records = array();
-            $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
 
-            list($orderBy, $order) = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request);
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $SMSTemplates = SMSTemplates::getBulkData($ids);
@@ -79,12 +78,12 @@ class SMSTemplatesController extends Controller
             // Get Total Records
             $iTotalRecords = SMSTemplates::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $SMSTemplates = SMSTemplates::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
-            $records["data"] = $SMSTemplates;
-            $records["permissions"] = [
+            $records['data'] = $SMSTemplates;
+            $records['permissions'] = [
                 'edit' => Gate::allows('sms_templates_edit'),
                 'active' => Gate::allows('sms_templates_active'),
                 'inactive' => Gate::allows('sms_templates_inactive'),
@@ -92,9 +91,9 @@ class SMSTemplatesController extends Controller
             $filters = Filters::all(Auth::User()->id, 'sms_templates');
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
-                'status' => config('constants.status')
+                'status' => config('constants.status'),
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -109,7 +108,6 @@ class SMSTemplatesController extends Controller
         }
     }
 
-
     /**
      * Show the form for creating new Permission.
      *
@@ -117,23 +115,22 @@ class SMSTemplatesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('sms_templates_manage')) {
+        if (! Gate::allows('sms_templates_manage')) {
             return abort(401);
         }
+
         return view('admin.sms_templates.create');
     }
-
 
     /**
      * Store a newly created Sms Templates in storage.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('sms_templates_manage')) {
+            if (! Gate::allows('sms_templates_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -143,17 +140,16 @@ class SMSTemplatesController extends Controller
             if (SMSTemplates::createRecord($request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Validate form fields
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyFields(Request $request)
@@ -164,43 +160,39 @@ class SMSTemplatesController extends Controller
         ]);
     }
 
-
     /**
      * Show data for editing Sms Templates.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         try {
-            if (!Gate::allows('sms_templates_edit')) {
+            if (! Gate::allows('sms_templates_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $sms_template = SMSTemplates::getData($id);
-            if (!$sms_template) {
+            if (! $sms_template) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
 
-            $sms_template->variables=GeneralFunctions::smsTemplateVariables($sms_template->slug);
+            $sms_template->variables = GeneralFunctions::smsTemplateVariables($sms_template->slug);
+
             return ApiHelper::apiResponse($this->success, 'Success', true, $sms_template);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Update Sms Templates in storage.
      *
-     * @param Request $request
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('sms_templates_edit')) {
+            if (! Gate::allows('sms_templates_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -210,30 +202,30 @@ class SMSTemplatesController extends Controller
             if (SMSTemplates::updateRecord($id, $request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Remove Sms Template from storage.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('sms_templates_manage')) {
+            if (! Gate::allows('sms_templates_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $sms_template = SMSTemplates::getData($id);
-            if (!$sms_template) {
-                return ApiHelper::apiResponse($this->success, 'Resource not found.',false);
+            if (! $sms_template) {
+                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
             }
             $sms_template->delete();
+
             return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -243,31 +235,32 @@ class SMSTemplatesController extends Controller
     /**
      * Change status of SMS Template
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request){
+    public function status(Request $request)
+    {
         try {
             $sms_template = SMSTemplates::getData($request->id);
-            if (!$sms_template) {
+            if (! $sms_template) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
             }
             if ($request->status == 0) {
-                if (!Gate::allows('sms_templates_inactive')) {
+                if (! Gate::allows('sms_templates_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                $update=$sms_template->update(['active' => 0]);
+                $update = $sms_template->update(['active' => 0]);
+
                 return ApiHelper::apiResponse($this->success, 'Record has been inactivated successfully.');
             } else {
-                if (!Gate::allows('sms_templates_active')) {
+                if (! Gate::allows('sms_templates_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
-                $update=$sms_template->update(['active' => 1]);
+                $update = $sms_template->update(['active' => 1]);
+
                 return ApiHelper::apiResponse($this->success, 'Record has been activated successfully.');
             }
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
-
 }

@@ -7,11 +7,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Import\Upload;
 
-use PhpMyAdmin\Import\Ajax;
-use PhpMyAdmin\Plugins\UploadInterface;
-
 use function array_key_exists;
 use function function_exists;
+use PhpMyAdmin\Import\Ajax;
+use PhpMyAdmin\Plugins\UploadInterface;
 use function trim;
 
 /**
@@ -34,8 +33,7 @@ class UploadProgress implements UploadInterface
      *
      * This is implementation for upload progress
      *
-     * @param string $id upload id
-     *
+     * @param  string  $id upload id
      * @return array|null
      */
     public static function getUploadStatus($id)

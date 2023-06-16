@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function in_array;
+use function is_string;
 use PhpMyAdmin\Charsets;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\Config\PageSettings;
@@ -30,10 +33,6 @@ use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
 use PhpMyAdmin\Utils\ForeignKey;
 use stdClass;
-
-use function __;
-use function in_array;
-use function is_string;
 use function str_contains;
 
 /**
@@ -42,7 +41,7 @@ use function str_contains;
  */
 class StructureController extends AbstractController
 {
-    /** @var Table  The table object */
+    /** @var Table The table object */
     protected $tableObj;
 
     /** @var CreateAddField */
@@ -149,11 +148,10 @@ class StructureController extends AbstractController
     /**
      * Displays the table structure ('show table' works correct since 3.23.03)
      *
-     * @param array       $columns_with_unique_index Columns with unique index
-     * @param Index|false $primary_index             primary index or false if no one exists
-     * @param array       $fields                    Fields
-     * @param array       $columns_with_index        Columns with index
-     *
+     * @param  array  $columns_with_unique_index Columns with unique index
+     * @param  Index|false  $primary_index             primary index or false if no one exists
+     * @param  array  $fields                    Fields
+     * @param  array  $columns_with_index        Columns with index
      * @return string
      */
     protected function displayStructure(
@@ -203,7 +201,7 @@ class StructureController extends AbstractController
         $extracted_columnspecs = [];
         $collations = [];
         foreach ($fields as &$field) {
-            ++$rownum;
+            $rownum++;
             $columns_list[] = $field['Field'];
 
             $extracted_columnspecs[$rownum] = Util::extractColumnSpec($field['Type']);

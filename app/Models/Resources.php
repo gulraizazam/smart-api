@@ -2,16 +2,13 @@
 
 namespace App\Models;
 
-use App\Helpers\Filters;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Config;
-use App\Models\AuditTrails;
-use Auth;
-use Illuminate\Support\Facades\DB;
 use App\Helpers\ACL;
-use phpDocumentor\Reflection\Types\Self_;
+use App\Helpers\Filters;
+use Auth;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class Resources extends BaseModal
 {
@@ -26,48 +23,41 @@ class Resources extends BaseModal
     protected static $_table = 'resources';
 
     protected $casts = [
-        'created_at' => 'datetime:F d,Y h:i A'
+        'created_at' => 'datetime:F d,Y h:i A',
     ];
 
     /**
      * Get minTime of resource rota days with respect to doctor and machine
-     * @param $location_id
-     * @param $doctor_id
-     * @param $machine_id
-     * @param $start
-     * @param $end
+     *
      * @return mixed
      */
     public static function getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end)
     {
-        return self::join("resource_has_rota", "resources.id", "=", "resource_has_rota.resource_id")
-            ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_days.resource_has_rota_id")
-            ->where("resource_has_rota.location_id", "=", $location_id)
-            ->where("resources.external_id", "=", $doctor_id)
-            ->orWhere("resource_has_rota.resource_id", "=", $machine_id)
-            ->where("resource_has_rota.resource_type_id", "=", config("constants.resource_room_type_id"))
-            ->where("resource_has_rota_days.date", ">", $start)
-            ->where("resource_has_rota_days.date", "<", $end)
-            ->min(DB::raw("time(resource_has_rota_days.start_timestamp)"));
+        return self::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
+            ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_days.resource_has_rota_id')
+            ->where('resource_has_rota.location_id', '=', $location_id)
+            ->where('resources.external_id', '=', $doctor_id)
+            ->orWhere('resource_has_rota.resource_id', '=', $machine_id)
+            ->where('resource_has_rota.resource_type_id', '=', config('constants.resource_room_type_id'))
+            ->where('resource_has_rota_days.date', '>', $start)
+            ->where('resource_has_rota_days.date', '<', $end)
+            ->min(DB::raw('time(resource_has_rota_days.start_timestamp)'));
     }
 
     /**
      * get MinRota time for consulting appointment
-     * @param $location_id
-     * @param $doctor_id
-     * @param $start
-     * @param $end
+     *
      * @return mixed
      */
     public static function getMinTimeWithDr($location_id, $doctor_id, $start, $end)
     {
-        return self::join("resource_has_rota", "resources.id", "=", "resource_has_rota.resource_id")
-            ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_days.resource_has_rota_id")
-            ->where("resource_has_rota.location_id", "=", $location_id)
-            ->where("resources.external_id", "=", $doctor_id)
-            ->where("resource_has_rota_days.date", ">", $start)
-            ->where("resource_has_rota_days.date", "<", $end)
-            ->min(DB::raw("time(resource_has_rota_days.start_timestamp)"));
+        return self::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
+            ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_days.resource_has_rota_id')
+            ->where('resource_has_rota.location_id', '=', $location_id)
+            ->where('resources.external_id', '=', $doctor_id)
+            ->where('resource_has_rota_days.date', '>', $start)
+            ->where('resource_has_rota_days.date', '<', $end)
+            ->min(DB::raw('time(resource_has_rota_days.start_timestamp)'));
     }
 
     /*
@@ -104,42 +94,43 @@ class Resources extends BaseModal
 
     public static function getResourceType($slug)
     {
-        return ResourceTypes::where("slug", 'like', $slug)->value('id');
+        return ResourceTypes::where('slug', 'like', $slug)->value('id');
     }
 
     public static function getResourceWithRotas($resource_id)
     {
         $where = [];
-        $where[] = array("id", "=", $resource_id);
-        $where[] = array("account_id", "=", Auth::User()->account_id);
-        return self::where($where)->with("doctor_rotas")->get();
+        $where[] = ['id', '=', $resource_id];
+        $where[] = ['account_id', '=', Auth::User()->account_id];
+
+        return self::where($where)->with('doctor_rotas')->get();
     }
 
     /**
-     * @param Request $request (doctor_id, started_time, end_time)
+     * @param  Request  $request (doctor_id, started_time, end_time)
      * @return bool
      */
     public static function checkDoctorAvailbility(Request $request)
     {
         if (
-            $request->get("doctor_id")
-            && $request->get("start")
-            && $request->get("end")
+            $request->get('doctor_id')
+            && $request->get('start')
+            && $request->get('end')
         ) {
 
-            $data["started_time"] = \Carbon\Carbon::parse($request->get("start"))->format("Y-m-d H:i:s");
-            $data["ended_time"] = \Carbon\Carbon::parse($request->get("end"))->format("Y-m-d H:i:s");
+            $data['started_time'] = \Carbon\Carbon::parse($request->get('start'))->format('Y-m-d H:i:s');
+            $data['ended_time'] = \Carbon\Carbon::parse($request->get('end'))->format('Y-m-d H:i:s');
         } else {
             return false;
         }
-        $start_for_break_check = \Carbon\Carbon::parse($request->get("start"))->format("H:i");
-        $end_for_break_check = \Carbon\Carbon::parse($request->get("end"))->format("H:i");
+        $start_for_break_check = \Carbon\Carbon::parse($request->get('start'))->format('H:i');
+        $end_for_break_check = \Carbon\Carbon::parse($request->get('end'))->format('H:i');
 
-        $record = self::join("resource_has_rota", "resources.id", "=", "resource_has_rota.resource_id")
-            ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
-            ->where("resources.external_id", "=", $request->get("doctor_id"))
-            ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
-            ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"])
+        $record = self::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
+            ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
+            ->where('resources.external_id', '=', $request->get('doctor_id'))
+            ->where('resource_has_rota_days.start_timestamp', '<=', $data['started_time'])
+            ->where('resource_has_rota_days.end_timestamp', '>=', $data['ended_time'])
             ->get()->toArray();
         if ($record) {
             if ($record[0]['start_time']) {
@@ -172,16 +163,16 @@ class Resources extends BaseModal
     public static function checkingDoctorAvailbility($doctor_id, $start, $end)
     {
 
-        $data["started_time"] = $start;
-        $data["ended_time"] = $end;
+        $data['started_time'] = $start;
+        $data['ended_time'] = $end;
 
-        $start_for_break_check = \Carbon\Carbon::parse($start)->format("H:i");
-        $end_for_break_check = \Carbon\Carbon::parse($end)->format("H:i");
+        $start_for_break_check = \Carbon\Carbon::parse($start)->format('H:i');
+        $end_for_break_check = \Carbon\Carbon::parse($end)->format('H:i');
 
-        $record = self::join("resource_has_rota", "resources.id", "=", "resource_has_rota.resource_id")
-            ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
-            ->where("resources.external_id", "=", $doctor_id)
-            ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
+        $record = self::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
+            ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
+            ->where('resources.external_id', '=', $doctor_id)
+            ->where('resource_has_rota_days.start_timestamp', '<=', $data['started_time'])
            // ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"]) /*No Actually if start time exist in rota we'll create its treatment*/
             ->first();
 
@@ -215,39 +206,41 @@ class Resources extends BaseModal
 
     /**
      * is Room has rota in this time slot
-     * @param Request $request (resource_id, started_time, end_time
+     *
+     * @param  Request  $request (resource_id, started_time, end_time
      * @return bool
      */
     public static function checkRoomAvailbility(Request $request)
     {
         if (
-            $request->get("resourceId")
-            && $request->get("start")
-            && $request->get("end")
+            $request->get('resourceId')
+            && $request->get('start')
+            && $request->get('end')
         ) {
-            $data["started_time"] = \Carbon\Carbon::parse($request->get("start"))->format("Y-m-d H:i:s");
-            $data["ended_time"] = \Carbon\Carbon::parse($request->get("end"))->format("Y-m-d H:i:s");
+            $data['started_time'] = \Carbon\Carbon::parse($request->get('start'))->format('Y-m-d H:i:s');
+            $data['ended_time'] = \Carbon\Carbon::parse($request->get('end'))->format('Y-m-d H:i:s');
 
         } else {
             return false;
         }
-        $record = self::join("resource_has_rota", "resource_id", "=", "resource_has_rota.resource_id")
-            ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
-            ->where("resources.id", "=", $request->get("resourceId"))
-            ->where("resource_has_rota.resource_id", "=", $request->get("resourceId"))
-            ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
-            ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"])
+        $record = self::join('resource_has_rota', 'resource_id', '=', 'resource_has_rota.resource_id')
+            ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
+            ->where('resources.id', '=', $request->get('resourceId'))
+            ->where('resource_has_rota.resource_id', '=', $request->get('resourceId'))
+            ->where('resource_has_rota_days.start_timestamp', '<=', $data['started_time'])
+            ->where('resource_has_rota_days.end_timestamp', '>=', $data['ended_time'])
             ->get()->toArray();
-        if ($record)
+        if ($record) {
             return $record;
-        else
+        } else {
             return false;
+        }
     }
-
 
     /**
      * is Room has rota in this time slot
-     * @param Request $request (resource_id, started_time, end_time
+     *
+     * @param  Request  $request (resource_id, started_time, end_time
      * @return bool
      */
     public static function checkingRoomAvailbility($resource_id, $start, $end)
@@ -257,95 +250,99 @@ class Resources extends BaseModal
             && $start
             && $end
         ) {
-            $data["started_time"] = \Carbon\Carbon::parse($start)->format("Y-m-d H:i:s");
-            $data["ended_time"] = \Carbon\Carbon::parse($end)->format("Y-m-d H:i:s");
+            $data['started_time'] = \Carbon\Carbon::parse($start)->format('Y-m-d H:i:s');
+            $data['ended_time'] = \Carbon\Carbon::parse($end)->format('Y-m-d H:i:s');
 
         } else {
             return false;
         }
-        return self::join("resource_has_rota", "resource_id", "=", "resource_has_rota.resource_id")
-            ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
-            ->where("resources.id", "=", $resource_id)
-            ->where("resource_has_rota.resource_id", "=", $resource_id)
-            ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
-            ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"])
+
+        return self::join('resource_has_rota', 'resource_id', '=', 'resource_has_rota.resource_id')
+            ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
+            ->where('resources.id', '=', $resource_id)
+            ->where('resource_has_rota.resource_id', '=', $resource_id)
+            ->where('resource_has_rota_days.start_timestamp', '<=', $data['started_time'])
+            ->where('resource_has_rota_days.end_timestamp', '>=', $data['ended_time'])
             ->exists();
     }
 
-
     /**
      * get doctor rotoas
-     * @param $doctor_id
+     *
      * @return mixed
      */
     public static function getDoctorWithRotas($location_id, $doctor_id, $start_date, $end_date)
     {
         $where = [];
-        $where[] = array("external_id", "=", $doctor_id);
-        $where[] = array("resource_type_id", "=", self::getResourceType("doctor"));
-        $where[] = array("account_id", "=", Auth::User()->account_id);
-        return self::where($where)->with(["doctor_rotas" => function ($query) use ($location_id,$start_date, $end_date) {
-            $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
-            $query->where("resource_has_rota.location_id", $location_id);
-            $query->where("resource_has_rota.is_consultancy", '1');
-            $query->where("resource_has_rota.active", '1');
+        $where[] = ['external_id', '=', $doctor_id];
+        $where[] = ['resource_type_id', '=', self::getResourceType('doctor')];
+        $where[] = ['account_id', '=', Auth::User()->account_id];
+
+        return self::where($where)->with(['doctor_rotas' => function ($query) use ($location_id, $start_date, $end_date) {
+            $query->whereBetween('resource_has_rota_days.date', [$start_date, $end_date]);
+            $query->where('resource_has_rota.location_id', $location_id);
+            $query->where('resource_has_rota.is_consultancy', '1');
+            $query->where('resource_has_rota.active', '1');
         }])->get();
     }
+
     public static function getRoomsWithRotas()
     {
         $where = [];
-        $where[] = array("resource_type_id", "=", self::getResourceType("room"));
-        $where[] = array("account_id", "=", Auth::User()->account_id);
-        return self::where($where)->with("rotas")->get();
+        $where[] = ['resource_type_id', '=', self::getResourceType('room')];
+        $where[] = ['account_id', '=', Auth::User()->account_id];
+
+        return self::where($where)->with('rotas')->get();
     }
 
     public static function getRoomsResourceRotaWithoutDays($location_id)
     {
         $account_id = Auth::User()->account_id;
-        $resource_type_id = self::getResourceType("Machine");
+        $resource_type_id = self::getResourceType('Machine');
         $location_id = $location_id;
         $resources = DB::select(DB::raw("SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id=locations.id WHERE resources.account_id = '$account_id' AND resources.resource_type_id ='$resource_type_id'  AND resources.location_id ='$location_id' "));
-        $resources_array = array();
+        $resources_array = [];
         foreach ($resources as $r) {
             $r = $r->id;
-            $resources_array[] = Resources::where('id', '=', $r)->with("resource_rota")->first();
+            $resources_array[] = Resources::where('id', '=', $r)->with('resource_rota')->first();
 
         }
+
         return $resources_array;
         //return self::join('resources','locations.id  resources.location_id','=','resources.location_id')->where($where)->select('resources.*')->with("resource_rota")->get();
     }
 
-
     /**
      * get machines resources without rota days
-     * @param $location_id
-     * @param $machine_id
+     *
      * @return array
      */
     public static function getMachinesResourcesRotaWithoutDays($location_id, $machine_id)
     {
         $account_id = Auth::User()->account_id;
-        $resource_type_id = self::getResourceType("Machine");
+        $resource_type_id = self::getResourceType('Machine');
         $resources = DB::select(DB::raw("SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id=locations.id WHERE resources.account_id = '$account_id' AND resources.id = '$machine_id' AND resources.resource_type_id ='$resource_type_id'  AND resources.location_id ='$location_id' "));
-        $resources_array = array();
+        $resources_array = [];
         foreach ($resources as $r) {
             $r = $r->id;
-            $resources_array[] = Resources::where('id', '=', $r)->with("resource_rota")->first();
+            $resources_array[] = Resources::where('id', '=', $r)->with('resource_rota')->first();
 
         }
+
         return $resources_array;
     }
 
     public static function getRoomsWithRotasWithSpecificDate($start_date, $end_date, $range = false)
     {
         $where = [];
-        $where[] = array("resource_type_id", "=", self::getResourceType("room"));
-        $where[] = array("account_id", "=", Auth::User()->account_id);
-        return self::where($where)->with(["rotas" => function ($query) use ($start_date, $end_date, $range) {
+        $where[] = ['resource_type_id', '=', self::getResourceType('room')];
+        $where[] = ['account_id', '=', Auth::User()->account_id];
+
+        return self::where($where)->with(['rotas' => function ($query) use ($start_date, $end_date, $range) {
             if ($range) {
-                $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
+                $query->whereBetween('resource_has_rota_days.date', [$start_date, $end_date]);
             } else {
-                $query->where("resource_has_rota_days.date", "=", $start_date);
+                $query->where('resource_has_rota_days.date', '=', $start_date);
             }
         }])->get();
     }
@@ -353,20 +350,21 @@ class Resources extends BaseModal
     public static function getDoctorWithRotasWithSpecificDate($location_id, $doctor_id, $start_date, $end_date)
     {
         $where = [];
-        $where[] = array("external_id", "=", $doctor_id);
-        $where[] = array("resource_type_id", "=", self::getResourceType("doctor"));
-        $where[] = array("account_id", "=", Auth::User()->account_id);
-        return self::where($where)->with(["doctor_rotas" => function ($query) use ($location_id, $start_date, $end_date) {
-            $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
-            $query->where("resource_has_rota.location_id", $location_id);
-            $query->where("resource_has_rota.is_treatment", '1');
-            $query->where("resource_has_rota.active", '1');
+        $where[] = ['external_id', '=', $doctor_id];
+        $where[] = ['resource_type_id', '=', self::getResourceType('doctor')];
+        $where[] = ['account_id', '=', Auth::User()->account_id];
+
+        return self::where($where)->with(['doctor_rotas' => function ($query) use ($location_id, $start_date, $end_date) {
+            $query->whereBetween('resource_has_rota_days.date', [$start_date, $end_date]);
+            $query->where('resource_has_rota.location_id', $location_id);
+            $query->where('resource_has_rota.is_treatment', '1');
+            $query->where('resource_has_rota.active', '1');
         }])->get();
     }
 
     public static function getDoctorRotaHasDay($start_date, $doctor_id)
     {
-        $resouce = self::where(array('external_id' => $doctor_id))->first();
+        $resouce = self::where(['external_id' => $doctor_id])->first();
 
         if ($resouce) {
             $record = ResourceHasRota::join('resource_has_rota_days', 'resource_has_rota_days.resource_has_rota_id', '=', 'resource_has_rota.id')
@@ -376,28 +374,28 @@ class Resources extends BaseModal
                 ->first();
 
             if ($record) {
-                return array(
+                return [
                     'resource_id' => $resouce->id,
                     'resource_has_rota_day_id' => $record->id,
                     'resource' => $record,
                     'resource_has_rota_day' => $record,
-                );
+                ];
             } else {
-                return array(
+                return [
                     'resource_id' => $resouce->id,
                     'resource_has_rota_day_id' => null,
                     'resource' => $record,
                     'resource_has_rota_day' => null,
-                );
+                ];
             }
         }
 
-        return array(
+        return [
             'resource_id' => null,
             'resource_has_rota_day_id' => null,
             'resource' => null,
             'resource_has_rota_day' => null,
-        );
+        ];
     }
 
     public static function getResourceRotaHasDay($start_date, $resource_id)
@@ -409,15 +407,15 @@ class Resources extends BaseModal
             ->first();
 
         if ($record) {
-            return array(
+            return [
                 'resource_has_rota_day_id' => $record->id,
                 'resource_has_rota_day' => $record,
-            );
+            ];
         } else {
-            return array(
+            return [
                 'resource_has_rota_day_id' => null,
                 'resource_has_rota_day' => null,
-            );
+            ];
         }
     }
 
@@ -445,20 +443,20 @@ class Resources extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($skip_ids = false, $include_ids = false)
+    public static function getActiveSorted($skip_ids = false, $include_ids = false)
     {
-        if ($skip_ids && !is_array($skip_ids)) {
-            $skip_ids = array($skip_ids);
+        if ($skip_ids && ! is_array($skip_ids)) {
+            $skip_ids = [$skip_ids];
         }
-        if ($include_ids && !is_array($include_ids)) {
-            $include_ids = array($include_ids);
+        if ($include_ids && ! is_array($include_ids)) {
+            $include_ids = [$include_ids];
         }
 
         if ($skip_ids && $include_ids) {
             return self::where(['active' => 1])->whereIn('id', $include_ids)->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
-        } else if ($skip_ids) {
+        } elseif ($skip_ids) {
             return self::where(['active' => 1])->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
-        } else if ($include_ids) {
+        } elseif ($include_ids) {
             return self::where(['active' => 1])->whereIn('id', $include_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
         } else {
             return self::where(['active' => 1])->OrderBy('name', 'asc')->get()->pluck('name', 'id');
@@ -468,14 +466,12 @@ class Resources extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::resources_filters($request, $account_id, $apply_filter);
+        $where = self::resources_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
             $count = Resources::where($where)
@@ -486,24 +482,23 @@ class Resources extends BaseModal
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->count();
         }
+
         return $count;
     }
 
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::resources_filters($request, $account_id, $apply_filter);
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         if ($request->has('sort')) {
             Filters::put(Auth::User()->id, 'resources', 'order_by', $orderBy);
@@ -523,197 +518,197 @@ class Resources extends BaseModal
             }
         }
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_resources')) {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
                     ->whereIn('location_id', ACL::getUserCentres())
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderby($orderBy, $order)
                     ->get();
-            }else{
+            } else {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
                     ->whereIn('location_id', ACL::getUserCentres())
-                    ->where('resources.active',1)
+                    ->where('resources.active', 1)
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderby($orderBy, $order)
                     ->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_resources')) {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderby($orderBy, $order)
                     ->get();
-            }else{ 
+            } else {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
-                ->where('resources.active',1)
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
+                    ->where('resources.active', 1)
+                    ->limit($iDisplayLength)
+                    ->offset($iDisplayStart)
+                    ->orderby($orderBy, $order)
+                    ->get();
             }
         }
     }
 
-    static public function resources_filters($request, $account_id, $apply_filter)
+    public static function resources_filters($request, $account_id, $apply_filter)
     {
-        $where = array();
+        $where = [];
 
         $filename = 'resources';
         $filters = getFilters($request->all());
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'resources', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'resources', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'resources', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'resources', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'resources', 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'resources', 'name').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'resource_type_id')) {
-            $where[] = array(
+            $where[] = [
                 'resource_type_id',
                 '=',
-                $filters['resource_type_id']
-            );
+                $filters['resource_type_id'],
+            ];
             Filters::put(Auth::User()->id, 'resources', 'resource_type_id', $filters['resource_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'resource_type_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'resource_type_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'resource_type_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'resources', 'resource_type_id')
-                    );
+                        Filters::get(Auth::User()->id, 'resources', 'resource_type_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'location_id')) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $filters['location_id']
-            );
+                $filters['location_id'],
+            ];
             Filters::put(Auth::User()->id, 'resources', 'location_id', $filters['location_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'location_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'location_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'location_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'resources', 'location_id')
-                    );
+                        Filters::get(Auth::User()->id, 'resources', 'location_id'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'machine_type_id')) {
-            $where[] = array(
+            $where[] = [
                 'machine_type_id',
                 '=',
-                $filters['machine_type_id']
-            );
+                $filters['machine_type_id'],
+            ];
             Filters::put(Auth::User()->id, 'resources', 'machine_type_id', $filters['machine_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'machine_type_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'machine_type_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'machine_type_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'resources', 'machine_type_id')
-                    );
+                        Filters::get(Auth::User()->id, 'resources', 'machine_type_id'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
+            $where[] = [
                 'resources.created_at',
                 '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
-            Filters::put(Auth::User()->id, 'resources', 'created_from', $filters['created_from'] . ' 00:00:00');
+                $filters['created_from'].' 00:00:00',
+            ];
+            Filters::put(Auth::User()->id, 'resources', 'created_from', $filters['created_from'].' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'created_from');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'created_from')) {
-                    $where[] = array(
+                    $where[] = [
                         'resources.created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, 'resources', 'created_from') . ' 00:00:00'
-                    );
+                        Filters::get(Auth::User()->id, 'resources', 'created_from').' 00:00:00',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
+            $where[] = [
                 'resources.created_at',
                 '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
-            Filters::put(Auth::User()->id, 'resources', 'created_to', $filters['created_to'] . ' 23:59:59');
+                $filters['created_to'].' 23:59:59',
+            ];
+            Filters::put(Auth::User()->id, 'resources', 'created_to', $filters['created_to'].' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'created_to');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'created_to')) {
-                    $where[] = array(
+                    $where[] = [
                         'resources.created_at',
                         '<=',
-                        Filters::get(Auth::User()->id, 'resources', 'created_to') . ' 23:59:59'
-                    );
+                        Filters::get(Auth::User()->id, 'resources', 'created_to').' 23:59:59',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'resources.active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'resources', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -721,16 +716,15 @@ class Resources extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'resources', 'status') == 0 || Filters::get(Auth::user()->id, 'resources', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'resources', 'status') != null) {
-                        $where[] = array(
+                        $where[] = [
                             'resources.active',
                             '=',
-                            Filters::get(Auth::user()->id, 'resources', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'resources', 'status'),
+                        ];
                     }
                 }
             }
         }
-
 
         return $where;
     }
@@ -738,11 +732,10 @@ class Resources extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
@@ -750,11 +743,10 @@ class Resources extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
 
         $data = $request->all();
@@ -774,16 +766,16 @@ class Resources extends BaseModal
      * Inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
 
         $resource = Resources::getData($id);
 
-        if (!$resource) {
+        if (! $resource) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.resources.index');
         }
 
@@ -800,15 +792,14 @@ class Resources extends BaseModal
      * Create Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function activeRecord($id)
+    public static function activeRecord($id)
     {
 
         $resource = Resources::getData($id);
 
-        if (!$resource) {
+        if (! $resource) {
             return false;
         }
 
@@ -823,18 +814,17 @@ class Resources extends BaseModal
      * delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function deleteRecord($id)
+    public static function deleteRecord($id)
     {
 
         $resource = Resources::getData($id);
 
-        if (!$resource) {
+        if (! $resource) {
             return [
-              'status' => false,
-              'message' => 'Resource not found.',
+                'status' => false,
+                'message' => 'Resource not found.',
             ];
         }
 
@@ -860,11 +850,10 @@ class Resources extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (Resources::find($id))->toArray();
 
@@ -876,10 +865,10 @@ class Resources extends BaseModal
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -893,15 +882,13 @@ class Resources extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
-     * @param
-     *
+     * @param  (int)  $id
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         if (
-        ResourceHasRota::where(['resource_id' => $id])->count()
+            ResourceHasRota::where(['resource_id' => $id])->count()
         ) {
             return true;
         }
@@ -911,9 +898,10 @@ class Resources extends BaseModal
 
     /**
      * get resource
+     *
      * @return (mixed)
      */
-    static public function getresource()
+    public static function getresource()
     {
         return self::get()->pluck('name', 'id');
     }
@@ -922,18 +910,14 @@ class Resources extends BaseModal
      * get machine against location id in rota management
      *
      * @param location id and account id
-     * @param
-     *
      * @return (mixed)
      */
-    static public function getActiveOnly($locationId = false, $account_id = false)
+    public static function getActiveOnly($locationId = false, $account_id = false)
     {
         return self::where([
             ['location_id', '=', $locationId],
             ['active', '=', 1],
-            ['external_id', '=', 0]
+            ['external_id', '=', 0],
         ])->get();
     }
-
-
 }

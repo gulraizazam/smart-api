@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table\Structure;
 
+use function __;
+use function count;
+use function implode;
+use function in_array;
+use function is_array;
+use function mb_strpos;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Controllers\Table\AbstractController;
 use PhpMyAdmin\Controllers\Table\StructureController;
@@ -18,19 +24,12 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function count;
-use function implode;
-use function in_array;
-use function is_array;
-use function mb_strpos;
 use function sprintf;
 use function strlen;
 
 final class SaveController extends AbstractController
 {
-    /** @var Table  The table object */
+    /** @var Table The table object */
     private $tableObj;
 
     /** @var Relation */
@@ -98,7 +97,7 @@ final class SaveController extends AbstractController
                 continue;
             }
 
-            $changes[] = 'CHANGE ' . Table::generateAlter(
+            $changes[] = 'CHANGE '.Table::generateAlter(
                 Util::getValueByKey($_POST, "field_orig.${i}", ''),
                 $_POST['field_name'][$i],
                 $_POST['field_type'][$i],
@@ -151,14 +150,14 @@ final class SaveController extends AbstractController
             if (! $this->dbi->selectDb($this->db)) {
                 Generator::mysqlDie(
                     $this->dbi->getError(),
-                    'USE ' . Util::backquote($this->db) . ';',
+                    'USE '.Util::backquote($this->db).';',
                     false,
                     $err_url
                 );
             }
 
-            $sql_query = 'ALTER TABLE ' . Util::backquote($this->table) . ' ';
-            $sql_query .= implode(', ', $changes) . $key_query;
+            $sql_query = 'ALTER TABLE '.Util::backquote($this->table).' ';
+            $sql_query .= implode(', ', $changes).$key_query;
             if (isset($_POST['online_transaction'])) {
                 $sql_query .= ', ALGORITHM=INPLACE, LOCK=NONE';
             }
@@ -185,15 +184,15 @@ final class SaveController extends AbstractController
                     && $_POST['field_collation'][$i] !== $_POST['field_collation_orig'][$i]
                     && ! in_array($_POST['field_orig'][$i], $columns_with_index)
                 ) {
-                    $secondary_query = 'ALTER TABLE ' . Util::backquote($this->table)
-                        . ' CHANGE ' . Util::backquote($_POST['field_orig'][$i])
-                        . ' ' . Util::backquote($_POST['field_orig'][$i])
-                        . ' BLOB';
+                    $secondary_query = 'ALTER TABLE '.Util::backquote($this->table)
+                        .' CHANGE '.Util::backquote($_POST['field_orig'][$i])
+                        .' '.Util::backquote($_POST['field_orig'][$i])
+                        .' BLOB';
 
                     if (isset($_POST['field_virtuality'][$i], $_POST['field_expression'][$i])) {
                         if ($_POST['field_virtuality'][$i]) {
-                            $secondary_query .= ' AS (' . $_POST['field_expression'][$i] . ') '
-                                . $_POST['field_virtuality'][$i];
+                            $secondary_query .= ' AS ('.$_POST['field_expression'][$i].') '
+                                .$_POST['field_virtuality'][$i];
                         }
                     }
 
@@ -242,7 +241,7 @@ final class SaveController extends AbstractController
                         continue;
                     }
 
-                    $changes_revert[] = 'CHANGE ' . Table::generateAlter(
+                    $changes_revert[] = 'CHANGE '.Table::generateAlter(
                         Util::getValueByKey($_POST, "field_orig.${i}", ''),
                         $_POST['field_name'][$i],
                         $_POST['field_type_orig'][$i],
@@ -260,9 +259,9 @@ final class SaveController extends AbstractController
                     );
                 }
 
-                $revert_query = 'ALTER TABLE ' . Util::backquote($this->table)
-                    . ' ';
-                $revert_query .= implode(', ', $changes_revert) . '';
+                $revert_query = 'ALTER TABLE '.Util::backquote($this->table)
+                    .' ';
+                $revert_query .= implode(', ', $changes_revert).'';
                 $revert_query .= ';';
 
                 // Column reverted back to original
@@ -270,7 +269,7 @@ final class SaveController extends AbstractController
 
                 $this->response->setRequestStatus(false);
                 $message = Message::rawError(
-                    __('Query error') . ':<br>' . $orig_error
+                    __('Query error').':<br>'.$orig_error
                 );
                 $this->response->addHTML(
                     Generator::getMessage($message, $sql_query, 'error')
@@ -316,7 +315,7 @@ final class SaveController extends AbstractController
     /**
      * Verifies if some elements of a column have changed
      *
-     * @param int $i column index in the request
+     * @param  int  $i column index in the request
      */
     private function columnNeedsAlterTable($i): bool
     {
@@ -347,7 +346,7 @@ final class SaveController extends AbstractController
             'field_type',
         ];
         foreach ($fields as $field) {
-            if ($_POST[$field][$i] != $_POST[$field . '_orig'][$i]) {
+            if ($_POST[$field][$i] != $_POST[$field.'_orig'][$i]) {
                 return true;
             }
         }
@@ -358,7 +357,7 @@ final class SaveController extends AbstractController
     /**
      * Adjusts the Privileges for all the columns whose names have changed
      *
-     * @param array $adjust_privileges assoc array of old col names mapped to new
+     * @param  array  $adjust_privileges assoc array of old col names mapped to new
      *                                 cols
      */
     private function adjustColumnPrivileges(array $adjust_privileges): bool

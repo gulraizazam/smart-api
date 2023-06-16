@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Import;
 
-use PhpMyAdmin\Core;
-
 use function function_exists;
 use function ini_get;
 use function json_encode;
+use PhpMyAdmin\Core;
 use function ucwords;
 use function uniqid;
 
@@ -49,10 +48,10 @@ final class Ajax
 
         // select available plugin
         foreach ($plugins as $plugin) {
-            $check = $plugin . 'Check';
+            $check = $plugin.'Check';
 
             if (self::$check()) {
-                $upload_class = 'PhpMyAdmin\Plugins\Import\Upload\Upload' . ucwords($plugin);
+                $upload_class = 'PhpMyAdmin\Plugins\Import\Upload\Upload'.ucwords($plugin);
                 $_SESSION[$SESSION_KEY]['handler'] = $upload_class;
                 break;
             }
@@ -97,7 +96,7 @@ final class Ajax
      * The function outputs json encoded status of uploaded.
      * It uses PMA_getUploadStatus, which is defined in plugin's file.
      *
-     * @param string $id ID of transfer, usually $upload_id
+     * @param  string  $id ID of transfer, usually $upload_id
      */
     public static function status($id): void
     {

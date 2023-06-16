@@ -7,10 +7,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Config\Forms;
 
+use function is_int;
 use PhpMyAdmin\Config\ConfigFile;
 use PhpMyAdmin\Config\FormDisplay;
-
-use function is_int;
 
 /**
  * Base form for user preferences
@@ -18,8 +17,8 @@ use function is_int;
 abstract class BaseForm extends FormDisplay
 {
     /**
-     * @param ConfigFile $cf       Config file instance
-     * @param int|null   $serverId 0 if new server, validation; >= 1 if editing a server
+     * @param  ConfigFile  $cf       Config file instance
+     * @param  int|null  $serverId 0 if new server, validation; >= 1 if editing a server
      */
     final public function __construct(ConfigFile $cf, $serverId = null)
     {

@@ -16,12 +16,9 @@ use App\Models\Resources;
 use App\Models\ResourceTypes;
 use App\Models\RoleHasUsers;
 use App\Models\Services;
-use App\Models\UserTypes;
 use App\Models\User;
-use Facade\FlareClient\Api;
-use Illuminate\Contracts\Encryption\DecryptException;
+use App\Models\UserTypes;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -31,9 +28,10 @@ use Spatie\Permission\Models\Role;
 
 class DoctorsController extends Controller
 {
-
     public $success;
+
     public $error;
+
     public $unauthorized;
 
     public function __construct()
@@ -48,7 +46,7 @@ class DoctorsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('doctors_manage')) {
+        if (! Gate::allows('doctors_manage')) {
             return abort(401);
         }
 
@@ -58,13 +56,12 @@ class DoctorsController extends Controller
     /**
      * Display a User As Doctor  in datatables.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('doctors_manage')) {
+            if (! Gate::allows('doctors_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
 
@@ -77,14 +74,14 @@ class DoctorsController extends Controller
             $records = [];
             $records['data'] = [];
 
-            list($orderBy, $order) = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request);
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $users = User::getBulkData($ids);
                 if ($users) {
                     foreach ($users as $user) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!User::isExists($user->id, Auth::User()->account_id)) {
+                        if (! User::isExists($user->id, Auth::User()->account_id)) {
                             $user->delete();
                         }
                     }
@@ -93,23 +90,23 @@ class DoctorsController extends Controller
                 $records['message'] = 'Records has been deleted successfully!';
             }
             $filterConditions = $this->getFilters($request, $apply_filter);
-            if (!$filterConditions->get('status')) {
+            if (! $filterConditions->get('status')) {
                 return ApiHelper::apiException($filterConditions->get('data'));
             }
 
             $where = $filterConditions->get('data');
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_doctors')) {
                 $iTotalRecords = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('role_has_users.user_id')
-                ->when(count($where), fn($q) => $q->where($where))->get();
-            }else{
+                    ->groupBy('role_has_users.user_id')
+                    ->when(count($where), fn ($q) => $q->where($where))->get();
+            } else {
                 $iTotalRecords = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('role_has_users.user_id')
-                ->when(count($where), fn($q) => $q->where($where)->where('active',1))->get();
+                    ->groupBy('role_has_users.user_id')
+                    ->when(count($where), fn ($q) => $q->where($where)->where('active', 1))->get();
             }
             $iTotalRecords = $iTotalRecords->count();
-                
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
             if ($orderBy != '') {
                 if ($orderBy == 'created_at') {
                     $orderBy = 'users.created_at';
@@ -135,24 +132,24 @@ class DoctorsController extends Controller
                     Filters::put(Auth::User()->id, 'doctors', 'order', $order);
                 }
             }
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_doctors")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_doctors')) {
                 $Users = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('role_has_users.user_id')
-                ->when(count($where), fn($q) => $q->where($where))->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
-            }else{
+                    ->groupBy('role_has_users.user_id')
+                    ->when(count($where), fn ($q) => $q->where($where))->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            } else {
                 $Users = User::leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('role_has_users.user_id')
-                ->when(count($where), fn($q) => $q->where($where)->where('active',1))->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+                    ->groupBy('role_has_users.user_id')
+                    ->when(count($where), fn ($q) => $q->where($where)->where('active', 1))->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }
             foreach ($Users as $user) {
                 $user->roles = $user->user_roles()->pluck('name');
                 $user->phone = GeneralFunctions::contactStatus($user->phone);
-                $user->gender = config('constants.gender_array.' . $user->gender);
+                $user->gender = config('constants.gender_array.'.$user->gender);
                 $user->created = $user->created_at->format('F j,Y h:i A');
             }
 
             $records['data'] = $Users;
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('doctors_edit'),
                 'change_password' => Gate::allows('doctors_change_password'),
                 'active' => Gate::allows('doctors_active'),
@@ -172,7 +169,7 @@ class DoctorsController extends Controller
                 'status' => config('constants.status'),
 
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -180,6 +177,7 @@ class DoctorsController extends Controller
                 'total' => $iTotalRecords,
                 'sort' => $order,
             ];
+
             return ApiHelper::apiDataTable($records);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -191,14 +189,13 @@ class DoctorsController extends Controller
         try {
             $filters = getFilters($request->all());
             $where = [];
-            list($orderBy, $order) = getSortBy($request);
-
+            [$orderBy, $order] = getSortBy($request);
 
             if (hasFilter($filters, 'name')) {
                 $where[] = [
                     'users.name',
                     'like',
-                    '%' . $filters['name'] . '%',
+                    '%'.$filters['name'].'%',
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'name', $filters['name']);
             } else {
@@ -209,7 +206,7 @@ class DoctorsController extends Controller
                         $where[] = [
                             'users.name',
                             'like',
-                            '%' . Filters::get(Auth::User()->id, 'doctors', 'name') . '%',
+                            '%'.Filters::get(Auth::User()->id, 'doctors', 'name').'%',
                         ];
                     }
                 }
@@ -218,7 +215,7 @@ class DoctorsController extends Controller
                 $where[] = [
                     'users.email',
                     'like',
-                    '%' . $filters['email'] . '%',
+                    '%'.$filters['email'].'%',
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'email', $filters['email']);
             } else {
@@ -229,7 +226,7 @@ class DoctorsController extends Controller
                         $where[] = [
                             'users.email',
                             'like',
-                            '%' . Filters::get(Auth::User()->id, 'doctors', 'email') . '%',
+                            '%'.Filters::get(Auth::User()->id, 'doctors', 'email').'%',
                         ];
                     }
                 }
@@ -239,7 +236,7 @@ class DoctorsController extends Controller
                 $where[] = [
                     'users.phone',
                     'like',
-                    '%' . GeneralFunctions::cleanNumber($filters['phone']) . '%',
+                    '%'.GeneralFunctions::cleanNumber($filters['phone']).'%',
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'phone', $filters['phone']);
             } else {
@@ -250,7 +247,7 @@ class DoctorsController extends Controller
                         $where[] = [
                             'users.phone',
                             'like',
-                            '%' . GeneralFunctions::cleanNumber(Filters::get(Auth::User()->id, 'doctors', 'phone')) . '%',
+                            '%'.GeneralFunctions::cleanNumber(Filters::get(Auth::User()->id, 'doctors', 'phone')).'%',
                         ];
                     }
                 }
@@ -315,7 +312,7 @@ class DoctorsController extends Controller
                 $where[] = [
                     'users.created_at',
                     '>=',
-                    $filters['created_from'] . ' 00:00:00',
+                    $filters['created_from'].' 00:00:00',
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'created_from', $filters['created_from']);
             } else {
@@ -327,7 +324,7 @@ class DoctorsController extends Controller
                         $where[] = [
                             'users.created_at',
                             '>=',
-                            Filters::get(Auth::User()->id, 'doctors', 'created_from') . ' 00:00:00',
+                            Filters::get(Auth::User()->id, 'doctors', 'created_from').' 00:00:00',
                         ];
                     }
                 }
@@ -336,7 +333,7 @@ class DoctorsController extends Controller
                 $where[] = [
                     'users.created_at',
                     '<=',
-                    $filters['created_to'] . ' 23:59:59'
+                    $filters['created_to'].' 23:59:59',
                 ];
                 Filters::put(Auth::User()->id, 'doctors', 'created_to', $filters['created_to']);
             } else {
@@ -347,7 +344,7 @@ class DoctorsController extends Controller
                         $where[] = [
                             'users.created_at',
                             '<=',
-                            Filters::get(Auth::User()->id, 'doctors', 'created_to') . ' 23:59:59',
+                            Filters::get(Auth::User()->id, 'doctors', 'created_to').' 23:59:59',
                         ];
                     }
                 }
@@ -373,6 +370,7 @@ class DoctorsController extends Controller
                     }
                 }
             }
+
             return collect(['status' => true, 'message' => null, 'data' => $where]);
         } catch (\Exception $e) {
             return collect(['status' => false, 'message' => null, 'data' => $e]);
@@ -386,7 +384,7 @@ class DoctorsController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('doctors_create')) {
+        if (! Gate::allows('doctors_create')) {
             return abort(401);
         }
         $doctor = new \stdClass();
@@ -419,21 +417,19 @@ class DoctorsController extends Controller
             'user' => $doctor,
             'Services' => $Services,
             'DoctorServices' => $DoctorServices,
-            'roles'  => $roles
+            'roles' => $roles,
         ]);
 
     }
 
-
     /**
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         try {
 
-            if (!Gate::allows('doctors_create')) {
+            if (! Gate::allows('doctors_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
 
@@ -475,19 +471,19 @@ class DoctorsController extends Controller
                 $resource->resource_type_id = $resourcetype_id->id;
                 $resource->external_id = $user->id;
                 $resource->save();
+
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
+
             return ApiHelper::apiResponse($this->error, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Validate form fields.
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyFields(Request $request)
@@ -515,20 +511,20 @@ class DoctorsController extends Controller
     /**
      * Show the form for changing password.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function changePassword($id)
     {
         try {
-            if (!Gate::allows('doctors_change_password')) {
+            if (! Gate::allows('doctors_change_password')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $user = User::getData($id);
-            if (!$user) {
+            if (! $user) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
+
             return ApiHelper::apiResponse($this->success, 'No Record Found!', true, $user);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -538,13 +534,12 @@ class DoctorsController extends Controller
     /**
      * Update User Password in storage or Database.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function savePassword(Request $request)
     {
         try {
-            if (!Gate::allows('doctors_change_password')) {
+            if (! Gate::allows('doctors_change_password')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $data = [];
@@ -560,6 +555,7 @@ class DoctorsController extends Controller
             if ($result) {
                 return ApiHelper::apiResponse($this->success, 'Password has been changed successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Are you mad? what were you trying to do? :@.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -569,13 +565,12 @@ class DoctorsController extends Controller
     /**
      * Show the form for editing User.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
-        if (!Gate::allows('doctors_edit')) {
+        if (! Gate::allows('doctors_edit')) {
             return abort(401);
         }
         $doctor = User::getData($id);
@@ -590,11 +585,11 @@ class DoctorsController extends Controller
 
             $DoctorServices = $doctor->doctor_has_services()->pluck('service_id')->toArray();
 
-            if (!$user_has_locations) {
+            if (! $user_has_locations) {
                 $user_has_locations = [];
             }
 
-            if (!$DoctorServices) {
+            if (! $DoctorServices) {
                 $DoctorServices = [];
             }
 
@@ -622,7 +617,7 @@ class DoctorsController extends Controller
                 'DoctorServices' => $DoctorServices,
                 'Services' => $Services,
                 'roles' => $roles,
-                'user_roles' => $user_roles
+                'user_roles' => $user_roles,
             ]);
 
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -631,23 +626,20 @@ class DoctorsController extends Controller
                 'locations' => $locations,
                 'roles_commissions' => $roles_commissions,
                 'user_has_locations' => $user_has_locations,
-                'user_roles' => $user_roles
+                'user_roles' => $user_roles,
             ]);
         }
     }
 
-
     /**
      * Update Doctor in storage.
      *
-     * @param Request $request
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('doctors_edit')) {
+            if (! Gate::allows('doctors_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyUpdateFields($request, $id);
@@ -685,7 +677,7 @@ class DoctorsController extends Controller
                     }
                 }
                 $resource_doctor = Resources::where('external_id', '=', $user->id)->first();
-                if (!$resource_doctor) {
+                if (! $resource_doctor) {
 
                     $resourcetype_id = ResourceTypes::where('name', '=', 'doctor')->first();
 
@@ -701,28 +693,29 @@ class DoctorsController extends Controller
                     $resource_doctor->name = $request->name;
                     $resource_doctor->save();
                 }
+
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
+
             return ApiHelper::apiResponse($this->error, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Remove Doctor from storage.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse|never
      */
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('doctors_destroy')) {
+            if (! Gate::allows('doctors_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = User::deleteRecord1($id);
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
 
         } catch (\Exception $e) {
@@ -733,19 +726,19 @@ class DoctorsController extends Controller
     /**
      * Display lcoation to add service for doctor.
      *
-     * @param int $id
+     * @param  int  $id
      */
     public function displaylocation($id)
     {
         try {
-            if (!Gate::allows('doctors_allocate')) {
+            if (! Gate::allows('doctors_allocate')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $doctor = User::find($id);
             $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
             $doctor_has_location = DoctorHasLocations::with(['service', 'location.city'])->where('user_id', '=', $doctor->id)->get();
 
-//            return view('admin.doctors.location', compact('doctor', 'location', 'doctor_has_location'));
+            //            return view('admin.doctors.location', compact('doctor', 'location', 'doctor_has_location'));
             return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
                 'doctor' => $doctor,
                 'location' => $location,
@@ -764,12 +757,13 @@ class DoctorsController extends Controller
     public function getservices(Request $request)
     {
         try {
-            if (!Gate::allows('doctors_allocate')) {
+            if (! Gate::allows('doctors_allocate')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $serive = ServiceWidget::generateServiceArrayArray($request, Auth::User()->account_id);
 
             $myarray = ['services' => $serive, 'locaiton_id_1' => $request->id];
+
             return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -778,13 +772,11 @@ class DoctorsController extends Controller
 
     /**
      * save services against location id.
-     *
-     * @param  $request
      */
     public function saveservices(Request $request)
     {
         try {
-            if (!Gate::allows('doctors_allocate')) {
+            if (! Gate::allows('doctors_allocate')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $has_services = '';
@@ -794,56 +786,57 @@ class DoctorsController extends Controller
             $data['user_id'] = $request->doctor_id;
             $data['location_id'] = $myArray[0];
             $data['service_id'] = $myArray[1];
-            $service= Services::where(['id' => $data['service_id']])->first();
+            $service = Services::where(['id' => $data['service_id']])->first();
             $data['end_node'] = $service->end_node;
-            
+
             $checked_service = DoctorHasLocations::where([
                 'location_id' => $myArray[0],
                 'service_id' => $myArray[1],
                 'user_id' => $request->doctor_id,
             ])->count();
             if ($checked_service == '0') {
-                $query = DoctorHasLocations::
-                where([
+                $query = DoctorHasLocations::where([
                     'location_id' => $myArray[0],
                     'user_id' => $request->doctor_id,
                 ]);
                 $checked = $query->with('service')->get();
-                if($checked_service == '0' && count($checked) == '0'){
+                if ($checked_service == '0' && count($checked) == '0') {
                     $has_services = 'new';
                 } else {
-                    foreach($checked->toArray() as $value){
-                        if($value['service']['slug'] == 'all'){
+                    foreach ($checked->toArray() as $value) {
+                        if ($value['service']['slug'] == 'all') {
                             $has_services = 'all';
-                        } elseif($service->parent_id == $value['service']['id']){
+                        } elseif ($service->parent_id == $value['service']['id']) {
                             $has_services = 'parent';
-                        } elseif($service->id == $value['service']['parent_id']){
+                        } elseif ($service->id == $value['service']['parent_id']) {
                             $has_services = 'child';
-                        } else{
+                        } else {
                             $has_services = 'equal';
                         }
                     }
                 }
-                if($has_services == 'new'){
+                if ($has_services == 'new') {
                     $record = DoctorHasLocations::create($data);
-                } elseif($service->slug == 'all'){
+                } elseif ($service->slug == 'all') {
                     $query->delete();
                     $record = DoctorHasLocations::create($data);
-                } elseif($has_services == 'child'){
-                    $query->whereHas('service', fn($q) => $q->where(['parent_id' => $service->id]))->delete();
+                } elseif ($has_services == 'child') {
+                    $query->whereHas('service', fn ($q) => $q->where(['parent_id' => $service->id]))->delete();
                     $record = DoctorHasLocations::create($data);
-                } elseif($has_services == 'equal'){
+                } elseif ($has_services == 'equal') {
                     $record = DoctorHasLocations::create($data);
-                } elseif($has_services == 'all' || $has_services == 'parent'){
+                } elseif ($has_services == 'all' || $has_services == 'parent') {
                     return ApiHelper::apiResponse($this->success, 'Parent Service / All Service already exist!', false);
                 } else {
                     return ApiHelper::apiResponse($this->success, 'Service not found!', false);
                 }
-                $record_location_name = $record->location->city->name . '-' . $record->location->name;
+                $record_location_name = $record->location->city->name.'-'.$record->location->name;
                 $record_service_name = $record->service->name;
                 $myarray = ['record' => $record, 'record_location_name' => $record_location_name, 'record_service_name' => $record_service_name];
+
                 return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
             }
+
             return ApiHelper::apiResponse($this->success, 'Service already exist!', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -858,21 +851,20 @@ class DoctorsController extends Controller
     public function deleteservices(Request $request)
     {
         try {
-            if (!Gate::allows('doctors_allocate')) {
+            if (! Gate::allows('doctors_allocate')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             DoctorHasLocations::find($request->id)->delete();
+
             return ApiHelper::apiResponse($this->success, 'Doctor location has been deleted!', true, ['id' => $request->id]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Validate create form fields.
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyPasswordFields(Request $request)
@@ -890,40 +882,35 @@ class DoctorsController extends Controller
         return $validator = Validator::make($request->all(), $rules, $messages);
     }
 
-
     /**
      * Validate create form fields.
      *
-     * @param Request $request
-     * @param $id
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyUpdateFields(Request $request, $id)
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'email' => 'unique:users,email,' . $id,
+            'email' => 'unique:users,email,'.$id,
             'phone' => 'required',
             'gender' => 'required',
         ]);
     }
 
-
     /**
      * Change status of Record from storage.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request)
     {
         try {
             if ($request->status == 0) {
-                if (!Gate::allows('doctors_inactive')) {
+                if (! Gate::allows('doctors_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
             } elseif ($request->status == 1) {
-                if (!Gate::allows('doctors_active')) {
+                if (! Gate::allows('doctors_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
             }
@@ -931,6 +918,7 @@ class DoctorsController extends Controller
             if ($response) {
                 return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

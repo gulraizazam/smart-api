@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\TwoFactor;
 
-use PhpMyAdmin\Plugins\TwoFactorPlugin;
-
 use function __;
+use PhpMyAdmin\Plugins\TwoFactorPlugin;
 
 /**
  * Simple two-factor authentication auth asking just for confirmation.
