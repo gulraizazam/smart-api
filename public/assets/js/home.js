@@ -764,7 +764,6 @@ function ConsultanciesByStatus(bar) {
 function initDoctorWiseConversion(period, time = ''){
 
     centre_id = $(".doctorwiseconversion").attr('data-id');
-
     $.ajax({
         url: route('admin.dashboard.doctor_wise_conversion'),
         type: 'GET',
@@ -777,7 +776,6 @@ function initDoctorWiseConversion(period, time = ''){
             var categories = response.data.categories;
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
-            console.log('categories',categories);
             jQuery.each( categories, function( index, category ) {
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>"+category.total_arrival+"</td><td>"+category.total_conversion+"</td></tr>";
                

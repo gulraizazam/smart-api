@@ -907,16 +907,30 @@
                                                 onclick="initDoctorWiseConversion('lastmonth');">Last Month</a>
                                             </li>
                                         </ul>
+                                        
                                         <div class="d-none flex-column text-right">
                                             <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
                                             <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
                                         </div>
                                     </div>
+                                   
                                     <div class="row pt-7">
                                         <div class="col-7">
                                             <div id="doc_wise_conversion"></div>
                                         </div>
                                         <div class="row" id="centre_wise_arrival_02">
+                                        <ul class="nav nav-pills nav-fill" role="tablist">
+                                            <li class="nav-item">
+                                                <a class="nav-link active show" data-toggle="tab" href="#m_tabs_5_1">Active</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#m_tabs_5_2">Link</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#m_tabs_5_3">Link</a>
+                                            </li>
+                                           
+                                        </ul>
                                             <div class='table-responsive'>
                                                 <table class='table'>
                                                     <thead>
