@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Setup;
 
-use PhpMyAdmin\Config\Forms\Setup\ServersForm;
-use PhpMyAdmin\Setup\FormProcessing;
-
 use function in_array;
 use function is_numeric;
 use function is_string;
 use function ob_get_clean;
 use function ob_start;
+use PhpMyAdmin\Config\Forms\Setup\ServersForm;
+use PhpMyAdmin\Setup\FormProcessing;
 
 class ServersController extends AbstractController
 {
     /**
-     * @param array $params Request parameters
-     *
+     * @param  array  $params Request parameters
      * @return string HTML
      */
     public function index(array $params): string
@@ -31,7 +29,7 @@ class ServersController extends AbstractController
 
         $pages = $this->getPages();
 
-        $hasServer = $id >= 1 && $this->config->get('Servers/' . $id) !== null;
+        $hasServer = $id >= 1 && $this->config->get('Servers/'.$id) !== null;
 
         if (! $hasServer && $mode !== 'revert' && $mode !== 'edit') {
             $id = 0;
@@ -53,13 +51,13 @@ class ServersController extends AbstractController
     }
 
     /**
-     * @param array $params Request parameters
+     * @param  array  $params Request parameters
      */
     public function destroy(array $params): void
     {
         $id = isset($params['id']) && is_numeric($params['id']) && (int) $params['id'] >= 1 ? (int) $params['id'] : 0;
 
-        $hasServer = $id >= 1 && $this->config->get('Servers/' . $id) !== null;
+        $hasServer = $id >= 1 && $this->config->get('Servers/'.$id) !== null;
 
         if (! $hasServer) {
             return;

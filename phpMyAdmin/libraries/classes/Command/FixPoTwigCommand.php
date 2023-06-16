@@ -4,33 +4,32 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Command;
 
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-
 use function file_get_contents;
 use function file_put_contents;
 use function intval;
 use function is_array;
 use function json_decode;
 use function preg_replace_callback;
-
 use const ROOT_PATH;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 final class FixPoTwigCommand extends Command
 {
     /** @var string|null */
     protected static $defaultName = 'fix-po-twig';
 
-    private const POT_FILE = ROOT_PATH . 'po/phpmyadmin.pot';
-    private const REPLACE_FILE = ROOT_PATH . 'twig-templates/replace.json';
+    private const POT_FILE = ROOT_PATH.'po/phpmyadmin.pot';
+
+    private const REPLACE_FILE = ROOT_PATH.'twig-templates/replace.json';
 
     protected function configure(): void
     {
         $this->setDescription('Fixes POT file for Twig templates');
         $this->setHelp(
             'The <info>%command.name%</info> command fixes the Twig file name and line number in the'
-            . ' POT file to match the Twig template and not the compiled Twig file.'
+            .' POT file to match the Twig template and not the compiled Twig file.'
         );
     }
 
@@ -61,11 +60,11 @@ final class FixPoTwigCommand extends Command
                 $replace = $replacements[$filename];
                 foreach ($replace[1] as $cacheLine => $result) {
                     if ($line >= $cacheLine) {
-                        return $replace[0] . ':' . $result;
+                        return $replace[0].':'.$result;
                     }
                 }
 
-                return $replace[0] . ':0';
+                return $replace[0].':0';
             },
             $pot
         );

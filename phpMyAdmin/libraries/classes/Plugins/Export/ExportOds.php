@@ -7,6 +7,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Export;
 
+use function __;
+use function bin2hex;
+use function date;
+use function htmlspecialchars;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\FieldMetadata;
 use PhpMyAdmin\OpenDocument;
@@ -17,11 +21,6 @@ use PhpMyAdmin\Properties\Options\Items\BoolPropertyItem;
 use PhpMyAdmin\Properties\Options\Items\HiddenPropertyItem;
 use PhpMyAdmin\Properties\Options\Items\TextPropertyItem;
 use PhpMyAdmin\Properties\Plugins\ExportPluginProperties;
-
-use function __;
-use function bin2hex;
-use function date;
-use function htmlspecialchars;
 use function stripslashes;
 use function strtotime;
 
@@ -86,51 +85,51 @@ class ExportOds extends ExportPlugin
      */
     public function exportHeader(): bool
     {
-        $GLOBALS['ods_buffer'] .= '<?xml version="1.0" encoding="utf-8"?' . '>'
-            . '<office:document-content '
-            . OpenDocument::NS . ' office:version="1.0">'
-            . '<office:automatic-styles>'
-            . '<number:date-style style:name="N37"'
-            . ' number:automatic-order="true">'
-            . '<number:month number:style="long"/>'
-            . '<number:text>/</number:text>'
-            . '<number:day number:style="long"/>'
-            . '<number:text>/</number:text>'
-            . '<number:year/>'
-            . '</number:date-style>'
-            . '<number:time-style style:name="N43">'
-            . '<number:hours number:style="long"/>'
-            . '<number:text>:</number:text>'
-            . '<number:minutes number:style="long"/>'
-            . '<number:text>:</number:text>'
-            . '<number:seconds number:style="long"/>'
-            . '<number:text> </number:text>'
-            . '<number:am-pm/>'
-            . '</number:time-style>'
-            . '<number:date-style style:name="N50"'
-            . ' number:automatic-order="true"'
-            . ' number:format-source="language">'
-            . '<number:month/>'
-            . '<number:text>/</number:text>'
-            . '<number:day/>'
-            . '<number:text>/</number:text>'
-            . '<number:year/>'
-            . '<number:text> </number:text>'
-            . '<number:hours number:style="long"/>'
-            . '<number:text>:</number:text>'
-            . '<number:minutes number:style="long"/>'
-            . '<number:text> </number:text>'
-            . '<number:am-pm/>'
-            . '</number:date-style>'
-            . '<style:style style:name="DateCell" style:family="table-cell"'
-            . ' style:parent-style-name="Default" style:data-style-name="N37"/>'
-            . '<style:style style:name="TimeCell" style:family="table-cell"'
-            . ' style:parent-style-name="Default" style:data-style-name="N43"/>'
-            . '<style:style style:name="DateTimeCell" style:family="table-cell"'
-            . ' style:parent-style-name="Default" style:data-style-name="N50"/>'
-            . '</office:automatic-styles>'
-            . '<office:body>'
-            . '<office:spreadsheet>';
+        $GLOBALS['ods_buffer'] .= '<?xml version="1.0" encoding="utf-8"?'.'>'
+            .'<office:document-content '
+            .OpenDocument::NS.' office:version="1.0">'
+            .'<office:automatic-styles>'
+            .'<number:date-style style:name="N37"'
+            .' number:automatic-order="true">'
+            .'<number:month number:style="long"/>'
+            .'<number:text>/</number:text>'
+            .'<number:day number:style="long"/>'
+            .'<number:text>/</number:text>'
+            .'<number:year/>'
+            .'</number:date-style>'
+            .'<number:time-style style:name="N43">'
+            .'<number:hours number:style="long"/>'
+            .'<number:text>:</number:text>'
+            .'<number:minutes number:style="long"/>'
+            .'<number:text>:</number:text>'
+            .'<number:seconds number:style="long"/>'
+            .'<number:text> </number:text>'
+            .'<number:am-pm/>'
+            .'</number:time-style>'
+            .'<number:date-style style:name="N50"'
+            .' number:automatic-order="true"'
+            .' number:format-source="language">'
+            .'<number:month/>'
+            .'<number:text>/</number:text>'
+            .'<number:day/>'
+            .'<number:text>/</number:text>'
+            .'<number:year/>'
+            .'<number:text> </number:text>'
+            .'<number:hours number:style="long"/>'
+            .'<number:text>:</number:text>'
+            .'<number:minutes number:style="long"/>'
+            .'<number:text> </number:text>'
+            .'<number:am-pm/>'
+            .'</number:date-style>'
+            .'<style:style style:name="DateCell" style:family="table-cell"'
+            .' style:parent-style-name="Default" style:data-style-name="N37"/>'
+            .'<style:style style:name="TimeCell" style:family="table-cell"'
+            .' style:parent-style-name="Default" style:data-style-name="N43"/>'
+            .'<style:style style:name="DateTimeCell" style:family="table-cell"'
+            .' style:parent-style-name="Default" style:data-style-name="N50"/>'
+            .'</office:automatic-styles>'
+            .'<office:body>'
+            .'<office:spreadsheet>';
 
         return true;
     }
@@ -153,8 +152,8 @@ class ExportOds extends ExportPlugin
     /**
      * Outputs database header
      *
-     * @param string $db      Database name
-     * @param string $dbAlias Aliases of db
+     * @param  string  $db      Database name
+     * @param  string  $dbAlias Aliases of db
      */
     public function exportDBHeader($db, $dbAlias = ''): bool
     {
@@ -164,7 +163,7 @@ class ExportOds extends ExportPlugin
     /**
      * Outputs database footer
      *
-     * @param string $db Database name
+     * @param  string  $db Database name
      */
     public function exportDBFooter($db): bool
     {
@@ -174,9 +173,9 @@ class ExportOds extends ExportPlugin
     /**
      * Outputs CREATE DATABASE statement
      *
-     * @param string $db         Database name
-     * @param string $exportType 'server', 'database', 'table'
-     * @param string $dbAlias    Aliases of db
+     * @param  string  $db         Database name
+     * @param  string  $exportType 'server', 'database', 'table'
+     * @param  string  $dbAlias    Aliases of db
      */
     public function exportDBCreate($db, $exportType, $dbAlias = ''): bool
     {
@@ -186,12 +185,12 @@ class ExportOds extends ExportPlugin
     /**
      * Outputs the content of a table in NHibernate format
      *
-     * @param string $db       database name
-     * @param string $table    table name
-     * @param string $crlf     the end of line sequence
-     * @param string $errorUrl the url to go back in case of error
-     * @param string $sqlQuery SQL query for obtaining data
-     * @param array  $aliases  Aliases of db/table/columns
+     * @param  string  $db       database name
+     * @param  string  $table    table name
+     * @param  string  $crlf     the end of line sequence
+     * @param  string  $errorUrl the url to go back in case of error
+     * @param  string  $sqlQuery SQL query for obtaining data
+     * @param  array  $aliases  Aliases of db/table/columns
      */
     public function exportData(
         $db,
@@ -212,10 +211,10 @@ class ExportOds extends ExportPlugin
         /** @var FieldMetadata[] $fieldsMeta */
         $fieldsMeta = $dbi->getFieldsMeta($result);
 
-        $GLOBALS['ods_buffer'] .= '<table:table table:name="' . htmlspecialchars($table_alias) . '">';
+        $GLOBALS['ods_buffer'] .= '<table:table table:name="'.htmlspecialchars($table_alias).'">';
 
         // If required, get fields name at the first line
-        if (isset($GLOBALS[$what . '_columns'])) {
+        if (isset($GLOBALS[$what.'_columns'])) {
             $GLOBALS['ods_buffer'] .= '<table:table-row>';
             foreach ($fieldsMeta as $field) {
                 $col_as = $field->name;
@@ -224,12 +223,12 @@ class ExportOds extends ExportPlugin
                 }
 
                 $GLOBALS['ods_buffer'] .= '<table:table-cell office:value-type="string">'
-                    . '<text:p>'
-                    . htmlspecialchars(
+                    .'<text:p>'
+                    .htmlspecialchars(
                         stripslashes($col_as)
                     )
-                    . '</text:p>'
-                    . '</table:table-cell>';
+                    .'</text:p>'
+                    .'</table:table-cell>';
             }
 
             $GLOBALS['ods_buffer'] .= '</table:table-row>';
@@ -241,47 +240,47 @@ class ExportOds extends ExportPlugin
             for ($j = 0; $j < $fields_cnt; $j++) {
                 if ($fieldsMeta[$j]->isMappedTypeGeometry) {
                     // export GIS types as hex
-                    $row[$j] = '0x' . bin2hex($row[$j]);
+                    $row[$j] = '0x'.bin2hex($row[$j]);
                 }
 
                 if (! isset($row[$j])) {
                     $GLOBALS['ods_buffer'] .= '<table:table-cell office:value-type="string">'
-                        . '<text:p>'
-                        . htmlspecialchars($GLOBALS[$what . '_null'])
-                        . '</text:p>'
-                        . '</table:table-cell>';
+                        .'<text:p>'
+                        .htmlspecialchars($GLOBALS[$what.'_null'])
+                        .'</text:p>'
+                        .'</table:table-cell>';
                 } elseif ($fieldsMeta[$j]->isBinary && $fieldsMeta[$j]->isBlob) {
                     // ignore BLOB
                     $GLOBALS['ods_buffer'] .= '<table:table-cell office:value-type="string">'
-                        . '<text:p></text:p>'
-                        . '</table:table-cell>';
+                        .'<text:p></text:p>'
+                        .'</table:table-cell>';
                 } elseif ($fieldsMeta[$j]->isType(FieldMetadata::TYPE_DATE)) {
                     $GLOBALS['ods_buffer'] .= '<table:table-cell office:value-type="date"'
-                        . ' office:date-value="'
-                        . date('Y-m-d', strtotime($row[$j]))
-                        . '" table:style-name="DateCell">'
-                        . '<text:p>'
-                        . htmlspecialchars($row[$j])
-                        . '</text:p>'
-                        . '</table:table-cell>';
+                        .' office:date-value="'
+                        .date('Y-m-d', strtotime($row[$j]))
+                        .'" table:style-name="DateCell">'
+                        .'<text:p>'
+                        .htmlspecialchars($row[$j])
+                        .'</text:p>'
+                        .'</table:table-cell>';
                 } elseif ($fieldsMeta[$j]->isType(FieldMetadata::TYPE_TIME)) {
                     $GLOBALS['ods_buffer'] .= '<table:table-cell office:value-type="time"'
-                        . ' office:time-value="'
-                        . date('\P\TH\Hi\Ms\S', strtotime($row[$j]))
-                        . '" table:style-name="TimeCell">'
-                        . '<text:p>'
-                        . htmlspecialchars($row[$j])
-                        . '</text:p>'
-                        . '</table:table-cell>';
+                        .' office:time-value="'
+                        .date('\P\TH\Hi\Ms\S', strtotime($row[$j]))
+                        .'" table:style-name="TimeCell">'
+                        .'<text:p>'
+                        .htmlspecialchars($row[$j])
+                        .'</text:p>'
+                        .'</table:table-cell>';
                 } elseif ($fieldsMeta[$j]->isType(FieldMetadata::TYPE_DATETIME)) {
                     $GLOBALS['ods_buffer'] .= '<table:table-cell office:value-type="date"'
-                        . ' office:date-value="'
-                        . date('Y-m-d\TH:i:s', strtotime($row[$j]))
-                        . '" table:style-name="DateTimeCell">'
-                        . '<text:p>'
-                        . htmlspecialchars($row[$j])
-                        . '</text:p>'
-                        . '</table:table-cell>';
+                        .' office:date-value="'
+                        .date('Y-m-d\TH:i:s', strtotime($row[$j]))
+                        .'" table:style-name="DateTimeCell">'
+                        .'<text:p>'
+                        .htmlspecialchars($row[$j])
+                        .'</text:p>'
+                        .'</table:table-cell>';
                 } elseif (
                     ($fieldsMeta[$j]->isNumeric
                     && ! $fieldsMeta[$j]->isMappedTypeTimestamp
@@ -289,17 +288,17 @@ class ExportOds extends ExportPlugin
                     || $fieldsMeta[$j]->isType(FieldMetadata::TYPE_REAL)
                 ) {
                     $GLOBALS['ods_buffer'] .= '<table:table-cell office:value-type="float"'
-                        . ' office:value="' . $row[$j] . '" >'
-                        . '<text:p>'
-                        . htmlspecialchars($row[$j])
-                        . '</text:p>'
-                        . '</table:table-cell>';
+                        .' office:value="'.$row[$j].'" >'
+                        .'<text:p>'
+                        .htmlspecialchars($row[$j])
+                        .'</text:p>'
+                        .'</table:table-cell>';
                 } else {
                     $GLOBALS['ods_buffer'] .= '<table:table-cell office:value-type="string">'
-                        . '<text:p>'
-                        . htmlspecialchars($row[$j])
-                        . '</text:p>'
-                        . '</table:table-cell>';
+                        .'<text:p>'
+                        .htmlspecialchars($row[$j])
+                        .'</text:p>'
+                        .'</table:table-cell>';
                 }
             }
 
@@ -314,9 +313,9 @@ class ExportOds extends ExportPlugin
     /**
      * Outputs result raw query in ODS format
      *
-     * @param string $errorUrl the url to go back in case of error
-     * @param string $sqlQuery the rawquery to output
-     * @param string $crlf     the end of line sequence
+     * @param  string  $errorUrl the url to go back in case of error
+     * @param  string  $sqlQuery the rawquery to output
+     * @param  string  $crlf     the end of line sequence
      */
     public function exportRawQuery(string $errorUrl, string $sqlQuery, string $crlf): bool
     {

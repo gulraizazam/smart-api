@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
-use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\Controller;
-use Validator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\HelperModule\ApiHelper;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Validator;
 
 class RolesController extends Controller
 {
@@ -42,7 +42,7 @@ class RolesController extends Controller
 
         $filters = Filters::all(Auth::User()->id, 'roles');
 
-        return view('admin.roles.index',compact('filters'));
+        return view('admin.roles.index', compact('filters'));
     }
 
     /**
@@ -56,100 +56,99 @@ class RolesController extends Controller
 
         $filters = getFilters($request->all());
 
-
         $apply_filter = checkFilters($filters, 'roles');
 
-        $records = array();
-        $records["data"] = array();
+        $records = [];
+        $records['data'] = [];
 
-        if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
             $ids = explode(',', $filters['delete']);
             $Roles = Role::whereIn('id', $ids)->get();
 
             $any_deleted = false;
-            foreach ($Roles as $role){
-                if(!self::isChildExists($role->id, Auth::User()->account_id)) {
+            foreach ($Roles as $role) {
+                if (! self::isChildExists($role->id, Auth::User()->account_id)) {
                     $any_deleted = true;
                     $role->delete();
-              }
+                }
             }
 
-            if($any_deleted){
-                $records["status"] = true;
-                $records["message"] = "Records has been deleted successfully!";
+            if ($any_deleted) {
+                $records['status'] = true;
+                $records['message'] = 'Records has been deleted successfully!';
             } else {
-                $records["status"] = false;
-                $records["message"] = "One or more records are not deleted!";
+                $records['status'] = false;
+                $records['message'] = 'One or more records are not deleted!';
             }
         }
 
-        $where = array();
+        $where = [];
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
-        if(hasFilter($filters, 'name')) {
-            $where[] = array(
+        if (hasFilter($filters, 'name')) {
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::user()->id, 'roles', 'name', $filters['name']);
         } else {
-            if ($apply_filter){
+            if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'roles', 'name');
             } else {
-                if (Filters::get(Auth::user()->id,'roles', 'name')){
-                    $where[] = array(
+                if (Filters::get(Auth::user()->id, 'roles', 'name')) {
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::user()->id, 'roles','name') . '%'
-                    );
+                        '%'.Filters::get(Auth::user()->id, 'roles', 'name').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'commission') && is_numeric($filters['commission'])) {
-            $where[] = array(
+            $where[] = [
                 'commission',
                 '=',
-                $filters['commission']
-            );
-            Filters::put(Auth::user()->id,'roles', 'commission', $filters['commission']);
+                $filters['commission'],
+            ];
+            Filters::put(Auth::user()->id, 'roles', 'commission', $filters['commission']);
         } else {
-            if ($apply_filter){
+            if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'roles', 'commission');
             } else {
-                if (Filters::get(Auth::user()->id,'roles', 'commission')){
-                    $where[] = array(
+                if (Filters::get(Auth::user()->id, 'roles', 'commission')) {
+                    $where[] = [
                         'commission',
                         '=',
-                        Filters::get(Auth::user()->id, 'roles', 'commission')
-                    );
+                        Filters::get(Auth::user()->id, 'roles', 'commission'),
+                    ];
                 }
             }
         }
 
-        if(count($where)) {
+        if (count($where)) {
             $iTotalRecords = Role::where($where)->count();
         } else {
             $iTotalRecords = Role::count();
         }
 
-        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        if(count($where)) {
+        if (count($where)) {
             $Roles = Role::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         } else {
             $Roles = Role::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
         }
 
-        if($Roles) {
-            $records["data"] = $Roles;
-            $records["permissions"] = [
+        if ($Roles) {
+            $records['data'] = $Roles;
+            $records['permissions'] = [
                 'edit' => Gate::allows('roles_edit'),
                 'delete' => Gate::allows('roles_destroy'),
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -176,7 +175,7 @@ class RolesController extends Controller
         // Get list of all allowed permissions for current role.
         $allowed_permissions = Permission::join('role_has_permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
             ->get()->pluck('name', 'id');
-        if(!$allowed_permissions) {
+        if (! $allowed_permissions) {
             $allowed_permissions = [];
         }
 
@@ -197,15 +196,13 @@ class RolesController extends Controller
             'permissions_mapping' => $permissions_mapping,
             'dashboard_permissions_mapping' => $dashboard_permissions_mapping,
             'reports_permissions_mapping' => $reports_permissions_mapping,
-            'allowed_permissions' =>  $allowed_permissions
+            'allowed_permissions' => $allowed_permissions,
         ], 'admin.roles.create');
 
     }
 
     /**
      * Store a newly created Role in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
      */
     public function store(Request $request)
     {
@@ -234,7 +231,8 @@ class RolesController extends Controller
      * @param  (void)
      * @return (array) $array
      */
-    protected function preparePermissionsMapping() {
+    protected function preparePermissionsMapping()
+    {
         /*
          * Note: Mapping will go like below examples
          * permissions_create
@@ -244,7 +242,7 @@ class RolesController extends Controller
          * permissions_destroy
          * users_change_password
          */
-        return array(
+        return [
             'create' => 'Create',
             'edit' => 'Edit',
             'active' => 'Active',
@@ -254,9 +252,9 @@ class RolesController extends Controller
             'change_password' => 'Change Password',
             'import' => 'Import',
             'export' => 'Export',
-            'export_today'=>'Today',
-            'export_this_month'=>'This Month',
-            'export_all'=>'Export All',
+            'export_today' => 'Today',
+            'export_this_month' => 'This Month',
+            'export_all' => 'Export All',
             'patient_card' => 'Patient Card',
             'invoice_display' => 'Display Invoice',
             'convert' => 'Convert',
@@ -299,14 +297,14 @@ class RolesController extends Controller
             'plan_inactive' => 'Plan Inactive',
             'plan_active' => 'Plan Active',
             'plan_destroy' => 'Plan Delete',
-            'plan_edit'=> 'Plan Edit',
-            'plan_service_delete'=> 'Patient Plan Service Delete',
-            'plan_cash_edit'=> 'Patient Plan Cash Edit',
+            'plan_edit' => 'Plan Edit',
+            'plan_service_delete' => 'Patient Plan Service Delete',
+            'plan_cash_edit' => 'Patient Plan Cash Edit',
             'plan_cash_edit_payment_mode' => 'Patient Plan Cash Edit Payment Mode',
             'plan_cash_edit_amount' => 'Patient Plan Cash Edit Amount',
             'plan_cash_edit_date' => 'Patient Plan Cash Edit Date',
-            'plan_cash_delete'=> 'Patient Plan Cash Delete',
-            'plan_log'=> 'Plan Log',
+            'plan_cash_delete' => 'Patient Plan Cash Delete',
+            'plan_log' => 'Plan Log',
             'plan_log_excel' => 'Plan Log Excel',
             'plan_sms_log' => 'Plan Sms Log',
             'finance_manage' => 'Finance Manage',
@@ -320,18 +318,18 @@ class RolesController extends Controller
             'refund_refund' => 'Patient Refund',
             'payment' => 'Add Payment',
             'detail' => 'Detail',
-            'service_delete'=> 'Plan Service Delete',
-            'cash_edit'=> 'Plan Cash Edit',
+            'service_delete' => 'Plan Service Delete',
+            'cash_edit' => 'Plan Cash Edit',
 
             'cash_edit_payment_mode' => 'Plan Cash Edit Payment Mode',
             'cash_edit_amount' => 'Plan Cash Edit Amount',
-            'cash_edit_date'=>'Plan Cash Edit Date',
+            'cash_edit_date' => 'Plan Cash Edit Date',
 
             'cash_delete' => 'Plan Cash Delete',
             'log' => 'Log',
             'log_excel' => 'Generate Invoice For Outrange',
             'sms_log' => 'Sms Log',
-        );
+        ];
     }
 
     /**
@@ -340,7 +338,8 @@ class RolesController extends Controller
      * @param  (void)
      * @return (array) $array
      */
-    protected function prepareDashboardPermissionsMapping() {
+    protected function prepareDashboardPermissionsMapping()
+    {
         /*
          * Note: Mapping will go like below examples
          * permissions_create
@@ -350,7 +349,7 @@ class RolesController extends Controller
          * permissions_destroy
          * users_change_password
          */
-        return array(
+        return [
             'collection_by_centre' => 'Collection by Centre',
             'my_collection_by_centre' => 'My Collection by Centre',
             'revenue_by_centre' => 'Revenue by Centre',
@@ -365,10 +364,8 @@ class RolesController extends Controller
             'appointment_by_status' => 'Consultancy by Status',
             'my_appointment_by_status' => 'My Appointments by Status',
             'staff_wise_arrival' => 'Staff Wise Arrival',
-        );
+        ];
     }
-
-
 
     /**
      * Prepare Reports Permissions to display in table
@@ -376,7 +373,8 @@ class RolesController extends Controller
      * @param  (void)
      * @return (array) $array
      */
-    protected function prepareReportsPermissionsMapping() {
+    protected function prepareReportsPermissionsMapping()
+    {
         /*
          * Note: Mapping will go like below examples
          * permissions_create
@@ -386,7 +384,7 @@ class RolesController extends Controller
          * permissions_destroy
          * users_change_password
          */
-        return array(
+        return [
             'general_report' => 'General Report',
             'general_summary_report' => 'General Report Summary',
             'summary_report_by_lead_status' => 'Summary Report By Lead Status',
@@ -447,14 +445,13 @@ class RolesController extends Controller
             'center_performance_stats_by_revenue' => 'Staff Revenue Centre Wise',
             'center_performance_stats_by_service_type' => 'Staff Revenue by Service Type',
             'compliance_reports' => 'Compliance Report',
-            'rescheduled_count_report' => 'Appointment Rescheduled Count Report'
-        );
+            'rescheduled_count_report' => 'Appointment Rescheduled Count Report',
+        ];
     }
 
     /**
      * Validate form fields
      *
-     * @param  \Illuminate\Http\Request $request
      * @return Validator $validator;
      */
     protected function verifyFields(Request $request)
@@ -463,7 +460,6 @@ class RolesController extends Controller
             'name' => 'required',
         ]);
     }
-
 
     /**
      * Show the form for editing Role.
@@ -483,7 +479,7 @@ class RolesController extends Controller
         $allowed_permissions = Permission::join('role_has_permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
             ->where(['role_has_permissions.role_id' => $role->id])
             ->get()->pluck('name', 'id');
-        if(!$allowed_permissions) {
+        if (! $allowed_permissions) {
             $allowed_permissions = [];
         }
 
@@ -505,7 +501,7 @@ class RolesController extends Controller
             'permissions' => $permissions,
             'permissions_mapping' => $permissions_mapping,
             'reports_permissions_mapping' => $reports_permissions_mapping,
-            'reports_permissions' => $reports_permissions
+            'reports_permissions' => $reports_permissions,
         ], 'admin.roles.edit');
 
     }
@@ -518,47 +514,47 @@ class RolesController extends Controller
      */
     protected function getAllPermissionsMapping()
     {
-        $notInArray = array(
-            'dashboard_manage', 'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage','finance_general_revenue_reports_manage','finance_revenue_breakup_reports_manage','finance_ledger_reports_manage','staff_listing_reports_manage','staff_revenue_reports_manage','marketing_reports_manage'
-        );
-        $notInNamesArray = array(
-            'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres', 'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors','view_inactive_lead_sources','view_inactive_leads','view_inactive_lead_statuses','view_inactive_machine_types','view_inactive_packages','view_inactive_patients','view_inactive_payment_modes','view_inactive_plans',
-            'view_inactive_products','view_inactive_regions','view_inactive_custom_forms','view_inactive_towns','view_inactive_resources','view_inactive_rota','view_inactive_rotas','view_inactive_services','view_inactive_sms_templates'
-        );
-        if(Auth::user()->hasRole('Super-Admin')){
+        $notInArray = [
+            'dashboard_manage', 'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage', 'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage', 'finance_ledger_reports_manage', 'staff_listing_reports_manage', 'staff_revenue_reports_manage', 'marketing_reports_manage',
+        ];
+        $notInNamesArray = [
+            'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres', 'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors', 'view_inactive_lead_sources', 'view_inactive_leads', 'view_inactive_lead_statuses', 'view_inactive_machine_types', 'view_inactive_packages', 'view_inactive_patients', 'view_inactive_payment_modes', 'view_inactive_plans',
+            'view_inactive_products', 'view_inactive_regions', 'view_inactive_custom_forms', 'view_inactive_towns', 'view_inactive_resources', 'view_inactive_rota', 'view_inactive_rotas', 'view_inactive_services', 'view_inactive_sms_templates',
+        ];
+        if (Auth::user()->hasRole('Super-Admin')) {
             $group_permissions = Permission::where(['main_group' => 1, 'status' => 1])
-            ->whereNotIn('name', $notInArray)
-            ->get();
+                ->whereNotIn('name', $notInArray)
+                ->get();
             $sub_permissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereNotIn('name', $notInArray)->pluck('id', 'name'))->get()->keyBy('id');
-        }else{
+        } else {
             $group_permissions = Permission::where(['main_group' => 1, 'status' => 1])
-            ->whereNotIn('name', $notInArray)
-            ->whereNotIn('name', $notInNamesArray)
-            ->get();
+                ->whereNotIn('name', $notInArray)
+                ->whereNotIn('name', $notInNamesArray)
+                ->get();
             $sub_permissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereNotIn('name', $notInArray)
-            ->whereNotIn('name', $notInNamesArray)
-            ->pluck('id', 'name'))->get()->keyBy('id');
+                ->whereNotIn('name', $notInNamesArray)
+                ->pluck('id', 'name'))->get()->keyBy('id');
         }
-        $permissions = array();
-        if($group_permissions) {
-            foreach($group_permissions as $group_permission) {
-                $permissions[$group_permission->id] = array(
+        $permissions = [];
+        if ($group_permissions) {
+            foreach ($group_permissions as $group_permission) {
+                $permissions[$group_permission->id] = [
                     'id' => $group_permission->id,
                     'title' => $group_permission->title,
                     'name' => $group_permission->name,
                     'parent_id' => $group_permission->parent_id,
-                    'children' => array(),
+                    'children' => [],
                     'key' => Str::replaceLast('manage', '', $group_permission->name),
-                );
-                if($sub_permissions) {
-                    foreach($sub_permissions as $sub_permission) {
-                        if(array_key_exists($sub_permission->parent_id, $permissions)) {
-                            $permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = array(
+                ];
+                if ($sub_permissions) {
+                    foreach ($sub_permissions as $sub_permission) {
+                        if (array_key_exists($sub_permission->parent_id, $permissions)) {
+                            $permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = [
                                 'id' => $sub_permission->id,
                                 'title' => $sub_permission->title,
                                 'name' => $sub_permission->name,
                                 'parent_id' => $sub_permission->parent_id,
-                            );
+                            ];
                         }
                     }
                 }
@@ -567,37 +563,36 @@ class RolesController extends Controller
         /*
          * Dashboard Permissions
          */
-        $whereIn = array(
-            'dashboard_manage'
-        );
-        $dashboard_group_permissions = Permission::
-        where(['main_group' => 1, 'status' => 1])->
+        $whereIn = [
+            'dashboard_manage',
+        ];
+        $dashboard_group_permissions = Permission::where(['main_group' => 1, 'status' => 1])->
         whereIn('name', $whereIn)
-        ->get();
+            ->get();
 
         $dashboard_sub_permissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereIn('name', $whereIn)->pluck('id', 'name'))->get()->keyBy('id');
 
-        $dashboard_permissions = array();
-        if($dashboard_group_permissions) {
-            foreach($dashboard_group_permissions as $group_permission) {
-                $dashboard_permissions[$group_permission->id] = array(
+        $dashboard_permissions = [];
+        if ($dashboard_group_permissions) {
+            foreach ($dashboard_group_permissions as $group_permission) {
+                $dashboard_permissions[$group_permission->id] = [
                     'id' => $group_permission->id,
                     'title' => $group_permission->title,
                     'name' => $group_permission->name,
                     'parent_id' => $group_permission->parent_id,
-                    'children' => array(),
+                    'children' => [],
                     'key' => Str::replaceLast('manage', '', $group_permission->name),
-                );
+                ];
 
-                if($dashboard_sub_permissions) {
-                    foreach($dashboard_sub_permissions as $sub_permission) {
-                        if(array_key_exists($sub_permission->parent_id, $dashboard_permissions)) {
-                            $dashboard_permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = array(
+                if ($dashboard_sub_permissions) {
+                    foreach ($dashboard_sub_permissions as $sub_permission) {
+                        if (array_key_exists($sub_permission->parent_id, $dashboard_permissions)) {
+                            $dashboard_permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = [
                                 'id' => $sub_permission->id,
                                 'title' => $sub_permission->title,
                                 'name' => $sub_permission->name,
                                 'parent_id' => $sub_permission->parent_id,
-                            );
+                            ];
                         }
                     }
                 }
@@ -607,36 +602,35 @@ class RolesController extends Controller
         /*
          * Reports Permissions
          */
-        $whereIn = array(
-            'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage','finance_general_revenue_reports_manage','finance_revenue_breakup_reports_manage','finance_ledger_reports_manage','staff_listing_reports_manage','staff_revenue_reports_manage','marketing_reports_manage'
-        );
-        $reports_group_permissions = Permission::
-        where(['main_group' => 1, 'status' => 1])->
+        $whereIn = [
+            'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage', 'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage', 'finance_ledger_reports_manage', 'staff_listing_reports_manage', 'staff_revenue_reports_manage', 'marketing_reports_manage',
+        ];
+        $reports_group_permissions = Permission::where(['main_group' => 1, 'status' => 1])->
         whereIn('name', $whereIn)
             ->get();
         $report_sub_permissions = Permission::whereIn('parent_id', Permission::where(['main_group' => 1, 'status' => 1])->whereIn('name', $whereIn)->pluck('id', 'name'))->get()->keyBy('id');
 
-        $reports_permissions = array();
-        if($reports_group_permissions) {
-            foreach($reports_group_permissions as $group_permission) {
-                $reports_permissions[$group_permission->id] = array(
+        $reports_permissions = [];
+        if ($reports_group_permissions) {
+            foreach ($reports_group_permissions as $group_permission) {
+                $reports_permissions[$group_permission->id] = [
                     'id' => $group_permission->id,
                     'title' => $group_permission->title,
                     'name' => $group_permission->name,
                     'parent_id' => $group_permission->parent_id,
-                    'children' => array(),
+                    'children' => [],
                     'key' => Str::replaceLast('manage', '', $group_permission->name),
-                );
+                ];
 
-                if($report_sub_permissions) {
-                    foreach($report_sub_permissions as $sub_permission) {
-                        if(array_key_exists($sub_permission->parent_id, $reports_permissions)) {
-                            $reports_permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = array(
+                if ($report_sub_permissions) {
+                    foreach ($report_sub_permissions as $sub_permission) {
+                        if (array_key_exists($sub_permission->parent_id, $reports_permissions)) {
+                            $reports_permissions[$sub_permission->parent_id]['children'][$sub_permission->name] = [
                                 'id' => $sub_permission->id,
                                 'title' => $sub_permission->title,
                                 'name' => $sub_permission->name,
                                 'parent_id' => $sub_permission->parent_id,
-                            );
+                            ];
                         }
                     }
                 }
@@ -647,20 +641,19 @@ class RolesController extends Controller
         $dashboard_permissions_mapping = $this->prepareDashboardPermissionsMapping();
         $reports_permissions_mapping = $this->prepareReportsPermissionsMapping();
 
-        return array(
+        return [
             'permissions' => $permissions,
             'dashboard_permissions' => $dashboard_permissions,
             'reports_permissions' => $reports_permissions,
             'permissions_mapping' => $permissions_mapping,
             'dashboard_permissions_mapping' => $dashboard_permissions_mapping,
             'reports_permissions_mapping' => $reports_permissions_mapping,
-        );
+        ];
     }
 
     /**
      * Update Role in storage.
      *
-     * @param  \Illuminate\Http\Request $request
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
@@ -693,7 +686,6 @@ class RolesController extends Controller
         }
     }
 
-
     /**
      * Remove Role from storage.
      *
@@ -708,9 +700,10 @@ class RolesController extends Controller
 
         $role = Role::findOrFail($id);
 
-        if (!$role) {
+        if (! $role) {
 
             session()->flash('success', 'Resource not found.', false);
+
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
 
@@ -718,6 +711,7 @@ class RolesController extends Controller
         if (self::isChildExists($id, Auth::User()->account_id)) {
 
             session()->flash('success', 'Child records exist, unable to delete resource.');
+
             return ApiHelper::apiResponse($this->success, 'Child records exist, unable to delete resource.', false);
         }
 
@@ -731,18 +725,15 @@ class RolesController extends Controller
     /**
      * Check if child records exist
      *
-     * @param (int) $id
-     * @param
-     *
+     * @param  (int)  $id
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
-        if (DB::table('role_has_users')->where('role_id','=',$id)->count()) {
+        if (DB::table('role_has_users')->where('role_id', '=', $id)->count()) {
             return true;
         }
+
         return false;
     }
-
-
 }

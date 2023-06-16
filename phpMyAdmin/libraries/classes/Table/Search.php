@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Table;
 
-use PhpMyAdmin\DatabaseInterface;
-use PhpMyAdmin\Util;
-use PhpMyAdmin\Utils\Gis;
-
 use function count;
 use function explode;
 use function implode;
 use function in_array;
 use function is_array;
 use function mb_strpos;
+use PhpMyAdmin\DatabaseInterface;
+use PhpMyAdmin\Util;
+use PhpMyAdmin\Utils\Gis;
 use function preg_match;
 use function str_contains;
 use function str_replace;
@@ -62,15 +61,15 @@ final class Search
         }
 
         $sql_query .= ' FROM '
-            . Util::backquote($_POST['table']);
+            .Util::backquote($_POST['table']);
         $whereClause = $this->generateWhereClause();
         $sql_query .= $whereClause;
 
         // if the search results are to be ordered
         if (isset($_POST['orderByColumn']) && $_POST['orderByColumn'] !== '--nil--') {
             $sql_query .= ' ORDER BY '
-                . Util::backquote($_POST['orderByColumn'])
-                . ' ' . $_POST['order'];
+                .Util::backquote($_POST['orderByColumn'])
+                .' '.$_POST['order'];
         }
 
         return $sql_query;
@@ -84,7 +83,7 @@ final class Search
     private function generateWhereClause(): string
     {
         if (isset($_POST['customWhereClause']) && trim($_POST['customWhereClause']) != '') {
-            return ' WHERE ' . $_POST['customWhereClause'];
+            return ' WHERE '.$_POST['customWhereClause'];
         }
 
         // If there are no search criteria set or no unary criteria operators,
@@ -120,7 +119,7 @@ final class Search
         }
 
         if (! empty($fullWhereClause)) {
-            return ' WHERE ' . implode(' AND ', $fullWhereClause);
+            return ' WHERE '.implode(' AND ', $fullWhereClause);
         }
 
         return '';
@@ -129,13 +128,12 @@ final class Search
     /**
      * Return the where clause for query generation based on the inputs provided.
      *
-     * @param mixed       $criteriaValues Search criteria input
-     * @param string      $names          Name of the column on which search is submitted
-     * @param string      $types          Type of the field
-     * @param string      $func_type      Search function/operator
-     * @param bool        $unaryFlag      Whether operator unary or not
-     * @param string|null $geom_func      Whether geometry functions should be applied
-     *
+     * @param  mixed  $criteriaValues Search criteria input
+     * @param  string  $names          Name of the column on which search is submitted
+     * @param  string  $types          Type of the field
+     * @param  string  $func_type      Search function/operator
+     * @param  bool  $unaryFlag      Whether operator unary or not
+     * @param  string|null  $geom_func      Whether geometry functions should be applied
      * @return string generated where clause.
      */
     private function getWhereClause(
@@ -154,7 +152,7 @@ final class Search
         $backquoted_name = Util::backquote($names);
         $where = '';
         if ($unaryFlag) {
-            $where = $backquoted_name . ' ' . $func_type;
+            $where = $backquoted_name.' '.$func_type;
         } elseif (strncasecmp($types, 'enum', 4) == 0 && ! empty($criteriaValues)) {
             $where = $backquoted_name;
             $where .= $this->getEnumWhereClause($criteriaValues, $func_type);
@@ -165,7 +163,7 @@ final class Search
             // during the comparison
             if (
                 preg_match('@char|binary|blob|text|set|date|time|year@i', $types)
-                || mb_strpos(' ' . $func_type, 'LIKE')
+                || mb_strpos(' '.$func_type, 'LIKE')
             ) {
                 $quot = '\'';
             } else {
@@ -175,17 +173,17 @@ final class Search
             // LIKE %...%
             if ($func_type === 'LIKE %...%') {
                 $func_type = 'LIKE';
-                $criteriaValues = '%' . $criteriaValues . '%';
+                $criteriaValues = '%'.$criteriaValues.'%';
             }
 
             if ($func_type === 'NOT LIKE %...%') {
                 $func_type = 'NOT LIKE';
-                $criteriaValues = '%' . $criteriaValues . '%';
+                $criteriaValues = '%'.$criteriaValues.'%';
             }
 
             if ($func_type === 'REGEXP ^...$') {
                 $func_type = 'REGEXP';
-                $criteriaValues = '^' . $criteriaValues . '$';
+                $criteriaValues = '^'.$criteriaValues.'$';
             }
 
             if (
@@ -194,8 +192,8 @@ final class Search
                 && $func_type !== 'BETWEEN'
                 && $func_type !== 'NOT BETWEEN'
             ) {
-                return $backquoted_name . ' ' . $func_type . ' ' . $quot
-                    . $this->dbi->escapeString($criteriaValues) . $quot;
+                return $backquoted_name.' '.$func_type.' '.$quot
+                    .$this->dbi->escapeString($criteriaValues).$quot;
             }
 
             $func_type = str_replace(' (...)', '', $func_type);
@@ -214,17 +212,18 @@ final class Search
                 if ($value === '') {
                     $emptyKey = $key;
                     $value = 'NULL';
+
                     continue;
                 }
 
-                $value = $quot . $this->dbi->escapeString(trim($value))
-                    . $quot;
+                $value = $quot.$this->dbi->escapeString(trim($value))
+                    .$quot;
             }
 
             if ($func_type === 'BETWEEN' || $func_type === 'NOT BETWEEN') {
-                $where = $backquoted_name . ' ' . $func_type . ' '
-                    . ($values[0] ?? '')
-                    . ' AND ' . ($values[1] ?? '');
+                $where = $backquoted_name.' '.$func_type.' '
+                    .($values[0] ?? '')
+                    .' AND '.($values[1] ?? '');
             } else { //[NOT] IN
                 if ($emptyKey !== false) {
                     unset($values[$emptyKey]);
@@ -232,17 +231,17 @@ final class Search
 
                 $wheres = [];
                 if (! empty($values)) {
-                    $wheres[] = $backquoted_name . ' ' . $func_type
-                        . ' (' . implode(',', $values) . ')';
+                    $wheres[] = $backquoted_name.' '.$func_type
+                        .' ('.implode(',', $values).')';
                 }
 
                 if ($emptyKey !== false) {
-                    $wheres[] = $backquoted_name . ' IS NULL';
+                    $wheres[] = $backquoted_name.' IS NULL';
                 }
 
                 $where = implode(' OR ', $wheres);
                 if (1 < count($wheres)) {
-                    $where = '(' . $where . ')';
+                    $where = '('.$where.')';
                 }
             }
         }
@@ -253,12 +252,11 @@ final class Search
     /**
      * Return the where clause for a geometrical column.
      *
-     * @param mixed       $criteriaValues Search criteria input
-     * @param string      $names          Name of the column on which search is submitted
-     * @param string      $func_type      Search function/operator
-     * @param string      $types          Type of the field
-     * @param string|null $geom_func      Whether geometry functions should be applied
-     *
+     * @param  mixed  $criteriaValues Search criteria input
+     * @param  string  $names          Name of the column on which search is submitted
+     * @param  string  $func_type      Search function/operator
+     * @param  string  $types          Type of the field
+     * @param  string|null  $geom_func      Whether geometry functions should be applied
      * @return string part of where clause.
      */
     private function getGeomWhereClause(
@@ -281,21 +279,21 @@ final class Search
 
         // If the function takes multiple parameters
         if (str_contains($func_type, 'IS NULL') || str_contains($func_type, 'IS NOT NULL')) {
-            return Util::backquote($names) . ' ' . $func_type;
+            return Util::backquote($names).' '.$func_type;
         }
 
         if ($geom_funcs[$geom_func]['params'] > 1) {
             // create gis data from the criteria input
             $gis_data = Gis::createData($criteriaValues, $this->dbi->getVersion());
 
-            return $geom_func . '(' . Util::backquote($names)
-                . ', ' . $gis_data . ')';
+            return $geom_func.'('.Util::backquote($names)
+                .', '.$gis_data.')';
         }
 
         // New output type is the output type of the function being applied
         $type = $geom_funcs[$geom_func]['type'];
         $geom_function_applied = $geom_func
-            . '(' . Util::backquote($names) . ')';
+            .'('.Util::backquote($names).')';
 
         // If the where clause is something like 'IsEmpty(`spatial_col_name`)'
         if (isset($geom_unary_functions[$geom_func]) && trim($criteriaValues) == '') {
@@ -303,10 +301,10 @@ final class Search
         } elseif (in_array($type, Gis::getDataTypes()) && ! empty($criteriaValues)) {
             // create gis data from the criteria input
             $gis_data = Gis::createData($criteriaValues, $this->dbi->getVersion());
-            $where = $geom_function_applied . ' ' . $func_type . ' ' . $gis_data;
+            $where = $geom_function_applied.' '.$func_type.' '.$gis_data;
         } elseif (strlen($criteriaValues) > 0) {
-            $where = $geom_function_applied . ' '
-                . $func_type . " '" . $criteriaValues . "'";
+            $where = $geom_function_applied.' '
+                .$func_type." '".$criteriaValues."'";
         }
 
         return $where;
@@ -315,9 +313,8 @@ final class Search
     /**
      * Return the where clause in case column's type is ENUM.
      *
-     * @param mixed  $criteriaValues Search criteria input
-     * @param string $func_type      Search function/operator
-     *
+     * @param  mixed  $criteriaValues Search criteria input
+     * @param  string  $func_type      Search function/operator
      * @return string part of where clause.
      */
     private function getEnumWhereClause($criteriaValues, $func_type): string
@@ -341,13 +338,13 @@ final class Search
         }
 
         $enum_where = '\''
-            . $this->dbi->escapeString($criteriaValues[0]) . '\'';
+            .$this->dbi->escapeString($criteriaValues[0]).'\'';
         for ($e = 1; $e < $enum_selected_count; $e++) {
             $enum_where .= ', \''
-                . $this->dbi->escapeString($criteriaValues[$e]) . '\'';
+                .$this->dbi->escapeString($criteriaValues[$e]).'\'';
         }
 
-        return ' ' . $func_type . ' ' . $parens_open
-            . $enum_where . $parens_close;
+        return ' '.$func_type.' '.$parens_open
+            .$enum_where.$parens_close;
     }
 }

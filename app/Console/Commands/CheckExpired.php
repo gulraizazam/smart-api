@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\Bundles;
 use App\Models\Discounts;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class CheckExpired extends Command
@@ -15,6 +14,7 @@ class CheckExpired extends Command
      * @var string
      */
     protected $signature = 'check:expired';
+
     /**
      * The console command description.
      *
@@ -36,6 +36,7 @@ class CheckExpired extends Command
     {
         parent::__construct();
     }
+
     /**
      * Execute the console command.
      *
@@ -43,11 +44,11 @@ class CheckExpired extends Command
      */
     public function handle()
     {
-        Discounts::whereDate('end','<',now())->whereActive('1')->update([
-            'active'=>0
+        Discounts::whereDate('end', '<', now())->whereActive('1')->update([
+            'active' => 0,
         ]);
-        Bundles::whereDate('end','<',now())->whereActive('1')->update([
-            'active'=>0
+        Bundles::whereDate('end', '<', now())->whereActive('1')->update([
+            'active' => 0,
         ]);
     }
 }

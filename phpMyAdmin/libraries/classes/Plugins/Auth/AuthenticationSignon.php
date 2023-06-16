@@ -7,16 +7,16 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Auth;
 
-use PhpMyAdmin\Core;
-use PhpMyAdmin\Plugins\AuthenticationPlugin;
-use PhpMyAdmin\ResponseRenderer;
-use PhpMyAdmin\Util;
-
 use function __;
 use function array_merge;
 use function defined;
 use function file_exists;
 use function in_array;
+use const PHP_VERSION;
+use PhpMyAdmin\Core;
+use PhpMyAdmin\Plugins\AuthenticationPlugin;
+use PhpMyAdmin\ResponseRenderer;
+use PhpMyAdmin\Util;
 use function session_get_cookie_params;
 use function session_id;
 use function session_name;
@@ -24,8 +24,6 @@ use function session_set_cookie_params;
 use function session_start;
 use function session_write_close;
 use function version_compare;
-
-use const PHP_VERSION;
 
 /**
  * Handles the SignOn authentication method
@@ -57,7 +55,7 @@ class AuthenticationSignon extends AuthenticationPlugin
     /**
      * Set cookie params
      *
-     * @param array $sessionCookieParams The cookie params
+     * @param  array  $sessionCookieParams The cookie params
      */
     public function setCookieParams(?array $sessionCookieParams = null): void
     {
@@ -98,8 +96,8 @@ class AuthenticationSignon extends AuthenticationPlugin
             isset($sessionCookieParams['samesite'])
             && ! in_array($sessionCookieParams['samesite'], ['Lax', 'Strict'])
         ) {
-                // Not a valid value for samesite
-                unset($sessionCookieParams['samesite']);
+            // Not a valid value for samesite
+            unset($sessionCookieParams['samesite']);
         }
 
         if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
@@ -147,7 +145,7 @@ class AuthenticationSignon extends AuthenticationPlugin
             if (! @file_exists($script_name)) {
                 Core::fatalError(
                     __('Can not find signon authentication script:')
-                    . ' ' . $script_name
+                    .' '.$script_name
                 );
             }
 
@@ -261,7 +259,7 @@ class AuthenticationSignon extends AuthenticationPlugin
     /**
      * User is not allowed to login to MySQL -> authentication failed
      *
-     * @param string $failure String describing why authentication has failed
+     * @param  string  $failure String describing why authentication has failed
      */
     public function showFailure($failure): void
     {

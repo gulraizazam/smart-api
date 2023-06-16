@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Command;
 
+use function file_put_contents;
+use function preg_match;
 use RangeException;
+use function sprintf;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-
-use function file_put_contents;
-use function preg_match;
-use function sprintf;
 
 final class SetVersionCommand extends Command
 {
@@ -77,7 +76,7 @@ PHP;
         // Do not allow any major below 5
         $return = preg_match('/^([5-9]+)\.(\d{1,2})\.(\d{1,2})(-([a-z0-9]+))?$/', $version, $matches);
         if ($return === false || $return === 0) {
-            throw new RangeException('The version number is in the wrong format: ' . $version);
+            throw new RangeException('The version number is in the wrong format: '.$version);
         }
 
         return sprintf(
@@ -93,7 +92,7 @@ PHP;
 
     private function writeGeneratedClassFile(string $generatedClass): bool
     {
-        $result = file_put_contents(ROOT_PATH . 'libraries/classes/Version.php', $generatedClass);
+        $result = file_put_contents(ROOT_PATH.'libraries/classes/Version.php', $generatedClass);
 
         return $result !== false;
     }

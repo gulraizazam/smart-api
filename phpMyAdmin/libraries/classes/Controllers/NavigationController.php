@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers;
 
+use function __;
 use PhpMyAdmin\Config\PageSettings;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Message;
@@ -11,8 +12,6 @@ use PhpMyAdmin\Navigation\Navigation;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Utils\SessionCache;
-
-use function __;
 
 /**
  * The navigation panel
@@ -59,7 +58,7 @@ class NavigationController extends AbstractController
         }
 
         if (isset($_POST['reload'])) {
-            SessionCache::set('dbs_to_test', false);// Empty database list cache, see #14252
+            SessionCache::set('dbs_to_test', false); // Empty database list cache, see #14252
         }
 
         $relationParameters = $this->relation->getRelationParameters();

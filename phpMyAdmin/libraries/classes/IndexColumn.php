@@ -55,7 +55,7 @@ class IndexColumn
     private $expression = null;
 
     /**
-     * @param array $params an array containing the parameters of the index column
+     * @param  array  $params an array containing the parameters of the index column
      */
     public function __construct(array $params = [])
     {
@@ -81,7 +81,7 @@ class IndexColumn
     /**
      * Sets parameters of the index column
      *
-     * @param array $params an array containing the parameters of the index column
+     * @param  array  $params an array containing the parameters of the index column
      */
     public function set(array $params): void
     {
@@ -149,8 +149,7 @@ class IndexColumn
     /**
      * Returns whether the column is nullable
      *
-     * @param bool $as_text whether to returned the string representation
-     *
+     * @param  bool  $as_text whether to returned the string representation
      * @return string nullability of the column. True/false or Yes/No depending
      *                on the value of the $as_text parameter
      */

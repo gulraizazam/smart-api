@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table\Structure;
 
+use function __;
+use function count;
 use PhpMyAdmin\Controllers\Table\AbstractController;
 use PhpMyAdmin\Controllers\Table\StructureController;
 use PhpMyAdmin\DatabaseInterface;
@@ -11,9 +13,6 @@ use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Util;
-
-use function __;
-use function count;
 
 final class FulltextController extends AbstractController
 {
@@ -51,7 +50,7 @@ final class FulltextController extends AbstractController
 
         $i = 1;
         $selectedCount = count($selected);
-        $sql_query = 'ALTER TABLE ' . Util::backquote($table) . ' ADD FULLTEXT(';
+        $sql_query = 'ALTER TABLE '.Util::backquote($table).' ADD FULLTEXT(';
 
         foreach ($selected as $field) {
             $sql_query .= Util::backquote($field);

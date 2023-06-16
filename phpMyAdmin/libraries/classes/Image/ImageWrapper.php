@@ -21,7 +21,6 @@ use function imagepng;
 use function imagestring;
 use function imagesx;
 use function imagesy;
-
 use const PHP_VERSION_ID;
 
 final class ImageWrapper
@@ -30,7 +29,7 @@ final class ImageWrapper
     private $image;
 
     /**
-     * @param resource $image
+     * @param  resource  $image
      */
     private function __construct($image)
     {
@@ -46,7 +45,8 @@ final class ImageWrapper
     }
 
     /**
-     * @param array<string, int>|null $background
+     * @param  array<string, int>|null  $background
+     *
      * @psalm-param array{red: int, green: int, blue: int} $background
      */
     public static function create(int $width, int $height, ?array $background = null): ?self
@@ -163,7 +163,7 @@ final class ImageWrapper
     }
 
     /**
-     * @param resource|string|null $file
+     * @param  resource|string|null  $file
      */
     public function jpeg($file = null, int $quality = -1): bool
     {
@@ -180,7 +180,7 @@ final class ImageWrapper
     }
 
     /**
-     * @param resource|string|null $file
+     * @param  resource|string|null  $file
      */
     public function png($file = null, int $quality = -1, int $filters = -1): bool
     {

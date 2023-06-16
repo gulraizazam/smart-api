@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Command;
 
+use const CACHE_DIR;
+use function file_put_contents;
+use function is_file;
+use function json_encode;
 use PhpMyAdmin\Config;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Routing;
@@ -11,20 +15,14 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Tests\Stubs\DbiDummy;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use function sprintf;
+use function str_contains;
+use function str_replace;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Twig\Cache\CacheInterface;
-
-use function file_put_contents;
-use function is_file;
-use function json_encode;
-use function sprintf;
-use function str_contains;
-use function str_replace;
-
-use const CACHE_DIR;
 
 final class CacheWarmupCommand extends Command
 {
@@ -124,7 +122,7 @@ final class CacheWarmupCommand extends Command
         $cfg['environment'] = $environment;
         $config->set('environment', $cfg['environment']);
         $dbi = new DatabaseInterface(new DbiDummy());
-        $tmpDir = ROOT_PATH . 'twig-templates';
+        $tmpDir = ROOT_PATH.'twig-templates';
         $twig = Template::getTwigEnvironment($tmpDir);
 
         $output->writeln('Searching for files...', OutputInterface::VERBOSITY_VERY_VERBOSE);
@@ -138,7 +136,7 @@ final class CacheWarmupCommand extends Command
         $twigCache = $twig->getCache(false);
         $replacements = [];
         $output->writeln(
-            'Twig debug is: ' . ($twig->isDebug() ? 'enabled' : 'disabled'),
+            'Twig debug is: '.($twig->isDebug() ? 'enabled' : 'disabled'),
             OutputInterface::VERBOSITY_DEBUG
         );
 
@@ -154,8 +152,8 @@ final class CacheWarmupCommand extends Command
                 continue;
             }
 
-            $name = str_replace(Template::TEMPLATES_FOLDER . '/', '', $file->getPathname());
-            $output->writeln('Loading: ' . $name, OutputInterface::VERBOSITY_DEBUG);
+            $name = str_replace(Template::TEMPLATES_FOLDER.'/', '', $file->getPathname());
+            $output->writeln('Loading: '.$name, OutputInterface::VERBOSITY_DEBUG);
             /** @psalm-suppress InternalMethod */
             $template = $twig->loadTemplate($twig->getTemplateClass($name), $name);
 
@@ -166,7 +164,7 @@ final class CacheWarmupCommand extends Command
             // Generate line map
             /** @psalm-suppress InternalMethod */
             $cacheFilename = $twigCache->generateKey($name, $twig->getTemplateClass($name));
-            $template_file = 'templates/' . $name;
+            $template_file = 'templates/'.$name;
             $cache_file = str_replace($tmpDir, 'twig-templates', $cacheFilename);
             /** @psalm-suppress InternalMethod */
             $replacements[$cache_file] = [$template_file, $template->getDebugInfo()];
@@ -181,7 +179,7 @@ final class CacheWarmupCommand extends Command
         $output->writeln('Writing replacements...', OutputInterface::VERBOSITY_VERY_VERBOSE);
 
         // Store replacements in JSON
-        if (file_put_contents($tmpDir . '/replace.json', (string) json_encode($replacements)) === false) {
+        if (file_put_contents($tmpDir.'/replace.json', (string) json_encode($replacements)) === false) {
             return Command::FAILURE;
         }
 

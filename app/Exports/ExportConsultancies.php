@@ -1,16 +1,11 @@
 <?php
 
-
 namespace App\Exports;
+
 use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
-use App\Models\AppointmentStatuses;
-use App\Models\Leads;
-use App\Models\LeadStatuses;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -21,9 +16,10 @@ use Maatwebsite\Excel\Events\AfterSheet;
 class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
     private $limit = 1000;
+
     private $offset = 0;
 
-    public function __construct($limit = 1000, $offset = 0, $request)
+    public function __construct($limit, $offset, $request)
     {
         $this->limit = $limit;
         $this->offset = $offset;
@@ -32,134 +28,134 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
 
     public function collection()
     {
-        $where=array();
+        $where = [];
         if ($this->request->filter_date_from) {
-            $where[] = array(
+            $where[] = [
                 'appointments.scheduled_date',
                 '>=',
-                $this->request->filter_date_from
-            );
+                $this->request->filter_date_from,
+            ];
         }
 
         if ($this->request->filter_date_to) {
-            $where[] = array(
+            $where[] = [
                 'appointments.scheduled_date',
                 '<=',
-                $this->request->filter_date_to
-            );
+                $this->request->filter_date_to,
+            ];
         }
         if ($this->request->appointmenttype) {
-            $where[] = array(
+            $where[] = [
                 'appointment_type_id',
                 '=',
-                $this->request->appointmenttype
-            );
+                $this->request->appointmenttype,
+            ];
         }
         if ($this->request->filter_doctor_id) {
-            $where[] = array(
+            $where[] = [
                 'doctor_id',
                 '=',
-                $this->request->filter_doctor_id
-            );
+                $this->request->filter_doctor_id,
+            ];
         }
         if ($this->request->filter_status_id) {
             $where[] = [
                 'match' => [
-                    'base_appointment_status_id' => $this->request->filter_status_id
-                ]
+                    'base_appointment_status_id' => $this->request->filter_status_id,
+                ],
             ];
         }
         if ($this->request->filter_created_by_id) {
-            $where[] = array(
+            $where[] = [
                 'created_by',
                 '=',
-                $this->request->filter_created_by_id
-            );
+                $this->request->filter_created_by_id,
+            ];
         }
         if ($this->request->filter_center_id) {
-            $where[] = array(
+            $where[] = [
                 'location_id',
                 '=',
-                $this->request->filter_center_id
-            );
+                $this->request->filter_center_id,
+            ];
         }
         if ($this->request->filter_patient_id) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $this->request->filter_patient_id
-            );
+                $this->request->filter_patient_id,
+            ];
         }
         if ($this->request->filter_city_id) {
-            $where[] = array(
+            $where[] = [
                 'city_id',
                 '=',
-                $this->request->filter_city_id
-            );
+                $this->request->filter_city_id,
+            ];
         }
         if ($this->request->filter_region_id) {
-            $where[] = array(
+            $where[] = [
                 'region_id',
                 '=',
-                $this->request->filter_region_id
-            );
+                $this->request->filter_region_id,
+            ];
         }
         if ($this->request->filter_region_id) {
-            $where[] = array(
+            $where[] = [
                 'region_id',
                 '=',
-                $this->request->filter_region_id
-            );
+                $this->request->filter_region_id,
+            ];
         }
         if ($this->request->filter_consultancytype_id) {
-            $where[] = array(
+            $where[] = [
                 'consultancy_type',
                 '=',
-                $this->request->filter_consultancytype_id
-            );
+                $this->request->filter_consultancytype_id,
+            ];
         }
         if ($this->request->filter_updated_by_id) {
-            $where[] = array(
+            $where[] = [
                 'updated_by',
                 '=',
-                $this->request->filter_updated_by_id
-            );
+                $this->request->filter_updated_by_id,
+            ];
         }
         if ($this->request->filter_rescheduled_by_id) {
-            $where[] = array(
+            $where[] = [
                 'converted_by',
                 '=',
-                $this->request->filter_rescheduled_by_id
-            );
+                $this->request->filter_rescheduled_by_id,
+            ];
         }
         if ($this->request->filter_created_from_id) {
-            $where[] = array(
+            $where[] = [
                 'appointments.created_at',
                 '>=',
-                $this->request->filter_created_from_id. ' 00:00:00'
-            );
+                $this->request->filter_created_from_id.' 00:00:00',
+            ];
         }
         if ($this->request->filter_created_to_id) {
-            $where[] = array(
+            $where[] = [
                 'appointments.created_at',
                 '<=',
-                $this->request->filter_created_to_id . ' 23:59:59'
-            );
+                $this->request->filter_created_to_id.' 23:59:59',
+            ];
         }
         if ($this->request->filter_service_id) {
-            $where[] = array(
+            $where[] = [
                 'appointments.service_id',
                 '=',
-                $this->request->filter_service_id
-            );
+                $this->request->filter_service_id,
+            ];
         }
         if ($this->request->filter_phone) {
             $phone = substr($this->request->filter_phone, 1);
-            $where[] = array(
+            $where[] = [
                 'users.phone',
                 '=',
-                $phone
-            );
+                $phone,
+            ];
         }
         $results = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
             ->where(['users.user_type_id' => config('constants.patient_id')])
@@ -169,7 +165,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             ->get();
 
         return $results;
-     }
+    }
 
     public function headings(): array
     {
@@ -197,13 +193,13 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
     {
         if ($appointment->consultancy_type == 'in_person') {
             $consultancy_type = 'In Person';
-        } else if ($appointment->consultancy_type == 'virtual') {
+        } elseif ($appointment->consultancy_type == 'virtual') {
             $consultancy_type = 'Virtual';
         } else {
             $consultancy_type = 'N/A';
         }
 
-        if (!Gate::allows('contact')) {
+        if (! Gate::allows('contact')) {
             $phone = '***********';
         } else {
             $phone = $appointment->phone ?? 'N/A';
@@ -213,7 +209,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             GeneralFunctions::patientSearchStringAdd($appointment->id),
             $appointment->name ?? 'N/A',
             $phone,
-            Carbon::parse($appointment->scheduled_date)->format('F j,Y') .' '. Carbon::parse($appointment->scheduled_time)->format('h:i A') ?? 'N/A',
+            Carbon::parse($appointment->scheduled_date)->format('F j,Y').' '.Carbon::parse($appointment->scheduled_time)->format('h:i A') ?? 'N/A',
             $appointment->doctor->name ?? 'N/A',
             $appointment->region->name ?? 'N/A',
             $appointment->city->name ?? 'N/A',
@@ -231,12 +227,11 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
 
     /**
      * Write code on Method
-     *
      */
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class    => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
 
                 $event->sheet->getDelegate()->getStyle('A1:P1')->getFont()->setBold(true);
 
@@ -262,5 +257,4 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             },
         ];
     }
-
 }

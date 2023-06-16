@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Dbal;
 
-use Stringable;
-
 use function in_array;
 use function is_numeric;
 use function is_string;
+use Stringable;
 
 /**
  * @see https://mariadb.com/kb/en/show-warnings/
@@ -20,12 +19,14 @@ final class Warning implements Stringable
 {
     /**
      * @var string
+     *
      * @psalm-var 'Note'|'Warning'|'Error'|'?'
      */
     public $level;
 
     /**
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $code;
@@ -41,7 +42,7 @@ final class Warning implements Stringable
     }
 
     /**
-     * @param mixed[] $row
+     * @param  mixed[]  $row
      */
     public static function fromArray(array $row): self
     {
@@ -69,6 +70,6 @@ final class Warning implements Stringable
      */
     public function __toString(): string
     {
-        return $this->level . ': #' . $this->code . ($this->message !== '' ? ' ' . $this->message : '');
+        return $this->level.': #'.$this->code.($this->message !== '' ? ' '.$this->message : '');
     }
 }

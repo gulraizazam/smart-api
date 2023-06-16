@@ -5,12 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
-
 class Medical extends Model
 {
-    protected $fillable = ['user_id','patient_id', 'appointment_id', 'custom_form_feedback_id','date','created_at', 'updated_at'];
+    protected $fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date', 'created_at', 'updated_at'];
 
-    protected static $_fillable = ['user_id','patient_id', 'appointment_id', 'custom_form_feedback_id','date'];
+    protected static $_fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date'];
 
     protected $table = 'medicals';
 
@@ -28,10 +27,12 @@ class Medical extends Model
     {
         return $this->belongsTo(User::class, 'patient_id');
     }
+
     /*
      * Create Record with log file
      */
-    static public function CreateRecord($request,$parent_id,$user_id){
+    public static function CreateRecord($request, $parent_id, $user_id)
+    {
 
         $data['patient_id'] = $request->reference_id;
         $data['user_id'] = $user_id;
@@ -49,7 +50,8 @@ class Medical extends Model
     /*
      * Update Record
      */
-    static public function updateRecord($request,$account_id){
+    public static function updateRecord($request, $account_id)
+    {
 
         $old_data = (self::find($request->medical_id))->toArray();
 
@@ -59,7 +61,7 @@ class Medical extends Model
             'id' => $request->measurement_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -73,130 +75,126 @@ class Medical extends Model
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false,$id = false,$flag = 0)
+    public static function getTotalRecords(Request $request, $account_id = false, $id = false, $flag = 0)
     {
-        $where = array();
-        if($flag == 1){
-            if($id != false){
-                $where[] = array(
+        $where = [];
+        if ($flag == 1) {
+            if ($id != false) {
+                $where[] = [
                     'patient_id',
                     '=',
-                    $id
-                );
+                    $id,
+                ];
             }
-        }else{
-            if($id != false){
-                $where[] = array(
+        } else {
+            if ($id != false) {
+                $where[] = [
                     'appointment_id',
                     '=',
-                    $id
-                );
+                    $id,
+                ];
             }
         }
 
         if ($request->get('user_id')) {
-            $where[] = array(
+            $where[] = [
                 'user_id',
                 '=',
-                $request->get('user_id')
-            );
+                $request->get('user_id'),
+            ];
         }
         if ($request->get('name')) {
-            $where[] = array(
+            $where[] = [
                 'form_name',
                 'like',
-                '%'.$request->get('name').'%'
-            );
+                '%'.$request->get('name').'%',
+            ];
         }
         if ($request->get('created_from') && $request->get('created_from') != '') {
-            $where[] = array(
+            $where[] = [
                 'medicals.created_at',
                 '>=',
-                $request->get('created_from') . ' 00:00:00'
-            );
+                $request->get('created_from').' 00:00:00',
+            ];
         }
         if ($request->get('created_to') && $request->get('created_to') != '') {
-            $where[] = array(
+            $where[] = [
                 'medicals.created_at',
                 '<=',
-                $request->get('created_to') . ' 23:59:59'
-            );
+                $request->get('created_to').' 23:59:59',
+            ];
         }
-        return self::join('custom_form_feedbacks','medicals.custom_form_feedback_id','=','custom_form_feedbacks.id')
-            ->where($where)->select('custom_form_feedbacks.form_name','medicals.*')->count();
+
+        return self::join('custom_form_feedbacks', 'medicals.custom_form_feedback_id', '=', 'custom_form_feedbacks.id')
+            ->where($where)->select('custom_form_feedbacks.form_name', 'medicals.*')->count();
     }
 
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false,$flag = 0)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false, $flag = 0)
     {
         $filters = getFilters($request->all());
 
-        $where = array();
+        $where = [];
 
-        if($flag == 1){
-            if($id != false){
-                $where[] = array(
+        if ($flag == 1) {
+            if ($id != false) {
+                $where[] = [
                     'patient_id',
                     '=',
-                    $id
-                );
+                    $id,
+                ];
             }
-        }else{
-            if($id != false){
-                $where[] = array(
+        } else {
+            if ($id != false) {
+                $where[] = [
                     'appointment_id',
                     '=',
-                    $id
-                );
+                    $id,
+                ];
             }
         }
         if (hasFilter($filters, 'user_id')) {
-            $where[] = array(
+            $where[] = [
                 'user_id',
                 '=',
-                $filters['user_id']
-            );
+                $filters['user_id'],
+            ];
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'form_name',
                 'like',
-                '%'.$filters['name'].'%'
-            );
+                '%'.$filters['name'].'%',
+            ];
         }
         if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
+            $where[] = [
                 'medicals.created_at',
                 '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
+                $filters['created_from'].' 00:00:00',
+            ];
         }
         if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
+            $where[] = [
                 'medicals.created_at',
                 '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
+                $filters['created_to'].' 23:59:59',
+            ];
         }
 
-        list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'medicals');
+        [$orderBy, $order] = getSortBy($request, 'created_at', 'desc', 'medicals');
 
-        return self::with('patient')->join('custom_form_feedbacks','medicals.custom_form_feedback_id','=','custom_form_feedbacks.id')
-            ->where($where)->select('custom_form_feedbacks.form_name','medicals.*')->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy,$order)->get();
+        return self::with('patient')->join('custom_form_feedbacks', 'medicals.custom_form_feedback_id', '=', 'custom_form_feedbacks.id')
+            ->where($where)->select('custom_form_feedbacks.form_name', 'medicals.*')->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
     }
-
 }
