@@ -761,4 +761,85 @@ function ConsultanciesByStatus(bar) {
     central_wise_arrival_chart.render();
 }
 
+function initDoctorWiseConversion(period, time = ''){
+
+    centre_id = $(".doctorwiseconversion").attr('data-id');
+
+    $.ajax({
+        url: route('admin.dashboard.doctor_wise_conversion'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'centre_id': centre_id
+        },
+        success: function (response) {
+            var categories = response.data.categories;
+            jQuery('#categories-table-body').html("");
+            var TABLE_HTML = "";
+            console.log('categories',categories);
+            jQuery.each( categories, function( index, category ) {
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>"+category.total_arrival+"</td><td>"+category.total_conversion+"</td></tr>";
+               
+            });
+            jQuery('#categories-table-body').append(TABLE_HTML);
+            DoctorWiseConversion(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
+function DoctorWiseConversion(bar) {
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    let lables =bar.data.labels;
+    var options = {
+        series: [{
+            name: 'Total Appointments',
+            data: bar.data.total_appointments
+        }, {
+            name: 'Converted',
+            data: bar.data.converted_appointments
+        } ],
+        noData: {
+            text: 'No Data',
+            align: 'center',
+            verticalAlign: 'top',
+            style: {
+              color: 'red',
+              fontSize: '14px',
+              fontFamily: undefined
+            }
+        },
+        chart: {
+            type: 'bar',
+            height: 350,
+
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 1,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: lables,
+        },
+        colors: [primary, success, warning]
+    };
+    $("#doc_wise_conversion").html("");
+    doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
+    doc_wise_conversion_chart.render();
+}
+
 
