@@ -182,7 +182,7 @@ class Resources extends BaseModal
             ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
             ->where("resources.external_id", "=", $doctor_id)
             ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
-           // ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"]) /*No Actually if start time exist in rota we'll create its treatment*/
+            // ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"]) /*No Actually if start time exist in rota we'll create its treatment*/
             ->first();
 
         if ($record) {
@@ -227,7 +227,6 @@ class Resources extends BaseModal
         ) {
             $data["started_time"] = \Carbon\Carbon::parse($request->get("start"))->format("Y-m-d H:i:s");
             $data["ended_time"] = \Carbon\Carbon::parse($request->get("end"))->format("Y-m-d H:i:s");
-
         } else {
             return false;
         }
@@ -259,7 +258,6 @@ class Resources extends BaseModal
         ) {
             $data["started_time"] = \Carbon\Carbon::parse($start)->format("Y-m-d H:i:s");
             $data["ended_time"] = \Carbon\Carbon::parse($end)->format("Y-m-d H:i:s");
-
         } else {
             return false;
         }
@@ -284,7 +282,7 @@ class Resources extends BaseModal
         $where[] = array("external_id", "=", $doctor_id);
         $where[] = array("resource_type_id", "=", self::getResourceType("doctor"));
         $where[] = array("account_id", "=", Auth::User()->account_id);
-        return self::where($where)->with(["doctor_rotas" => function ($query) use ($location_id,$start_date, $end_date) {
+        return self::where($where)->with(["resource_rota", "doctor_rotas" => function ($query) use ($location_id, $start_date, $end_date) {
             $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
             $query->where("resource_has_rota.location_id", $location_id);
             $query->where("resource_has_rota.is_consultancy", '1');
@@ -309,7 +307,6 @@ class Resources extends BaseModal
         foreach ($resources as $r) {
             $r = $r->id;
             $resources_array[] = Resources::where('id', '=', $r)->with("resource_rota")->first();
-
         }
         return $resources_array;
         //return self::join('resources','locations.id  resources.location_id','=','resources.location_id')->where($where)->select('resources.*')->with("resource_rota")->get();
@@ -331,7 +328,6 @@ class Resources extends BaseModal
         foreach ($resources as $r) {
             $r = $r->id;
             $resources_array[] = Resources::where('id', '=', $r)->with("resource_rota")->first();
-
         }
         return $resources_array;
     }
@@ -515,7 +511,6 @@ class Resources extends BaseModal
             ) {
                 $orderBy = Filters::get(Auth::User()->id, 'resources', 'order_by');
                 $order = Filters::get(Auth::User()->id, 'resources', 'order');
-
             } else {
 
                 Filters::put(Auth::User()->id, 'resources', 'order_by', $orderBy);
@@ -523,36 +518,36 @@ class Resources extends BaseModal
             }
         }
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")){
+            if (\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")) {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
                     ->whereIn('location_id', ACL::getUserCentres())
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderby($orderBy, $order)
                     ->get();
-            }else{
+            } else {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
                     ->whereIn('location_id', ACL::getUserCentres())
-                    ->where('resources.active',1)
+                    ->where('resources.active', 1)
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderby($orderBy, $order)
                     ->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")){
+            if (\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")) {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderby($orderBy, $order)
                     ->get();
-            }else{ 
+            } else {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
-                ->where('resources.active',1)
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
+                    ->where('resources.active', 1)
+                    ->limit($iDisplayLength)
+                    ->offset($iDisplayStart)
+                    ->orderby($orderBy, $order)
+                    ->get();
             }
         }
     }
@@ -833,8 +828,8 @@ class Resources extends BaseModal
 
         if (!$resource) {
             return [
-              'status' => false,
-              'message' => 'Resource not found.',
+                'status' => false,
+                'message' => 'Resource not found.',
             ];
         }
 
@@ -901,7 +896,7 @@ class Resources extends BaseModal
     static public function isChildExists($id, $account_id)
     {
         if (
-        ResourceHasRota::where(['resource_id' => $id])->count()
+            ResourceHasRota::where(['resource_id' => $id])->count()
         ) {
             return true;
         }
@@ -934,6 +929,4 @@ class Resources extends BaseModal
             ['external_id', '=', 0]
         ])->get();
     }
-
-
 }
