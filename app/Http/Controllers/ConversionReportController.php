@@ -14,17 +14,19 @@ class ConversionReportController extends Controller
 {
     public function index()
     {
-        $services = Services::where(['parent_id' => 0])->where('slug','!=','all')->pluck('id','name');
+        $services = Services::where(['parent_id' => 0])->where('slug', '!=', 'all')->pluck('id', 'name');
         $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
-        $select_All = array('' => 'All');
+        $select_All = ['' => 'All'];
         $users = ($select_All + $employees->toArray() + $operators->toArray());
         $operators->prepend('All', '');
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         $locations->prepend('All', '');
         $locations_com = Locations::getActiveSorted(ACL::getUserCentres());
-        return view('admin.reports.conversion',get_defined_vars());
+
+        return view('admin.reports.conversion', get_defined_vars());
     }
+
     public function LoadConversionReport(Request $request)
     {
         ini_set('memory_limit', '-1');
@@ -37,7 +39,8 @@ class ConversionReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        list($report_data, $locationData, $maxConversion, $minConversion, $conversionsByPatient, $average_client_coversion, $arrival_to_conversion_ratio, $total_conversion, $total_arrival, $CategoryConversionData, $avg_cxlient_valu) = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
+        [$report_data, $locationData, $maxConversion, $minConversion, $conversionsByPatient, $average_client_coversion, $arrival_to_conversion_ratio, $total_conversion, $total_arrival, $CategoryConversionData, $avg_cxlient_valu] = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
+
         return view('admin.reports.conversion_report', get_defined_vars());
     }
 }

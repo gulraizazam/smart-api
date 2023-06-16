@@ -19,9 +19,11 @@ class Scripts
      * An array of SCRIPT tags
      *
      * @var array<string, array<string, int|string|array<string, string>>>
+     *
      * @psalm-var array<string, array{has_onload: 0|1, filename: non-empty-string, params: array<string, string>}>
      */
     private $files;
+
     /**
      * A string of discrete javascript code snippets
      *
@@ -45,8 +47,8 @@ class Scripts
     /**
      * Adds a new file to the list of scripts
      *
-     * @param string                $filename The name of the file to include
-     * @param array<string, string> $params   Additional parameters to pass to the file
+     * @param  string  $filename The name of the file to include
+     * @param  array<string, string>  $params   Additional parameters to pass to the file
      */
     public function addFile(
         string $filename,
@@ -68,7 +70,7 @@ class Scripts
     /**
      * Add new files to the list of scripts
      *
-     * @param string[] $filelist The array of file names
+     * @param  string[]  $filelist The array of file names
      */
     public function addFiles(array $filelist): void
     {
@@ -80,8 +82,7 @@ class Scripts
     /**
      * Determines whether to fire up an onload event for a file
      *
-     * @param string $filename The name of the file to be checked against the exclude list.
-     *
+     * @param  string  $filename The name of the file to be checked against the exclude list.
      * @return bool true to fire up the event, false not to
      */
     private function hasOnloadEvent(string $filename): bool
@@ -96,11 +97,11 @@ class Scripts
     /**
      * Adds a new code snippet to the code to be executed
      *
-     * @param string $code The JS code to be added
+     * @param  string  $code The JS code to be added
      */
     public function addCode(string $code): void
     {
-        $this->code .= $code . "\n";
+        $this->code .= $code."\n";
     }
 
     /**
@@ -108,6 +109,7 @@ class Scripts
      * whether to register onload events for this file
      *
      * @return array<int, array<string, int|string>>
+     *
      * @psalm-return list<array{name: non-empty-string, fire: 0|1}>
      */
     public function getFiles(): array

@@ -32,7 +32,7 @@ class CreateInvoicesTable extends Migration
             $table->softDeletes();
 
             /*Manage foreign Keys relationship*/
-            $table->foreign('invoice_status_id','invoices_invoice_status')->references('id')->on('invoice_statuses');
+            $table->foreign('invoice_status_id', 'invoices_invoice_status')->references('id')->on('invoice_statuses');
             $table->foreign('account_id')->references('id')->on('accounts');
             $table->foreign('patient_id')->references('id')->on('users');
             $table->foreign('appointment_id')->references('id')->on('appointments');

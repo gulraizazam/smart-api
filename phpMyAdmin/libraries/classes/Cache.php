@@ -17,8 +17,8 @@ class Cache
     /**
      * Store a value
      *
-     * @param string $cacheKey The key to use
-     * @param mixed  $value    The value to cache
+     * @param  string  $cacheKey The key to use
+     * @param  mixed  $value    The value to cache
      */
     public static function set(string $cacheKey, $value): bool
     {
@@ -30,7 +30,7 @@ class Cache
     /**
      * Does the cache have a value stored for the key
      *
-     * @param string $cacheKey The key to use
+     * @param  string  $cacheKey The key to use
      */
     public static function has(string $cacheKey): bool
     {
@@ -40,9 +40,8 @@ class Cache
     /**
      * Get back a cached value
      *
-     * @param string $cacheKey     The key to use
-     * @param mixed  $defaultValue The default value in case it does not exist
-     *
+     * @param  string  $cacheKey     The key to use
+     * @param  mixed  $defaultValue The default value in case it does not exist
      * @return mixed The cached value
      */
     public static function get(string $cacheKey, $defaultValue = null)
@@ -53,7 +52,7 @@ class Cache
     /**
      * Remove a cached value
      *
-     * @param string $cacheKey The key to use to remove the value
+     * @param  string  $cacheKey The key to use to remove the value
      */
     public static function remove(string $cacheKey): bool
     {

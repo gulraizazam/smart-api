@@ -16,8 +16,7 @@ declare(strict_types=1);
  *
  * It can optionally use configured username as parameter.
  *
- * @param string $user User name
- *
+ * @param  string  $user User name
  * @return array
  */
 function get_login_credentials($user)

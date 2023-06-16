@@ -8,12 +8,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Server\Status;
 
-use PhpMyAdmin\ReplicationInfo;
-use PhpMyAdmin\Url;
-
 use function __;
 use function basename;
 use function mb_strtolower;
+use PhpMyAdmin\ReplicationInfo;
+use PhpMyAdmin\Url;
 use function str_contains;
 
 /**
@@ -71,8 +70,8 @@ class Data
     /**
      * An empty setter makes the above properties read-only
      *
-     * @param string $a key
-     * @param mixed  $b value
+     * @param  string  $a key
+     * @param  mixed  $b value
      */
     public function __set($a, $b): void
     {
@@ -242,9 +241,8 @@ class Data
     /**
      * Calculate some values
      *
-     * @param array $server_status    contains results of SHOW GLOBAL STATUS
-     * @param array $server_variables contains results of SHOW GLOBAL VARIABLES
-     *
+     * @param  array  $server_status    contains results of SHOW GLOBAL STATUS
+     * @param  array  $server_variables contains results of SHOW GLOBAL VARIABLES
      * @return array
      */
     private function calculateValues(array $server_status, array $server_variables)
@@ -303,12 +301,11 @@ class Data
     /**
      * Sort variables into arrays
      *
-     * @param array $server_status contains results of SHOW GLOBAL STATUS
-     * @param array $allocations   allocations for sections
-     * @param array $allocationMap map variables to their section
-     * @param array $sectionUsed   is a section used?
-     * @param array $used_queries  used queries
-     *
+     * @param  array  $server_status contains results of SHOW GLOBAL STATUS
+     * @param  array  $allocations   allocations for sections
+     * @param  array  $allocationMap map variables to their section
+     * @param  array  $sectionUsed   is a section used?
+     * @param  array  $used_queries  used queries
      * @return array ($allocationMap, $sectionUsed, $used_queries)
      */
     private function sortVariables(
@@ -432,8 +429,7 @@ class Data
     /**
      * cleanup of some deprecated values
      *
-     * @param array $server_status status array to process
-     *
+     * @param  array  $server_status status array to process
      * @return array
      */
     public static function cleanDeprecated(array $server_status)

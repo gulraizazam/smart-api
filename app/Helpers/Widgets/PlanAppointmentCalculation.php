@@ -7,7 +7,6 @@ use App\Jobs\IndexSingleAppointmentJob;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
-use App\Models\Cities;
 use App\Models\Discounts;
 use App\Models\InvoiceDetails;
 use App\Models\Invoices;
@@ -17,22 +16,17 @@ use App\Models\LeadStatuses;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\PackageBundles;
-use App\Models\PackageService;
 use App\Models\Patients;
 use App\Models\PaymentModes;
 use App\Models\ResourceHasRota;
 use App\Models\ResourceHasRotaDays;
 use App\Models\Resources;
 use App\Models\Services;
-use App\Models\Settings;
 use App\Models\User;
-use Carbon\Carbon;
 use Auth;
-use Illuminate\Foundation\Bus\DispatchesJobs;
+use Carbon\Carbon;
 use Config;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
-
+use Illuminate\Foundation\Bus\DispatchesJobs;
 
 class PlanAppointmentCalculation
 {
@@ -41,7 +35,7 @@ class PlanAppointmentCalculation
     /*
      * Need consultnacy and Doctors for tag in plan
      */
-    static function tagAppointments($request)
+    public static function tagAppointments($request)
     {
         $appointment = [];
         $doctorids = [];
@@ -63,15 +57,15 @@ class PlanAppointmentCalculation
                 ['patient_id', '=', $request->patient_id],
                 ['base_appointment_status_id', '=', $appointment_status?->id],
                 ['appointment_type_id', '=', $appointment_type?->id],
-                ['location_id', '=', $request?->location_id]
+                ['location_id', '=', $request?->location_id],
             ])->orderBy('created_at', 'asc')->get();
 
             // Making array for above data
             foreach ($appointment_info as $appointment) {
-                $appointmentArray_appointment[$appointment?->id] = array(
-                    'id' => $appointment?->id . '.' . 'A',
-                    'name' => $appointment?->service->name . " - " . Carbon::parse($appointment?->created_at)->format('F j,Y h:i A') . " - " . $appointment->doctor->name,
-                );
+                $appointmentArray_appointment[$appointment?->id] = [
+                    'id' => $appointment?->id.'.'.'A',
+                    'name' => $appointment?->service->name.' - '.Carbon::parse($appointment?->created_at)->format('F j,Y h:i A').' - '.$appointment->doctor->name,
+                ];
                 $doctorids[] = $appointment?->doctor_id;
             }
 
@@ -89,6 +83,7 @@ class PlanAppointmentCalculation
             //     }
             // }
             $appointment = array_merge($appointmentArray_appointment, $appointmentArray_doctor);
+
             return $appointment;
         } else {
             return $appointment;
@@ -99,7 +94,7 @@ class PlanAppointmentCalculation
     /*
      * Now we need doctors which to which have rota for consutlancy
      */
-    static function loadDoctorsByLocation($location_id, $doctorids)
+    public static function loadDoctorsByLocation($location_id, $doctorids)
     {
         if ($location_id) {
 
@@ -124,6 +119,7 @@ class PlanAppointmentCalculation
                     }
                 }
             }
+
             return $doctors;
         } else {
             return null;
@@ -154,7 +150,7 @@ class PlanAppointmentCalculation
         $appointmentData['coming_from'] = 'plan';
         $appointmentData['start'] = Carbon::now()->toDateTimeString();
         $appointmentData['resource_id'] = $doctor_id;
-        $appointmentData['appointment_type'] = "consulting";
+        $appointmentData['appointment_type'] = 'consulting';
         $appointmentData['service_id'] = $service_info;
         $appointmentData['patient_id_1'] = null;
         $appointmentData['phone'] = $user_info->phone;
@@ -199,7 +195,7 @@ class PlanAppointmentCalculation
          * Check if Lead ID not provided then create a new lead
          * and assign this lead to current appointment.
          */
-        if (!$appointmentData['lead_id']) {
+        if (! $appointmentData['lead_id']) {
             /*
              * If Patient is from database
              * - if appointment already exists then do not update info
@@ -212,15 +208,15 @@ class PlanAppointmentCalculation
 
             if ($appointmentData['start']) {
 
-                $date_of_appointment = Carbon::parse($appointmentData['start'])->format("Y-m-d");
+                $date_of_appointment = Carbon::parse($appointmentData['start'])->format('Y-m-d');
 
                 $doctor_checking = self::checkingDoctorAvailbility($appointmentData['doctor_id'], $appointmentData['location_id'], $date_of_appointment);
 
-                $appointmentData['scheduled_date'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format("Y-m-d");
-                $appointmentData['scheduled_time'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format("H:i:s");
+                $appointmentData['scheduled_date'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format('Y-m-d');
+                $appointmentData['scheduled_time'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format('H:i:s');
 
-                $appointmentData['first_scheduled_date'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format("Y-m-d");
-                $appointmentData['first_scheduled_time'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format("H:i:s");
+                $appointmentData['first_scheduled_date'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format('Y-m-d');
+                $appointmentData['first_scheduled_time'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format('H:i:s');
 
                 $appointmentData['first_scheduled_count'] = 1;
             }
@@ -229,10 +225,10 @@ class PlanAppointmentCalculation
             unset($leadObj['lead_id']); // Remove Lead ID index
             $leadObj['patient_id'] = $patient->id;
             // Convert Lead status to Converted
-            $DefaultConvertedLeadStatus = LeadStatuses::where(array(
+            $DefaultConvertedLeadStatus = LeadStatuses::where([
                 'account_id' => Auth::User()->account_id,
                 'is_converted' => 1,
-            ))->first();
+            ])->first();
             if ($DefaultConvertedLeadStatus) {
                 $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
             } else {
@@ -243,7 +239,7 @@ class PlanAppointmentCalculation
             if (! empty($leadObj) && isset($leadObj['service_id'])) {
                 $leadObj['base_service_id'] = $leadObj['service_id'];
             }
-            $lead = Leads::createRecord($leadObj, $patient, $status = "Appointment");
+            $lead = Leads::createRecord($leadObj, $patient, $status = 'Appointment');
         }
 
         // Set Lead ID for Appointment
@@ -264,9 +260,9 @@ class PlanAppointmentCalculation
 
         // Based on allow message by status and scheduled date, allow send sms
         if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
-            $appointment->update(array(
-                'send_message' => 1
-            ));
+            $appointment->update([
+                'send_message' => 1,
+            ]);
         }
 
         /*
@@ -274,46 +270,45 @@ class PlanAppointmentCalculation
          * case 1: If Scheduled Date is not set then status is 'un-scheduled'
          * case 2: If 'un-scheduled' is not set then set defautl status i.e. 'pending'
          */
-        if (!$appointment->scheduled_date && !$appointment->scheduled_time) {
+        if (! $appointment->scheduled_date && ! $appointment->scheduled_time) {
             $appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id);
             if ($appointment_status) {
-                $appointment->update(array(
+                $appointment->update([
                     'appointment_status_id' => $appointment_status->id,
                     'base_appointment_status_id' => $appointment_status->id,
-                    'appointment_status_allow_message' => 0
-                ));
+                    'appointment_status_allow_message' => 0,
+                ]);
             } else {
                 // Set default appointment status i.e. 'pending'
                 $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
                 if ($appointment_status) {
-                    $appointment->update(array(
+                    $appointment->update([
                         'appointment_status_id' => $appointment_status->id,
                         'base_appointment_status_id' => $appointment_status->id,
-                        'appointment_status_allow_message' => 0
-                    ));
+                        'appointment_status_allow_message' => 0,
+                    ]);
                 } else {
-                    $appointment->update(array(
+                    $appointment->update([
                         'appointment_status_id' => null,
                         'base_appointment_status_id' => null,
-                        'appointment_status_allow_message' => 0
-                    ));
+                        'appointment_status_allow_message' => 0,
+                    ]);
                 }
             }
         }
-
 
         $message = 'Record has been created successfully.';
 
         /**
          * Dispatch Elastic Search Index
          */
-
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
-                'appointment_id' => $appointment->id
+                'appointment_id' => $appointment->id,
             ])
         );
+
         return $appointment->id;
 
     }
@@ -321,12 +316,12 @@ class PlanAppointmentCalculation
     /*
      *  Now we need to find the parent service against child service
      */
-    static function getserviceparentinfo($request)
+    public static function getserviceparentinfo($request)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => Auth::User()->account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         $package_bundle_info = PackageBundles::where('random_id', '=', $request->random_id)->first();
 
@@ -338,12 +333,12 @@ class PlanAppointmentCalculation
     /*
      *  Now we need to find the parent service against child service
      */
-    static function getserviceparentinfo_direct($request)
+    public static function getserviceparentinfo_direct($request)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => Auth::User()->account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         $service_id = self::findRoot($request, $searchServices);
 
@@ -353,7 +348,7 @@ class PlanAppointmentCalculation
     /*
      * We call function recursively so find the first parent
      */
-    static public function findRoot($service_id, $data)
+    public static function findRoot($service_id, $data)
     {
         if ($data[$service_id]['parent_id'] == '0') {
             return $service_id;
@@ -365,7 +360,7 @@ class PlanAppointmentCalculation
     /*
      *  Check doctor is availabale or not
      */
-    static function checkingDoctorAvailbility($doctor_id, $location_id, $date_of_appointment)
+    public static function checkingDoctorAvailbility($doctor_id, $location_id, $date_of_appointment)
     {
         $record = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
             ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
@@ -414,8 +409,8 @@ class PlanAppointmentCalculation
         $data['location_id'] = $appointmentinfo->location_id;
         $data['doctor_id'] = $appointmentinfo->doctor_id;
         $data['is_exclusive'] = $req['is_exclusive'];
-        $data['created_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
-        $data['updated_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
+        $data['created_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
+        $data['updated_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
 
         $invoice = Invoices::CreateRecord($data);
         $data_detail['tax_exclusive_serviceprice'] = $req['amount_create'];
@@ -430,8 +425,8 @@ class PlanAppointmentCalculation
         $data_detail['service_id'] = $appointmentinfo->service_id;
         $data_detail['invoice_id'] = $invoice->id;
 
-        $data_detail['created_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
-        $data_detail['updated_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
+        $data_detail['created_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
+        $data_detail['updated_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
 
         $discount_info = Discounts::find($req['discount_id']);
 
@@ -456,9 +451,8 @@ class PlanAppointmentCalculation
         $data_package['created_by'] = Auth::User()->id;
         $data_package['updated_by'] = Auth::User()->id;
 
-        $data_package['created_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
-        $data_package['updated_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
-
+        $data_package['created_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
+        $data_package['updated_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
 
         $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
         $out_transcation = $req['cash'] + $req['settle'];
@@ -466,10 +460,10 @@ class PlanAppointmentCalculation
         $out_transcation_price = $out_transcation - $invoice_detail->tax_price;
         $out_transcation_tax = $invoice_detail->tax_price;
 
-        $tran = array(
+        $tran = [
             '1' => $out_transcation_price,
-            '2' => $out_transcation_tax
-        );
+            '2' => $out_transcation_tax,
+        ];
         $count = 0;
         foreach ($tran as $trans) {
             if ($count == '1') {
@@ -486,8 +480,8 @@ class PlanAppointmentCalculation
             $data_package['location_id'] = $appointmentinfo->location_id;
             $data_package['created_by'] = Auth::User()->id;
             $data_package['updated_by'] = Auth::User()->id;
-            $data_package['created_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
-            $data_package['updated_at'] = $req['created_at'] . ' ' . Carbon::now()->toTimeString();
+            $data_package['created_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
+            $data_package['updated_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
             if ($invoice_detail->package_id != null) {
                 $data_package['package_id'] = $invoice_detail->package_id;
             }
@@ -509,7 +503,7 @@ class PlanAppointmentCalculation
             } else {
                 Appointments::where('id', '=', $req['appointment_id'])->update([
                     'base_appointment_status_id' => $arrivedStatus?->id,
-                'appointment_status_id' => $arrivedStatus?->id
+                    'appointment_status_id' => $arrivedStatus?->id,
                 ]);
             }
         }
@@ -525,7 +519,7 @@ class PlanAppointmentCalculation
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
-                'appointment_id' => $appointmentinfo->id
+                'appointment_id' => $appointmentinfo->id,
             ])
         );
 
@@ -552,10 +546,10 @@ class PlanAppointmentCalculation
         $appointmentData['start'] = Carbon::parse(Carbon::now())->toDateTimeString();
 
         if ($appointmentData['start']) {
-            $date_of_appointment = Carbon::parse($appointmentData['start'])->format("Y-m-d");
+            $date_of_appointment = Carbon::parse($appointmentData['start'])->format('Y-m-d');
             $doctor_checking = self::checkingDoctorAvailbility($appointmentData['doctor_id'], $appointmentData['location_id'], $date_of_appointment);
-            $appointmentData['scheduled_date'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format("Y-m-d");
-            $appointmentData['scheduled_time'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format("H:i:s");
+            $appointmentData['scheduled_date'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format('Y-m-d');
+            $appointmentData['scheduled_time'] = Carbon::parse($doctor_checking[0]['start_timestamp'])->format('H:i:s');
         }
 
         /*
@@ -588,7 +582,7 @@ class PlanAppointmentCalculation
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
-                'appointment_id' => $appointment->id
+                'appointment_id' => $appointment->id,
             ])
         );
 

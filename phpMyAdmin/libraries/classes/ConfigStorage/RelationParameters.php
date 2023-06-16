@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\ConfigStorage;
 
+use function is_string;
 use PhpMyAdmin\ConfigStorage\Features\BookmarkFeature;
 use PhpMyAdmin\ConfigStorage\Features\BrowserTransformationFeature;
 use PhpMyAdmin\ConfigStorage\Features\CentralColumnsFeature;
@@ -28,8 +29,6 @@ use PhpMyAdmin\Version;
 use Webmozart\Assert\Assert;
 use Webmozart\Assert\InvalidArgumentException;
 
-use function is_string;
-
 /**
  * @psalm-immutable
  */
@@ -37,46 +36,65 @@ final class RelationParameters
 {
     /**
      * @var string|null
+     *
      * @psalm-var non-empty-string|null
      */
     public $user;
+
     /** @var DatabaseName|null */
     public $db;
 
     /** @var BookmarkFeature|null */
     public $bookmarkFeature;
+
     /** @var BrowserTransformationFeature|null */
     public $browserTransformationFeature;
+
     /** @var CentralColumnsFeature|null */
     public $centralColumnsFeature;
+
     /** @var ColumnCommentsFeature|null */
     public $columnCommentsFeature;
+
     /** @var ConfigurableMenusFeature|null */
     public $configurableMenusFeature;
+
     /** @var DatabaseDesignerSettingsFeature|null */
     public $databaseDesignerSettingsFeature;
+
     /** @var DisplayFeature|null */
     public $displayFeature;
+
     /** @var ExportTemplatesFeature|null */
     public $exportTemplatesFeature;
+
     /** @var FavoriteTablesFeature|null */
     public $favoriteTablesFeature;
+
     /** @var NavigationItemsHidingFeature|null */
     public $navigationItemsHidingFeature;
+
     /** @var PdfFeature|null */
     public $pdfFeature;
+
     /** @var RecentlyUsedTablesFeature|null */
     public $recentlyUsedTablesFeature;
+
     /** @var RelationFeature|null */
     public $relationFeature;
+
     /** @var SavedQueryByExampleSearchesFeature|null */
     public $savedQueryByExampleSearchesFeature;
+
     /** @var SqlHistoryFeature|null */
     public $sqlHistoryFeature;
+
     /** @var TrackingFeature|null */
     public $trackingFeature;
+
     /** @var UiPreferencesFeature|null */
     public $uiPreferencesFeature;
+
     /** @var UserPreferencesFeature|null */
     public $userPreferencesFeature;
 
@@ -128,7 +146,7 @@ final class RelationParameters
     }
 
     /**
-     * @param mixed[] $params
+     * @param  mixed[]  $params
      */
     public static function fromArray(array $params): self
     {
@@ -309,6 +327,7 @@ final class RelationParameters
 
     /**
      * @return array<string, bool|string|null>
+     *
      * @psalm-return array{
      *   version: string,
      *   user: (string|null),
@@ -459,7 +478,7 @@ final class RelationParameters
     }
 
     /**
-     * @param mixed $tableName
+     * @param  mixed  $tableName
      */
     private static function getTableName($tableName): ?TableName
     {

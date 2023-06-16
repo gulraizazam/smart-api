@@ -7,6 +7,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers;
 
+use function __;
+use function count;
+use function in_array;
+use function is_string;
+use function json_decode;
 use PhpMyAdmin\ErrorHandler;
 use PhpMyAdmin\ErrorReport;
 use PhpMyAdmin\Http\ServerRequest;
@@ -14,12 +19,6 @@ use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\UserPreferences;
-
-use function __;
-use function count;
-use function in_array;
-use function is_string;
-use function json_decode;
 use function time;
 
 /**
@@ -104,7 +103,7 @@ class ErrorReportController extends AbstractController
                     if ($automatic === 'true' || $cfg['SendErrorReports'] === 'always') {
                         $msg = __(
                             'An error has been detected and an error report has been '
-                            . 'automatically submitted based on your settings.'
+                            .'automatically submitted based on your settings.'
                         );
                     } else {
                         $msg = __('Thank you for submitting this report.');
@@ -117,7 +116,7 @@ class ErrorReportController extends AbstractController
                     $msg .= __('If you experience any problems please submit a bug report manually.');
                 }
 
-                $msg .= ' ' . __('You may want to refresh the page.');
+                $msg .= ' '.__('You may want to refresh the page.');
 
                 /* Create message object */
                 if ($success) {
@@ -135,8 +134,8 @@ class ErrorReportController extends AbstractController
                     }
                 } elseif ($exceptionType === 'php') {
                     $jsCode = 'Functions.ajaxShowMessage(\'<div class="alert alert-danger" role="alert">'
-                        . $msg
-                        . '</div>\', false);';
+                        .$msg
+                        .'</div>\', false);';
                     $this->response->getFooter()->getScripts()->addCode($jsCode);
                 }
 

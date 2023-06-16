@@ -4,17 +4,14 @@ namespace App\Http\Controllers\Admin\Patients;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use App\Models\CustomFormFeedbackDetails;
 use App\Models\CustomFormFeedbacks;
 use App\Models\CustomForms;
 use App\Models\Patients;
 use App\Models\User;
-use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Spatie\Browsershot\Browsershot;
 
 class CustomFormFeedbacksController extends Controller
@@ -39,30 +36,33 @@ class CustomFormFeedbacksController extends Controller
      */
     public function index($id)
     {
-        if (!Gate::allows('patients_customform_manage')) {
+        if (! Gate::allows('patients_customform_manage')) {
             return abort(401);
         }
         $filters = Filters::all(Auth::User()->id, 'patient_custom_form_feedbacks');
         $patient = User::finduser($id);
-        return view('admin.patients..card.custom_form_feedbacks.index',compact('patient','filters'));
+
+        return view('admin.patients..card.custom_form_feedbacks.index', compact('patient', 'filters'));
     }
+
     /**
      * Display a listing of Lead_statuse.
      *
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws \Throwable
      */
     public function datatable(Request $request, $id)
     {
-        $filename = 'patient_custom_form_feedbacks' ;
+        $filename = 'patient_custom_form_feedbacks';
 
         $filters = getFilters($request->all());
 
         $apply_filter = checkFilters($filters, $filename);
 
-        $records = array();
-        $records["data"] = array();
+        $records = [];
+        $records['data'] = [];
 
         if (hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
@@ -70,23 +70,21 @@ class CustomFormFeedbacksController extends Controller
             if ($CustomFormFeedbacks) {
                 foreach ($CustomFormFeedbacks as $custom_form_feedback) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!CustomFormFeedbacks::isChildExists($custom_form_feedback->id, Auth::User()->account_id)) {
+                    if (! CustomFormFeedbacks::isChildExists($custom_form_feedback->id, Auth::User()->account_id)) {
                         $custom_form_feedback->delete();
                     }
                 }
             }
-            $records["status"] = true; // pass custom message(useful for getting status of group actions)
-            $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+            $records['status'] = true; // pass custom message(useful for getting status of group actions)
+            $records['message'] = 'Records has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
         }
 
         // Get Total Records
         $iTotalRecords = CustomFormFeedbacks::getTotalRecords($request, Auth::user()->account_id, $apply_filter, $id, $filename);
 
+        [$orderBy, $order] = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
 
-        list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
-
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $CustomFormFeedbacks = CustomFormFeedbacks::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $apply_filter, $id, $filename);
 
@@ -94,9 +92,9 @@ class CustomFormFeedbacksController extends Controller
 
         if ($CustomFormFeedbacks) {
 
-            $records["data"] = $CustomFormFeedbacks;
+            $records['data'] = $CustomFormFeedbacks;
 
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -107,7 +105,7 @@ class CustomFormFeedbacksController extends Controller
 
         }
 
-        $records["permissions"] = [
+        $records['permissions'] = [
             'edit' => Gate::allows('patients_customform_edit'),
             'manage' => Gate::allows('patients_customform_manage'),
         ];
@@ -115,36 +113,38 @@ class CustomFormFeedbacksController extends Controller
         return ApiHelper::apiDataTable($records);
     }
 
-    private function getFilters($records, $filename) {
+    private function getFilters($records, $filename)
+    {
 
         $records['active_filters'] = Filters::all(Auth::user()->id, $filename);
+
         return $records;
     }
 
     /**
      * Show the form for editing Permission.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
-        if (!Gate::allows('patients_customform_edit')) {
+        if (! Gate::allows('patients_customform_edit')) {
             return abort(401);
         }
         $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
 
         $patient_id = $custom_form_feedback->reference_id;
 
-        if (!$custom_form_feedback) {
+        if (! $custom_form_feedback) {
             return abort(404);
         }
-        $patient_name  =  User::where('id','=',$custom_form_feedback->reference_id)->first();
+        $patient_name = User::where('id', '=', $custom_form_feedback->reference_id)->first();
 
         return ApiHelper::makeResponse([
             'custom_form' => $custom_form_feedback,
-            'patient_name'=>$patient_name,
-            'patient_id'=>$patient_id
+            'patient_name' => $patient_name,
+            'patient_id' => $patient_id,
         ], 'admin.patients.card.custom_form_feedbacks.edit');
 
     }
@@ -152,44 +152,42 @@ class CustomFormFeedbacksController extends Controller
     /**
      * Show the form for editing Permission.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
     public function filled_preview($id)
     {
-        if (!Gate::allows('custom_form_feedbacks_manage') && !Gate::allows('patients_customform_manage')) {
+        if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
         }
-
 
         $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
         $patient_id = $custom_form_feedback->reference_id;
 
-        if (!$custom_form_feedback) {
+        if (! $custom_form_feedback) {
             return abort(404);
         }
 
         return ApiHelper::makeResponse([
             'custom_form' => $custom_form_feedback,
             'thisId' => $id,
-            'patientId' => $patient_id
+            'patientId' => $patient_id,
         ], 'admin.patients.card.custom_form_feedbacks.filled_preview');
 
     }
+
     /**
-     * @param $id
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
     public function filledPrint($id)
     {
-        if (!Gate::allows('custom_form_feedbacks_manage') && !Gate::allows('patients_customform_manage')) {
+        if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
         }
 
-
         $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
 
-        if (!$custom_form_feedback) {
+        if (! $custom_form_feedback) {
             return view('error');
         }
 
@@ -197,29 +195,27 @@ class CustomFormFeedbacksController extends Controller
     }
 
     /**
-     * @param $id
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
     public function exportPdf($id)
     {
-        if (!Gate::allows('custom_form_feedbacks_manage') && !Gate::allows('patients_customform_manage')) {
+        if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
         }
 
-
         $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
 
-        if (!$custom_form_feedback) {
+        if (! $custom_form_feedback) {
             return view('error');
         }
 
         //return view('admin.custom_form_feedbacks.filled_export_pdf', ['custom_form' => $custom_form_feedback, 'thisId' => $id]);
-        $pdfName = 'custom_form'.'_'.$id.'_'.date('YmdHis') . ".pdf";
+        $pdfName = 'custom_form'.'_'.$id.'_'.date('YmdHis').'.pdf';
         $custom_form = $custom_form_feedback;
         $thisId = $id;
-        $html = \View::make('admin.custom_form_feedbacks.filled_export_pdf', compact('custom_form','thisId'))->render();
+        $html = \View::make('admin.custom_form_feedbacks.filled_export_pdf', compact('custom_form', 'thisId'))->render();
         $pdfPath = public_path('pdf_download/'.$pdfName);
-        $file = Browsershot::html( $html )
+        $file = Browsershot::html($html)
             //->hideBackground()
             ->waitUntilNetworkIdle()
             ->landscape()
@@ -227,9 +223,10 @@ class CustomFormFeedbacksController extends Controller
             //->margins(0, 0, 0, 0)
             //->paperSize(216, 280)
             ->save($pdfPath);
-        $headers = array(
+        $headers = [
             'Content-Type: application/pdf',
-        );
+        ];
+
         return response()->download($pdfPath, $pdfName, $headers);
         //return $file->download($pdfName);
         /*
@@ -270,40 +267,42 @@ class CustomFormFeedbacksController extends Controller
                 return response()->download($output_file, $pdfName, $headers);
         */
     }
+
     /**
      * Show the form for submitt to patient.
      *
      * @return $id
      */
-    public function AddNewForm($id){
+    public function AddNewForm($id)
+    {
 
-        if (!Gate::allows('patients_customform_create')) {
+        if (! Gate::allows('patients_customform_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        $where = array();
+        $where = [];
 
         if (Auth::User()->account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                Auth::User()->account_id
-            );
+                Auth::User()->account_id,
+            ];
         }
-        $where[] = array(
+        $where[] = [
             'custom_form_type',
             '=',
-            '0'
-        );
+            '0',
+        ];
         if (count($where)) {
-            $CustomForms = CustomForms::where($where)->orderBy('sort_number','asc')->get();
+            $CustomForms = CustomForms::where($where)->orderBy('sort_number', 'asc')->get();
         } else {
-            $CustomForms = CustomForms::orderBy('sort_number','asc')->get();
+            $CustomForms = CustomForms::orderBy('sort_number', 'asc')->get();
         }
 
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'CustomForms' => $CustomForms,
-            'id' => $id
+            'id' => $id,
         ]);
     }
 
@@ -314,12 +313,12 @@ class CustomFormFeedbacksController extends Controller
      */
     public function fill_form($form_id, $patient_id)
     {
-        if (!Gate::allows('patients_customform_create')) {
+        if (! Gate::allows('patients_customform_create')) {
             return abort(401);
         }
         $users = Patients::where([
-            ['active','=','1'],
-            ['id','=',$patient_id]
+            ['active', '=', '1'],
+            ['id', '=', $patient_id],
         ])->get();
 
         $custom_form = CustomForms::get_all_fields_data($form_id);
@@ -327,9 +326,7 @@ class CustomFormFeedbacksController extends Controller
         return ApiHelper::makeResponse([
             'custom_form' => $custom_form,
             'users' => $users,
-            'patient_id' => $patient_id
+            'patient_id' => $patient_id,
         ], 'admin.patients.card.custom_form_feedbacks.create');
     }
-
-
 }

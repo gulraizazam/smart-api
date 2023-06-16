@@ -1,10 +1,8 @@
 <?php
 
 use App\Models\Bundles;
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use App\Models\TaxTreatmentType;
+use Illuminate\Database\Seeder;
 
 class TaxTreatmentTypeSeed extends Seeder
 {
@@ -16,51 +14,51 @@ class TaxTreatmentTypeSeed extends Seeder
     public function run()
     {
         TaxTreatmentType::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'name' => 'Both',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            2 => array(
+            ],
+            2 => [
                 'id' => 2,
                 'name' => 'Is exclusive',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            3 => array(
+            ],
+            3 => [
                 'id' => 3,
                 'name' => 'Is Inclusive',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
         ]);
 
         /*Service information updated according to treatment tax type, default set as both*/
 
         $services_info = \App\Models\Services::get();
 
-        foreach ($services_info as $service){
+        foreach ($services_info as $service) {
 
-            $service->update(['tax_treatment_type_id'=>1]);
+            $service->update(['tax_treatment_type_id' => 1]);
 
             $bundleWithService = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
-                ->where(array(
+                ->where([
                     'bundles.account_id' => 1,
                     'bundles.type' => 'single',
                     'bundle_has_services.service_id' => $service->id,
-                ))->first();
+                ])->first();
 
             Bundles::where([
                 'id' => $bundleWithService->id,
-            ])->update(array(
-                'tax_treatment_type_id' => 1
-            ));
+            ])->update([
+                'tax_treatment_type_id' => 1,
+            ]);
         }
         Bundles::where([
             'type' => 'multiple',
-        ])->update(array(
-            'tax_treatment_type_id' => 1
-        ));
+        ])->update([
+            'tax_treatment_type_id' => 1,
+        ]);
     }
 }

@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Server\Status;
 
-use PhpMyAdmin\DatabaseInterface;
-use PhpMyAdmin\Html\Generator;
-use PhpMyAdmin\Util;
-
 use function __;
 use function array_keys;
 use function count;
 use function mb_strtolower;
+use PhpMyAdmin\DatabaseInterface;
+use PhpMyAdmin\Html\Generator;
+use PhpMyAdmin\Util;
 use function strlen;
 use function ucfirst;
 
@@ -26,8 +25,7 @@ final class Processes
     }
 
     /**
-     * @param array $params Request parameters
-     *
+     * @param  array  $params Request parameters
      * @return array<string, array|string>
      */
     public function getList(array $params): array
@@ -61,8 +59,8 @@ final class Processes
 
         if (! empty($params['order_by_field']) && ! empty($params['sort_order'])) {
             $sqlQuery .= ' ORDER BY '
-                . Util::backquote($params['order_by_field'])
-                . ' ' . $params['sort_order'];
+                .Util::backquote($params['order_by_field'])
+                .' '.$params['sort_order'];
         }
 
         $result = $this->dbi->query($sqlQuery);

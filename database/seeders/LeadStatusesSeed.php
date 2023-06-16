@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\LeadStatuses;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\LeadStatuses;
 
 class LeadStatusesSeed extends Seeder
 {
@@ -76,7 +76,7 @@ class LeadStatusesSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -91,9 +91,9 @@ class LeadStatusesSeed extends Seeder
         $role->givePermissionTo('lead_statuses_sort');
 
         LeadStatuses::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
-                'parent_id'=> 0,
+                'parent_id' => 0,
                 'sort_no' => 1,
                 'is_default' => 1,
                 'is_arrived' => 0,
@@ -102,11 +102,11 @@ class LeadStatusesSeed extends Seeder
                 'name' => 'Open',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            2 => array(
+                'account_id' => '1',
+            ],
+            2 => [
                 'id' => 2,
-                'parent_id'=> 0,
+                'parent_id' => 0,
                 'sort_no' => 2,
                 'is_default' => 0,
                 'is_arrived' => 0,
@@ -115,11 +115,11 @@ class LeadStatusesSeed extends Seeder
                 'name' => 'contacted Not Interested',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            3 => array(
+                'account_id' => '1',
+            ],
+            3 => [
                 'id' => 3,
-                'parent_id'=> 0,
+                'parent_id' => 0,
                 'sort_no' => 3,
                 'is_default' => 0,
                 'is_arrived' => 0,
@@ -128,11 +128,11 @@ class LeadStatusesSeed extends Seeder
                 'name' => 'Contacted Call Again',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            4 => array(
+                'account_id' => '1',
+            ],
+            4 => [
                 'id' => 4,
-                'parent_id'=> 0,
+                'parent_id' => 0,
                 'sort_no' => 4,
                 'is_default' => 0,
                 'is_arrived' => 0,
@@ -141,11 +141,11 @@ class LeadStatusesSeed extends Seeder
                 'name' => 'Contacted Booked',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            5 => array(
+                'account_id' => '1',
+            ],
+            5 => [
                 'id' => 5,
-                'parent_id'=> 0,
+                'parent_id' => 0,
                 'sort_no' => 5,
                 'name' => 'Junk',
                 'is_default' => 0,
@@ -154,9 +154,9 @@ class LeadStatusesSeed extends Seeder
                 'is_junk' => 1,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            6 => array(
+                'account_id' => '1',
+            ],
+            6 => [
                 'id' => 6,
                 'parent_id' => 0,
                 'sort_no' => 6,
@@ -168,7 +168,7 @@ class LeadStatusesSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => '1',
-            ),
+            ],
         ]);
     }
 }

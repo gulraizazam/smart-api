@@ -20,6 +20,7 @@ final class Transformations
      * - The third option is the string to append and/or prepend when truncation occurs (Default: "…").
      *
      * @var array<int, int|string>
+     *
      * @psalm-var array{0: int, 1: 'all'|int, 2: string}
      */
     public $Substring;
@@ -29,6 +30,7 @@ final class Transformations
      * - First option is for TRUE, second for FALSE. Nonzero=true.
      *
      * @var string[]
+     *
      * @psalm-var array{0: string, 1: string}
      */
     public $Bool2Text;
@@ -46,6 +48,7 @@ final class Transformations
      *   all on one line (Default 1).
      *
      * @var array<int, int|string>
+     *
      * @psalm-var array{0: int, 1: string, 2: int, 3: int}
      */
     public $External;
@@ -55,6 +58,7 @@ final class Transformations
      * - First option is text to be prepended. second is appended (enclosed in single quotes, default empty string).
      *
      * @var string[]
+     *
      * @psalm-var array{0: string, 1: string}
      */
     public $PreApPend;
@@ -64,6 +68,7 @@ final class Transformations
      * Optional first parameter specifies how often space will be added (defaults to 2 nibbles).
      *
      * @var string[]
+     *
      * @psalm-var array{0: 0|positive-int}
      */
     public $Hex;
@@ -77,6 +82,7 @@ final class Transformations
      *   for PHP's strftime() function and for "utc" it is done using gmdate() function.
      *
      * @var array<int, int|string>
+     *
      * @psalm-var array{0: 0|positive-int, 1: string, 2: 'local'|'utc'}
      */
     public $DateFormat;
@@ -87,6 +93,7 @@ final class Transformations
      * The original aspect ratio is preserved.
      *
      * @var array<(int|string), (int|string|array<string, string>|null)>
+     *
      * @psalm-var array{
      *   0: 0|positive-int,
      *   1: 0|positive-int,
@@ -102,6 +109,7 @@ final class Transformations
      * - The second and third options are the width and the height in pixels.
      *
      * @var array<int, int|string|null>
+     *
      * @psalm-var array{0: string|null, 1: 0|positive-int, 2: 0|positive-int}
      */
     public $TextImageLink;
@@ -112,12 +120,13 @@ final class Transformations
      * - The second option is a title for the link.
      *
      * @var array<int, string|null>
+     *
      * @psalm-var array{0: string|null, 1: string|null, 2: bool|null}
      */
     public $TextLink;
 
     /**
-     * @param array<int|string, mixed> $transformations
+     * @param  array<int|string, mixed>  $transformations
      */
     public function __construct(array $transformations = [])
     {
@@ -133,9 +142,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return array<int, int|string>
+     *
      * @psalm-return array{0: int, 1: 'all'|int, 2: string}
      */
     private function setSubstring(array $transformations): array
@@ -159,9 +168,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return string[]
+     *
      * @psalm-return array{0: string, 1: string}
      */
     private function setBool2Text(array $transformations): array
@@ -181,9 +190,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return array<int, int|string>
+     *
      * @psalm-return array{0: int, 1: string, 2: int, 3: int}
      */
     private function setExternal(array $transformations): array
@@ -211,9 +220,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return string[]
+     *
      * @psalm-return array{0: string, 1: string}
      */
     private function setPreApPend(array $transformations): array
@@ -233,9 +242,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return string[]
+     *
      * @psalm-return array{0: 0|positive-int}
      */
     private function setHex(array $transformations): array
@@ -253,9 +262,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return array<int, int|string>
+     *
      * @psalm-return array{0: 0|positive-int, 1: string, 2: 'local'|'utc'}
      */
     private function setDateFormat(array $transformations): array
@@ -282,9 +291,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return array<(int|string), (int|string|array<string, string>|null)>
+     *
      * @psalm-return array{
      *   0: 0|positive-int,
      *   1: 0|positive-int,
@@ -332,9 +341,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return array<int, int|string|null>
+     *
      * @psalm-return array{0: string|null, 1: 0|positive-int, 2: 0|positive-int}
      */
     private function setTextImageLink(array $transformations): array
@@ -364,9 +373,9 @@ final class Transformations
     }
 
     /**
-     * @param array<int|string, mixed> $transformations
-     *
+     * @param  array<int|string, mixed>  $transformations
      * @return array<int, string|null>
+     *
      * @psalm-return array{0: string|null, 1: string|null, 2: bool|null}
      */
     private function setTextLink(array $transformations): array
