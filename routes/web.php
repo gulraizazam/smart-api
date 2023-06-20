@@ -522,7 +522,7 @@ use Illuminate\Support\Facades\DB;
         Route::get('appointmentsmedical/{id}/export_pdf', [AppointmentMedicalController::class, 'exportPdf'])->name("appointmentsmedical.custom_form_feedbacks.export_pdf");
         /*Appointment Route end for medical history form*/
 
-
+        Route::get('dashboard/getdoctors', [DashboardReportsController::class, 'GetCentreDoctors'])->name('getdoctors');
 
        // Appointment Comments
         Route::get('appointments/comment-save',[AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
@@ -600,4 +600,5 @@ use Illuminate\Support\Facades\DB;
 
         Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
         Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
+       
     });

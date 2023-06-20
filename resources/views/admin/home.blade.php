@@ -112,7 +112,32 @@
     .wise_arrival_ul .dropdown-menu li a:hover{
         background:#f3f3f3;
     }
-
+.appenddoctorlist .nav.nav-pills.nav-fill .nav-item{ 
+    justify-content: center;
+    flex: none;
+}
+.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a{
+    -webkit-box-pack: flex-start;
+    -ms-flex-pack: flex-start;
+    justify-content: flex-start;
+    padding: 5px 10px;
+    text-align: left;
+}
+.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a.active{
+    color: #3699FF;
+    background-color: transparent;
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a.active::before{
+    content: "";
+    position: absolute;
+    bottom: 3px;
+    width: 70%;
+    height: 2px;
+    background: #3699FF;
+}
 </style>
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb')
@@ -866,7 +891,7 @@
                                                     <div class="btn-group">
                                                         <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorwiseconversion"
                                                             href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                            data-close-others="true" aria-expanded="false"> All
+                                                            data-close-others="true" aria-expanded="false"> All Centres
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right">
@@ -875,9 +900,23 @@
                                                             </li>
                                                             @foreach($centres as $centre)
                                                             <li >
-                                                                <a class="dropdown-item centre-item" data-period="yesterday" data-id="{{$centre->id}}">{{$centre->name}}</a>
+                                                                <a class="dropdown-item centre-item" data-period="yesterday" data-id="{{$centre->id}}" onclick="GetDoctors({{$centre->id}})">{{$centre->name}}</a>
                                                             </li>
                                                             @endforeach
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorname" 
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> All Doctors
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
+                                                           
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -918,19 +957,8 @@
                                         <div class="col-7">
                                             <div id="doc_wise_conversion"></div>
                                         </div>
-                                        <div class="row" id="centre_wise_arrival_02">
-                                        <ul class="nav nav-pills nav-fill" role="tablist">
-                                            <li class="nav-item">
-                                                <a class="nav-link active show" data-toggle="tab" href="#m_tabs_5_1">Active</a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" data-toggle="tab" href="#m_tabs_5_2">Link</a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" data-toggle="tab" href="#m_tabs_5_3">Link</a>
-                                            </li>
-                                           
-                                        </ul>
+                                        <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02" > 
+                                        
                                             <div class='table-responsive'>
                                                 <table class='table'>
                                                     <thead>
@@ -977,6 +1005,44 @@
             jQuery('.doc_wise_arrival_ul li a').removeClass('active');
             jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
         });
+        
+        function GetDoctors(centre_id)
+        {
+            CENTRE_ID = centre_id;
+
+            $("#categories-table-body").html('');
+            $.ajax({
+                url: route('admin.dashboard.doctor_wise_conversion'),
+                type: 'GET',
+                cache: false,
+                data: {
+                    'period': 'thismonth',
+                    'centre_id': centre_id
+                },
+                success: function (response) {
+                    var categories = response.data.categories;
+                    DoctorWiseConversion(response);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+           
+            var TABLE_HTML = "";
+            $.ajax({
+                url: route('admin.getdoctors'),
+                type: "GET",
+                data: {'centre_id': centre_id},
+                cache: false,
+                success: function (response) {
+                    jQuery('#doc_nav').html("");
+                    jQuery.each( response.doctors, function( index, doctor ) {               
+                        TABLE_HTML += " <li><a class='dropdown-item centre-item' data-id="+doctor.id+" onclick='LoadDocWiseConversion("+doctor.id+")'>"+doctor.name+"</a></li>";
+                    });
+                    jQuery('#doc_nav').append(TABLE_HTML);
+                },
+            });
+        }
         $(document).ready(function(){
             period="today";
             // activities
