@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\Cities;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\Cities;
 
 class CitiesSeed extends Seeder
 {
@@ -77,7 +77,7 @@ class CitiesSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -92,63 +92,63 @@ class CitiesSeed extends Seeder
         $role->givePermissionTo('cities_sort');
 
         Cities::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'slug' => 'custom',
                 'name' => 'Lahore',
-                'sort_number'=>'2',
-                'is_featured'=> 1,
-                'region_id'=> 5,
-                'account_id'=>'1',
+                'sort_number' => '2',
+                'is_featured' => 1,
+                'region_id' => 5,
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            2 => array(
+            ],
+            2 => [
                 'id' => 2,
                 'slug' => 'custom',
                 'name' => 'Karachi',
-                'sort_number'=>'3',
-                'is_featured'=> 1,
-                'region_id'=> 4,
-                'account_id'=>'1',
+                'sort_number' => '3',
+                'is_featured' => 1,
+                'region_id' => 4,
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            3 => array(
+            ],
+            3 => [
                 'id' => 3,
                 'slug' => 'custom',
                 'name' => 'Islamabad',
-                'sort_number'=>'4',
-                'is_featured'=> 1,
-                'region_id'=> 3,
-                'account_id'=>'1',
+                'sort_number' => '4',
+                'is_featured' => 1,
+                'region_id' => 3,
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            4 => array(
+            ],
+            4 => [
                 'id' => 4,
                 'slug' => 'custom',
                 'name' => 'Peshawar',
-                'sort_number'=>'5',
-                'is_featured'=> 1,
-                'region_id'=> 3,
-                'account_id'=>'1',
+                'sort_number' => '5',
+                'is_featured' => 1,
+                'region_id' => 3,
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
 
-            5 => array(
+            5 => [
                 'id' => 5,
                 'slug' => 'all',
                 'name' => 'All Cities',
-                'sort_number'=>'1',
-                'is_featured'=> 0,
-                'region_id'=> 6,
-                'account_id'=>'1',
+                'sort_number' => '1',
+                'is_featured' => 0,
+                'region_id' => 6,
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            6 => array(
+            ],
+            6 => [
                 'id' => 6,
                 'slug' => 'region',
                 'name' => 'All East Region',
@@ -158,8 +158,8 @@ class CitiesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            7 => array(
+            ],
+            7 => [
                 'id' => 7,
                 'slug' => 'region',
                 'name' => 'All West Region',
@@ -169,8 +169,8 @@ class CitiesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            8 => array(
+            ],
+            8 => [
                 'id' => 8,
                 'slug' => 'region',
                 'name' => 'All North Region',
@@ -180,8 +180,8 @@ class CitiesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            9 => array(
+            ],
+            9 => [
                 'id' => 9,
                 'slug' => 'region',
                 'name' => 'All South Region',
@@ -191,8 +191,8 @@ class CitiesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            10 => array(
+            ],
+            10 => [
                 'id' => 10,
                 'slug' => 'region',
                 'name' => 'All Central Region',
@@ -202,7 +202,7 @@ class CitiesSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
         ]);
 
     }

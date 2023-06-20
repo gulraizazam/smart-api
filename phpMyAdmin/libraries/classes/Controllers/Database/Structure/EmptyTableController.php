@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database\Structure;
 
+use function __;
+use function count;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\ConfigStorage\RelationCleanup;
 use PhpMyAdmin\Controllers\Database\AbstractController;
@@ -18,9 +20,6 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Util;
 use PhpMyAdmin\Utils\ForeignKey;
-
-use function __;
-use function count;
 
 final class EmptyTableController extends AbstractController
 {
@@ -85,7 +84,7 @@ final class EmptyTableController extends AbstractController
             $aQuery = 'TRUNCATE ';
             $aQuery .= Util::backquote($selected[$i]);
 
-            $sql_query .= $aQuery . ';' . "\n";
+            $sql_query .= $aQuery.';'."\n";
             $this->dbi->selectDb($db);
             $this->dbi->query($aQuery);
         }

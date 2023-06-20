@@ -4,6 +4,18 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Import;
 
+use function __;
+use function _ngettext;
+use function in_array;
+use function ini_get;
+use function ini_set;
+use function intval;
+use function is_array;
+use function is_link;
+use function is_numeric;
+use function is_uploaded_file;
+use function mb_strlen;
+use function mb_strtolower;
 use PhpMyAdmin\Bookmark;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Console;
@@ -24,25 +36,12 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
 use PhpMyAdmin\Utils\ForeignKey;
-use Throwable;
-
-use function __;
-use function _ngettext;
-use function in_array;
-use function ini_get;
-use function ini_set;
-use function intval;
-use function is_array;
-use function is_link;
-use function is_numeric;
-use function is_uploaded_file;
-use function mb_strlen;
-use function mb_strtolower;
 use function preg_match;
 use function preg_quote;
 use function preg_replace;
 use function strlen;
 use function substr;
+use Throwable;
 use function time;
 use function trim;
 
@@ -152,18 +151,18 @@ final class ImportController extends AbstractController
                 foreach ($parameters as $parameter => $replacement) {
                     $replacementValue = $this->dbi->escapeString($replacement);
                     if (! is_numeric($replacementValue)) {
-                        $replacementValue = '\'' . $replacementValue . '\'';
+                        $replacementValue = '\''.$replacementValue.'\'';
                     }
 
                     $quoted = preg_quote($parameter, '/');
                     // making sure that :param does not apply values to :param1
                     $sql_query = preg_replace(
-                        '/' . $quoted . '([^a-zA-Z0-9_])/',
-                        $replacementValue . '${1}',
+                        '/'.$quoted.'([^a-zA-Z0-9_])/',
+                        $replacementValue.'${1}',
                         $sql_query
                     );
                     // for parameters the appear at the end of the string
-                    $sql_query = preg_replace('/' . $quoted . '$/', $replacementValue, $sql_query);
+                    $sql_query = preg_replace('/'.$quoted.'$/', $replacementValue, $sql_query);
                 }
             }
 
@@ -214,7 +213,7 @@ final class ImportController extends AbstractController
         if ($_POST == [] && $_GET == []) {
             $message = Message::error(
                 __(
-                    'You probably tried to upload a file that is too large. Please refer ' .
+                    'You probably tried to upload a file that is too large. Please refer '.
                     'to %sdocumentation%s for a workaround for this limit.'
                 )
             );
@@ -240,7 +239,6 @@ final class ImportController extends AbstractController
          * Sets globals from $_POST patterns, for import plugins
          * We only need to load the selected plugin
          */
-
         if (! in_array($format, ['csv', 'ldi', 'mediawiki', 'ods', 'shp', 'sql', 'xml'])) {
             // this should not happen for a normal user
             // but only during an attack
@@ -249,7 +247,7 @@ final class ImportController extends AbstractController
 
         $post_patterns = [
             '/^force_file_/',
-            '/^' . $format . '_/',
+            '/^'.$format.'_/',
         ];
 
         Core::setPostAsGlobal($post_patterns);
@@ -288,7 +286,7 @@ final class ImportController extends AbstractController
             }
         }
 
-        $errorUrl = $goto . Url::getCommon($urlParams, '&');
+        $errorUrl = $goto.Url::getCommon($urlParams, '&');
         $_SESSION['Import_message']['go_back_url'] = $errorUrl;
 
         if (strlen($db) > 0) {
@@ -451,7 +449,7 @@ final class ImportController extends AbstractController
             $local_import_file = Core::securePath($local_import_file);
 
             $import_file = Util::userDir((string) $cfg['UploadDir'])
-                . $local_import_file;
+                .$local_import_file;
 
             /*
              * Do not allow symlinks to avoid security issues
@@ -507,8 +505,8 @@ final class ImportController extends AbstractController
         } elseif (! $error && (! isset($import_text) || empty($import_text))) {
             $message = Message::error(
                 __(
-                    'No data was received to import. Either no file name was ' .
-                    'submitted, or the file size exceeded the maximum size permitted ' .
+                    'No data was received to import. Either no file name was '.
+                    'submitted, or the file size exceeded the maximum size permitted '.
                     'by your PHP configuration. See [doc@faq1-16]FAQ 1.16[/doc].'
                 )
             );
@@ -528,7 +526,7 @@ final class ImportController extends AbstractController
                 $charset_conversion = true;
             }
         } elseif (isset($charset_of_file) && $charset_of_file !== 'utf-8') {
-            $this->dbi->query('SET NAMES \'' . $charset_of_file . '\'');
+            $this->dbi->query('SET NAMES \''.$charset_of_file.'\'');
             // We can not show query in this case, it is in different charset
             $sql_query_disabled = true;
             $reset_charset = true;
@@ -591,7 +589,7 @@ final class ImportController extends AbstractController
 
         // Reset charset back, if we did some changes
         if ($reset_charset) {
-            $this->dbi->query('SET CHARACTER SET ' . $charset_connection);
+            $this->dbi->query('SET CHARACTER SET '.$charset_connection);
             $this->dbi->setCollation($collation_connection);
         }
 
@@ -608,12 +606,12 @@ final class ImportController extends AbstractController
             if ($import_type !== 'query') {
                 $message = Message::success(
                     '<em>'
-                    . _ngettext(
+                    ._ngettext(
                         'Import has been successfully finished, %d query executed.',
                         'Import has been successfully finished, %d queries executed.',
                         $executed_queries
                     )
-                    . '</em>'
+                    .'</em>'
                 );
                 $message->addParam($executed_queries);
 
@@ -622,9 +620,9 @@ final class ImportController extends AbstractController
                 }
 
                 if (! empty($local_import_file)) {
-                    $message->addText('(' . $local_import_file . ')');
+                    $message->addText('('.$local_import_file.')');
                 } else {
-                    $message->addText('(' . $_FILES['import_file']['name'] . ')');
+                    $message->addText('('.$_FILES['import_file']['name'].')');
                 }
             }
         }
@@ -637,23 +635,23 @@ final class ImportController extends AbstractController
                 $urlParams['local_import_file'] = $local_import_file;
             }
 
-            $importUrl = $errorUrl = $goto . Url::getCommon($urlParams, '&');
+            $importUrl = $errorUrl = $goto.Url::getCommon($urlParams, '&');
 
             $message = Message::error(
                 __(
                     'Script timeout passed, if you want to finish import,'
-                    . ' please %sresubmit the same file%s and import will resume.'
+                    .' please %sresubmit the same file%s and import will resume.'
                 )
             );
-            $message->addParamHtml('<a href="' . $importUrl . '">');
+            $message->addParamHtml('<a href="'.$importUrl.'">');
             $message->addParamHtml('</a>');
 
             if ($offset == 0 || (isset($original_skip) && $original_skip == $offset)) {
                 $message->addText(
                     __(
                         'However on last run no data has been parsed,'
-                        . ' this usually means phpMyAdmin won\'t be able to'
-                        . ' finish this import unless you increase php time limits.'
+                        .' this usually means phpMyAdmin won\'t be able to'
+                        .' finish this import unless you increase php time limits.'
                     )
                 );
             }
@@ -802,7 +800,7 @@ final class ImportController extends AbstractController
         } else {
             $active_page = $goto;
             /** @psalm-suppress UnresolvableInclude */
-            include ROOT_PATH . $goto;
+            include ROOT_PATH.$goto;
         }
 
         // If there is request for ROLLBACK in the end.

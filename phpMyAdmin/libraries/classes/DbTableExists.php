@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\Controllers\Database\SqlController;
-
 use function __;
 use function defined;
+use PhpMyAdmin\Controllers\Database\SqlController;
 use function strlen;
 
 final class DbTableExists
@@ -64,7 +63,7 @@ final class DbTableExists
             $urlParams['show_as_php'] = $show_as_php;
         }
 
-        Core::sendHeaderLocation('./index.php?route=/' . Url::getCommonRaw($urlParams, '&'));
+        Core::sendHeaderLocation('./index.php?route=/'.Url::getCommonRaw($urlParams, '&'));
 
         exit;
     }
@@ -84,7 +83,7 @@ final class DbTableExists
                 return;
             }
 
-            $result = $dbi->tryQuery('SHOW TABLES LIKE \'' . $dbi->escapeString($table) . '\';');
+            $result = $dbi->tryQuery('SHOW TABLES LIKE \''.$dbi->escapeString($table).'\';');
             $is_table = $result && $result->numRows();
         }
 
@@ -101,7 +100,7 @@ final class DbTableExists
              * SHOW TABLES doesn't show temporary tables, so try select
              * (as it can happen just in case temporary table, it should be fast):
              */
-            $result = $dbi->tryQuery('SELECT COUNT(*) FROM ' . Util::backquote($table) . ';');
+            $result = $dbi->tryQuery('SELECT COUNT(*) FROM '.Util::backquote($table).';');
             $is_table = $result && $result->numRows();
         }
 

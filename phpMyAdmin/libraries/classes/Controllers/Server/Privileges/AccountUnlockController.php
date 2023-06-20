@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server\Privileges;
 
+use function __;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\Http\ServerRequest;
 use PhpMyAdmin\Message;
@@ -11,8 +12,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Server\Privileges\AccountLocking;
 use PhpMyAdmin\Template;
 use Throwable;
-
-use function __;
 
 final class AccountUnlockController extends AbstractController
 {

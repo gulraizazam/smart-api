@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database;
 
+use function __;
+use function count;
+use function htmlspecialchars;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Html\Generator;
@@ -14,10 +17,6 @@ use PhpMyAdmin\Tracker;
 use PhpMyAdmin\Tracking;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function count;
-use function htmlspecialchars;
 use function sprintf;
 
 /**
@@ -148,8 +147,8 @@ class TrackingController extends AbstractController
 
         $log = '';
         foreach ($data['ddlog'] as $entry) {
-            $log .= '# ' . $entry['date'] . ' ' . $entry['username'] . "\n"
-                . $entry['statement'] . "\n";
+            $log .= '# '.$entry['date'].' '.$entry['username']."\n"
+                .$entry['statement']."\n";
         }
 
         echo Generator::getMessage(__('Database Log'), $log);

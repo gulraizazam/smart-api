@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\Discounts;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\Discounts;
 
 class DiscountsSeed extends Seeder
 {
@@ -70,14 +70,14 @@ class DiscountsSeed extends Seeder
                 'parent_id' => $MainPermission->id,
             ],
             [
-            'title' => 'Allocate',
-            'name' => 'discounts_allocate',
-            'guard_name' => 'web',
-            'main_group' => 0,
-            'created_at' => \Carbon\Carbon::now(),
-            'updated_at' => \Carbon\Carbon::now(),
-            'parent_id' => $MainPermission->id,
-            ]
+                'title' => 'Allocate',
+                'name' => 'discounts_allocate',
+                'guard_name' => 'web',
+                'main_group' => 0,
+                'created_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now(),
+                'parent_id' => $MainPermission->id,
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -92,31 +92,31 @@ class DiscountsSeed extends Seeder
         $role->givePermissionTo('discounts_allocate');
 
         Discounts::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'slug' => 'default',
                 'name' => 'Facebook Promotion',
-                'type'=>'Fixed',
-                'amount'=> 250,
-                'start' => '2018-04-01 17:29:58',
-                'end' => '2018-12-25 17:29:58',
-                'account_id'=>'1',
-                'created_at' => \Carbon\Carbon::now(),
-                'updated_at' => \Carbon\Carbon::now(),
-            ),
-            2 => array(
-                'id' => 2,
-                'slug' => 'default',
-                'name' => 'Instragram Promotion',
-                'type'=>'Fixed',
-                'amount'=> 350,
+                'type' => 'Fixed',
+                'amount' => 250,
                 'start' => '2018-04-01 17:29:58',
                 'end' => '2018-12-25 17:29:58',
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            3 => array(
+            ],
+            2 => [
+                'id' => 2,
+                'slug' => 'default',
+                'name' => 'Instragram Promotion',
+                'type' => 'Fixed',
+                'amount' => 350,
+                'start' => '2018-04-01 17:29:58',
+                'end' => '2018-12-25 17:29:58',
+                'account_id' => '1',
+                'created_at' => \Carbon\Carbon::now(),
+                'updated_at' => \Carbon\Carbon::now(),
+            ],
+            3 => [
                 'id' => 3,
                 'slug' => 'custom',
                 'name' => 'Custom',
@@ -127,8 +127,8 @@ class DiscountsSeed extends Seeder
                 'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            4 => array(
+            ],
+            4 => [
                 'id' => 4,
                 'slug' => 'birthday',
                 'name' => 'Birthday Promotion',
@@ -136,10 +136,10 @@ class DiscountsSeed extends Seeder
                 'amount' => 25,
                 'start' => '2018-04-01 17:29:58',
                 'end' => '2018-12-25 17:29:58',
-                'account_id'=>'1',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
         ]);
     }
 }

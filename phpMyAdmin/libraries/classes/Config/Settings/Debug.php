@@ -38,7 +38,7 @@ final class Debug
     public $simple2fa;
 
     /**
-     * @param mixed[] $debug
+     * @param  mixed[]  $debug
      */
     public function __construct(array $debug = [])
     {
@@ -49,7 +49,7 @@ final class Debug
     }
 
     /**
-     * @param mixed[] $debug
+     * @param  mixed[]  $debug
      */
     private function setSql(array $debug): bool
     {
@@ -57,7 +57,7 @@ final class Debug
     }
 
     /**
-     * @param mixed[] $debug
+     * @param  mixed[]  $debug
      */
     private function setSqlLog(array $debug): bool
     {
@@ -65,7 +65,7 @@ final class Debug
     }
 
     /**
-     * @param mixed[] $debug
+     * @param  mixed[]  $debug
      */
     private function setDemo(array $debug): bool
     {
@@ -73,7 +73,7 @@ final class Debug
     }
 
     /**
-     * @param mixed[] $debug
+     * @param  mixed[]  $debug
      */
     private function setSimple2fa(array $debug): bool
     {

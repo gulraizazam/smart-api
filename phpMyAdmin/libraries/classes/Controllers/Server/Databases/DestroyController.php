@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server\Databases;
 
+use function __;
+use function _ngettext;
+use function count;
+use function is_array;
 use PhpMyAdmin\ConfigStorage\RelationCleanup;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\DatabaseInterface;
@@ -13,11 +17,6 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function _ngettext;
-use function count;
-use function is_array;
 
 final class DestroyController extends AbstractController
 {
@@ -79,7 +78,7 @@ final class DestroyController extends AbstractController
 
         foreach ($selected_dbs as $database) {
             $this->relationCleanup->database($database);
-            $aQuery = 'DROP DATABASE ' . Util::backquote($database);
+            $aQuery = 'DROP DATABASE '.Util::backquote($database);
             $reload = true;
 
             $this->dbi->query($aQuery);

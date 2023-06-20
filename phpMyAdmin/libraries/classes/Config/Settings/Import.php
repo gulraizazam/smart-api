@@ -15,6 +15,7 @@ final class Import
 {
     /**
      * @var string
+     *
      * @psalm-var 'csv'|'docsql'|'ldi'|'sql'
      */
     public $format;
@@ -31,12 +32,14 @@ final class Import
 
     /**
      * @var int
+     *
      * @psalm-var 0|positive-int
      */
     public $skip_queries;
 
     /**
      * @var string
+     *
      * @psalm-var 'NONE'|'ANSI'|'DB2'|'MAXDB'|'MYSQL323'|'MYSQL40'|'MSSQL'|'ORACLE'|'TRADITIONAL'
      */
     public $sql_compatibility;
@@ -96,6 +99,7 @@ final class Import
      * 'auto' for auto-detection, true or false for forcing
      *
      * @var string|bool
+     *
      * @psalm-var 'auto'|bool
      */
     public $ldi_local_option;
@@ -113,7 +117,7 @@ final class Import
     public $ods_recognize_currency;
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     public function __construct(array $import = [])
     {
@@ -147,7 +151,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      *
      * @psalm-return 'csv'|'docsql'|'ldi'|'sql'
      */
@@ -161,7 +165,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCharset(array $import): string
     {
@@ -173,7 +177,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setAllowInterrupt(array $import): bool
     {
@@ -185,7 +189,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      *
      * @psalm-return 0|positive-int
      */
@@ -201,7 +205,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      *
      * @psalm-return 'NONE'|'ANSI'|'DB2'|'MAXDB'|'MYSQL323'|'MYSQL40'|'MSSQL'|'ORACLE'|'TRADITIONAL'
      */
@@ -221,7 +225,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setSqlNoAutoValueOnZero(array $import): bool
     {
@@ -233,7 +237,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setSqlReadAsMultibytes(array $import): bool
     {
@@ -245,7 +249,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCsvReplace(array $import): bool
     {
@@ -257,7 +261,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCsvIgnore(array $import): bool
     {
@@ -269,7 +273,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCsvTerminated(array $import): string
     {
@@ -281,7 +285,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCsvEnclosed(array $import): string
     {
@@ -293,7 +297,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCsvEscaped(array $import): string
     {
@@ -305,7 +309,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCsvNewLine(array $import): string
     {
@@ -317,7 +321,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCsvColumns(array $import): string
     {
@@ -329,7 +333,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setCsvColNames(array $import): bool
     {
@@ -341,7 +345,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setLdiReplace(array $import): bool
     {
@@ -353,7 +357,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setLdiIgnore(array $import): bool
     {
@@ -365,7 +369,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setLdiTerminated(array $import): string
     {
@@ -377,7 +381,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setLdiEnclosed(array $import): string
     {
@@ -389,7 +393,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setLdiEscaped(array $import): string
     {
@@ -401,7 +405,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setLdiNewLine(array $import): string
     {
@@ -413,7 +417,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setLdiColumns(array $import): string
     {
@@ -425,9 +429,9 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
-     *
+     * @param  array<int|string, mixed>  $import
      * @return bool|string
+     *
      * @psalm-return 'auto'|bool
      */
     private function setLdiLocalOption(array $import)
@@ -440,7 +444,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setOdsColNames(array $import): bool
     {
@@ -452,7 +456,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setOdsEmptyRows(array $import): bool
     {
@@ -464,7 +468,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setOdsRecognizePercentages(array $import): bool
     {
@@ -476,7 +480,7 @@ final class Import
     }
 
     /**
-     * @param array<int|string, mixed> $import
+     * @param  array<int|string, mixed>  $import
      */
     private function setOdsRecognizeCurrency(array $import): bool
     {

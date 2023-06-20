@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database\Structure;
 
+use function json_encode;
 use PhpMyAdmin\Controllers\Database\AbstractController;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function json_encode;
 
 /**
  * Handles request for real row count on database level view page.

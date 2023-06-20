@@ -4,6 +4,17 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database;
 
+use function __;
+use function array_search;
+use function ceil;
+use function count;
+use function htmlspecialchars;
+use function implode;
+use function in_array;
+use function is_string;
+use function max;
+use function mb_substr;
+use function md5;
 use PhpMyAdmin\Charsets;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\Config\PageSettings;
@@ -23,18 +34,6 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Tracker;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function array_search;
-use function ceil;
-use function count;
-use function htmlspecialchars;
-use function implode;
-use function in_array;
-use function is_string;
-use function max;
-use function mb_substr;
-use function md5;
 use function preg_match;
 use function preg_quote;
 use function sprintf;
@@ -112,7 +111,7 @@ class StructureController extends AbstractController
     /**
      * Retrieves database information for further use
      *
-     * @param string $subPart Page part name
+     * @param  string  $subPart Page part name
      */
     private function getDatabaseInfo(string $subPart): void
     {
@@ -218,7 +217,7 @@ class StructureController extends AbstractController
     }
 
     /**
-     * @param array $replicaInfo
+     * @param  array  $replicaInfo
      */
     protected function displayTableList($replicaInfo): string
     {
@@ -337,7 +336,7 @@ class StructureController extends AbstractController
             $rowCount++;
             if ($tableIsView) {
                 $hiddenFields[] = '<input type="hidden" name="views[]" value="'
-                    . htmlspecialchars($currentTable['TABLE_NAME']) . '">';
+                    .htmlspecialchars($currentTable['TABLE_NAME']).'">';
             }
 
             /*
@@ -399,7 +398,7 @@ class StructureController extends AbstractController
 
             $structureTableRows[] = [
                 'table_name_hash' => md5($currentTable['TABLE_NAME']),
-                'db_table_name_hash' => md5($this->db . '.' . $currentTable['TABLE_NAME']),
+                'db_table_name_hash' => md5($this->db.'.'.$currentTable['TABLE_NAME']),
                 'db' => $this->db,
                 'curr' => $i,
                 'input_class' => implode(' ', $inputClass),
@@ -408,7 +407,7 @@ class StructureController extends AbstractController
                 'may_have_rows' => $mayHaveRows,
                 'browse_table_label_title' => htmlspecialchars($currentTable['TABLE_COMMENT']),
                 'browse_table_label_truename' => $truename,
-                'empty_table_sql_query' => 'TRUNCATE ' . Util::backquote($currentTable['TABLE_NAME']),
+                'empty_table_sql_query' => 'TRUNCATE '.Util::backquote($currentTable['TABLE_NAME']),
                 'empty_table_message_to_show' => urlencode(
                     sprintf(
                         __('Table %s has been emptied.'),
@@ -470,7 +469,7 @@ class StructureController extends AbstractController
 
         $relationParameters = $this->relation->getRelationParameters();
 
-        return $html . $this->template->render('database/structure/table_header', [
+        return $html.$this->template->render('database/structure/table_header', [
             'db' => $this->db,
             'db_is_system_schema' => $this->dbIsSystemSchema,
             'replication' => $replicaInfo['status'],
@@ -521,8 +520,7 @@ class StructureController extends AbstractController
     /**
      * Returns the tracking icon if the table is tracked
      *
-     * @param string $table table name
-     *
+     * @param  string  $table table name
      * @return string HTML for tracking icon
      */
     protected function getTrackingIcon(string $table): string
@@ -545,10 +543,8 @@ class StructureController extends AbstractController
     /**
      * Returns whether the row count is approximated
      *
-     * @param array $currentTable array containing details about the table
-     * @param bool  $tableIsView  whether the table is a view
-     *
-     * @return array
+     * @param  array  $currentTable array containing details about the table
+     * @param  bool  $tableIsView  whether the table is a view
      */
     protected function isRowCountApproximated(
         array $currentTable,
@@ -593,10 +589,8 @@ class StructureController extends AbstractController
     /**
      * Returns the replication status of the table.
      *
-     * @param array  $replicaInfo
-     * @param string $table       table name
-     *
-     * @return array
+     * @param  array  $replicaInfo
+     * @param  string  $table       table name
      */
     protected function getReplicationStatus($replicaInfo, string $table): array
     {
@@ -628,7 +622,7 @@ class StructureController extends AbstractController
     /**
      * Function to check if a table is already in favorite list.
      *
-     * @param string $currentTable current table
+     * @param  string  $currentTable current table
      */
     protected function checkFavoriteTable(string $currentTable): bool
     {
@@ -647,8 +641,8 @@ class StructureController extends AbstractController
     /**
      * Find table with truename
      *
-     * @param array  $db       DB to look into
-     * @param string $truename Table name
+     * @param  array  $db       DB to look into
+     * @param  string  $truename Table name
      */
     protected function hasTable(array $db, $truename): bool
     {
@@ -656,8 +650,8 @@ class StructureController extends AbstractController
             if (
                 $this->db == $this->replication->extractDbOrTable($dbTable)
                 && preg_match(
-                    '@^' .
-                    preg_quote(mb_substr($this->replication->extractDbOrTable($dbTable, 'table'), 0, -1), '@') . '@',
+                    '@^'.
+                    preg_quote(mb_substr($this->replication->extractDbOrTable($dbTable, 'table'), 0, -1), '@').'@',
                     $truename
                 )
             ) {
@@ -673,10 +667,9 @@ class StructureController extends AbstractController
      *
      * @internal param bool $table_is_view whether table is view or not
      *
-     * @param array $currentTable current table
-     * @param int   $sumSize      total table size
-     * @param int   $overheadSize overhead size
-     *
+     * @param  array  $currentTable current table
+     * @param  int  $sumSize      total table size
+     * @param  int  $overheadSize overhead size
      * @return array
      */
     protected function getStuffForEngineTypeTable(
@@ -691,8 +684,8 @@ class StructureController extends AbstractController
         $tableIsView = false;
 
         switch ($currentTable['ENGINE']) {
-        // MyISAM, ISAM or Heap table: Row count, data size and index size
-        // are accurate; data size is accurate for ARCHIVE
+            // MyISAM, ISAM or Heap table: Row count, data size and index size
+            // are accurate; data size is accurate for ARCHIVE
             case 'MyISAM':
             case 'ISAM':
             case 'HEAP':
@@ -729,9 +722,9 @@ class StructureController extends AbstractController
                     $sumSize
                 );
                 break;
-        // Mysql 5.0.x (and lower) uses MRG_MyISAM
-        // and MySQL 5.1.x (and higher) uses MRG_MYISAM
-        // Both are aliases for MERGE
+                // Mysql 5.0.x (and lower) uses MRG_MyISAM
+                // and MySQL 5.1.x (and higher) uses MRG_MYISAM
+                // Both are aliases for MERGE
             case 'MRG_MyISAM':
             case 'MRG_MYISAM':
             case 'MERGE':
@@ -743,8 +736,8 @@ class StructureController extends AbstractController
                 }
 
                 break;
-        // for a view, the ENGINE is sometimes reported as null,
-        // or on some servers it's reported as "SYSTEM VIEW"
+                // for a view, the ENGINE is sometimes reported as null,
+                // or on some servers it's reported as "SYSTEM VIEW"
             case null:
             case 'SYSTEM VIEW':
                 // possibly a view, do nothing
@@ -791,14 +784,13 @@ class StructureController extends AbstractController
     /**
      * Get values for ARIA/MARIA tables
      *
-     * @param array  $currentTable      current table
-     * @param int    $sumSize           sum size
-     * @param int    $overheadSize      overhead size
-     * @param int    $formattedSize     formatted size
-     * @param string $unit              unit
-     * @param int    $formattedOverhead overhead formatted
-     * @param string $overheadUnit      overhead unit
-     *
+     * @param  array  $currentTable      current table
+     * @param  int  $sumSize           sum size
+     * @param  int  $overheadSize      overhead size
+     * @param  int  $formattedSize     formatted size
+     * @param  string  $unit              unit
+     * @param  int  $formattedOverhead overhead formatted
+     * @param  string  $overheadUnit      overhead unit
      * @return array
      */
     protected function getValuesForAriaTable(
@@ -846,9 +838,8 @@ class StructureController extends AbstractController
     /**
      * Get values for InnoDB table
      *
-     * @param array $currentTable current table
-     * @param int   $sumSize      sum size
-     *
+     * @param  array  $currentTable current table
+     * @param  int  $sumSize      sum size
      * @return array
      */
     protected function getValuesForInnodbTable(
@@ -889,10 +880,8 @@ class StructureController extends AbstractController
     /**
      * Get values for Mroonga table
      *
-     * @param array $currentTable current table
-     * @param int   $sumSize      sum size
-     *
-     * @return array
+     * @param  array  $currentTable current table
+     * @param  int  $sumSize      sum size
      */
     protected function getValuesForMroongaTable(
         array $currentTable,

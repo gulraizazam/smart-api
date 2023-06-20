@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Helpers;
 
 use App\Models\Services;
@@ -8,60 +9,59 @@ use App\Models\Services;
  */
 class GroupsTree
 {
-	var $id = 0;
-	var $name = '';
+    public $id = 0;
 
-	var $children_groups = array();
+    public $name = '';
 
-	var $counter = 0;
+    public $children_groups = [];
 
-	var $current_id = -1;
+    public $counter = 0;
 
-/**
- * Initializer
- */
-	function GroupTree()
-	{
-		return;
-	}
+    public $current_id = -1;
 
-/**
- * Setup which group id to start from
- */
-	function build($id, $account_id)
-	{
-		if ($this->current_id == $id) {
-			return;
-		}
+    /**
+     * Initializer
+     */
+    public function GroupTree()
+    {
 
-		if ($id == 0)
-		{
-			$this->id = 0;
-			$this->name = "None";
-		} else {
-		    $group = Services::where(['id' => $id, 'end_node' => 0, 'account_id' => $account_id])->first()->toArray();
-			$this->id = $group['id'];
-			$this->name = $group['name'];
+    }
+
+    /**
+     * Setup which group id to start from
+     */
+    public function build($id, $account_id)
+    {
+        if ($this->current_id == $id) {
+            return;
         }
 
-		$this->add_sub_groups($account_id);
-	}
-
-/**
- * Find and add subgroups as objects
- */
-	function add_sub_groups($account_id)
-	{
-		/* If primary group sort by id else sort by name */
-		if ($this->id == 0) {
-            $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'account_id' => $account_id])->OrderBy('name','asc')->get()->toArray();
+        if ($id == 0) {
+            $this->id = 0;
+            $this->name = 'None';
         } else {
-            $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'account_id' => $account_id])->OrderBy('name','asc')->get()->toArray();
-		}
+            $group = Services::where(['id' => $id, 'end_node' => 0, 'account_id' => $account_id])->first()->toArray();
+            $this->id = $group['id'];
+            $this->name = $group['name'];
+        }
 
-		$counter = 0;
-        foreach ($child_group_q as $row)
-        {
+        $this->add_sub_groups($account_id);
+    }
+
+    /**
+     * Find and add subgroups as objects
+     */
+    public function add_sub_groups($account_id)
+    {
+        /* If primary group sort by id else sort by name */
+        if ($this->id == 0) {
+            $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'account_id' => $account_id])->OrderBy('name', 'asc')->get()->toArray();
+        } else {
+            $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'account_id' => $account_id])->OrderBy('name', 'asc')->get()->toArray();
+        }
+
+        $counter = 0;
+        foreach ($child_group_q as $row) {
             /* Create new AccountList object */
             $this->children_groups[$counter] = new GroupsTree();
 
@@ -72,82 +72,83 @@ class GroupsTree
 
             $counter++;
         }
-	}
+    }
 
-	var $groupList = array();
+    public $groupList = [];
 
-	/* Convert group tree to a list */
-	public function toList($tree, $c = 0)
-	{
-		$counter = $c;
+    /* Convert group tree to a list */
+    public function toList($tree, $c = 0)
+    {
+        $counter = $c;
 
-		if ($tree->id != 0) {
-			$this->groupList[$tree->id] = $this->space($counter) . $tree->name;
-		}
+        if ($tree->id != 0) {
+            $this->groupList[$tree->id] = $this->space($counter).$tree->name;
+        }
 
-		/* Process child groups recursively */
-		if(count($tree->children_groups) > 0) {
+        /* Process child groups recursively */
+        if (count($tree->children_groups) > 0) {
             foreach ($tree->children_groups as $id => $data) {
                 $counter++;
                 $this->toList($data, $counter);
                 $counter--;
             }
         }
-	}
+    }
 
-    var $groupListView = array();
+    public $groupListView = [];
 
-	/* Convert group tree for List View */
-	public function toListView($tree, $c = 0)
-	{
-		$counter = $c;
+    /* Convert group tree for List View */
+    public function toListView($tree, $c = 0)
+    {
+        $counter = $c;
 
-		if ($tree->id != 0) {
-			$this->groupListView[$tree->id] = array(
-			    'id' => $tree->id,
-			    'name' => $this->space($counter) . $tree->name,
-            );
-		}
+        if ($tree->id != 0) {
+            $this->groupListView[$tree->id] = [
+                'id' => $tree->id,
+                'name' => $this->space($counter).$tree->name,
+            ];
+        }
 
-		/* Process child groups recursively */
-		if(count($tree->children_groups) > 0) {
+        /* Process child groups recursively */
+        if (count($tree->children_groups) > 0) {
             foreach ($tree->children_groups as $id => $data) {
                 $counter++;
                 $this->toListView($data, $counter);
                 $counter--;
             }
         }
-	}
+    }
 
-    var $groupListIDs = array();
+    public $groupListIDs = [];
 
-	/* Convert group tree to array */
-	public function toListArray($tree, $c = 0)
-	{
-		$counter = $c;
+    /* Convert group tree to array */
+    public function toListArray($tree, $c = 0)
+    {
+        $counter = $c;
 
-		if ($tree->id != 0) {
-			$this->groupListIDs[$tree->id] = $tree->id;
-		}
+        if ($tree->id != 0) {
+            $this->groupListIDs[$tree->id] = $tree->id;
+        }
 
-		/* Process child groups recursively */
-		if(count($tree->children_groups) > 0) {
+        /* Process child groups recursively */
+        if (count($tree->children_groups) > 0) {
             foreach ($tree->children_groups as $id => $data) {
                 $counter++;
                 $this->toListArray($data, $counter);
                 $counter--;
             }
         }
-	}
+    }
 
-	function space($count)
-	{
+    public function space($count)
+    {
         $str = '';
         for ($i = 1; $i <= $count; $i++) {
             $str .= '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-		}
-		return $str;
-	}
+        }
+
+        return $str;
+    }
 
     /*
      * Generate Tree from Array.
@@ -155,21 +156,23 @@ class GroupsTree
      * @param Array $data
      * @param $parent
      */
-    public static function buildTree(Array $data, $parent = 0, $skip_id = 0) {
-        $tree = array();
+    public static function buildTree(array $data, $parent = 0, $skip_id = 0)
+    {
+        $tree = [];
         foreach ($data as $d) {
             if ($d['parent_id'] == $parent) {
-                if($skip_id == $d['id']) {
+                if ($skip_id == $d['id']) {
                     continue;
                 }
                 $children = self::buildTree($data, $d['id'], $skip_id);
                 // set a trivial key
-                if (!empty($children)) {
+                if (! empty($children)) {
                     $d['children'] = $children;
                 }
                 $tree[] = $d;
             }
         }
+
         return $tree;
     }
 
@@ -181,20 +184,21 @@ class GroupsTree
      * @param $parent
      * @return $html
      */
-    public static function buildOptions(Array $arr, $target, $parent = NULL) {
-        $html = "";
-        foreach ( $arr as $key => $v )
-        {
-            if ( $v['id'] == $target )
-//                $html .= "<option value='" . $v['id'] . "' selected='selected'>$parent {$v['name']}</option>\n";
-                $html .= "<option value='" . $v['id'] . "' selected='selected'>$parent {$v['name']}</option>";
-            else
-//                $html .= "<option value='" . $v['id'] . "'>$parent {$v['name']}</option>\n";
-                $html .= "<option value='" . $v['id'] . "'>$parent {$v['name']}</option>";
+    public static function buildOptions(array $arr, $target, $parent = null)
+    {
+        $html = '';
+        foreach ($arr as $key => $v) {
+            if ($v['id'] == $target) {
+                //                $html .= "<option value='" . $v['id'] . "' selected='selected'>$parent {$v['name']}</option>\n";
+                $html .= "<option value='".$v['id']."' selected='selected'>$parent {$v['name']}</option>";
+            } else { //                $html .= "<option value='" . $v['id'] . "'>$parent {$v['name']}</option>\n";
+                $html .= "<option value='".$v['id']."'>$parent {$v['name']}</option>";
+            }
 
-            if (array_key_exists('children', $v))
-//                $html .= $this->buildOptions($v['children'],$target,$parent . $v['name']. " - ");
-                $html .= self::buildOptions($v['children'],$target,$parent . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . "");
+            if (array_key_exists('children', $v)) {
+                //                $html .= $this->buildOptions($v['children'],$target,$parent . $v['name']. " - ");
+                $html .= self::buildOptions($v['children'], $target, $parent.'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.'');
+            }
         }
 
         return $html;
@@ -208,20 +212,21 @@ class GroupsTree
      * @param $parent
      * @return $html
      */
-    public static function buildArray(Array $arr, $target, $parent = NULL) {
-        $html = "";
-        foreach ( $arr as $key => $v )
-        {
-            if ( $v['id'] == $target )
-//                $html .= "<option value='" . $v['id'] . "' selected='selected'>$parent {$v['name']}</option>\n";
-                $html .= "<option value='" . $v['id'] . "' selected='selected'>$parent {$v['name']}</option>";
-            else
-//                $html .= "<option value='" . $v['id'] . "'>$parent {$v['name']}</option>\n";
-                $html .= "<option value='" . $v['id'] . "'>$parent {$v['name']}</option>";
+    public static function buildArray(array $arr, $target, $parent = null)
+    {
+        $html = '';
+        foreach ($arr as $key => $v) {
+            if ($v['id'] == $target) {
+                //                $html .= "<option value='" . $v['id'] . "' selected='selected'>$parent {$v['name']}</option>\n";
+                $html .= "<option value='".$v['id']."' selected='selected'>$parent {$v['name']}</option>";
+            } else { //                $html .= "<option value='" . $v['id'] . "'>$parent {$v['name']}</option>\n";
+                $html .= "<option value='".$v['id']."'>$parent {$v['name']}</option>";
+            }
 
-            if (array_key_exists('children', $v))
-//                $html .= $this->buildOptions($v['children'],$target,$parent . $v['name']. " - ");
-                $html .= self::buildOptions($v['children'],$target,$parent . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . "");
+            if (array_key_exists('children', $v)) {
+                //                $html .= $this->buildOptions($v['children'],$target,$parent . $v['name']. " - ");
+                $html .= self::buildOptions($v['children'], $target, $parent.'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.'');
+            }
         }
 
         return $html;

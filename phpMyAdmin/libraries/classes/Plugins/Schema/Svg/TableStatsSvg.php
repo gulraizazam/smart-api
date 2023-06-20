@@ -7,13 +7,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Schema\Svg;
 
-use PhpMyAdmin\Plugins\Schema\ExportRelationSchema;
-use PhpMyAdmin\Plugins\Schema\TableStats;
-
 use function __;
 use function count;
 use function in_array;
 use function max;
+use PhpMyAdmin\Plugins\Schema\ExportRelationSchema;
+use PhpMyAdmin\Plugins\Schema\TableStats;
 use function sprintf;
 
 /**
@@ -39,16 +38,16 @@ class TableStatsSvg extends TableStats
      * @see TableStatsSvg::setWidthTable
      * @see TableStatsSvg::setHeightTable
      *
-     * @param Svg    $diagram         The current SVG image document
-     * @param string $db              The database name
-     * @param string $tableName       The table name
-     * @param string $font            Font face
-     * @param int    $fontSize        The font size
-     * @param int    $pageNumber      Page number
-     * @param int    $same_wide_width The max. width among tables
-     * @param bool   $showKeys        Whether to display keys or not
-     * @param bool   $tableDimension  Whether to display table position or not
-     * @param bool   $offline         Whether the coordinates are sent
+     * @param  Svg  $diagram         The current SVG image document
+     * @param  string  $db              The database name
+     * @param  string  $tableName       The table name
+     * @param  string  $font            Font face
+     * @param  int  $fontSize        The font size
+     * @param  int  $pageNumber      Page number
+     * @param  int  $same_wide_width The max. width among tables
+     * @param  bool  $showKeys        Whether to display keys or not
+     * @param  bool  $tableDimension  Whether to display table position or not
+     * @param  bool  $offline         Whether the coordinates are sent
      */
     public function __construct(
         $diagram,
@@ -93,8 +92,8 @@ class TableStatsSvg extends TableStats
      *
      * @see    PMA_SVG
      *
-     * @param string $font     The font size
-     * @param int    $fontSize The font size
+     * @param  string  $font     The font size
+     * @param  int  $fontSize The font size
      */
     private function setWidthTable($font, $fontSize): void
     {
@@ -119,7 +118,7 @@ class TableStatsSvg extends TableStats
     /**
      * Sets the height of the table
      *
-     * @param int $fontSize font size
+     * @param  int  $fontSize font size
      */
     private function setHeightTable($fontSize): void
     {
@@ -132,7 +131,7 @@ class TableStatsSvg extends TableStats
      *
      * @see Svg::printElement
      *
-     * @param bool $showColor Whether to display color
+     * @param  bool  $showColor Whether to display color
      */
     public function tableDraw($showColor): void
     {
@@ -174,7 +173,7 @@ class TableStatsSvg extends TableStats
                 $this->width,
                 $this->heightCell,
                 null,
-                'fill:' . $fillColor . ';stroke:black;'
+                'fill:'.$fillColor.';stroke:black;'
             );
             $this->diagram->printElement(
                 'text',

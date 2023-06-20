@@ -7,12 +7,12 @@ use App\Helpers\JazzSMSAPI;
 use App\Helpers\TelenorSMSAPI;
 use App\Models\Appointments;
 use App\Models\Settings;
-use App\Models\UserOperatorSettings;
 use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
+use App\Models\UserOperatorSettings;
 use Carbon\Carbon;
-use Illuminate\Console\Command;
 use Config;
+use Illuminate\Console\Command;
 
 class ThirdMessageBeforeAppointment extends Command
 {
@@ -48,10 +48,10 @@ class ThirdMessageBeforeAppointment extends Command
     public function handle()
     {
         $day = Carbon::now()->setTimezone('Asia/Karachi')->format('Y-m-d');
-        $start_time = Carbon::parse(Carbon::now())->setTimezone('Asia/Karachi')->format('H:i') . ':00';
-        $end_time = Carbon::parse(Carbon::now())->addMinutes(120)->setTimezone('Asia/Karachi')->format('H:i') . ':00';
+        $start_time = Carbon::parse(Carbon::now())->setTimezone('Asia/Karachi')->format('H:i').':00';
+        $end_time = Carbon::parse(Carbon::now())->addMinutes(120)->setTimezone('Asia/Karachi')->format('H:i').':00';
 
-        $currentTime = Carbon::now()->setTimezone('Asia/Karachi')->format('H:i') . ':00';
+        $currentTime = Carbon::now()->setTimezone('Asia/Karachi')->format('H:i').':00';
         $start = '10:00:00';
         $end = '19:00:00';
 
@@ -63,23 +63,23 @@ class ThirdMessageBeforeAppointment extends Command
             return;
         }
 
-        $where = array();
+        $where = [];
 
-        $where[] = array(
+        $where[] = [
             'scheduled_date',
             '=',
-            $day
-        );
-        $where[] = array(
+            $day,
+        ];
+        $where[] = [
             'scheduled_time',
             '>=',
-            $start_time
-        );
-        $where[] = array(
+            $start_time,
+        ];
+        $where[] = [
             'scheduled_time',
             '<=',
-            $end_time
-        );
+            $end_time,
+        ];
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')->where($where)
             ->where(['appointments.appointment_status_allow_message' => 1])
             ->whereNull('coming_from')
@@ -91,10 +91,10 @@ class ThirdMessageBeforeAppointment extends Command
         if ($appointments) {
             foreach ($appointments as $appointment) {
 
-                $smsLog = SMSLogs::where(array(
+                $smsLog = SMSLogs::where([
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'log_type' => $log_type,
-                ))
+                ])
                     ->where('appointment_id', '=', $appointment->appointment_id)
                     ->whereDate('created_at', '=', $day)
                     ->select('id')->first();
@@ -115,7 +115,7 @@ class ThirdMessageBeforeAppointment extends Command
      * @param: string $patient_phone
      * @return: array|mixture
      */
-    private function sendSMS($appointmentId, $patient_phone, $log_type = 'sms', $account_id)
+    private function sendSMS($appointmentId, $patient_phone, $log_type, $account_id)
     {
         // Get Appointment
         $appointment = Appointments::find($appointmentId);
@@ -131,13 +131,13 @@ class ThirdMessageBeforeAppointment extends Command
             $SMSTemplate = SMSTemplates::getBySlug('treatment-third-sms', $account_id); // 'third-sms' for Appointment SMS
         }
 
-        if (!$SMSTemplate) {
+        if (! $SMSTemplate) {
             // SMS Promotion is disabled
-            return array(
+            return [
                 'status' => true,
                 'sms_data' => 'SMS Promotion is disabled',
                 'error_msg' => '',
-            );
+            ];
         }
 
         $preparedText = Appointments::prepareSMSContent($appointmentId, $SMSTemplate->content);
@@ -147,24 +147,24 @@ class ThirdMessageBeforeAppointment extends Command
         $UserOperatorSettings = UserOperatorSettings::getRecord($account_id, $setting->data);
 
         if ($setting->data == 1) {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
                 'text' => $preparedText,
                 'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = TelenorSMSAPI::SendSMS($SMSObj);
         } else {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'from' => $UserOperatorSettings->mask,
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
                 'text' => $preparedText,
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
         $SMSLog = array_merge($SMSObj, $response);

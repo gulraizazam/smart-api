@@ -3,7 +3,6 @@
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\Accounts;
 
 class DashboardSeeder extends Seeder
 {
@@ -112,7 +111,7 @@ class DashboardSeeder extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);

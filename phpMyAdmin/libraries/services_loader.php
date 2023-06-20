@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
-use Symfony\Component\DependencyInjection\Reference;
-
 use function is_string;
 use function substr;
+use Symfony\Component\DependencyInjection\Reference;
 
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services();
@@ -15,6 +14,7 @@ return static function (ContainerConfigurator $configurator): void {
         foreach ($servicesFile['services'] as $serviceName => $service) {
             if (is_string($service)) {
                 $services->alias($serviceName, $service);
+
                 continue;
             }
 
@@ -41,8 +41,8 @@ return static function (ContainerConfigurator $configurator): void {
         }
     };
 
-    $servicesFile = include ROOT_PATH . 'libraries/services.php';
+    $servicesFile = include ROOT_PATH.'libraries/services.php';
     $loadServices($servicesFile, $services);
-    $servicesFile = include ROOT_PATH . 'libraries/services_controllers.php';
+    $servicesFile = include ROOT_PATH.'libraries/services_controllers.php';
     $loadServices($servicesFile, $services);
 };
