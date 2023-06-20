@@ -4,17 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
+use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use App\Http\Controllers\Controller;
 use Validator;
 
 class PermissionsController extends Controller
 {
-
-
     public $success;
 
     public $error;
@@ -52,75 +50,73 @@ class PermissionsController extends Controller
      */
     public function datatable(Request $request)
     {
-        $records = array();
+        $records = [];
 
         $filters = getFilters($request->all());
 
         $apply_filter = checkFilters($filters, 'permissions');
 
-        if(count($filters) > 0 &&  hasFilter($filters, 'delete')) {
+        if (count($filters) > 0 && hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $Permissions = Permission::whereIn('id', $ids);
-            if($Permissions->exists()) {
+            if ($Permissions->exists()) {
                 $Permissions->delete();
             }
-            $records["status"] = true;
-            $records["message"] = "Records has been deleted successfully!";
+            $records['status'] = true;
+            $records['message'] = 'Records has been deleted successfully!';
         }
 
-        list($orderBy, $order) = getSortBy($request);
-        $user= AUth::user();
-        if($user->hasRole('Super-Admin')){
+        [$orderBy, $order] = getSortBy($request);
+        $user = AUth::user();
+        if ($user->hasRole('Super-Admin')) {
             $query = Permission::query()->with(['parent' => function ($query) {
                 $query->select('id', 'name');
             }]);
-        }else{
+        } else {
             $query = Permission::query()->with(['parent' => function ($query) {
                 $query->select('id', 'name');
-            }])->where('name','!=',"view_inactive_records");
+            }])->where('name', '!=', 'view_inactive_records');
         }
-        
 
         $iTotalRecords = Permission::count();
 
-        if(count($filters) > 0  && hasFilter($filters, 'search')) {
+        if (count($filters) > 0 && hasFilter($filters, 'search')) {
             Filters::put(Auth::user()->id, 'permissions', 'search', $filters['search']);
             $search = $filters['search'];
-            $query = $query->where("name", "LIKE", "%{$search}%")
-                ->orWhere("title", "LIKE", "%{$search}%")
-                ->orWhere("parent_id", "LIKE", "%{$search}%");
-                $iTotalRecords = $query->count();
+            $query = $query->where('name', 'LIKE', "%{$search}%")
+                ->orWhere('title', 'LIKE', "%{$search}%")
+                ->orWhere('parent_id', 'LIKE', "%{$search}%");
+            $iTotalRecords = $query->count();
         } else {
-            if ($apply_filter){
+            if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'permissions', 'search');
             } else {
-                if ($search = Filters::get(Auth::user()->id,'permissions', 'search')){
-                    $query = $query->where("name", "LIKE", "%{$search}%")
-                        ->orWhere("title", "LIKE", "%{$search}%")
-                        ->orWhere("parent_id", "LIKE", "%{$search}%");
+                if ($search = Filters::get(Auth::user()->id, 'permissions', 'search')) {
+                    $query = $query->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('title', 'LIKE', "%{$search}%")
+                        ->orWhere('parent_id', 'LIKE', "%{$search}%");
                     $iTotalRecords = $query->count();
                 }
             }
         }
 
-        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         if ($orderBy === 'parent.name') {
             $orderBy = 'name';
         }
         $Permissions = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
 
+        if ($Permissions) {
 
-        if($Permissions) {
+            $records['data'] = $Permissions;
 
-            $records["data"] = $Permissions;
-
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('permissions_edit'),
                 'delete' => Gate::allows('permissions_destroy'),
             ];
 
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -149,14 +145,14 @@ class PermissionsController extends Controller
         $permissions = ['' => 'Select a Parent Group', 0 => 'This is Parent Group'];
 
         $PermissionsData = Permission::where('main_group', 1)->OrderBy('name', 'asc')->get();
-        if($PermissionsData) {
+        if ($PermissionsData) {
             foreach ($PermissionsData as $permission) {
-                $permissions[$permission->id] = $permission->title . ' (' . $permission->name . ')';
+                $permissions[$permission->id] = $permission->title.' ('.$permission->name.')';
             }
         }
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
-            'permissions' => $permissions
+            'permissions' => $permissions,
         ]);
 
     }
@@ -164,14 +160,13 @@ class PermissionsController extends Controller
     /**
      * Store a newly created Permission in storage.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-       /* if (! Gate::allows('permissions_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-        }*/
+        /* if (! Gate::allows('permissions_create')) {
+             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+         }*/
 
         $validator = $this->verifyFields($request);
 
@@ -180,7 +175,7 @@ class PermissionsController extends Controller
         }
 
         $data = $request->all();
-        if(!$data['parent_id']) {
+        if (! $data['parent_id']) {
             $data['main_group'] = 1;
         } else {
             $data['main_group'] = 0;
@@ -188,14 +183,12 @@ class PermissionsController extends Controller
 
         Permission::create($data);
 
-
         return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
     }
 
     /**
      * Validate form fields
      *
-     * @param  \Illuminate\Http\Request $request
      * @return Validator $validator;
      */
     protected function verifyFields(Request $request)
@@ -204,7 +197,6 @@ class PermissionsController extends Controller
             'name' => 'required',
         ]);
     }
-
 
     /**
      * Show the form for editing Permission.
@@ -222,15 +214,15 @@ class PermissionsController extends Controller
         $permissions = ['' => 'Select a Parent Group', 0 => 'This is Parent Group'];
 
         $PermissionsData = Permission::where('main_group', 1)->OrderBy('name', 'asc')->get();
-        if($PermissionsData) {
+        if ($PermissionsData) {
             foreach ($PermissionsData as $permissionData) {
-                $permissions[$permissionData->id] = $permissionData->title . ' (' . $permissionData->name . ')';
+                $permissions[$permissionData->id] = $permissionData->title.' ('.$permissionData->name.')';
             }
         }
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'permissions' => $permissions,
-            'permission' => $permission
+            'permission' => $permission,
         ]);
 
     }
@@ -238,7 +230,6 @@ class PermissionsController extends Controller
     /**
      * Update Permission in storage.
      *
-     * @param  \Illuminate\Http\Request $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
@@ -251,15 +242,16 @@ class PermissionsController extends Controller
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
+            return response()->json([
                 'status' => 0,
                 'message' => $validator->messages()->all(),
-            ));
-            return ApiHelper::apiResponse($this->success,  $validator->messages()->first(), false);
+            ]);
+
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
         $data = $request->all();
-        if(!$data['parent_id']) {
+        if (! $data['parent_id']) {
             $data['main_group'] = 1;
         } else {
             $data['main_group'] = 0;
@@ -270,7 +262,6 @@ class PermissionsController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
-
 
     /**
      * Remove Permission from storage.
@@ -289,5 +280,4 @@ class PermissionsController extends Controller
         return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
 
     }
-
 }

@@ -17,8 +17,9 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
 
-    static protected  $PATIENT_GROUP = 3;
-    static protected  $DOCTOR_GROUP = 5;
+    protected static $PATIENT_GROUP = 3;
+
+    protected static $DOCTOR_GROUP = 5;
 
     /**
      * The attributes that should be cast.
@@ -29,9 +30,9 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    protected $fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'user_type_id', 'resource_type_id','referred_by','account_id', 'active', 'select_all'];
+    protected $fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'user_type_id', 'resource_type_id', 'referred_by', 'account_id', 'active', 'select_all'];
 
-    protected static $_fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'user_type_id', 'resource_type_id','referred_by','active', 'select_all'];
+    protected static $_fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'user_type_id', 'resource_type_id', 'referred_by', 'active', 'select_all'];
 
     protected static $_table = 'users';
 
@@ -44,7 +45,7 @@ class User extends Authenticatable
      */
     public function getFullNameAttribute($value)
     {
-        return ucfirst($this->name) . ' - ' . strtolower($this->email);
+        return ucfirst($this->name).' - '.strtolower($this->email);
     }
 
     public function scopeIsActive($query, $status = 1)
@@ -59,6 +60,7 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Models\Refunds', 'patient_id');
     }
+
     /**
      * Get the invoice.
      */
@@ -66,6 +68,7 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Models\Invoices', 'patient_id');
     }
+
     /**
      * Get the package infornation.
      */
@@ -73,17 +76,16 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Models\Packages', 'patient_id');
     }
+
     /**
      * Hash password
-     * @param $input
      */
-
     public function setPasswordAttribute($input)
     {
-        if ($input)
+        if ($input) {
             $this->attributes['password'] = app('hash')->needsRehash($input) ? Hash::make($input) : $input;
+        }
     }
-
 
     public function role()
     {
@@ -95,22 +97,24 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'role_has_users');
     }
 
-    public function getRoles() {
+    public function getRoles()
+    {
 
         if ($this->user_roles()->count() > 0) {
             return implode(',', $this->user_roles()->pluck('name')->toArray());
         }
+
         return '';
     }
 
     /**
      * Get the Users.
      */
-    public function doctorhaslocation(){
+    public function doctorhaslocation()
+    {
 
         return $this->hasMany('App\Models\DoctorHasLocations', 'user_id');
     }
-
 
     /**
      * Get the Doctors for User.
@@ -133,10 +137,9 @@ class User extends Authenticatable
         return $this->belongsTo('App\Models\Accounts');
     }
 
-
     public function audit()
     {
-        return $this->hasMany('App\Models\AuditTrails','user_id');
+        return $this->hasMany('App\Models\AuditTrails', 'user_id');
     }
 
     /**
@@ -151,7 +154,6 @@ class User extends Authenticatable
      * Get the name by whom patient is Referred by
      * */
 
-
     public function referredBy()
     {
         return $this->belongsTo(User::class, 'referred_by')->withTrashed();
@@ -164,6 +166,7 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Models\UserHasLocations', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
+
     /**
      * Get the role has users.
      */
@@ -171,6 +174,7 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Models\RoleHasUsers', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
+
     /**
      * Get the doctor service.
      */
@@ -182,7 +186,8 @@ class User extends Authenticatable
     /**
      * Get the package advances.
      */
-    public function packagesadvances(){
+    public function packagesadvances()
+    {
 
         return $this->hasMany('App\Models\PackageAdvances', 'patient_id');
     }
@@ -198,60 +203,66 @@ class User extends Authenticatable
     /*Relation for audit trail*/
     public function audit_field_before()
     {
-        return $this->hasMany('App\Models\AuditTrailChanges','field_before');
+        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
     }
+
     public function audit_field_after()
     {
-        return $this->hasMany('App\Models\AuditTrailChanges','field_after');
+        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
     }
+
     /*end*/
-    static public function getData($id) {
+    public static function getData($id)
+    {
 
         return self::where([
-            ['id','=',$id],
-            ['account_id','=',Auth::User()->account_id]
+            ['id', '=', $id],
+            ['account_id', '=', Auth::User()->account_id],
         ])->first();
     }
 
-    static public function getUsers() {
+    public static function getUsers()
+    {
 
-        return self::where('account_id','=',Auth::User()->account_id)->whereNull('resource_type_id')->pluck('name','id');
+        return self::where('account_id', '=', Auth::User()->account_id)->whereNull('resource_type_id')->pluck('name', 'id');
     }
+
     /*
      * Get the users with  name & id
      */
-    static public function getUsersleadReport() {
-        return self::where('account_id','=',Auth::User()->account_id)->whereIn('user_type_id',[Config::get('constants.administrator_id'),Config::get('constants.application_user_id'),Config::get('constants.practitioner_id')])->pluck('name','id');
+    public static function getUsersleadReport()
+    {
+        return self::where('account_id', '=', Auth::User()->account_id)->whereIn('user_type_id', [Config::get('constants.administrator_id'), Config::get('constants.application_user_id'), Config::get('constants.practitioner_id')])->pluck('name', 'id');
     }
 
-    static public function getUsersWithTypeReport() {
-        $allUsersObject = self::where('account_id','=',Auth::User()->account_id)->whereIn('user_type_id',[Config::get('constants.administrator_id'),Config::get('constants.application_user_id'),Config::get('constants.practitioner_id')])->select('name','id','user_type_id')->get();
+    public static function getUsersWithTypeReport()
+    {
+        $allUsersObject = self::where('account_id', '=', Auth::User()->account_id)->whereIn('user_type_id', [Config::get('constants.administrator_id'), Config::get('constants.application_user_id'), Config::get('constants.practitioner_id')])->select('name', 'id', 'user_type_id')->get();
         $allUsersWithTypes = [];
         $allUsersWithTypes['doctor'][''] = 'Select Practitioner';
         $allUsersWithTypes['app_user'][''] = 'Select App user';
-        foreach ($allUsersObject as $user)
-        {
-//-------------------------- Both Admin & Application User ----------------------------------------
-            if($user->user_type_id == 1 || $user->user_type_id == 2)
-            {
+        foreach ($allUsersObject as $user) {
+            //-------------------------- Both Admin & Application User ----------------------------------------
+            if ($user->user_type_id == 1 || $user->user_type_id == 2) {
                 $allUsersWithTypes['app_user'][$user->id] = $user->name;
             }
-//-------------------------- Doctors / Practitioner User ----------------------------------------
-            if($user->user_type_id == 5)
-            {
+            //-------------------------- Doctors / Practitioner User ----------------------------------------
+            if ($user->user_type_id == 5) {
                 $allUsersWithTypes['doctor'][$user->id] = $user->name;
             }
         }
+
         return $allUsersWithTypes;
     }
+
     /**
      * Create Record
      *
      * @param data
-     *
      * @return (mixed)
      */
-    static public function createRecord($data){
+    public static function createRecord($data)
+    {
 
         $record = self::create($data);
 
@@ -259,14 +270,15 @@ class User extends Authenticatable
 
         return $record;
     }
+
     /**
      * update Record
      *
      * @param data
-     *
      * @return (mixed)
      */
-    static public function updateRecord($data,$id){
+    public static function updateRecord($data, $id)
+    {
 
         $old_data = (User::find($id)->makeVisible(['password']))->toArray();
 
@@ -274,26 +286,25 @@ class User extends Authenticatable
 
         $record->update($data);
 
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable,$old_data,$id);
+        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $id);
 
         return $record;
     }
+
     /**
      * delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function deleteRecord($id){
+    public static function deleteRecord($id)
+    {
 
         $user = User::getData($id);
 
-        if($user==null)
-        {
+        if ($user == null) {
             return view('error_full');
-        }
-        else{
+        } else {
 
             $record = $user->delete();
 
@@ -304,18 +315,19 @@ class User extends Authenticatable
             return $record;
         }
     }
+
     /**
      * delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function deleteRecord1($id){
+    public static function deleteRecord1($id)
+    {
 
         $doctor = User::getData($id);
 
-        if (!$doctor) {
+        if (! $doctor) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
 
@@ -329,16 +341,17 @@ class User extends Authenticatable
         //log request for delete for audit trail
 
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
+
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
+
     /**
      * isExit
      *
      * @param id, account id
-     *
      * @return (mixed)
      */
-    static public function isExists($id, $account_id)
+    public static function isExists($id, $account_id)
     {
         if (
             DoctorHasLocations::where(['user_id' => $id])->count() ||
@@ -349,21 +362,22 @@ class User extends Authenticatable
 
         return false;
     }
+
     /**
      * Inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id){
+    public static function inactiveRecord($id)
+    {
 
         $user = User::getData($id);
         if ($user == null) {
             return view('error_full');
         } else {
 
-            $record = $user->update(['active'=>0]);
+            $record = $user->update(['active' => 0]);
 
             session()->flash('success', 'Record has been inactivated successfully.');
 
@@ -372,22 +386,24 @@ class User extends Authenticatable
             return $record;
         }
     }
+
     /**
      * Active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function activeRecord($id, $status){
+    public static function activeRecord($id, $status)
+    {
 
         $user = User::getData($id);
 
         if ($user == null) {
             session()->flash('error', 'Resource not found.');
+
             return false;
         } else {
-            $record = $user->update(['active'=> $status]);
+            $record = $user->update(['active' => $status]);
 
             session()->flash('success', 'Record has been activated successfully.');
 
@@ -395,19 +411,21 @@ class User extends Authenticatable
 
             return $record;
 
-
         }
 
     }
+
     /**
      * Get patients
+     *
      * @return (mixed)
      */
-    static public function getPatients(){
+    public static function getPatients()
+    {
 
         return self::where([
-            ['user_type_id','=',Config::get('constants.patient_id')],
-            ['account_id','=',Auth::User()->account_id]
+            ['user_type_id', '=', Config::get('constants.patient_id')],
+            ['account_id', '=', Auth::User()->account_id],
         ])->get();
 
     }
@@ -419,12 +437,14 @@ class User extends Authenticatable
     *
     * @return (mixed)
     */
-    static public function getBulkData($id) {
-        if(!is_array($id)) {
-            $id = array($id);
+    public static function getBulkData($id)
+    {
+        if (! is_array($id)) {
+            $id = [$id];
         }
+
         return self::where([
-            ['account_id','=',Auth::User()->account_id]
+            ['account_id', '=', Auth::User()->account_id],
         ])->whereIn('id', $id)
             ->get();
     }
@@ -436,21 +456,21 @@ class User extends Authenticatable
      *
      * @return patient
      * */
-    static public function finduser($id){
+    public static function finduser($id)
+    {
         return self::where([
-            ['account_id','=',Auth::User()->account_id],
-            ['id','=',$id]
+            ['account_id', '=', Auth::User()->account_id],
+            ['id', '=', $id],
         ])->first();
     }
 
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllRecords($account_id)
+    public static function getAllRecords($account_id)
     {
         return self::where(['account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP])->get();
     }
@@ -458,13 +478,12 @@ class User extends Authenticatable
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllPatientRecords($account_id, array $ids = [])
+    public static function getAllPatientRecords($account_id, array $ids = [])
     {
-        if(is_array($ids) && count($ids)) {
+        if (is_array($ids) && count($ids)) {
             return self::where(['account_id' => $account_id])
                 ->whereIn('user_type_id', [self::$PATIENT_GROUP])
                 ->whereIn('id', $ids)
@@ -479,23 +498,23 @@ class User extends Authenticatable
     /**
      * Get All Active Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllActiveRecords($account_id, $locationId = false)
+    public static function getAllActiveRecords($account_id, $locationId = false)
     {
-        if($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
 
-        if($locationId) {
-            $query = self::join('user_has_locations','users.id','=','user_has_locations.user_id')
+        if ($locationId) {
+            $query = self::join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->where([
                     ['users.user_type_id', '!=', self::$PATIENT_GROUP],
                     ['users.active', '=', 1],
                     ['users.account_id', '=', $account_id],
-                ]) ->whereIn('user_has_locations.location_id', $locationId)->get();
+                ])->whereIn('user_has_locations.location_id', $locationId)->get();
+
             return $query;
         } else {
             return self::where(['active' => 1, 'account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP])->get();
@@ -505,25 +524,25 @@ class User extends Authenticatable
     /**
      * Get All Active Records for employee
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllActiveEmployeeRecords($account_id, $locationId = false)
+    public static function getAllActiveEmployeeRecords($account_id, $locationId = false)
     {
-        if($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
 
-        if($locationId) {
-            $query = self::join('user_has_locations','users.id','=','user_has_locations.user_id')
+        if ($locationId) {
+            $query = self::join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->where([
                     ['users.user_type_id', '!=', self::$PATIENT_GROUP],
                     ['users.active', '=', 1],
                     ['users.account_id', '=', $account_id],
-                ]) ->whereIn('user_has_locations.location_id', $locationId)
-                ->select('users.id','users.name')
+                ])->whereIn('user_has_locations.location_id', $locationId)
+                ->select('users.id', 'users.name')
                 ->get();
+
             return $query;
         } else {
             return self::where(['active' => 1, 'account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP])->get();
@@ -533,25 +552,25 @@ class User extends Authenticatable
     /**
      * Get All Active Records for practionars
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllActivePractionersRecords($account_id, $locationId = false)
+    public static function getAllActivePractionersRecords($account_id, $locationId = false)
     {
-        if($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
 
-        if($locationId) {
-            $query = self::join('doctor_has_locations','users.id','=','doctor_has_locations.user_id')
+        if ($locationId) {
+            $query = self::join('doctor_has_locations', 'users.id', '=', 'doctor_has_locations.user_id')
                 ->where([
                     ['users.user_type_id', '!=', self::$PATIENT_GROUP],
                     ['users.active', '=', 1],
                     ['users.account_id', '=', $account_id],
                 ])->whereIn('doctor_has_locations.location_id', $locationId)
-                ->select('users.id','users.name')
+                ->select('users.id', 'users.name')
                 ->get();
+
             return $query;
         } else {
             return self::where(['active' => 1, 'account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP])->get();
@@ -561,11 +580,10 @@ class User extends Authenticatable
     /**
      * Get All Active Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllSystemUsersActiveRecords($account_id)
+    public static function getAllSystemUsersActiveRecords($account_id)
     {
         return self::where(['active' => 1, 'account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP, self::$DOCTOR_GROUP])->get();
     }
@@ -573,17 +591,17 @@ class User extends Authenticatable
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveOnly($locationId = false, $account_id = false, $user_id = false, $pluck_columns = true)
+    public static function getActiveOnly($locationId = false, $account_id = false, $user_id = false, $pluck_columns = true)
     {
-        if($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
-        if ($user_id && !is_array($user_id)) {
-            $user_id = array($user_id);
+        if ($user_id && ! is_array($user_id)) {
+            $user_id = [$user_id];
         }
 
-        if($locationId) {
-            if($account_id) {
+        if ($locationId) {
+            if ($account_id) {
                 if ($user_id) {
                     $query = self::join('user_has_locations', function ($join) use ($account_id) {
                         $join->on('users.id', '=', 'user_has_locations.user_id')
@@ -594,9 +612,10 @@ class User extends Authenticatable
                         ->whereIn('user_has_locations.location_id', $locationId)
                         ->whereIn('users.id', $user_id)
                         ->get();
-                    if($pluck_columns) {
+                    if ($pluck_columns) {
                         $query = $query->pluck('name', 'user_id');
                     }
+
                     return $query;
                 } else {
                     $query = self::join('user_has_locations', function ($join) use ($account_id) {
@@ -607,9 +626,10 @@ class User extends Authenticatable
                     })
                         ->whereIn('user_has_locations.location_id', $locationId)
                         ->get();
-                    if($pluck_columns) {
+                    if ($pluck_columns) {
                         $query = $query->pluck('name', 'user_id');
                     }
+
                     return $query;
                 }
             }
@@ -623,9 +643,10 @@ class User extends Authenticatable
                     ->whereIn('users.id', $user_id)
                     ->whereIn('user_has_locations.location_id', $locationId)
                     ->get();
-                if($pluck_columns) {
+                if ($pluck_columns) {
                     $query = $query->pluck('name', 'user_id');
                 }
+
                 return $query;
             } else {
                 $query = self::join('user_has_locations', function ($join) {
@@ -635,32 +656,35 @@ class User extends Authenticatable
                 })
                     ->whereIn('user_has_locations.location_id', $locationId)
                     ->get();
-                if($pluck_columns) {
+                if ($pluck_columns) {
                     $query = $query->pluck('name', 'user_id');
                 }
+
                 return $query;
             }
-//            $query = self::whereIn('location_id',$locationId)->get()->pluck('name','id');
+            //            $query = self::whereIn('location_id',$locationId)->get()->pluck('name','id');
         } else {
-            if($account_id) {
+            if ($account_id) {
                 if ($user_id) {
                     $query = self::where('users.user_type_id', '=', config('constants.application_user_id'))
                         ->where('users.active', '=', 1)
                         ->where('users.account_id', '=', $account_id)
                         ->whereIn('users.id', $user_id)
                         ->get();
-                    if($pluck_columns) {
+                    if ($pluck_columns) {
                         $query = $query->pluck('name', 'id');
                     }
+
                     return $query;
                 } else {
                     $query = self::where('users.user_type_id', '=', config('constants.application_user_id'))
                         ->where('users.active', '=', 1)
                         ->where('users.account_id', '=', $account_id)
                         ->get();
-                    if($pluck_columns) {
+                    if ($pluck_columns) {
                         $query = $query->pluck('name', 'id');
                     }
+
                     return $query;
                 }
             }
@@ -670,19 +694,21 @@ class User extends Authenticatable
                     ->where('users.active', '=', 1)
                     ->whereIn('users.id', $user_id)
                     ->get();
-                if($pluck_columns) {
+                if ($pluck_columns) {
                     $query = $query->pluck('name', 'id');
                 }
+
                 return $query;
             } else {
                 $query = self::where('users.user_type_id', '=', config('constants.application_user_id'))
                     ->where('users.active', '=', 1)->get();
-                if($pluck_columns) {
+                if ($pluck_columns) {
                     $query = $query->pluck('name', 'id');
                 }
+
                 return $query;
             }
-//            $query = self::get()->pluck('name','id');
+            //            $query = self::get()->pluck('name','id');
         }
     }
 }

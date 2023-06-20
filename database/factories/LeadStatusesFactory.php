@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class LeadStatusesFactory extends Factory
 {
-
     public function definition()
     {
         return [

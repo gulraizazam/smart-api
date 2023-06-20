@@ -9,7 +9,6 @@ use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Query\Generator as QueryGenerator;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
-
 use function rtrim;
 
 final class TablesController extends AbstractController
@@ -32,7 +31,7 @@ final class TablesController extends AbstractController
 
         $tablesListForQuery = '';
         foreach ($params['tables'] as $table) {
-            $tablesListForQuery .= "'" . $this->dbi->escapeString($table) . "',";
+            $tablesListForQuery .= "'".$this->dbi->escapeString($table)."',";
         }
 
         $tablesListForQuery = rtrim($tablesListForQuery, ',');

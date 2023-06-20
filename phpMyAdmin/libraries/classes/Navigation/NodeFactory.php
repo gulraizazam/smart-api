@@ -7,15 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Navigation;
 
-use PhpMyAdmin\Navigation\Nodes\Node;
-
 use function __;
 use function class_exists;
+use const E_USER_ERROR;
+use PhpMyAdmin\Navigation\Nodes\Node;
 use function preg_match;
 use function sprintf;
 use function trigger_error;
-
-use const E_USER_ERROR;
 
 /**
  * Node factory - instantiates Node objects or objects derived from the Node class
@@ -28,9 +26,9 @@ class NodeFactory
     /**
      * Sanitizes the name of a Node class
      *
-     * @param string $class The class name to be sanitized
-     *
+     * @param  string  $class The class name to be sanitized
      * @return string
+     *
      * @psalm-return class-string
      */
     private static function sanitizeClass($class)
@@ -55,9 +53,9 @@ class NodeFactory
      * Will return the default class name back if the
      * file for some subclass is not available
      *
-     * @param string $class The class name to check
-     *
+     * @param  string  $class The class name to check
      * @return string
+     *
      * @psalm-return class-string
      */
     private static function checkClass($class)
@@ -83,10 +81,10 @@ class NodeFactory
     /**
      * Instantiates a Node object
      *
-     * @param string       $class   The name of the class to instantiate
-     * @param string|array $name    An identifier for the new node
-     * @param int          $type    Type of node, may be one of CONTAINER or OBJECT
-     * @param bool         $isGroup Whether this object has been created while grouping nodes
+     * @param  string  $class   The name of the class to instantiate
+     * @param  string|array  $name    An identifier for the new node
+     * @param  int  $type    Type of node, may be one of CONTAINER or OBJECT
+     * @param  bool  $isGroup Whether this object has been created while grouping nodes
      */
     public static function getInstance(
         $class = 'Node',
@@ -105,8 +103,8 @@ class NodeFactory
     /**
      * Instantiates a Node object that will be used only for "New db/table/etc.." objects
      *
-     * @param string $name    An identifier for the new node
-     * @param string $classes Extra CSS classes for the node
+     * @param  string  $name    An identifier for the new node
+     * @param  string  $classes Extra CSS classes for the node
      */
     public static function getInstanceForNewNode(
         string $name,

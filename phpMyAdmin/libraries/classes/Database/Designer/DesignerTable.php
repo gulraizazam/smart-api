@@ -26,10 +26,10 @@ class DesignerTable
     /**
      * Create a new DesignerTable
      *
-     * @param string      $databaseName The database name
-     * @param string      $tableName    The table name
-     * @param string      $tableEngine  The table engine
-     * @param string|null $displayField The display field if available
+     * @param  string  $databaseName The database name
+     * @param  string  $tableName    The table name
+     * @param  string  $tableEngine  The table engine
+     * @param  string|null  $displayField The display field if available
      */
     public function __construct(
         string $databaseName,
@@ -88,6 +88,6 @@ class DesignerTable
      */
     public function getDbTableString(): string
     {
-        return $this->databaseName . '.' . $this->tableName;
+        return $this->databaseName.'.'.$this->tableName;
     }
 }

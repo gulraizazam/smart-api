@@ -18,7 +18,7 @@ abstract class TransformationsPlugin implements TransformationsInterface
     /**
      * Does the actual work of each specific transformations plugin.
      *
-     * @param array $options transformation options
+     * @param  array  $options transformation options
      */
     public function applyTransformationNoWrap(array $options = []): bool
     {
@@ -28,10 +28,9 @@ abstract class TransformationsPlugin implements TransformationsInterface
     /**
      * Does the actual work of each specific transformations plugin.
      *
-     * @param string             $buffer  text to be transformed
-     * @param array              $options transformation options
-     * @param FieldMetadata|null $meta    meta information
-     *
+     * @param  string  $buffer  text to be transformed
+     * @param  array  $options transformation options
+     * @param  FieldMetadata|null  $meta    meta information
      * @return string the transformed text
      */
     abstract public function applyTransformation(
@@ -43,9 +42,8 @@ abstract class TransformationsPlugin implements TransformationsInterface
     /**
      * Returns passed options or default values if they were not set
      *
-     * @param string[] $options  List of passed options
-     * @param string[] $defaults List of default values
-     *
+     * @param  string[]  $options  List of passed options
+     * @param  string[]  $defaults List of default values
      * @return array List of options possibly filled in by defaults.
      */
     public function getOptions(array $options, array $defaults)

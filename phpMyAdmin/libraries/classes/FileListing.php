@@ -23,9 +23,8 @@ class FileListing
     /**
      * Returns array of filtered file names
      *
-     * @param string $dir        directory to list
-     * @param string $expression regular expression to match files
-     *
+     * @param  string  $dir        directory to list
+     * @param  string  $expression regular expression to match files
      * @return array|bool sorted file list on success, false on failure
      */
     public function getDirContent(string $dir, string $expression = '')
@@ -47,8 +46,8 @@ class FileListing
 
         while ($file = @readdir($handle)) {
             if (
-                ! @is_file($dir . $file)
-                || @is_link($dir . $file)
+                ! @is_file($dir.$file)
+                || @is_link($dir.$file)
                 || ($expression != '' && ! preg_match($expression, $file))
             ) {
                 continue;
@@ -66,10 +65,9 @@ class FileListing
     /**
      * Returns options of filtered file names
      *
-     * @param string $dir        directory to list
-     * @param string $extensions regular expression to match files
-     * @param string $active     currently active choice
-     *
+     * @param  string  $dir        directory to list
+     * @param  string  $extensions regular expression to match files
+     * @param  string  $active     currently active choice
      * @return string|false Html <option> field, false if not files in dir
      */
     public function getFileSelectOptions(

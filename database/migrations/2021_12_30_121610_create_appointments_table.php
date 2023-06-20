@@ -35,7 +35,7 @@ class CreateAppointmentsTable extends Migration
             $table->unsignedBigInteger('appointment_status_allow_message')->default(0);
             $table->unsignedBigInteger('cancellation_reason_id')->nullable();
             $table->unsignedBigInteger('service_id')->nullable();
-            $table->unsignedBigInteger("resource_id")->nullable();
+            $table->unsignedBigInteger('resource_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('converted_by')->nullable();
@@ -58,7 +58,7 @@ class CreateAppointmentsTable extends Migration
             $table->softDeletes();
 
             // Manage Foreign Key Relationships
-            $table->foreign('account_id','appointments_account')
+            $table->foreign('account_id', 'appointments_account')
                 ->references('id')
                 ->on('accounts');
             $table->foreign('appointment_type_id',
@@ -86,10 +86,10 @@ class CreateAppointmentsTable extends Migration
             $table->foreign('service_id')
                 ->references('id')
                 ->on('services');
-            $table->foreign("resource_id",
-                "appointments_resource_id")
-                ->references("id")
-                ->on("resources");
+            $table->foreign('resource_id',
+                'appointments_resource_id')
+                ->references('id')
+                ->on('resources');
             $table->foreign('appointment_status_id')
                 ->references('id')
                 ->on('appointment_statuses');

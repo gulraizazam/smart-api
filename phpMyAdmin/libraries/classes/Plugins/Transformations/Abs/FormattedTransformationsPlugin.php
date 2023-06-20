@@ -7,10 +7,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Transformations\Abs;
 
+use function __;
 use PhpMyAdmin\FieldMetadata;
 use PhpMyAdmin\Plugins\TransformationsPlugin;
-
-use function __;
 use function strtr;
 
 /**
@@ -27,25 +26,24 @@ abstract class FormattedTransformationsPlugin extends TransformationsPlugin
     {
         return __(
             'Displays the contents of the column as-is, without running it'
-            . ' through htmlspecialchars(). That is, the column is assumed'
-            . ' to contain valid HTML.'
+            .' through htmlspecialchars(). That is, the column is assumed'
+            .' to contain valid HTML.'
         );
     }
 
     /**
      * Does the actual work of each specific transformations plugin.
      *
-     * @param string             $buffer  text to be transformed
-     * @param array              $options transformation options
-     * @param FieldMetadata|null $meta    meta information
-     *
+     * @param  string  $buffer  text to be transformed
+     * @param  array  $options transformation options
+     * @param  FieldMetadata|null  $meta    meta information
      * @return string
      */
     public function applyTransformation($buffer, array $options = [], ?FieldMetadata $meta = null)
     {
         return '<iframe srcdoc="'
-            . strtr($buffer, '"', '\'')
-            . '" sandbox=""></iframe>';
+            .strtr($buffer, '"', '\'')
+            .'" sandbox=""></iframe>';
     }
 
     /* ~~~~~~~~~~~~~~~~~~~~ Getters and Setters ~~~~~~~~~~~~~~~~~~~~ */

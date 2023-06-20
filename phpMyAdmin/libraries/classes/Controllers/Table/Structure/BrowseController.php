@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table\Structure;
 
+use function __;
+use function implode;
 use PhpMyAdmin\Controllers\Table\AbstractController;
 use PhpMyAdmin\ParseAnalyze;
 use PhpMyAdmin\ResponseRenderer;
@@ -11,9 +13,6 @@ use PhpMyAdmin\Sql;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function implode;
 use function sprintf;
 
 final class BrowseController extends AbstractController
@@ -42,7 +41,7 @@ final class BrowseController extends AbstractController
     /**
      * Function to display table browse for selected columns
      *
-     * @param string $goto goto page url
+     * @param  string  $goto goto page url
      */
     private function displayTableBrowseForSelectedColumns($goto): void
     {

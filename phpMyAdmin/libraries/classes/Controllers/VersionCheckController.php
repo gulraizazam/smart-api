@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers;
 
+use function json_encode;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\VersionInformation;
-
-use function json_encode;
 
 /**
  * A caching proxy for retrieving version information from https://www.phpmyadmin.net/.

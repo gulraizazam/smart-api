@@ -7,11 +7,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Navigation\Nodes;
 
-use PhpMyAdmin\ConfigStorage\Relation;
-use PhpMyAdmin\DatabaseInterface;
-use PhpMyAdmin\Html\Generator;
-use PhpMyAdmin\Util;
-
 use function __;
 use function array_keys;
 use function array_reverse;
@@ -21,6 +16,10 @@ use function count;
 use function implode;
 use function in_array;
 use function is_string;
+use PhpMyAdmin\ConfigStorage\Relation;
+use PhpMyAdmin\DatabaseInterface;
+use PhpMyAdmin\Html\Generator;
+use PhpMyAdmin\Util;
 use function preg_match;
 use function sort;
 use function sprintf;
@@ -34,44 +33,54 @@ use function strstr;
 class Node
 {
     public const CONTAINER = 0;
+
     public const OBJECT = 1;
+
     /**
      * @var string A non-unique identifier for the node
      *             This may be trimmed when grouping nodes
      */
     public $name = '';
+
     /**
      * @var string A non-unique identifier for the node
      *             This will never change after being assigned
      */
     public $realName = '';
+
     /** @var int May be one of CONTAINER or OBJECT */
     public $type = self::OBJECT;
+
     /**
      * @var bool Whether this object has been created while grouping nodes
      *           Only relevant if the node is of type CONTAINER
      */
     public $isGroup = false;
+
     /**
      * @var bool Whether to add a "display: none;" CSS
      *           rule to the node when rendering it
      */
     public $visible = false;
+
     /**
      * @var Node A reference to the parent object of
      *           this node, NULL for the root node.
      */
     public $parent;
+
     /**
      * @var Node[] An array of Node objects that are
      *             direct children of this node
      */
     public $children = [];
+
     /**
-     * @var Mixed A string used to group nodes, or an array of strings
+     * @var mixed A string used to group nodes, or an array of strings
      *            Only relevant if the node is of type CONTAINER
      */
     public $separator = '';
+
     /**
      * @var int How many time to recursively apply the grouping function
      *          Only relevant if the node is of type CONTAINER
@@ -82,6 +91,7 @@ class Node
      * For the IMG tag, used when rendering the node.
      *
      * @var array<string, string>
+     *
      * @psalm-var array{image: string, title: string}
      */
     public $icon = ['image' => '', 'title' => ''];
@@ -90,6 +100,7 @@ class Node
      * An array of A tags, used when rendering the node.
      *
      * @var array<string, mixed>
+     *
      * @psalm-var array{
      *   text: array{route: string, params: array<string, mixed>},
      *   icon: array{route: string, params: array<string, mixed>},
@@ -104,15 +115,19 @@ class Node
 
     /** @var string HTML title */
     public $title;
+
     /** @var string Extra CSS classes for the node */
     public $classes = '';
+
     /** @var bool Whether this node is a link for creating new objects */
     public $isNew = false;
+
     /**
      * @var int The position for the pagination of
      *          the branch at the second level of the tree
      */
     public $pos2 = 0;
+
     /**
      * @var int The position for the pagination of
      *          the branch at the third level of the tree
@@ -122,7 +137,7 @@ class Node
     /** @var Relation */
     protected $relation;
 
-    /** @var string $displayName  display name for the navigation tree */
+    /** @var string display name for the navigation tree */
     public $displayName;
 
     /** @var string|null */
@@ -131,9 +146,9 @@ class Node
     /**
      * Initialises the class by setting the mandatory variables
      *
-     * @param string $name    An identifier for the new node
-     * @param int    $type    Type of node, may be one of CONTAINER or OBJECT
-     * @param bool   $isGroup Whether this object has been created
+     * @param  string  $name    An identifier for the new node
+     * @param  int  $type    Type of node, may be one of CONTAINER or OBJECT
+     * @param  bool  $isGroup Whether this object has been created
      *                        while grouping nodes
      */
     public function __construct($name, $type = self::OBJECT, $isGroup = false)
@@ -156,7 +171,7 @@ class Node
     /**
      * Adds a child node to this node
      *
-     * @param Node $child A child node
+     * @param  Node  $child A child node
      */
     public function addChild($child): void
     {
@@ -167,10 +182,9 @@ class Node
     /**
      * Returns a child node given it's name
      *
-     * @param string $name     The name of requested child
-     * @param bool   $realName Whether to use the "realName"
+     * @param  string  $name     The name of requested child
+     * @param  bool  $realName Whether to use the "realName"
      *                         instead of "name" in comparisons
-     *
      * @return Node|null The requested child node or null,
      *                   if the requested node cannot be found
      */
@@ -196,7 +210,7 @@ class Node
     /**
      * Removes a child node from this node
      *
-     * @param string $name The name of child to be removed
+     * @param  string  $name The name of child to be removed
      */
     public function removeChild($name): void
     {
@@ -211,10 +225,9 @@ class Node
     /**
      * Retrieves the parents for a node
      *
-     * @param bool $self       Whether to include the Node itself in the results
-     * @param bool $containers Whether to include nodes of type CONTAINER
-     * @param bool $groups     Whether to include nodes which have $group == true
-     *
+     * @param  bool  $self       Whether to include the Node itself in the results
+     * @param  bool  $containers Whether to include nodes of type CONTAINER
+     * @param  bool  $groups     Whether to include nodes which have $group == true
      * @return Node[] An array of parent Nodes
      */
     public function parents($self = false, $containers = false, $groups = false): array
@@ -256,7 +269,7 @@ class Node
     /**
      * This function checks if the node has children nodes associated with it
      *
-     * @param bool $countEmptyContainers Whether to count empty child
+     * @param  bool  $countEmptyContainers Whether to count empty child
      *                                   containers as valid children
      */
     public function hasChildren($countEmptyContainers = true): bool
@@ -326,8 +339,6 @@ class Node
     /**
      * Returns the actual path and the virtual paths for a node
      * both as clean arrays and base64 encoded strings
-     *
-     * @return array
      */
     public function getPaths(): array
     {
@@ -364,11 +375,10 @@ class Node
      * This method is overridden by the PhpMyAdmin\Navigation\Nodes\NodeDatabase
      * and PhpMyAdmin\Navigation\Nodes\NodeTable classes
      *
-     * @param string $type         The type of item we are looking for
+     * @param  string  $type         The type of item we are looking for
      *                             ('tables', 'views', etc)
-     * @param int    $pos          The offset of the list within the results
-     * @param string $searchClause A string used to filter the results of the query
-     *
+     * @param  int  $pos          The offset of the list within the results
+     * @param  string  $searchClause A string used to filter the results of the query
      * @return array
      */
     public function getData($type, $pos, $searchClause = '')
@@ -389,10 +399,9 @@ class Node
      * This method is overridden by the PhpMyAdmin\Navigation\Nodes\NodeDatabase
      * and PhpMyAdmin\Navigation\Nodes\NodeTable classes
      *
-     * @param string $type         The type of item we are looking for
+     * @param  string  $type         The type of item we are looking for
      *                             ('tables', 'views', etc)
-     * @param string $searchClause A string used to filter the results of the query
-     *
+     * @param  string  $searchClause A string used to filter the results of the query
      * @return int
      */
     public function getPresence($type = '', $searchClause = '')
@@ -417,7 +426,7 @@ class Node
 
             $retval = 0;
             foreach ($this->getDatabasesToSearch($searchClause) as $db) {
-                $query = "SHOW DATABASES LIKE '" . $db . "'";
+                $query = "SHOW DATABASES LIKE '".$db."'";
                 $retval += (int) $dbi->queryAndGetNumRows($query);
             }
 
@@ -429,7 +438,7 @@ class Node
             $query = 'SELECT COUNT(*) ';
             $query .= 'FROM ( ';
             $query .= 'SELECT DISTINCT SUBSTRING_INDEX(SCHEMA_NAME, ';
-            $query .= "'" . $dbSeparator . "', 1) ";
+            $query .= "'".$dbSeparator."', 1) ";
             $query .= 'DB_first_level ';
             $query .= 'FROM INFORMATION_SCHEMA.SCHEMATA ';
             $query .= $this->getWhereClause('SCHEMA_NAME', $searchClause);
@@ -441,7 +450,7 @@ class Node
         if ($GLOBALS['dbs_to_test'] !== false) {
             $prefixMap = [];
             foreach ($this->getDatabasesToSearch($searchClause) as $db) {
-                $query = "SHOW DATABASES LIKE '" . $db . "'";
+                $query = "SHOW DATABASES LIKE '".$db."'";
                 $handle = $dbi->tryQuery($query);
                 if ($handle === false) {
                     continue;
@@ -485,12 +494,12 @@ class Node
     /**
      * Detemines whether a given database should be hidden according to 'hide_db'
      *
-     * @param string $db database name
+     * @param  string  $db database name
      */
     private function isHideDb($db): bool
     {
         return ! empty($GLOBALS['cfg']['Server']['hide_db'])
-            && preg_match('/' . $GLOBALS['cfg']['Server']['hide_db'] . '/', $db);
+            && preg_match('/'.$GLOBALS['cfg']['Server']['hide_db'].'/', $db);
     }
 
     /**
@@ -499,8 +508,7 @@ class Node
      * the next priority. In case both are empty list of databases determined by
      * GRANTs are used
      *
-     * @param string $searchClause search clause
-     *
+     * @param  string  $searchClause search clause
      * @return array array of databases
      */
     private function getDatabasesToSearch($searchClause)
@@ -510,7 +518,7 @@ class Node
         $databases = [];
         if (! empty($searchClause)) {
             $databases = [
-                '%' . $dbi->escapeString($searchClause) . '%',
+                '%'.$dbi->escapeString($searchClause).'%',
             ];
         } elseif (! empty($GLOBALS['cfg']['Server']['only_db'])) {
             $databases = $GLOBALS['cfg']['Server']['only_db'];
@@ -527,9 +535,8 @@ class Node
      * Returns the WHERE clause depending on the $searchClause parameter
      * and the hide_db directive
      *
-     * @param string $columnName   Column name of the column having database names
-     * @param string $searchClause A string used to filter the results of the query
-     *
+     * @param  string  $columnName   Column name of the column having database names
+     * @param  string  $searchClause A string used to filter the results of the query
      * @return string
      */
     private function getWhereClause($columnName, $searchClause = '')
@@ -538,17 +545,17 @@ class Node
 
         $whereClause = 'WHERE TRUE ';
         if (! empty($searchClause)) {
-            $whereClause .= 'AND ' . Util::backquote($columnName)
-                . " LIKE '%";
+            $whereClause .= 'AND '.Util::backquote($columnName)
+                ." LIKE '%";
             $whereClause .= $dbi->escapeString($searchClause);
             $whereClause .= "%' ";
         }
 
         if (! empty($GLOBALS['cfg']['Server']['hide_db'])) {
-            $whereClause .= 'AND ' . Util::backquote($columnName)
-                . " NOT REGEXP '"
-                . $dbi->escapeString($GLOBALS['cfg']['Server']['hide_db'])
-                . "' ";
+            $whereClause .= 'AND '.Util::backquote($columnName)
+                ." NOT REGEXP '"
+                .$dbi->escapeString($GLOBALS['cfg']['Server']['hide_db'])
+                ."' ";
         }
 
         if (! empty($GLOBALS['cfg']['Server']['only_db'])) {
@@ -561,12 +568,12 @@ class Node
             $whereClause .= 'AND (';
             $subClauses = [];
             foreach ($GLOBALS['cfg']['Server']['only_db'] as $eachOnlyDb) {
-                $subClauses[] = ' ' . Util::backquote($columnName)
-                    . " LIKE '"
-                    . $dbi->escapeString($eachOnlyDb) . "' ";
+                $subClauses[] = ' '.Util::backquote($columnName)
+                    ." LIKE '"
+                    .$dbi->escapeString($eachOnlyDb)."' ";
             }
 
-            $whereClause .= implode('OR', $subClauses) . ') ';
+            $whereClause .= implode('OR', $subClauses).') ';
         }
 
         return $whereClause;
@@ -585,8 +592,7 @@ class Node
     /**
      * Returns CSS classes for a node
      *
-     * @param bool $match Whether the node matched loaded tree
-     *
+     * @param  bool  $match Whether the node matched loaded tree
      * @return string with html classes.
      */
     public function getCssClasses($match): string
@@ -611,8 +617,7 @@ class Node
     /**
      * Returns icon for the node
      *
-     * @param bool $match Whether the node matched loaded tree
-     *
+     * @param  bool  $match Whether the node matched loaded tree
      * @return string with image name
      */
     public function getIcon($match): string
@@ -642,11 +647,11 @@ class Node
         $navigationItemsHidingFeature = $this->relation->getRelationParameters()->navigationItemsHidingFeature;
         if ($navigationItemsHidingFeature !== null) {
             $navTable = Util::backquote($navigationItemsHidingFeature->database)
-                . '.' . Util::backquote($navigationItemsHidingFeature->navigationHiding);
-            $sqlQuery = 'SELECT `db_name`, COUNT(*) AS `count` FROM ' . $navTable
-                . " WHERE `username`='"
-                . $dbi->escapeString($GLOBALS['cfg']['Server']['user']) . "'"
-                . ' GROUP BY `db_name`';
+                .'.'.Util::backquote($navigationItemsHidingFeature->navigationHiding);
+            $sqlQuery = 'SELECT `db_name`, COUNT(*) AS `count` FROM '.$navTable
+                ." WHERE `username`='"
+                .$dbi->escapeString($GLOBALS['cfg']['Server']['user'])."'"
+                .' GROUP BY `db_name`';
 
             return $dbi->fetchResult($sqlQuery, 'db_name', 'count', DatabaseInterface::CONNECT_CONTROL);
         }
@@ -655,9 +660,8 @@ class Node
     }
 
     /**
-     * @param int    $pos          The offset of the list within the results.
-     * @param string $searchClause A string used to filter the results of the query.
-     *
+     * @param  int  $pos          The offset of the list within the results.
+     * @param  string  $searchClause A string used to filter the results of the query.
      * @return array
      */
     private function getDataFromInfoSchema($pos, $searchClause)
@@ -679,11 +683,11 @@ class Node
         $dbSeparator = $cfg['NavigationTreeDbSeparator'];
         $query = sprintf(
             'SELECT `SCHEMA_NAME` FROM `INFORMATION_SCHEMA`.`SCHEMATA`, (SELECT DB_first_level'
-                . ' FROM ( SELECT DISTINCT SUBSTRING_INDEX(SCHEMA_NAME, \'%1$s\', 1) DB_first_level'
-                . ' FROM INFORMATION_SCHEMA.SCHEMATA %2$s) t'
-                . ' ORDER BY DB_first_level ASC LIMIT %3$d, %4$d) t2'
-                . ' %2$sAND 1 = LOCATE(CONCAT(DB_first_level, \'%1$s\'),'
-                . ' CONCAT(SCHEMA_NAME, \'%1$s\')) ORDER BY SCHEMA_NAME ASC',
+                .' FROM ( SELECT DISTINCT SUBSTRING_INDEX(SCHEMA_NAME, \'%1$s\', 1) DB_first_level'
+                .' FROM INFORMATION_SCHEMA.SCHEMATA %2$s) t'
+                .' ORDER BY DB_first_level ASC LIMIT %3$d, %4$d) t2'
+                .' %2$sAND 1 = LOCATE(CONCAT(DB_first_level, \'%1$s\'),'
+                .' CONCAT(SCHEMA_NAME, \'%1$s\')) ORDER BY SCHEMA_NAME ASC',
             $dbi->escapeString($dbSeparator),
             $this->getWhereClause('SCHEMA_NAME', $searchClause),
             $pos,
@@ -694,9 +698,8 @@ class Node
     }
 
     /**
-     * @param int    $pos          The offset of the list within the results.
-     * @param string $searchClause A string used to filter the results of the query.
-     *
+     * @param  int  $pos          The offset of the list within the results.
+     * @param  string  $searchClause A string used to filter the results of the query.
      * @return array
      */
     private function getDataFromShowDatabases($pos, $searchClause)
@@ -774,9 +777,8 @@ class Node
     }
 
     /**
-     * @param int    $pos          The offset of the list within the results.
-     * @param string $searchClause A string used to filter the results of the query.
-     *
+     * @param  int  $pos          The offset of the list within the results.
+     * @param  string  $searchClause A string used to filter the results of the query.
      * @return array
      */
     private function getDataFromShowDatabasesLike($pos, $searchClause)
@@ -861,7 +863,7 @@ class Node
                 }
 
                 foreach ($prefixes as $prefix) {
-                    $startsWith = strpos($arr[0] . $dbSeparator, $prefix . $dbSeparator) === 0;
+                    $startsWith = strpos($arr[0].$dbSeparator, $prefix.$dbSeparator) === 0;
                     if ($startsWith) {
                         $retval[] = $arr[0];
                         break;

@@ -7,9 +7,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\ConfigStorage\Relation;
-use Traversable;
-
 use function basename;
 use function file_exists;
 use function in_array;
@@ -18,7 +15,9 @@ use function is_object;
 use function is_scalar;
 use function json_encode;
 use function json_last_error;
+use PhpMyAdmin\ConfigStorage\Relation;
 use function strlen;
+use Traversable;
 
 /**
  * Class used to output the footer
@@ -31,12 +30,14 @@ class Footer
      * @var Scripts
      */
     private $scripts;
+
     /**
      * Whether we are servicing an ajax request.
      *
      * @var bool
      */
     private $isAjax;
+
     /**
      * Whether to only close the BODY and HTML tags
      * or also include scripts, errors and links
@@ -44,6 +45,7 @@ class Footer
      * @var bool
      */
     private $isMinimal;
+
     /**
      * Whether to display anything
      *
@@ -73,15 +75,16 @@ class Footer
 
     /**
      * @return array<string, string>
+     *
      * @psalm-return array{revision: string, revisionUrl: string, branch: string, branchUrl: string}|[]
      */
     private function getGitRevisionInfo(): array
     {
         $info = [];
 
-        if (@file_exists(ROOT_PATH . 'revision-info.php')) {
+        if (@file_exists(ROOT_PATH.'revision-info.php')) {
             /** @psalm-suppress MissingFile,UnresolvableInclude */
-            $info = include ROOT_PATH . 'revision-info.php';
+            $info = include ROOT_PATH.'revision-info.php';
         }
 
         return is_array($info) ? $info : [];
@@ -90,9 +93,8 @@ class Footer
     /**
      * Remove recursions and iterator objects from an object
      *
-     * @param mixed $object Object to clean
-     * @param array $stack  Stack used to keep track of recursion, need not be passed for the first time
-     *
+     * @param  mixed  $object Object to clean
+     * @param  array  $stack  Stack used to keep track of recursion, need not be passed for the first time
      * @return mixed Reference passed object
      */
     private static function removeRecursion(&$object, array $stack = [])
@@ -184,7 +186,7 @@ class Footer
             $params['single_table'] = $_REQUEST['single_table'];
         }
 
-        return basename(Core::getenv('SCRIPT_NAME')) . Url::getCommonRaw($params);
+        return basename(Core::getenv('SCRIPT_NAME')).Url::getCommonRaw($params);
     }
 
     /**
@@ -246,7 +248,7 @@ class Footer
      * Set the ajax flag to indicate whether
      * we are servicing an ajax request
      *
-     * @param bool $isAjax Whether we are servicing an ajax request
+     * @param  bool  $isAjax Whether we are servicing an ajax request
      */
     public function setAjax(bool $isAjax): void
     {
@@ -283,7 +285,7 @@ class Footer
                     $url = $this->getSelfUrl();
                 }
 
-                $this->scripts->addCode('var debugSQLInfo = ' . $this->getDebugMessage() . ';');
+                $this->scripts->addCode('var debugSQLInfo = '.$this->getDebugMessage().';');
                 $errorMessages = $this->getErrorMessages();
                 $scripts = $this->scripts->getDisplay();
 

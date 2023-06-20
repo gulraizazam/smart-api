@@ -3,19 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
-use App\Models\AuditTrails;
-use Auth;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvoiceDetails extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['qty', 'discount_type', 'discount_price','discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'created_at', 'updated_at', 'deleted_at', 'package_service_id','tax_exclusive_serviceprice','tax_percenatage','tax_price','tax_including_price','is_exclusive'];
+    protected $fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'created_at', 'updated_at', 'deleted_at', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percenatage', 'tax_price', 'tax_including_price', 'is_exclusive'];
 
-    protected static $_fillable = ['qty', 'discount_type', 'discount_price','discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'package_service_id','tax_exclusive_serviceprice','tax_percenatage','tax_price','tax_including_price','is_exclusive'];
+    protected static $_fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percenatage', 'tax_price', 'tax_including_price', 'is_exclusive'];
 
     protected $table = 'invoice_details';
 
@@ -24,11 +21,10 @@ class InvoiceDetails extends Model
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_data)
+    public static function createRecord($data, $parent_data)
     {
         $record = self::create($data);
 
@@ -48,9 +44,8 @@ class InvoiceDetails extends Model
         return $this->belongsTo('App\Models\Services', 'service_id')->withTrashed();
     }
 
-    public function parentService() :BelongsTo
+    public function parentService(): BelongsTo
     {
         return $this->belongsTo('App\Models\Services', 'parent_id', 'service_id');
     }
-
 }

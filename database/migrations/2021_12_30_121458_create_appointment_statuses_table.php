@@ -32,7 +32,7 @@ class CreateAppointmentStatusesTable extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('account_id','appointment_statuses_account')
+            $table->foreign('account_id', 'appointment_statuses_account')
                 ->references('id')
                 ->on('accounts');
             $table->foreign('appointment_type_id',
