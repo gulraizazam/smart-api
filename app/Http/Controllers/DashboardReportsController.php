@@ -2528,6 +2528,7 @@ class DashboardReportsController extends Controller
     }
     public function DoctoreWiseConversion(Request $request)
     {
+       
         $total_apts = [];
         $converted_apts = [];
         $lables = [];
@@ -2536,17 +2537,26 @@ class DashboardReportsController extends Controller
         $appointments_info = array();
         $period = $request->period;
         $periods = GeneralFunctions::GetPeriods();
-        $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
-        $centre_doctors = DoctorHasLocations::where(['location_id' => $request->centre_id])
+        $centre_doctors = DoctorHasLocations::when($request->centre_id, function ($query) use ($request) {
+            return $query->where(['location_id' => $request->centre_id]);
+        })
+        ->when($request->doc_id, function ($query) use ($request) {
+            return $query->where(['user_id' => $request->doc_id]);
+        })
         ->groupBy('user_id')
         ->pluck('user_id');
+       
+        $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
+        
         $consultants = RoleHasUsers::join('users','users.id','role_has_users.user_id')
         ->select('users.name','users.id')
         ->whereIn('users.id' , $centre_doctors)
         ->where('role_id',$role)
         ->where('users.active',1)
         ->get();
+       
         foreach($consultants as $consultant){
+            
             array_push($lables , $consultant->name);
 
             $converted_appointments = Appointments::with('location:id,name')->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
@@ -2565,6 +2575,7 @@ class DashboardReportsController extends Controller
                     ]);
                 })
             ->get();
+            
             if (count($converted_appointments)) {
                 foreach ($converted_appointments as $appointment) {
                     if (!in_array($appointment->id, $appointmentss)) {
@@ -2639,6 +2650,7 @@ class DashboardReportsController extends Controller
             $total_appointments = Appointments::whereBetween('scheduled_date',[$periods[$period]['start_date'], $periods[$period]['end_date']])
             ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2 , 'doctor_id' => $consultant->id])
             ->count();
+           
             array_push($converted_apts, collect($appointments_info)->where('conversion_spend', "!=","")->count());
             array_push($total_apts, $total_appointments);
             $maxConversion1 = collect($appointments_info)->filter(function($appointment){
@@ -2664,8 +2676,10 @@ class DashboardReportsController extends Controller
                     'total_arrival' => $category_total_records,
                     'total_conversion' => $sum_conversion_total
                 ];
+                
             }
         }
+       
         return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
             'labels' => $lables,
             'total_appointments'=>$total_apts,
@@ -2674,5 +2688,19 @@ class DashboardReportsController extends Controller
 
         ]);
            
+    }
+    public function GetCentreDoctors(Request $request)
+    {
+        $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
+        $centre_doctors = DoctorHasLocations::where(['location_id' => $request->centre_id])
+        ->groupBy('user_id')
+        ->pluck('user_id');
+        $consultants = RoleHasUsers::join('users','users.id','role_has_users.user_id')
+        ->select('users.name','users.id')
+        ->whereIn('users.id' , $centre_doctors)
+        ->where('role_id',$role)
+        ->where('users.active',1)
+        ->get();
+        return response()->json(['status' => 1 , 'doctors' => $consultants]);
     }
 }
