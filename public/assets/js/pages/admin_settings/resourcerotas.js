@@ -357,8 +357,8 @@ $(document).ready(function () {
             $('#edit_sundayElement_1').prop('checked', false);
             $('#edit_sundayOperation_1').find("input").prop('disabled', false);
 
-            $('.mondaytime_1').val('', '');
-            $('.monday_breake_time').val('', '');
+            $('.edit_mondaytime_1').val('', '');
+            $('.edit_monday_breake_time').val('', '');
             $(".ftime_1").timepicker('setTime', null);
             $(".ttime_1").timepicker('setTime', null);
             $(".f_time_break").timepicker('setTime', null);
