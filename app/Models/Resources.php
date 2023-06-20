@@ -301,7 +301,7 @@ class Resources extends BaseModal
         $resources_array = [];
         foreach ($resources as $r) {
             $r = $r->id;
-            $resources_array[] = Resources::where('id', '=', $r)->with("resource_rota")->first();
+            $resources_array[] = Resources::where(['id' => $r])->with("resource_rota")->first();
         }
 
         return $resources_array;
