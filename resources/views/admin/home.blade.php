@@ -552,7 +552,7 @@
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">$(".appointment_by_type_dropdown").text("");
+                                                    <div class="btn-group">
                                                         <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report appointment_by_status_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
@@ -722,7 +722,7 @@
                                                             $csr_users = \App\Models\User::whereIn('id', $all_csr)
                                                                 ->where('active', 1)
                                                                 ->get();
-
+                                                            
                                                         @endphp
                                                         <div class="btn-group">
                                                             <a data-id="All"
