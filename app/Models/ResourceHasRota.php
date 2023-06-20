@@ -226,7 +226,7 @@ class ResourceHasRota extends BaseModal
             return [
                 'status' => true,
                 'message' => 'Record has been created successfully.',
-            );
+            ];
         } else {
             return [
                 'status' => false,
@@ -382,13 +382,6 @@ class ResourceHasRota extends BaseModal
             $old_data = (ResourceHasRota::find($id))->toArray();
             $resourcerota = ResourceHasRota::find($id);
             $request_data = $request->all();
-            /*  if ($request->start > Carbon::now()->format('Y-m-d')) {
-                $sattle_date = $request->start;
-            } elseif ($request->start <= Carbon::now()->format('Y-m-d')) {
-                $sattle_date = Carbon::now()->format('Y-m-d');
-            } else {
-                $sattle_date = Carbon::now()->format('Y-m-d');
-            } */
             $request_data['start'] = $request->start;
             $request = new Request();
             $request->replace($request_data);
@@ -419,7 +412,7 @@ class ResourceHasRota extends BaseModal
                             return array(
                                 'status' => 0,
                                 'message' => 'Time range must be different, Kindly define again',
-                            ];
+                            );
                         } else {
                             if (
                                 strtotime($request->get('break_from_monday')) >= strtotime($request->get('time_f_monday')) &&
@@ -441,7 +434,7 @@ class ResourceHasRota extends BaseModal
                             return array(
                                 'status' => 0,
                                 'message' => 'From Break or To Break require, kindly define again',
-                            ];
+                            );
                         }
                     }
                 }
@@ -458,7 +451,7 @@ class ResourceHasRota extends BaseModal
                                 return array(
                                     'status' => 0,
                                     'message' => 'Time range must be different, Kindly define again',
-                                ];
+                                );
                             } else {
                                 $data[$day] = implode(',', [Carbon::parse($request->get('time_f_'.$day))->format('H:i'), Carbon::parse($request->get('time_to_'.$day))->format('H:i')]);
                             }
@@ -476,7 +469,7 @@ class ResourceHasRota extends BaseModal
                                     return array(
                                         'status' => 0,
                                         'message' => 'Time range must be different, Kindly define again',
-                                    ];
+                                    );
                                 } else {
                                     if (
                                         strtotime($request->get('break_from_'.$day)) >= strtotime($request->get('time_f_'.$day)) &&
@@ -498,7 +491,7 @@ class ResourceHasRota extends BaseModal
                                     return array(
                                         'status' => 0,
                                         'message' => 'From Break or To Break require, kindly define again',
-                                    ];
+                                    );
                                 }
                             }
                         }
@@ -557,13 +550,6 @@ class ResourceHasRota extends BaseModal
                 // Set Region ID
                 $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
             }
-            /* if ($resourcerota->start < Carbon::now()->format('Y-m-d')) {
-                $data['start'] = $resourcerota->start;
-            } else if ($resourcerota->start > Carbon::now()->format('Y-m-d')) {
-                $data['start'] = $request->start;
-            } else if ($resourcerota->start = Carbon::now()->format('Y-m-d')) {
-                $data['start'] = Carbon::now()->format('Y-m-d');
-            }*/
 
             /*Date overlap function for 2 rotas only not for one*/
 
