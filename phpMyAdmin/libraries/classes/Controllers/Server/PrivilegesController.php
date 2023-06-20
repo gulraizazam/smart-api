@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server;
 
+use function __;
+use function header;
+use function implode;
+use function is_array;
+use function is_string;
+use function ob_get_clean;
+use function ob_start;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\ConfigStorage\RelationCleanup;
@@ -20,14 +27,6 @@ use PhpMyAdmin\Server\Privileges;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function header;
-use function implode;
-use function is_array;
-use function is_string;
-use function ob_get_clean;
-use function ob_start;
 use function str_replace;
 use function strtolower;
 use function urlencode;
@@ -175,8 +174,8 @@ class PrivilegesController extends AbstractController
                 Message::error(
                     __(
                         "Username and hostname didn't change. "
-                        . 'If you only want to change the password, '
-                        . "'Change password' tab should be used."
+                        .'If you only want to change the password, '
+                        ."'Change password' tab should be used."
                     )
                 )->getDisplay()
             );
@@ -367,7 +366,7 @@ class PrivilegesController extends AbstractController
             ] = Util::getDbInfo($db, $sub_part);
 
             $content = ob_get_clean();
-            $this->response->addHTML($content . "\n");
+            $this->response->addHTML($content."\n");
         } elseif (! empty($GLOBALS['message'])) {
             $this->response->addHTML(Generator::getMessage($GLOBALS['message']));
             unset($GLOBALS['message']);
@@ -386,7 +385,7 @@ class PrivilegesController extends AbstractController
                 return;
             }
 
-            $this->response->addHTML('<h2>' . $title . '</h2>' . $export);
+            $this->response->addHTML('<h2>'.$title.'</h2>'.$export);
         }
 
         // Show back the form if an error occurred

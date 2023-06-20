@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database\Structure;
 
+use function __;
 use PhpMyAdmin\Controllers\Database\AbstractController;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
-
-use function __;
 
 final class ShowCreateController extends AbstractController
 {
@@ -42,8 +41,7 @@ final class ShowCreateController extends AbstractController
     }
 
     /**
-     * @param string[] $selected Selected tables.
-     *
+     * @param  string[]  $selected Selected tables.
      * @return array<string, array<int, array<string, string>>>
      */
     private function getShowCreateTables(array $selected): array

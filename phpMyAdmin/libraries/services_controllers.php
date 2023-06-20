@@ -290,7 +290,7 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\CentralColumns\AddController::class => [
@@ -300,7 +300,7 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\CentralColumns\MakeConsistentController::class => [
@@ -310,7 +310,7 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\CentralColumns\RemoveController::class => [
@@ -320,7 +320,7 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\ChangePrefixFormController::class => [
@@ -346,7 +346,7 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$operations' => '@operations',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\CopyTableWithPrefixController::class => [
@@ -355,7 +355,7 @@ return [
                 '$response' => '@response',
                 '$template' => '@template',
                 '$db' => '%db%',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\DropFormController::class => [
@@ -375,7 +375,7 @@ return [
                 '$db' => '%db%',
                 '$dbi' => '@dbi',
                 '$relationCleanup' => '@relation_cleanup',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\EmptyFormController::class => [
@@ -397,7 +397,7 @@ return [
                 '$relationCleanup' => '@relation_cleanup',
                 '$operations' => '@operations',
                 '$flash' => '@flash',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\FavoriteTableController::class => [
@@ -425,7 +425,7 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Database\StructureController::class,
+                '$structureController' => '@'.Database\StructureController::class,
             ],
         ],
         Database\Structure\ShowCreateController::class => [
@@ -506,7 +506,7 @@ return [
             'arguments' => [
                 '$response' => '@response',
                 '$template' => '@template',
-                '$exportController' => '@' . Database\ExportController::class,
+                '$exportController' => '@'.Database\ExportController::class,
             ],
         ],
         Export\Template\CreateController::class => [
@@ -1106,7 +1106,7 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$table' => '%table%',
-                '$changeController' => '@' . Table\ChangeController::class,
+                '$changeController' => '@'.Table\ChangeController::class,
             ],
         ],
         Table\ChartController::class => [
@@ -1189,7 +1189,7 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$table' => '%table%',
-                '$exportController' => '@' . Table\ExportController::class,
+                '$exportController' => '@'.Table\ExportController::class,
             ],
         ],
         Table\FindReplaceController::class => [
@@ -1466,7 +1466,7 @@ return [
                 '$db' => '%db%',
                 '$table' => '%table%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\AddKeyController::class => [
@@ -1476,8 +1476,8 @@ return [
                 '$template' => '@template',
                 '$db' => '%db%',
                 '$table' => '%table%',
-                '$sqlController' => '@' . Sql\SqlController::class,
-                '$structureController' => '@' . Table\StructureController::class,
+                '$sqlController' => '@'.Sql\SqlController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\BrowseController::class => [
@@ -1498,7 +1498,7 @@ return [
                 '$db' => '%db%',
                 '$table' => '%table%',
                 '$centralColumns' => '@central_columns',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\CentralColumnsRemoveController::class => [
@@ -1509,7 +1509,7 @@ return [
                 '$db' => '%db%',
                 '$table' => '%table%',
                 '$centralColumns' => '@central_columns',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\ChangeController::class => [
@@ -1532,7 +1532,7 @@ return [
                 '$db' => '%db%',
                 '$table' => '%table%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\MoveColumnsController::class => [
@@ -1554,7 +1554,7 @@ return [
                 '$table' => '%table%',
                 '$dbi' => '@dbi',
                 '$createAddField' => '@create_add_field',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\PrimaryController::class => [
@@ -1565,7 +1565,7 @@ return [
                 '$db' => '%db%',
                 '$table' => '%table%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\ReservedWordCheckController::class => [
@@ -1587,7 +1587,7 @@ return [
                 '$relation' => '@relation',
                 '$transformations' => '@transformations',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\SpatialController::class => [
@@ -1598,7 +1598,7 @@ return [
                 '$db' => '%db%',
                 '$table' => '%table%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\Structure\UniqueController::class => [
@@ -1609,7 +1609,7 @@ return [
                 '$db' => '%db%',
                 '$table' => '%table%',
                 '$dbi' => '@dbi',
-                '$structureController' => '@' . Table\StructureController::class,
+                '$structureController' => '@'.Table\StructureController::class,
             ],
         ],
         Table\StructureController::class => [

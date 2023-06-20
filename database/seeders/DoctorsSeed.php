@@ -1,14 +1,14 @@
 <?php
 
+use App\Models\DoctorHasLocations;
+use App\Models\Resources;
+use App\Models\ResourceTypes;
+use App\Models\RoleHasUsers;
+use App\Models\Services;
+use App\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\User;
-use App\Models\ResourceTypes;
-use App\Models\DoctorHasLocations;
-use App\Models\RoleHasUsers;
-use App\Models\Services;
-use App\Models\Resources;
 
 class DoctorsSeed extends Seeder
 {
@@ -91,7 +91,7 @@ class DoctorsSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -108,8 +108,7 @@ class DoctorsSeed extends Seeder
 
         $resourcetype = ResourceTypes::where('name', '=', 'doctor')->first();
         $roleid = DB::table('roles')->select('id')->where('name', '=', 'administrator')->first();
-        $services = Services::where('parent_id','!=','0')->first();
-
+        $services = Services::where('parent_id', '!=', '0')->first();
 
         $doctors = [
             // Lahore Doctors
@@ -123,7 +122,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 4,
                 'city_id' => 1,
-                'region_id'=> 5,
+                'region_id' => 5,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -138,7 +137,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 4,
                 'city_id' => 1,
-                'region_id'=> 5,
+                'region_id' => 5,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -153,7 +152,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 2,
                 'city_id' => 1,
-                'region_id'=> 5,
+                'region_id' => 5,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -168,7 +167,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 3,
                 'city_id' => 1,
-                'region_id'=> 5,
+                'region_id' => 5,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -183,7 +182,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 5,
                 'city_id' => 1,
-                'region_id'=> 5,
+                'region_id' => 5,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -198,7 +197,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 5,
                 'city_id' => 1,
-                'region_id'=> 5,
+                'region_id' => 5,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -213,7 +212,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 7,
                 'city_id' => 1,
-                'region_id'=> 5,
+                'region_id' => 5,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -230,7 +229,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 7,
                 'city_id' => 2,
-                'region_id'=> 4,
+                'region_id' => 4,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -245,7 +244,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 7,
                 'city_id' => 2,
-                'region_id'=> 4,
+                'region_id' => 4,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -260,7 +259,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 12,
                 'city_id' => 2,
-                'region_id'=> 4,
+                'region_id' => 4,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -275,7 +274,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 12,
                 'city_id' => 2,
-                'region_id'=> 4,
+                'region_id' => 4,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -291,7 +290,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 8,
                 'city_id' => 3,
-                'region_id'=> 3,
+                'region_id' => 3,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -306,7 +305,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 9,
                 'city_id' => 3,
-                'region_id'=> 3,
+                'region_id' => 3,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -321,7 +320,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 9,
                 'city_id' => 3,
-                'region_id'=> 3,
+                'region_id' => 3,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -336,7 +335,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 11,
                 'city_id' => 3,
-                'region_id'=> 3,
+                'region_id' => 3,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -351,7 +350,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 11,
                 'city_id' => 3,
-                'region_id'=> 3,
+                'region_id' => 3,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -367,7 +366,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 13,
                 'city_id' => 4,
-                'region_id'=> 3,
+                'region_id' => 3,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -382,7 +381,7 @@ class DoctorsSeed extends Seeder
                 'account_id' => 1,
                 'location_id' => 13,
                 'city_id' => 4,
-                'region_id'=> 3,
+                'region_id' => 3,
                 'password' => bcrypt('password'),
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
@@ -405,18 +404,16 @@ class DoctorsSeed extends Seeder
                 $resource->external_id = $user->id;
                 $resource->save();
 
-
-                RoleHasUsers::create(array(
+                RoleHasUsers::create([
                     'role_id' => $roleid->id,
                     'user_id' => $user->id,
-                ));
+                ]);
 
-
-                DoctorHasLocations::create(array(
+                DoctorHasLocations::create([
                     'location_id' => $doctor['location_id'],
                     'service_id' => $services->id,
                     'user_id' => $user->id,
-                ));
+                ]);
             }
         }
     }

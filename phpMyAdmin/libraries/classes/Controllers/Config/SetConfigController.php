@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Config;
 
+use function json_decode;
 use PhpMyAdmin\Config;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\Http\ServerRequest;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
-
-use function json_decode;
 
 final class SetConfigController extends AbstractController
 {

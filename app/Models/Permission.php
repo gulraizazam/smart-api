@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 class Permission extends \Spatie\Permission\Models\Permission
 {
@@ -15,10 +14,11 @@ class Permission extends \Spatie\Permission\Models\Permission
         'main_group',
         'parent_id',
         'status',
-        'guard_name'
+        'guard_name',
     ];
 
-    public function parent() {
+    public function parent()
+    {
         return $this->belongsTo(static::class);
     }
 }

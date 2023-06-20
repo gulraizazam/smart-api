@@ -16,10 +16,10 @@ class CreateCustomFormFeedbackDetailsTable extends Migration
         Schema::create('custom_form_feedback_details', function (Blueprint $table) {
             $table->id();
             $table->smallInteger('field_type');
-            $table->text("field_label")->nullable();
-            $table->text("field_value")->nullable();
+            $table->text('field_label')->nullable();
+            $table->text('field_value')->nullable();
             $table->text('content')->nullable();
-            $table->unsignedBigInteger('section_id')->default(1)->comment("this will be used when one want to create form with multiple sections");
+            $table->unsignedBigInteger('section_id')->default(1)->comment('this will be used when one want to create form with multiple sections');
             $table->unsignedBigInteger('custom_form_id');
             $table->unsignedBigInteger('custom_form_field_id');
             $table->unsignedBigInteger('custom_form_feedback_id');

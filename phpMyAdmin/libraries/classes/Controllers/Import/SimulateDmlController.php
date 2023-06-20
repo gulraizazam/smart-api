@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Import;
 
+use function __;
+use function count;
+use function explode;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\Import\SimulateDml;
 use PhpMyAdmin\Message;
@@ -13,10 +16,6 @@ use PhpMyAdmin\SqlParser\Statements\DeleteStatement;
 use PhpMyAdmin\SqlParser\Statements\UpdateStatement;
 use PhpMyAdmin\SqlParser\Utils\Query;
 use PhpMyAdmin\Template;
-
-use function __;
-use function count;
-use function explode;
 
 final class SimulateDmlController extends AbstractController
 {

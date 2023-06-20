@@ -20,37 +20,36 @@ class MachineTypeWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadlocationservice($location_id, $account_id, $reverse_process = false)
+    public static function loadlocationservice($location_id, $account_id, $reverse_process = false)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
         // Locaton Based Services Array
-        $location_services_array = array();
+        $location_services_array = [];
 
-        $services = ServiceHasLocations
-            ::join('services', 'services.id', '=', 'service_has_locations.service_id')
+        $services = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
             ->where([
-                'service_has_locations.service_id' => Services::where(array(
+                'service_has_locations.service_id' => Services::where([
                     'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'service_has_locations.location_id' => $location_id
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'service_has_locations.location_id' => $location_id,
             ])->get();
 
         if ($services->count()) {
-            $ss = Services::where(array(
+            $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
                 'parent_id' => '0',
                 'active' => 1,
-            ))->select('id')->get();
+            ])->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -71,12 +70,11 @@ class MachineTypeWidget
                 }
             }
         } else {
-            $centreServices = ServiceHasLocations
-                ::join('services', 'services.id', '=', 'service_has_locations.service_id')
-                ->where(array(
+            $centreServices = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
+                ->where([
                     'service_has_locations.account_id' => $account_id,
                     'service_has_locations.location_id' => $location_id,
-                ))->get();
+                ])->get();
 
             if ($centreServices->count()) {
                 foreach ($centreServices as $centreService) {
@@ -93,7 +91,7 @@ class MachineTypeWidget
                         );
                     } else {
                         $rootService = self::findRoot($centreService->service_id, $searchServices);
-                        if (!in_array($rootService, $location_services_array)) {
+                        if (! in_array($rootService, $location_services_array)) {
                             $location_services_array[] = $rootService;
                         }
                     }
@@ -104,7 +102,8 @@ class MachineTypeWidget
         if (count($location_services_array)) {
             return $location_services_array;
         }
-        return array();
+
+        return [];
     }
 
     /*
@@ -113,37 +112,36 @@ class MachineTypeWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadmachinetypeservice($machine_type_id, $account_id, $reverse_process = false)
+    public static function loadmachinetypeservice($machine_type_id, $account_id, $reverse_process = false)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
         // machine type Based Services Array
-        $machinetype_services_array = array();
+        $machinetype_services_array = [];
 
-        $services = MachineTypeHasServices
-            ::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
+        $services = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
             ->where([
-                'machine_type_has_services.service_id' => Services::where(array(
+                'machine_type_has_services.service_id' => Services::where([
                     'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'machine_type_has_services.machine_type_id' => $machine_type_id
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'machine_type_has_services.machine_type_id' => $machine_type_id,
             ])->get();
 
         if ($services->count()) {
-            $ss = Services::where(array(
+            $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
                 'parent_id' => '0',
                 'active' => 1,
-            ))->select('id')->get();
+            ])->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -164,11 +162,10 @@ class MachineTypeWidget
                 }
             }
         } else {
-            $machinetypeServices = MachineTypeHasServices
-                ::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
-                ->where(array(
+            $machinetypeServices = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
+                ->where([
                     'machine_type_has_services.machine_type_id' => $machine_type_id,
-                ))->get();
+                ])->get();
 
             if ($machinetypeServices->count()) {
                 foreach ($machinetypeServices as $machinetypeService) {
@@ -185,7 +182,7 @@ class MachineTypeWidget
                         );
                     } else {
                         $rootService = self::findRoot($machinetypeService->service_id, $searchServices);
-                        if (!in_array($rootService, $machinetype_services_array)) {
+                        if (! in_array($rootService, $machinetype_services_array)) {
                             $machinetype_services_array[] = $rootService;
                         }
                     }
@@ -196,14 +193,14 @@ class MachineTypeWidget
         if (count($machinetype_services_array)) {
             return $machinetype_services_array;
         }
-        return array();
+
+        return [];
     }
 
-
-    static public function findNestedServicesEndNodes($data, $nodes = array())
+    public static function findNestedServicesEndNodes($data, $nodes = [])
     {
         foreach ($data as $node) {
-            if ((isset($node['children']) && sizeof($node['children']))) {
+            if ((isset($node['children']) && count($node['children']))) {
                 $nodes = array_unique(array_merge($nodes, self::findNestedServicesEndNodes($node['children'], $nodes)));
             } else {
                 if ($node['end_node'] == '1') {
@@ -211,12 +208,13 @@ class MachineTypeWidget
                 }
             }
         }
+
         return $nodes;
     }
 
-    static function getNestedServicesByID($service_id, $data)
+    public static function getNestedServicesByID($service_id, $data)
     {
-        $nested = array();
+        $nested = [];
 
         foreach ($data as &$s) {
             if ($s['id'] == $service_id) {
@@ -224,7 +222,7 @@ class MachineTypeWidget
                 $nested[$s['id']] = &$s;
 
                 if ($s['end_node'] == '0') {
-                    $nested[$s['id']]['children'] = array();
+                    $nested[$s['id']]['children'] = [];
                 }
             } else {
                 $pid = $s['parent_id'];
@@ -233,12 +231,12 @@ class MachineTypeWidget
                     // If the parent ID exists in the source array
                     // we add it to the 'children' array of the parent after initializing it.
 
-                    if ($data[$id]['end_node'] == '0' && !isset($data[$id]['children'])) {
-                        $data[$id]['children'] = array();
+                    if ($data[$id]['end_node'] == '0' && ! isset($data[$id]['children'])) {
+                        $data[$id]['children'] = [];
                     }
 
-                    if (!isset($data[$pid]['children'])) {
-                        $data[$pid]['children'] = array();
+                    if (! isset($data[$pid]['children'])) {
+                        $data[$pid]['children'] = [];
                     }
 
                     $data[$pid]['children'][$s['id']] = &$s;
@@ -249,7 +247,7 @@ class MachineTypeWidget
         return $nested;
     }
 
-    static public function findRoot($service_id, $data)
+    public static function findRoot($service_id, $data)
     {
         if ($data[$service_id]['parent_id'] == '0') {
             return $service_id;

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Export;
 
+use function __;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Plugins\ExportPlugin;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyMainGroup;
@@ -15,8 +16,6 @@ use PhpMyAdmin\Properties\Options\Items\HiddenPropertyItem;
 use PhpMyAdmin\Properties\Plugins\ExportPluginProperties;
 use PhpMyAdmin\Util;
 use PhpMyAdmin\Version;
-
-use function __;
 use function preg_match;
 use function preg_replace;
 use function stripslashes;
@@ -66,8 +65,7 @@ class ExportPhparray extends ExportPlugin
     /**
      * Removes end of comment from a string
      *
-     * @param string $string String to replace
-     *
+     * @param  string  $string String to replace
      * @return string
      */
     public function commentString($string)
@@ -81,11 +79,11 @@ class ExportPhparray extends ExportPlugin
     public function exportHeader(): bool
     {
         $this->export->outputHandler(
-            '<?php' . $GLOBALS['crlf']
-            . '/**' . $GLOBALS['crlf']
-            . ' * Export to PHP Array plugin for PHPMyAdmin' . $GLOBALS['crlf']
-            . ' * @version ' . Version::VERSION . $GLOBALS['crlf']
-            . ' */' . $GLOBALS['crlf'] . $GLOBALS['crlf']
+            '<?php'.$GLOBALS['crlf']
+            .'/**'.$GLOBALS['crlf']
+            .' * Export to PHP Array plugin for PHPMyAdmin'.$GLOBALS['crlf']
+            .' * @version '.Version::VERSION.$GLOBALS['crlf']
+            .' */'.$GLOBALS['crlf'].$GLOBALS['crlf']
         );
 
         return true;
@@ -102,8 +100,8 @@ class ExportPhparray extends ExportPlugin
     /**
      * Outputs database header
      *
-     * @param string $db      Database name
-     * @param string $dbAlias Aliases of db
+     * @param  string  $db      Database name
+     * @param  string  $dbAlias Aliases of db
      */
     public function exportDBHeader($db, $dbAlias = ''): bool
     {
@@ -112,9 +110,9 @@ class ExportPhparray extends ExportPlugin
         }
 
         $this->export->outputHandler(
-            '/**' . $GLOBALS['crlf']
-            . ' * Database ' . $this->commentString(Util::backquote($dbAlias))
-            . $GLOBALS['crlf'] . ' */' . $GLOBALS['crlf']
+            '/**'.$GLOBALS['crlf']
+            .' * Database '.$this->commentString(Util::backquote($dbAlias))
+            .$GLOBALS['crlf'].' */'.$GLOBALS['crlf']
         );
 
         return true;
@@ -123,7 +121,7 @@ class ExportPhparray extends ExportPlugin
     /**
      * Outputs database footer
      *
-     * @param string $db Database name
+     * @param  string  $db Database name
      */
     public function exportDBFooter($db): bool
     {
@@ -133,9 +131,9 @@ class ExportPhparray extends ExportPlugin
     /**
      * Outputs CREATE DATABASE statement
      *
-     * @param string $db         Database name
-     * @param string $exportType 'server', 'database', 'table'
-     * @param string $dbAlias    Aliases of db
+     * @param  string  $db         Database name
+     * @param  string  $exportType 'server', 'database', 'table'
+     * @param  string  $dbAlias    Aliases of db
      */
     public function exportDBCreate($db, $exportType, $dbAlias = ''): bool
     {
@@ -145,12 +143,12 @@ class ExportPhparray extends ExportPlugin
     /**
      * Outputs the content of a table in PHP array format
      *
-     * @param string $db       database name
-     * @param string $table    table name
-     * @param string $crlf     the end of line sequence
-     * @param string $errorUrl the url to go back in case of error
-     * @param string $sqlQuery SQL query for obtaining data
-     * @param array  $aliases  Aliases of db/table/columns
+     * @param  string  $db       database name
+     * @param  string  $table    table name
+     * @param  string  $crlf     the end of line sequence
+     * @param  string  $errorUrl the url to go back in case of error
+     * @param  string  $sqlQuery SQL query for obtaining data
+     * @param  array  $aliases  Aliases of db/table/columns
      */
     public function exportData(
         $db,
@@ -189,17 +187,17 @@ class ExportPhparray extends ExportPlugin
 
             // variable name must not start with a number or dash...
             if (preg_match('/^[a-zA-Z_\x7f-\xff]/', $tablefixed) === 0) {
-                $tablefixed = '_' . $tablefixed;
+                $tablefixed = '_'.$tablefixed;
             }
         }
 
         $buffer = '';
         $record_cnt = 0;
         // Output table name as comment
-        $buffer .= $crlf . '/* '
-            . $this->commentString(Util::backquote($db_alias)) . '.'
-            . $this->commentString(Util::backquote($table_alias)) . ' */' . $crlf;
-        $buffer .= '$' . $tablefixed . ' = array(';
+        $buffer .= $crlf.'/* '
+            .$this->commentString(Util::backquote($db_alias)).'.'
+            .$this->commentString(Util::backquote($table_alias)).' */'.$crlf;
+        $buffer .= '$'.$tablefixed.' = array(';
         if (! $this->export->outputHandler($buffer)) {
             return false;
         }
@@ -210,15 +208,15 @@ class ExportPhparray extends ExportPlugin
             $record_cnt++;
 
             if ($record_cnt == 1) {
-                $buffer .= $crlf . '  array(';
+                $buffer .= $crlf.'  array(';
             } else {
-                $buffer .= ',' . $crlf . '  array(';
+                $buffer .= ','.$crlf.'  array(';
             }
 
             for ($i = 0; $i < $columns_cnt; $i++) {
                 $buffer .= var_export($columns[$i], true)
-                    . ' => ' . var_export($record[$i], true)
-                    . ($i + 1 >= $columns_cnt ? '' : ',');
+                    .' => '.var_export($record[$i], true)
+                    .($i + 1 >= $columns_cnt ? '' : ',');
             }
 
             $buffer .= ')';
@@ -230,7 +228,7 @@ class ExportPhparray extends ExportPlugin
             $buffer = '';
         }
 
-        $buffer .= $crlf . ');' . $crlf;
+        $buffer .= $crlf.');'.$crlf;
 
         return $this->export->outputHandler($buffer);
     }
@@ -238,9 +236,9 @@ class ExportPhparray extends ExportPlugin
     /**
      * Outputs result of raw query as PHP array
      *
-     * @param string $errorUrl the url to go back in case of error
-     * @param string $sqlQuery the rawquery to output
-     * @param string $crlf     the end of line sequence
+     * @param  string  $errorUrl the url to go back in case of error
+     * @param  string  $sqlQuery the rawquery to output
+     * @param  string  $crlf     the end of line sequence
      */
     public function exportRawQuery(string $errorUrl, string $sqlQuery, string $crlf): bool
     {

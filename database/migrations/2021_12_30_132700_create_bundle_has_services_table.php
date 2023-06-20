@@ -16,7 +16,7 @@ class CreateBundleHasServicesTable extends Migration
         Schema::create('bundle_has_services', function (Blueprint $table) {
             $table->unsignedBigInteger('bundle_id');
             $table->unsignedBigInteger('service_id');
-            $table->double('service_price', 11,2)->default(0.00);
+            $table->double('service_price', 11, 2)->default(0.00);
             $table->double('calculated_price', 11, 2)->default(0.00);
             $table->unsignedTinyInteger('end_node')->default(1);
 

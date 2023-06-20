@@ -7,12 +7,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Config;
 
+use function array_shift;
+use function implode;
 use PhpMyAdmin\Config;
 use PhpMyAdmin\Sanitize;
 use PhpMyAdmin\Template;
-
-use function array_shift;
-use function implode;
 
 /**
  * PhpMyAdmin\Config\FormDisplayTemplate class
@@ -29,7 +28,7 @@ class FormDisplayTemplate
     public $template;
 
     /**
-     * @param Config $config Config instance
+     * @param  Config  $config Config instance
      */
     public function __construct(Config $config)
     {
@@ -55,13 +54,13 @@ class FormDisplayTemplate
      * o comment - (string) tooltip comment
      * o comment_warning - (bool) whether this comments warns about something
      *
-     * @param string     $path           config option path
-     * @param string     $name           config option name
-     * @param string     $type           type of config option
-     * @param mixed      $value          current value
-     * @param string     $description    verbose description
-     * @param bool       $valueIsDefault whether value is default
-     * @param array|null $opts           see above description
+     * @param  string  $path           config option path
+     * @param  string  $name           config option name
+     * @param  string  $type           type of config option
+     * @param  mixed  $value          current value
+     * @param  string  $description    verbose description
+     * @param  bool  $valueIsDefault whether value is default
+     * @param  array|null  $opts           see above description
      */
     public function displayInput(
         $path,
@@ -74,11 +73,11 @@ class FormDisplayTemplate
     ): string {
         $isSetupScript = $this->config->get('is_setup');
         $optionIsDisabled = ! $isSetupScript && isset($opts['userprefs_allow']) && ! $opts['userprefs_allow'];
-        $trClass = $this->group > 0 ? 'group-field group-field-' . $this->group : '';
+        $trClass = $this->group > 0 ? 'group-field group-field-'.$this->group : '';
         if (isset($opts['setvalue']) && $opts['setvalue'] === ':group') {
             unset($opts['setvalue']);
             $this->group++;
-            $trClass = 'group-header-field group-header-' . $this->group;
+            $trClass = 'group-header-field group-header-'.$this->group;
         }
 
         return $this->template->render('config/form_display/input', [
@@ -106,7 +105,7 @@ class FormDisplayTemplate
     /**
      * Display group header
      *
-     * @param string $headerText Text of header
+     * @param  string  $headerText Text of header
      */
     public function displayGroupHeader(string $headerText): string
     {
@@ -135,9 +134,9 @@ class FormDisplayTemplate
     /**
      * Appends JS validation code to $js_array
      *
-     * @param string       $fieldId    ID of field to validate
-     * @param string|array $validators validators callback
-     * @param array        $jsArray    will be updated with javascript code
+     * @param  string  $fieldId    ID of field to validate
+     * @param  string|array  $validators validators callback
+     * @param  array  $jsArray    will be updated with javascript code
      */
     public function addJsValidate($fieldId, $validators, array &$jsArray): void
     {
@@ -149,17 +148,16 @@ class FormDisplayTemplate
                 $vArgs[] = Sanitize::escapeJsString($arg);
             }
 
-            $vArgs = $vArgs ? ", ['" . implode("', '", $vArgs) . "']" : '';
-            $jsArray[] = "registerFieldValidator('" . $fieldId . "', '" . $vName . "', true" . $vArgs . ')';
+            $vArgs = $vArgs ? ", ['".implode("', '", $vArgs)."']" : '';
+            $jsArray[] = "registerFieldValidator('".$fieldId."', '".$vName."', true".$vArgs.')';
         }
     }
 
     /**
      * Displays error list
      *
-     * @param string $name      Name of item with errors
-     * @param array  $errorList List of errors to show
-     *
+     * @param  string  $name      Name of item with errors
+     * @param  array  $errorList List of errors to show
      * @return string HTML for errors
      */
     public function displayErrors($name, array $errorList): string

@@ -57,7 +57,7 @@ class InvoiceSeeder extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
 
         ]);
 
@@ -69,7 +69,6 @@ class InvoiceSeeder extends Seeder
         $role->givePermissionTo('invoices_log');
         $role->giverPermissionTo('invoices_log_excel');
         $role->giverPermissionTo('invoices_sms_log');
-
 
     }
 }

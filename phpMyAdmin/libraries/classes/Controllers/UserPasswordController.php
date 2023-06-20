@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers;
 
+use function __;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Html\Generator;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\UserPassword;
-
-use function __;
 
 /**
  * Displays and handles the form where the user can change their password.
@@ -81,7 +80,7 @@ class UserPasswordController extends AbstractController
                     return;
                 }
 
-                $this->response->addHTML('<h1>' . __('Change password') . '</h1>' . "\n\n");
+                $this->response->addHTML('<h1>'.__('Change password').'</h1>'."\n\n");
                 $this->response->addHTML(Generator::getMessage($msg, $sql_query, 'success'));
                 $this->render('user_password');
 

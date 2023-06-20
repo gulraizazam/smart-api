@@ -30,12 +30,14 @@ final class Console
 
     /**
      * @var string
+     *
      * @psalm-var 'info'|'show'|'collapse'
      */
     public $Mode;
 
     /**
      * @var int
+     *
      * @psalm-var positive-int
      */
     public $Height;
@@ -45,18 +47,20 @@ final class Console
 
     /**
      * @var string
+     *
      * @psalm-var 'exec'|'time'|'count'
      */
     public $OrderBy;
 
     /**
      * @var string
+     *
      * @psalm-var 'asc'|'desc'
      */
     public $Order;
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      */
     public function __construct(array $console = [])
     {
@@ -73,7 +77,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      */
     private function setStartHistory(array $console): bool
     {
@@ -85,7 +89,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      */
     private function setAlwaysExpand(array $console): bool
     {
@@ -97,7 +101,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      */
     private function setCurrentQuery(array $console): bool
     {
@@ -109,7 +113,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      */
     private function setEnterExecutes(array $console): bool
     {
@@ -121,7 +125,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      */
     private function setDarkTheme(array $console): bool
     {
@@ -133,7 +137,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      *
      * @psalm-return 'info'|'show'|'collapse'
      */
@@ -147,7 +151,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      *
      * @psalm-return positive-int
      */
@@ -164,7 +168,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      */
     private function setGroupQueries(array $console): bool
     {
@@ -176,7 +180,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      *
      * @psalm-return 'exec'|'time'|'count'
      */
@@ -190,7 +194,7 @@ final class Console
     }
 
     /**
-     * @param mixed[] $console
+     * @param  mixed[]  $console
      *
      * @psalm-return 'asc'|'desc'
      */

@@ -6,11 +6,10 @@ use App\Helpers\JazzSMSAPI;
 use App\Helpers\TelenorSMSAPI;
 use App\Models\Appointments;
 use App\Models\Settings;
-use App\Models\UserOperatorSettings;
 use App\Models\SMSLogs;
+use App\Models\UserOperatorSettings;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Config;
 
 class DeliverNotSentAppointment extends Command
 {
@@ -45,31 +44,31 @@ class DeliverNotSentAppointment extends Command
      */
     public function handle()
     {
-        $start_time = Carbon::parse(Carbon::now())->subMinute(120)->setTimezone('Asia/Karachi')->format('Y-m-d H:i') . ':00';
-        $end_time = Carbon::parse(Carbon::now())->addMinutes(5)->setTimezone('Asia/Karachi')->format('Y-m-d H:i') . ':59';
+        $start_time = Carbon::parse(Carbon::now())->subMinute(120)->setTimezone('Asia/Karachi')->format('Y-m-d H:i').':00';
+        $end_time = Carbon::parse(Carbon::now())->addMinutes(5)->setTimezone('Asia/Karachi')->format('Y-m-d H:i').':59';
 
-        $where = array();
+        $where = [];
 
-        $where[] = array(
+        $where[] = [
             'status',
             '=',
-            0
-        );
-        $where[] = array(
+            0,
+        ];
+        $where[] = [
             'created_at',
             '>=',
-            $start_time
-        );
-        $where[] = array(
+            $start_time,
+        ];
+        $where[] = [
             'created_at',
             '<=',
-            $end_time
-        );
+            $end_time,
+        ];
 
-        $sms_logs = SMSLogs::where($where)->select('id','to', 'text','appointment_id')->get();
+        $sms_logs = SMSLogs::where($where)->select('id', 'to', 'text', 'appointment_id')->get();
 
-        if($sms_logs) {
-            foreach($sms_logs as $sms_log) {
+        if ($sms_logs) {
+            foreach ($sms_logs as $sms_log) {
                 $response = $this->sendSMS($sms_log->id, $sms_log->to, $sms_log->text, $sms_log->appointment_id);
             }
         }
@@ -82,7 +81,8 @@ class DeliverNotSentAppointment extends Command
      * @param: string $patient_phone
      * @return: array|mixture
      */
-    private function sendSMS($smsId, $patient_phone, $preparedText, $appointmentId) {
+    private function sendSMS($smsId, $patient_phone, $preparedText, $appointmentId)
+    {
 
         if ($appointmentId) {
 
@@ -93,31 +93,32 @@ class DeliverNotSentAppointment extends Command
             $UserOperatorSettings = UserOperatorSettings::getRecord($appointment->account_id, $setting->data);
 
             if ($setting->data == 1) {
-                $SMSObj = array(
+                $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                     'to' => $patient_phone,
                     'text' => $preparedText,
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-                );
+                ];
                 $response = TelenorSMSAPI::SendSMS($SMSObj);
             } else {
-                $SMSObj = array(
+                $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                     'from' => $UserOperatorSettings->mask,
                     'to' => $patient_phone,
                     'text' => $preparedText,
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-                );
+                ];
                 $response = JazzSMSAPI::SendSMS($SMSObj);
             }
             if ($response['status']) {
                 SMSLogs::find($smsId)->update(['status' => 1]);
             }
 
-            \Log::Info("AppointmentId: ". json_encode($appointmentId));
+            \Log::Info('AppointmentId: '.json_encode($appointmentId));
+
             return $response;
         }
     }

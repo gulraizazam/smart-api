@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\AuditTrails;
-use Auth;
 
 class RoleHasUsers extends Model
 {
@@ -25,10 +23,9 @@ class RoleHasUsers extends Model
      * Create Record
      *
      * @param data
-     *
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_data)
+    public static function createRecord($data, $parent_data)
     {
 
         $record = self::insert($data);
@@ -44,10 +41,9 @@ class RoleHasUsers extends Model
      * update Record
      *
      * @param data ,parent_data
-     *
      * @return (mixed)
      */
-    static public function updateRecord($data, $parent_data)
+    public static function updateRecord($data, $parent_data)
     {
         $record = self::insert($data);
 
@@ -59,5 +55,4 @@ class RoleHasUsers extends Model
 
         return $record;
     }
-
 }

@@ -6,11 +6,11 @@ use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
+use App\Http\Controllers\Controller;
 use App\Models\MachineType;
 use App\Models\MachineTypeHasServices;
 use App\Models\Services;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -18,7 +18,9 @@ use Illuminate\Support\Facades\Validator;
 class MachineTypeController extends Controller
 {
     protected $error;
+
     protected $success;
+
     protected $unauthorized;
 
     public function __construct()
@@ -35,22 +37,22 @@ class MachineTypeController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('machineType_manage')) {
+        if (! Gate::allows('machineType_manage')) {
             return abort(401);
         }
+
         return view('admin.machine_types.index');
     }
 
     /**
      * Display the machinetype in datatable.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('machineType_manage')) {
+            if (! Gate::allows('machineType_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
 
@@ -60,8 +62,8 @@ class MachineTypeController extends Controller
 
             $apply_filter = checkFilters($filters, $filename);
 
-            $records = array();
-            $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
 
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
@@ -69,7 +71,7 @@ class MachineTypeController extends Controller
                 if ($machinetypes) {
                     foreach ($machinetypes as $machinetype) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!MachineType::isChildExists($machinetype->id, Auth::User()->account_id)) {
+                        if (! MachineType::isChildExists($machinetype->id, Auth::User()->account_id)) {
                             $machinetype->delete();
                         }
                     }
@@ -81,15 +83,15 @@ class MachineTypeController extends Controller
             // Get Total Records
             $iTotalRecords = MachineType::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-            list($orderBy, $order) = getSortBy($request);
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$orderBy, $order] = getSortBy($request);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $machinetypes = MachineType::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
             $services = GeneralFunctions::ServicesTree();
 
-            $records["data"] = $machinetypes;
-            $records["permissions"] = [
+            $records['data'] = $machinetypes;
+            $records['permissions'] = [
                 'edit' => Gate::allows('machineType_edit'),
                 'delete' => Gate::allows('machineType_destroy'),
                 'active' => Gate::allows('machineType_active'),
@@ -99,9 +101,9 @@ class MachineTypeController extends Controller
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
                 'services' => $services,
-                'status' => config('constants.status')
+                'status' => config('constants.status'),
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -124,7 +126,7 @@ class MachineTypeController extends Controller
     public function create()
     {
 
-        if (!Gate::allows('machineType_create')) {
+        if (! Gate::allows('machineType_create')) {
             return abort('401');
         }
         /*Get Service as we get in resouce create module*/
@@ -145,7 +147,7 @@ class MachineTypeController extends Controller
             }
         }
         /*end*/
-        $ServiceMachinetype = array();
+        $ServiceMachinetype = [];
 
         return view('admin.machinetypes.create', compact('Services', 'ServiceMachinetype'));
     }
@@ -153,13 +155,12 @@ class MachineTypeController extends Controller
     /**
      * Store a newly created machine type in storage.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('machineType_create')) {
+            if (! Gate::allows('machineType_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -169,28 +170,28 @@ class MachineTypeController extends Controller
             if ($machinetype = MachineType::createRecord($request, Auth::User()->account_id)) {
                 $data = $request->all();
                 if (isset($data['services']) && count($data['services'])) {
-                    $servicesData = array();
+                    $servicesData = [];
                     foreach ($data['services'] as $service) {
-                        $servicesData = array(
+                        $servicesData = [
                             'machine_type_id' => $machinetype->id,
                             'service_id' => $service,
-                        );
+                        ];
                         MachineTypeHasServices::createRecord($servicesData, $machinetype);
                     }
                 }
+
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Validate form fields
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyFields(Request $request)
@@ -204,7 +205,7 @@ class MachineTypeController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -215,21 +216,21 @@ class MachineTypeController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         try {
-            if (!Gate::allows('machineType_edit')) {
+            if (! Gate::allows('machineType_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $machine_type = MachineType::getData($id);
-            if (!$machine_type) {
+            if (! $machine_type) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
             $service_machine_type = $machine_type->machinetype_has_services()->pluck('service_id')->toArray();
             $services = GeneralFunctions::ServicesTree();
+
             return ApiHelper::apiResponse($this->success, 'Success', true, ['machine_type' => $machine_type, 'service_machine_type' => $service_machine_type, 'services' => $services]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -239,14 +240,12 @@ class MachineTypeController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param Request $request
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('machineType_edit')) {
+            if (! Gate::allows('machineType_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -258,37 +257,38 @@ class MachineTypeController extends Controller
                 $machinetype->machinetype_has_services()->delete();
                 $data = $request->all();
                 if (isset($data['services']) && count($data['services'])) {
-                    $servicesData = array();
+                    $servicesData = [];
                     foreach ($data['services'] as $service) {
-                        $servicesData = array(
+                        $servicesData = [
                             'machine_type_id' => $machinetype->id,
                             'service_id' => $service,
-                        );
+                        ];
                         MachineTypeHasServices::updateRecord($servicesData, $machinetype);
                     }
                 }
+
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Remove the specified resource from storage.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('machineType_destroy')) {
+            if (! Gate::allows('machineType_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = MachineType::deleteRecord($id);
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -298,27 +298,26 @@ class MachineTypeController extends Controller
     /**
      * Change status of Lead Source
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request)
     {
         try {
             if ($request->status == 0) {
-                if (!Gate::allows('machineType_inactive')) {
+                if (! Gate::allows('machineType_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = MachineType::inactiveRecord($request->id);
             } else {
-                if (!Gate::allows('machineType_active')) {
+                if (! Gate::allows('machineType_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = MachineType::activeRecord($request->id);
             }
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
-
 }

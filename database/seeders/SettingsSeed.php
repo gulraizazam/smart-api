@@ -1,10 +1,10 @@
 <?php
 
+use App\Models\Settings;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Config;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\Settings;
-use Illuminate\Support\Facades\Config;
 
 class SettingsSeed extends Seeder
 {
@@ -32,7 +32,7 @@ class SettingsSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);

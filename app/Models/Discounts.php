@@ -3,51 +3,52 @@
 namespace App\Models;
 
 use App\HelperModule\ApiHelper;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use DB;
-use Illuminate\Support\Facades\Input;
-use App\Models\DiscountHasLocations;
-use App\Models\AuditTrails;
 use Auth;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
 
 class Discounts extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'type', 'amount','discount_type','pre_days','post_days','start','end','active','service_id','location_id','created_at', 'updated_at','account_id','slug'];
+    protected $fillable = ['name', 'type', 'amount', 'discount_type', 'pre_days', 'post_days', 'start', 'end', 'active', 'service_id', 'location_id', 'created_at', 'updated_at', 'account_id', 'slug'];
 
-    protected static $_fillable = ['name', 'type', 'amount','discount_type','pre_days','post_days','start', 'end','active','slug'];
+    protected static $_fillable = ['name', 'type', 'amount', 'discount_type', 'pre_days', 'post_days', 'start', 'end', 'active', 'slug'];
 
     protected $table = 'discounts';
 
     protected static $_table = 'discounts';
 
     protected $casts = [
-        'created_at' => 'datetime:F d,Y h:i A'
+        'created_at' => 'datetime:F d,Y h:i A',
     ];
 
-    public function setStartAttribute($start) {
+    public function setStartAttribute($start)
+    {
         $this->attributes['start'] = $this->dateFormat($start);
     }
 
-    public function setEndAttribute($end) {
+    public function setEndAttribute($end)
+    {
         $this->attributes['end'] = $this->dateFormat($end);
     }
 
-    public function getStartAttribute($start) {
-        return $this->dateFormat($start, "F d,Y");
+    public function getStartAttribute($start)
+    {
+        return $this->dateFormat($start, 'F d,Y');
     }
 
-    public function getEndAttribute($end) {
-        return $this->dateFormat($end, "F d,Y");
+    public function getEndAttribute($end)
+    {
+        return $this->dateFormat($end, 'F d,Y');
     }
 
     /**
      * Get the Users.
      */
-    public function discounthaslocation(){
+    public function discounthaslocation()
+    {
 
         return $this->hasMany('App\Models\DiscountHasLocations', 'discount_id');
     }
@@ -56,10 +57,10 @@ class Discounts extends BaseModal
      * Create Record
      *
      * @param data
-     *
      * @return (mixed)
      */
-    static public function createDiscount($data){
+    public static function createDiscount($data)
+    {
 
         $record = self::create($data);
 
@@ -67,6 +68,7 @@ class Discounts extends BaseModal
 
         return $record;
     }
+
     /**
      * Get the Package Service.
      */
@@ -78,11 +80,12 @@ class Discounts extends BaseModal
     /*Relation for audit trail*/
     public function audit_field_before()
     {
-        return $this->hasMany('App\Models\AuditTrailChanges','field_before');
+        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
     }
+
     public function audit_field_after()
     {
-        return $this->hasMany('App\Models\AuditTrailChanges','field_after');
+        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
     }
     /*end*/
 
@@ -90,10 +93,10 @@ class Discounts extends BaseModal
      * update Record
      *
      * @param data id
-     *
      * @return (mixed)
      */
-    static public function updateDiscount($data,$id){
+    public static function updateDiscount($data, $id)
+    {
 
         $old_data = (Discounts::find($id))->toArray();
 
@@ -105,18 +108,19 @@ class Discounts extends BaseModal
 
         return $record;
     }
+
     /**
      * inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id){
+    public static function inactiveRecord($id)
+    {
 
         $discount = Discounts::getData($id);
 
-        if($discount==null) {
+        if ($discount == null) {
 
             return false;
 
@@ -130,22 +134,23 @@ class Discounts extends BaseModal
         }
 
     }
+
     /**
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function activeRecord($id){
+    public static function activeRecord($id)
+    {
 
         $discount = Discounts::getData($id);
 
-        if($discount==null) {
+        if ($discount == null) {
 
             return false;
 
-        } else{
+        } else {
 
             $record = $discount->update(['active' => 1]);
 
@@ -154,20 +159,22 @@ class Discounts extends BaseModal
             return $record;
         }
     }
+
     /**
      * delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function deleteRecord($id){
+    public static function deleteRecord($id)
+    {
 
         $discount = Discounts::getData($id);
 
-        if (!$discount) {
+        if (! $discount) {
 
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.discounts.index');
         }
 
@@ -176,7 +183,7 @@ class Discounts extends BaseModal
 
             //flash('Child records exist, unable to delete resource')->error()->important();
             //return redirect()->route('admin.discounts.index');
-            return 'Child records exist, unable to delete resource.';//ApiHelper::apiResponse(200, 'Child records exist, unable to delete resource.');
+            return 'Child records exist, unable to delete resource.'; //ApiHelper::apiResponse(200, 'Child records exist, unable to delete resource.');
         }
 
         $record = $discount->delete();
@@ -187,19 +194,19 @@ class Discounts extends BaseModal
 
         flash('Record has been deleted successfully.')->success()->important();
 
-        return 'Record has been deleted successfully';$record;
+        return 'Record has been deleted successfully';
     }
+
     /**
      * IChild Exists or not
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         if (
-            DiscountHasLocations::where(['discount_id' => $id])->count()||
+            DiscountHasLocations::where(['discount_id' => $id])->count() ||
             PackageBundles::where(['discount_id' => $id])->count()
         ) {
             return true;
@@ -207,42 +214,40 @@ class Discounts extends BaseModal
 
         return false;
     }
+
     /**
      * Get Discount data
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function getDiscount($account_id)
+    public static function getDiscount($account_id)
     {
 
         $date = Carbon::now();
+
         return self::where([
-            ['start','<=',$date],
-            ['end','>=',$date],
-            ['active','=','1'],
-            ['account_id', '=', $account_id]
+            ['start', '<=', $date],
+            ['end', '>=', $date],
+            ['active', '=', '1'],
+            ['account_id', '=', $account_id],
         ])->get();
     }
+
     /**
      * Get Discount data
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function getDiscountforreport($account_id)
+    public static function getDiscountforreport($account_id)
     {
 
         $date = Carbon::now();
+
         return self::where([
-            ['active','=','1'],
-            ['account_id', '=', $account_id]
+            ['active', '=', '1'],
+            ['account_id', '=', $account_id],
         ])->get();
     }
-
-
-
-
 }

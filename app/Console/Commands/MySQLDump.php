@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\DBBackups;
 use Illuminate\Console\Command;
-use Config;
 
 class MySQLDump extends Command
 {
@@ -47,18 +46,18 @@ class MySQLDump extends Command
             $database = env('DB_DATABASE');
 
             $ts = time();
-            $path = database_path() . $ds . 'backups' . $ds;
-            $file = date('Y-m-d-His', $ts) . '-dump-' . $database . '.sql.gz';
-            $command = sprintf('mysqldump -h %s -u %s -p\'%s\' %s | gzip -9 -c > %s', $host, $username, $password, $database, $path . $file);
+            $path = database_path().$ds.'backups'.$ds;
+            $file = date('Y-m-d-His', $ts).'-dump-'.$database.'.sql.gz';
+            $command = sprintf('mysqldump -h %s -u %s -p\'%s\' %s | gzip -9 -c > %s', $host, $username, $password, $database, $path.$file);
 
             is_dir($path) ?: mkdir($path, 0755, true);
 
             exec($command);
 
-            DBBackups::create(array(
-               'path' => $path,
-               'file' => $file
-            ));
+            DBBackups::create([
+                'path' => $path,
+                'file' => $file,
+            ]);
 
         } catch (\Exception $exception) {
 

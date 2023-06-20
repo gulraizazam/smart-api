@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function is_array;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
-
-use function __;
-use function is_array;
 
 final class ChangeRowsController extends AbstractController
 {

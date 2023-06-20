@@ -7,6 +7,7 @@ namespace PhpMyAdmin;
 use function __;
 use function closedir;
 use function count;
+use const E_USER_ERROR;
 use function explode;
 use function file_exists;
 use function is_dir;
@@ -17,8 +18,6 @@ use function strtolower;
 use function trigger_error;
 use function uasort;
 use function ucfirst;
-
-use const E_USER_ERROR;
 
 /**
  * Language selection manager
@@ -36,6 +35,7 @@ class LanguageManager
      * - MySQL locale
      *
      * @var array<string, string[]>
+     *
      * @psalm-var array<string, array{non-empty-string, non-empty-string, string, non-empty-string, string}>
      */
     private static $languageData = [
@@ -764,8 +764,8 @@ class LanguageManager
         /* Process all files */
         while (($file = readdir($handle)) !== false) {
             $path = LOCALE_PATH
-                . '/' . $file
-                . '/LC_MESSAGES/phpmyadmin.mo';
+                .'/'.$file
+                .'/LC_MESSAGES/phpmyadmin.mo';
             if ($file === '.' || $file === '..' || ! @file_exists($path)) {
                 continue;
             }
@@ -791,7 +791,7 @@ class LanguageManager
                 $this->availableLocales = $this->listLocaleDir();
             } else {
                 $this->availableLocales = preg_grep(
-                    '@' . $GLOBALS['config']->get('FilterLanguages') . '@',
+                    '@'.$GLOBALS['config']->get('FilterLanguages').'@',
                     $this->listLocaleDir()
                 );
             }
@@ -857,8 +857,7 @@ class LanguageManager
     /**
      * Return Language object for given code
      *
-     * @param string $code Language code
-     *
+     * @param  string  $code Language code
      * @return Language|false Language object or false on failure
      */
     public function getLanguage($code)
