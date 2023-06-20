@@ -2,21 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Resources\Json\Resource;
-use App\Models\Resources;
-use App\Models\ResourceHasRota;
-use App\Models\AuditTrails;
 use Auth;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\Resource;
 
 class ResourceTypes extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name','slug','active', 'updated_by', 'created_by', 'created_at', 'updated_at'];
+    protected $fillable = ['name', 'slug', 'active', 'updated_by', 'created_by', 'created_at', 'updated_at'];
 
-    protected static $_fillable = ['name','slug','active'];
+    protected static $_fillable = ['name', 'slug', 'active'];
 
     protected $table = 'resource_types';
 
@@ -33,20 +30,20 @@ class ResourceTypes extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($skip_ids = false, $include_ids = false)
+    public static function getActiveSorted($skip_ids = false, $include_ids = false)
     {
-        if ($skip_ids && !is_array($skip_ids)) {
-            $skip_ids = array($skip_ids);
+        if ($skip_ids && ! is_array($skip_ids)) {
+            $skip_ids = [$skip_ids];
         }
-        if ($include_ids && !is_array($include_ids)) {
-            $include_ids = array($include_ids);
+        if ($include_ids && ! is_array($include_ids)) {
+            $include_ids = [$include_ids];
         }
 
         if ($skip_ids && $include_ids) {
             return self::where(['active' => 1])->whereIn('id', $include_ids)->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
-        } else if ($skip_ids) {
+        } elseif ($skip_ids) {
             return self::where(['active' => 1])->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
-        } else if ($include_ids) {
+        } elseif ($include_ids) {
             return self::where(['active' => 1])->whereIn('id', $include_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
         } else {
             return self::where(['active' => 1])->OrderBy('name', 'asc')->get()->pluck('name', 'id');
@@ -56,20 +53,19 @@ class ResourceTypes extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
      *
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request)
+    public static function getTotalRecords(Request $request)
     {
-        $where = array();
+        $where = [];
 
         if ($request->get('name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
-            );
+                '%'.$request->get('name').'%',
+            ];
         }
 
         if (count($where)) {
@@ -82,22 +78,20 @@ class ResourceTypes extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength)
     {
-        $where = array();
+        $where = [];
 
         if ($request->get('name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $request->get('name') . '%'
-            );
+                '%'.$request->get('name').'%',
+            ];
         }
 
         if (count($where)) {
@@ -114,7 +108,7 @@ class ResourceTypes extends BaseModal
      *
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary()
+    public static function getAllRecordsDictionary()
     {
         return self::get()->getDictionary();
     }
@@ -122,11 +116,10 @@ class ResourceTypes extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request)
+    public static function createRecord($request)
     {
 
         $data = $request->all();
@@ -147,11 +140,10 @@ class ResourceTypes extends BaseModal
     /**
      * Inactive Record
      *
-     * @param $id
      *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
         $resource_type = ResourceTypes::findOrFail($id);
 
@@ -168,11 +160,10 @@ class ResourceTypes extends BaseModal
     /**
      * active Record
      *
-     * @param $id
      *
      * @return (mixed)
      */
-    static public function activeRecord($id)
+    public static function activeRecord($id)
     {
         $resource_type = ResourceTypes::findOrFail($id);
 
@@ -189,17 +180,17 @@ class ResourceTypes extends BaseModal
     /**
      * delete Record
      *
-     * @param $id
      *
      * @return (mixed)
      */
-    static public function deleteRecord($id)
+    public static function deleteRecord($id)
     {
         $resource_types = ResourceTypes::findOrFail($id);
 
         if (ResourceTypes::isExists($id, Auth::User()->account_id)) {
 
             flash('Child record exist, unable to delete')->error()->important();
+
             return redirect()->route('admin.resource_types.index');
         }
 
@@ -215,22 +206,21 @@ class ResourceTypes extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request)
+    public static function updateRecord($id, $request)
     {
         $old_data = (ResourceTypes::find($id))->toArray();
 
         $data = $request->all();
-        $data ['updated_by'] = Auth::User()->id;
+        $data['updated_by'] = Auth::User()->id;
 
         $record = self::where([
             'id' => $id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -244,41 +234,48 @@ class ResourceTypes extends BaseModal
     /**
      * Check if resource type use any where.
      *
-     * @param (int) $id, $account id
-     *
+     * @param  (int)  $id, $account id
      * @return (boolean)
      */
-    static public function isExists($id, $account_id)
+    public static function isExists($id, $account_id)
     {
         if (Resources::where(
-                ['resource_type_id' => $id, 'account_id' => $account_id])->count() ||
+            ['resource_type_id' => $id, 'account_id' => $account_id])->count() ||
             ResourceHasRota::where(['resource_type_id' => $id])->count()) {
             return true;
         }
+
         return false;
     }
+
     /**
      * get resource type only for doctor and room.
+     *
      * @return (resource types)
      */
-    static public function getResourceType(){
-        return self::where('slug','=','Machine')->orwhere('slug','=','Doctor')->get()->pluck('name','id');
-
+    public static function getResourceType()
+    {
+        return self::where('slug', '=', 'Machine')->orwhere('slug', '=', 'Doctor')->get()->pluck('name', 'id');
 
     }
+
     /**
      * get resource type only rota management.
+     *
      * @return (resource types)
      */
-    static public function getResourceforrota(){
-       return self::where('slug','=','Machine')->orwhere('slug','=','Doctor')->get();
-    }
-    /**
-     * get resource type only rota management.
-     * @return (resource types)
-     */
-    static public function getallresource(){
-        return self::where('slug','!=','Doctor')->get()->pluck('name','id');
+    public static function getResourceforrota()
+    {
+        return self::where('slug', '=', 'Machine')->orwhere('slug', '=', 'Doctor')->get();
     }
 
+    /**
+     * get resource type only rota management.
+     *
+     * @return (resource types)
+     */
+    public static function getallresource()
+    {
+        return self::where('slug', '!=', 'Doctor')->get()->pluck('name', 'id');
+    }
 }

@@ -4,13 +4,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Database;
 
-use PhpMyAdmin\DatabaseInterface;
-use PhpMyAdmin\Html\Generator;
-use PhpMyAdmin\Message;
-use PhpMyAdmin\ResponseRenderer;
-use PhpMyAdmin\Template;
-use PhpMyAdmin\Util;
-
 use function __;
 use function count;
 use function explode;
@@ -18,6 +11,12 @@ use function htmlspecialchars;
 use function in_array;
 use function intval;
 use function mb_strtoupper;
+use PhpMyAdmin\DatabaseInterface;
+use PhpMyAdmin\Html\Generator;
+use PhpMyAdmin\Message;
+use PhpMyAdmin\ResponseRenderer;
+use PhpMyAdmin\Template;
+use PhpMyAdmin\Util;
 use function sprintf;
 use function str_contains;
 use function strtoupper;
@@ -66,9 +65,9 @@ class Events
     private $response;
 
     /**
-     * @param DatabaseInterface $dbi      DatabaseInterface instance.
-     * @param Template          $template Template instance.
-     * @param ResponseRenderer  $response Response instance.
+     * @param  DatabaseInterface  $dbi      DatabaseInterface instance.
+     * @param  Template  $template Template instance.
+     * @param  ResponseRenderer  $response Response instance.
      */
     public function __construct(DatabaseInterface $dbi, Template $template, $response)
     {
@@ -96,16 +95,16 @@ class Events
                     // Backup the old trigger, in case something goes wrong
                     $create_item = $this->dbi->getDefinition($db, 'EVENT', $_POST['item_original_name']);
                     $drop_item = 'DROP EVENT IF EXISTS '
-                        . Util::backquote($_POST['item_original_name'])
-                        . ";\n";
+                        .Util::backquote($_POST['item_original_name'])
+                        .";\n";
                     $result = $this->dbi->tryQuery($drop_item);
                     if (! $result) {
                         $errors[] = sprintf(
                             __('The following query has failed: "%s"'),
                             htmlspecialchars($drop_item)
                         )
-                        . '<br>'
-                        . __('MySQL said: ') . $this->dbi->getError();
+                        .'<br>'
+                        .__('MySQL said: ').$this->dbi->getError();
                     } else {
                         $result = $this->dbi->tryQuery($item_query);
                         if (! $result) {
@@ -113,8 +112,8 @@ class Events
                                 __('The following query has failed: "%s"'),
                                 htmlspecialchars($item_query)
                             )
-                            . '<br>'
-                            . __('MySQL said: ') . $this->dbi->getError();
+                            .'<br>'
+                            .__('MySQL said: ').$this->dbi->getError();
                             // We dropped the old item, but were unable to create
                             // the new one. Try to restore the backup query
                             $result = $this->dbi->tryQuery($create_item);
@@ -128,7 +127,7 @@ class Events
                             $message->addParam(
                                 Util::backquote($_POST['item_name'])
                             );
-                            $sql_query = $drop_item . $item_query;
+                            $sql_query = $drop_item.$item_query;
                         }
                     }
                 } else {
@@ -139,8 +138,8 @@ class Events
                             __('The following query has failed: "%s"'),
                             htmlspecialchars($item_query)
                         )
-                        . '<br><br>'
-                        . __('MySQL said: ') . $this->dbi->getError();
+                        .'<br><br>'
+                        .__('MySQL said: ').$this->dbi->getError();
                     } else {
                         $message = Message::success(
                             __('Event %1$s has been created.')
@@ -156,14 +155,14 @@ class Events
             if (count($errors)) {
                 $message = Message::error(
                     '<b>'
-                    . __(
+                    .__(
                         'One or more errors have occurred while processing your request:'
                     )
-                    . '</b>'
+                    .'</b>'
                 );
                 $message->addHtml('<ul>');
                 foreach ($errors as $string) {
-                    $message->addHtml('<li>' . $string . '</li>');
+                    $message->addHtml('<li>'.$string.'</li>');
                 }
 
                 $message->addHtml('</ul>');
@@ -300,8 +299,7 @@ class Events
      * This function will generate the values that are required to complete
      * the "Edit event" form given the name of a event.
      *
-     * @param string $name The name of the event.
-     *
+     * @param  string  $name The name of the event.
      * @return array|null Data necessary to create the editor.
      */
     public function getDataFromName($name): ?array
@@ -310,12 +308,12 @@ class Events
 
         $retval = [];
         $columns = '`EVENT_NAME`, `STATUS`, `EVENT_TYPE`, `EXECUTE_AT`, '
-                 . '`INTERVAL_VALUE`, `INTERVAL_FIELD`, `STARTS`, `ENDS`, '
-                 . '`EVENT_DEFINITION`, `ON_COMPLETION`, `DEFINER`, `EVENT_COMMENT`';
-        $where = 'EVENT_SCHEMA ' . Util::getCollateForIS() . '='
-                 . "'" . $this->dbi->escapeString($db) . "' "
-                 . "AND EVENT_NAME='" . $this->dbi->escapeString($name) . "'";
-        $query = 'SELECT ' . $columns . ' FROM `INFORMATION_SCHEMA`.`EVENTS` WHERE ' . $where . ';';
+                 .'`INTERVAL_VALUE`, `INTERVAL_FIELD`, `STARTS`, `ENDS`, '
+                 .'`EVENT_DEFINITION`, `ON_COMPLETION`, `DEFINER`, `EVENT_COMMENT`';
+        $where = 'EVENT_SCHEMA '.Util::getCollateForIS().'='
+                 ."'".$this->dbi->escapeString($db)."' "
+                 ."AND EVENT_NAME='".$this->dbi->escapeString($name)."'";
+        $query = 'SELECT '.$columns.' FROM `INFORMATION_SCHEMA`.`EVENTS` WHERE '.$where.';';
         $item = $this->dbi->fetchSingleRow($query);
         if (! $item) {
             return null;
@@ -350,14 +348,13 @@ class Events
     /**
      * Displays a form used to add/edit an event
      *
-     * @param string $mode      If the editor will be used to edit an event
+     * @param  string  $mode      If the editor will be used to edit an event
      *                          or add a new one: 'edit' or 'add'.
-     * @param string $operation If the editor was previously invoked with
+     * @param  string  $operation If the editor was previously invoked with
      *                          JS turned off, this will hold the name of
      *                          the current operation
-     * @param array  $item      Data for the event returned by
+     * @param  array  $item      Data for the event returned by
      *                          getDataFromRequest() or getDataFromName()
-     *
      * @return string   HTML code for the editor.
      */
     public function getEditorForm($mode, $operation, array $item)
@@ -398,8 +395,8 @@ class Events
         if (! empty($_POST['item_definer'])) {
             if (str_contains($_POST['item_definer'], '@')) {
                 $arr = explode('@', $_POST['item_definer']);
-                $query .= 'DEFINER=' . Util::backquote($arr[0]);
-                $query .= '@' . Util::backquote($arr[1]) . ' ';
+                $query .= 'DEFINER='.Util::backquote($arr[0]);
+                $query .= '@'.Util::backquote($arr[1]).' ';
             } else {
                 $errors[] = __('The definer must be in the "username@hostname" format!');
             }
@@ -407,7 +404,7 @@ class Events
 
         $query .= 'EVENT ';
         if (! empty($_POST['item_name'])) {
-            $query .= Util::backquote($_POST['item_name']) . ' ';
+            $query .= Util::backquote($_POST['item_name']).' ';
         } else {
             $errors[] = __('You must provide an event name!');
         }
@@ -420,28 +417,28 @@ class Events
                     && ! empty($_POST['item_interval_field'])
                     && in_array($_POST['item_interval_field'], $this->interval)
                 ) {
-                    $query .= 'EVERY ' . intval($_POST['item_interval_value']) . ' ';
-                    $query .= $_POST['item_interval_field'] . ' ';
+                    $query .= 'EVERY '.intval($_POST['item_interval_value']).' ';
+                    $query .= $_POST['item_interval_field'].' ';
                 } else {
                     $errors[] = __('You must provide a valid interval value for the event.');
                 }
 
                 if (! empty($_POST['item_starts'])) {
                     $query .= "STARTS '"
-                        . $this->dbi->escapeString($_POST['item_starts'])
-                        . "' ";
+                        .$this->dbi->escapeString($_POST['item_starts'])
+                        ."' ";
                 }
 
                 if (! empty($_POST['item_ends'])) {
                     $query .= "ENDS '"
-                        . $this->dbi->escapeString($_POST['item_ends'])
-                        . "' ";
+                        .$this->dbi->escapeString($_POST['item_ends'])
+                        ."' ";
                 }
             } else {
                 if (! empty($_POST['item_execute_at'])) {
                     $query .= "AT '"
-                        . $this->dbi->escapeString($_POST['item_execute_at'])
-                        . "' ";
+                        .$this->dbi->escapeString($_POST['item_execute_at'])
+                        ."' ";
                 } else {
                     $errors[] = __('You must provide a valid execution time for the event.');
                 }
@@ -459,14 +456,14 @@ class Events
         if (! empty($_POST['item_status'])) {
             foreach ($this->status['display'] as $key => $value) {
                 if ($value == $_POST['item_status']) {
-                    $query .= $this->status['query'][$key] . ' ';
+                    $query .= $this->status['query'][$key].' ';
                     break;
                 }
             }
         }
 
         if (! empty($_POST['item_comment'])) {
-            $query .= "COMMENT '" . $this->dbi->escapeString($_POST['item_comment']) . "' ";
+            $query .= "COMMENT '".$this->dbi->escapeString($_POST['item_comment'])."' ";
         }
 
         $query .= 'DO ';
@@ -487,9 +484,8 @@ class Events
     }
 
     /**
-     * @param string|null $createStatement Query
-     * @param array       $errors          Errors
-     *
+     * @param  string|null  $createStatement Query
+     * @param  array  $errors          Errors
      * @return array
      */
     private function checkResult($createStatement, array $errors)
@@ -499,10 +495,10 @@ class Events
         // and now even the backup query does not execute!
         // This should not happen, but we better handle
         // this just in case.
-        $errors[] = __('Sorry, we failed to restore the dropped event.') . '<br>'
-            . __('The backed up query was:')
-            . '"' . htmlspecialchars((string) $createStatement) . '"<br>'
-            . __('MySQL said: ') . $this->dbi->getError();
+        $errors[] = __('Sorry, we failed to restore the dropped event.').'<br>'
+            .__('The backed up query was:')
+            .'"'.htmlspecialchars((string) $createStatement).'"<br>'
+            .__('MySQL said: ').$this->dbi->getError();
 
         return $errors;
     }
@@ -510,11 +506,11 @@ class Events
     /**
      * Send editor via ajax or by echoing.
      *
-     * @param string     $mode      Editor mode 'add' or 'edit'
-     * @param array|null $item      Data necessary to create the editor
-     * @param string     $title     Title of the editor
-     * @param string     $db        Database
-     * @param string     $operation Operation 'change' or ''
+     * @param  string  $mode      Editor mode 'add' or 'edit'
+     * @param  array|null  $item      Data necessary to create the editor
+     * @param  string  $title     Title of the editor
+     * @param  string  $db        Database
+     * @param  string  $operation Operation 'change' or ''
      */
     private function sendEditor($mode, ?array $item, $title, $db, $operation): void
     {
@@ -524,14 +520,14 @@ class Events
                 $this->response->addJSON('message', $editor);
                 $this->response->addJSON('title', $title);
             } else {
-                echo "\n\n<h2>" . $title . "</h2>\n\n" . $editor;
+                echo "\n\n<h2>".$title."</h2>\n\n".$editor;
                 unset($_POST);
             }
 
             exit;
         }
 
-        $message = __('Error in processing request:') . ' ';
+        $message = __('Error in processing request:').' ';
         $message .= sprintf(
             __('No event with name %1$s found in database %2$s.'),
             htmlspecialchars(Util::backquote($_REQUEST['item_name'])),
@@ -575,9 +571,9 @@ class Events
             }
 
             $output = '<div class="container">';
-            $output .= '<h2>' . $title . '</h2>';
+            $output .= '<h2>'.$title.'</h2>';
             $output .= '<div class="card"><div class="card-body">';
-            $output .= '<textarea rows="15" class="form-control">' . $exportData . '</textarea>';
+            $output .= '<textarea rows="15" class="form-control">'.$exportData.'</textarea>';
             $output .= '</div></div></div>';
 
             $this->response->addHTML($output);

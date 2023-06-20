@@ -2,29 +2,27 @@
 
 namespace App\Reports;
 
+use App\Helpers\ACL;
+use App\Helpers\Widgets\LocationsWidget;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\Regions;
-use App\Models\RoleHasUsers;
 use App\User;
-use Config;
-use App\Helpers\Widgets\LocationsWidget;
 use Auth;
 use Carbon\Carbon;
 use DB;
-use App\Helpers\ACL;
 
 class Revenue
 {
-
     /**
      * Revenue Breakup Report
-     * @param (mixed) $request
+     *
+     * @param  (mixed)  $request
      * @return (mixed)
      */
     public static function RevenueBreakup($data, $account_id)
     {
-        $where = array();
+        $where = [];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -39,64 +37,64 @@ class Revenue
         $days = $end->diffInDays($start);
 
         if (isset($data['role_id']) && $data['role_id']) {
-            $where[] = array(
+            $where[] = [
                 'role_id',
                 '=',
-                $data['role_id']
-            );
+                $data['role_id'],
+            ];
         }
         if (isset($data['user_id']) && $data['user_id']) {
-            $where[] = array(
+            $where[] = [
                 'user_id',
                 '=',
-                $data['user_id']
-            );
+                $data['user_id'],
+            ];
         }
 
         $invoicepaid = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
         if (isset($data['region_id']) && $data['region_id']) {
-            $regions = Regions::where(['active' => 1, 'slug' => 'custom','id' => $data['region_id']])->where('account_id', '=', Auth::User()->account_id)->pluck('name', 'id');
+            $regions = Regions::where(['active' => 1, 'slug' => 'custom', 'id' => $data['region_id']])->where('account_id', '=', Auth::User()->account_id)->pluck('name', 'id');
         } else {
             $regions = Regions::getActiveSorted(ACL::getUserRegions());
         }
 
-       $revenuebreakup = array();
+        $revenuebreakup = [];
 
-        foreach ($regions as $key=>$region) {
+        foreach ($regions as $key => $region) {
 
-            $revenuebreakup[$key] = array(
+            $revenuebreakup[$key] = [
                 'id' => $key,
                 'name' => $region,
-                'centers' => array(),
-            );
-            $whereLocation = array();
-            if (isset($data['location_id']) && $data['location_id']){
-                $whereLocation[] = array(
+                'centers' => [],
+            ];
+            $whereLocation = [];
+            if (isset($data['location_id']) && $data['location_id']) {
+                $whereLocation[] = [
                     'id',
                     '=',
-                    $data['location_id']
-                );
+                    $data['location_id'],
+                ];
             }
 
             $centersinfo = Locations::where([
                 ['region_id', '=', $key],
                 [$whereLocation],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->get();
 
             if (count($centersinfo) > 0) {
                 foreach ($centersinfo as $location) {
-                    $revenuebreakup[$key]['centers'][$location->id] = array(
+                    $revenuebreakup[$key]['centers'][$location->id] = [
                         'id' => $location->id,
                         'name' => $location->name,
-                        'date' => array(),
-                    );
+                        'date' => [],
+                    ];
                     for ($i = 0; $i <= $days; $i++) {
-                        $revenuebreakup[$key]['centers'][$location->id]['date'][$i] = array(
+                        $revenuebreakup[$key]['centers'][$location->id]['date'][$i] = [
                             'Date' => $start->format('Y-m-d'),
-                            'service' => array(),
-                        );
+                            'service' => [],
+                        ];
 
                         $servicesinfo = LocationsWidget::loadEndServiceByLocation($location->id, Auth::User()->account_id);
                         $checkedsum = 0;
@@ -104,20 +102,20 @@ class Revenue
 
                             /*Need to Finilize the users id*/
                             $users = DB::table('role_has_users')->where($where)->select('user_id')->get()->toArray();
-                            $userids = array();
+                            $userids = [];
                             foreach ($users as $user) {
                                 $userids[] = $user->user_id;
                             }
                             /*End to finilize the user id*/
 
-                            if(count($userids)>0){
+                            if (count($userids) > 0) {
                                 $revenueservicesum = \App\Models\Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                                     ->whereDate('invoices.created_at', '=', $start->format('Y-m-d'))
                                     ->where([
                                         ['invoices.location_id', '=', $location->id],
                                         ['invoice_details.service_id', $service],
                                         ['invoice_status_id', '=', $invoicepaid->id],
-                                        ['invoices.account_id','=',$account_id],
+                                        ['invoices.account_id', '=', $account_id],
                                     ])
                                     ->select('invoice_details.net_amount')
                                     ->sum('invoice_details.net_amount');
@@ -125,13 +123,13 @@ class Revenue
                             } else {
                                 $revenueservicesum = 0;
                             }
-                            $userids = array();
+                            $userids = [];
                             $checkedsum += $revenueservicesum;
                             if ($revenueservicesum != 0) {
-                                $revenuebreakup[$key]['centers'][$location->id]['date'][$i]['service'][$service] = array(
+                                $revenuebreakup[$key]['centers'][$location->id]['date'][$i]['service'][$service] = [
                                     'service_id' => $service,
-                                    'total' => $revenueservicesum
-                                );
+                                    'total' => $revenueservicesum,
+                                ];
                             }
                         }
                         if ($checkedsum == 0) {
@@ -143,6 +141,7 @@ class Revenue
                 }
             }
         }
+
         return $revenuebreakup;
     }
 }

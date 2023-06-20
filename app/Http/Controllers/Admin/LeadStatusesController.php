@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\Filters;
+use App\Http\Controllers\Controller;
 use App\Models\LeadStatuses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use App\Http\Controllers\Controller;
-use App\Helpers\Filters;
 use Illuminate\Support\Facades\Validator;
 
 class LeadStatusesController extends Controller
 {
     protected $error;
+
     protected $success;
+
     protected $unauthorized;
 
     public function __construct()
@@ -31,23 +33,22 @@ class LeadStatusesController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('lead_statuses_manage')) {
+        if (! Gate::allows('lead_statuses_manage')) {
             return abort(401);
         }
+
         return view('admin.lead_statuses.index');
     }
-
 
     /**
      * Display a listing of Lead Status
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('lead_statuses_manage')) {
+            if (! Gate::allows('lead_statuses_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
 
@@ -57,9 +58,9 @@ class LeadStatusesController extends Controller
 
             $apply_filter = checkFilters($filters, $filename);
 
-            $records = array();
-            $records["data"] = array();
-            list($orderBy, $order) = getSortBy($request);
+            $records = [];
+            $records['data'] = [];
+            [$orderBy, $order] = getSortBy($request);
 
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
@@ -67,7 +68,7 @@ class LeadStatusesController extends Controller
                 if ($LeadStatuses) {
                     foreach ($LeadStatuses as $LeadStatus) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!LeadStatuses::isChildExists($LeadStatus->id, Auth::User()->account_id)) {
+                        if (! LeadStatuses::isChildExists($LeadStatus->id, Auth::User()->account_id)) {
                             $LeadStatus->delete();
                         }
                     }
@@ -78,7 +79,7 @@ class LeadStatusesController extends Controller
 
             // Get Total Records
             $iTotalRecords = LeadStatuses::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $allLeadStatuses = LeadStatuses::getAllRecordsDictionary(Auth::User()->account_id);
 
@@ -96,8 +97,8 @@ class LeadStatusesController extends Controller
                     $lead_status->is_junk = ($lead_status->is_junk) ? 'Yes' : 'No';
                 }
             }
-            $records["data"] = $LeadStatuses;
-            $records["permissions"] = [
+            $records['data'] = $LeadStatuses;
+            $records['permissions'] = [
                 'edit' => Gate::allows('lead_sources_edit'),
                 'delete' => Gate::allows('lead_sources_destroy'),
                 'active' => Gate::allows('lead_sources_active'),
@@ -108,9 +109,9 @@ class LeadStatusesController extends Controller
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
                 'parents' => $parentLeadStatuses,
-                'status' => config('constants.status')
+                'status' => config('constants.status'),
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -132,7 +133,7 @@ class LeadStatusesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('lead_statuses_create')) {
+        if (! Gate::allows('lead_statuses_create')) {
             return abort(401);
         }
 
@@ -154,31 +155,33 @@ class LeadStatusesController extends Controller
      */
     public function sortOrder()
     {
-        if (!Gate::allows('lead_statuses_sort')) {
+        if (! Gate::allows('lead_statuses_sort')) {
             return abort(401);
         }
+
         return view('admin.lead_statuses.sort');
     }
 
     /**
      * Sorting save after change order
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function sortOrderSave(Request $request)
     {
         try {
-            if (!Gate::allows('lead_statuses_sort')) {
+            if (! Gate::allows('lead_statuses_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $itemIDs = $request->item_ids;
             if (count($itemIDs)) {
                 foreach ($itemIDs as $key => $itemID) {
-                    LeadStatuses::where('id', '=', $itemID)->update(array('sort_no' => $key));
+                    LeadStatuses::where('id', '=', $itemID)->update(['sort_no' => $key]);
                 }
+
                 return ApiHelper::apiResponse($this->success, 'Records are sorted Successfully!');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -193,10 +196,11 @@ class LeadStatusesController extends Controller
     public function sortOrderGet()
     {
         try {
-            if (!Gate::allows('lead_statuses_sort')) {
+            if (! Gate::allows('lead_statuses_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $lead_statuses = LeadStatuses::where(['account_id' => Auth::User()->account_id])->orderby('sort_no', 'ASC')->get();
+
             return ApiHelper::apiResponse($this->success, 'Success', true, $lead_statuses);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -206,13 +210,12 @@ class LeadStatusesController extends Controller
     /**
      * Store a newly created Lead_statuse in storage.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('lead_statuses_create')) {
+            if (! Gate::allows('lead_statuses_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -222,17 +225,16 @@ class LeadStatusesController extends Controller
             if (LeadStatuses::createRecord($request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Validate form fields
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyFields(Request $request)
@@ -242,42 +244,38 @@ class LeadStatusesController extends Controller
         ]);
     }
 
-
     /**
      * Get Data for editing Lead_statuse.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         try {
-            if (!Gate::allows('lead_statuses_edit')) {
+            if (! Gate::allows('lead_statuses_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $lead_statuse = LeadStatuses::getData($id);
-            if (!$lead_statuse) {
+            if (! $lead_statuse) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
             $parentLeadStatuses = LeadStatuses::getParentRecords(false, Auth::User()->account_id, $lead_statuse->id, true);
+
             return ApiHelper::apiResponse($this->success, 'Success', true, compact('lead_statuse', 'parentLeadStatuses'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Update Lead_statuse in storage.
      *
-     * @param Request $request
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('lead_statuses_edit')) {
+            if (! Gate::allows('lead_statuses_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -287,6 +285,7 @@ class LeadStatusesController extends Controller
             if (LeadStatuses::updateRecord($id, $request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -296,16 +295,16 @@ class LeadStatusesController extends Controller
     /**
      * Remove Lead_status from storage.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('lead_statuses_destroy')) {
+            if (! Gate::allows('lead_statuses_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = LeadStatuses::DeleteRecord($id);
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -315,27 +314,26 @@ class LeadStatusesController extends Controller
     /**
      * Change status of Lead Statuses
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request)
     {
         try {
             if ($request->status == 0) {
-                if (!Gate::allows('cities_inactive')) {
+                if (! Gate::allows('cities_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = LeadStatuses::inactiveRecord($request->id);
             } else {
-                if (!Gate::allows('cities_active')) {
+                if (! Gate::allows('cities_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = LeadStatuses::activeRecord($request->id);
             }
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
-
 }

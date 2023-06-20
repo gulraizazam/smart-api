@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class Locations extends BaseModal
 {
@@ -16,7 +16,7 @@ class Locations extends BaseModal
     protected $fillable = [
 
         'name', 'fdo_name', 'fdo_phone', 'account_id', 'slug',
-        'address', 'google_map', 'region_id', 'city_id', 'active', 'sort_no', 'created_at', 'updated_at', 'parent_id', 'image_src', 'tax_percentage', 'ntn', 'stn'
+        'address', 'google_map', 'region_id', 'city_id', 'active', 'sort_no', 'created_at', 'updated_at', 'parent_id', 'image_src', 'tax_percentage', 'ntn', 'stn',
     ];
 
     protected static $_fillable = ['name', 'fdo_name', 'fdo_phone', 'slug', 'address', 'google_map', 'region_id', 'city_id', 'active', 'parent_id', 'image_src', 'tax_percentage', 'ntn', 'stn'];
@@ -67,7 +67,6 @@ class Locations extends BaseModal
     {
         return $this->belongsTo('App\Models\Cities')->withTrashed();
     }
-
 
     /**
      * Get the Locations that owns the City.
@@ -124,7 +123,7 @@ class Locations extends BaseModal
      */
     public function getFullAddressAttribute($value)
     {
-        return ucfirst($this->city->name ?? '') . ' - ' . ucfirst($this->name ?? '');
+        return ucfirst($this->city->name ?? '').' - '.ucfirst($this->name ?? '');
     }
 
     /**
@@ -139,42 +138,42 @@ class Locations extends BaseModal
     /**
      * Get active and sorted data only.
      */
-    static public function getActiveSorted($locationId = false, $name = 'name')
+    public static function getActiveSorted($locationId = false, $name = 'name')
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->get()->pluck($name, 'id');
         } else {
             return self::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->get()->pluck($name, 'id');
         }
     }
 
-    static public function getActiveSortedLocations($locationId = false)
+    public static function getActiveSortedLocations($locationId = false)
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->get();
         } else {
             return self::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->get();
         }
     }
@@ -182,58 +181,56 @@ class Locations extends BaseModal
     /**
      * Get active and sorted data only for staff wise report.
      */
-    static public function getActiveSortedStaffwisereport($locationId = false, $name = 'name')
+    public static function getActiveSortedStaffwisereport($locationId = false, $name = 'name')
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->select('id')->get();
         } else {
             return self::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->select('id')->get();
         }
     }
 
-
     /**
      * Get active and sorted data only.
      */
-    static public function getLocationActiveSorted($locationId = false)
+    public static function getLocationActiveSorted($locationId = false)
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->get();
         } else {
             return self::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
-                ['slug', '=', 'custom']
+                ['slug', '=', 'custom'],
             ])->get();
         }
     }
 
-
     /**
      * Get active and sorted data only.
      */
-    static public function getlocation($locationId = false)
+    public static function getlocation($locationId = false)
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where('account_id', '=', Auth::User()->account_id)->get()->pluck('name', 'id');
@@ -245,53 +242,50 @@ class Locations extends BaseModal
     /**
      * Get active and sorted data only for general revenue summary report.
      */
-    static public function generalrevenuegetActiveSorted($locationId = false, $region_id)
+    public static function generalrevenuegetActiveSorted($locationId, $region_id)
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = array($locationId);
+        if ($locationId && ! is_array($locationId)) {
+            $locationId = [$locationId];
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
-                ['region_id', '=', $region_id]
+                ['region_id', '=', $region_id],
             ])->get()->pluck('name', 'id');
         } else {
             return self::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
-                ['region_id', '=', $region_id]
+                ['region_id', '=', $region_id],
             ])->get()->pluck('name', 'id');
         }
     }
 
-
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::locations_filters($request, $account_id, $apply_filter);
+        $where = self::locations_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_centres")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
                 return count(DB::table('locations')
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
                     ->whereIn('id', ACL::getUserCentres())
                     ->groupBy('service_has_locations.location_id')
                     ->get());
-            }else{
+            } else {
                 return count(DB::table('locations')
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
-                    ->where('locations.active',1)
+                    ->where('locations.active', 1)
                     ->whereIn('id', ACL::getUserCentres())
                     ->groupBy('service_has_locations.location_id')
                     ->get());
@@ -299,18 +293,15 @@ class Locations extends BaseModal
         }
     }
 
-
     /**
      * Get Total Records for target
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords_target(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords_target(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::staff_target_location_filters($request, $account_id, $apply_filter);
+        $where = self::staff_target_location_filters($request, $account_id, $apply_filter);
         if (count($where)) {
             return count(DB::table('locations')
                 ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
@@ -324,19 +315,17 @@ class Locations extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::locations_filters($request, $account_id, $apply_filter);
 
         if ($request->has('sort')) {
-            list($orderBy, $order) = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request);
             $orderColumn = $orderBy;
 
             if ($orderBy == 'created_at') {
@@ -368,7 +357,7 @@ class Locations extends BaseModal
             }
         }
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_centres")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
                 return DB::table('locations')
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
@@ -376,16 +365,16 @@ class Locations extends BaseModal
                     ->groupBy('service_has_locations.location_id', 'locations.id')
                     ->orderby('sort_no', 'asc')
                     ->limit($iDisplayLength)->offset($iDisplayStart)->get();
-            }else{
+            } else {
                 return DB::table('locations')
-                ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
-                ->where($where)
-                ->where('active',1)
-                ->whereIn('id', ACL::getUserCentres())
-                ->whereNull('deleted_at')
-                ->groupBy('service_has_locations.location_id', 'locations.id')
-                ->orderby('sort_no', 'asc')
-                ->limit($iDisplayLength)->offset($iDisplayStart)->get();
+                    ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
+                    ->where($where)
+                    ->where('active', 1)
+                    ->whereIn('id', ACL::getUserCentres())
+                    ->whereNull('deleted_at')
+                    ->groupBy('service_has_locations.location_id', 'locations.id')
+                    ->orderby('sort_no', 'asc')
+                    ->limit($iDisplayLength)->offset($iDisplayStart)->get();
             }
         }
     }
@@ -393,16 +382,14 @@ class Locations extends BaseModal
     /**
      * Get Records target
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords_target(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords_target(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
-        $where = Self::staff_target_location_filters($request, $account_id, $apply_filter);
+        $where = self::staff_target_location_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
             return DB::table('locations')
@@ -415,26 +402,25 @@ class Locations extends BaseModal
         }
     }
 
-
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     * @param (boolean) $apply_filter
+     * @param  \Illuminate\Http\Request  $request
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (boolean)  $apply_filter
      * @return (mixed)
      */
-    static public function locations_filters($request, $account_id, $apply_filter)
+    public static function locations_filters($request, $account_id, $apply_filter)
     {
         $filters = getFilters($request->all());
 
-        $where = array();
+        $where = [];
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'locations.account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'locations', 'account_id', $account_id);
         } else {
 
@@ -442,201 +428,201 @@ class Locations extends BaseModal
                 Filters::forget(Auth::User()->id, 'locations', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'locations', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'locations', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'locations.name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'locations', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'locations', 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'locations', 'name').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'fdo_name')) {
-            $where[] = array(
+            $where[] = [
                 'fdo_name',
                 'like',
-                '%' . $filters['fdo_name'] . '%'
-            );
+                '%'.$filters['fdo_name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'locations', 'fdo_name', $filters['fdo_name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'fdo_name');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'fdo_name')) {
-                    $where[] = array(
+                    $where[] = [
                         'fdo_name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'locations', 'fdo_name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'locations', 'fdo_name').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'fdo_phone')) {
-            $where[] = array(
+            $where[] = [
                 'fdo_phone',
                 'like',
-                '%' . $filters['fdo_phone'] . '%'
-            );
+                '%'.$filters['fdo_phone'].'%',
+            ];
             Filters::put(Auth::User()->id, 'locations', 'fdo_phone', $filters['fdo_phone']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'fdo_phone');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'fdo_phone')) {
-                    $where[] = array(
+                    $where[] = [
                         'fdo_phone',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'locations', 'fdo_phone') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'locations', 'fdo_phone').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'address')) {
-            $where[] = array(
+            $where[] = [
                 'locations.address',
                 'like',
-                '%' . $filters['address'] . '%'
-            );
+                '%'.$filters['address'].'%',
+            ];
             Filters::put(Auth::User()->id, 'locations', 'address', $filters['address']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'address');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'address')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.address',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'locations', 'address') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'locations', 'address').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'city_id')) {
-            $where[] = array(
+            $where[] = [
                 'locations.city_id',
                 '=',
-                $filters['city_id']
-            );
+                $filters['city_id'],
+            ];
             Filters::put(Auth::User()->id, 'locations', 'city_id', $filters['city_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'city_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'city_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.city_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'locations', 'city_id')
-                    );
+                        Filters::get(Auth::User()->id, 'locations', 'city_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'region_id')) {
-            $where[] = array(
+            $where[] = [
                 'locations.region_id',
                 '=',
-                $filters['region_id']
-            );
+                $filters['region_id'],
+            ];
             Filters::put(Auth::User()->id, 'locations', 'region_id', $filters['region_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'region_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'region_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.region_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'locations', 'region_id')
-                    );
+                        Filters::get(Auth::User()->id, 'locations', 'region_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'service_id')) {
-            $where[] = array(
+            $where[] = [
                 'service_has_locations.service_id',
                 '=',
-                $filters['service_id']
-            );
+                $filters['service_id'],
+            ];
             Filters::put(Auth::User()->id, 'locations', 'service_id', $filters['service']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'service_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'service_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'service_has_locations.service_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'locations', 'service_id')
-                    );
+                        Filters::get(Auth::User()->id, 'locations', 'service_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
+            $where[] = [
                 'locations.created_at',
                 '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
+                $filters['created_from'].' 00:00:00',
+            ];
             Filters::put(Auth::User()->id, 'locations', 'created_from', $filters['created_from']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'created_from');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'created_from')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, 'locations', 'created_from') . ' 00:00:00'
-                    );
+                        Filters::get(Auth::User()->id, 'locations', 'created_from').' 00:00:00',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
+            $where[] = [
                 'locations.created_at',
                 '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
+                $filters['created_to'].' 23:59:59',
+            ];
             Filters::put(Auth::User()->id, 'locations', 'created_to', $filters['created_to']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'locations', 'created_to');
             } else {
                 if (Filters::get(Auth::User()->id, 'locations', 'created_to')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.created_at',
                         '<=',
-                        Filters::get(Auth::User()->id, 'locations', 'created_to') . ' 23:59:59'
-                    );
+                        Filters::get(Auth::User()->id, 'locations', 'created_to').' 23:59:59',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'locations.active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'locations', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -644,23 +630,23 @@ class Locations extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'locations', 'status') == 0 || Filters::get(Auth::user()->id, 'locations', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'locations', 'status') != null) {
-                        $where[] = array(
+                        $where[] = [
                             'locations.active',
                             '=',
-                            Filters::get(Auth::user()->id, 'locations', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'locations', 'status'),
+                        ];
                     }
                 }
             }
         }
 
-        $where[] = array(
+        $where[] = [
             'slug',
             '=',
-            'custom'
-        );
+            'custom',
+        ];
 
-//        dd( $where );
+        //        dd( $where );
 
         return $where;
     }
@@ -668,20 +654,20 @@ class Locations extends BaseModal
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     * @param (boolean) $apply_filter
+     * @param  \Illuminate\Http\Request  $request
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (boolean)  $apply_filter
      * @return (mixed)
      */
-    static public function staff_target_location_filters($request, $account_id, $apply_filter)
+    public static function staff_target_location_filters($request, $account_id, $apply_filter)
     {
-        $where = array();
+        $where = [];
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'locations.account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'staff_target_location', 'account_id', $account_id);
         } else {
 
@@ -689,95 +675,93 @@ class Locations extends BaseModal
                 Filters::forget(Auth::User()->id, 'staff_target_location', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'staff_target_location', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'staff_target_location', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'staff_target_location', 'account_id'),
+                    ];
                 }
             }
         }
         if ($request->get('lead_status_name')) {
-            $where[] = array(
+            $where[] = [
                 'locations.name',
                 'like',
-                '%' . $request->get('lead_status_name') . '%'
-            );
+                '%'.$request->get('lead_status_name').'%',
+            ];
             Filters::put(Auth::User()->id, 'staff_target_location', 'lead_status_name', $request->get('lead_status_name'));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'staff_target_location', 'lead_status_name');
             } else {
                 if (Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_name')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_name').'%',
+                    ];
                 }
             }
         }
         if ($request->get('lead_status_city')) {
-            $where[] = array(
+            $where[] = [
                 'locations.city_id',
                 '=',
-                $request->get('lead_status_city')
-            );
+                $request->get('lead_status_city'),
+            ];
             Filters::put(Auth::User()->id, 'staff_target_location', 'lead_status_city', $request->get('lead_status_city'));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'staff_target_location', 'lead_status_city');
             } else {
                 if (Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_city')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.city_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_city')
-                    );
+                        Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_city'),
+                    ];
                 }
             }
         }
         if ($request->get('region')) {
-            $where[] = array(
+            $where[] = [
                 'locations.region_id',
                 '=',
-                $request->get('region')
-            );
+                $request->get('region'),
+            ];
             Filters::put(Auth::User()->id, 'staff_target_location', 'region', $request->get('region'));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'staff_target_location', 'region');
             } else {
                 if (Filters::get(Auth::User()->id, 'staff_target_location', 'region')) {
-                    $where[] = array(
+                    $where[] = [
                         'locations.region_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'staff_target_location', 'region')
-                    );
+                        Filters::get(Auth::User()->id, 'staff_target_location', 'region'),
+                    ];
                 }
             }
         }
-        $where[] = array(
+        $where[] = [
             'slug',
             '=',
-            'custom'
-        );
+            'custom',
+        ];
 
         return $where;
     }
 
-
     /**
      * Get All Records with Dictionary
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id, $get_slug = false, $order_by = false, $order = false, $locationids = false)
+    public static function getAllRecordsDictionary($account_id, $get_slug = false, $order_by = false, $order = false, $locationids = false)
     {
-        if ($locationids && !is_array($locationids)) {
-            $locationids = array($locationids);
+        if ($locationids && ! is_array($locationids)) {
+            $locationids = [$locationids];
         }
         if ($locationids) {
 
@@ -814,14 +798,13 @@ class Locations extends BaseModal
     /**
      * Get All Records by City
      *
-     * @param (int) $cityId City's ID
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $cityId City's ID
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getActiveRecordsByCity($cityId = false, $locationId = false, $account_id)
+    public static function getActiveRecordsByCity($cityId, $locationId, $account_id)
     {
-        $where = array();
+        $where = [];
 
         $where[] = ['account_id', '=', $account_id];
         $where[] = ['active', '=', '1'];
@@ -831,12 +814,13 @@ class Locations extends BaseModal
         }
 
         if (is_array($locationId)) {
-            $names= ['All Centres','All South Region','All Central Region'];
-            return self::where($where)->whereIn('id', $locationId)->whereNotIn('name',$names)->orderBy('name', 'asc')->get();
+            $names = ['All Centres', 'All South Region', 'All Central Region'];
+
+            return self::where($where)->whereIn('id', $locationId)->whereNotIn('name', $names)->orderBy('name', 'asc')->get();
         } else {
-           
+
             if ($locationId) {
-                return self::where($where)->whereIn('id', array($locationId))->orderBy('name', 'asc')->get();
+                return self::where($where)->whereIn('id', [$locationId])->orderBy('name', 'asc')->get();
             } else {
                 return self::where($where)->orderBy('name', 'asc')->get();
             }
@@ -846,11 +830,10 @@ class Locations extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
         $data = $request->all();
         // Set Account ID
@@ -870,6 +853,7 @@ class Locations extends BaseModal
         $record->update(['sort_no' => $record->id]);
         //log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+
         return $record;
     }
 
@@ -877,17 +861,16 @@ class Locations extends BaseModal
      * delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static function deleteRecord($id)
+    public static function deleteRecord($id)
     {
         $location = Locations::getData($id);
 
-        if (!$location) {
+        if (! $location) {
             return [
                 'status' => false,
-                'message' => 'Resource not found.'
+                'message' => 'Resource not found.',
             ];
         }
 
@@ -895,7 +878,7 @@ class Locations extends BaseModal
         if (Locations::isChildExists($id, Auth::User()->account_id)) {
             return [
                 'status' => false,
-                'message' => 'Child records exist, unable to delete resource.'
+                'message' => 'Child records exist, unable to delete resource.',
             ];
         }
 
@@ -905,7 +888,7 @@ class Locations extends BaseModal
 
         return [
             'status' => true,
-            'message' => 'Record has been deleted successfully.'
+            'message' => 'Record has been deleted successfully.',
         ];
 
     }
@@ -914,16 +897,16 @@ class Locations extends BaseModal
      * Inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
 
         $location = Locations::getData($id);
 
-        if (!$location) {
+        if (! $location) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.locations.index');
         }
 
@@ -939,15 +922,14 @@ class Locations extends BaseModal
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static function activeRecord($id, $status)
+    public static function activeRecord($id, $status)
     {
 
         $location = Locations::getData($id);
 
-        if (!$location) {
+        if (! $location) {
             return false;
         }
 
@@ -962,11 +944,10 @@ class Locations extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (Locations::find($id))->toArray();
 
@@ -978,9 +959,9 @@ class Locations extends BaseModal
         // Set Region ID
         $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
 
-        if (!isset($data['is_featured'])) {
+        if (! isset($data['is_featured'])) {
             $data['is_featured'] = 0;
-        } else if ($data['is_featured'] == '') {
+        } elseif ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
         //Set Image
@@ -993,10 +974,10 @@ class Locations extends BaseModal
         }
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -1010,12 +991,10 @@ class Locations extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
-     * @param
-     *
+     * @param  (int)  $id
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         return false;
     }
@@ -1029,7 +1008,7 @@ class Locations extends BaseModal
      * Function for target location data
      *
      */
-    static function LoadtargetLocationdata($request)
+    public static function LoadtargetLocationdata($request)
     {
 
         $center_target_status = 0;
@@ -1037,22 +1016,22 @@ class Locations extends BaseModal
 
         $lcoations = Locations::where([
             ['active', '=', '1'],
-            ['slug', '=', 'custom']
+            ['slug', '=', 'custom'],
         ])->get();
 
         $targetlocationdata_existing = CentertargetMeta::where([
             ['year', '=', $request->get('year')],
-            ['month', '=', $request->get('month')]
+            ['month', '=', $request->get('month')],
         ])->get();
 
-        $CenterTargetArray = array();
+        $CenterTargetArray = [];
 
         foreach ($lcoations as $location) {
-            $CenterTargetArray[$location->id] = array(
+            $CenterTargetArray[$location->id] = [
                 'location_id' => $location->id,
-                'location_name' => $location->city->name . '  ' . $location->name,
+                'location_name' => $location->city->name.'  '.$location->name,
                 'target_amount' => 0,
-            );
+            ];
         }
 
         if ($targetlocationdata_existing->count()) {
@@ -1061,22 +1040,22 @@ class Locations extends BaseModal
 
             $center_target = Centertarget::where([
                 ['year', '=', $request->get('year')],
-                ['month', '=', $request->get('month')]
+                ['month', '=', $request->get('month')],
             ])->first();
 
             $center_target_working_days = $center_target->working_days;
 
             foreach ($targetlocationdata_existing as $locationdata) {
                 $location_info = Locations::find($locationdata->location_id);
-                $CenterTargetArray[$locationdata->location_id] = array(
+                $CenterTargetArray[$locationdata->location_id] = [
                     'location_id' => $locationdata->location_id,
-                    'location_name' => $location_info->city->name . '  ' . $location_info->name,
+                    'location_name' => $location_info->city->name.'  '.$location_info->name,
                     'target_amount' => $locationdata->target_amount,
-                );
+                ];
             }
         }
-        return array('CenterTargetArray' => $CenterTargetArray, 'center_target_status' => $center_target_status,'center_target_working_days' => $center_target_working_days);
+
+        return ['CenterTargetArray' => $CenterTargetArray, 'center_target_status' => $center_target_status, 'center_target_working_days' => $center_target_working_days];
 
     }
-
 }

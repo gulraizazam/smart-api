@@ -4,14 +4,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table\Structure;
 
-use PhpMyAdmin\Controllers\Table\AbstractController;
-use PhpMyAdmin\DatabaseInterface;
-use PhpMyAdmin\Message;
-use PhpMyAdmin\ResponseRenderer;
-use PhpMyAdmin\Table;
-use PhpMyAdmin\Template;
-use PhpMyAdmin\Util;
-
 use function __;
 use function array_keys;
 use function array_splice;
@@ -20,12 +12,19 @@ use function implode;
 use function in_array;
 use function is_array;
 use function mb_strtoupper;
+use PhpMyAdmin\Controllers\Table\AbstractController;
+use PhpMyAdmin\DatabaseInterface;
+use PhpMyAdmin\Message;
+use PhpMyAdmin\ResponseRenderer;
+use PhpMyAdmin\Table;
+use PhpMyAdmin\Template;
+use PhpMyAdmin\Util;
 use function sprintf;
 use function str_replace;
 
 final class MoveColumnsController extends AbstractController
 {
-    /** @var Table  The table object */
+    /** @var Table The table object */
     private $tableObj;
 
     /** @var DatabaseInterface */
@@ -106,7 +105,7 @@ final class MoveColumnsController extends AbstractController
                 $data['Expression'] = is_array($expressions) ? $expressions[$column] : null;
             }
 
-            $changes[] = 'CHANGE ' . Table::generateAlter(
+            $changes[] = 'CHANGE '.Table::generateAlter(
                 $column,
                 $column,
                 mb_strtoupper($extracted_columnspec['type']),

@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Config\Forms\User;
 
-use PhpMyAdmin\Config\Forms\BaseForm;
-
 use function __;
+use PhpMyAdmin\Config\Forms\BaseForm;
 
 class NaviForm extends BaseForm
 {

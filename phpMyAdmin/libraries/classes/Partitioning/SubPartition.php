@@ -14,29 +14,38 @@ class SubPartition
 {
     /** @var string the database */
     protected $db;
+
     /** @var string the table */
     protected $table;
+
     /** @var string partition name */
     protected $name;
+
     /** @var int ordinal */
     protected $ordinal;
+
     /** @var string partition method */
     protected $method;
+
     /** @var string partition expression */
     protected $expression;
+
     /** @var int no of table rows in the partition */
     protected $rows;
+
     /** @var int data length */
     protected $dataLength;
+
     /** @var int index length */
     protected $indexLength;
+
     /** @var string partition comment */
     protected $comment;
 
     /**
      * Constructs a partition
      *
-     * @param array $row fetched row from information_schema.PARTITIONS
+     * @param  array  $row fetched row from information_schema.PARTITIONS
      */
     public function __construct(array $row)
     {
@@ -48,7 +57,7 @@ class SubPartition
     /**
      * Loads data from the fetched row from information_schema.PARTITIONS
      *
-     * @param array $row fetched row
+     * @param  array  $row fetched row
      */
     protected function loadData(array $row): void
     {
@@ -62,7 +71,7 @@ class SubPartition
     /**
      * Loads some data that is common to both partitions and sub partitions
      *
-     * @param array $row fetched row
+     * @param  array  $row fetched row
      */
     protected function loadCommonData(array $row): void
     {

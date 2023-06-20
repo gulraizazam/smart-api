@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUpdateCustomFormsRequest;
 use App\Models\CustomFormFields;
@@ -12,12 +13,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Input;
-use Carbon\Carbon;
-use App\Helpers\Filters;
 
 class CustomFormsController extends Controller
 {
-
     public $success;
 
     public $error;
@@ -38,7 +36,7 @@ class CustomFormsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('custom_forms_manage')) {
+        if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
         }
 
@@ -50,11 +48,12 @@ class CustomFormsController extends Controller
      *
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
+     *
      * @throws \Throwable
      */
     public function datatable(Request $request)
     {
-        try { 
+        try {
 
             $filename = 'custom_forms';
 
@@ -62,43 +61,39 @@ class CustomFormsController extends Controller
 
             $apply_filter = checkFilters($filters, $filename);
 
-
-            $records = array();
-            $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
 
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
-                $CustomForms = CustomForms::getBulkData( $ids);
+                $CustomForms = CustomForms::getBulkData($ids);
                 if ($CustomForms) {
                     foreach ($CustomForms as $custom_form) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!CustomForms::isChildExists($custom_form->id, Auth::User()->account_id)) {
+                        if (! CustomForms::isChildExists($custom_form->id, Auth::User()->account_id)) {
                             $custom_form->delete();
                         }
                     }
                 }
-                $records["status"] = true; // pass custom message(useful for getting status of group actions)
-                $records["message"] = "Records has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+                $records['status'] = true; // pass custom message(useful for getting status of group actions)
+                $records['message'] = 'Records has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
             }
 
             // Get Total Records
-            $iTotalRecords = CustomForms::getTotalRecords($request, Auth::User()->account_id,$apply_filter);
+            $iTotalRecords = CustomForms::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
+            [$orderBy, $order] = getSortBy($request);
 
-            list($orderBy, $order) = getSortBy($request);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
-            $CustomForms = CustomForms::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id,$apply_filter);
-
-
+            $CustomForms = CustomForms::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
             $records = $this->getFilters($records);
 
             if ($CustomForms) {
-                $records["data"] = $CustomForms;
-            
-                $records["meta"] = [
+                $records['data'] = $CustomForms;
+
+                $records['meta'] = [
                     'field' => $orderBy,
                     'page' => $page,
                     'pages' => $pages,
@@ -108,37 +103,38 @@ class CustomFormsController extends Controller
                 ];
             }
 
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('custom_forms_edit'),
                 'delete' => Gate::allows('custom_forms_destroy'),
                 'active' => Gate::allows('custom_forms_active'),
                 'inactive' => Gate::allows('custom_forms_inactive'),
                 'preview' => Gate::allows('custom_forms_preview'),
-                'submit' => Gate::allows('custom_forms_submit')
+                'submit' => Gate::allows('custom_forms_submit'),
             ];
 
             return ApiHelper::apiDataTable($records);
 
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
 
             return ApiHelper::apiException($e);
         }
     }
 
-    private function getFilters($records) {
+    private function getFilters($records)
+    {
 
         $form_types = [
-            '' => 'All', 
-            '1' => 'Measurement Form', 
-            '0' => 'General Form', 
-            '2' => 'Medical Form'
+            '' => 'All',
+            '1' => 'Measurement Form',
+            '0' => 'General Form',
+            '2' => 'Medical Form',
         ];
-        
-        $records["active_filters"] = Filters::all(Auth::User()->id, 'custom_forms');
 
-        $records["filter_values"] = [
+        $records['active_filters'] = Filters::all(Auth::User()->id, 'custom_forms');
+
+        $records['filter_values'] = [
             'form_types' => $form_types,
-            'status' => config('constants.status')
+            'status' => config('constants.status'),
         ];
 
         return $records;
@@ -151,13 +147,15 @@ class CustomFormsController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('custom_forms_create_general') && !Gate::allows('custom_forms_edit')) {
+        if (! Gate::allows('custom_forms_create_general') && ! Gate::allows('custom_forms_edit')) {
             return abort(401);
         }
         $data['custom_form_type'] = '0';
-        $form = CustomForms::createForm(Auth::User()->account_id,$data);
+        $form = CustomForms::createForm(Auth::User()->account_id, $data);
+
         return redirect()->route('admin.custom_forms.edit', $form);
     }
+
     /**
      * Show the form for creating measurement new Permission.
      *
@@ -165,11 +163,12 @@ class CustomFormsController extends Controller
      */
     public function create_measurement()
     {
-        if (!Gate::allows('custom_forms_create_measurement') && !Gate::allows('custom_forms_edit')) {
+        if (! Gate::allows('custom_forms_create_measurement') && ! Gate::allows('custom_forms_edit')) {
             return abort(401);
         }
         $data['custom_form_type'] = '1';
-        $form = CustomForms::createForm(Auth::User()->account_id,$data);
+        $form = CustomForms::createForm(Auth::User()->account_id, $data);
+
         return redirect()->route('admin.custom_forms.edit', $form);
     }
 
@@ -180,15 +179,14 @@ class CustomFormsController extends Controller
      */
     public function create_medical()
     {
-        if (!Gate::allows('custom_forms_create_medical_history_form') && !Gate::allows('custom_forms_edit')) {
+        if (! Gate::allows('custom_forms_create_medical_history_form') && ! Gate::allows('custom_forms_edit')) {
             return abort(401);
         }
         $data['custom_form_type'] = '2';
-        $form = CustomForms::createForm(Auth::User()->account_id,$data);
-      
+        $form = CustomForms::createForm(Auth::User()->account_id, $data);
+
         return redirect()->route('admin.custom_forms.edit', $form);
     }
-
 
     public function sortorder_save()
     {
@@ -198,46 +196,48 @@ class CustomFormsController extends Controller
         $itemIndex = Input::get('itemIndex');
         if ($itemID) {
             foreach ($custom_forms as $custom_form) {
-                $sort = DB::table('custom_forms')->where('id', '=', $itemID)->update(array('sort_number' => $itemIndex));
-                $myarray = ['status' => "Data Sort Successfully"];
+                $sort = DB::table('custom_forms')->where('id', '=', $itemID)->update(['sort_number' => $itemIndex]);
+                $myarray = ['status' => 'Data Sort Successfully'];
+
                 return response()->json($myarray);
             }
         } else {
-            $myarray = ['status' => "Data Not Sort"];
+            $myarray = ['status' => 'Data Not Sort'];
+
             return response()->json($myarray);
         }
     }
 
     public function sort_fields(Request $request, $id)
     {
-        if (!Gate::allows('custom_forms_manage')) {
+        if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
         }
 
-        if (!CustomFormFields::sortFields($request, $id, Auth::User()->account_id, Auth::id())) {
+        if (! CustomFormFields::sortFields($request, $id, Auth::User()->account_id, Auth::id())) {
 
-            return response()->json(array("Unprocessable Entities" => ".", 'code' => 422), 422);
+            return response()->json(['Unprocessable Entities' => '.', 'code' => 422], 422);
         }
 
-        return response()->json(array("message" => "Records has been sorted successfully.", 'code' => 200), 200);
+        return response()->json(['message' => 'Records has been sorted successfully.', 'code' => 200], 200);
     }
 
     public function sortorder()
     {
 
         $custom_forms = DB::table('custom_forms')->where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
+
         return view('admin.custom_forms.sort', compact('custom_forms'));
     }
 
     /**
      * Store a newly created Permission in storage.
      *
-     * @param  \App\Http\Requests\Admin\StoreUpdateCustomFormsRequest $request
      * @return \Illuminate\Http\Response
      */
     public function store(StoreUpdateCustomFormsRequest $request)
     {
-        if (!Gate::allows('custom_forms_manage')) {
+        if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
         }
 
@@ -251,22 +251,21 @@ class CustomFormsController extends Controller
         return redirect()->route('admin.custom_forms.index');
     }
 
-
     /**
      * Show the form for editing Permission.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
     {
-        if (!Gate::allows('custom_forms_edit') && !Gate::allows('custom_forms_create_measurement') && !Gate::allows('custom_forms_create_general')  ) {
+        if (! Gate::allows('custom_forms_edit') && ! Gate::allows('custom_forms_create_measurement') && ! Gate::allows('custom_forms_create_general')) {
             return abort(401);
         }
 
         $custom_form = CustomForms::get_all_fields_data($id);
 
-        if (!$custom_form) {
+        if (! $custom_form) {
             return view('error');
         }
 
@@ -276,13 +275,13 @@ class CustomFormsController extends Controller
     /**
      * Update Permission in storage.
      *
-     * @param  \App\Http\Requests\Admin\StoreUpdateCustomFormsRequest $request
-     * @param  int $id
+     * @param  \App\Http\Requests\Admin\StoreUpdateCustomFormsRequest  $request
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('custom_forms_manage')) {
+        if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
         }
 
@@ -298,7 +297,7 @@ class CustomFormsController extends Controller
 
     public function form_update(Request $request, $id)
     {
-        if (!Gate::allows('custom_forms_manage')) {
+        if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
         }
 
@@ -307,85 +306,80 @@ class CustomFormsController extends Controller
             return response()->json($custom_form, 200);
 
         } else {
-            return response()->json(array("message" => "Some went wrong, please try again later"), 400);
+            return response()->json(['message' => 'Some went wrong, please try again later'], 400);
         }
     }
-
 
     public function create_field(Request $request, $id)
     {
 
-        if (!Gate::allows('custom_forms_manage')) {
+        if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
         }
 
         $data = CustomFormFields::createRecord($request, Auth::User()->account_id, Auth::id(), $id);
         if ($data) {
-            return response()->json(array("request" => $request->all(), 'data' => $data));
+            return response()->json(['request' => $request->all(), 'data' => $data]);
         } else {
-            response()->json(array("error" => $request->all(), 'id' => $id, 'data' => $data), 401);
+            response()->json(['error' => $request->all(), 'id' => $id, 'data' => $data], 401);
         }
 
     }
 
     /**
      * update form field
-     * @param Request $request
-     * @param $form_id
-     * @param $field_id
+     *
      * @return \Illuminate\Http\JsonResponse
      */
-
     public function update_field(Request $request, $form_id, $field_id)
     {
-        if (!Gate::allows('custom_forms_manage')) {
+        if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
         }
         $data = CustomFormFields::updateRecord($request, Auth::User()->account_id, Auth::id(), $form_id, $field_id);
 
         if ($data) {
-            return response()->json(array("request" => $request->all(), 'data' => $data));
+            return response()->json(['request' => $request->all(), 'data' => $data]);
         } else {
-            response()->json(array("error" => $request->all(), 'form_id' => $form_id, 'field_id' => $field_id, 'data' => $data), 401);
+            response()->json(['error' => $request->all(), 'form_id' => $form_id, 'field_id' => $field_id, 'data' => $data], 401);
         }
     }
 
     public function delete_field(Request $request, $form_id, $field_id)
     {
 
-        if (!Gate::allows('custom_forms_manage')) {
+        if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
         }
 
         $custom_form_field = CustomFormFields::getData($field_id);
 
-        if (!$custom_form_field) {
+        if (! $custom_form_field) {
 
-            return response()->json(array("message" => "Resource not found.", 'code' => 404), 404);
+            return response()->json(['message' => 'Resource not found.', 'code' => 404], 404);
         }
 
         CustomFormFields::deleteRecord($form_id, $field_id);
 
-        return response()->json(array("message" => "Record has been deleted successfully.", 'code' => 200), 200);
+        return response()->json(['message' => 'Record has been deleted successfully.', 'code' => 200], 200);
 
     }
-
 
     /**
      * Remove Permission from storage.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
-        if (!Gate::allows('custom_forms_destroy')) {
+        if (! Gate::allows('custom_forms_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $custom_form = CustomForms::getData($id);
 
-        if (!$custom_form) {
+        if (! $custom_form) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
 
@@ -402,18 +396,18 @@ class CustomFormsController extends Controller
     /**
      * Inactive Record from storage.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function status(Request $request)
     {
-        if (!Gate::allows('custom_forms_inactive')) {
+        if (! Gate::allows('custom_forms_inactive')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $custom_form = CustomForms::getData($request->id);
 
-        if (!$custom_form) {
+        if (! $custom_form) {
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
 
@@ -426,5 +420,4 @@ class CustomFormsController extends Controller
         return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
 
     }
-
 }

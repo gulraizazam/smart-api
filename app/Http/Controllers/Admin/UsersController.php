@@ -11,16 +11,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Locations;
 use App\Models\Patients;
 use App\Models\RoleHasUsers;
-use App\Models\UserHasLocations;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
+use App\Models\UserHasLocations;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Session;
 use Spatie\Permission\Models\Role;
 use Validator;
 
@@ -46,7 +45,7 @@ class UsersController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('users_manage')) {
+        if (! Gate::allows('users_manage')) {
             return abort(401);
         }
 
@@ -57,7 +56,6 @@ class UsersController extends Controller
      * Display a listing of Lead_statuse.
      *
      * @param \Illuminate\Http\Request
-     *
      * @return \Illuminate\Http\Response
      */
     public function datatable(Request $request)
@@ -71,7 +69,7 @@ class UsersController extends Controller
         $records = [];
         $records['data'] = [];
 
-        if(hasFilter($filters, 'delete')) {
+        if (hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $Users = User::whereIn('id', $ids);
             if ($Users) {
@@ -83,7 +81,7 @@ class UsersController extends Controller
 
         $where = [];
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         if (Auth::user()->account_id && Auth::user()->account_id != '') {
             $where[] = [
@@ -315,92 +313,92 @@ class UsersController extends Controller
             }
         }
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_users')) {
                 $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
-                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where([
-                    [$where],
-                    ['account_id', '=', Auth::User()->account_id],
-                ])->get(['users.id']));
-            }else{
+                    ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                    ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                    ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                    ->where([
+                        [$where],
+                        ['account_id', '=', Auth::User()->account_id],
+                    ])->get(['users.id']));
+            } else {
                 $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
-                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where('users.active',1)
-                ->where([
-                    [$where],
-                    ['account_id', '=', Auth::User()->account_id],
-                ])->get(['users.id']));
+                    ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                    ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                    ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                    ->where('users.active', 1)
+                    ->where([
+                        [$where],
+                        ['account_id', '=', Auth::User()->account_id],
+                    ])->get(['users.id']));
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_users')) {
                 $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
-                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where([
-                    [$where],
-                    ['account_id', '=', Auth::User()->account_id],
-                ])->get(['users.id']));
-            }else{
+                    ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                    ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                    ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                    ->where([
+                        [$where],
+                        ['account_id', '=', Auth::User()->account_id],
+                    ])->get(['users.id']));
+            } else {
                 $iTotalRecords = count(User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
-                ->where('users.active',1)
-                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where([
-                    [$where],
-                    ['account_id', '=', Auth::User()->account_id],
-                ])->get(['users.id']));
+                    ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                    ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                    ->where('users.active', 1)
+                    ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                    ->where([
+                        [$where],
+                        ['account_id', '=', Auth::User()->account_id],
+                    ])->get(['users.id']));
             }
         }
-        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_users')) {
                 $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
-                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where('email','!=','superadmin@redsignal.net')
-                ->where([
-                    [$where],
-                    ['account_id', '=', Auth::User()->account_id],
-                ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
-            }else{
+                    ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                    ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                    ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                    ->where('email', '!=', 'superadmin@redsignal.net')
+                    ->where([
+                        [$where],
+                        ['account_id', '=', Auth::User()->account_id],
+                    ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            } else {
                 $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
-                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where('users.active',1)
-                ->where('email','!=','superadmin@redsignal.net')
-                ->where([
-                    [$where],
-                    ['account_id', '=', Auth::User()->account_id],
-                ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+                    ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                    ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                    ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                    ->where('users.active', 1)
+                    ->where('email', '!=', 'superadmin@redsignal.net')
+                    ->where([
+                        [$where],
+                        ['account_id', '=', Auth::User()->account_id],
+                    ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_users")){
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_users')) {
                 $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
-                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where('email','!=','superadmin@redsignal.net')
-                ->where([
-                    'account_id'=>Auth::User()->account_id,
-                ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
-            }else{
+                    ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                    ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                    ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                    ->where('email', '!=', 'superadmin@redsignal.net')
+                    ->where([
+                        'account_id' => Auth::User()->account_id,
+                    ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+            } else {
                 $Users = User::leftJoin('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-                ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
-                ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
-                ->where('users.active',1)
-                ->where('email','!=','superadmin@redsignal.net')
-                ->where([
-                    'account_id'=>Auth::User()->account_id,
-                ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
+                    ->leftjoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
+                    ->groupBy('user_has_locations.user_id', 'role_has_users.user_id')
+                    ->whereNotIn('users.user_type_id', [Config::get('constants.practitioner_id'), Config::get('constants.patient_id')])
+                    ->where('users.active', 1)
+                    ->where('email', '!=', 'superadmin@redsignal.net')
+                    ->where([
+                        'account_id' => Auth::User()->account_id,
+                    ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->get();
             }
         }
         $records = $this->getExtraData($records);
@@ -414,7 +412,7 @@ class UsersController extends Controller
                 if ($user_has_locations) {
                     foreach ($user_has_locations as $location) {
                         $locationchecked = Locations::find($location);
-                        if($locationchecked != null){
+                        if ($locationchecked != null) {
                             $locations[] = $loc[$location]->name ?? '';
                         }
                     }
@@ -431,9 +429,9 @@ class UsersController extends Controller
                     'created_at' => Carbon::parse($user->created_at)->format('F j,Y h:i A'),
                     'active' => $user->active,
                 ];
-                ++$index;
+                $index++;
             }
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('users_edit'),
                 'change_password' => Gate::allows('users_change_password'),
                 'active' => Gate::allows('users_active'),
@@ -441,7 +439,7 @@ class UsersController extends Controller
                 'delete' => Gate::allows('users_destroy'),
                 'contact' => Gate::allows('contact'),
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -450,20 +448,25 @@ class UsersController extends Controller
                 'sort' => $order,
             ];
         }
+
         return ApiHelper::apiDataTable($records);
     }
-    private function getExtraData($records = []) {
+
+    private function getExtraData($records = [])
+    {
         $locations = Locations::where([['active', '=', '1'], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('full_address', 'id');
         $roles = Role::get()->pluck('name', 'id');
         $filters = Filters::all(Auth::User()->id, 'users');
         $records['filter_values'] = [
             'roles' => $roles,
             'locations' => $locations,
-            'status' => config('constants.status')
+            'status' => config('constants.status'),
         ];
         $records['active_filters'] = $filters;
+
         return $records;
     }
+
     /**
      * Show the form for creating new User.
      *
@@ -471,30 +474,30 @@ class UsersController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('users_create')) {
+        if (! Gate::allows('users_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $user = new \stdClass();
         $user->gender = null;
         $user->phone = null;
-        $roles = Role::where('name','!=','Super-Admin')->get();
-        $roles_commissions = Role::where('name','!=','Super-Admin')->get();
+        $roles = Role::where('name', '!=', 'Super-Admin')->get();
+        $roles_commissions = Role::where('name', '!=', 'Super-Admin')->get();
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'roles' => $roles,
             'roles_commissions' => $roles_commissions,
             'locations' => $locations,
-            'user' => $user
+            'user' => $user,
         ]);
     }
 
     /**
      * Store a newly created User in storage.
-     *
      */
     public function store(Request $request)
     {
-        if (!Gate::allows('users_create')) {
+        if (! Gate::allows('users_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $validator = $this->verifyCreateFields($request);
@@ -539,6 +542,7 @@ class UsersController extends Controller
             }
         }
         session()->flash('success', 'Record has been created successfully.');
+
         return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
     }
 
@@ -566,18 +570,19 @@ class UsersController extends Controller
             'roles.required' => 'Role must be unique',
             'commission.required' => 'Commission must be unique',
         ];
+
         return $validator = Validator::make($request->all(), $rules, $messages);
     }
+
     /**
      * Show the form for editing User.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function changePassword($id)
     {
-        if (!Gate::allows('users_change_password')) {
+        if (! Gate::allows('users_change_password')) {
             return abort(401);
         }
         $user = User::getData($id);
@@ -591,13 +596,12 @@ class UsersController extends Controller
     /**
      * Update User Password in storage.
      *
-     * @param \App\Http\Requests\Admin\UpdateUsersRequest $request
-     *
+     * @param  \App\Http\Requests\Admin\UpdateUsersRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function savePassword(Request $request)
     {
-        if (!Gate::allows('users_change_password')) {
+        if (! Gate::allows('users_change_password')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $data = [];
@@ -620,6 +624,7 @@ class UsersController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Password has been changed successfully.');
         }
+
         return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
     }
 
@@ -638,23 +643,23 @@ class UsersController extends Controller
             'password.min' => 'password must be at least 8 characters',
             'password.regex' => 'Password must be a combination of numbers, upper, lower, and special characters',
         ];
+
         return $validator = Validator::make($request->all(), $rules, $messages);
     }
 
     /**
      * Show the form for editing User.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
     {
-        if (!Gate::allows('users_edit')) {
+        if (! Gate::allows('users_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $roles = Role::where('name','!=','Super-Admin')->get()->pluck('name', 'id');
-        $roles_commissions = Role::where('name','!=','Super-Admin')->get();
+        $roles = Role::where('name', '!=', 'Super-Admin')->get()->pluck('name', 'id');
+        $roles_commissions = Role::where('name', '!=', 'Super-Admin')->get();
         $user = User::getData($id);
         $user_has_locations = $user->user_has_locations->pluck('location_id');
         $user_has_locations = LocationsWidget::generatelocationArrayEdit($user_has_locations, Auth::User()->account_id, $user);
@@ -668,35 +673,35 @@ class UsersController extends Controller
         if ($user_roles) {
             $user_roles = $user_roles->toArray();
         } else {
-            $user_roles = array();
+            $user_roles = [];
         }
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'roles' => $roles,
             'user' => $user,
             'locations' => $locations,
             'roles_commissions' => $roles_commissions,
             'user_has_locations' => $user_has_locations,
-            'user_roles' => $user_roles
+            'user_roles' => $user_roles,
         ]);
     }
 
     /**
      * Update User in storage.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('users_edit')) {
+        if (! Gate::allows('users_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $validator = $this->verifyUpdateFields($request);
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
-        if($request->input('phone') == '***********'){
+        if ($request->input('phone') == '***********') {
             $request->merge(['phone' => $request->input('old_phone')]);
         }
         $request->request->remove('old_phone');
@@ -713,7 +718,7 @@ class UsersController extends Controller
                 $role_has_users = [];
                 foreach ($roles as $role) {
                     $roleid = DB::table('roles')->select('id')->where('id', '=', $role)->first();
-                   if ($roleid) {
+                    if ($roleid) {
                         $role_has_users = [
                             'role_id' => $roleid->id ?? 0,
                             'user_id' => $user->id ?? 0,
@@ -741,8 +746,10 @@ class UsersController extends Controller
             }
         }
         session()->flash('success', 'Record has been updated successfully.');
+
         return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
     }
+
     /**
      * Validate create form fields.
      *
@@ -761,34 +768,34 @@ class UsersController extends Controller
     /**
      * Remove User from storage.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      */
     public function destroy($id)
     {
-        if (!Gate::allows('users_destroy')) {
+        if (! Gate::allows('users_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         User::deleteRecord($id);
+
         return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
     }
 
     /**
      * Inactive Record from storage.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function status(Request $request)
     {
-        if (!Gate::allows('users_active')) {
+        if (! Gate::allows('users_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $response = User::activeRecord($request->id, $request->status);
         if ($response) {
             return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
         }
+
         return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
     }
 
@@ -799,6 +806,7 @@ class UsersController extends Controller
     public function getpatient(Request $request)
     {
         $patient = Patients::getPatientAjax($request->q, Auth::User()->account_id);
+
         return response()->json($patient);
     }
 
@@ -809,16 +817,18 @@ class UsersController extends Controller
     public function getpatientid(Request $request)
     {
         $patients = Patients::getPatientidAjax($request->search, Auth::User()->account_id);
+
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'patients' => $patients
+            'patients' => $patients,
         ]);
     }
 
     public function phoneSearch(Request $request)
     {
         $patients = Patients::getPatientPhoneAjax($request->search, Auth::User()->account_id);
+
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'patients' => $patients
+            'patients' => $patients,
         ]);
     }
 
@@ -829,28 +839,33 @@ class UsersController extends Controller
     public function getpatientnumber(Request $request)
     {
         $patient = Patients::find($request->patient_id);
+
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'patient' => $patient
+            'patient' => $patient,
         ]);
     }
 
-    public function getUserCities() {
-       $cities =  ACL::getUserCities();
-       if (count($cities) == 1) {
-           return ApiHelper::apiResponse($this->success, 'City found', true, [
-               'city' => $cities[0]
-           ]);
-       }
+    public function getUserCities()
+    {
+        $cities = ACL::getUserCities();
+        if (count($cities) == 1) {
+            return ApiHelper::apiResponse($this->success, 'City found', true, [
+                'city' => $cities[0],
+            ]);
+        }
+
         return ApiHelper::apiResponse($this->success, 'City not found', false);
     }
 
-    public function getUserCenters() {
-       $centers =  ACL::getUserCentres();
-       if (count($centers) == 1) {
-           return ApiHelper::apiResponse($this->success, 'Center found', true, [
-               'center' => $centers[0]
-           ]);
-       }
+    public function getUserCenters()
+    {
+        $centers = ACL::getUserCentres();
+        if (count($centers) == 1) {
+            return ApiHelper::apiResponse($this->success, 'Center found', true, [
+                'center' => $centers[0],
+            ]);
+        }
+
         return ApiHelper::apiResponse($this->success, 'Center not found', false);
     }
 }

@@ -7,12 +7,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Transformations\Abs;
 
+use function __;
+use function htmlspecialchars;
 use PhpMyAdmin\FieldMetadata;
 use PhpMyAdmin\Plugins\TransformationsPlugin;
 use PhpMyAdmin\Utils\FormatConverter;
-
-use function __;
-use function htmlspecialchars;
 
 /**
  * Provides common methods for all of the long to IPv4 transformations plugins.
@@ -28,17 +27,16 @@ abstract class LongToIPv4TransformationsPlugin extends TransformationsPlugin
     {
         return __(
             'Converts an (IPv4) Internet network address stored as a BIGINT'
-            . ' into a string in Internet standard dotted format.'
+            .' into a string in Internet standard dotted format.'
         );
     }
 
     /**
      * Does the actual work of each specific transformations plugin.
      *
-     * @param string             $buffer  text to be transformed
-     * @param array              $options transformation options
-     * @param FieldMetadata|null $meta    meta information
-     *
+     * @param  string  $buffer  text to be transformed
+     * @param  array  $options transformation options
+     * @param  FieldMetadata|null  $meta    meta information
      * @return string
      */
     public function applyTransformation($buffer, array $options = [], ?FieldMetadata $meta = null)

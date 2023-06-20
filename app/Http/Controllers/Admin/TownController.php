@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FileUploadTownRequest;
 use App\Models\Cities;
 use App\Models\Towns;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Gate;
 use Auth;
+use Carbon\Carbon;
+use File;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Validator;
-use File;
-use App\HelperModule\ApiHelper;
 
 class TownController extends Controller
 {
@@ -38,7 +38,7 @@ class TownController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('towns_manage')) {
+        if (! Gate::allows('towns_manage')) {
             return abort(401);
         }
 
@@ -59,40 +59,39 @@ class TownController extends Controller
 
         $apply_filter = checkFilters($filters, $filename);
 
-        $records = array();
-        $records["data"] = array();
+        $records = [];
+        $records['data'] = [];
 
         $filters = getFilters($request->all());
 
-        if(hasFilter($filters, 'delete')) {
+        if (hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $towns = Towns::getBulkData($ids);
             if ($towns) {
                 foreach ($towns as $town) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!Towns::isChildExists($town->id, Auth::User()->account_id)) {
+                    if (! Towns::isChildExists($town->id, Auth::User()->account_id)) {
                         $town->delete();
                     }
                 }
             }
-            $records["status"] = true;
-            $records["message"] = "Records has been deleted successfully!";
+            $records['status'] = true;
+            $records['message'] = 'Records has been deleted successfully!';
         }
 
-
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         // Get Total Records
         $iTotalRecords = Towns::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $towns = Towns::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
         if ($towns) {
-            $records["data"] = $towns;
+            $records['data'] = $towns;
 
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -101,7 +100,7 @@ class TownController extends Controller
                 'sort' => $order,
             ];
 
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('towns_edit'),
                 'delete' => Gate::allows('towns_destroy'),
                 'active' => Gate::allows('towns_active'),
@@ -120,7 +119,7 @@ class TownController extends Controller
 
         $records['filter_values'] = [
             'cities' => $cities,
-            'status' => config('constants.status')
+            'status' => config('constants.status'),
         ];
 
         $records['active_filters'] = $filters;
@@ -135,7 +134,7 @@ class TownController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('towns_create')) {
+        if (! Gate::allows('towns_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $cities = Cities::where([
@@ -153,12 +152,11 @@ class TownController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        if (!Gate::allows('towns_create')) {
+        if (! Gate::allows('towns_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -178,21 +176,20 @@ class TownController extends Controller
     /**
      * Validate form fields
      *
-     * @param \Illuminate\Http\Request $request
      * @return Validator $validator;
      */
     protected function verifyFields(Request $request)
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'city_id' => 'required'
+            'city_id' => 'required',
         ]);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -203,18 +200,18 @@ class TownController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
     {
-        if (!Gate::allows('towns_edit')) {
+        if (! Gate::allows('towns_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $town = Towns::getData($id);
 
-        if (!$town) {
+        if (! $town) {
             return ApiHelper::apiResponse($this->unauthorized, 'Resource not found.', false);
         }
 
@@ -222,12 +219,11 @@ class TownController extends Controller
             ['account_id', '=', Auth::User()->account_id],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
-            ['is_featured', '=', '1']
+            ['is_featured', '=', '1'],
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
 
-
-       return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'cities' => $cities,
             'town' => $town,
         ]);
@@ -236,44 +232,43 @@ class TownController extends Controller
     /**
      * Update town.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('towns_edit')) {
+        if (! Gate::allows('towns_edit')) {
             return abort(401);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
+            return response()->json([
                 'status' => 0,
                 'message' => $validator->messages()->all(),
-            ));
+            ]);
         }
 
         if (Towns::updateRecord($id, $request, Auth::User()->account_id)) {
             flash('Record has been updated successfully.')->success()->important();
 
-            return response()->json(array(
+            return response()->json([
                 'status' => 1,
                 'message' => 'Record has been updated successfully.',
-            ));
+            ]);
         } else {
-            return response()->json(array(
+            return response()->json([
                 'status' => 0,
                 'message' => 'Something went wrong, please try again later.',
-            ));
+            ]);
         }
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
@@ -290,12 +285,12 @@ class TownController extends Controller
     /**
      * Inactive Record from storage.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function status(Request $request)
     {
-        if (!Gate::allows('towns_active')) {
+        if (! Gate::allows('towns_active')) {
             return abort(401);
         }
 
@@ -311,13 +306,12 @@ class TownController extends Controller
 
     /**
      * Import Town.
-     *
-     * @param Request $request
      */
     public function importTowns(Request $request)
     {
-        if (!Gate::allows('towns_import')) {
+        if (! Gate::allows('towns_import')) {
             flash('You are not authorized to access this resource.')->error()->important();
+
             return redirect()->route('admin.towns.index');
         }
 
@@ -327,38 +321,39 @@ class TownController extends Controller
     /**
      * Upload excel file.
      *
-     * @param \App\Http\Requests\Admin\FileUploadLeadsRequest $request
-     * @param int $id
+     * @param  \App\Http\Requests\Admin\FileUploadLeadsRequest  $request
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function uploadLeads(FileUploadTownRequest $request)
     {
-        if (!Gate::allows('towns_import')) {
+        if (! Gate::allows('towns_import')) {
             flash('You are not authorized to access this resource.')->error()->important();
+
             return redirect()->route('admin.Towns.index');
         }
 
         if ($request->hasfile('towns_file')) {
             // Check if directory not exists then create it
             $dir = public_path('/towndata');
-            if (!File::isDirectory($dir)) {
+            if (! File::isDirectory($dir)) {
                 // path does not exist so create directory
                 File::makeDirectory($dir, 777, true, true);
-                File::put($dir . '/index.html', 'Direct access is forbidden');
+                File::put($dir.'/index.html', 'Direct access is forbidden');
             }
 
             $File = $request->file('towns_file');
 
             // Store File Information
-            $name = str_replace('.' . $File->getClientOriginalExtension(), '', $File->getClientOriginalName());
+            $name = str_replace('.'.$File->getClientOriginalExtension(), '', $File->getClientOriginalName());
             $ext = $File->getClientOriginalExtension();
             $full_name = $File->getClientOriginalName();
-            $full_name_new = $name . '-' . rand(11111111, 99999999) . '.' . $ext;
+            $full_name_new = $name.'-'.rand(11111111, 99999999).'.'.$ext;
 
             $File->move($dir, $full_name_new);
 
             // Read File and dump data
-            $SpreadSheet = IOFactory::load($dir . DIRECTORY_SEPARATOR . $full_name_new);
+            $SpreadSheet = IOFactory::load($dir.DIRECTORY_SEPARATOR.$full_name_new);
             $SheetData = $SpreadSheet->getActiveSheet(0)->toArray(null, true, true, true);
 
             if (count($SheetData)) {
@@ -373,19 +368,19 @@ class TownController extends Controller
 
                     $Cities = Cities::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
 
-                    $TownData = array();
+                    $TownData = [];
                     $count = 0;
                     foreach ($SheetData as $SingleRow) {
-                        if($count != 0){
+                        if ($count != 0) {
                             $city_info = Cities::where('name', '=', $SingleRow['B'])->first();
-                            $TownData[] = array(
+                            $TownData[] = [
                                 'name' => $SingleRow['A'],
                                 'city_id' => $city_info->id,
                                 'active' => $SingleRow['C'],
                                 'account_id' => $SingleRow['D'],
                                 'created_at' => Carbon::createFromFormat('Y-m-d H:i:s', Carbon::now())->format('Y-m-d'),
-                                'updated_at' => Carbon::createFromFormat('Y-m-d H:i:s', Carbon::now())->format('Y-m-d')
-                            );
+                                'updated_at' => Carbon::createFromFormat('Y-m-d H:i:s', Carbon::now())->format('Y-m-d'),
+                            ];
                         }
                         $count++;
                     }
@@ -403,5 +398,4 @@ class TownController extends Controller
             return redirect()->route('admin.towns.import');
         }
     }
-
 }

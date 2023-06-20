@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server;
 
+use function __;
+use function intval;
+use function is_numeric;
 use PhpMyAdmin\Charsets;
 use PhpMyAdmin\Config\PageSettings;
 use PhpMyAdmin\Controllers\AbstractController;
@@ -18,10 +21,6 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
 use PhpMyAdmin\Utils\ForeignKey;
-
-use function __;
-use function intval;
-use function is_numeric;
 
 final class ImportController extends AbstractController
 {

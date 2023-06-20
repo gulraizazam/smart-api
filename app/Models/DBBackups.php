@@ -6,9 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class DBBackups extends Model
 {
-
     protected $fillable = [
-        'path', 'file'
+        'path', 'file',
     ];
 
     protected $table = 'db_backups';

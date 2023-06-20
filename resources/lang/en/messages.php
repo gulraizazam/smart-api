@@ -1,4 +1,5 @@
 <?php
+
 /* @author <abdullah@redsignal.biz> */
 // It is a file placed in respective language directory .... it is used for custom messages i-e success & Error Messages
 /*
@@ -13,8 +14,8 @@ return [
         'cancel' => ':attribute successfully canceled',
         'destroy' => ':attribute successfully deleted',
         'submission' => 'Thank You! Your submission has been received.',
-        'payment'  => ':attribute successfully charge',
-        'scan'  => 'Ticket Scanned',
+        'payment' => ':attribute successfully charge',
+        'scan' => 'Ticket Scanned',
         'invoice_status' => 'Invoice Status has been successfully updated to :attribute',
         'success_log_in' => 'You have successfully logged in!!!',
         'settings_updated' => 'Settings Successfully Updated!!!',
@@ -38,5 +39,5 @@ return [
         'image_size_5_mb' => 'Image Size Cannot be greater than 5 MB',
         'max_no_of_images' => 'Max 20 images can be uploaded',
 
-    ]
+    ],
 ];

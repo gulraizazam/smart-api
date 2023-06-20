@@ -1,10 +1,10 @@
 <?php
 
+use App\Models\UserOperatorSettings;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Config;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\UserOperatorSettings;
-use Illuminate\Support\Facades\Config;
 
 class UserOperatorSettingsSeed extends Seeder
 {
@@ -41,7 +41,6 @@ class UserOperatorSettingsSeed extends Seeder
         // Assign Permission to 'administrator' role
         $role->givePermissionTo('user_operator_settings_manage');
         $role->givePermissionTo('user_operator_settings_edit');
-
 
         UserOperatorSettings::insert(Config::get('organization_setup_data.user_operator_settings'));
     }

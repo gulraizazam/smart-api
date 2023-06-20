@@ -2,10 +2,11 @@
 
 namespace App\Console\Commands;
 
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
+
 class MoveBackup extends Command
 {
     /**
@@ -41,15 +42,15 @@ class MoveBackup extends Command
     {
         try {
 
-            $d = DIRECTORY_SEPARATOR ;
+            $d = DIRECTORY_SEPARATOR;
 
-            $path1 = storage_path() . $d . 'app' . $d . 'backups' ;
+            $path1 = storage_path().$d.'app'.$d.'backups';
 
-            is_dir($path1) ?: mkdir( $path1 , 0755, true);
+            is_dir($path1) ?: mkdir($path1, 0755, true);
 
             $contents = Storage::disk('local_for_backup')->allFiles();
 
-            foreach ( $contents as $content ) {
+            foreach ($contents as $content) {
 
                 $data = explode('-', $content);
 
@@ -57,14 +58,14 @@ class MoveBackup extends Command
 
                 $date = Carbon::parse($date)->format('Y-m-d');
 
-                if ( $date <= Carbon::now()->subDays(1)->format('Y-m-d') ) {
+                if ($date <= Carbon::now()->subDays(1)->format('Y-m-d')) {
                     File::move(storage_path().$d.'app'.$d.'Roles-Permissions-Manager'.$d.$content, storage_path().$d.'app'.$d.'backups'.$d.$content);
                 }
             }
 
             $contents_old = Storage::disk('backups')->allFiles();
 
-            foreach ($contents_old as $contact_delete ){
+            foreach ($contents_old as $contact_delete) {
 
                 $data = explode('-', $contact_delete);
 
@@ -72,14 +73,14 @@ class MoveBackup extends Command
 
                 $date = Carbon::parse($date)->format('Y-m-d');
 
-                if ( $date <= Carbon::now()->subDays(5)->format('Y-m-d') ) {
+                if ($date <= Carbon::now()->subDays(5)->format('Y-m-d')) {
 
                     File::delete(storage_path().$d.'app'.$d.'backups'.$d.$contact_delete);
                 }
             }
 
-        } catch ( \Exception $exception ) {
-            $this->error($exception->getFile() .'-----'. $exception->getMessage() . '-----code------'. $exception->getCode());
+        } catch (\Exception $exception) {
+            $this->error($exception->getFile().'-----'.$exception->getMessage().'-----code------'.$exception->getCode());
         }
     }
 }
