@@ -1,4 +1,7 @@
 var central_wise_arrival_chart;
+var CENTRE_ID;
+var SELECTED_MONTH;
+var DOC_ID;
 
 function initCollectionByCentre(today, yesterday, last7days, week, thismonth, lastmonth) {
     $.ajax({
@@ -762,15 +765,17 @@ function ConsultanciesByStatus(bar) {
 }
 
 function initDoctorWiseConversion(period, time = ''){
-
-    centre_id = $(".doctorwiseconversion").attr('data-id');
+    SELECTED_MONTH = period;
+    var centre_id = $(".doctorwiseconversion").attr('data-id');
+    var doc_id = $(".doctorname").attr('data-id');
     $.ajax({
         url: route('admin.dashboard.doctor_wise_conversion'),
         type: 'GET',
         cache: false,
         data: {
-            'period': period,
-            'centre_id': centre_id
+            'period': SELECTED_MONTH,
+            'centre_id': centre_id,
+            'doc_id':doc_id
         },
         success: function (response) {
             var categories = response.data.categories;
@@ -788,6 +793,40 @@ function initDoctorWiseConversion(period, time = ''){
         }
     });
 }
+function LoadDocWiseConversion(doc_id)
+{
+    var DrName = $('#doc_nav').find('li').find('a[data-id='+doc_id+']').text(); 
+    jQuery('.btn.doctorname').html(DrName+'<i class="fa fa-angle-down"></i>')
+    jQuery('.btn.doctorname').attr('data-id',doc_id);
+    var centre_id = $(".doctorwiseconversion").attr('data-id');
+   
+    
+    $.ajax({
+        url: route('admin.dashboard.doctor_wise_conversion'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': 'thismonth',
+            'doc_id': doc_id,
+            'centre_id' : centre_id
+        },
+        success: function (response) {
+            jQuery('#categories-table-body').html("");
+            var TABLE_HTML = "";
+            jQuery.each( response.data.categories, function( index, category ) {
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>"+category.total_arrival+"</td><td>"+category.total_conversion+"</td></tr>";
+               
+            });
+            jQuery('#categories-table-body').append(TABLE_HTML);
+            DoctorWiseConversion(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
+
+
 function DoctorWiseConversion(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
@@ -839,5 +878,6 @@ function DoctorWiseConversion(bar) {
     doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
     doc_wise_conversion_chart.render();
 }
+
 
 
