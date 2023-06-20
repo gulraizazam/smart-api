@@ -4413,12 +4413,15 @@ class AppointmentsController extends Controller
             }
         }
         $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
+        if ($lead) {
+            $appointment_data['lead_id'] = $lead->id;
+        } else {
+            return ApiHelper::apiResponse($this->success, "Lead does not exist. Please create lead against this phone number.", false);
+        }
         $appointment_data['patient_id'] = $patient->id;
-        $appointment_data['lead_id'] = $lead->id;
         $appointment_data['created_at'] = Filters::getCurrentTimeStamp();
         $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
         $appointment = Appointments::create($appointment_data);
-        $find_apt = Appointments::find($appointment->id);
         $find_cons = Appointments::latest()->first();
         if($find_cons){
             $parents = Services::where(['parent_id' => $find_cons->service_id])->first();
