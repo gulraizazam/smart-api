@@ -295,10 +295,10 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report collection_by_centre_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Report
+                                                            aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right"
@@ -363,10 +363,10 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report revenue_by_centre_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Report
+                                                            aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right"
@@ -427,10 +427,10 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report revenue_by_service_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Report
+                                                            aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right"
@@ -492,10 +492,10 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report revenue_by_service_category_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Report
+                                                            aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right"
@@ -552,11 +552,11 @@
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                    <div class="btn-group">$(".appointment_by_type_dropdown").text("");
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report appointment_by_status_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Report
+                                                            aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right"
@@ -619,10 +619,10 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report"
+                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report appointment_by_type_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Report
+                                                            aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right"
@@ -722,7 +722,7 @@
                                                             $csr_users = \App\Models\User::whereIn('id', $all_csr)
                                                                 ->where('active', 1)
                                                                 ->get();
-                                                            
+
                                                         @endphp
                                                         <div class="btn-group">
                                                             <a data-id="All"
