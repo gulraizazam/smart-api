@@ -20,7 +20,7 @@ class CreateCentretargetmetaTable extends Migration
             $table->year('year')->index();
             $table->unsignedBigInteger('location_id')->index();
             $table->unsignedBigInteger('centertarget_id')->index();
-            $table->decimal('target_amount',12,2)->default(0);
+            $table->decimal('target_amount', 12, 2)->default(0);
             $table->timestamps();
             $table->softDeletes();
 

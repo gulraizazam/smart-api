@@ -29,6 +29,6 @@ final class CollationConnectionController extends AbstractController
             'utf8mb4_unicode_ci'
         );
 
-        $this->response->header('Location: index.php?route=/' . Url::getCommonRaw([], '&'));
+        $this->response->header('Location: index.php?route=/'.Url::getCommonRaw([], '&'));
     }
 }

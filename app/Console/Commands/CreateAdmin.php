@@ -31,7 +31,6 @@ class CreateAdmin extends Command
      */
     private $user;
 
-
     private $user_type;
 
     private $resource_type;
@@ -54,7 +53,6 @@ class CreateAdmin extends Command
         $this->user = $user;
     }
 
-
     /**
      * Execute the console command.
      *
@@ -64,9 +62,9 @@ class CreateAdmin extends Command
     {
 
         /*run required seeders before create admin*/
-       /* $this->account->run();
-        $this->user_type->run();
-        $this->resource_type->run();*/
+        /* $this->account->run();
+         $this->user_type->run();
+         $this->resource_type->run();*/
         /*seeders*/
 
         $details = $this->getDetails();
@@ -88,13 +86,14 @@ class CreateAdmin extends Command
         $details['email'] = $this->ask('Email', 'admin@admin.com');
         if ($this->isExist($details['email'])) {
             $this->error('This email already in use, can you enter different one.');
+
             return false;
         }
 
         $password = $this->ask('Password', '12345678');
         $confirm_password = $this->ask('Confirm password', '12345678');
         $details['password'] = bcrypt($password);
-        $details['confirm_password']  = bcrypt($confirm_password);
+        $details['confirm_password'] = bcrypt($confirm_password);
         $details['phone'] = '12345678901';
         $details['main_account'] = 1;
         $details['user_type_id'] = 1;
@@ -105,11 +104,13 @@ class CreateAdmin extends Command
         while (! $this->isValidPassword($password, $confirm_password)) {
             if (! $this->isRequiredLength($password)) {
                 $this->error('Password must be more that six characters');
+
                 return false;
             }
 
             if (! $this->isMatch($password, $confirm_password)) {
                 $this->error('Password and Confirm password do not match');
+
                 return false;
             }
         }
@@ -117,24 +118,24 @@ class CreateAdmin extends Command
         return $details;
     }
 
-    private function isExist($email): bool {
+    private function isExist($email): bool
+    {
         return User::where('email', $email)->exists();
     }
 
     /**
      * Display created admin.
      *
-     * @param array $admin
-     * @return void
+     * @param  array  $admin
      */
-    private function display(User $admin) : void
+    private function display(User $admin): void
     {
         $headers = ['Name', 'Email', 'Super admin'];
 
         $fields = [
             'Name' => $admin->name,
             'email' => $admin->email,
-            'admin' => 'Admin'
+            'admin' => 'Admin',
         ];
 
         $this->info('Super admin created.');
@@ -143,12 +144,8 @@ class CreateAdmin extends Command
 
     /**
      * Check if password is valid
-     *
-     * @param string $password
-     * @param string $confirmPassword
-     * @return boolean
      */
-    private function isValidPassword(string $password, string $confirmPassword) : bool
+    private function isValidPassword(string $password, string $confirmPassword): bool
     {
         return $this->isRequiredLength($password) &&
             $this->isMatch($password, $confirmPassword);
@@ -156,23 +153,16 @@ class CreateAdmin extends Command
 
     /**
      * Check if password and confirm password matches.
-     *
-     * @param string $password
-     * @param string $confirmPassword
-     * @return bool
      */
-    private function isMatch(string $password, string $confirmPassword) : bool
+    private function isMatch(string $password, string $confirmPassword): bool
     {
         return $password === $confirmPassword;
     }
 
     /**
      * Checks if password is longer than six characters.
-     *
-     * @param string $password
-     * @return bool
      */
-    private function isRequiredLength(string $password) : bool
+    private function isRequiredLength(string $password): bool
     {
         return strlen($password) > 6;
     }

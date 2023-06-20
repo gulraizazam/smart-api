@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Transformations\Input;
 
-use PhpMyAdmin\Plugins\Transformations\Abs\CodeMirrorEditorTransformationPlugin;
-
 use function __;
+use PhpMyAdmin\Plugins\Transformations\Abs\CodeMirrorEditorTransformationPlugin;
 
 /**
  * XML (and HTML) editing with syntax highlighted CodeMirror editor

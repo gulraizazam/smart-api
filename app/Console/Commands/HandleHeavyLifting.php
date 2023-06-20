@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use App\Jobs\SyncSingleAppointmentJob;
 use App\Models\Appointments;
-use Illuminate\Console\Command;
 use App\Models\HeavyLifter;
+use Illuminate\Console\Command;
 use Queue;
 
 class HandleHeavyLifting extends Command
@@ -46,14 +46,14 @@ class HandleHeavyLifting extends Command
             $heavyLifts = HeavyLifter::limit(5)
                 ->get();
 
-            if($heavyLifts) {
+            if ($heavyLifts) {
 
                 /**
                  * Variable holding shopify jobs
                  */
                 $shopify_jobs = [];
 
-                foreach($heavyLifts as $heavyLift) {
+                foreach ($heavyLifts as $heavyLift) {
 
                     $payload = json_decode($heavyLift->payload, true);
 
@@ -61,7 +61,7 @@ class HandleHeavyLifting extends Command
                         case 'upload-appointments':
 
                             $appointments = Appointments::where([
-                                'account_id' => $payload['account_id']
+                                'account_id' => $payload['account_id'],
                             ])
                                 ->limit($payload['records_per_page'])
                                 ->offset($payload['offset'])
@@ -69,15 +69,15 @@ class HandleHeavyLifting extends Command
                                 ->select('id')
                                 ->get();
 
-                            if($appointments) {
+                            if ($appointments) {
 
-                                $jobs_array = array();
+                                $jobs_array = [];
 
-                                foreach($appointments as $appointment) {
-                                    $payload = array(
+                                foreach ($appointments as $appointment) {
+                                    $payload = [
                                         'account_id' => $payload['account_id'],
-                                        'appointment_id' => $appointment->id
-                                    );
+                                        'appointment_id' => $appointment->id,
+                                    ];
 
                                     $jobs_array[] = new SyncSingleAppointmentJob($payload);
                                 }
@@ -91,12 +91,12 @@ class HandleHeavyLifting extends Command
                     }
 
                     HeavyLifter::where([
-                        'id' => $heavyLift->id
+                        'id' => $heavyLift->id,
                     ])->forceDelete();
                 }
             }
 
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             echo "\n";
             echo 'Exception came';
             echo "\n";

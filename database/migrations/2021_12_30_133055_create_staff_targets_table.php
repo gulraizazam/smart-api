@@ -18,7 +18,7 @@ class CreateStaffTargetsTable extends Migration
             $table->unsignedBigInteger('account_id')->index();
             $table->unsignedBigInteger('staff_id')->index();
             $table->unsignedBigInteger('location_id')->default(1)->index();
-            $table->decimal('total_amount',12,2)->default(0);
+            $table->decimal('total_amount', 12, 2)->default(0);
             $table->unsignedTinyInteger('total_services')->default(0);
             $table->unsignedTinyInteger('month')->index();
             $table->year('year')->index();

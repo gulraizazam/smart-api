@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\Services;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\Services;
 
 class ServicesSeed extends Seeder
 {
@@ -67,7 +67,7 @@ class ServicesSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -81,164 +81,164 @@ class ServicesSeed extends Seeder
         $role->givePermissionTo('services_destroy');
 
         Services::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'slug' => 'custom',
                 'name' => 'Skin Tightening',
                 'parent_id' => '0',
                 'color' => '#8080ff',
                 'duration' => '00:30',
-                'end_node'=>'0',
+                'end_node' => '0',
                 'price' => '0.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            2 => array(
+            ],
+            2 => [
                 'id' => 2,
                 'slug' => 'custom',
                 'name' => 'Facial Rejuvenation',
                 'parent_id' => '0',
                 'color' => '#ff00ff',
                 'duration' => '00:30',
-                'end_node'=>'0',
+                'end_node' => '0',
                 'price' => '0.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            3 => array(
+            ],
+            3 => [
                 'id' => 3,
                 'slug' => 'custom',
                 'name' => 'Body Contouring',
                 'parent_id' => '0',
                 'color' => '#ff8080',
                 'duration' => '00:30',
-                'end_node'=>'0',
+                'end_node' => '0',
                 'price' => '0.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            4 => array(
+            ],
+            4 => [
                 'id' => 4,
                 'slug' => 'custom',
                 'name' => 'Trilogy ice',
                 'parent_id' => '0',
                 'color' => '#00ff00',
                 'duration' => '00:30',
-                'end_node'=>'0',
+                'end_node' => '0',
                 'price' => '0.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
+            ],
 
-            5 => array(
+            5 => [
                 'id' => 5,
                 'slug' => 'custom',
                 'name' => 'Face contouring',
                 'parent_id' => '3',
                 'color' => '#ff8080',
                 'duration' => '01:30',
-                'end_node'=>'1',
+                'end_node' => '1',
                 'price' => '25000.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            6 => array(
+            ],
+            6 => [
                 'id' => 6,
                 'slug' => 'custom',
                 'name' => 'Chin contouring',
                 'parent_id' => '3',
                 'color' => '#ff80ff',
                 'duration' => '01:10',
-                'end_node'=>'1',
+                'end_node' => '1',
                 'price' => '25000.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            7 => array(
+            ],
+            7 => [
                 'id' => 7,
                 'slug' => 'custom',
                 'name' => 'Chin Rejuvenation',
                 'parent_id' => '2',
                 'color' => '#ff00ff',
                 'duration' => '01:10',
-                'end_node'=>'1',
+                'end_node' => '1',
                 'price' => '35000.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            8 => array(
+            ],
+            8 => [
                 'id' => 8,
                 'slug' => 'custom',
                 'name' => 'Face Rejuvenation',
                 'parent_id' => '2',
                 'color' => '#0080ff',
                 'duration' => '01:10',
-                'end_node'=>'1',
+                'end_node' => '1',
                 'price' => '35000.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            9 => array(
+            ],
+            9 => [
                 'id' => 9,
                 'slug' => 'custom',
                 'name' => 'Face Skin Tightening',
                 'parent_id' => '1',
                 'color' => '#0080ff',
                 'duration' => '01:10',
-                'end_node'=>'1',
+                'end_node' => '1',
                 'price' => '45000.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            10 => array(
+            ],
+            10 => [
                 'id' => 10,
                 'slug' => 'custom',
                 'name' => 'Chin Skin Tightening',
                 'parent_id' => '1',
                 'color' => '#408080',
                 'duration' => '01:10',
-                'end_node'=>'1',
+                'end_node' => '1',
                 'price' => '45000.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            11 => array(
+            ],
+            11 => [
                 'id' => 11,
                 'slug' => 'custom',
                 'name' => 'Face Skin Trilogy',
                 'parent_id' => '4',
                 'color' => '#808080',
                 'duration' => '01:10',
-                'end_node'=>'1',
+                'end_node' => '1',
                 'price' => '55000.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            12 => array(
+            ],
+            12 => [
                 'id' => 12,
                 'slug' => 'custom',
                 'name' => 'Chin Skin Trilogy',
                 'parent_id' => '4',
                 'color' => '#808080',
                 'duration' => '01:10',
-                'end_node'=>'1',
+                'end_node' => '1',
                 'price' => '55000.00',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
-            13 => array(
+            ],
+            13 => [
                 'id' => 13,
                 'slug' => 'all',
                 'name' => 'All Services',
@@ -250,7 +250,7 @@ class ServicesSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'account_id' => 1,
-            ),
+            ],
         ]);
     }
 }

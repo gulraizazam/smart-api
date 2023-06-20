@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\UserTypes;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\UserTypes;
 
 class UserTypesSeeder extends Seeder
 {
@@ -31,7 +31,7 @@ class UserTypesSeeder extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -41,38 +41,38 @@ class UserTypesSeeder extends Seeder
         $role->givePermissionTo('user_types_edit');
 
         UserTypes::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'name' => 'Administrator',
-                'type'=>'application user',
-                'account_id'=>'1',
+                'type' => 'application user',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            2 => array(
+            ],
+            2 => [
                 'id' => 2,
                 'name' => 'Application User',
-                'type'=>'application user',
-                'account_id'=>'1',
+                'type' => 'application user',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-             3=> array(
+            ],
+            3 => [
                 'id' => 3,
                 'name' => 'Patient',
-                 'type'=>'patient',
-                 'account_id'=>'1',
+                'type' => 'patient',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            5 => array(
+            ],
+            5 => [
                 'id' => 5,
                 'name' => 'Practitioner',
-                'type'=>'practitioner',
-                'account_id'=>'1',
+                'type' => 'practitioner',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
         ]);
     }
 }

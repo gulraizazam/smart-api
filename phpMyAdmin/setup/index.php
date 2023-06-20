@@ -15,7 +15,7 @@ use PhpMyAdmin\Url;
 
 if (! defined('ROOT_PATH')) {
     // phpcs:disable PSR1.Files.SideEffects
-    define('ROOT_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
+    define('ROOT_PATH', dirname(__DIR__).DIRECTORY_SEPARATOR);
     // phpcs:enable
 }
 
@@ -26,7 +26,7 @@ global $cfg;
 define('PHPMYADMIN', true);
 // phpcs:enable
 
-require ROOT_PATH . 'setup/lib/common.inc.php';
+require ROOT_PATH.'setup/lib/common.inc.php';
 
 if (@file_exists(CONFIG_FILE) && ! $cfg['DBG']['demo']) {
     Core::fatalError(__('Configuration already exists, setup is disabled!'));
@@ -62,7 +62,7 @@ if ($page === 'servers') {
         $controller->destroy([
             'id' => $_GET['id'] ?? null,
         ]);
-        header('Location: index.php' . Url::getCommonRaw());
+        header('Location: index.php'.Url::getCommonRaw());
 
         return;
     }

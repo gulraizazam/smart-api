@@ -8,20 +8,15 @@
 
 namespace App\Helpers\Widgets;
 
-use App\Models\Cities;
 use App\Models\DoctorHasLocations;
 use App\Models\Doctors;
 use App\Models\Locations;
 use App\Models\MachineType;
 use App\Models\MachineTypeHasServices;
-use App\Models\Packages;
 use App\Models\Regions;
-use App\Models\ResourceHasServices;
 use App\Models\Resources;
 use App\Models\ServiceHasLocations;
 use App\Models\Services;
-use Illuminate\Database\Eloquent\Collection;
-use phpDocumentor\Reflection\Types\Self_;
 
 class LocationsWidget
 {
@@ -31,67 +26,67 @@ class LocationsWidget
      *
      * @return: (mixed) $result
      */
-    static function generateDropDownArray($account_id)
+    public static function generateDropDownArray($account_id)
     {
-        $regions = Regions::where(array(
+        $regions = Regions::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->whereIn('slug',['custom','all'])->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
+        ])->whereIn('slug', ['custom', 'all'])->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
 
-        $dropdown_array = array();
+        $dropdown_array = [];
 
         foreach ($regions as $region) {
-            $dropdown_array[$region->id] = array(
+            $dropdown_array[$region->id] = [
                 'id' => $region->id,
                 'name' => $region->name,
                 'optgroup' => $region->name,
-                'children' => array(),
-            );
+                'children' => [],
+            ];
 
             if ($region->slug == 'all') {
-                $first_child = Locations::where(array(
+                $first_child = Locations::where([
                     'account_id' => $account_id,
                     'region_id' => $region->id,
                     'slug' => 'all',
-                ))->select('id', 'name', 'slug')->first();
+                ])->select('id', 'name', 'slug')->first();
 
                 if ($first_child) {
-                    $dropdown_array[$region->id]['children'][$first_child->id] = array(
+                    $dropdown_array[$region->id]['children'][$first_child->id] = [
                         'id' => $first_child->id,
                         'name' => $first_child->name,
                         'slug' => $first_child->slug,
-                    );
+                    ];
                 }
             } else {
-                $first_child = Locations::where(array(
+                $first_child = Locations::where([
                     'account_id' => $account_id,
                     'region_id' => $region->id,
                     'slug' => 'region',
                     'active' => 1,
-                ))->select('id', 'name', 'slug')->first();
+                ])->select('id', 'name', 'slug')->first();
 
                 if ($first_child) {
-                    $dropdown_array[$region->id]['children'][$first_child->id] = array(
+                    $dropdown_array[$region->id]['children'][$first_child->id] = [
                         'id' => $first_child->id,
                         'name' => $first_child->name,
                         'slug' => $first_child->slug,
-                    );
+                    ];
                 }
             }
 
-            $other_childrens = Locations::where(array(
+            $other_childrens = Locations::where([
                 'account_id' => $account_id,
                 'region_id' => $region->id,
                 'slug' => 'custom',
-            ))->orderBy('name', 'asc')->get();
+            ])->orderBy('name', 'asc')->get();
 
             if ($other_childrens) {
                 foreach ($other_childrens as $other_children) {
-                    $dropdown_array[$region->id]['children'][$other_children->id] = array(
+                    $dropdown_array[$region->id]['children'][$other_children->id] = [
                         'id' => $other_children->id,
-                        'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $other_children->full_address,
+                        'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$other_children->full_address,
                         'slug' => $other_children->slug,
-                    );
+                    ];
                 }
             }
         }
@@ -105,37 +100,38 @@ class LocationsWidget
      *
      * @return: (mixed) $result
      */
-    static function generatelocationArray($centers, $account_id, $user_id)
+    public static function generatelocationArray($centers, $account_id, $user_id)
     {
 
         if (is_array($centers) && count($centers)) {
-            $first_child = Locations::where(array(
+            $first_child = Locations::where([
                 'account_id' => $account_id,
                 'slug' => 'all',
-            ))->select('id', 'name')->first();
+            ])->select('id', 'name')->first();
 
             if ($first_child && in_array($first_child->id, $centers)) {
 
                 $all_location = Locations::where([
                     ['account_id', '=', $account_id],
-                    ['active', '=', '1']
+                    ['active', '=', '1'],
                 ])->get();
 
                 foreach ($all_location as $location_all) {
-                    $location_array[] = array(
+                    $location_array[] = [
                         'user_id' => $user_id,
                         'region_id' => $location_all->region_id,
                         'location_id' => $location_all->id,
-                    );
+                    ];
                 }
+
                 return $location_array;
             } else {
                 // Check Regions in centres array any one found then add their respective centres as well.
                 $regions_mapping = self::generateDropDownArray($account_id);
-                $region_centres = Locations::where(array(
+                $region_centres = Locations::where([
                     'account_id' => $account_id,
                     'slug' => 'region',
-                ))->select('id', 'name', 'region_id')->get();
+                ])->select('id', 'name', 'region_id')->get();
 
                 if ($region_centres) {
                     foreach ($region_centres as $region_centre) {
@@ -147,19 +143,17 @@ class LocationsWidget
                     }
                 }
 
-
                 $centers = array_unique($centers);
 
                 foreach ($centers as $center) {
 
-
                     $location = Locations::find($center);
 
-                    $location_array[] = array(
+                    $location_array[] = [
                         'user_id' => $user_id,
                         'region_id' => $location->region_id,
                         'location_id' => $location->id,
-                    );
+                    ];
                 }
 
                 return $location_array;
@@ -174,18 +168,18 @@ class LocationsWidget
     *
     * @return: (mixed) $result
     */
-    static function generatelocationArrayEdit($centers, $account_id, $user)
+    public static function generatelocationArrayEdit($centers, $account_id, $user)
     {
-        $array1 = array();
-        $location_array_1 = array();
+        $array1 = [];
+        $location_array_1 = [];
         $collection = $centers;
 
         if (count($collection) > 0) {
 
-            $first_child = Locations::where(array(
+            $first_child = Locations::where([
                 'account_id' => $account_id,
                 'slug' => 'all',
-            ))->select('id', 'name')->first();
+            ])->select('id', 'name')->first();
 
             if ($first_child && $collection->search($first_child->id)) {
                 $location_array = $user->user_has_locations->where('location_id', '=', $first_child->id)->pluck('location_id')->toArray();
@@ -197,11 +191,11 @@ class LocationsWidget
                 // Check Regions in centres array any one found then add their respective centres as well.
                 $regions_mapping = self::generateDropDownArray($account_id);
 
-                $region_centres = Locations::where(array(
+                $region_centres = Locations::where([
                     'account_id' => $account_id,
                     'slug' => 'region',
                     'active' => 1,
-                ))->select('id', 'name', 'region_id')->get();
+                ])->select('id', 'name', 'region_id')->get();
                 if ($region_centres) {
 
                     foreach ($region_centres as $region_centre) {
@@ -216,12 +210,11 @@ class LocationsWidget
                                 break;
                             }
 
-
                         }
                     }
                     foreach ($centers as $centerlives) {
                         $locationchecked = Locations::find($centerlives);
-                        if ($locationchecked && !in_array($locationchecked->region_id, $array1)) {
+                        if ($locationchecked && ! in_array($locationchecked->region_id, $array1)) {
                             $location_array_1[] = $centerlives;
                         }
                     }
@@ -234,7 +227,6 @@ class LocationsWidget
             }
         }
 
-
         return $location_array_1;
     }
 
@@ -244,15 +236,15 @@ class LocationsWidget
     *
     * @return: (mixed)
     */
-    static function generateservicearray($store_service, $account_id)
+    public static function generateservicearray($store_service, $account_id)
     {
 
         if (is_array($store_service) && count($store_service)) {
-            $first_child = Services::where(array(
+            $first_child = Services::where([
                 'account_id' => $account_id,
                 'slug' => 'all',
                 'active' => 1,
-            ))->select('id', 'name')->first();
+            ])->select('id', 'name')->first();
 
             if ($first_child && in_array($first_child->id, $store_service)) {
 
@@ -272,6 +264,7 @@ class LocationsWidget
 
                     }
                 }
+
                 return $store_service;
             }
         }
@@ -284,39 +277,40 @@ class LocationsWidget
     *
     * @return: (mixed)
     */
-    static function locationPackageArray($account_id)
+    public static function locationPackageArray($account_id)
     {
 
-        $regions = Regions::where(array(
+        $regions = Regions::where([
             'account_id' => $account_id,
             'slug' => 'custom',
-        ))->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
+        ])->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
 
-        $dropdown_array = array();
+        $dropdown_array = [];
 
         foreach ($regions as $region) {
-            $dropdown_array[$region->id] = array(
+            $dropdown_array[$region->id] = [
                 'id' => $region->id,
                 'name' => $region->name,
-                'children' => array(),
-            );
+                'children' => [],
+            ];
 
-            $other_childrens = Locations::where(array(
+            $other_childrens = Locations::where([
                 'account_id' => $account_id,
                 'region_id' => $region->id,
                 'slug' => 'custom',
-            ))->orderBy('name', 'asc')->get();
+            ])->orderBy('name', 'asc')->get();
 
             if ($other_childrens) {
                 foreach ($other_childrens as $other_children) {
-                    $dropdown_array[$region->id]['children'][$other_children->id] = array(
+                    $dropdown_array[$region->id]['children'][$other_children->id] = [
                         'id' => $other_children->id,
-                        'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $other_children->full_address,
+                        'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$other_children->full_address,
                         'slug' => $other_children->slug,
-                    );
+                    ];
                 }
             }
         }
+
         return $dropdown_array;
 
     }
@@ -327,7 +321,7 @@ class LocationsWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadAppointmentDoctorByLocation($location_id, $account_id)
+    public static function loadAppointmentDoctorByLocation($location_id, $account_id)
     {
 
         /*
@@ -338,12 +332,12 @@ class LocationsWidget
          */
 
         // 1)
-        $doctors = DoctorHasLocations::where(['location_id' => Locations::where(array(
+        $doctors = DoctorHasLocations::where(['location_id' => Locations::where([
             'slug' => 'all',
-            'account_id' => $account_id
-        ))->select('id')->first()->id])->select('user_id')->get();
+            'account_id' => $account_id,
+        ])->select('id')->first()->id])->select('user_id')->get();
 
-        $doctor_array = array();
+        $doctor_array = [];
 
         if ($doctors->count()) {
             foreach ($doctors as $doctor) {
@@ -353,15 +347,15 @@ class LocationsWidget
 
         // 2)
         $location = Locations::find($location_id);
-        $regionLocation = Locations::where(array(
+        $regionLocation = Locations::where([
             'slug' => 'region',
-            'region_id' => $location->region_id
-        ))->select('id')->first();
+            'region_id' => $location->region_id,
+        ])->select('id')->first();
 
-        $doctors = DoctorHasLocations::where(['location_id' => Locations::where(array(
+        $doctors = DoctorHasLocations::where(['location_id' => Locations::where([
             'slug' => 'region',
-            'region_id' => $location->region_id
-        ))->select('id')->first()?->id])->select('user_id')->get();
+            'region_id' => $location->region_id,
+        ])->select('id')->first()?->id])->select('user_id')->get();
 
         if ($doctors->count()) {
             foreach ($doctors as $doctor) {
@@ -388,7 +382,7 @@ class LocationsWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadAppointmentServiceByLocation($location_id, $account_id)
+    public static function loadAppointmentServiceByLocation($location_id, $account_id)
     {
 
         /*
@@ -399,12 +393,12 @@ class LocationsWidget
          */
 
         // 1)
-        $doctors = DoctorHasLocations::where(['location_id' => Locations::where(array(
+        $doctors = DoctorHasLocations::where(['location_id' => Locations::where([
             'slug' => 'all',
-            'account_id' => $account_id
-        ))->select('id')->first()->id])->select('user_id')->get();
+            'account_id' => $account_id,
+        ])->select('id')->first()->id])->select('user_id')->get();
 
-        $doctor_array = array();
+        $doctor_array = [];
 
         if ($doctors->count()) {
             foreach ($doctors as $doctor) {
@@ -414,15 +408,15 @@ class LocationsWidget
 
         // 2)
         $location = Locations::find($location_id);
-        $regionLocation = Locations::where(array(
+        $regionLocation = Locations::where([
             'slug' => 'region',
-            'region_id' => $location->region_id
-        ))->select('id')->first();
+            'region_id' => $location->region_id,
+        ])->select('id')->first();
 
-        $doctors = DoctorHasLocations::where(['location_id' => Locations::where(array(
+        $doctors = DoctorHasLocations::where(['location_id' => Locations::where([
             'slug' => 'region',
-            'region_id' => $location->region_id
-        ))->select('id')->first()->id])->select('user_id')->get();
+            'region_id' => $location->region_id,
+        ])->select('id')->first()->id])->select('user_id')->get();
 
         if ($doctors->count()) {
             foreach ($doctors as $doctor) {
@@ -443,8 +437,7 @@ class LocationsWidget
         return $doctors;
     }
 
-
-    static public function findRoot($service_id, $data)
+    public static function findRoot($service_id, $data)
     {
         if ($data[$service_id]['parent_id'] == '0') {
             return $service_id;
@@ -453,8 +446,7 @@ class LocationsWidget
         }
     }
 
-
-    static public function findParent($service_id, $data)
+    public static function findParent($service_id, $data)
     {
         if ($data[$service_id]['end_node'] == '0') {
             return $service_id;
@@ -463,12 +455,13 @@ class LocationsWidget
         }
     }
 
-    static public function findServiceParents($service_id, $data, $parents = array())
+    public static function findServiceParents($service_id, $data, $parents = [])
     {
         if (isset($data[$service_id]['parent_id']) && $data[$service_id]['parent_id'] == '0') {
             if ($data[$service_id]['end_node'] == '0') {
                 $parents[] = $data[$service_id]['id'];
             }
+
             return $parents;
         } else {
             if (isset($data[$service_id]['end_node']) && $data[$service_id]['end_node'] == '0') {
@@ -480,10 +473,10 @@ class LocationsWidget
         }
     }
 
-    static public function findNestedServicesEndNodes($data, $nodes = array())
+    public static function findNestedServicesEndNodes($data, $nodes = [])
     {
-        foreach($data as $node) {
-            if((isset($node['children']) && sizeof($node['children']))) {
+        foreach ($data as $node) {
+            if ((isset($node['children']) && count($node['children']))) {
                 $nodes = array_unique(array_merge($nodes, self::findNestedServicesEndNodes($node['children'], $nodes)));
             } else {
                 if ($node['end_node'] == '1') {
@@ -491,33 +484,35 @@ class LocationsWidget
                 }
             }
         }
+
         return $nodes;
     }
 
-    static function getNestedServicesByID($service_id, $data) {
-        $nested = array();
+    public static function getNestedServicesByID($service_id, $data)
+    {
+        $nested = [];
 
-        foreach ( $data as &$s ) {
+        foreach ($data as &$s) {
             if ($s['id'] == $service_id) {
                 // no parent_id so we put it in the root of the array
                 $nested[$s['id']] = &$s;
 
-                if($s['end_node'] == '0') {
-                    $nested[$s['id']]['children'] = array();
+                if ($s['end_node'] == '0') {
+                    $nested[$s['id']]['children'] = [];
                 }
             } else {
                 $pid = $s['parent_id'];
                 $id = $s['id'];
-                if ( isset($data[$pid]) ) {
+                if (isset($data[$pid])) {
                     // If the parent ID exists in the source array
                     // we add it to the 'children' array of the parent after initializing it.
 
-                    if ( $data[$id]['end_node'] == '0' && !isset($data[$id]['children']) ) {
-                        $data[$id]['children'] = array();
+                    if ($data[$id]['end_node'] == '0' && ! isset($data[$id]['children'])) {
+                        $data[$id]['children'] = [];
                     }
 
-                    if ( !isset($data[$pid]['children']) ) {
-                        $data[$pid]['children'] = array();
+                    if (! isset($data[$pid]['children'])) {
+                        $data[$pid]['children'] = [];
                     }
 
                     $data[$pid]['children'][$s['id']] = &$s;
@@ -528,31 +523,31 @@ class LocationsWidget
         return $nested;
     }
 
-    static function buildNestedServices($data) {
-        $nested = array();
+    public static function buildNestedServices($data)
+    {
+        $nested = [];
 
-        foreach ( $data as &$s ) {
+        foreach ($data as &$s) {
             if ($s['parent_id'] == '0') {
                 // no parent_id so we put it in the root of the array
                 $nested[$s['id']] = &$s;
 
-                if($s['end_node'] == '0') {
-                    $nested[$s['id']]['children'] = array();
+                if ($s['end_node'] == '0') {
+                    $nested[$s['id']]['children'] = [];
                 }
-            }
-            else {
+            } else {
                 $pid = $s['parent_id'];
                 $id = $s['id'];
-                if ( isset($data[$pid]) ) {
+                if (isset($data[$pid])) {
                     // If the parent ID exists in the source array
                     // we add it to the 'children' array of the parent after initializing it.
 
-                    if ( $data[$id]['end_node'] == '0' && !isset($data[$id]['children']) ) {
-                        $data[$id]['children'] = array();
+                    if ($data[$id]['end_node'] == '0' && ! isset($data[$id]['children'])) {
+                        $data[$id]['children'] = [];
                     }
 
-                    if ( !isset($data[$pid]['children']) ) {
-                        $data[$pid]['children'] = array();
+                    if (! isset($data[$pid]['children'])) {
+                        $data[$pid]['children'] = [];
                     }
 
                     $data[$pid]['children'][$s['id']] = &$s;
@@ -569,14 +564,14 @@ class LocationsWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static public function getRootServiceGroup($service_id, $account_id)
+    public static function getRootServiceGroup($service_id, $account_id)
     {
         $service_id = 14;
 
-        $services = Services::where(array(
+        $services = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($services->count()) {
             $services = $services->toArray();
@@ -589,40 +584,40 @@ class LocationsWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadAppointmentServiceByLocationDoctor($location_id, $doctor_id, $account_id, $reverse_process = false)
+    public static function loadAppointmentServiceByLocationDoctor($location_id, $doctor_id, $account_id, $reverse_process = false)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
         // Locaton Based Services Array
-        $location_services_array = array();
-        $services = ServiceHasLocations::join('services','services.id', '=', 'service_has_locations.service_id')
+        $location_services_array = [];
+        $services = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
             ->where([
-            'service_has_locations.service_id' => Services::where(array(
-                'slug' => 'all',
-                'account_id' => $account_id
-            ))->select('id')->first()->id,
-            'service_has_locations.location_id' => $location_id
-        ])->get();
-        
+                'service_has_locations.service_id' => Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'service_has_locations.location_id' => $location_id,
+            ])->get();
+
         if ($services->count()) {
-            
-            $ss = Services::where(array(
+
+            $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
                 'parent_id' => '0',
                 'active' => 1,
-            ))->select('id')->get();
+            ])->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
-                    if($reverse_process) {
+                    if ($reverse_process) {
                         $location_services_array = array_unique(
                             array_merge(
                                 $location_services_array,
@@ -639,16 +634,15 @@ class LocationsWidget
                 }
             }
         } else {
-            $centreServices = ServiceHasLocations
-                ::join('services', 'services.id', '=', 'service_has_locations.service_id')
-            ->where(array(
-                'service_has_locations.account_id' => $account_id,
-                'service_has_locations.location_id' => $location_id,
-            ))->get();
+            $centreServices = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
+                ->where([
+                    'service_has_locations.account_id' => $account_id,
+                    'service_has_locations.location_id' => $location_id,
+                ])->get();
 
             if ($centreServices->count()) {
                 foreach ($centreServices as $centreService) {
-                    if($reverse_process) {
+                    if ($reverse_process) {
                         $location_services_array = array_unique(
                             array_merge(
                                 $location_services_array,
@@ -661,7 +655,7 @@ class LocationsWidget
                         );
                     } else {
                         $rootService = self::findRoot($centreService->service_id, $searchServices);
-                        if (!in_array($rootService, $location_services_array)) {
+                        if (! in_array($rootService, $location_services_array)) {
                             $location_services_array[] = $rootService;
                         }
                     }
@@ -669,41 +663,40 @@ class LocationsWidget
             }
         }
 
-
         /*
          * Doctor Based Services Array
          */
-        $doctor_services_array = array();
+        $doctor_services_array = [];
 
         // 1. Find All Centres
         $rootlocation = DoctorHasLocations::where([
-            'location_id' => Locations::where(array(
+            'location_id' => Locations::where([
                 'slug' => 'all',
-                'account_id' => $account_id
-            ))->select('id')->first()->id,
-            'user_id' => $doctor_id
+                'account_id' => $account_id,
+            ])->select('id')->first()->id,
+            'user_id' => $doctor_id,
         ])->get();
 
         if ($rootlocation->count()) {
             //      Find All Services
             $rootservice = DoctorHasLocations::where([
-                'service_id' => Services::where(array(
+                'service_id' => Services::where([
                     'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'user_id' => $doctor_id
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'user_id' => $doctor_id,
             ])->get();
 
             if ($rootservice->count()) {
-                $ss = Services::where(array(
+                $ss = Services::where([
                     'slug' => 'custom',
                     'account_id' => $account_id,
                     'parent_id' => '0',
-                ))->select('id')->get();
+                ])->select('id')->get();
 
                 if ($ss->count()) {
                     foreach ($ss as $service) {
-                        if($reverse_process) {
+                        if ($reverse_process) {
                             $doctor_services_array = array_unique(
                                 array_merge(
                                     $doctor_services_array,
@@ -727,7 +720,7 @@ class LocationsWidget
 
                 if ($doctorservices->count()) {
                     foreach ($doctorservices as $doctorservice) {
-                        if($reverse_process) {
+                        if ($reverse_process) {
                             $doctor_services_array = array_unique(
                                 array_merge(
                                     $doctor_services_array,
@@ -740,7 +733,7 @@ class LocationsWidget
                             );
                         } else {
                             $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                            if (!in_array($rootService, $doctor_services_array)) {
+                            if (! in_array($rootService, $doctor_services_array)) {
                                 $doctor_services_array[] = $rootService;
                             }
                         }
@@ -750,47 +743,47 @@ class LocationsWidget
         } else {
             // 2. Find All Regions
             $singleLocation = Locations::find($location_id);
-            $location_count=Locations::where(array('slug' => 'region', 'account_id' => $account_id,'region_id' => $singleLocation->region_id))->count();
-            if($location_count){
+            $location_count = Locations::where(['slug' => 'region', 'account_id' => $account_id, 'region_id' => $singleLocation->region_id])->count();
+            if ($location_count) {
                 $regionlocation = DoctorHasLocations::where([
-                    'location_id' => Locations::where(array(
+                    'location_id' => Locations::where([
                         'slug' => 'region',
                         'account_id' => $account_id,
                         'region_id' => $singleLocation->region_id,
-                    ))->select('id')->first()->id,
-                    'user_id' => $doctor_id
+                    ])->select('id')->first()->id,
+                    'user_id' => $doctor_id,
                 ])->get();
-            }else{
+            } else {
                 $regionlocation = DoctorHasLocations::where([
-                    'location_id' => Locations::where(array(
+                    'location_id' => Locations::where([
                         'slug' => 'region',
                         'account_id' => $account_id,
                         'region_id' => null,
-                    ))->select('id')->first(),
-                    'user_id' => $doctor_id
+                    ])->select('id')->first(),
+                    'user_id' => $doctor_id,
                 ])->get();
             }
 
             if ($regionlocation->count()) {
                 //      Find All Services
                 $rootservice = DoctorHasLocations::where([
-                    'service_id' => Services::where(array(
+                    'service_id' => Services::where([
                         'slug' => 'all',
-                        'account_id' => $account_id
-                    ))->select('id')->first()->id,
-                    'user_id' => $doctor_id
+                        'account_id' => $account_id,
+                    ])->select('id')->first()->id,
+                    'user_id' => $doctor_id,
                 ])->get();
 
                 if ($rootservice->count()) {
-                    $ss = Services::where(array(
+                    $ss = Services::where([
                         'slug' => 'custom',
                         'account_id' => $account_id,
                         'parent_id' => '0',
-                    ))->select('id')->get();
+                    ])->select('id')->get();
 
                     if ($ss->count()) {
                         foreach ($ss as $service) {
-                            if($reverse_process) {
+                            if ($reverse_process) {
                                 $doctor_services_array = array_unique(
                                     array_merge(
                                         $doctor_services_array,
@@ -814,7 +807,7 @@ class LocationsWidget
 
                     if ($doctorservices->count()) {
                         foreach ($doctorservices as $doctorservice) {
-                            if($reverse_process) {
+                            if ($reverse_process) {
                                 $doctor_services_array = array_unique(
                                     array_merge(
                                         $doctor_services_array,
@@ -827,7 +820,7 @@ class LocationsWidget
                                 );
                             } else {
                                 $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                                if (!in_array($rootService, $doctor_services_array)) {
+                                if (! in_array($rootService, $doctor_services_array)) {
                                     $doctor_services_array[] = $rootService;
                                 }
                             }
@@ -844,24 +837,24 @@ class LocationsWidget
                 if ($singlelocation->count()) {
                     //      Find All Services
                     $rootservice = DoctorHasLocations::where([
-                        'service_id' => Services::where(array(
+                        'service_id' => Services::where([
                             'slug' => 'all',
-                            'account_id' => $account_id
-                        ))->select('id')->first()->id,
+                            'account_id' => $account_id,
+                        ])->select('id')->first()->id,
                         'user_id' => $doctor_id,
                         'location_id' => $location_id,
                     ])->get();
 
                     if ($rootservice->count()) {
-                        $ss = Services::where(array(
+                        $ss = Services::where([
                             'slug' => 'custom',
                             'account_id' => $account_id,
                             'parent_id' => '0',
-                        ))->select('id')->get();
+                        ])->select('id')->get();
 
                         if ($ss->count()) {
                             foreach ($ss as $service) {
-                                if($reverse_process) {
+                                if ($reverse_process) {
                                     $doctor_services_array = array_unique(
                                         array_merge(
                                             $doctor_services_array,
@@ -886,7 +879,7 @@ class LocationsWidget
 
                         if ($doctorservices->count()) {
                             foreach ($doctorservices as $doctorservice) {
-                                if($reverse_process) {
+                                if ($reverse_process) {
                                     $doctor_services_array = array_unique(
                                         array_merge(
                                             $doctor_services_array,
@@ -899,7 +892,7 @@ class LocationsWidget
                                     );
                                 } else {
                                     $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                                    if (!in_array($rootService, $doctor_services_array)) {
+                                    if (! in_array($rootService, $doctor_services_array)) {
                                         $doctor_services_array[] = $rootService;
                                     }
                                 }
@@ -910,12 +903,11 @@ class LocationsWidget
             }
         }
 
-
         if (count($location_services_array) && count($doctor_services_array)) {
             return array_intersect($location_services_array, $doctor_services_array);
         }
 
-        return array();
+        return [];
     }
 
     /*
@@ -924,33 +916,33 @@ class LocationsWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadEndServiceByLocation($location_id, $account_id)
+    public static function loadEndServiceByLocation($location_id, $account_id)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
         // Locaton Based Services Array
-        $location_services_array = array();
+        $location_services_array = [];
         $services = ServiceHasLocations::where([
-            'service_id' => Services::where(array(
+            'service_id' => Services::where([
                 'slug' => 'all',
-                'account_id' => $account_id
-            ))->select('id')->first()->id,
-            'location_id' => $location_id
+                'account_id' => $account_id,
+            ])->select('id')->first()->id,
+            'location_id' => $location_id,
         ])->get();
 
         if ($services->count()) {
-            $ss = Services::where(array(
+            $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
                 'parent_id' => '0',
-            ))->select('id')->get();
+            ])->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -967,10 +959,10 @@ class LocationsWidget
                 }
             }
         } else {
-            $centreServices = ServiceHasLocations::where(array(
+            $centreServices = ServiceHasLocations::where([
                 'account_id' => $account_id,
                 'location_id' => $location_id,
-            ))->get();
+            ])->get();
 
             if ($centreServices->count()) {
                 foreach ($centreServices as $centreService) {
@@ -997,43 +989,42 @@ class LocationsWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadAppointmentServiceByLocationResource($resource_id, $account_id)
+    public static function loadAppointmentServiceByLocationResource($resource_id, $account_id)
     {
         /*First that use to return resource assign service I (Bilal) shift that function in machine type assign services */
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
             'active' => 1,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
         }
 
-        $resource_machine_type_services_array = array();
+        $resource_machine_type_services_array = [];
         //      Find All Services
 
         $resoruce_info = Resources::find($resource_id);
 
         $machinetype = MachineType::find($resoruce_info->machine_type_id);
 
-        $rootservice = MachineTypeHasServices
-            ::join('services','services.id','=','machine_type_has_services.service_id')
+        $rootservice = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
             ->where([
-            'machine_type_has_services.service_id' => Services::where(array(
-                'slug' => 'all',
-                'account_id' => $account_id
-            ))->select('id')->first()->id,
-            'services.active' => 1,
-            'machine_type_has_services.machine_type_id' => $machinetype->id,
-        ])->get();
+                'machine_type_has_services.service_id' => Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'services.active' => 1,
+                'machine_type_has_services.machine_type_id' => $machinetype->id,
+            ])->get();
 
         if ($rootservice->count()) {
-            $ss = Services::where(array(
+            $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
                 'parent_id' => '0',
-                'active' => 1
-            ))->select('id')->get();
+                'active' => 1,
+            ])->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -1042,8 +1033,7 @@ class LocationsWidget
             }
         } else {
             //      Find Allocated Services
-            $machineervices = MachineTypeHasServices
-                ::join('services','services.id','=','machine_type_has_services.service_id')
+            $machineervices = MachineTypeHasServices::join('services', 'services.id', '=', 'machine_type_has_services.service_id')
                 ->where([
                     'machine_type_has_services.machine_type_id' => $machinetype->id,
                     'services.active' => 1,
@@ -1053,7 +1043,7 @@ class LocationsWidget
             if ($machineervices->count()) {
                 foreach ($machineervices as $resourceservice) {
                     $rootService = self::findRoot($resourceservice->service_id, $searchServices);
-                    if (!in_array($rootService, $resource_machine_type_services_array)) {
+                    if (! in_array($rootService, $resource_machine_type_services_array)) {
                         $resource_machine_type_services_array[] = $rootService;
                     }
                 }

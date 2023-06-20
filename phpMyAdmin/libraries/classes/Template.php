@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
+use function __;
+use const E_USER_WARNING;
+use function is_array;
 use PhpMyAdmin\Twig\AssetExtension;
 use PhpMyAdmin\Twig\CoreExtension;
 use PhpMyAdmin\Twig\Extensions\Node\TransNode;
@@ -18,7 +21,9 @@ use PhpMyAdmin\Twig\TransformationsExtension;
 use PhpMyAdmin\Twig\UrlExtension;
 use PhpMyAdmin\Twig\UtilExtension;
 use RuntimeException;
+use function sprintf;
 use Throwable;
+use function trigger_error;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -27,13 +32,6 @@ use Twig\Extension\DebugExtension;
 use Twig\Loader\FilesystemLoader;
 use Twig\RuntimeLoader\ContainerRuntimeLoader;
 use Twig\TemplateWrapper;
-
-use function __;
-use function is_array;
-use function sprintf;
-use function trigger_error;
-
-use const E_USER_WARNING;
 
 /**
  * Handle front end templating
@@ -47,7 +45,7 @@ class Template
      */
     protected static $twig;
 
-    public const TEMPLATES_FOLDER = ROOT_PATH . 'templates';
+    public const TEMPLATES_FOLDER = ROOT_PATH.'templates';
 
     public function __construct()
     {
@@ -111,7 +109,7 @@ class Template
     /**
      * Loads a template.
      *
-     * @param string $templateName Template path name
+     * @param  string  $templateName Template path name
      *
      * @throws LoaderError
      * @throws RuntimeError
@@ -120,11 +118,11 @@ class Template
     private function load(string $templateName): TemplateWrapper
     {
         try {
-            $template = static::$twig->load($templateName . '.twig');
+            $template = static::$twig->load($templateName.'.twig');
         } catch (RuntimeException $e) {
             /* Retry with disabled cache */
             static::$twig->setCache(false);
-            $template = static::$twig->load($templateName . '.twig');
+            $template = static::$twig->load($templateName.'.twig');
             /*
              * The trigger error is intentionally after second load
              * to avoid triggering error when disabling cache does not
@@ -143,8 +141,8 @@ class Template
     }
 
     /**
-     * @param string $template Template path name
-     * @param array  $data     Associative array of template variables
+     * @param  string  $template Template path name
+     * @param  array  $data     Associative array of template variables
      *
      * @throws Throwable
      * @throws LoaderError

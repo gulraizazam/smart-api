@@ -7,12 +7,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins;
 
+use function __;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyMainGroup;
 use PhpMyAdmin\Properties\Options\Items\BoolPropertyItem;
 use PhpMyAdmin\Properties\Plugins\PluginPropertyItem;
 use PhpMyAdmin\Properties\Plugins\SchemaPluginProperties;
-
-use function __;
 
 /**
  * Provides a common interface that will have to be implemented by all of the
@@ -60,14 +59,14 @@ abstract class SchemaPlugin implements Plugin
     /**
      * Exports the schema into the specified format.
      *
-     * @param string $db database name
+     * @param  string  $db database name
      */
     abstract public function exportSchema($db): bool;
 
     /**
      * Adds export options common to all plugins.
      *
-     * @param OptionsPropertyMainGroup $propertyGroup property group
+     * @param  OptionsPropertyMainGroup  $propertyGroup property group
      */
     protected function addCommonOptions(OptionsPropertyMainGroup $propertyGroup): void
     {

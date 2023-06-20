@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Transformation;
 
+use function array_keys;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
-
-use function array_keys;
 
 /**
  * Lists available transformation plugins
@@ -49,7 +48,7 @@ class OverviewController extends AbstractController
             foreach ($types[$type] as $key => $transformation) {
                 $transformations[$type][] = [
                     'name' => $transformation,
-                    'description' => $this->transformations->getDescription($types[$type . '_file'][$key]),
+                    'description' => $this->transformations->getDescription($types[$type.'_file'][$key]),
                 ];
             }
         }
