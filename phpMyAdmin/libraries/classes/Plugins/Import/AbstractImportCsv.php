@@ -7,12 +7,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Import;
 
+use function __;
 use PhpMyAdmin\Plugins\ImportPlugin;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyMainGroup;
 use PhpMyAdmin\Properties\Options\Items\BoolPropertyItem;
 use PhpMyAdmin\Properties\Options\Items\TextPropertyItem;
-
-use function __;
 
 /**
  * Super class of the import plugins for the CSV format

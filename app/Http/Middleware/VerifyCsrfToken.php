@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
 use Illuminate\Session\TokenMismatchException;
-use Illuminate\Http\Request;
 
 class VerifyCsrfToken extends Middleware
 {
@@ -15,12 +14,12 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        '/api/*'
+        '/api/*',
     ];
 
     public function handle($request, Closure $next)
     {
-        if ($request->hasHeader('Authorization')){
+        if ($request->hasHeader('Authorization')) {
             return $next($request);
         }
         if (

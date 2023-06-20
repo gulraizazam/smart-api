@@ -15,9 +15,9 @@ class CreateCustomFormFeedbacksTable extends Migration
     {
         Schema::create('custom_form_feedbacks', function (Blueprint $table) {
             $table->id();
-            $table->text("form_name")->nullable();
-            $table->text("form_description")->nullable();
-            $table->text("content")->nullable();
+            $table->text('form_name')->nullable();
+            $table->text('form_description')->nullable();
+            $table->text('content')->nullable();
             $table->unsignedBigInteger('custom_form_id');
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->unsignedBigInteger('account_id');

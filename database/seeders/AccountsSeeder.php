@@ -18,7 +18,7 @@ class AccountsSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         Accounts::truncate();
-        if (!Accounts::where('email', 'care@smartaesthetics.pk')->exists()) {
+        if (! Accounts::where('email', 'care@smartaesthetics.pk')->exists()) {
             Accounts::create([
                 'name' => 'Smart Aesthetics',
                 'email' => 'care@smartaesthetics.pk',

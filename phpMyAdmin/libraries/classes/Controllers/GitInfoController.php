@@ -9,7 +9,6 @@ use PhpMyAdmin\Git;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Util;
-
 use function strtotime;
 
 final class GitInfoController extends AbstractController

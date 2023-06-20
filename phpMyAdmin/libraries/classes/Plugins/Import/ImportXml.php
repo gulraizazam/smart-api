@@ -9,25 +9,23 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Import;
 
+use function __;
+use function count;
+use function in_array;
+use const LIBXML_COMPACT;
+use function libxml_disable_entity_loader;
+use const PHP_VERSION_ID;
 use PhpMyAdmin\File;
 use PhpMyAdmin\Import;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\Plugins\ImportPlugin;
 use PhpMyAdmin\Properties\Plugins\ImportPluginProperties;
 use PhpMyAdmin\Util;
-use SimpleXMLElement;
-
-use function __;
-use function count;
-use function in_array;
-use function libxml_disable_entity_loader;
 use function simplexml_load_string;
+use SimpleXMLElement;
 use function str_replace;
 use function strcmp;
 use function strlen;
-
-use const LIBXML_COMPACT;
-use const PHP_VERSION_ID;
 
 /**
  * Handles the import for the XML format
@@ -56,7 +54,7 @@ class ImportXml extends ImportPlugin
     /**
      * Handles the whole import logic
      *
-     * @param array $sql_data 2-element array with sql data
+     * @param  array  $sql_data 2-element array with sql data
      */
     public function doImport(?File $importHandle = null, array &$sql_data = []): void
     {
@@ -203,7 +201,7 @@ class ImportXml extends ImportPlugin
                      *          into another database.
                      */
                     $attrs = $val2->attributes();
-                    $create[] = 'USE ' . Util::backquote((string) $attrs['name']);
+                    $create[] = 'USE '.Util::backquote((string) $attrs['name']);
 
                     foreach ($val2 as $val3) {
                         /**
@@ -241,7 +239,7 @@ class ImportXml extends ImportPlugin
 
                 $isInTables = false;
                 $num_tables = count($tables);
-                for ($i = 0; $i < $num_tables; ++$i) {
+                for ($i = 0; $i < $num_tables; $i++) {
                     if (! strcmp($tables[$i][Import::TBL_NAME], (string) $tbl_attr['name'])) {
                         $isInTables = true;
                         break;
@@ -278,9 +276,9 @@ class ImportXml extends ImportPlugin
              * Bring accumulated rows into the corresponding table
              */
             $num_tables = count($tables);
-            for ($i = 0; $i < $num_tables; ++$i) {
+            for ($i = 0; $i < $num_tables; $i++) {
                 $num_rows = count($rows);
-                for ($j = 0; $j < $num_rows; ++$j) {
+                for ($j = 0; $j < $num_rows; $j++) {
                     if (strcmp($tables[$i][Import::TBL_NAME], $rows[$j][Import::TBL_NAME])) {
                         continue;
                     }
@@ -299,7 +297,7 @@ class ImportXml extends ImportPlugin
                 $analyses = [];
 
                 $len = count($tables);
-                for ($i = 0; $i < $len; ++$i) {
+                for ($i = 0; $i < $len; $i++) {
                     $analyses[] = $this->import->analyzeTable($tables[$i]);
                 }
             }

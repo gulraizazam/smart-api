@@ -8,7 +8,6 @@ use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Http\ServerRequest;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
-
 use const SQL_DIR;
 
 /**

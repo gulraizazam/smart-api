@@ -15,9 +15,8 @@ final class Gis
     /**
      * Converts GIS data to Well Known Text format
      *
-     * @param string $data        GIS data
-     * @param bool   $includeSRID Add SRID to the WKT
-     *
+     * @param  string  $data        GIS data
+     * @param  bool  $includeSRID Add SRID to the WKT
      * @return string GIS data in Well Know Text format
      */
     public static function convertToWellKnownText($data, $includeSRID = false): string
@@ -39,9 +38,9 @@ final class Gis
             $axisOrder = ', \'axis-order=long-lat\'';
         }
 
-        $wktsql = 'SELECT ' . $spatialAsText . "(x'" . $hex . "'" . $axisOrder . ')';
+        $wktsql = 'SELECT '.$spatialAsText."(x'".$hex."'".$axisOrder.')';
         if ($includeSRID) {
-            $wktsql .= ', ' . $spatialSrid . "(x'" . $hex . "')";
+            $wktsql .= ', '.$spatialSrid."(x'".$hex."')";
         }
 
         $wktresult = $dbi->tryQuery($wktsql);
@@ -54,7 +53,7 @@ final class Gis
 
         if ($includeSRID) {
             $srid = $wktarr[1] ?? null;
-            $wktval = "'" . $wktval . "'," . $srid;
+            $wktval = "'".$wktval."',".$srid;
         }
 
         return $wktval;
@@ -63,8 +62,7 @@ final class Gis
     /**
      * Return GIS data types
      *
-     * @param bool $upperCase whether to return values in upper case
-     *
+     * @param  bool  $upperCase whether to return values in upper case
      * @return string[] GIS data types
      */
     public static function getDataTypes($upperCase = false): array
@@ -89,9 +87,8 @@ final class Gis
     /**
      * Generates GIS data based on the string passed.
      *
-     * @param string $gisString    GIS string
-     * @param int    $mysqlVersion The mysql version as int
-     *
+     * @param  string  $gisString    GIS string
+     * @param  int  $mysqlVersion The mysql version as int
      * @return string GIS data enclosed in 'ST_GeomFromText' or 'GeomFromText' function
      */
     public static function createData($gisString, $mysqlVersion)
@@ -99,12 +96,12 @@ final class Gis
         $geomFromText = $mysqlVersion >= 50600 ? 'ST_GeomFromText' : 'GeomFromText';
         $gisString = trim($gisString);
         $geomTypes = '(POINT|MULTIPOINT|LINESTRING|MULTILINESTRING|POLYGON|MULTIPOLYGON|GEOMETRYCOLLECTION)';
-        if (preg_match("/^'" . $geomTypes . "\(.*\)',[0-9]*$/i", $gisString)) {
-            return $geomFromText . '(' . $gisString . ')';
+        if (preg_match("/^'".$geomTypes."\(.*\)',[0-9]*$/i", $gisString)) {
+            return $geomFromText.'('.$gisString.')';
         }
 
-        if (preg_match('/^' . $geomTypes . '\(.*\)$/i', $gisString)) {
-            return $geomFromText . "('" . $gisString . "')";
+        if (preg_match('/^'.$geomTypes.'\(.*\)$/i', $gisString)) {
+            return $geomFromText."('".$gisString."')";
         }
 
         return $gisString;
@@ -114,13 +111,12 @@ final class Gis
      * Returns the names and details of the functions
      * that can be applied on geometry data types.
      *
-     * @param string $geomType if provided the output is limited to the functions
+     * @param  string  $geomType if provided the output is limited to the functions
      *                          that are applicable to the provided geometry type.
-     * @param bool   $binary   if set to false functions that take two geometries
+     * @param  bool  $binary   if set to false functions that take two geometries
      *                         as arguments will not be included.
-     * @param bool   $display  if set to true separators will be added to the
+     * @param  bool  $display  if set to true separators will be added to the
      *                         output array.
-     *
      * @return array<int|string,array<string,int|string>> names and details of the functions that can be applied on
      *                                                    geometry data types.
      */
@@ -252,35 +248,35 @@ final class Gis
                 $spatialPrefix = 'ST_';
             }
 
-            $funcs[$spatialPrefix . 'Crosses'] = [
+            $funcs[$spatialPrefix.'Crosses'] = [
                 'params' => 2,
                 'type' => 'int',
             ];
-            $funcs[$spatialPrefix . 'Contains'] = [
+            $funcs[$spatialPrefix.'Contains'] = [
                 'params' => 2,
                 'type' => 'int',
             ];
-            $funcs[$spatialPrefix . 'Disjoint'] = [
+            $funcs[$spatialPrefix.'Disjoint'] = [
                 'params' => 2,
                 'type' => 'int',
             ];
-            $funcs[$spatialPrefix . 'Equals'] = [
+            $funcs[$spatialPrefix.'Equals'] = [
                 'params' => 2,
                 'type' => 'int',
             ];
-            $funcs[$spatialPrefix . 'Intersects'] = [
+            $funcs[$spatialPrefix.'Intersects'] = [
                 'params' => 2,
                 'type' => 'int',
             ];
-            $funcs[$spatialPrefix . 'Overlaps'] = [
+            $funcs[$spatialPrefix.'Overlaps'] = [
                 'params' => 2,
                 'type' => 'int',
             ];
-            $funcs[$spatialPrefix . 'Touches'] = [
+            $funcs[$spatialPrefix.'Touches'] = [
                 'params' => 2,
                 'type' => 'int',
             ];
-            $funcs[$spatialPrefix . 'Within'] = [
+            $funcs[$spatialPrefix.'Within'] = [
                 'params' => 2,
                 'type' => 'int',
             ];

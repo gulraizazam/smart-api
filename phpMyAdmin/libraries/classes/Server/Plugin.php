@@ -52,19 +52,19 @@ final class Plugin
     private $authVersion;
 
     /**
-     * @param string      $name           Name of the plugin
-     * @param string|null $version        Version from the plugin's general type descriptor
-     * @param string      $status         Plugin status
-     * @param string      $type           Type of plugin
-     * @param string|null $typeVersion    Version from the plugin's type-specific descriptor
-     * @param string|null $library        Plugin's shared object file name
-     * @param string|null $libraryVersion Version from the plugin's API interface
-     * @param string|null $author         Author of the plugin
-     * @param string|null $description    Description
-     * @param string      $license        Plugin's licence
-     * @param string|null $loadOption     How the plugin was loaded
-     * @param string|null $maturity       Plugin's maturity level
-     * @param string|null $authVersion    Plugin's version as determined by the plugin author
+     * @param  string  $name           Name of the plugin
+     * @param  string|null  $version        Version from the plugin's general type descriptor
+     * @param  string  $status         Plugin status
+     * @param  string  $type           Type of plugin
+     * @param  string|null  $typeVersion    Version from the plugin's type-specific descriptor
+     * @param  string|null  $library        Plugin's shared object file name
+     * @param  string|null  $libraryVersion Version from the plugin's API interface
+     * @param  string|null  $author         Author of the plugin
+     * @param  string|null  $description    Description
+     * @param  string  $license        Plugin's licence
+     * @param  string|null  $loadOption     How the plugin was loaded
+     * @param  string|null  $maturity       Plugin's maturity level
+     * @param  string|null  $authVersion    Plugin's version as determined by the plugin author
      */
     private function __construct(
         string $name,
@@ -97,7 +97,7 @@ final class Plugin
     }
 
     /**
-     * @param array $state array with the properties
+     * @param  array  $state array with the properties
      */
     public static function fromState(array $state): self
     {
@@ -118,9 +118,6 @@ final class Plugin
         );
     }
 
-    /**
-     * @return array
-     */
     public function toArray(): array
     {
         return [

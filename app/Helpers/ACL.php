@@ -9,10 +9,10 @@
 namespace App\Helpers;
 
 use App\Models\Cities;
+use App\Models\DoctorHasLocations;
 use App\Models\Locations;
 use App\Models\Regions;
 use App\Models\User;
-use App\Models\DoctorHasLocations;
 use Auth;
 use Config;
 
@@ -23,7 +23,7 @@ class ACL
      * @param: (void)
      * @return: (array)
      */
-    static function getUserCentres()
+    public static function getUserCentres()
     {
         if (Auth::user()->id == 1) {
             $locations = Locations::whereActive(1)->get()->pluck('id');
@@ -31,14 +31,14 @@ class ACL
             if (Auth::user()->user_type_id == Config::get('constants.practitioner_id')) {
                 $locations = DoctorHasLocations::where('user_id', '=', Auth::user()->id)->groupBy('location_id')->get()->pluck('location_id');
             } else {
-                $locations = Auth::user()->user_has_locations()->pluck("location_id");
+                $locations = Auth::user()->user_has_locations()->pluck('location_id');
             }
         }
         if ($locations) {
             return $locations->toArray();
         }
 
-        return array();
+        return [];
     }
 
     /*
@@ -46,12 +46,12 @@ class ACL
      * @param: (void)
      * @return: (array)
      */
-    static function getUserRegions()
+    public static function getUserRegions()
     {
         if (Auth::user()->id == 1) {
             $regions = Regions::where('account_id', '=', Auth::User()->account_id)->pluck('id');
         } else {
-            $regions = Regions::whereIn('id', Cities::getActiveOnly(ACL::getUserCities(), Auth::User()->account_id)->pluck("region_id"))
+            $regions = Regions::whereIn('id', Cities::getActiveOnly(ACL::getUserCities(), Auth::User()->account_id)->pluck('region_id'))
                 ->where('account_id', '=', Auth::User()->account_id)
                 ->get()->pluck('id');
         }
@@ -60,7 +60,7 @@ class ACL
             return $regions->toArray();
         }
 
-        return array();
+        return [];
     }
 
     /*
@@ -68,7 +68,7 @@ class ACL
      * @param: (void)
      * @return: (array)
      */
-    static function getUserCities()
+    public static function getUserCities()
     {
         if (Auth::user()->id == 1) {
             $cities = Cities::where('account_id', '=', Auth::User()->account_id)->pluck('id');
@@ -79,7 +79,7 @@ class ACL
                     ->where('account_id', '=', Auth::User()->account_id)
                     ->get()->pluck('city_id');
             } else {
-                $cities = Locations::whereIn('id', Auth::user()->user_has_locations()->pluck("location_id"))
+                $cities = Locations::whereIn('id', Auth::user()->user_has_locations()->pluck('location_id'))
                     ->where('account_id', '=', Auth::User()->account_id)
                     ->get()->pluck('city_id');
             }
@@ -90,7 +90,6 @@ class ACL
             return $cities->toArray();
         }
 
-        return array();
+        return [];
     }
-
 }

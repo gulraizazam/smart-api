@@ -23,7 +23,7 @@ class CreateProductsTable extends Migration
             $table->timestamps();
             $table->foreign('account_id')->references('id')->on('accounts');
             $table->foreign('brand_id')->references('id')->on('brands');
-            
+
         });
     }
 

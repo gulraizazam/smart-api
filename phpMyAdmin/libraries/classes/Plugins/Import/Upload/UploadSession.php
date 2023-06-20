@@ -7,11 +7,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Import\Upload;
 
-use PhpMyAdmin\Import\Ajax;
-use PhpMyAdmin\Plugins\UploadInterface;
-
 use function array_key_exists;
 use function ini_get;
+use PhpMyAdmin\Import\Ajax;
+use PhpMyAdmin\Plugins\UploadInterface;
 use function trim;
 
 /**
@@ -34,8 +33,7 @@ class UploadSession implements UploadInterface
      *
      * This is implementation for session.upload_progress in PHP 5.4+.
      *
-     * @param string $id upload id
-     *
+     * @param  string  $id upload id
      * @return array|null
      */
     public static function getUploadStatus($id)
@@ -64,7 +62,7 @@ class UploadSession implements UploadInterface
         }
 
         $status = false;
-        $sessionkey = ini_get('session.upload_progress.prefix') . $id;
+        $sessionkey = ini_get('session.upload_progress.prefix').$id;
 
         if (isset($_SESSION[$sessionkey])) {
             $status = $_SESSION[$sessionkey];

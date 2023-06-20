@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use RuntimeException;
-
 use function __;
+use RuntimeException;
 
 final class FlashMessages
 {

@@ -3,69 +3,69 @@
 return [
     // Consultancy SMS Templates
     'sms_templates' => [
-        1 => array(
+        1 => [
             'name' => '	On consultancy appointment SMS',
             'content' => '',
             'slug' => 'on-appointment',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        2 => array(
+        ],
+        2 => [
             'name' => '2nd message one day before consultancy appointment at 8PM',
             'content' => '',
             'slug' => 'second-sms',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        3 => array(
+        ],
+        3 => [
             'name' => '3rd reminder 2 hours before consultancy appointment',
             'content' => '',
             'slug' => 'third-sms',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        4 => array(
+        ],
+        4 => [
             'name' => 'Promotion SMS',
             'content' => '',
             'slug' => 'promotion-sms',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
+        ],
     ],
     // Treatment SMS Templates
     'treatment_sms_templates' => [
-        1 => array(
+        1 => [
             'name' => '	On treatment appointment SMS',
             'content' => '',
             'slug' => 'treatment-on-appointment',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        2 => array(
+        ],
+        2 => [
             'name' => '2nd message one day before treatment appointment at 8PM',
             'content' => '',
             'slug' => 'treatment-second-sms',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        3 => array(
+        ],
+        3 => [
             'name' => '3rd reminder 2 hours before treatment appointment',
             'content' => '',
             'slug' => 'treatment-third-sms',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
+        ],
     ],
     // Invoice SMS Templates
     'invoice_sms_templates' => [
-        1 => array(
+        1 => [
             'name' => '	On Invoice Ringup SMS',
             'content' => '',
             'slug' => 'invoice-ringup',
@@ -73,11 +73,11 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
+        ],
     ],
     // Plan SMS Templates
     'plan_sms_templates' => [
-        1 => array(
+        1 => [
             'name' => '	On Plan Cah Received SMS',
             'content' => '',
             'slug' => 'plan-cash',
@@ -85,11 +85,11 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
+        ],
     ],
     // Refund SMS Templates
     'refund_sms_templates' => [
-        1 => array(
+        1 => [
             'name' => '	On Refund SMS',
             'content' => '',
             'slug' => 'refund-amount',
@@ -97,11 +97,11 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
+        ],
     ],
 
     'virtual_sms_templates' => [
-        1 => array(
+        1 => [
             'name' => '	On virtual consultancy appointment SMS',
             'content' => '',
             'slug' => 'virtual-on-appointment',
@@ -109,8 +109,8 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        2 => array(
+        ],
+        2 => [
             'name' => '2nd message one day before virtual consultancy appointment at 8PM',
             'content' => '',
             'slug' => 'virtual-second-sms',
@@ -118,8 +118,8 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        3 => array(
+        ],
+        3 => [
             'name' => '3rd reminder 2 hours before virtual consultancy appointment',
             'content' => '',
             'slug' => 'virtual-third-sms',
@@ -127,12 +127,12 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
+        ],
     ],
 
     // Lead Statuses
-    'lead_statuses' => array(
-        1 => array(
+    'lead_statuses' => [
+        1 => [
             'id' => 1,
             'parent_id' => 0,
             'sort_no' => 1,
@@ -140,8 +140,8 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        2 => array(
+        ],
+        2 => [
             'id' => 2,
             'parent_id' => 0,
             'sort_no' => 2,
@@ -149,8 +149,8 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        3 => array(
+        ],
+        3 => [
             'id' => 3,
             'parent_id' => 0,
             'sort_no' => 3,
@@ -158,8 +158,8 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        4 => array(
+        ],
+        4 => [
             'id' => 4,
             'parent_id' => 0,
             'sort_no' => 4,
@@ -167,8 +167,8 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-        5 => array(
+        ],
+        5 => [
             'id' => 5,
             'parent_id' => 0,
             'sort_no' => 5,
@@ -176,12 +176,12 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
             'account_id' => '1',
-        ),
-    ),
+        ],
+    ],
 
     // Settings
-    'settings' => array(
-        1 => array(
+    'settings' => [
+        1 => [
             'id' => 1,
             'name' => 'Head Office Contact',
             'data' => '(021) 111-232-889',
@@ -189,8 +189,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        2 => array(
+        ],
+        2 => [
             'id' => 2,
             'name' => 'Custom Discount Range',
             'data' => '0:100',
@@ -198,8 +198,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        3 => array(
+        ],
+        3 => [
             'id' => 3,
             'name' => 'Documentation Charges',
             'data' => '1000',
@@ -207,8 +207,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        4 => array(
+        ],
+        4 => [
             'id' => 4,
             'name' => 'Birthday Promotion DayS Range',
             'data' => '10:10',
@@ -216,8 +216,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        5 => array(
+        ],
+        5 => [
             'id' => 5,
             'name' => 'Finance Editing Days',
             'data' => '3',
@@ -225,8 +225,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        6 => array(
+        ],
+        6 => [
             'id' => 6,
             'name' => 'Appointment Rescheduled Counter',
             'data' => '3',
@@ -234,8 +234,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        7 => array(
+        ],
+        7 => [
             'id' => 7,
             'name' => 'System Listing Mode',
             'data' => 'listing',
@@ -243,8 +243,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        8 => array(
+        ],
+        8 => [
             'id' => 8,
             'name' => 'Back Date Appointment',
             'data' => '0',
@@ -252,8 +252,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'update_at' => \Carbon\Carbon::now(),
-        ),
-        9 => array(
+        ],
+        9 => [
             'id' => 9,
             'name' => 'Current SMS Operator',
             'data' => '1',
@@ -261,8 +261,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        10 => array(
+        ],
+        10 => [
             'id' => 10,
             'name' => 'Consultancy Invoice With Medical History Form',
             'data' => '1',
@@ -270,8 +270,8 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        11 => array(
+        ],
+        11 => [
             'id' => 11,
             'name' => 'Virtual Consultancy',
             'data' => '2',
@@ -279,12 +279,12 @@ return [
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-    ),
+        ],
+    ],
 
     // User Operator Settings
-    'user_operator_settings' => array(
-        1 => array(
+    'user_operator_settings' => [
+        1 => [
             'id' => 1,
             'operator_name' => 'Telenor Corporate SMS',
             'username' => '923458232889',
@@ -298,8 +298,8 @@ return [
             'operator_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        2 => array(
+        ],
+        2 => [
             'id' => 2,
             'operator_name' => 'Jazz Corporate SMS',
             'username' => '03011156718',
@@ -313,42 +313,42 @@ return [
             'operator_id' => '2',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-    ),
+        ],
+    ],
 
     // Settings
-    'invoice_statuses' => array(
-        1 => array(
+    'invoice_statuses' => [
+        1 => [
             'id' => 1,
             'name' => 'Pending',
             'slug' => 'pending',
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        2 => array(
+        ],
+        2 => [
             'id' => 2,
             'name' => 'Invoiced',
             'slug' => 'invoiced',
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        3 => array(
+        ],
+        3 => [
             'id' => 3,
             'name' => 'Paid',
             'slug' => 'paid',
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ),
-        4 => array(
+        ],
+        4 => [
             'id' => 4,
             'name' => 'Cancelled',
             'slug' => 'cancelled',
             'account_id' => '1',
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        )
-    ),
+        ],
+    ],
 ];

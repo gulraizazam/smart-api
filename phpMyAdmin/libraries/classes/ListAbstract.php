@@ -5,16 +5,15 @@ declare(strict_types=1);
 namespace PhpMyAdmin;
 
 use ArrayObject;
-use PhpMyAdmin\Query\Utilities;
-
 use function in_array;
+use PhpMyAdmin\Query\Utilities;
 
 /**
  * @extends ArrayObject<int, string>
  */
 abstract class ListAbstract extends ArrayObject
 {
-    /** @var mixed   empty item */
+    /** @var mixed empty item */
     protected $itemEmpty = '';
 
     /**
@@ -31,7 +30,7 @@ abstract class ListAbstract extends ArrayObject
      * checks if the given db names exists in the current list, if there is
      * missing at least one item it returns false otherwise true
      *
-     * @param mixed[] ...$params params
+     * @param  mixed[]  ...$params params
      */
     public function exists(...$params): bool
     {

@@ -10,7 +10,7 @@ class LeadComments extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'comment', 'lead_id', 'created_by','created_at', 'updated_at'
+        'comment', 'lead_id', 'created_by', 'created_at', 'updated_at',
     ];
 
     protected $table = 'lead_comments';

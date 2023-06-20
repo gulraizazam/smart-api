@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\Http\ServerRequest;
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
-
 use function __;
 use function array_keys;
 use function array_pop;
 use function array_walk_recursive;
 use function chr;
 use function count;
+use const DATE_RFC1123;
 use function defined;
+use const E_USER_ERROR;
+use const E_USER_WARNING;
 use function explode;
+use const FILTER_VALIDATE_IP;
 use function filter_var;
 use function function_exists;
 use function getenv;
@@ -38,6 +37,7 @@ use function mb_strpos;
 use function mb_substr;
 use function parse_str;
 use function parse_url;
+use PhpMyAdmin\Http\ServerRequest;
 use function preg_match;
 use function preg_replace;
 use function session_write_close;
@@ -49,15 +49,13 @@ use function strpos;
 use function strtolower;
 use function strtr;
 use function substr;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use function trigger_error;
 use function unserialize;
 use function urldecode;
 use function vsprintf;
-
-use const DATE_RFC1123;
-use const E_USER_ERROR;
-use const E_USER_WARNING;
-use const FILTER_VALIDATE_IP;
 
 /**
  * Core functions used all over the scripts.
@@ -69,7 +67,7 @@ class Core
      * require() when a part of the path comes from an insecure source
      * like a cookie or form.
      *
-     * @param string $path The path to check
+     * @param  string  $path The path to check
      */
     public static function securePath(string $path): string
     {
@@ -83,8 +81,8 @@ class Core
      *
      * loads language file if not loaded already
      *
-     * @param string       $error_message the error message or named error message
-     * @param string|array $message_args  arguments applied to $error_message
+     * @param  string  $error_message the error message or named error message
+     * @param  string|array  $message_args  arguments applied to $error_message
      */
     public static function fatalError(
         string $error_message,
@@ -153,8 +151,7 @@ class Core
     /**
      * Returns a link to the PHP documentation
      *
-     * @param string $target anchor in documentation
-     *
+     * @param  string  $target anchor in documentation
      * @return string  the URL
      */
     public static function getPHPDocLink(string $target): string
@@ -176,15 +173,15 @@ class Core
             $lang = $GLOBALS['lang'];
         }
 
-        return self::linkURL('https://www.php.net/manual/' . $lang . '/' . $target);
+        return self::linkURL('https://www.php.net/manual/'.$lang.'/'.$target);
     }
 
     /**
      * Warn or fail on missing extension.
      *
-     * @param string $extension Extension name
-     * @param bool   $fatal     Whether the error is fatal.
-     * @param string $extra     Extra string to append to message.
+     * @param  string  $extension Extension name
+     * @param  bool  $fatal     Whether the error is fatal.
+     * @param  string  $extra     Extra string to append to message.
      */
     public static function warnMissingExtension(
         string $extension,
@@ -200,10 +197,10 @@ class Core
             $message = __('The %s extension is missing. Please check your PHP configuration.');
         }
 
-        $doclink = self::getPHPDocLink('book.' . $extension . '.php');
-        $message = sprintf($message, '[a@' . $doclink . '@Documentation][em]' . $extension . '[/em][/a]');
+        $doclink = self::getPHPDocLink('book.'.$extension.'.php');
+        $message = sprintf($message, '[a@'.$doclink.'@Documentation][em]'.$extension.'[/em][/a]');
         if ($extra != '') {
-            $message .= ' ' . $extra;
+            $message .= ' '.$extra;
         }
 
         if ($fatal) {
@@ -218,15 +215,14 @@ class Core
     /**
      * returns count of tables in given db
      *
-     * @param string $db database to count tables for
-     *
+     * @param  string  $db database to count tables for
      * @return int count of tables in $db
      */
     public static function getTableCount(string $db): int
     {
         global $dbi;
 
-        $tables = $dbi->tryQuery('SHOW TABLES FROM ' . Util::backquote($db) . ';');
+        $tables = $dbi->tryQuery('SHOW TABLES FROM '.Util::backquote($db).';');
 
         if ($tables) {
             return $tables->numRows();
@@ -241,7 +237,7 @@ class Core
      * (renamed with PMA prefix to avoid double definition when embedded
      * in Moodle)
      *
-     * @param string|int $size size (Default = 0)
+     * @param  string|int  $size size (Default = 0)
      */
     public static function getRealSize($size = 0): int
     {
@@ -271,9 +267,9 @@ class Core
      * Checks given $page against given $allowList and returns true if valid
      * it optionally ignores query parameters in $page (script.php?ignored)
      *
-     * @param string $page      page to check
-     * @param array  $allowList allow list to check page against
-     * @param bool   $include   whether the page is going to be included
+     * @param  string  $page      page to check
+     * @param  array  $allowList allow list to check page against
+     * @param  bool  $include   whether the page is going to be included
      */
     public static function checkPageValidity(&$page, array $allowList = [], $include = false): bool
     {
@@ -296,7 +292,7 @@ class Core
         $_page = mb_substr(
             $page,
             0,
-            (int) mb_strpos($page . '?', '?')
+            (int) mb_strpos($page.'?', '?')
         );
         if (in_array($_page, $allowList)) {
             return true;
@@ -306,7 +302,7 @@ class Core
         $_page = mb_substr(
             $_page,
             0,
-            (int) mb_strpos($_page . '?', '?')
+            (int) mb_strpos($_page.'?', '?')
         );
 
         return in_array($_page, $allowList);
@@ -318,8 +314,7 @@ class Core
      * searches in $_SERVER, $_ENV then tries getenv() and apache_getenv()
      * in this order
      *
-     * @param string $var_name variable name
-     *
+     * @param  string  $var_name variable name
      * @return string  value of $var or empty string
      */
     public static function getenv(string $var_name): string
@@ -346,8 +341,8 @@ class Core
     /**
      * Send HTTP header, taking IIS limits into account (600 seems ok)
      *
-     * @param string $uri         the header to send
-     * @param bool   $use_refresh whether to use Refresh: header when running on IIS
+     * @param  string  $uri         the header to send
+     * @param  bool  $use_refresh whether to use Refresh: header when running on IIS
      */
     public static function sendHeaderLocation(string $uri, bool $use_refresh = false): void
     {
@@ -365,7 +360,7 @@ class Core
          * like /phpmyadmin/index.php/ which some web servers happily accept.
          */
         if ($uri[0] === '.') {
-            $uri = $GLOBALS['config']->getRootPath() . substr($uri, 2);
+            $uri = $GLOBALS['config']->getRootPath().substr($uri, 2);
         }
 
         $response = ResponseRenderer::getInstance();
@@ -379,12 +374,12 @@ class Core
         // results in a blank page
         // but we need it when coming from the cookie login panel)
         if ($GLOBALS['config']->get('PMA_IS_IIS') && $use_refresh) {
-            $response->header('Refresh: 0; ' . $uri);
+            $response->header('Refresh: 0; '.$uri);
 
             return;
         }
 
-        $response->header('Location: ' . $uri);
+        $response->header('Location: '.$uri);
     }
 
     /**
@@ -457,11 +452,11 @@ class Core
     /**
      * Sends header indicating file download.
      *
-     * @param string $filename Filename to include in headers if empty,
+     * @param  string  $filename Filename to include in headers if empty,
      *                         none Content-Disposition header will be sent.
-     * @param string $mimetype MIME type to include in headers.
-     * @param int    $length   Length of content (optional)
-     * @param bool   $no_cache Whether to include no-caching headers.
+     * @param  string  $mimetype MIME type to include in headers.
+     * @param  int  $length   Length of content (optional)
+     * @param  bool  $no_cache Whether to include no-caching headers.
      */
     public static function downloadHeader(
         string $filename,
@@ -479,7 +474,7 @@ class Core
         $filename = Sanitize::sanitizeFilename($filename);
         if (! empty($filename)) {
             $headers['Content-Description'] = 'File Transfer';
-            $headers['Content-Disposition'] = 'attachment; filename="' . $filename . '"';
+            $headers['Content-Disposition'] = 'attachment; filename="'.$filename.'"';
         }
 
         $headers['Content-Type'] = $mimetype;
@@ -519,22 +514,21 @@ class Core
      * $path is a string describing position of an element in an associative array,
      * eg. Servers/1/host refers to $array[Servers][1][host]
      *
-     * @param string $path    path in the array
-     * @param array  $array   the array
-     * @param mixed  $default default value
-     *
+     * @param  string  $path    path in the array
+     * @param  array  $array   the array
+     * @param  mixed  $default default value
      * @return array|mixed|null array element or $default
      */
     public static function arrayRead(string $path, array $array, $default = null)
     {
         $keys = explode('/', $path);
-        $value =& $array;
+        $value = &$array;
         foreach ($keys as $key) {
             if (! isset($value[$key])) {
                 return $default;
             }
 
-            $value =& $value[$key];
+            $value = &$value[$key];
         }
 
         return $value;
@@ -543,21 +537,21 @@ class Core
     /**
      * Stores value in an array
      *
-     * @param string $path  path in the array
-     * @param array  $array the array
-     * @param mixed  $value value to store
+     * @param  string  $path  path in the array
+     * @param  array  $array the array
+     * @param  mixed  $value value to store
      */
     public static function arrayWrite(string $path, array &$array, $value): void
     {
         $keys = explode('/', $path);
         $last_key = array_pop($keys);
-        $a =& $array;
+        $a = &$array;
         foreach ($keys as $key) {
             if (! isset($a[$key])) {
                 $a[$key] = [];
             }
 
-            $a =& $a[$key];
+            $a = &$a[$key];
         }
 
         $a[$last_key] = $value;
@@ -566,8 +560,8 @@ class Core
     /**
      * Removes value from an array
      *
-     * @param string $path  path in the array
-     * @param array  $array the array
+     * @param  string  $path  path in the array
+     * @param  array  $array the array
      */
     public static function arrayRemove(string $path, array &$array): void
     {
@@ -576,7 +570,7 @@ class Core
         $path = [];
         $depth = 0;
 
-        $path[0] =& $array;
+        $path[0] = &$array;
         $found = true;
         // go as deep as required or possible
         foreach ($keys as $key) {
@@ -586,7 +580,7 @@ class Core
             }
 
             $depth++;
-            $path[$depth] =& $path[$depth - 1][$key];
+            $path[$depth] = &$path[$depth - 1][$key];
         }
 
         // if element found, remove it
@@ -608,8 +602,7 @@ class Core
     /**
      * Returns link to (possibly) external site using defined redirector.
      *
-     * @param string $url URL where to go.
-     *
+     * @param  string  $url URL where to go.
      * @return string URL for a link.
      */
     public static function linkURL(string $url): string
@@ -633,17 +626,17 @@ class Core
         $query = http_build_query(['url' => $vars['url']]);
 
         if ($GLOBALS['config'] !== null && $GLOBALS['config']->get('is_setup')) {
-            return '../url.php?' . $query;
+            return '../url.php?'.$query;
         }
 
-        return './url.php?' . $query;
+        return './url.php?'.$query;
     }
 
     /**
      * Checks whether domain of URL is an allowed domain or not.
      * Use only for URLs of external sites.
      *
-     * @param string $url URL of external site.
+     * @param  string  $url URL of external site.
      */
     public static function isAllowedDomain(string $url): bool
     {
@@ -704,8 +697,7 @@ class Core
     /**
      * Replace some html-unfriendly stuff
      *
-     * @param string $buffer String to process
-     *
+     * @param  string  $buffer String to process
      * @return string Escaped and cleaned up text suitable for html
      */
     public static function mimeDefaultFunction(string $buffer): string
@@ -713,13 +705,13 @@ class Core
         $buffer = htmlspecialchars($buffer);
         $buffer = str_replace('  ', ' &nbsp;', $buffer);
 
-        return (string) preg_replace("@((\015\012)|(\015)|(\012))@", '<br>' . "\n", $buffer);
+        return (string) preg_replace("@((\015\012)|(\015)|(\012))@", '<br>'."\n", $buffer);
     }
 
     /**
      * Displays SQL query before executing.
      *
-     * @param array|string $query_data Array containing queries or query itself
+     * @param  array|string  $query_data Array containing queries or query itself
      */
     public static function previewSQL($query_data): void
     {
@@ -742,7 +734,7 @@ class Core
     /**
      * recursively check if variable is empty
      *
-     * @param mixed $value the variable
+     * @param  mixed  $value the variable
      */
     public static function emptyRecursive($value): bool
     {
@@ -751,7 +743,7 @@ class Core
             array_walk_recursive(
                 $value,
                 /**
-                 * @param mixed $item
+                 * @param  mixed  $item
                  */
                 static function ($item) use (&$empty): void {
                     $empty = $empty && empty($item);
@@ -767,7 +759,7 @@ class Core
     /**
      * Creates some globals from $_POST variables matching a pattern
      *
-     * @param array $post_patterns The patterns to search for
+     * @param  array  $post_patterns The patterns to search for
      */
     public static function setPostAsGlobal(array $post_patterns): void
     {
@@ -831,7 +823,7 @@ class Core
      *
      * * strips p: prefix(es)
      *
-     * @param string $name User given hostname
+     * @param  string  $name User given hostname
      */
     public static function sanitizeMySQLHost(string $name): string
     {
@@ -847,7 +839,7 @@ class Core
      *
      * * strips part behind null byte
      *
-     * @param string $name User given username
+     * @param  string  $name User given username
      */
     public static function sanitizeMySQLUser(string $name): string
     {
@@ -864,8 +856,7 @@ class Core
      *
      * It does not unserialize data containing objects
      *
-     * @param string $data Data to unserialize
-     *
+     * @param  string  $data Data to unserialize
      * @return mixed|null
      */
     public static function safeUnserialize(string $data)
@@ -951,8 +942,7 @@ class Core
     /**
      * Sign the sql query using hmac using the session token
      *
-     * @param string $sqlQuery The sql query
-     *
+     * @param  string  $sqlQuery The sql query
      * @return string
      */
     public static function signSqlQuery($sqlQuery)
@@ -961,21 +951,21 @@ class Core
 
         $secret = $_SESSION[' HMAC_secret '] ?? '';
 
-        return hash_hmac('sha256', $sqlQuery, $secret . $cfg['blowfish_secret']);
+        return hash_hmac('sha256', $sqlQuery, $secret.$cfg['blowfish_secret']);
     }
 
     /**
      * Check that the sql query has a valid hmac signature
      *
-     * @param string $sqlQuery  The sql query
-     * @param string $signature The Signature to check
+     * @param  string  $sqlQuery  The sql query
+     * @param  string  $signature The Signature to check
      */
     public static function checkSqlQuerySignature($sqlQuery, $signature): bool
     {
         global $cfg;
 
         $secret = $_SESSION[' HMAC_secret '] ?? '';
-        $hmac = hash_hmac('sha256', $sqlQuery, $secret . $cfg['blowfish_secret']);
+        $hmac = hash_hmac('sha256', $sqlQuery, $secret.$cfg['blowfish_secret']);
 
         return hash_equals($hmac, $signature);
     }
@@ -986,7 +976,7 @@ class Core
     public static function getContainerBuilder(): ContainerBuilder
     {
         $containerBuilder = new ContainerBuilder();
-        $loader = new PhpFileLoader($containerBuilder, new FileLocator(ROOT_PATH . 'libraries'));
+        $loader = new PhpFileLoader($containerBuilder, new FileLocator(ROOT_PATH.'libraries'));
         $loader->load('services_loader.php');
 
         return $containerBuilder;

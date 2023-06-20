@@ -3,15 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\AuditTrails;
-use Auth;
 
 class DoctorHasLocations extends Model
 {
     protected $fillable = ['user_id', 'location_id', 'service_id', 'end_node'];
 
     protected $table = 'doctor_has_locations';
-
 
     public function user()
     {

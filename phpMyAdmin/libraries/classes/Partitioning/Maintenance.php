@@ -8,7 +8,6 @@ use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Dbal\DatabaseName;
 use PhpMyAdmin\Dbal\TableName;
 use PhpMyAdmin\Util;
-
 use function sprintf;
 
 final class Maintenance
@@ -94,6 +93,7 @@ final class Maintenance
 
     /**
      * @return array<int, bool|string>
+     *
      * @psalm-return array{bool, string}
      */
     public function rebuild(DatabaseName $db, TableName $table, string $partition): array
@@ -131,6 +131,7 @@ final class Maintenance
 
     /**
      * @return array<int, bool|string>
+     *
      * @psalm-return array{bool, string}
      */
     public function truncate(DatabaseName $db, TableName $table, string $partition): array

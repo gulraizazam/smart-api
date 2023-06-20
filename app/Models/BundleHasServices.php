@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class BundleHasServices extends Model
 {
-
     protected $fillable = ['bundle_id', 'service_id', 'service_price', 'calculated_price', 'end_node'];
 
     protected static $_fillable = ['bundle_id', 'service_id', 'service_price', 'end_node'];
@@ -37,10 +36,9 @@ class BundleHasServices extends Model
      * Create Record
      *
      * @param data
-     *
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_data)
+    public static function createRecord($data, $parent_data)
     {
 
         $record = self::insert($data);
@@ -56,10 +54,9 @@ class BundleHasServices extends Model
      * update Record
      *
      * @param data ,parent_data
-     *
      * @return (mixed)
      */
-    static public function updateRecord($data, $parent_data)
+    public static function updateRecord($data, $parent_data)
     {
         $record = self::insert($data);
 
