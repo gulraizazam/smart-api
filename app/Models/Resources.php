@@ -520,7 +520,6 @@ class Resources extends BaseModal
                     ->orderby($orderBy, $order)
                     ->get();
             } else {
-            } else {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
                     ->whereIn('location_id', ACL::getUserCentres())
                     ->where('resources.active', 1)
@@ -538,13 +537,7 @@ class Resources extends BaseModal
                     ->orderby($orderBy, $order)
                     ->get();
             } else {
-            } else {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
-                    ->where('resources.active', 1)
-                    ->limit($iDisplayLength)
-                    ->offset($iDisplayStart)
-                    ->orderby($orderBy, $order)
-                    ->get();
                     ->where('resources.active', 1)
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
