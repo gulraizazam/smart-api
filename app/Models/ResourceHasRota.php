@@ -42,7 +42,6 @@ class ResourceHasRota extends BaseModal
      * */
     public function location()
     {
-
         return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
     }
 
@@ -120,7 +119,7 @@ class ResourceHasRota extends BaseModal
                             return array(
                                 'status' => false,
                                 'message' => 'Time range must be different, Kindly define again',
-                            ];
+                            );
                         } else {
                             if (
                                 strtotime($request->get('break_from_monday')) >= strtotime($request->get('time_f_monday')) &&
@@ -142,7 +141,7 @@ class ResourceHasRota extends BaseModal
                             return array(
                                 'status' => false,
                                 'message' => 'From Break or To Break require, kindly define again',
-                            ];
+                            );
                         }
                     }
                 }
@@ -164,7 +163,7 @@ class ResourceHasRota extends BaseModal
                                 return array(
                                     'status' => false,
                                     'message' => 'Time range must be different, Kindly define again',
-                                ];
+                                );
                             } else {
                                 $data[$day] = implode(',', [Carbon::parse($request->get('time_f_'.$day))->format('H:i'), Carbon::parse($request->get('time_to_'.$day))->format('H:i')]);
                             }
@@ -183,7 +182,7 @@ class ResourceHasRota extends BaseModal
                                 return array(
                                     'status' => false,
                                     'message' => 'Time range must be different, Kindly define again',
-                                ];
+                                );
                             } else {
                                 if (
                                     strtotime($request->get('break_from_'.$day)) >= strtotime($request->get('time_f_'.$day)) &&
@@ -205,7 +204,7 @@ class ResourceHasRota extends BaseModal
                                 return array(
                                     'status' => false,
                                     'message' => 'From Break or To Break require, kindly define again',
-                                ];
+                                );
                             }
                         }
                     }
