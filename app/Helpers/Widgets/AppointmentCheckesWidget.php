@@ -33,7 +33,7 @@ class AppointmentCheckesWidget
         $start = Carbon::parse($request->start)->format("Y-m-d");
 
         $today = Carbon::now()->toDateString();
-        $resource_id = Resources::where('external_id', '=', $request->doctor_id)->first();
+        $resource_id = Resources::where(['external_id' => $request->doctor_id])->first();
         $resource_rota = ResourceHasRota::where([
             'resource_id' => $resource_id->id,
             'location_id' => $request->location_id,
