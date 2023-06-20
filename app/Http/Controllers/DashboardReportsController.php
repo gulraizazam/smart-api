@@ -16,7 +16,6 @@ use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
-use App\Models\RoleHasUsers;
 use App\Models\Services;
 use App\Models\User;
 use App\Reports\dashboardreport;
@@ -2572,25 +2571,19 @@ class DashboardReportsController extends Controller
         })
         ->groupBy('user_id')
         ->pluck('user_id');
-       
         $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
-        
         $consultants = RoleHasUsers::join('users','users.id','role_has_users.user_id')
         ->select('users.name','users.id')
         ->whereIn('users.id' , $centre_doctors)
-        ->where('role_id',$role)
-        ->where('users.active',1)
+        ->where(['role_id' => $role , 'users.active' => 1])
+        ->where()
         ->get();
-       
         foreach($consultants as $consultant){
-            
             array_push($lables , $consultant->name);
-
             $converted_appointments = Appointments::with('location:id,name')->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
-                ->where('appointments.base_appointment_status_id', config('constants.appointment_status_arrived'))
-                ->where('appointments.appointment_type_id', 1)
+                ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived') , 
+                'appointments.appointment_type_id' => 1 , 'appointments.doctor_id' => $consultant->id])
                 ->where('package_advances.cash_amount', '>', 0)
-                ->where('appointments.doctor_id', $consultant->id)
                 ->select('appointments.*')
                 ->when($period == 'today', function ($query) use ($periods ,$period) {
                     $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
@@ -2725,8 +2718,7 @@ class DashboardReportsController extends Controller
         $consultants = RoleHasUsers::join('users','users.id','role_has_users.user_id')
         ->select('users.name','users.id')
         ->whereIn('users.id' , $centre_doctors)
-        ->where('role_id',$role)
-        ->where('users.active',1)
+        ->where(['role_id' => $role , 'users.active' => 1])
         ->get();
         return response()->json(['status' => 1 , 'doctors' => $consultants]);
     }
