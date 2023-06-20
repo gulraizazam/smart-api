@@ -31,7 +31,7 @@ final class Template
         $this->data = $data;
     }
 
-    /** @param array<string, mixed> $state */
+    /** @param  array<string, mixed>  $state */
     public static function fromArray(array $state): self
     {
         return new self(

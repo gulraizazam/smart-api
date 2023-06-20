@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Activity;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 
 class RecentActivities extends Command
 {

@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\AuditTrails;
 use Illuminate\Database\Eloquent\Model;
-use Auth;
 
 class MachineTypeHasServices extends Model
 {
@@ -21,11 +19,10 @@ class MachineTypeHasServices extends Model
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_data)
+    public static function createRecord($data, $parent_data)
     {
         $record = self::insert($data);
 
@@ -39,11 +36,10 @@ class MachineTypeHasServices extends Model
     /**
      * update Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function updateRecord($data, $parent_data)
+    public static function updateRecord($data, $parent_data)
     {
         $record = self::insert($data);
 

@@ -11,7 +11,6 @@ use PhpMyAdmin\File;
 use PhpMyAdmin\Import;
 use PhpMyAdmin\Properties\Plugins\ImportPluginProperties;
 use PhpMyAdmin\Properties\Plugins\PluginPropertyItem;
-
 use function strlen;
 
 /**
@@ -47,7 +46,7 @@ abstract class ImportPlugin implements Plugin
     /**
      * Handles the whole import logic
      *
-     * @param array $sql_data 2-element array with sql data
+     * @param  array  $sql_data 2-element array with sql data
      */
     abstract public function doImport(?File $importHandle = null, array &$sql_data = []): void;
 
@@ -69,9 +68,8 @@ abstract class ImportPlugin implements Plugin
     /**
      * Define DB name and options
      *
-     * @param string $currentDb DB
-     * @param string $defaultDb Default DB name
-     *
+     * @param  string  $currentDb DB
+     * @param  string  $defaultDb Default DB name
      * @return array DB name and options (an associative array of options)
      */
     protected function getDbnameAndOptions($currentDb, $defaultDb)

@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
+use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
+use Auth;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\ACL;
-use Carbon\Carbon;
 
 class Refunds extends Model
 {
@@ -35,30 +34,29 @@ class Refunds extends Model
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $id)
+    public static function createRecord($request, $id)
     {
         /*Only for back date problem*/
         $package_advance_last_in = PackageAdvances::where([
             ['cash_flow', '=', 'in'],
             ['cash_amount', '>', 0],
-            ['package_id', '=', $request->package_id]
+            ['package_id', '=', $request->package_id],
         ])->orderBy('created_at', 'desc')->first();
         //dd($package_advance_last_in->toArray());
         /*end*/
 
         $custom_created_at = '';
         if ($request->created_at > $request->date_backend) {
-            $custom_created_at = $request->created_at . ' ' . Carbon::now()->format('H:i:s');
-        } else if ($request->created_at === $request->date_backend) {
-            $date_format_orignal_created = $request->created_at . ' ' . Carbon::now()->format('H:i:s');
+            $custom_created_at = $request->created_at.' '.Carbon::now()->format('H:i:s');
+        } elseif ($request->created_at === $request->date_backend) {
+            $date_format_orignal_created = $request->created_at.' '.Carbon::now()->format('H:i:s');
             $date_format_orignal_in = $package_advance_last_in->created_at;
             if ($date_format_orignal_created > $date_format_orignal_in) {
                 $custom_created_at = $date_format_orignal_created;
-            } else if ($date_format_orignal_created <= $date_format_orignal_in) {
+            } elseif ($date_format_orignal_created <= $date_format_orignal_in) {
                 $custom_created_at = $date_format_orignal_in->addMinutes(2)->toDateTimeString();
             }
         }
@@ -69,7 +67,7 @@ class Refunds extends Model
         $package_is_adjustment = PackageAdvances::where([
             ['package_id', '=', $packageinformation->id],
             ['is_adjustment', '=', '1'],
-            ['cash_flow', '=', 'out']
+            ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
 
         // Set Account ID
@@ -89,11 +87,10 @@ class Refunds extends Model
         $data['created_at'] = $custom_created_at;
         $data['updated_at'] = $custom_created_at;
 
-
         $record = self::create($data);
 
         // Here We sand the message of refund
-        if($record->cash_amount > 0){
+        if ($record->cash_amount > 0) {
             Invoice_Plan_Refund_Sms_Functions::RefundCashReceived_SMS($record);
         }
         // End
@@ -125,7 +122,6 @@ class Refunds extends Model
             $data_adjustment['created_at'] = $custom_created_at;
             $data_adjustment['updated_at'] = $custom_created_at;
 
-
             $record = self::create($data_adjustment);
 
             AuditTrails::addEventLogger(self::$_table, 'create', $data_adjustment, self::$_fillable, $record);
@@ -150,17 +146,17 @@ class Refunds extends Model
 
             AuditTrails::addEventLogger(self::$_table, 'create', $data_refund_tax, self::$_fillable, $record);
         }
+
         return $record;
     }
 
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecordfornonplans($request, $id)
+    public static function createRecordfornonplans($request, $id)
     {
         $package_advance_information = PackageAdvances::find($request->package_advance_id);
 
@@ -168,19 +164,19 @@ class Refunds extends Model
         $package_advance_last_in = PackageAdvances::where([
             ['cash_flow', '=', 'in'],
             ['cash_amount', '>', 0],
-            ['appointment_id', '=', $package_advance_information->appointment_id]
+            ['appointment_id', '=', $package_advance_information->appointment_id],
         ])->orderBy('created_at', 'desc')->first();
         /*end*/
 
         $custom_created_at = '';
         if ($request->created_at > $request->date_backend) {
-            $custom_created_at = $request->created_at . ' ' . Carbon::now()->format('H:i:s');
-        } else if ($request->created_at === $request->date_backend) {
-            $date_format_orignal_created = $request->created_at . ' ' . Carbon::now()->format('H:i:s');
+            $custom_created_at = $request->created_at.' '.Carbon::now()->format('H:i:s');
+        } elseif ($request->created_at === $request->date_backend) {
+            $date_format_orignal_created = $request->created_at.' '.Carbon::now()->format('H:i:s');
             $date_format_orignal_in = $package_advance_last_in->created_at;
             if ($date_format_orignal_created > $date_format_orignal_in) {
                 $custom_created_at = $date_format_orignal_created;
-            } else if ($date_format_orignal_created <= $date_format_orignal_in) {
+            } elseif ($date_format_orignal_created <= $date_format_orignal_in) {
                 $custom_created_at = $date_format_orignal_in->addMinutes(2)->toDateTimeString();
             }
         }
@@ -207,7 +203,7 @@ class Refunds extends Model
         $record = self::create($data);
 
         // Here We sand the message of refund
-        if($record->cash_amount > 0){
+        if ($record->cash_amount > 0) {
             Invoice_Plan_Refund_Sms_Functions::RefundCashReceived_SMS($record);
         }
         // End
@@ -220,7 +216,7 @@ class Refunds extends Model
             ['patient_id', '=', $request->get('patient_id')],
             ['is_adjustment', '=', '1'],
             ['cash_flow', '=', 'out'],
-            ['appointment_id', '=', $package_advance_information->appointment_id]
+            ['appointment_id', '=', $package_advance_information->appointment_id],
         ])->whereNull('package_id')->sum('cash_amount');
 
         if ($appointment_is_adjustment == '0') {
@@ -244,43 +240,41 @@ class Refunds extends Model
 
             AuditTrails::addEventLogger(self::$_table, 'create', $data_adjustment, self::$_fillable, $record);
         }
+
         return $record;
     }
-
 
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $id = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $id = false)
     {
-        $where = array();
+        $where = [];
 
         if ($id != false) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $id
-            );
+                $id,
+            ];
         }
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
         }
 
         if ($request->get('patient_id')) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 'like',
-                '%' . $request->get('patient_id') . '%'
-            );
+                '%'.$request->get('patient_id').'%',
+            ];
         }
 
         if (count($where)) {
@@ -293,37 +287,35 @@ class Refunds extends Model
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $id = false)
     {
-        $where = array();
+        $where = [];
         if ($id != false) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $id
-            );
+                $id,
+            ];
         }
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
         }
 
         if ($request->get('patient_id')) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 'like',
-                '%' . $request->get('patient_id') . '%'
-            );
+                '%'.$request->get('patient_id').'%',
+            ];
         }
         if (count($where)) {
             return self::where($where)->distinct()->groupby('patient_id')->limit($iDisplayLength)->offset($iDisplayStart)->get();
@@ -335,12 +327,10 @@ class Refunds extends Model
     /**
      * Get Total Records for non plans refunds
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecordsnonplansrefunds(Request $request, $account_id = false, $id = false, $apply_filter = false)
+    public static function getTotalRecordsnonplansrefunds(Request $request, $account_id = false, $id = false, $apply_filter = false)
     {
 
         $where = self::filters_nonPlanRefunds($request, $account_id, $id, $apply_filter);
@@ -355,12 +345,12 @@ class Refunds extends Model
                 $singlepatient_cash_in = self::where([
                     ['patient_id', '=', $patient->patient_id],
                     ['appointment_id', '=', $patient->appointment_id],
-                    ['cash_flow', '=', 'in']
+                    ['cash_flow', '=', 'in'],
                 ])->whereNull('package_id')->sum('cash_amount');
                 $singlepatient_cash_out = self::where([
                     ['patient_id', '=', $patient->patient_id],
                     ['appointment_id', '=', $patient->appointment_id],
-                    ['cash_flow', '=', 'out']
+                    ['cash_flow', '=', 'out'],
                 ])->whereNull('package_id')->sum('cash_amount');
 
                 if ($singlepatient_cash_in - $singlepatient_cash_out != 0) {
@@ -369,21 +359,20 @@ class Refunds extends Model
                 }
             }
         }
-        return array(
+
+        return [
             'iTotalRecords' => $count,
-            'nonplansrefunds' => $nonrefundspatient
-        );
+            'nonplansrefunds' => $nonrefundspatient,
+        ];
     }
 
     /**
      * Check if child records exist
      *
-     * @param (int) $id
-     * @param
-     *
+     * @param  (int)  $id
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         //        if (
         //        InvoiceDetails::where(['package_id' => $id])->count()
@@ -394,25 +383,25 @@ class Refunds extends Model
         //        return false;
     }
 
-    static public function filters_nonPlanRefunds($request, $account_id, $id, $apply_filter)
+    public static function filters_nonPlanRefunds($request, $account_id, $id, $apply_filter)
     {
-        $where = array();
+        $where = [];
 
         $filters = getFilters($request->all());
 
         if ($id != false) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $id
-            );
+                $id,
+            ];
         }
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                $filters['patient_id']
-            );
+                $filters['patient_id'],
+            ];
             Filters::put(Auth::user()->id, 'nonplansrefunds', 'patient_id', $filters['patient_id']);
             Filters::put(Auth::user()->id, 'nonplansrefunds', 'patient_name', str_replace('undefined', '', $filters['patient_name']));
         } else {
@@ -421,53 +410,53 @@ class Refunds extends Model
                 Filters::forget(Auth::user()->id, 'nonplansrefunds', 'patient_name');
             } else {
                 if (Filters::get(Auth::user()->id, 'nonplansrefunds', 'patient_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'patient_id',
                         '=',
-                        Filters::get(Auth::user()->id, 'nonplansrefunds', 'patient_id')
-                    );
+                        Filters::get(Auth::user()->id, 'nonplansrefunds', 'patient_id'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'id')) {
-            $where[] = array(
+            $where[] = [
                 'patient_id',
                 '=',
-                \App\Helpers\GeneralFunctions::patientSearch($filters['id'])
-            );
+                \App\Helpers\GeneralFunctions::patientSearch($filters['id']),
+            ];
             Filters::put(Auth::user()->id, 'nonplansrefunds', 'id', \App\Helpers\GeneralFunctions::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'nonplansrefunds', 'id');
             } else {
                 if (Filters::get(Auth::user()->id, 'nonplansrefunds', 'id')) {
-                    $where[] = array(
+                    $where[] = [
                         'patient_id',
                         '=',
-                        Filters::get(Auth::user()->id, 'nonplansrefunds', 'id')
-                    );
+                        Filters::get(Auth::user()->id, 'nonplansrefunds', 'id'),
+                    ];
                 }
             }
         }
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::user()->id, 'nonplansrefunds', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'nonplansrefunds', 'account_id', $account_id);
             } else {
                 if (Filters::get(Auth::user()->id, 'nonplansrefunds', 'account_id', $account_id)) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::user()->id, 'nonplansrefunds', 'account_id', $account_id)
-                    );
+                        Filters::get(Auth::user()->id, 'nonplansrefunds', 'account_id', $account_id),
+                    ];
                 }
             }
         }

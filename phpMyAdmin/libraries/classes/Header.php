@@ -7,10 +7,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\ConfigStorage\Relation;
-use PhpMyAdmin\Html\Generator;
-use PhpMyAdmin\Navigation\Navigation;
-
 use function array_merge;
 use function defined;
 use function gmdate;
@@ -19,6 +15,9 @@ use function htmlspecialchars;
 use function implode;
 use function ini_get;
 use function is_bool;
+use PhpMyAdmin\ConfigStorage\Relation;
+use PhpMyAdmin\Html\Generator;
+use PhpMyAdmin\Navigation\Navigation;
 use function sprintf;
 use function strlen;
 use function strtolower;
@@ -35,54 +34,63 @@ class Header
      * @var Scripts
      */
     private $scripts;
+
     /**
      * PhpMyAdmin\Console instance
      *
      * @var Console
      */
     private $console;
+
     /**
      * Menu instance
      *
      * @var Menu
      */
     private $menu;
+
     /**
      * The page title
      *
      * @var string
      */
     private $title;
+
     /**
      * The value for the id attribute for the body tag
      *
      * @var string
      */
     private $bodyId;
+
     /**
      * Whether to show the top menu
      *
      * @var bool
      */
     private $menuEnabled;
+
     /**
      * Whether to show the warnings
      *
      * @var bool
      */
     private $warningsEnabled;
+
     /**
      * Whether we are servicing an ajax request.
      *
      * @var bool
      */
     private $isAjax;
+
     /**
      * Whether to display anything
      *
      * @var bool
      */
     private $isEnabled;
+
     /**
      * Whether the HTTP headers (and possibly some HTML)
      * have already been sent to the browser
@@ -166,8 +174,6 @@ class Header
     /**
      * Returns, as an array, a list of parameters
      * used on the client side
-     *
-     * @return array
      */
     public function getJsParams(): array
     {
@@ -215,13 +221,13 @@ class Header
         $params = $this->getJsParams();
         foreach ($params as $key => $value) {
             if (is_bool($value)) {
-                $params[$key] = $key . ':' . ($value ? 'true' : 'false') . '';
+                $params[$key] = $key.':'.($value ? 'true' : 'false').'';
             } else {
-                $params[$key] = $key . ':"' . Sanitize::escapeJsString($value) . '"';
+                $params[$key] = $key.':"'.Sanitize::escapeJsString($value).'"';
             }
         }
 
-        return 'CommonParams.setAll({' . implode(',', $params) . '});';
+        return 'CommonParams.setAll({'.implode(',', $params).'});';
     }
 
     /**
@@ -236,7 +242,7 @@ class Header
      * Set the ajax flag to indicate whether
      * we are servicing an ajax request
      *
-     * @param bool $isAjax Whether we are servicing an ajax request
+     * @param  bool  $isAjax Whether we are servicing an ajax request
      */
     public function setAjax(bool $isAjax): void
     {
@@ -267,7 +273,7 @@ class Header
     /**
      * Setter for the ID attribute in the BODY tag
      *
-     * @param string $id Value for the ID attribute
+     * @param  string  $id Value for the ID attribute
      */
     public function setBodyId(string $id): void
     {
@@ -277,7 +283,7 @@ class Header
     /**
      * Setter for the title of the page
      *
-     * @param string $title New title
+     * @param  string  $title New title
      */
     public function setTitle(string $title): void
     {
@@ -358,7 +364,7 @@ class Header
 
         $this->scripts->addCode($this->getVariablesForJavaScript());
 
-        $this->scripts->addCode('ConsoleEnterExecutes=' . ($GLOBALS['cfg']['ConsoleEnterExecutes'] ? 'true' : 'false'));
+        $this->scripts->addCode('ConsoleEnterExecutes='.($GLOBALS['cfg']['ConsoleEnterExecutes'] ? 'true' : 'false'));
         $this->scripts->addFiles($this->console->getScripts());
 
         // if database storage for user preferences is transient,
@@ -464,7 +470,7 @@ class Header
         /**
          * Sends http headers
          */
-        $GLOBALS['now'] = gmdate('D, d M Y H:i:s') . ' GMT';
+        $GLOBALS['now'] = gmdate('D, d M Y H:i:s').' GMT';
 
         $headers = $this->getHttpHeaders();
 
@@ -581,14 +587,14 @@ class Header
             && ! empty($cfg['CaptchaRequestParam'])
             && ! empty($cfg['CaptchaResponseParam'])
         ) {
-            $captchaUrl = ' ' . $cfg['CaptchaCsp'] . ' ';
+            $captchaUrl = ' '.$cfg['CaptchaCsp'].' ';
         }
 
         $headers = [];
 
         $headers['Content-Security-Policy'] = sprintf(
             'default-src \'self\' %s%s;script-src \'self\' \'unsafe-inline\' \'unsafe-eval\' %s%s;'
-                . 'style-src \'self\' \'unsafe-inline\' %s%s;img-src \'self\' data: %s%s%s;object-src \'none\';',
+                .'style-src \'self\' \'unsafe-inline\' %s%s;img-src \'self\' data: %s%s%s;object-src \'none\';',
             $captchaUrl,
             $cspAllow,
             $captchaUrl,
@@ -602,7 +608,7 @@ class Header
 
         $headers['X-Content-Security-Policy'] = sprintf(
             'default-src \'self\' %s%s;options inline-script eval-script;'
-                . 'referrer no-referrer;img-src \'self\' data: %s%s%s;object-src \'none\';',
+                .'referrer no-referrer;img-src \'self\' data: %s%s%s;object-src \'none\';',
             $captchaUrl,
             $cspAllow,
             $cspAllow,
@@ -612,8 +618,8 @@ class Header
 
         $headers['X-WebKit-CSP'] = sprintf(
             'default-src \'self\' %s%s;script-src \'self\' %s%s \'unsafe-inline\' \'unsafe-eval\';'
-                . 'referrer no-referrer;style-src \'self\' \'unsafe-inline\' %s;'
-                . 'img-src \'self\' data: %s%s%s;object-src \'none\';',
+                .'referrer no-referrer;style-src \'self\' \'unsafe-inline\' %s;'
+                .'img-src \'self\' data: %s%s%s;object-src \'none\';',
             $captchaUrl,
             $cspAllow,
             $captchaUrl,
@@ -630,8 +636,8 @@ class Header
     /**
      * Add recently used table and reload the navigation.
      *
-     * @param string $db    Database name where the table is located.
-     * @param string $table The table name
+     * @param  string  $db    Database name where the table is located.
+     * @param  string  $table The table name
      */
     private function addRecentTable(string $db, string $table): string
     {
@@ -657,7 +663,7 @@ class Header
      */
     public static function getVersionParameter(): string
     {
-        return 'v=' . urlencode(Version::VERSION);
+        return 'v='.urlencode(Version::VERSION);
     }
 
     private function getVariablesForJavaScript(): string

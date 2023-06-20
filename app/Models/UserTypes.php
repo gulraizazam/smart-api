@@ -2,18 +2,15 @@
 
 namespace App\Models;
 
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\AuditTrails;
 use Auth;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
 
 class UserTypes extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name','type','created_at', 'updated_at','account_id','active'];
+    protected $fillable = ['name', 'type', 'created_at', 'updated_at', 'account_id', 'active'];
 
     protected static $_fillable = ['name', 'type', 'active'];
 
@@ -21,57 +18,56 @@ class UserTypes extends BaseModal
 
     protected static $_table = 'user_types';
 
-    static public function getUserType_for_Doctor(){
+    public static function getUserType_for_Doctor()
+    {
 
         return self::where([
-                ['type','=','consultant'],
-                ['account_id','=',Auth::User()->account_id]
-            ]
-        )->get()->pluck('name','id');
+            ['type', '=', 'consultant'],
+            ['account_id', '=', Auth::User()->account_id],
+        ]
+        )->get()->pluck('name', 'id');
     }
 
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false)
+    public static function getTotalRecords(Request $request, $account_id = false)
     {
-        $where = array();
+        $where = [];
 
         $filters = getFilters($request->all());
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
         }
 
         if (count($filters) > 0 && hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
         }
 
         if (count($filters) > 0 && hasFilter($filters, 'type')) {
-            $where[] = array(
+            $where[] = [
                 'type',
                 '=',
-                $filters['type']
-            );
+                $filters['type'],
+            ];
         }
 
         if (count($where)) {
             return self::where([
                 [$where],
-                ['name', '!=', 'Administrator']
+                ['name', '!=', 'Administrator'],
             ])->count();
         } else {
             return self::where('name', '!=', 'Administrator')->count();
@@ -81,41 +77,39 @@ class UserTypes extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false)
     {
-        $where = array();
+        $where = [];
 
         $filters = getFilters($request->all());
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
         }
 
         if (count($filters) > 0 && hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
         }
 
         if (count($filters) > 0 && hasFilter($filters, 'type')) {
-            $where[] = array(
+            $where[] = [
                 'type',
                 '=',
-                $filters['type']
-            );
+                $filters['type'],
+            ];
         }
 
         if (count($where)) {
@@ -128,11 +122,10 @@ class UserTypes extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
@@ -140,11 +133,10 @@ class UserTypes extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id, $user_id)
+    public static function createRecord($request, $account_id, $user_id)
     {
         $data = $request->all();
 
@@ -165,22 +157,23 @@ class UserTypes extends BaseModal
      * inactive Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function inactiveRecord($id)
+    public static function inactiveRecord($id)
     {
 
         $usertype = UserTypes::getData($id);
 
-        if (!$usertype) {
+        if (! $usertype) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.user_types.index');
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (UserTypes::isChildExists($id, Auth::User()->account_id)) {
             flash('Child records exist, unable to inactivate resource')->error()->important();
+
             return redirect()->route('admin.user_types.index');
         }
 
@@ -197,16 +190,16 @@ class UserTypes extends BaseModal
      * active Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function activeRecord($id)
+    public static function activeRecord($id)
     {
 
         $usertype = UserTypes::getData($id);
 
-        if (!$usertype) {
+        if (! $usertype) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.user_types.index');
         }
 
@@ -223,22 +216,23 @@ class UserTypes extends BaseModal
      * delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static public function deleteRecord($id)
+    public static function deleteRecord($id)
     {
 
         $usertypes = UserTypes::getData($id);
 
-        if (!$usertypes) {
+        if (! $usertypes) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.user_types.index');
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
         if (UserTypes::isChildExists($id, Auth::User()->account_id)) {
             flash('Child records exist, unable to delete resource')->error()->important();
+
             return redirect()->route('admin.user_types.index');
         }
 
@@ -255,11 +249,10 @@ class UserTypes extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id, $user_id)
+    public static function updateRecord($id, $request, $account_id, $user_id)
     {
         $old_data = (UserTypes::find($id))->toArray();
 
@@ -271,10 +264,10 @@ class UserTypes extends BaseModal
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -288,15 +281,13 @@ class UserTypes extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
-     * @param
-     *
+     * @param  (int)  $id
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         if (
-        User::where(['user_type_id' => $id, 'account_id' => $account_id])->count()
+            User::where(['user_type_id' => $id, 'account_id' => $account_id])->count()
         ) {
             return true;
         }

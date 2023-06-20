@@ -3,24 +3,24 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
-use App\Models\Appointments;
-use App\Models\PackageAdvances;
-use App\Models\PackageService;
-use App\Models\Settings;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Gate;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Validator;
-use App\Models\Refunds;
-use App\Models\Packages;
+use App\Models\Appointments;
 use App\Models\Locations;
-use Carbon\Carbon;
+use App\Models\PackageAdvances;
 use App\Models\PackageBundles;
-use App\Helpers\ACL;
+use App\Models\Packages;
+use App\Models\PackageService;
+use App\Models\Refunds;
+use App\Models\Settings;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Validator;
 
 class RefundsController extends Controller
 {
@@ -67,15 +67,14 @@ class RefundsController extends Controller
 
             $apply_filter = checkFilters($filters, $filename);
 
-            $records = array();
-            $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
 
             // Get Total Records
             $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
 
-
-            list($orderBy, $order) = getSortBy($request);
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$orderBy, $order] = getSortBy($request);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
 
@@ -88,29 +87,29 @@ class RefundsController extends Controller
                     $cash_receive = PackageAdvances::where([
                         ['package_id', '=', $package->id],
                         ['cash_flow', '=', 'in'],
-                        ['is_cancel', '=', '0']
+                        ['is_cancel', '=', '0'],
                     ])->sum('cash_amount');
 
                     if ($cash_receive != 0) {
 
-                        $records["data"][] = array(
+                        $records['data'][] = [
                             'id' => $package->id ?? 0,
                             'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
                             'name' => $package->user?->name ?? '-',
                             'phone' => $package->user ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '-',
                             'package_id' => $package?->name ?? '-',
-                            'location_id' => $package->location->city->name . "-" . $package->location?->name,
+                            'location_id' => $package->location->city->name.'-'.$package->location?->name,
                             'session_count' => $session_count,
                             'total' => number_format($package->total_price),
                             'cash_receive' => number_format($cash_receive),
                             'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
-                        );
+                        ];
                     } else {
                         $iTotalRecords--;
                     }
                 }
 
-                $records["meta"] = [
+                $records['meta'] = [
                     'field' => $orderBy,
                     'page' => $page,
                     'pages' => $pages,
@@ -121,7 +120,7 @@ class RefundsController extends Controller
 
             }
 
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'delete' => Gate::allows('refunds_destroy'),
                 'active' => Gate::allows('refunds_active'),
                 'inactive' => Gate::allows('refunds_inactive'),
@@ -130,7 +129,7 @@ class RefundsController extends Controller
 
             $patient_id = request('patient_id');
             if (isset($patient_id)) {
-                $records["permissions"] = [
+                $records['permissions'] = [
                     'refund' => Gate::allows('patients_refund_refund'),
                 ];
             }
@@ -142,15 +141,16 @@ class RefundsController extends Controller
         }
     }
 
-    private function getFiltersData($records, $filename = 'plansrefunds') {
+    private function getFiltersData($records, $filename = 'plansrefunds')
+    {
 
         $filters = Filters::all(Auth::User()->id, $filename);
 
-        if($user_id = Filters::get(Auth::User()->id, $filename, 'patient_id')) {
-            $patient = User::where(array(
-                'id' => $user_id
-            ))->first();
-            if($patient) {
+        if ($user_id = Filters::get(Auth::User()->id, $filename, 'patient_id')) {
+            $patient = User::where([
+                'id' => $user_id,
+            ])->first();
+            if ($patient) {
                 $patient = $patient->toArray();
             }
         } else {
@@ -158,9 +158,9 @@ class RefundsController extends Controller
         }
         $package_id = Filters::get(Auth::User()->id, $filename, 'package_id');
         if ($package_id) {
-            $package = Packages::where(array(
-                'id' => $package_id
-            ))->first();
+            $package = Packages::where([
+                'id' => $package_id,
+            ])->first();
             if ($package) {
                 $package = $package->toArray();
             }
@@ -168,14 +168,14 @@ class RefundsController extends Controller
             $package = [];
         }
 
-        $locations = Locations::getActiveSorted(ACL::getUserCentres(),'full_address');
+        $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
 
         $records['active_filters'] = $filters;
 
         $records['filter_values'] = [
             'package' => $package,
             'locations' => $locations,
-            'patient' => $patient
+            'patient' => $patient,
         ];
 
         return $records;
@@ -198,15 +198,15 @@ class RefundsController extends Controller
 
         /*calculation for back date refund entry*/
         $package_advance_last_in = PackageAdvances::where([
-            ['cash_flow','=','in'],
-            ['cash_amount','>',0],
-            ['package_id','=',$package_information->id]
-        ])->orderBy('created_at','desc')->first();
+            ['cash_flow', '=', 'in'],
+            ['cash_amount', '>', 0],
+            ['package_id', '=', $package_information->id],
+        ])->orderBy('created_at', 'desc')->first();
         $date_backend = date('Y-m-d', strtotime($package_advance_last_in->created_at));
         /*end*/
 
         /*first need to tax percentage*/
-        $bundle_information = PackageBundles::where('package_id','=',$id)->first();
+        $bundle_information = PackageBundles::where('package_id', '=', $id)->first();
         $tax_percentage = $bundle_information->tax_percenatage ?? '';
         /*ans is :: 16.0*/
 
@@ -217,7 +217,7 @@ class RefundsController extends Controller
             ['package_id', '=', $id],
             ['cash_flow', '=', 'out'],
             ['is_refund', '=', '1'],
-            ['is_tax', '=', '0']
+            ['is_tax', '=', '0'],
         ])->sum('cash_amount');
         /*ans is :: 0 */
 
@@ -229,7 +229,7 @@ class RefundsController extends Controller
         $package_cash_receive = PackageAdvances::where([
             ['package_id', '=', $id],
             ['cash_flow', '=', 'in'],
-            ['is_cancel', '=', '0']
+            ['is_cancel', '=', '0'],
         ])->sum('cash_amount');
         /*ans is :: 300*/
 
@@ -237,30 +237,30 @@ class RefundsController extends Controller
             /*Give amount that patient consume*/
             $package_service_originalPrice_consumed = PackageService::where([
                 ['package_id', '=', $id],
-                ['is_consumed', '=', '1']
+                ['is_consumed', '=', '1'],
             ])->sum('orignal_price');
             /*ans is :: 240*/
 
             /*Consume amount tax calculate*/
-            $cosume_amount_tax = 0;//$package_service_originalPrice_consumed*($tax_percentage/100);
+            $cosume_amount_tax = 0; //$package_service_originalPrice_consumed*($tax_percentage/100);
             /*ans is :: 38.4*/
 
             $refund_1 = $package_service_originalPrice_consumed + $cosume_amount_tax + $documentationcharges->data;
 
-            $refundable_amount = ceil(($package_cash_receive - $refund_1)-$package_is_refunded_amount);
+            $refundable_amount = ceil(($package_cash_receive - $refund_1) - $package_is_refunded_amount);
         }
 
         if ($refundable_amount > 0) {
             /*consume final price with tax*/
             $package_service_Price_consumed_tax = PackageService::where([
                 ['package_id', '=', $id],
-                ['is_consumed', '=', '1']
+                ['is_consumed', '=', '1'],
             ])->sum('tax_including_price');
             /*ans is :: 232*/
 
             $package_service_Price_consumed_without_tax = PackageService::where([
                 ['package_id', '=', $id],
-                ['is_consumed', '=', '1']
+                ['is_consumed', '=', '1'],
             ])->sum('tax_exclusive_price');
             /*ans is :: 200*/
 
@@ -274,7 +274,7 @@ class RefundsController extends Controller
             $cal_adjustment_final = $package_service_Price_consumed_tax + ($package_cash_receive - $refund_1);
             /*ans is 248.6*/
 
-            $is_adjustment_amount = ceil(($package_cash_receive - $cal_adjustment_final)-$return_tax_amount);
+            $is_adjustment_amount = ceil(($package_cash_receive - $cal_adjustment_final) - $return_tax_amount);
 
             $return_tax_amount = ceil($return_tax_amount);
 
@@ -308,7 +308,6 @@ class RefundsController extends Controller
     /**
      * Store a newly created Permission in storage.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
@@ -323,7 +322,7 @@ class RefundsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
-        if(Refunds::createRecord($request, Auth::User()->account_id)) {
+        if (Refunds::createRecord($request, Auth::User()->account_id)) {
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         }
 
@@ -337,7 +336,8 @@ class RefundsController extends Controller
      *
      * @return information of patient ledger
      */
-    public function detail($id){
+    public function detail($id)
+    {
 
         if (! Gate::allows('refunds_manage')) {
             return abort(401);
@@ -345,17 +345,16 @@ class RefundsController extends Controller
         $patient_name = User::find($id);
         $package_advances = PackageAdvances::where([
             ['patient_id', '=', $id],
-            ['cash_amount', '!=', '0']
+            ['cash_amount', '!=', '0'],
         ])->get();
 
-        return view('admin.refunds.detail',compact('package_advances','patient_name'));
+        return view('admin.refunds.detail', compact('package_advances', 'patient_name'));
 
     }
 
     /**
      * Validate form fields
      *
-     * @param  \Illuminate\Http\Request $request
      * @return Validator $validator;
      */
     protected function verifyFields(Request $request)
@@ -373,24 +372,24 @@ class RefundsController extends Controller
      */
     public function nonplansindex()
     {
-        if (!Gate::allows('refunds_manage')) {
+        if (! Gate::allows('refunds_manage')) {
             return abort(401);
         }
 
         $filters = Filters::all(Auth::User()->id, 'nonplansrefunds');
 
-        if($user_id = Filters::get(Auth::User()->id, 'nonplansrefunds', 'patient_id')) {
-            $patient = User::where(array(
-                'id' => $user_id
-            ))->first();
-            if($patient) {
+        if ($user_id = Filters::get(Auth::User()->id, 'nonplansrefunds', 'patient_id')) {
+            $patient = User::where([
+                'id' => $user_id,
+            ])->first();
+            if ($patient) {
                 $patient = $patient->toArray();
             }
         } else {
             $patient = [];
         }
 
-        return view('admin.nonplansrefunds.index', compact('filters' , 'patient'));
+        return view('admin.nonplansrefunds.index', compact('filters', 'patient'));
     }
 
     /**
@@ -403,62 +402,62 @@ class RefundsController extends Controller
     {
         try {
 
-        $filename = 'nonplansrefunds';
+            $filename = 'nonplansrefunds';
 
-        $filters = getFilters($request->all());
+            $filters = getFilters($request->all());
 
-        $apply_filter = checkFilters($filters, $filename);
+            $apply_filter = checkFilters($filters, $filename);
 
-        $records = array();
-        $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
 
-        // Get Total Records
-        $data = Refunds::getTotalRecordsnonplansrefunds($request, Auth::User()->account_id, false , $apply_filter);
+            // Get Total Records
+            $data = Refunds::getTotalRecordsnonplansrefunds($request, Auth::User()->account_id, false, $apply_filter);
 
-        $iTotalRecords = $data['iTotalRecords'];
+            $iTotalRecords = $data['iTotalRecords'];
 
-        list($orderBy, $order) = getSortBy($request);
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$orderBy, $order] = getSortBy($request);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $nonplansrefunds = $data['nonplansrefunds'];
+            $nonplansrefunds = $data['nonplansrefunds'];
 
-        $records = $this->getFilters($records);
+            $records = $this->getFilters($records);
 
-        if ($nonplansrefunds) {
-            foreach ($nonplansrefunds as $nonplansrefunds) {
-                $appointmentinformation = Appointments::where('id', '=', $nonplansrefunds['appointment_id'])->first();
-                $records["data"][] = array(
-                    'patient_id' => \App\Helpers\GeneralFunctions::patientSearchStringAdd($appointmentinformation->patient_id),
-                    'name' => $appointmentinformation->name,
-                    'doctor' => $appointmentinformation->doctor->name,
-                    'region' => $appointmentinformation->region->name,
-                    'city' => $appointmentinformation->city->name,
-                    'location' => $appointmentinformation->location->name,
-                    'service' => $appointmentinformation->service->name,
-                    'type' => $appointmentinformation->appointment_type->name,
-                );
+            if ($nonplansrefunds) {
+                foreach ($nonplansrefunds as $nonplansrefunds) {
+                    $appointmentinformation = Appointments::where('id', '=', $nonplansrefunds['appointment_id'])->first();
+                    $records['data'][] = [
+                        'patient_id' => \App\Helpers\GeneralFunctions::patientSearchStringAdd($appointmentinformation->patient_id),
+                        'name' => $appointmentinformation->name,
+                        'doctor' => $appointmentinformation->doctor->name,
+                        'region' => $appointmentinformation->region->name,
+                        'city' => $appointmentinformation->city->name,
+                        'location' => $appointmentinformation->location->name,
+                        'service' => $appointmentinformation->service->name,
+                        'type' => $appointmentinformation->appointment_type->name,
+                    ];
+                }
+
+                $records['meta'] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+
             }
 
-            $records["meta"] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
+            return ApiHelper::apiDataTable($records);
 
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-
-
-        return ApiHelper::apiDataTable($records);
-
-    } catch(\Exception $e) {
-        return ApiHelper::apiException($e);
     }
-}
 
-    private function getFilters($records) {
+    private function getFilters($records)
+    {
 
         $records['active_filters'] = Filters::all(Auth::User()->id, 'nonplansrefunds');
 
@@ -473,7 +472,7 @@ class RefundsController extends Controller
      */
     public function nonplans_refund_create($packageadvance_id)
     {
-        if (!Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_refund')) {
             return abort(401);
         }
         $package_advance_information = PackageAdvances::find($packageadvance_id);
@@ -492,7 +491,7 @@ class RefundsController extends Controller
             ['patient_id', '=', $package_advance_information->patient_id],
             ['cash_flow', '=', 'out'],
             ['appointment_id', '=', $package_advance_information->appointment_id],
-            ['is_adjustment', '=', '1']
+            ['is_adjustment', '=', '1'],
         ])->whereNull('package_id')->sum('cash_amount');
 
         if ($package_advance_adjustemnt_amount == 0) {
@@ -506,15 +505,14 @@ class RefundsController extends Controller
         $singlepatient_cash_in = PackageAdvances::where([
             ['patient_id', '=', $package_advance_information->patient_id],
             ['cash_flow', '=', 'in'],
-            ['appointment_id', '=', $package_advance_information->appointment_id]
+            ['appointment_id', '=', $package_advance_information->appointment_id],
         ])->whereNull('package_id')->sum('cash_amount');
 
         $singlepatient_cash_out = PackageAdvances::where([
             ['patient_id', '=', $package_advance_information->patient_id],
             ['cash_flow', '=', 'out'],
-            ['appointment_id', '=', $package_advance_information->appointment_id]
+            ['appointment_id', '=', $package_advance_information->appointment_id],
         ])->whereNull('package_id')->sum('cash_amount');
-
 
         $refundable_amount = $singlepatient_cash_in - $singlepatient_cash_out - $documentationcharges;
 
@@ -527,18 +525,17 @@ class RefundsController extends Controller
             $is_adjustment_amount = $documentationcharges;
         }
 
-        return view('admin.nonplansrefunds.create_refund', compact('patient_id', 'refundable_amount', 'is_adjustment_amount', 'documentationcharges', 'package_advance_id', 'document','date_backend'));
+        return view('admin.nonplansrefunds.create_refund', compact('patient_id', 'refundable_amount', 'is_adjustment_amount', 'documentationcharges', 'package_advance_id', 'document', 'date_backend'));
     }
 
     /**
      * Store refunds for non plans refunds
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function nonplans_refund_store(Request $request)
     {
-        if (!Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_refund')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 

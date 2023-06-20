@@ -23,8 +23,7 @@ interface UploadInterface
     /**
      * Returns upload status.
      *
-     * @param string $id upload id
-     *
+     * @param  string  $id upload id
      * @return array|null
      */
     public static function getUploadStatus($id);

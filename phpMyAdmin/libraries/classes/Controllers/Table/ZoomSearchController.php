@@ -4,17 +4,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
-use PhpMyAdmin\ConfigStorage\Relation;
-use PhpMyAdmin\Core;
-use PhpMyAdmin\DatabaseInterface;
-use PhpMyAdmin\DbTableExists;
-use PhpMyAdmin\ResponseRenderer;
-use PhpMyAdmin\Table\Search;
-use PhpMyAdmin\Template;
-use PhpMyAdmin\Url;
-use PhpMyAdmin\Util;
-use PhpMyAdmin\Utils\Gis;
-
 use function array_search;
 use function array_values;
 use function count;
@@ -25,6 +14,16 @@ use function is_numeric;
 use function json_encode;
 use function mb_strtolower;
 use function md5;
+use PhpMyAdmin\ConfigStorage\Relation;
+use PhpMyAdmin\Core;
+use PhpMyAdmin\DatabaseInterface;
+use PhpMyAdmin\DbTableExists;
+use PhpMyAdmin\ResponseRenderer;
+use PhpMyAdmin\Table\Search;
+use PhpMyAdmin\Template;
+use PhpMyAdmin\Url;
+use PhpMyAdmin\Util;
+use PhpMyAdmin\Utils\Gis;
 use function preg_match;
 use function preg_replace;
 use function str_ireplace;
@@ -223,7 +222,7 @@ class ZoomSearchController extends AbstractController
     /**
      * Display selection form action
      *
-     * @param string $dataLabel Data label
+     * @param  string  $dataLabel Data label
      */
     public function displaySelectionFormAction($dataLabel = null): void
     {
@@ -275,9 +274,9 @@ class ZoomSearchController extends AbstractController
         }
 
         $extra_data = [];
-        $row_info_query = 'SELECT * FROM ' . Util::backquote($_POST['db']) . '.'
-            . Util::backquote($_POST['table']) . ' WHERE ' . $_POST['where_clause'];
-        $result = $this->dbi->query($row_info_query . ';');
+        $row_info_query = 'SELECT * FROM '.Util::backquote($_POST['db']).'.'
+            .Util::backquote($_POST['table']).' WHERE '.$_POST['where_clause'];
+        $result = $this->dbi->query($row_info_query.';');
         $fields_meta = $this->dbi->getFieldsMeta($result);
         while ($row = $result->fetchAssoc()) {
             // for bit fields we need to convert them to printable form
@@ -328,17 +327,17 @@ class ZoomSearchController extends AbstractController
     /**
      * Zoom submit action
      *
-     * @param string $dataLabel Data label
-     * @param string $goto      Goto
+     * @param  string  $dataLabel Data label
+     * @param  string  $goto      Goto
      */
     public function zoomSubmitAction($dataLabel, $goto): void
     {
         //Query generation part
         $sql_query = $this->search->buildSqlQuery();
-        $sql_query .= ' LIMIT ' . $_POST['maxPlotLimit'];
+        $sql_query .= ' LIMIT '.$_POST['maxPlotLimit'];
 
         //Query execution part
-        $result = $this->dbi->query($sql_query . ';');
+        $result = $this->dbi->query($sql_query.';');
         $fields_meta = $this->dbi->getFieldsMeta($result);
         $data = [];
         while ($row = $result->fetchAssoc()) {
@@ -395,9 +394,8 @@ class ZoomSearchController extends AbstractController
      * Provides a column's type, collation, operators list, and criteria value
      * to display in table search form
      *
-     * @param int $search_index Row number in table search form
-     * @param int $column_index Column index in ColumnNames array
-     *
+     * @param  int  $search_index Row number in table search form
+     * @param  int  $column_index Column index in ColumnNames array
      * @return array Array containing column's properties
      */
     public function getColumnProperties($search_index, $column_index)
@@ -431,12 +429,12 @@ class ZoomSearchController extends AbstractController
             $extractedColumnspec = Util::extractColumnSpec($this->originalColumnTypes[$column_index]);
             $is_unsigned = $extractedColumnspec['unsigned'];
             $minMaxValues = $this->dbi->types->getIntegerRange($cleanType, ! $is_unsigned);
-            $htmlAttributes = 'data-min="' . $minMaxValues[0] . '" '
-                            . 'data-max="' . $minMaxValues[1] . '"';
+            $htmlAttributes = 'data-min="'.$minMaxValues[0].'" '
+                            .'data-max="'.$minMaxValues[1].'"';
         }
 
         $htmlAttributes .= ' onfocus="return '
-                        . 'verifyAfterSearchFieldChange(' . $search_index . ', \'#zoom_search_form\')"';
+                        .'verifyAfterSearchFieldChange('.$search_index.', \'#zoom_search_form\')"';
 
         $value = $this->template->render('table/search/input_box', [
             'str' => '',

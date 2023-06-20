@@ -1,10 +1,10 @@
 <?php
 
+use App\Models\SMSTemplates;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Config;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\SMSTemplates;
-use Illuminate\Support\Facades\Config;
 
 class SMSTemplatesSeed extends Seeder
 {
@@ -62,7 +62,6 @@ class SMSTemplatesSeed extends Seeder
         $role->givePermissionTo('sms_templates_edit');
         $role->givePermissionTo('sms_templates_active');
         $role->givePermissionTo('sms_templates_inactive');
-
 
         SMSTemplates::insert(Config::get('organization_setup_data.sms_templates'));
 

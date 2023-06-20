@@ -20,23 +20,23 @@ class RegionsWidget
      *
      * @return: (void)
      */
-    static function advancedCreateRegion($record, $account_id)
+    public static function advancedCreateRegion($record, $account_id)
     {
         // Create City
-        $city = Cities::create(array(
+        $city = Cities::create([
             'slug' => 'region',
-            'name' => 'All ' . $record->name,
+            'name' => 'All '.$record->name,
             'region_id' => $record->id,
             'account_id' => $account_id,
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ));
+        ]);
         $city->update(['sort_no' => $city->id]);
 
         // Create Centre
-        $center = Locations::create(array(
+        $center = Locations::create([
             'slug' => 'region',
-            'name' => 'All ' . $record->name,
+            'name' => 'All '.$record->name,
             'address' => '',
             'google_map' => '',
             'city_id' => $city->id,
@@ -44,7 +44,7 @@ class RegionsWidget
             'account_id' => $account_id,
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
-        ));
+        ]);
         $center->update(['sort_no' => $city->id]);
     }
 
@@ -55,21 +55,20 @@ class RegionsWidget
      *
      * @return: (void)
      */
-    static function advancedUpdateRegion($record, $account_id)
+    public static function advancedUpdateRegion($record, $account_id)
     {
-        Cities::where(array(
+        Cities::where([
             'account_id' => $account_id,
             'region_id' => $record->id,
-        ))->update(array(
-            'name' => $record->name
-        ));
+        ])->update([
+            'name' => $record->name,
+        ]);
 
-        Locations::where(array(
+        Locations::where([
             'account_id' => $account_id,
             'region_id' => $record->id,
-        ))->update(array(
-            'name' => $record->name
-        ));
+        ])->update([
+            'name' => $record->name,
+        ]);
     }
-
 }

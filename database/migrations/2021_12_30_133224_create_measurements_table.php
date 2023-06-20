@@ -21,7 +21,7 @@ class CreateMeasurementsTable extends Migration
             $table->unsignedBigInteger('custom_form_feedback_id');
             $table->date('date')->nullable();
             $table->unsignedBigInteger('service_id');
-            $table->enum('priority',['Low priority','Medium priority','High priority']);
+            $table->enum('priority', ['Low priority', 'Medium priority', 'High priority']);
             $table->enum('type', ['Before Appointment', 'After Appointment']);
             $table->timestamps();
 

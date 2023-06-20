@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Config\Forms\User;
 
-use PhpMyAdmin\Config\Forms\BaseForm;
-
 use function __;
+use PhpMyAdmin\Config\Forms\BaseForm;
 
 class MainForm extends BaseForm
 {
@@ -34,7 +33,7 @@ class MainForm extends BaseForm
             'TableStructure' => [
                 'HideStructureActions',
                 'ShowColumnComments',
-                ':group:' . __('Default transformations'),
+                ':group:'.__('Default transformations'),
                 'DefaultTransformations/Hex',
                 'DefaultTransformations/Substring',
                 'DefaultTransformations/Bool2Text',

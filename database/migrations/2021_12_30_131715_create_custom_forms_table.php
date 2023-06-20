@@ -16,9 +16,9 @@ class CreateCustomFormsTable extends Migration
         Schema::create('custom_forms', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text("description")->nullable();
-            $table->integer("form_type")->nullable();
-            $table->text("content")->nullable();
+            $table->text('description')->nullable();
+            $table->integer('form_type')->nullable();
+            $table->text('content')->nullable();
             $table->unsignedTinyInteger('active')->default(1);
             $table->unsignedBigInteger('sort_number')->nullable();
             $table->unsignedBigInteger('account_id');

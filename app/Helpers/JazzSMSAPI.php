@@ -1,23 +1,24 @@
 <?php
 
-namespace App\Helpers ;
+namespace App\Helpers;
 
-
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
-
-class JazzSMSAPI {
-
+class JazzSMSAPI
+{
     // Username for SMS APIs
     private static $_username = null;
+
     // Password for SMS APIs
     private static $_password = null;
+
     // Receiver List which will get SMS
     private static $_tos = null;
+
     // Text for Receiver List which will get SMS
     private static $_Message = null;
+
     // SMS Mast (optional)
     private static $_from = null;
+
     // Unicode for other than English (optional)
     private static $_unicode = null;
 
@@ -32,72 +33,72 @@ class JazzSMSAPI {
      * @param: array|mixed
      * @return: array|mixed
      */
-    public static function SendSMS($SMSData) {
+    public static function SendSMS($SMSData)
+    {
         // Error handling variables
         $status = 1;
-        $error_msg = array();
+        $error_msg = [];
 
-        if(!isset($SMSData['username']) || !$SMSData['username']) {
+        if (! isset($SMSData['username']) || ! $SMSData['username']) {
             $status = false;
             $error_msg[] = 'Username is required';
         } else {
             self::$_username = $SMSData['username'];
         }
 
-        if(!isset($SMSData['password']) || !$SMSData['password']) {
+        if (! isset($SMSData['password']) || ! $SMSData['password']) {
             $status = false;
             $error_msg[] = 'Password is required';
         } else {
             self::$_password = $SMSData['password'];
         }
 
-        if(!isset($SMSData['to']) || !$SMSData['to']) {
+        if (! isset($SMSData['to']) || ! $SMSData['to']) {
             $status = false;
             $error_msg[] = 'To is required';
         } else {
             self::$_tos = is_array($SMSData['to']) ? implode(',', $SMSData['to']) : $SMSData['to'];
         }
 
-        if(!isset($SMSData['text']) || !$SMSData['text']) {
+        if (! isset($SMSData['text']) || ! $SMSData['text']) {
             $status = false;
             $error_msg[] = 'Text is required';
         } else {
             self::$_Message = htmlentities($SMSData['text']);
         }
 
-        if(!isset($SMSData['test_mode'])) {
+        if (! isset($SMSData['test_mode'])) {
             $status = false;
             $error_msg[] = 'Test Mode value is required';
         } else {
             self::$_test_mode = $SMSData['test_mode'];
         }
 
-        if(isset($SMSData['from']) && $SMSData['from']) {
+        if (isset($SMSData['from']) && $SMSData['from']) {
             self::$_from = $SMSData['from'];
         }
 
         // Verify Test Mode, If enable then send response immedately
-        if(self::$_test_mode) {
-            return array(
+        if (self::$_test_mode) {
+            return [
                 'status' => true,
                 'sms_data' => 'Test Mode is enabled',
                 'error_msg' => '',
-            );
+            ];
         }
 
-        if(!$status) {
+        if (! $status) {
             // One or more information is needed
-            return array(
+            return [
                 'status' => $status,
                 'sms_data' => '',
                 'error_msg' => implode(', ', $error_msg),
-            );
+            ];
         } else {
             // All vaidation is complete now send SMS
-            return self::sendQuickSMS( $SMSData );
+            return self::sendQuickSMS($SMSData);
         }
     }
-
 
     /*
      * Send Quick SMS based on provided Data
@@ -105,7 +106,8 @@ class JazzSMSAPI {
      * @return: array|mixed
      */
 
-    private static function sendQuickSMS( $SMSData ) {
+    private static function sendQuickSMS($SMSData)
+    {
 
         $client = new \GuzzleHttp\Client();
 
@@ -123,16 +125,16 @@ class JazzSMSAPI {
                 'headers' => [
                     'Content-Type' => 'text/xml; charset=UTF8',
                 ],
-                'body' => $xml
+                'body' => $xml,
             ]);
             $status = true;
             $error_msg = '';
-            if($response->getStatusCode() == 200) {
+            if ($response->getStatusCode() == 200) {
                 $responseBody = $response->getBody();
-                if($responseBody) {
+                if ($responseBody) {
                     try {
-                        $responseJSON = \GuzzleHttp\json_decode(\GuzzleHttp\json_encode(simplexml_load_string($responseBody, "SimpleXMLElement", LIBXML_NOCDATA)), true);
-                        if(!array_key_exists('messageid',$responseJSON)) {
+                        $responseJSON = \GuzzleHttp\json_decode(\GuzzleHttp\json_encode(simplexml_load_string($responseBody, 'SimpleXMLElement', LIBXML_NOCDATA)), true);
+                        if (! array_key_exists('messageid', $responseJSON)) {
                             $status = false;
                             $error_msg = 'Problem belongs to response code 11';
                         }
@@ -152,11 +154,12 @@ class JazzSMSAPI {
             $status = false;
             $error_msg = $e->getMessage();
         }
-        return array(
+
+        return [
             'status' => $status,
             'sms_data' => $sms_data,
-            'error_msg' => $error_msg
-        );
+            'error_msg' => $error_msg,
+        ];
     }
 
     /*
@@ -165,8 +168,9 @@ class JazzSMSAPI {
     * @param: string
     * @return: string
     */
-    private static function tranlateError($ErrorCode) {
-        $errorCodes = array(
+    private static function tranlateError($ErrorCode)
+    {
+        $errorCodes = [
             'Error 200' => 'Failed login. Username and password do not match.',
             'Error 201' => 'Unknown MSISDN, Please Check Format i.e. 92345xxxxxxx',
             'Error 100' => 'Out of credit.',
@@ -201,13 +205,12 @@ class JazzSMSAPI {
             'Error 303' => 'User has entered date and is not valid date',
             'Error 304' => 'API throughput limit reached for TPS Control mode',
             'Error 305' => 'User SMS/recipients exceeds than allowed throughput',
-        );
+        ];
 
-        if($ErrorCode && array_key_exists($ErrorCode, $errorCodes)) {
+        if ($ErrorCode && array_key_exists($ErrorCode, $errorCodes)) {
             return $errorCodes[$ErrorCode];
         } else {
             return 'No error code match.';
         }
     }
-
 }

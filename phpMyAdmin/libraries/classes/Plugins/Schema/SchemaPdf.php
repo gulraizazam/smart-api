@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Schema;
 
+use function __;
+use function class_exists;
 use PhpMyAdmin\Plugins\Schema\Pdf\PdfRelationSchema;
 use PhpMyAdmin\Plugins\SchemaPlugin;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyMainGroup;
@@ -15,9 +17,6 @@ use PhpMyAdmin\Properties\Options\Items\BoolPropertyItem;
 use PhpMyAdmin\Properties\Options\Items\SelectPropertyItem;
 use PhpMyAdmin\Properties\Plugins\SchemaPluginProperties;
 use TCPDF;
-
-use function __;
-use function class_exists;
 
 /**
  * Handles the schema export for the PDF format
@@ -115,7 +114,7 @@ class SchemaPdf extends SchemaPlugin
     /**
      * Exports the schema into PDF format.
      *
-     * @param string $db database name
+     * @param  string  $db database name
      */
     public function exportSchema($db): bool
     {

@@ -15,7 +15,7 @@ class CreateTelecomprovidersTable extends Migration
     {
         Schema::create('telecomproviders', function (Blueprint $table) {
             $table->id();
-            $table->string('name',500)->nullable();
+            $table->string('name', 500)->nullable();
             $table->unsignedTinyInteger('active')->default(1);
             $table->timestamps();
             $table->softDeletes();

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server\Variables;
 
+use function __;
+use function htmlspecialchars;
+use function implode;
+use function is_numeric;
+use function mb_strtolower;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Http\ServerRequest;
@@ -11,12 +16,6 @@ use PhpMyAdmin\Providers\ServerVariables\ServerVariablesProvider;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Util;
-
-use function __;
-use function htmlspecialchars;
-use function implode;
-use function is_numeric;
-use function mb_strtolower;
 use function preg_match;
 use function trim;
 
@@ -34,7 +33,7 @@ final class SetVariableController extends AbstractController
     /**
      * Handle the AJAX request for setting value for a single variable
      *
-     * @param array $vars Request parameters
+     * @param  array  $vars Request parameters
      */
     public function __invoke(ServerRequest $request, array $vars): void
     {
@@ -68,17 +67,17 @@ final class SetVariableController extends AbstractController
         }
 
         if (! is_numeric($value)) {
-            $value = "'" . $value . "'";
+            $value = "'".$value."'";
         }
 
         $json = [];
         if (! preg_match('/[^a-zA-Z0-9_]+/', $variableName)) {
-            $this->dbi->query('SET GLOBAL ' . $variableName . ' = ' . $value);
+            $this->dbi->query('SET GLOBAL '.$variableName.' = '.$value);
             // Some values are rounded down etc.
             $varValue = $this->dbi->fetchSingleRow(
                 'SHOW GLOBAL VARIABLES WHERE Variable_name="'
-                . $this->dbi->escapeString($variableName)
-                . '";',
+                .$this->dbi->escapeString($variableName)
+                .'";',
                 DatabaseInterface::FETCH_NUM
             );
             [$formattedValue, $isHtmlFormatted] = $this->formatVariable($variableName, $varValue[1]);
@@ -99,9 +98,8 @@ final class SetVariableController extends AbstractController
     /**
      * Format Variable
      *
-     * @param string     $name  variable name
-     * @param int|string $value variable value
-     *
+     * @param  string  $name  variable name
+     * @param  int|string  $value variable value
      * @return array formatted string and bool if string is HTML formatted
      */
     private function formatVariable($name, $value): array

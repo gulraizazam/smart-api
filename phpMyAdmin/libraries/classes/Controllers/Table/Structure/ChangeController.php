@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table\Structure;
 
+use function __;
+use function count;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Controllers\Table\AbstractController;
@@ -14,9 +16,6 @@ use PhpMyAdmin\Table\ColumnsDefinition;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Url;
-
-use function __;
-use function count;
 
 final class ChangeController extends AbstractController
 {
@@ -67,7 +66,7 @@ final class ChangeController extends AbstractController
     /**
      * Displays HTML for changing one or more columns
      *
-     * @param array|null $selected the selected columns
+     * @param  array|null  $selected the selected columns
      */
     private function displayHtmlForColumnChange(?array $selected): void
     {

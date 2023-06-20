@@ -25,7 +25,7 @@ class CreateInvoiceStatusesTable extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('account_id','invoice_status_account_id')->references('id')->on('accounts');
+            $table->foreign('account_id', 'invoice_status_account_id')->references('id')->on('accounts');
         });
     }
 

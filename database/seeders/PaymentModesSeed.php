@@ -1,10 +1,9 @@
 <?php
 
+use App\Models\PaymentModes;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\PaymentModes;
-use Illuminate\Support\Facades\Config;
 
 class PaymentModesSeed extends Seeder
 {
@@ -93,42 +92,42 @@ class PaymentModesSeed extends Seeder
         $role->givePermissionTo('payment_modes_sort');
 
         PaymentModes::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'name' => 'Cash',
-                'sort_number'=>'1',
-                'payment_type'=> '1',
-                'account_id'=>'1',
+                'sort_number' => '1',
+                'payment_type' => '1',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            2 => array(
+            ],
+            2 => [
                 'id' => 2,
                 'name' => 'Card',
-                'sort_number'=>'2',
-                'payment_type'=> '2',
-                'account_id'=>'1',
+                'sort_number' => '2',
+                'payment_type' => '2',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            3 => array(
+            ],
+            3 => [
                 'id' => 3,
                 'name' => 'PayPal',
-                'sort_number'=>'3',
-                'payment_type'=> '3',
-                'account_id'=>'1',
+                'sort_number' => '3',
+                'payment_type' => '3',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            4 => array(
+            ],
+            4 => [
                 'id' => 4,
                 'name' => 'Bank/Wire Transfer',
-                'sort_number'=>'4',
-                'payment_type'=> '4',
-                'account_id'=>'1',
+                'sort_number' => '4',
+                'payment_type' => '4',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
         ]);
 
     }

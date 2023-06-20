@@ -4,18 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
+use App\Http\Controllers\Controller;
 use App\Models\UserOperatorSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class UserOperatorSettingsController extends Controller
 {
-
     protected $error;
+
     protected $success;
+
     protected $unauthorized;
 
     public function __construct()
@@ -32,7 +33,7 @@ class UserOperatorSettingsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('user_operator_settings_manage')) {
+        if (! Gate::allows('user_operator_settings_manage')) {
             return abort(401);
         }
         $filters = Filters::all(Auth::User()->id, 'operators');
@@ -40,15 +41,14 @@ class UserOperatorSettingsController extends Controller
         return view('admin.user_operator_settings.index', compact('filters'));
     }
 
-
     /**
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
-        if (!Gate::allows('user_operator_settings_manage'))
+        if (! Gate::allows('user_operator_settings_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
 
         $filename = 'operators';
 
@@ -56,15 +56,15 @@ class UserOperatorSettingsController extends Controller
 
         $apply_filter = checkFilters($filters, $filename);
 
-        $records = array();
-        $records["data"] = array();
+        $records = [];
+        $records['data'] = [];
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         // Get Total Records
         $iTotalRecords = UserOperatorSettings::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $Operators = UserOperatorSettings::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
@@ -74,12 +74,12 @@ class UserOperatorSettingsController extends Controller
                 $operator->test_mode = $operator->test_mode == 1 ? 'Yes' : 'No';
             }
         }
-        $records["data"] = $Operators;
+        $records['data'] = $Operators;
 
-        $records["permissions"] = [
+        $records['permissions'] = [
             'edit' => Gate::allows('user_operator_settings_edit'),
         ];
-        $records["meta"] = [
+        $records['meta'] = [
             'field' => $orderBy,
             'page' => $page,
             'pages' => $pages,
@@ -87,14 +87,13 @@ class UserOperatorSettingsController extends Controller
             'total' => $iTotalRecords,
             'sort' => $order,
         ];
+
         return ApiHelper::apiDataTable($records);
     }
-
 
     /**
      * Validate form fields
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyFields(Request $request)
@@ -104,23 +103,22 @@ class UserOperatorSettingsController extends Controller
         ]);
     }
 
-
     /**
      * Get Data for editing Operator Settings.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         try {
-            if (!Gate::allows('user_operator_settings_edit')) {
+            if (! Gate::allows('user_operator_settings_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $user_operator_setting = UserOperatorSettings::getData($id);
-            if (!$user_operator_setting) {
+            if (! $user_operator_setting) {
                 return ApiHelper::apiResponse($this->success, 'No Data Found!', false);
             }
+
             return ApiHelper::apiResponse($this->success, 'Success', true, $user_operator_setting);
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
@@ -131,14 +129,12 @@ class UserOperatorSettingsController extends Controller
     /**
      * Update Operator Settings.
      *
-     * @param Request $request
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('user_operator_settings_manage')) {
+            if (! Gate::allows('user_operator_settings_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -148,6 +144,7 @@ class UserOperatorSettingsController extends Controller
             if (UserOperatorSettings::updateRecord($id, $request, Auth::User()->account_id)) {
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
@@ -157,12 +154,11 @@ class UserOperatorSettingsController extends Controller
     /**
      * Load Operator by ID
      *
-     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function loadOperator(Request $request)
     {
-        if (!Gate::allows('user_operator_settings_manage')) {
+        if (! Gate::allows('user_operator_settings_manage')) {
             return abort(401);
         }
 
@@ -173,15 +169,15 @@ class UserOperatorSettingsController extends Controller
                 $GlobalOperatorSetting->password = '********';
             }
 
-            return response()->json(array(
+            return response()->json([
                 'status' => 1,
                 'operator_setting' => $GlobalOperatorSetting->toArray(),
-            ));
+            ]);
         }
 
-        return response()->json(array(
+        return response()->json([
             'status' => 0,
             'message' => 'Something went wrong, please try again later.',
-        ));
+        ]);
     }
 }

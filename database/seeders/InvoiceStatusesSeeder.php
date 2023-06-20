@@ -1,9 +1,7 @@
 <?php
 
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use App\Models\InvoiceStatuses;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Config;
 
 class InvoiceStatusesSeeder extends Seeder
