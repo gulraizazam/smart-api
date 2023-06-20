@@ -38,7 +38,7 @@ class PrivilegesController extends AbstractController
     }
 
     /**
-     * @param array $params Request parameters
+     * @param  array  $params Request parameters
      */
     public function __invoke(array $params): string
     {

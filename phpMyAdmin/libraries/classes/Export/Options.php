@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Export;
 
+use function explode;
+use function function_exists;
+use function in_array;
+use function is_array;
+use function is_string;
+use function mb_strpos;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\Encoding;
@@ -12,13 +18,6 @@ use PhpMyAdmin\Plugins\ExportPlugin;
 use PhpMyAdmin\Query\Utilities;
 use PhpMyAdmin\Table;
 use PhpMyAdmin\Util;
-
-use function explode;
-use function function_exists;
-use function in_array;
-use function is_array;
-use function is_string;
-use function mb_strpos;
 use function strlen;
 use function urldecode;
 
@@ -39,7 +38,7 @@ final class Options
     /**
      * Outputs appropriate checked statement for checkbox.
      *
-     * @param string $str option name
+     * @param  string  $str option name
      */
     private function checkboxCheck($str): bool
     {
@@ -50,8 +49,7 @@ final class Options
     /**
      * Prints Html For Export Selection Options
      *
-     * @param string $tmpSelect Tmp selected method of export
-     *
+     * @param  string  $tmpSelect Tmp selected method of export
      * @return array
      */
     public function getDatabasesForSelectOptions($tmpSelect = '')
@@ -78,7 +76,7 @@ final class Options
                     $isSelected = true;
                 }
             } elseif (! empty($tmpSelect)) {
-                if (mb_strpos(' ' . $tmpSelect, '|' . $currentDb . '|')) {
+                if (mb_strpos(' '.$tmpSelect, '|'.$currentDb.'|')) {
                     $isSelected = true;
                 }
             } else {
@@ -95,14 +93,13 @@ final class Options
     }
 
     /**
-     * @param string         $exportType   export type: server|database|table
-     * @param string         $db           selected DB
-     * @param string         $table        selected table
-     * @param string         $sqlQuery     SQL query
-     * @param int|string     $numTables    number of tables
-     * @param int|string     $unlimNumRows unlimited number of rows
-     * @param ExportPlugin[] $exportList
-     *
+     * @param  string  $exportType   export type: server|database|table
+     * @param  string  $db           selected DB
+     * @param  string  $table        selected table
+     * @param  string  $sqlQuery     SQL query
+     * @param  int|string  $numTables    number of tables
+     * @param  int|string  $unlimNumRows unlimited number of rows
+     * @param  ExportPlugin[]  $exportList
      * @return array<string, mixed>
      */
     public function getOptions(

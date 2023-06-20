@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\View;
 
+use function __;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\DbTableExists;
@@ -14,8 +15,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
 
 /**
  * View manipulations

@@ -2,24 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
-use App\Models\AuditTrails;
-use Illuminate\Support\Facades\Auth;
+use App\Helpers\Filters;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use App\Helpers\Filters;
-use App\Models\CentertargetMeta;
-
+use Illuminate\Support\Facades\Auth;
 
 class Centertarget extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['account_id', 'month', 'year','working_days', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['account_id', 'month', 'year', 'working_days', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['account_id', 'month', 'year','working_days'];
+    protected static $_fillable = ['account_id', 'month', 'year', 'working_days'];
 
     protected $table = 'centertarget';
 
@@ -36,39 +30,36 @@ class Centertarget extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
         $where = self::centertarget_filters($request, $account_id, $apply_filter);
+
         return Centertarget::where($where)->count();
     }
 
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false,$apply_filter = false, $filters = [])
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false, $filters = [])
     {
         $where = self::centertarget_filters($request, $account_id, $apply_filter, $filters);
 
         if ($request->has('sort')) {
 
-            list($orderBy, $order) = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request);
 
             Filters::put(Auth::User()->id, 'centertarget', 'order_by', $orderBy);
             Filters::put(Auth::User()->id, 'centertarget', 'order', $order);
         } else {
-            if(
+            if (
                 Filters::get(Auth::User()->id, 'centertarget', 'order_by')
                 && Filters::get(Auth::User()->id, 'centertarget', 'order')
             ) {
@@ -89,122 +80,122 @@ class Centertarget extends BaseModal
                 Filters::put(Auth::User()->id, 'centertarget', 'order', $order);
             }
         }
-         return Centertarget::where($where)
+
+        return Centertarget::where($where)
             ->orderby($orderBy, $order)
             ->limit($iDisplayLength)->offset($iDisplayStart)
             ->get();
     }
 
-
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     * @param (boolean) $apply_filter
+     * @param  \Illuminate\Http\Request  $request
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (boolean)  $apply_filter
      * @return (mixed)
      */
-    static public function centertarget_filters($request, $account_id, $apply_filter, $filters = [])
+    public static function centertarget_filters($request, $account_id, $apply_filter, $filters = [])
     {
-        $where = array();
+        $where = [];
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'centertarget', 'account_id', $account_id);
-        }  else {
+        } else {
 
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'centertarget', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'centertarget', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'centertarget', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'year')) {
-            $where[] = array(
+            $where[] = [
                 'year',
                 '=',
-                $filters['year']
-            );
+                $filters['year'],
+            ];
             Filters::put(Auth::User()->id, 'centertarget', 'year', $filters['year']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'year');
             } else {
                 if (Filters::get(Auth::User()->id, 'centertarget', 'year')) {
-                    $where[] = array(
+                    $where[] = [
                         'year',
                         '=',
-                        Filters::get(Auth::User()->id, 'centertarget', 'year')
-                    );
+                        Filters::get(Auth::User()->id, 'centertarget', 'year'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'month')) {
-            $where[] = array(
+            $where[] = [
                 'month',
                 '=',
-                $filters['month']
-            );
+                $filters['month'],
+            ];
             Filters::put(Auth::User()->id, 'centertarget', 'month', $filters['month']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'month');
             } else {
                 if (Filters::get(Auth::User()->id, 'centertarget', 'month')) {
-                    $where[] = array(
+                    $where[] = [
                         'month',
                         '=',
-                        Filters::get(Auth::User()->id, 'centertarget', 'month')
-                    );
+                        Filters::get(Auth::User()->id, 'centertarget', 'month'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
+                $filters['created_from'].' 00:00:00',
+            ];
             Filters::put(Auth::User()->id, 'centertarget', 'created_from', $filters['created_from']);
         } else {
-            if($apply_filter) {
+            if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'created_from');
             } else {
-                if(Filters::get(Auth::User()->id, 'centertarget', 'created_from')) {
-                    $where[] = array(
+                if (Filters::get(Auth::User()->id, 'centertarget', 'created_from')) {
+                    $where[] = [
                         'created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, 'centertarget', 'created_from') . ' 00:00:00'
-                    );
+                        Filters::get(Auth::User()->id, 'centertarget', 'created_from').' 00:00:00',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
+                $filters['created_to'].' 23:59:59',
+            ];
             Filters::put(Auth::User()->id, 'centertarget', 'created_to', $filters['created_to']);
         } else {
-            if($apply_filter) {
+            if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'centertarget', 'created_to');
             } else {
-                if(Filters::get(Auth::User()->id, 'centertarget', 'created_to')) {
-                    $where[] = array(
+                if (Filters::get(Auth::User()->id, 'centertarget', 'created_to')) {
+                    $where[] = [
                         'created_at',
                         '<=',
-                        Filters::get(Auth::User()->id, 'centertarget', 'created_to') . ' 23:59:59'
-                    );
+                        Filters::get(Auth::User()->id, 'centertarget', 'created_to').' 23:59:59',
+                    ];
                 }
             }
         }
@@ -212,16 +203,13 @@ class Centertarget extends BaseModal
         return $where;
     }
 
-
-
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
         $data = $request->all();
 
@@ -236,17 +224,17 @@ class Centertarget extends BaseModal
         foreach ($data['target_amount'] as $key => $amount) {
             $targetCentermeta = CentertargetMeta::createRecord($key, $amount, $account_id, $record);
         }
+
         return $record;
     }
 
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (Centertarget::find($id))->toArray();
 
@@ -254,10 +242,10 @@ class Centertarget extends BaseModal
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -268,21 +256,23 @@ class Centertarget extends BaseModal
         foreach ($data['target_amount'] as $key => $amount) {
             $targetCentermeta = CentertargetMeta::updateRecord($key, $amount, $account_id, $record);
         }
+
         return $record;
     }
+
     /**
      * delete Record
      *
      * @param id
-     *
      * @return (mixed)
      */
-    static function deleteRecord($id)
+    public static function deleteRecord($id)
     {
         $center_target = self::find($id);
 
-        if (!$center_target) {
+        if (! $center_target) {
             flash('Resource not found.')->error()->important();
+
             return redirect()->route('admin.centre_targets.index');
         }
         // Remove belonging records records

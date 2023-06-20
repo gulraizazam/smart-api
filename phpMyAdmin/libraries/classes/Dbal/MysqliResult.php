@@ -7,18 +7,16 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Dbal;
 
-use Generator;
-use mysqli_result;
-use PhpMyAdmin\FieldMetadata;
-use Webmozart\Assert\Assert;
-
 use function array_column;
+use Generator;
 use function is_array;
 use function is_bool;
 use function is_string;
 use function method_exists;
-
 use const MYSQLI_ASSOC;
+use mysqli_result;
+use PhpMyAdmin\FieldMetadata;
+use Webmozart\Assert\Assert;
 
 /**
  * Extension independent database result
@@ -28,12 +26,12 @@ final class MysqliResult implements ResultInterface
     /**
      * The result identifier produced by the DBiExtension
      *
-     * @var mysqli_result|null $result
+     * @var mysqli_result|null
      */
     private $result;
 
     /**
-     * @param mysqli_result|bool $result
+     * @param  mysqli_result|bool  $result
      */
     public function __construct($result)
     {
@@ -94,8 +92,7 @@ final class MysqliResult implements ResultInterface
     /**
      * Returns a single value from the given result; false on error
      *
-     * @param int|string $field
-     *
+     * @param  int|string  $field
      * @return string|false|null
      */
     public function fetchValue($field = 0)
@@ -211,6 +208,7 @@ final class MysqliResult implements ResultInterface
      * Returns the number of rows in the result
      *
      * @return string|int
+     *
      * @psalm-return int|numeric-string
      */
     public function numRows()
@@ -225,8 +223,7 @@ final class MysqliResult implements ResultInterface
     /**
      * Adjusts the result pointer to an arbitrary row in the result
      *
-     * @param int $offset offset to seek
-     *
+     * @param  int  $offset offset to seek
      * @return bool True if the offset exists, false otherwise
      */
     public function seek(int $offset): bool

@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Crypto;
 
-use Throwable;
-
 use function is_string;
 use function mb_strlen;
 use function mb_substr;
 use function random_bytes;
 use function sodium_crypto_secretbox;
-use function sodium_crypto_secretbox_open;
-
 use const SODIUM_CRYPTO_SECRETBOX_KEYBYTES;
 use const SODIUM_CRYPTO_SECRETBOX_NONCEBYTES;
+use function sodium_crypto_secretbox_open;
+use Throwable;
 
 final class Crypto
 {
@@ -44,7 +42,7 @@ final class Crypto
         $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
         $ciphertext = sodium_crypto_secretbox($plaintext, $nonce, $key);
 
-        return $nonce . $ciphertext;
+        return $nonce.$ciphertext;
     }
 
     public function decrypt(string $encrypted): ?string

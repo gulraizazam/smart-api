@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function count;
+use function is_array;
+use function is_numeric;
+use function json_decode;
+use function min;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\DbTableExists;
 use PhpMyAdmin\Index;
@@ -12,12 +17,6 @@ use PhpMyAdmin\Table\Indexes;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function count;
-use function is_array;
-use function is_numeric;
-use function json_decode;
-use function min;
 
 /**
  * Displays index edit/creation form and handles it.
@@ -80,7 +79,7 @@ class IndexesController extends AbstractController
     /**
      * Display the form to edit/create an index
      *
-     * @param Index $index An Index instance.
+     * @param  Index  $index An Index instance.
      */
     private function displayForm(Index $index): void
     {

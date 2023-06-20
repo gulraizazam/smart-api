@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Sql;
 
+use function __;
+use function mb_strpos;
 use PhpMyAdmin\Bookmark;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\Config\PageSettings;
@@ -18,9 +20,6 @@ use PhpMyAdmin\Sql;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function mb_strpos;
 use function str_contains;
 use function strlen;
 use function urlencode;
@@ -96,10 +95,10 @@ class SqlController extends AbstractController
                 ! str_contains($errorUrl, '?') ? '?' : '&'
             );
             if (
-                (mb_strpos(' ' . $errorUrl, 'db_') !== 1 || ! str_contains($errorUrl, '?route=/database/'))
+                (mb_strpos(' '.$errorUrl, 'db_') !== 1 || ! str_contains($errorUrl, '?route=/database/'))
                 && strlen($table) > 0
             ) {
-                $errorUrl .= '&amp;table=' . urlencode($table);
+                $errorUrl .= '&amp;table='.urlencode($table);
             }
         }
 
@@ -226,7 +225,7 @@ class SqlController extends AbstractController
         }
 
         if (! $this->response->isAjax()) {
-            Core::sendHeaderLocation('./' . $goto . '&label=' . $_POST['bkm_fields']['bkm_label']);
+            Core::sendHeaderLocation('./'.$goto.'&label='.$_POST['bkm_fields']['bkm_label']);
 
             return;
         }

@@ -10,7 +10,6 @@ class DiscountHasLocations extends Model
 
     protected $table = 'discount_has_locations';
 
-
     public function discount()
     {
         return $this->belongsTo('App\Models\Discounts', 'discount_id')->withTrashed();

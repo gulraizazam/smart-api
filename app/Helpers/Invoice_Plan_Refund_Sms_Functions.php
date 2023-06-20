@@ -3,8 +3,6 @@
 namespace App\Helpers;
 
 use App\Models\Appointments;
-use App\Models\Doctors;
-use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\Packages;
 use App\Models\Patients;
@@ -13,9 +11,8 @@ use App\Models\Settings;
 use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
 use App\Models\UserOperatorSettings;
-use Carbon\Carbon;
-use Composer\Package\Package;
 use Auth;
+use Carbon\Carbon;
 
 class Invoice_Plan_Refund_Sms_Functions
 {
@@ -25,25 +22,25 @@ class Invoice_Plan_Refund_Sms_Functions
      * @param: int $packageAdavances
      * @return: string
      */
-    static function PlanCashReceived_SMS($package_id, $packageAdavances)
+    public static function PlanCashReceived_SMS($package_id, $packageAdavances)
     {
         // SEND SMS for Appointment Booked
         $SMSTemplate = SMSTemplates::getBySlug('plan-cash', Auth::User()->account_id);
 
-        if (!$SMSTemplate) {
+        if (! $SMSTemplate) {
             // SMS Promotion is disabled
-            return array(
+            return [
                 'status' => true,
                 'sms_data' => 'Plan Cash Amount SMS is disabled',
                 'error_msg' => '',
-            );
+            ];
         }
 
         $plan_information = Packages::find($package_id);
 
         $patient = Patients::find($plan_information->patient_id);
 
-        $preparedText = Self::prepareSMSContent($package_id, $SMSTemplate->content, $packageAdavances, $plan_information, $patient);
+        $preparedText = self::prepareSMSContent($package_id, $SMSTemplate->content, $packageAdavances, $plan_information, $patient);
 
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
@@ -51,28 +48,28 @@ class Invoice_Plan_Refund_Sms_Functions
 
         if ($setting->data == 1) {
 
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient->phone)),
                 'text' => $preparedText,
                 'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = TelenorSMSAPI::SendSMS($SMSObj);
         } else {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'from' => $UserOperatorSettings->mask,
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient->phone)),
                 'text' => $preparedText,
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
 
-//        $response = TelenorSMSAPI::SendSMS($SMSObj);
+        //        $response = TelenorSMSAPI::SendSMS($SMSObj);
 
         $SMSLog = array_merge($SMSObj, $response);
         $SMSLog['package_id'] = $package_id;
@@ -89,13 +86,16 @@ class Invoice_Plan_Refund_Sms_Functions
      * Prepare SMS Contnet for Plan cash received
      *
      * @param: int $package_id
+     *
      * @param: int $smsContent
+     *
      * @param: int $packageAdavances
+     *
      * @return: string
      */
-    static public function prepareSMSContent($package_id, $smsContent, $packageAdavances, $plan_information, $patient)
+    public static function prepareSMSContent($package_id, $smsContent, $packageAdavances, $plan_information, $patient)
     {
-        if (!$package_id) {
+        if (! $package_id) {
             return $smsContent;
         } else {
             if ($plan_information) {
@@ -105,6 +105,7 @@ class Invoice_Plan_Refund_Sms_Functions
                 $smsContent = str_replace('##created_at##', Carbon::parse($packageAdavances->created_at)->toFormattedDateString(), $smsContent);
                 $smsContent = str_replace('##id##', $plan_information->id, $smsContent);
             }
+
             return $smsContent;
         }
     }
@@ -115,23 +116,23 @@ class Invoice_Plan_Refund_Sms_Functions
      * @param: int $packageAdavances
      * @return: string
      */
-    static function RefundCashReceived_SMS($packageAdavances)
+    public static function RefundCashReceived_SMS($packageAdavances)
     {
         // SEND SMS for Appointment Booked
         $SMSTemplate = SMSTemplates::getBySlug('refund-amount', Auth::User()->account_id);
 
-        if (!$SMSTemplate) {
+        if (! $SMSTemplate) {
             // SMS Promotion is disabled
-            return array(
+            return [
                 'status' => true,
                 'sms_data' => 'Refund SMS is disabled',
                 'error_msg' => '',
-            );
+            ];
         }
 
         $patient = Patients::find($packageAdavances->patient_id);
 
-        $preparedText = Self::prepareSMSContent_refund($packageAdavances, $SMSTemplate->content, $patient);
+        $preparedText = self::prepareSMSContent_refund($packageAdavances, $SMSTemplate->content, $patient);
 
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
@@ -139,28 +140,28 @@ class Invoice_Plan_Refund_Sms_Functions
 
         if ($setting->data == 1) {
 
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient->phone)),
                 'text' => $preparedText,
                 'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = TelenorSMSAPI::SendSMS($SMSObj);
         } else {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'from' => $UserOperatorSettings->mask,
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient->phone)),
                 'text' => $preparedText,
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
 
-//        $response = TelenorSMSAPI::SendSMS($SMSObj);
+        //        $response = TelenorSMSAPI::SendSMS($SMSObj);
 
         $SMSLog = array_merge($SMSObj, $response);
         if ($packageAdavances->package_id) {
@@ -183,13 +184,16 @@ class Invoice_Plan_Refund_Sms_Functions
      * Prepare SMS Contnet for refund
      *
      * @param: int $package_id
+     *
      * @param: int $smsContent
+     *
      * @param: int $packageAdavances
+     *
      * @return: string
      */
-    static public function prepareSMSContent_refund($packageAdavances, $smsContent, $patient)
+    public static function prepareSMSContent_refund($packageAdavances, $smsContent, $patient)
     {
-        if (!$packageAdavances) {
+        if (! $packageAdavances) {
             return $smsContent;
         } else {
             if ($packageAdavances) {
@@ -198,6 +202,7 @@ class Invoice_Plan_Refund_Sms_Functions
 
                 $smsContent = str_replace('##created_at##', Carbon::parse($packageAdavances->created_at)->toFormattedDateString(), $smsContent);
             }
+
             return $smsContent;
         }
     }
@@ -208,30 +213,30 @@ class Invoice_Plan_Refund_Sms_Functions
      * @param: int $packageAdavances
      * @return: string
      */
-    static function InvoiceCashReceived_SMS($invoice, $invoice_detail, $package_id = false)
+    public static function InvoiceCashReceived_SMS($invoice, $invoice_detail, $package_id = false)
     {
         // SEND SMS for Appointment Booked
         $SMSTemplate = SMSTemplates::getBySlug('invoice-ringup', Auth::User()->account_id);
 
-        if (!$SMSTemplate) {
+        if (! $SMSTemplate) {
             // SMS Promotion is disabled
-            return array(
+            return [
                 'status' => true,
                 'sms_data' => 'Invoice Ringup SMS is disabled',
                 'error_msg' => '',
-            );
+            ];
         }
         if ($package_id) {
             $information_type = Packages::find($package_id);
             $balance_patient_in = PackageAdvances::where([
                 ['patient_id', '=', $information_type->patient_id],
                 ['package_id', '=', $package_id],
-                ['cash_flow', '=', 'in']
+                ['cash_flow', '=', 'in'],
             ])->sum('cash_amount');
             $balance_patient_out = PackageAdvances::where([
                 ['patient_id', '=', $information_type->patient_id],
                 ['package_id', '=', $package_id],
-                ['cash_flow', '=', 'out']
+                ['cash_flow', '=', 'out'],
             ])->sum('cash_amount');
             $balance = $balance_patient_in - $balance_patient_out;
         } else {
@@ -241,7 +246,7 @@ class Invoice_Plan_Refund_Sms_Functions
 
         $patient = Patients::find($invoice->patient_id);
 
-        $preparedText = Self::prepareSMSContent_invoice($information_type, $SMSTemplate->content, $invoice, $invoice_detail, $patient, $balance);
+        $preparedText = self::prepareSMSContent_invoice($information_type, $SMSTemplate->content, $invoice, $invoice_detail, $patient, $balance);
 
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
@@ -249,28 +254,28 @@ class Invoice_Plan_Refund_Sms_Functions
 
         if ($setting->data == 1) {
 
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient->phone)),
                 'text' => $preparedText,
                 'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = TelenorSMSAPI::SendSMS($SMSObj);
         } else {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'from' => $UserOperatorSettings->mask,
                 'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient->phone)),
                 'text' => $preparedText,
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
 
-//        $response = TelenorSMSAPI::SendSMS($SMSObj);
+        //        $response = TelenorSMSAPI::SendSMS($SMSObj);
 
         $SMSLog = array_merge($SMSObj, $response);
         if ($package_id) {
@@ -292,13 +297,16 @@ class Invoice_Plan_Refund_Sms_Functions
      * Prepare SMS Contnet for Invoice
      *
      * @param: int $package_id
+     *
      * @param: int $smsContent
+     *
      * @param: int $packageAdavances
+     *
      * @return: string
      */
-    static public function prepareSMSContent_invoice($information_type, $smsContent, $invoice, $invoice_detail, $patient, $balance)
+    public static function prepareSMSContent_invoice($information_type, $smsContent, $invoice, $invoice_detail, $patient, $balance)
     {
-        if (!$information_type) {
+        if (! $information_type) {
             return $smsContent;
         } else {
             $service_info = Services::find($invoice_detail->service_id);
@@ -312,8 +320,8 @@ class Invoice_Plan_Refund_Sms_Functions
                 }
                 $smsContent = str_replace('##created_at##', Carbon::parse($invoice->created_at)->toFormattedDateString(), $smsContent);
             }
+
             return $smsContent;
         }
     }
-
 }

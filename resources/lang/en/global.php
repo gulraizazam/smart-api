@@ -26,7 +26,7 @@ return [
         'fields' => [
             'name' => 'Name',
             'status' => 'Status',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
 
@@ -38,7 +38,7 @@ return [
             'featured' => 'Featured',
             'region' => 'Region',
             'status' => 'Status',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
     'towns' => [
@@ -49,7 +49,7 @@ return [
             'name' => 'Name',
             'city' => 'City',
             'status' => 'Status',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
     'payment_modes' => [
@@ -61,7 +61,7 @@ return [
             'featured' => 'Featured',
             'use_type' => 'Use Type',
             'actions' => 'Actions',
-            'sort' => 'Sort Payment Modes'
+            'sort' => 'Sort Payment Modes',
         ],
     ],
     'custom_forms' => [
@@ -73,7 +73,7 @@ return [
             'actions' => 'Actions',
             'created_at' => 'Created at',
             'status' => 'Status',
-            'sort' => 'Sort Custom Forms'
+            'sort' => 'Sort Custom Forms',
         ],
     ],
     'custom_form_feedbacks' => [
@@ -85,7 +85,7 @@ return [
             'patient_name' => 'Patient Name',
             'actions' => 'Actions',
             'created_at' => 'Created at',
-            'sort' => 'Sort Custom Form Feedbacks'
+            'sort' => 'Sort Custom Form Feedbacks',
         ],
     ],
     'medical_history' => [
@@ -96,7 +96,7 @@ return [
             'patient_name' => 'Patient Name',
             'actions' => 'Actions',
             'created_at' => 'Created at',
-            'sort' => 'Sort Medical History'
+            'sort' => 'Sort Medical History',
         ],
     ],
 
@@ -108,7 +108,7 @@ return [
             'patient_name' => 'Patient Name',
             'actions' => 'Actions',
             'created_at' => 'Created at',
-            'sort' => 'Sort Measurement Form'
+            'sort' => 'Sort Measurement Form',
         ],
     ],
 
@@ -136,13 +136,13 @@ return [
             'name' => 'Name',
             'city' => 'City',
             'location' => 'Centre',
-            'service'=>'Service',
+            'service' => 'Service',
             'actions' => 'Actions',
-            'email'=>'email',
-            'phone'=>'Phone',
-            'gender'=>'Gender',
+            'email' => 'email',
+            'phone' => 'Phone',
+            'gender' => 'Gender',
             'role' => 'Role',
-            'location' =>'Allocate',
+            'location' => 'Allocate',
             'created_at' => 'Created at',
             'status' => 'Status',
         ],
@@ -168,7 +168,7 @@ return [
     'appointments' => [
         'title' => 'Appointments',
         'created_at' => 'Time',
-        "invoice_paid_message" => "Appointment has invoice",//"Paid payment. So It cannot be scheduled", // Appointment has invoice.
+        'invoice_paid_message' => 'Appointment has invoice', //"Paid payment. So It cannot be scheduled", // Appointment has invoice.
         'fields' => [
             'patient_name' => 'Patient',
             'msg_count' => 'SMS',
@@ -222,17 +222,17 @@ return [
         'created_at' => 'Time',
         'import' => 'Import Leads',
         'fields' => [
-            'patientid'=>'ID',
-            'patient_id' =>'Patient ID',
+            'patientid' => 'ID',
+            'patient_id' => 'Patient ID',
             'full_name' => 'Full Name',
             'phone' => 'Phone',
             'cnic' => 'CNIC',
-            'dob' =>'DOB',
+            'dob' => 'DOB',
             'email' => 'Email',
             'gender' => 'Gender',
-            'role'=> 'Role',
+            'role' => 'Role',
             'location' => 'Location',
-            'incentive'=>'Incentive',
+            'incentive' => 'Incentive',
             'total_Revenue' => 'Total Revenue',
             'commission' => 'Commission %',
             'comments' => 'Comments',
@@ -248,7 +248,7 @@ return [
             'msg_count' => 'Msg Count',
             'msg_send' => 'Send SMS',
             'actions' => 'Actions',
-        ]
+        ],
     ],
 
     'staff' => [
@@ -256,10 +256,10 @@ return [
         'created_at' => 'Time',
         'import' => 'Import Leads',
         'fields' => [
-            'patientid'=>'ID',
+            'patientid' => 'ID',
             'full_name' => 'Full Name',
             'phone' => 'Phone',
-            'dob' =>'DOB',
+            'dob' => 'DOB',
             'email' => 'Email',
             'gender' => 'Gender',
             'comments' => 'Comments',
@@ -274,7 +274,7 @@ return [
             'msg_count' => 'Msg Count',
             'msg_send' => 'Send SMS',
             'actions' => 'Actions',
-        ]
+        ],
     ],
 
     'services' => [
@@ -282,7 +282,7 @@ return [
         'created_at' => 'Time',
         'fields' => [
             'name' => 'Name',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
 
@@ -292,7 +292,7 @@ return [
         'created_at' => 'Time',
         'fields' => [
             'name' => 'Name',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
 
@@ -302,7 +302,7 @@ return [
         'fields' => [
             'name' => 'Name',
             'data' => 'Data',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
 
@@ -314,7 +314,7 @@ return [
             'content' => 'Content',
             'slug' => 'Slug',
             'status' => 'Status',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
 
@@ -341,11 +341,11 @@ return [
             'commission' => 'Commission',
             'remember-token' => 'Remember token',
             'actions' => 'Actions',
-            'phone'=>'Phone',
-            'gender'=>'Gender',
-            'locations'=>'Center',
-            'created_at' =>'Created at',
-            'status' => 'Status'
+            'phone' => 'Phone',
+            'gender' => 'Gender',
+            'locations' => 'Center',
+            'created_at' => 'Created at',
+            'status' => 'Status',
         ],
     ],
 
@@ -372,9 +372,9 @@ return [
         'created_at' => 'Time',
         'fields' => [
             'name' => 'Name',
-            'resource_types'=>'Resource Type',
+            'resource_types' => 'Resource Type',
             'centre' => 'Centre',
-            'machine_type' =>'Machine Type',
+            'machine_type' => 'Machine Type',
             'actions' => 'Actions',
             'created_at' => 'Created at',
             'status' => 'Status',
@@ -386,11 +386,11 @@ return [
         'created_at' => 'Time',
         'fields' => [
             'name' => 'Resource Name',
-            'type'=> 'Type',
+            'type' => 'Type',
             'city' => 'City',
             'location' => 'Centre',
-            'from' =>'From',
-            'to' =>'To',
+            'from' => 'From',
+            'to' => 'To',
             'region' => 'Regions',
             'created_at' => 'Created at',
             'actions' => 'Actions',
@@ -403,14 +403,14 @@ return [
         'created_at' => 'Time',
         'fields' => [
             'name' => 'Name',
-            'type'=>'Type',
-            'amount'=>'Amount',
+            'type' => 'Type',
+            'amount' => 'Amount',
             'discount_type' => 'Discount Type',
-            'discription'=>'Discription',
-            'services'=>'Services',
-            'locations'=>'Allocate',
-            'start'=>'From',
-            'end'=>'To',
+            'discription' => 'Discription',
+            'services' => 'Services',
+            'locations' => 'Allocate',
+            'start' => 'From',
+            'end' => 'To',
             'created_at' => 'Created at',
             'actions' => 'Actions',
             'status' => 'Status',
@@ -430,7 +430,7 @@ return [
             'url' => 'URL',
             'string_1' => 'Custom Field 1',
             'string_2' => 'Custom Field 2',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
 
@@ -438,10 +438,10 @@ return [
         'title' => 'Logs',
         'created_at' => 'Time',
         'fields' => [
-            'id'=>'Id',
+            'id' => 'Id',
             'datetime' => 'Date Time',
-            'screen'=>'Screen',
-            'user'=>'User',
+            'screen' => 'Screen',
+            'user' => 'User',
             'actions' => 'Actions',
         ],
     ],
@@ -458,10 +458,10 @@ return [
             'location' => 'Centres',
             'session_count' => 'Session count',
             'total' => 'Total',
-            'cash_receive'=>'Cash receive',
+            'cash_receive' => 'Cash receive',
             'refund' => 'Refund',
             'created_at' => 'Created at',
-            'actions'=>'Actions',
+            'actions' => 'Actions',
             'status' => 'Status',
 
         ],
@@ -474,7 +474,7 @@ return [
         'fields' => [
             'patient_id' => 'Patient ID',
             'patient' => 'Patient',
-            'phone'=>'Phone',
+            'phone' => 'Phone',
             'package' => 'Plans',
             'transtype' => 'Transaction type',
             'cash_in' => 'Cash In',
@@ -485,8 +485,8 @@ return [
             'cash_amount' => 'Cash Amount',
             'is_refund' => 'Is_Refund',
             'is_cancel' => 'Is_Cancel',
-            'actions'=>'Actions',
-            'created_at'=>'Created at',
+            'actions' => 'Actions',
+            'created_at' => 'Created at',
         ],
     ],
 
@@ -497,25 +497,25 @@ return [
         'fields' => [
             'invoice' => 'Invoice Number',
             'patient_id' => 'Patient ID',
-            'patient_name'=>'Patient Name',
+            'patient_name' => 'Patient Name',
             'region' => 'Region',
             'city' => 'City',
             'location' => 'Centre',
             'phone' => 'Phone',
-            'service_name' =>'consultancy/Service',
+            'service_name' => 'consultancy/Service',
             'invoive_status' => 'Invoice Status',
-            'total_price'=>'Price',
-            'actions'=>'Actions',
-            'created_at' => 'Created at'
+            'total_price' => 'Price',
+            'actions' => 'Actions',
+            'created_at' => 'Created at',
         ],
     ],
 
     'documents' => [
         'title' => 'Documents',
         'fields' => [
-            'name'=>'Name',
-            'actions'=>'Actions',
-            'created_at' => 'Created at'
+            'name' => 'Name',
+            'actions' => 'Actions',
+            'created_at' => 'Created at',
         ],
     ],
 
@@ -525,11 +525,11 @@ return [
         'non_plans_refunds' => 'Non Plans Refunds',
         'created_at' => 'Time',
         'fields' => [
-            'patient' =>'Patient',
-            'cash_in' =>'Total Cash In',
-            'cash_out' =>'Total Cash Out',
-            'balance' =>'Balance',
-            'actions'=>'Actions'
+            'patient' => 'Patient',
+            'cash_in' => 'Total Cash In',
+            'cash_out' => 'Total Cash Out',
+            'balance' => 'Balance',
+            'actions' => 'Actions',
         ],
     ],
 
@@ -545,7 +545,7 @@ return [
             'service' => 'Service',
             'service_type' => 'Type',
             'created_at' => 'Created At',
-            'actions' => 'Actions'
+            'actions' => 'Actions',
         ],
     ],
 
@@ -554,8 +554,8 @@ return [
         'created_at' => 'Time',
         'import' => 'Import Records',
         'fields' => [
-            'location_id' =>'Centre',
-            'client' =>'Client',
+            'location_id' => 'Centre',
+            'client' => 'Client',
             'phone' => 'Phone',
             'mobile' => 'Mobile',
             'invoice_no' => 'Invoice No.',
@@ -564,7 +564,7 @@ return [
             'paid_amount' => 'Paid Amount',
             'outstanding_amount' => 'Outstanding Amount',
             'actions' => 'Actions',
-        ]
+        ],
     ],
 
     'reports' => [
@@ -588,7 +588,7 @@ return [
         'hr_report' => 'HR Reports',
         'created_at' => 'Time',
         'fields' => [
-            'actions'=>'Actions'
+            'actions' => 'Actions',
         ],
     ],
 
@@ -609,7 +609,7 @@ return [
     'app_make_pdf' => 'PDF',
     'app_preview' => 'Preview',
     'app_submit' => 'Submit',
-    'app_calendar'=>'Calender',
+    'app_calendar' => 'Calender',
     'app_detail' => 'Details',
     'app_view' => 'View',
     'app_update' => 'Update',
@@ -633,11 +633,11 @@ return [
     'app_SortStatus' => 'Sort Statuses',
     'app_SortSource' => 'Sort Sources',
     'app_Sortservice' => 'Sort Services',
-    'app_SortCenters'=>'Sort Centers',
+    'app_SortCenters' => 'Sort Centers',
     'app_Sortcancellation_reason' => 'Sort No Show Reasons',
     'global_title_smart' => 'Smart',
     'global_title_keto' => 'KetoSlim',
-    'app_warning'=>'Warning',
+    'app_warning' => 'Warning',
     'app_appointmentimages' => 'Appointment Images',
     'app_appointmentmeasurement' => 'Appointment Measurement',
     'app_appointmentmeasurementforms' => 'Appointment Measurement Forms',
@@ -658,8 +658,8 @@ return [
             'patient_id' => 'Patient ID',
             'name' => 'Name',
             'email' => 'Email',
-            'phone'=>'Phone',
-            'gender'=>'Gender',
+            'phone' => 'Phone',
+            'gender' => 'Gender',
             'created_at' => 'Created at',
             'status' => 'Status',
             'actions' => 'Actions',
@@ -671,7 +671,7 @@ return [
             'name' => 'Image',
             'type' => 'Type',
             'actions' => 'Actions',
-            'created_at' => 'Created at'
+            'created_at' => 'Created at',
         ],
     ],
     'appointmentmesurement' => [
@@ -681,7 +681,7 @@ return [
             'created_by' => 'Created By',
             'type' => 'Type',
             'actions' => 'Actions',
-            'created_at' => 'Created at'
+            'created_at' => 'Created at',
         ],
     ],
     'appointmentmedical' => [
@@ -690,7 +690,7 @@ return [
             'patient_name' => 'Patient Name',
             'created_by' => 'Created By',
             'actions' => 'Actions',
-            'created_at' => 'Created at'
+            'created_at' => 'Created at',
         ],
     ],
     'bundles' => [
@@ -702,8 +702,8 @@ return [
             'total_services' => 'Total Services',
             'apply_discount' => 'Apply Discounts',
             'actions' => 'Actions',
-            'start'=>'Valid From',
-            'end'=>'Valid To',
+            'start' => 'Valid From',
+            'end' => 'Valid To',
             'created_at' => 'Created At',
             'status' => 'Status',
         ],
@@ -716,7 +716,7 @@ return [
             'name' => 'Name',
             'address' => 'Address',
             'city' => 'City',
-            'region'=>'Region',
+            'region' => 'Region',
             'employee' => 'Staff Member',
             'year' => 'Year',
             'month' => 'Month',
@@ -744,7 +744,7 @@ return [
         'created_at' => 'Time',
         'fields' => [
             'name' => 'Name',
-            'services'=>'Services',
+            'services' => 'Services',
             'created_at' => 'Created at',
             'status' => 'Status',
             'actions' => 'Actions',

@@ -8,18 +8,13 @@
 
 namespace App\Helpers\Widgets;
 
-use App\Models\Cities;
+use App\Helpers\GeneralFunctions;
+use App\Helpers\NodesTree;
+use App\Models\Bundles;
 use App\Models\Locations;
-use App\Models\Regions;
 use App\Models\ServiceHasLocations;
 use App\Models\Services;
-use Illuminate\Database\Eloquent\Collection;
-use App\Helpers\GroupsTree;
-use App\Helpers\NodesTree;
-use Auth;
-use App\Models\Bundles;
 use Carbon\Carbon;
-use App\Helpers\GeneralFunctions;
 
 class ServiceWidget
 {
@@ -29,22 +24,22 @@ class ServiceWidget
      *
      * @return: (mixed) $result
      */
-    static function generateServiceArrayArray($request, $account_id)
+    public static function generateServiceArrayArray($request, $account_id)
     {
-        $Services = array();
+        $Services = [];
         $result = [];
         $location = Locations::find($request->id);
         if ($location) {
-            if ($location->slug=='region') {
+            if ($location->slug == 'region') {
                 $locations = Locations::where([
                     ['slug', '=', 'custom'],
-                    ['region_id', '=', $location->region_id]
+                    ['region_id', '=', $location->region_id],
                 ])->get();
             }
-            if ($location->slug=='custom') {
+            if ($location->slug == 'custom') {
                 $locations = Locations::where('id', '=', $location->id)->get();
             }
-            if ($location->slug=='all') {
+            if ($location->slug == 'all') {
                 $locations = Locations::where('slug', '=', 'custom')->get();
             }
             foreach ($locations as $s_location) {
@@ -53,37 +48,40 @@ class ServiceWidget
                     $service_data = Services::find($servicehaslocation->service_id);
                     if ($service_data->slug == 'all') {
                         $Services = GeneralFunctions::ServicesTreeList();
+
                         return $Services;
                     } else {
                         $Services = GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
+
                         return $Services;
                     }
                 }
             }
         }
     }
+
     /*
      * create Service Dropdown with Heiracrchy for consultancy
      * @param: $request (int) $account_id
      *
      * @return: (mixed) $result
      */
-    static function generateServiceArrayConsultancy($request, $account_id)
+    public static function generateServiceArrayConsultancy($request, $account_id)
     {
-        $Services = array();
+        $Services = [];
         $result = [];
         $location = Locations::find($request->id);
         if ($location) {
-            if ($location->slug=='region') {
+            if ($location->slug == 'region') {
                 $locations = Locations::where([
                     ['slug', '=', 'custom'],
-                    ['region_id', '=', $location->region_id]
+                    ['region_id', '=', $location->region_id],
                 ])->get();
             }
-            if ($location->slug=='custom') {
+            if ($location->slug == 'custom') {
                 $locations = Locations::where('id', '=', $location->id)->get();
             }
-            if ($location->slug=='all') {
+            if ($location->slug == 'all') {
                 $locations = Locations::where('slug', '=', 'custom')->get();
             }
             foreach ($locations as $s_location) {
@@ -92,15 +90,18 @@ class ServiceWidget
                     $service_data = Services::find($servicehaslocation->service_id);
                     if ($service_data->slug == 'all') {
                         $Services = GeneralFunctions::ServicesTreeList();
+
                         return $Services;
                     } else {
                         $Services = GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
+
                         return $Services;
                     }
                 }
             }
         }
     }
+
     /*
      * create Service Dropdown for plans against location id.
      *
@@ -108,7 +109,7 @@ class ServiceWidget
      *
      * @return: (mixed) $result
      */
-    static public function generateServicelcoationArray($service_has_location, $account_id)
+    public static function generateServicelcoationArray($service_has_location, $account_id)
     {
         $date = Carbon::now();
         $services = [];
@@ -135,10 +136,10 @@ class ServiceWidget
                         ['bundle_has_services.end_node', '=', '1'],
                         ['bundle_has_services.service_id', '!=', $allService->id],
                         ['bundles.account_id', '=', $account_id],
-                        ['bundles.active','=','1'],
-                        ['bundles.start','<=',\Carbon\Carbon::parse($date)->format('Y-m-d')],
-                        ['bundles.end','>=',\Carbon\Carbon::parse($date)->format('Y-m-d')],
-                        ['bundles.type','=','multiple'],
+                        ['bundles.active', '=', '1'],
+                        ['bundles.start', '<=', \Carbon\Carbon::parse($date)->format('Y-m-d')],
+                        ['bundles.end', '>=', \Carbon\Carbon::parse($date)->format('Y-m-d')],
+                        ['bundles.type', '=', 'multiple'],
                     ])->groupBy('bundles.id')->get();
                 $service2 = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
                     ->whereIn('bundle_has_services.service_id', $Services)
@@ -146,11 +147,12 @@ class ServiceWidget
                         ['bundle_has_services.end_node', '=', '1'],
                         ['bundle_has_services.service_id', '!=', $allService->id],
                         ['bundles.account_id', '=', $account_id],
-                        ['bundles.active','=','1'],
-                        ['bundles.type','=','single'],
+                        ['bundles.active', '=', '1'],
+                        ['bundles.type', '=', 'single'],
                     ])->groupBy('bundles.id')->get();
-                    $merged = $service2->merge($service1);
-                    $service = $merged->all();
+                $merged = $service2->merge($service1);
+                $service = $merged->all();
+
                 return $service;
             } else {
                 $parentGroups = new NodesTree();
@@ -168,27 +170,27 @@ class ServiceWidget
             }
         }
         $service1 = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
-                    ->whereIn('bundle_has_services.service_id', $Services)
-                    ->where([
-                        ['bundle_has_services.end_node', '=', '1'],
-                        ['bundle_has_services.service_id', '!=', $allService->id],
-                        ['bundles.account_id', '=', $account_id],
-                        ['bundles.active','=','1'],
-                        ['bundles.start','<=',\Carbon\Carbon::parse($date)->format('Y-m-d')],
-                        ['bundles.end','>=',\Carbon\Carbon::parse($date)->format('Y-m-d')],
-                        ['bundles.type','=','multiple'],
-                    ])->groupBy('bundles.id')->get();
-                $service2 = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
-                    ->whereIn('bundle_has_services.service_id', $Services)
-                    ->where([
-                        ['bundle_has_services.end_node', '=', '1'],
-                        ['bundle_has_services.service_id', '!=', $allService->id],
-                        ['bundles.account_id', '=', $account_id],
-                        ['bundles.active','=','1'],
-                        ['bundles.type','=','single'],
-                    ])->groupBy('bundles.id')->get();
-                    $merged = $service2->merge($service1);
-                    $service = $merged->all();
+            ->whereIn('bundle_has_services.service_id', $Services)
+            ->where([
+                ['bundle_has_services.end_node', '=', '1'],
+                ['bundle_has_services.service_id', '!=', $allService->id],
+                ['bundles.account_id', '=', $account_id],
+                ['bundles.active', '=', '1'],
+                ['bundles.start', '<=', \Carbon\Carbon::parse($date)->format('Y-m-d')],
+                ['bundles.end', '>=', \Carbon\Carbon::parse($date)->format('Y-m-d')],
+                ['bundles.type', '=', 'multiple'],
+            ])->groupBy('bundles.id')->get();
+        $service2 = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
+            ->whereIn('bundle_has_services.service_id', $Services)
+            ->where([
+                ['bundle_has_services.end_node', '=', '1'],
+                ['bundle_has_services.service_id', '!=', $allService->id],
+                ['bundles.account_id', '=', $account_id],
+                ['bundles.active', '=', '1'],
+                ['bundles.type', '=', 'single'],
+            ])->groupBy('bundles.id')->get();
+        $merged = $service2->merge($service1);
+        $service = $merged->all();
 
         return $service;
     }
@@ -200,7 +202,7 @@ class ServiceWidget
      *
      * @return: (mixed) $result
      */
-    static function generateServiceArrayForAppointment($doctor_has_locations, $account_id)
+    public static function generateServiceArrayForAppointment($doctor_has_locations, $account_id)
     {
 
         $allService = Services::where(['slug' => 'all'])->select('id')->first();
@@ -230,7 +232,7 @@ class ServiceWidget
                         ['bundle_has_services.end_node', '=', '1'],
                         ['bundle_has_services.service_id', '!=', $allService->id],
                         ['bundles.account_id', '=', $account_id],
-                        ['bundles.type', '=', 'single']
+                        ['bundles.type', '=', 'single'],
                     ])
                     ->groupBy('bundles.id')->get();
 
@@ -259,7 +261,7 @@ class ServiceWidget
                 ['bundle_has_services.end_node', '=', '1'],
                 ['bundle_has_services.service_id', '!=', $allService->id],
                 ['bundles.account_id', '=', $account_id],
-                ['bundles.type', '=', 'single']
+                ['bundles.type', '=', 'single'],
             ])
             ->groupBy('bundles.id')
             ->select('bundles.id', 'bundles.name')
@@ -267,5 +269,4 @@ class ServiceWidget
 
         return $service;
     }
-
 }

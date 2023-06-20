@@ -25,7 +25,7 @@ class CreateLeadCommentsTable extends Migration
             $table->softDeletes();
 
             // Manage Foreign Key Relationships Mapping
-            $table->foreign('account_id','lead_comments_account')
+            $table->foreign('account_id', 'lead_comments_account')
                 ->references('id')
                 ->on('accounts');
             $table->foreign('lead_id')

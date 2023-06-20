@@ -1,12 +1,12 @@
 <?php
 
+use App\Models\BundleHasServices;
+use App\Models\Bundles;
+use App\Models\BundleServicesPriceHistory;
+use App\Models\Services;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\Services;
-use App\Models\Bundles;
-use App\Models\BundleHasServices;
-use App\Models\BundleServicesPriceHistory;
 
 class BundlesSeed extends Seeder
 {
@@ -84,27 +84,26 @@ class BundlesSeed extends Seeder
         $role->givePermissionTo('packages_inactive');
         $role->givePermissionTo('packages_destroy');
 
-
         $services = Services::all();
 
-        if($services->count()) {
+        if ($services->count()) {
             // Create bundle from Services
-            foreach($services as $service) {
-                $bundle = Bundles::create(array(
+            foreach ($services as $service) {
+                $bundle = Bundles::create([
                     'name' => $service->name,
                     'price' => $service->price,
                     'type' => 'single',
                     'total_services' => 1,
                     'account_id' => 1,
-                ));
-                BundleHasServices::create(array(
+                ]);
+                BundleHasServices::create([
                     'bundle_id' => $bundle->id,
                     'service_id' => $service->id,
                     'service_price' => $service->price,
                     'calculated_price' => $service->price,
                     'end_node' => $service->end_node,
-                ));
-                BundleServicesPriceHistory::createRecord(array(
+                ]);
+                BundleServicesPriceHistory::createRecord([
                     'bundle_id' => $bundle->id,
                     'bundle_price' => $service->price,
                     'bundle_services_price' => $service->price,
@@ -113,7 +112,7 @@ class BundlesSeed extends Seeder
                     'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
                     'created_by' => 1,
                     'updated_by' => 1,
-                ), 1);
+                ], 1);
             }
         }
 

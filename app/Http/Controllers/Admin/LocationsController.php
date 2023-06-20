@@ -3,28 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\ACL;
+use App\Helpers\Filters;
+use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
 use App\Helpers\Widgets\LocationsWidget;
+use App\Http\Controllers\Controller;
 use App\Models\Cities;
 use App\Models\Locations;
 use App\Models\Regions;
 use App\Models\ServiceHasLocations;
 use App\Models\Services;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Validator;
-use Carbon\Carbon;
 use App\Models\UserHasLocations;
-use App\Helpers\ACL;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\Filters;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Validator;
 
 class LocationsController extends Controller
 {
-
     public $success;
 
     public $error;
@@ -45,7 +43,7 @@ class LocationsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('locations_manage')) {
+        if (! Gate::allows('locations_manage')) {
             return abort(401);
         }
 
@@ -66,31 +64,31 @@ class LocationsController extends Controller
 
         $apply_filter = checkFilters($filters, $filename);
 
-        $records = array();
-        $records["data"] = array();
+        $records = [];
+        $records['data'] = [];
 
-        if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
             $ids = explode(',', $filters['delete']);
             $Locations = Locations::getBulkData($ids);
             if ($Locations) {
 
                 foreach ($Locations as $Location) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!Locations::isChildExists($Location->id, Auth::User()->account_id)) {
+                    if (! Locations::isChildExists($Location->id, Auth::User()->account_id)) {
                         $Location->delete();
                     }
                 }
             }
-            $records["status"] = true;
-            $records["message"] = "Records has been deleted successfully!";
+            $records['status'] = true;
+            $records['message'] = 'Records has been deleted successfully!';
         }
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         // Get Total Records
         $iTotalRecords = Locations::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $Locations = Locations::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
@@ -103,7 +101,7 @@ class LocationsController extends Controller
         if ($Locations->count()) {
             foreach ($Locations as $location) {
 
-               // $city = Cities::getData($location->id);
+                // $city = Cities::getData($location->id);
 
                 /*
                  * Record Level Services process start
@@ -111,10 +109,10 @@ class LocationsController extends Controller
                 $_services = '';
 
                 $locationServices = ServiceHasLocations::where(['location_id' => $location->id])->get()->pluck('service_id');
-                if (!$locationServices->isEmpty() && count($locationServices)) {
+                if (! $locationServices->isEmpty() && count($locationServices)) {
                     foreach ($locationServices as $_location) {
                         if (array_key_exists($_location, $Services)) {
-                            $_services .= '<span class="label label-sm label-info">' . $Services[$_location]->name . '</span>&nbsp;';
+                            $_services .= '<span class="label label-sm label-info">'.$Services[$_location]->name.'</span>&nbsp;';
                         }
                     }
                 }
@@ -122,7 +120,7 @@ class LocationsController extends Controller
                  * Record Level Services process end
                  */
 
-                $records["data"][] = array(
+                $records['data'][] = [
                     'id' => $location->id,
                     'name' => $location->name,
                     'fdo_name' => $location->fdo_name ? $location->fdo_name : 'N/A',
@@ -133,11 +131,11 @@ class LocationsController extends Controller
                     'service' => ($_services) ? $_services : 'N/A',
                     'active' => $location->active,
                     'created_at' => Carbon::parse($location->created_at)->format('F j,Y h:i A'),
-                );
+                ];
 
             }
 
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('locations_edit'),
                 'delete' => Gate::allows('locations_destroy'),
                 'active' => Gate::allows('locations_active'),
@@ -146,7 +144,7 @@ class LocationsController extends Controller
                 'sort' => Gate::allows('locations_sort'),
             ];
 
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -157,12 +155,11 @@ class LocationsController extends Controller
 
         } //end
 
-
         return response()->json($records);
     }
 
-    private function getExtraData($records = []) {
-
+    private function getExtraData($records = [])
+    {
 
         $filters = Filters::all(Auth::User()->id, 'locations');
 
@@ -170,7 +167,7 @@ class LocationsController extends Controller
             ['account_id', '=', Auth::User()->account_id],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
-            ['is_featured', '=', '1']
+            ['is_featured', '=', '1'],
         ])->get()->pluck('name', 'id');
 
         $regions = Regions::getActiveSorted(ACL::getUserRegions());
@@ -187,7 +184,7 @@ class LocationsController extends Controller
             'cities' => $cities,
             'regions' => $regions,
             'services' => $Services,
-            'status' => config('constants.status')
+            'status' => config('constants.status'),
         ];
 
         $records['active_filters'] = $filters;
@@ -202,7 +199,7 @@ class LocationsController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('locations_create')) {
+        if (! Gate::allows('locations_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         /*Get Service as we get in resource create module*/
@@ -212,25 +209,25 @@ class LocationsController extends Controller
             ['account_id', '=', Auth::User()->account_id],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
-            ['is_featured', '=', '1']
+            ['is_featured', '=', '1'],
         ])->get()->pluck('full_name', 'id');
-        $ServiceLocations = array();
+        $ServiceLocations = [];
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'services' => $Services,
             'service_location' => $ServiceLocations,
-            'cities' => $cities
+            'cities' => $cities,
         ]);
     }
 
     /**
      * Store a newly created Location in storage.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        if (!Gate::allows('locations_create')) {
+        if (! Gate::allows('locations_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -240,16 +237,16 @@ class LocationsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
         if ($location = Locations::createRecord($request, Auth::User()->account_id)) {
-            $locatUser = array();
+            $locatUser = [];
             $location_slug_all = Locations::where('slug', '=', 'all')->first();
             $user_has_location_data = UserHasLocations::where('location_id', '=', $location_slug_all->id ?? 0)->groupby('user_id')->get();
             if (count($user_has_location_data) > 0) {
                 foreach ($user_has_location_data as $user) {
-                    $user_has_locations = array(
+                    $user_has_locations = [
                         'user_id' => $user->user_id,
                         'region_id' => $location->region_id,
                         'location_id' => $location->id,
-                    );
+                    ];
                     // Insert assigned centres to User
                     UserHasLocations::createRecord($user_has_locations, $user->user_id);
                 }
@@ -261,7 +258,7 @@ class LocationsController extends Controller
             }
             $head_region = Locations::where([
                 ['slug', '=', 'region'],
-                ['region_id', '=', $location->region_id]
+                ['region_id', '=', $location->region_id],
             ])->first();
             $user_has_location_data = UserHasLocations::where([
                 ['location_id', '=', $head_region->id ?? 0],
@@ -269,17 +266,17 @@ class LocationsController extends Controller
             ])->select('user_id')->groupby('user_id')->get();
 
             foreach ($user_has_location_data as $Need_to_lcoateuser) {
-                if (!in_array($Need_to_lcoateuser->user_id, $user_already_have_location)) {
+                if (! in_array($Need_to_lcoateuser->user_id, $user_already_have_location)) {
                     $locatUser[] = $Need_to_lcoateuser->user_id;
                 }
             }
             if (count($locatUser) > 0) {
                 foreach ($locatUser as $user) {
-                    $user_has_locations = array(
+                    $user_has_locations = [
                         'user_id' => $user,
                         'region_id' => $location->region_id,
                         'location_id' => $location->id,
-                    );
+                    ];
                     // Insert assigned centres to User
                     UserHasLocations::createRecord($user_has_locations, $user);
                 }
@@ -293,16 +290,17 @@ class LocationsController extends Controller
              */
             if (isset($data['services']) && count($data['services'])) {
                 $services = LocationsWidget::generateservicearray($data['services'], Auth::User()->account_id);
-                $servicesData = array();
+                $servicesData = [];
                 foreach ($services as $service) {
-                    $servicesData = array(
+                    $servicesData = [
                         'service_id' => $service,
                         'location_id' => $location->id,
                         'account_id' => Auth::User()->account_id,
-                    );
+                    ];
                     ServiceHasLocations::createRecord($servicesData, $location);
                 }
             }
+
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         } else {
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
@@ -312,7 +310,6 @@ class LocationsController extends Controller
     /**
      * Validate form fields
      *
-     * @param  \Illuminate\Http\Request $request
      * @return Validator $validator;
      */
     protected function verifyFields(Request $request)
@@ -331,21 +328,19 @@ class LocationsController extends Controller
         ]);
     }
 
-
-
     /**
      * Show the form for editing Location.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
-        if (!Gate::allows('locations_edit')) {
+        if (! Gate::allows('locations_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $location = Locations::getData($id);
-        if (!$location) {
+        if (! $location) {
             return view('error', compact('lead_statuse'));
         }
         $ServiceLocations = $location->service_has_locations()->pluck('service_id')->toArray();
@@ -353,28 +348,28 @@ class LocationsController extends Controller
             ['account_id', '=', Auth::User()->account_id],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
-            ['is_featured', '=', '1']
+            ['is_featured', '=', '1'],
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
         $Services = GeneralFunctions::ServicesTreeList();
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'location' => $location,
             'services' => $Services,
             'service_location' => $ServiceLocations,
-            'cities' => $cities
+            'cities' => $cities,
         ]);
     }
 
     /**
      * Update Location in storage.
      *
-     * @param  \Illuminate\Http\Request $request
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('locations_edit')) {
+        if (! Gate::allows('locations_edit')) {
             return abort(401);
         }
         $validator = $this->verifyFields($request);
@@ -393,14 +388,14 @@ class LocationsController extends Controller
              */
 
             if (isset($data['services']) && count($data['services'])) {
-                $servicesData = array();
+                $servicesData = [];
                 $services = LocationsWidget::generateservicearray($data['services'], Auth::User()->account_id);
                 foreach ($services as $service) {
-                    $servicesData = array(
+                    $servicesData = [
                         'service_id' => $service,
                         'location_id' => $location->id,
                         'account_id' => Auth::User()->account_id,
-                    );
+                    ];
                     ServiceHasLocations::updateRecord($servicesData, $location);
                 }
             }
@@ -416,12 +411,12 @@ class LocationsController extends Controller
     /**
      * Remove Location from storage.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
-        if (!Gate::allows('locations_destroy')) {
+        if (! Gate::allows('locations_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $result = Locations::deleteRecord($id);
@@ -429,12 +424,13 @@ class LocationsController extends Controller
         if ($result['status']) {
             return ApiHelper::apiResponse($this->success, $result['message']);
         }
+
         return ApiHelper::apiResponse($this->success, $result['message'], false);
     }
 
     public function status(Request $request)
     {
-        if (!Gate::allows('locations_active')) {
+        if (! Gate::allows('locations_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -453,18 +449,19 @@ class LocationsController extends Controller
      */
     public function getSortOrder()
     {
-        if (!Gate::allows('locations_sort')) {
+        if (! Gate::allows('locations_sort')) {
             return abort(401);
         }
+
         return view('admin.locations.Sort');
     }
 
     public function sortorder()
     {
-        if (!Gate::allows('locations_sort')) {
+        if (! Gate::allows('locations_sort')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $locations =Locations::whereNull('deleted_at')->whereSlug('custom')->where(['account_id' => Auth::User()->account_id])->orderby('sort_no', 'ASC')->get();
+        $locations = Locations::whereNull('deleted_at')->whereSlug('custom')->where(['account_id' => Auth::User()->account_id])->orderby('sort_no', 'ASC')->get();
 
         return ApiHelper::apiResponse($this->success, 'Success', true, $locations);
     }
@@ -474,15 +471,16 @@ class LocationsController extends Controller
      */
     public function sortorder_save(Request $request)
     {
-        if (!Gate::allows('locations_sort')) {
+        if (! Gate::allows('locations_sort')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $itemIDs = $request->item_ids;
         if (count($itemIDs)) {
             foreach ($itemIDs as $key => $itemID) {
-                $sort = Locations::where('id', '=', $itemID)->update(array('sort_no' => $key));
+                $sort = Locations::where('id', '=', $itemID)->update(['sort_no' => $key]);
             }
+
             return ApiHelper::apiResponse($this->success, 'Records are sorted Successfully!');
         } else {
             return ApiHelper::apiResponse($this->success, 'Data Not Sort', false);
@@ -492,54 +490,51 @@ class LocationsController extends Controller
     /**
      * Store a newly created Location and checked attribute exists or not.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function verify(Request $request)
     {
-        if (!Gate::allows('locations_create')) {
+        if (! Gate::allows('locations_create')) {
             return abort(401);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
+            return response()->json([
                 'status' => 0,
                 'message' => $validator->messages()->all(),
-            ));
+            ]);
         }
 
-        return response()->json(array(
+        return response()->json([
             'status' => 1,
             'message' => 'Record has been verified successfully.',
-        ));
+        ]);
     }
 
     /**
      * updated Location and verify edit attribute exists or not
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function verify_edit(Request $request)
     {
-        if (!Gate::allows('locations_create')) {
+        if (! Gate::allows('locations_create')) {
             return abort(401);
         }
 
         $validator = $this->verifyFields($request);
         if ($validator->fails()) {
-            return response()->json(array(
+            return response()->json([
                 'status' => 0,
                 'message' => $validator->messages()->all(),
-            ));
+            ]);
         }
 
-        return response()->json(array(
+        return response()->json([
             'status' => 1,
             'message' => 'Record has been verified successfully.',
-        ));
+        ]);
     }
-
 }

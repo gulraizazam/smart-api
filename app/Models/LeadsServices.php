@@ -15,8 +15,9 @@ class LeadsServices extends Model
     {
         return $this->belongsTo('App\Models\Services');
     }
+
     public function childservice()
     {
-        return $this->belongsTo('App\Models\Services','child_service_id');
+        return $this->belongsTo('App\Models\Services', 'child_service_id');
     }
 }

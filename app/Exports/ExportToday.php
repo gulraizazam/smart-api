@@ -1,15 +1,11 @@
 <?php
 
-
 namespace App\Exports;
+
 use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
-use App\Models\Leads;
-use App\Models\LeadStatuses;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -20,8 +16,9 @@ use Maatwebsite\Excel\Events\AfterSheet;
 class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
     private $limit = 1000;
+
     private $offset = 0;
-    
+
     public function __construct($limit = 1000, $offset = 0)
     {
         $this->limit = $limit;
@@ -30,15 +27,15 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
 
     public function collection()
     {
-        
+
         return Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
-            ->whereDate('appointments.scheduled_date',Carbon::today())
-            ->where('appointment_type_id',1)
-            
+            ->whereDate('appointments.scheduled_date', Carbon::today())
+            ->where('appointment_type_id', 1)
+
             ->limit($this->limit)->offset($this->offset)
             ->orderBy('appointments.id', 'DESC')
             ->get();
@@ -71,13 +68,13 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
     {
         if ($appointment->consultancy_type == 'in_person') {
             $consultancy_type = 'In Person';
-        } else if ($appointment->consultancy_type == 'virtual') {
+        } elseif ($appointment->consultancy_type == 'virtual') {
             $consultancy_type = 'Virtual';
         } else {
             $consultancy_type = 'N/A';
         }
 
-        if (!Gate::allows('contact')) {
+        if (! Gate::allows('contact')) {
             $phone = '***********';
         } else {
             $phone = $appointment->phone ?? 'N/A';
@@ -87,7 +84,7 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
             GeneralFunctions::patientSearchStringAdd($appointment->id),
             $appointment->name ?? 'N/A',
             $phone,
-            Carbon::parse($appointment->scheduled_date)->format('F j,Y') .' '. Carbon::parse($appointment->scheduled_time)->format('h:i A') ?? 'N/A',
+            Carbon::parse($appointment->scheduled_date)->format('F j,Y').' '.Carbon::parse($appointment->scheduled_time)->format('h:i A') ?? 'N/A',
             $appointment->doctor->name ?? 'N/A',
             $appointment->region->name ?? 'N/A',
             $appointment->city->name ?? 'N/A',
@@ -105,12 +102,11 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
 
     /**
      * Write code on Method
-     *
      */
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class    => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
 
                 $event->sheet->getDelegate()->getStyle('A1:P1')->getFont()->setBold(true);
 
@@ -136,5 +132,4 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
             },
         ];
     }
-
 }
