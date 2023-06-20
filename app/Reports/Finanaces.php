@@ -20,7 +20,6 @@ use App\Models\PackageService;
 use App\Models\Resources;
 use App\User;
 use Auth;
-use Auth;
 use Carbon\Carbon;
 use Config;
 use DB;
@@ -2762,7 +2761,6 @@ class Finanaces
 
             /*case 1 end*/
         }
-        dd(collect($appointments_info)->where('conversion_spend','!=',"")->count());
         /*case 2 start*/
         $records = Appointments::with('location:id,name')
             ->join('appointments as appoint_2', 'appointments.id', '=', 'appoint_2.appointment_id')
