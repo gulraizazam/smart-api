@@ -76,7 +76,7 @@
 
                             <label class="checkbox">
                                 <span class="checkbox edit_check_final_1">
-                                    <input id="edit_mondayElement_1" checked type="checkbox" name="mondaychecked" class="mr-2">
+                                    <input id="edit_mondayElement_1" type="checkbox" name="mondaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Monday</strong>
@@ -117,7 +117,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox edit_check_final_1">
-                                    <input id="edit_tuesdayElement_1" checked type="checkbox" name="tuesdaychecked" class="mr-2">
+                                    <input id="edit_tuesdayElement_1" type="checkbox" name="tuesdaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Tuesday</strong>
@@ -146,7 +146,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox edit_check_final_1">
-                                    <input id="edit_wednesdayElement_1" type="checkbox" name="wednesdaychecked" checked class="mr-2">
+                                    <input id="edit_wednesdayElement_1" type="checkbox" name="wednesdaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Wednesday</strong>
@@ -176,7 +176,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox edit_check_final_1">
-                                    <input id="edit_thursdayElement_1" type="checkbox" name="thursdaychecked" checked class="mr-2">
+                                    <input id="edit_thursdayElement_1" type="checkbox" name="thursdaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Thursday</strong>
@@ -203,7 +203,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox edit_check_final_1">
-                                    <input id="edit_fridayElement_1" type="checkbox" name="fridaychecked" checked class="mr-2">
+                                    <input id="edit_fridayElement_1" type="checkbox" name="fridaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Friday</strong>
@@ -230,7 +230,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox edit_check_final_1">
-                                    <input id="edit_saturdayElement_1" type="checkbox" name="saturdaychecked" checked class="mr-2">
+                                    <input id="edit_saturdayElement_1" type="checkbox" name="saturdaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Saturday</strong>
@@ -257,7 +257,7 @@
                         <div class="fv-row col-md-4">
                             <label class="checkbox">
                                 <span class="checkbox edit_check_final_1">
-                                    <input id="edit_sundayElement_1" type="checkbox" name="sundaychecked" checked class="mr-2">
+                                    <input id="edit_sundayElement_1" type="checkbox" name="sundaychecked" class="mr-2">
                                     <span></span>
                                 </span>
                                 &nbsp;&nbsp;<strong class="position-absolute ml-10 font-size-h6-sm">Sunday</strong>
