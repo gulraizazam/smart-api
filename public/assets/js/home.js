@@ -211,7 +211,6 @@ function initRevenueByService(today, yesterday, last7days, week, thismonth, last
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Yesterday");
-                revenue_by_service
                 var pie = response.data.pie.yesterday;
             }
             if (last7days != '') {
