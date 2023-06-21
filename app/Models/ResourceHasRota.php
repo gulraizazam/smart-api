@@ -42,9 +42,7 @@ class ResourceHasRota extends BaseModal
      * */
     public function location()
     {
-
         return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
-
     }
 
     /**
@@ -118,10 +116,10 @@ class ResourceHasRota extends BaseModal
                     }
                     if ($request->get('break_from_monday') && $request->get('break_to_monday')) {
                         if ($request->get('break_from_monday') == $request->get('break_to_monday')) {
-                            return [
+                            return array(
                                 'status' => false,
                                 'message' => 'Time range must be different, Kindly define again',
-                            ];
+                            );
                         } else {
                             if (
                                 strtotime($request->get('break_from_monday')) >= strtotime($request->get('time_f_monday')) &&
@@ -136,14 +134,14 @@ class ResourceHasRota extends BaseModal
                             }
                         }
                     } else {
-                        if (! $request->get('break_from_monday') && ! $request->get('break_to_monday')) {
-                            $data[$day.'_off'] = null;
+                        if (!$request->get('break_from_monday') && !$request->get('break_to_monday')) {
+                            $data[$day . '_off'] = null;
                         }
                         if ($request->get('break_from_monday') || $request->get('break_to_monday')) {
-                            return [
+                            return array(
                                 'status' => false,
                                 'message' => 'From Break or To Break require, kindly define again',
-                            ];
+                            );
                         }
                     }
                 }
@@ -154,19 +152,18 @@ class ResourceHasRota extends BaseModal
 
                 $resourcerota = ResourceHasRota::create($data);
                 AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $resourcerota);
-
             } else {
                 $week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
                 foreach ($week as $day) {
                     if ($request->get($day.'checked') != 'on') {
                         $data[$day] = null;
                     } else {
-                        if ($request->get('time_f_'.$day) && $request->get('time_to_'.$day)) {
-                            if ($request->get('time_f_'.$day) == $request->get('time_to_'.$day)) {
-                                return [
+                        if ($request->get('time_f_' . $day) && $request->get('time_to_' . $day)) {
+                            if ($request->get('time_f_' . $day) == $request->get('time_to_' . $day)) {
+                                return array(
                                     'status' => false,
                                     'message' => 'Time range must be different, Kindly define again',
-                                ];
+                                );
                             } else {
                                 $data[$day] = implode(',', [Carbon::parse($request->get('time_f_'.$day))->format('H:i'), Carbon::parse($request->get('time_to_'.$day))->format('H:i')]);
                             }
@@ -177,21 +174,21 @@ class ResourceHasRota extends BaseModal
                             ];
                         }
                     }
-                    if ($request->get('break_from_'.$day) == null && $request->get('break_to_'.$day) == null) {
-                        $data[$day.'_off'] = null;
+                    if ($request->get('break_from_' . $day) == null && $request->get('break_to_' . $day) == null) {
+                        $data[$day . '_off'] = null;
                     } else {
-                        if ($request->get('break_from_'.$day) && $request->get('break_to_'.$day)) {
-                            if ($request->get('break_from_'.$day) == $request->get('break_to_'.$day)) {
-                                return [
+                        if ($request->get('break_from_' . $day) && $request->get('break_to_' . $day)) {
+                            if ($request->get('break_from_' . $day) == $request->get('break_to_' . $day)) {
+                                return array(
                                     'status' => false,
                                     'message' => 'Time range must be different, Kindly define again',
-                                ];
+                                );
                             } else {
                                 if (
                                     strtotime($request->get('break_from_'.$day)) >= strtotime($request->get('time_f_'.$day)) &&
                                     strtotime($request->get('break_from_'.$day)) <= strtotime($request->get('time_to_'.$day))
                                 ) {
-                                    $data[$day.'_off'] = implode(',', [Carbon::parse($request->get('break_from_'.$day))->format('H:i'), Carbon::parse($request->get('break_to_'.$day))->format('H:i')]);
+                                    $data[$day . '_off'] = implode(',', array(Carbon::parse($request->get('break_from_' . $day))->format('H:i'), Carbon::parse($request->get('break_to_' . $day))->format('H:i')));
                                 } else {
                                     return [
                                         'status' => false,
@@ -200,14 +197,14 @@ class ResourceHasRota extends BaseModal
                                 }
                             }
                         } else {
-                            if (! $request->get('break_from_'.$day) && ! $request->get('break_to_'.$day)) {
-                                $data[$day.'_off'] = null;
+                            if (!$request->get('break_from_' . $day) && !$request->get('break_to_' . $day)) {
+                                $data[$day . '_off'] = null;
                             }
-                            if ($request->get('break_from_'.$day) || $request->get('break_to_'.$day)) {
-                                return [
+                            if ($request->get('break_from_' . $day) || $request->get('break_to_' . $day)) {
+                                return array(
                                     'status' => false,
                                     'message' => 'From Break or To Break require, kindly define again',
-                                ];
+                                );
                             }
                         }
                     }
@@ -223,14 +220,12 @@ class ResourceHasRota extends BaseModal
 
                 AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $resourcerota);
             }
-            // dd($data);
             ResourceHasRotaDays::createRotaDaysRecord($request, $resourcerota, $week, $data);
 
             return [
                 'status' => true,
                 'message' => 'Record has been created successfully.',
             ];
-
         } else {
             return [
                 'status' => false,
@@ -264,7 +259,7 @@ class ResourceHasRota extends BaseModal
             if ($resourcehasrota->resource_type_id == 2) {
                 $appointment_info = Appointments::where([
                     ['resource_has_rota_day_id', '=', $rota_days->id],
-                    ['location_id', '=', $resourcehasrota->location_id],
+                    ['location_id', '=', $resourcehasrota->location_id]
                 ])->get();
                 if (count($appointment_info)) {
                     $status = false;
@@ -273,7 +268,7 @@ class ResourceHasRota extends BaseModal
             if ($resourcehasrota->resource_type_id == 1) {
                 $appointment_info = Appointments::where([
                     ['resource_has_rota_day_id_for_machine', '=', $rota_days->id],
-                    ['location_id', '=', $resourcehasrota->location_id],
+                    ['location_id', '=', $resourcehasrota->location_id]
                 ])->get();
                 if (count($appointment_info)) {
                     $status = false;
@@ -292,7 +287,6 @@ class ResourceHasRota extends BaseModal
                 'status' => true,
                 'message' => 'Record has been inactivated successfully.',
             ];
-
         }
 
         return [
@@ -352,7 +346,6 @@ class ResourceHasRota extends BaseModal
                 'status' => false,
                 'message' => 'Resource not found.',
             ];
-
         } else {
 
             if (ResourceHasRota::isChildExists($id, Auth::User()->account_id)) {
@@ -385,27 +378,13 @@ class ResourceHasRota extends BaseModal
     public static function updateRecord($id, $request, $account_id)
     {
         if ($request->start <= $request->end) {
-
             $old_data = (ResourceHasRota::find($id))->toArray();
-
             $resourcerota = ResourceHasRota::find($id);
-
             $request_data = $request->all();
-
-            if ($request->start > Carbon::now()->format('Y-m-d')) {
-                $sattle_date = $request->start;
-            } elseif ($request->start <= Carbon::now()->format('Y-m-d')) {
-                $sattle_date = Carbon::now()->format('Y-m-d');
-            } else {
-                $sattle_date = Carbon::now()->format('Y-m-d');
-            }
-
-            $request_data['start'] = $sattle_date;
+            $request_data['start'] = $request->start;
             $request = new Request();
             $request->replace($request_data);
-
             //$resourcerotadays = ResourceHasRotaDays::where('resource_has_rota_id', '=', $resourcerota->id)->forceDelete();
-
             $data = $request->all();
             /*Enter resource Id to reuse checkDatefunction*/
             $data['resource_id'] = $resourcerota->resource_id;
@@ -429,10 +408,10 @@ class ResourceHasRota extends BaseModal
                     }
                     if ($request->get('break_from_monday') && $request->get('break_to_monday')) {
                         if ($request->get('break_from_monday') == $request->get('break_to_monday')) {
-                            return [
+                            return array(
                                 'status' => 0,
                                 'message' => 'Time range must be different, Kindly define again',
-                            ];
+                            );
                         } else {
                             if (
                                 strtotime($request->get('break_from_monday')) >= strtotime($request->get('time_f_monday')) &&
@@ -447,14 +426,14 @@ class ResourceHasRota extends BaseModal
                             }
                         }
                     } else {
-                        if (! $request->get('break_from_monday') && ! $request->get('break_to_monday')) {
-                            $data[$day.'_off'] = null;
+                        if (!$request->get('break_from_monday') && !$request->get('break_to_monday')) {
+                            $data[$day . '_off'] = null;
                         }
                         if ($request->get('break_from_monday') || $request->get('break_to_monday')) {
-                            return [
+                            return array(
                                 'status' => 0,
                                 'message' => 'From Break or To Break require, kindly define again',
-                            ];
+                            );
                         }
                     }
                 }
@@ -466,12 +445,12 @@ class ResourceHasRota extends BaseModal
                     if ($request->get($day.'checked') != 'on') {
                         $data[$day] = null;
                     } else {
-                        if ($request->get('time_f_'.$day) && $request->get('time_to_'.$day)) {
-                            if ($request->get('time_f_'.$day) == $request->get('time_to_'.$day)) {
-                                return [
+                        if ($request->get('time_f_' . $day) && $request->get('time_to_' . $day)) {
+                            if ($request->get('time_f_' . $day) == $request->get('time_to_' . $day)) {
+                                return array(
                                     'status' => 0,
                                     'message' => 'Time range must be different, Kindly define again',
-                                ];
+                                );
                             } else {
                                 $data[$day] = implode(',', [Carbon::parse($request->get('time_f_'.$day))->format('H:i'), Carbon::parse($request->get('time_to_'.$day))->format('H:i')]);
                             }
@@ -481,21 +460,21 @@ class ResourceHasRota extends BaseModal
                                 'message' => 'From or To require, kindly define again',
                             ];
                         }
-                        if ($request->get('break_from_'.$day) == null && $request->get('break_to_'.$day) == null) {
-                            $data[$day.'_off'] = null;
+                        if ($request->get('break_from_' . $day) == null && $request->get('break_to_' . $day) == null) {
+                            $data[$day . '_off'] = null;
                         } else {
-                            if ($request->get('break_from_'.$day) && $request->get('break_to_'.$day)) {
-                                if ($request->get('break_from_'.$day) == $request->get('break_to_'.$day)) {
-                                    return [
+                            if ($request->get('break_from_' . $day) && $request->get('break_to_' . $day)) {
+                                if ($request->get('break_from_' . $day) == $request->get('break_to_' . $day)) {
+                                    return array(
                                         'status' => 0,
                                         'message' => 'Time range must be different, Kindly define again',
-                                    ];
+                                    );
                                 } else {
                                     if (
                                         strtotime($request->get('break_from_'.$day)) >= strtotime($request->get('time_f_'.$day)) &&
                                         strtotime($request->get('break_from_'.$day)) <= strtotime($request->get('time_to_'.$day))
                                     ) {
-                                        $data[$day.'_off'] = implode(',', [Carbon::parse($request->get('break_from_'.$day))->format('H:i'), Carbon::parse($request->get('break_to_'.$day))->format('H:i')]);
+                                        $data[$day . '_off'] = implode(',', array(Carbon::parse($request->get('break_from_' . $day))->format('H:i'), Carbon::parse($request->get('break_to_' . $day))->format('H:i')));
                                     } else {
                                         return [
                                             'status' => 0,
@@ -504,14 +483,14 @@ class ResourceHasRota extends BaseModal
                                     }
                                 }
                             } else {
-                                if (! $request->get('break_from_'.$day) && ! $request->get('break_to_'.$day)) {
-                                    $data[$day.'_off'] = null;
+                                if (!$request->get('break_from_' . $day) && !$request->get('break_to_' . $day)) {
+                                    $data[$day . '_off'] = null;
                                 }
-                                if ($request->get('break_from_'.$day) || $request->get('break_to_'.$day)) {
-                                    return [
+                                if ($request->get('break_from_' . $day) || $request->get('break_to_' . $day)) {
+                                    return array(
                                         'status' => 0,
                                         'message' => 'From Break or To Break require, kindly define again',
-                                    ];
+                                    );
                                 }
                             }
                         }
@@ -536,7 +515,7 @@ class ResourceHasRota extends BaseModal
 
                         if ($rota_appointment['scheduled_time'] && $rota_days_record['start_time'] && $rota_days_record['end_time']) {
 
-                            if (! self::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $rota_days_record['start_time'], $rota_days_record['end_time'])) {
+                            if (!self::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $rota_days_record['start_time'], $rota_days_record['end_time'])) {
                                 $not_allow = true;
                                 break;
                             }
@@ -570,13 +549,6 @@ class ResourceHasRota extends BaseModal
                 // Set Region ID
                 $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
             }
-            /* if ($resourcerota->start < Carbon::now()->format('Y-m-d')) {
-                 $data['start'] = $resourcerota->start;
-             } else if ($resourcerota->start > Carbon::now()->format('Y-m-d')) {
-                 $data['start'] = $request->start;
-             } else if ($resourcerota->start = Carbon::now()->format('Y-m-d')) {
-                 $data['start'] = Carbon::now()->format('Y-m-d');
-             }*/
 
             /*Date overlap function for 2 rotas only not for one*/
 
@@ -650,7 +622,6 @@ class ResourceHasRota extends BaseModal
         }
 
         return $checked;
-
     }
 
     /*
