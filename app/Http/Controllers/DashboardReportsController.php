@@ -2552,40 +2552,41 @@ class DashboardReportsController extends Controller
 
         ]);
     }
+
     public function DoctoreWiseConversion(Request $request)
     {
-       
         $total_apts = [];
         $converted_apts = [];
         $lables = [];
-        $appointmentss = array();
+        $appointments = array();
         $total = 0;
         $appointments_info = array();
         $period = $request->period;
         $periods = GeneralFunctions::GetPeriods();
         $centre_doctors = DoctorHasLocations::when($request->centre_id, function ($query) use ($request) {
-            return $query->where(['location_id' => $request->centre_id]);
-        })
-        ->when($request->doc_id, function ($query) use ($request) {
-            return $query->where(['user_id' => $request->doc_id]);
-        })
-        ->groupBy('user_id')
-        ->pluck('user_id');
+                return $query->where(['location_id' => $request->centre_id]);
+            })
+            ->when($request->doc_id, function ($query) use ($request) {
+                return $query->where(['user_id' => $request->doc_id]);
+            })
+            ->groupBy('user_id')
+            ->pluck('user_id');
+ 
         $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
         $consultants = RoleHasUsers::join('users','users.id','role_has_users.user_id')
             ->select('users.name','users.id')
             ->whereIn('users.id' , $centre_doctors)
             ->where(['role_id' => $role , 'users.active' => 1])
             ->get();
+
         foreach($consultants as $consultant){
-            
             array_push($lables , $consultant->name);
 
             $converted_appointments = GeneralFunctions::GetConvertedAppointments($period , $periods , $consultant);
 
             if (count($converted_appointments)) {
                 foreach ($converted_appointments as $appointment) {
-                    if (!in_array($appointment->id, $appointmentss)) {
+                    if (!in_array($appointment->id, $appointments)) {
                         $appointments_info[$appointment->id] = array(
                             'patient_id' => $appointment->patient_id,
                             'appointment_id' => $appointment->id,
@@ -2604,8 +2605,8 @@ class DashboardReportsController extends Controller
                             'conversion_date' => '',
                         );
                     }
-                    $appointmentss[] = $appointment->id;
-                    $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
+                    $appointments[] = $appointment->id;
+                    $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->pluck('id');
                     if (count($package_info)) {
                         $actual = 0;
                         $revenue_in = 0;
@@ -2652,17 +2653,21 @@ class DashboardReportsController extends Controller
                 }
             }
 
-            $total_appointments = Appointments::whereBetween('scheduled_date',[$periods[$period]['start_date'], $periods[$period]['end_date']])
-            ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2 , 'doctor_id' => $consultant->id])
-            ->count();
-            
+            $total_appointments = Appointments::join('services','appointments.service_id','services.id')->selectRaw('count(*) as arrived, service_id,services.name as service_name')
+                ->whereBetween('scheduled_date',[$periods[$period]['start_date'], $periods[$period]['end_date']])
+                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2 , 'doctor_id' => $consultant->id])
+                ->groupBy('service_id')
+                ->get();
+
             array_push($converted_apts, collect($appointments_info)->where('conversion_spend', "!=","")->count());
             array_push($total_apts, $total_appointments);
+
             $maxConversion = collect($appointments_info)->filter(function($appointment){
                 if($appointment['conversion_spend'] > 0){
                     return $appointment;
                 }
             });
+            
             $maxConversion = $maxConversion->groupBy('service_id');
             $returnCategoryData = [];
             foreach($maxConversion as $key => $conversions){
@@ -2677,11 +2682,12 @@ class DashboardReportsController extends Controller
                
                 $returnCategoryData[$key] = [
                     'service' => $name,
-                    'total_arrival' => $category_total_records,
+                    'total_arrival' => $total_appointments,
                     'total_conversion' => $sum_conversion_total
                 ];
             }
         }
+
         return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
             'labels' => $lables,
             'total_appointments'=>$total_apts,

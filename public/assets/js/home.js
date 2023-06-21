@@ -868,9 +868,10 @@ function LoadDocWiseConversion(doc_id)
             'centre_id' : CENTRE_ID
         },
         success: function (response) {
+            console.log('res',response);
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
-            jQuery.each( response.data.categories, function( index, category ) {
+            jQuery.each( response.data.total_appointments, function( index, category ) {
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>"+category.total_arrival+"</td><td>"+category.total_conversion+"</td></tr>";
                
             });
