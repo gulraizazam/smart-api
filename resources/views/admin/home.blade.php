@@ -163,12 +163,13 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report collection_by_centre_dropdown"
+                                                        <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
                                                             aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
+                                                       
                                                         <ul class="dropdown-menu dropdown-menu-right"
                                                             id="collection_by_centre_menu">
                                                             <li>
@@ -231,7 +232,7 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report revenue_by_centre_dropdown"
+                                                        <a class="form-control btndropdown btn_Report revenue_by_centre_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
                                                             aria-expanded="false"> Today
@@ -284,6 +285,65 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
+                    <div class="col-lg-6 col-xxl-6">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b"
+                                style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Revenue by Service Category</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="form-control btndropdown  btn_Report revenue_by_service_category_dropdown"
+                                                            href="javascript:;" data-toggle="dropdown"
+                                                            data-hover="dropdown" data-close-others="true"
+                                                            aria-expanded="false"> Today
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right"
+                                                            id="revenue_by_service_category_menu">
+                                                            <li>
+                                                                <a class="active" href="#service_revenue_4"
+                                                                    data-toggle="tab"
+                                                                    onclick="InitRevenueByServiceCategory('today', '', '', '','');">
+                                                                    Today</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#service_revenue_1" data-toggle="tab"
+                                                                    onclick="InitRevenueByServiceCategory('', 'yesterday', '', '','');">Yesterday</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#service_revenue_2" data-toggle="tab"
+                                                                    onclick="InitRevenueByServiceCategory('', '', 'last7days', '','');">Last
+                                                                    7 Days</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                                    onclick="InitRevenueByServiceCategory('', '', '', 'thismonth','');">This
+                                                                    Month</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="#service_revenue_3" data-toggle="tab"
+                                                                    onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
+                                                                    Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span
+                                                class="text-dark-75 font-weight-bolder font-size-h3 total-category-service"></span>
+                                            <span class="text-muted font-weight-bold mt-2 service-category-title"></span>
+                                        </div>
+                                    </div>
+                                    <div id="revenue-service-category"></div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
@@ -295,7 +355,7 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report revenue_by_service_dropdown"
+                                                        <a class="form-control btndropdown  btn_Report revenue_by_service_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
                                                             aria-expanded="false"> Today
@@ -349,65 +409,7 @@
                             </div>
                         </div>
 
-                        <div class="col-lg-6 col-xxl-6">
-                            <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
-                                <div class="card-body p-0">
-                                    <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Revenue by Service Category</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report revenue_by_service_category_dropdown"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Today
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right"
-                                                            id="revenue_by_service_category_menu">
-                                                            <li>
-                                                                <a class="active" href="#service_revenue_4"
-                                                                    data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('today', '', '', '','');">
-                                                                    Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_1" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', 'yesterday', '', '','');">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', 'last7days', '','');">Last
-                                                                    7 Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_3" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', '', 'thismonth','');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_3" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
-                                                                    Month</a>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                        <div class="d-none flex-column text-right">
-                                            <span
-                                                class="text-dark-75 font-weight-bolder font-size-h3 total-category-service"></span>
-                                            <span class="text-muted font-weight-bold mt-2 service-category-title"></span>
-                                        </div>
-                                    </div>
-                                    <div id="revenue-service-category"></div>
-                                </div>
-                            </div>
-                        </div>
+                        
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
@@ -421,7 +423,7 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report appointment_by_status_dropdown"
+                                                        <a class="form-control btndropdown  btn_Report appointment_by_status_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
                                                             aria-expanded="false"> Today
@@ -487,7 +489,7 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report appointment_by_type_dropdown"
+                                                        <a class="form-control btndropdown  btn_Report appointment_by_type_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
                                                             aria-expanded="false"> Today
@@ -563,10 +565,10 @@
                                                         @endphp
                                                         <div class="btn-group">
                                                             <a data-id=""
-                                                                class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
+                                                                class="btn form-control btndropdown btn_Report arrivalbtn"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false"> All
+                                                                aria-expanded="false"> All Centres
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                             <ul class="dropdown-menu dropdown-menu-right">
@@ -594,7 +596,7 @@
                                                         @endphp
                                                         <div class="btn-group">
                                                             <a data-id="All"
-                                                                class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
+                                                                class="btn form-control btndropdown btn_Report arrivalbtn"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">All
@@ -626,7 +628,7 @@
                                                         @endphp
                                                         <div class="btn-group">
                                                             <a data-id=""
-                                                                class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
+                                                                class="btn form-control btndropdown btn_Report arrivalbtn"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">
@@ -739,13 +741,13 @@
                                                     @endphp
                                                     <div class="btn-group">
                                                     @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('Super Admin'))
-                                                        <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorwiseconversion"
+                                                        <a data-id="" class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                             href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                             data-close-others="true" aria-expanded="false"> All Centres
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                     @else
-                                                    <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorwiseconversion"
+                                                    <a data-id="" class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                             href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                             data-close-others="true" aria-expanded="false"> Select Centre
                                                             <i class="fa fa-angle-down"></i>
@@ -769,7 +771,7 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorname" 
+                                                        <a data-id="" class="btn form-control btndropdown btn_Report doctorname" 
                                                             href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                             data-close-others="true" aria-expanded="false"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
