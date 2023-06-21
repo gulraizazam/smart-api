@@ -767,15 +767,17 @@ function ConsultanciesByStatus(bar) {
 function initDoctorWiseConversion(period, time = ''){
     SELECTED_MONTH = period;
     var centre_id = $(".doctorwiseconversion").attr('data-id');
+    CENTRE_ID = centre_id;
     var doc_id = $(".doctorname").attr('data-id');
+    DOC_ID = doc_id;
     $.ajax({
         url: route('admin.dashboard.doctor_wise_conversion'),
         type: 'GET',
         cache: false,
         data: {
             'period': SELECTED_MONTH,
-            'centre_id': centre_id,
-            'doc_id':doc_id
+            'centre_id': CENTRE_ID,
+            'doc_id':DOC_ID
         },
         success: function (response) {
             var categories = response.data.categories;
@@ -799,16 +801,16 @@ function LoadDocWiseConversion(doc_id)
     jQuery('.btn.doctorname').html(DrName+'<i class="fa fa-angle-down"></i>')
     jQuery('.btn.doctorname').attr('data-id',doc_id);
     var centre_id = $(".doctorwiseconversion").attr('data-id');
-   
-    
+    CENTRE_ID = centre_id;
+    DOC_ID = doc_id;
     $.ajax({
         url: route('admin.dashboard.doctor_wise_conversion'),
         type: 'GET',
         cache: false,
         data: {
             'period': 'thismonth',
-            'doc_id': doc_id,
-            'centre_id' : centre_id
+            'doc_id': DOC_ID,
+            'centre_id' : CENTRE_ID
         },
         success: function (response) {
             jQuery('#categories-table-body').html("");
@@ -825,7 +827,6 @@ function LoadDocWiseConversion(doc_id)
         }
     });
 }
-
 
 function DoctorWiseConversion(bar) {
     const primary = '#6993FF';

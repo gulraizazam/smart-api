@@ -2594,7 +2594,6 @@ class DashboardReportsController extends Controller
                     ]);
                 })
             ->get();
-            
             if (count($converted_appointments)) {
                 foreach ($converted_appointments as $appointment) {
                     if (!in_array($appointment->id, $appointmentss)) {
@@ -2662,32 +2661,30 @@ class DashboardReportsController extends Controller
                         }
                     }
                 }
-    
                 /*case 1 end*/
             }
 
             $total_appointments = Appointments::whereBetween('scheduled_date',[$periods[$period]['start_date'], $periods[$period]['end_date']])
             ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2 , 'doctor_id' => $consultant->id])
             ->count();
-           
             array_push($converted_apts, collect($appointments_info)->where('conversion_spend', "!=","")->count());
             array_push($total_apts, $total_appointments);
-            $maxConversion1 = collect($appointments_info)->filter(function($appointment){
+            $maxConversion = collect($appointments_info)->filter(function($appointment){
                 if($appointment['conversion_spend'] > 0){
                     return $appointment;
                 }
             });
-            $maxConversion1 = $maxConversion1->groupBy('service_id');
+            $maxConversion = $maxConversion->groupBy('service_id');
             $returnCategoryData = [];
-            foreach($maxConversion1 as $key => $app){
+            foreach($maxConversion as $key => $conversions){
                 $sum_conversion_spend = 0;
                 $sum_conversion_total = 0;
-                foreach($app as $value) {
-                    $name = $value['service'];
-                    $sum_conversion_spend += $value['conversion_spend'];
+                foreach($conversions as $conversion) {
+                    $name = $conversion['service'];
+                    $sum_conversion_spend += $conversion['conversion_spend'];
                     $sum_conversion_total += 1;
                 }
-               $category_total_records = Appointments::where(['service_id' => $value['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1 , 'doctor_id' =>$consultant->id])
+               $category_total_records = Appointments::where(['service_id' => $conversion['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1 , 'doctor_id' =>$consultant->id])
                 ->whereBetween('scheduled_date',[$periods[$period]['start_date'], $periods[$period]['end_date']])
                 ->count();
                 $returnCategoryData[$key] = [
@@ -2695,10 +2692,8 @@ class DashboardReportsController extends Controller
                     'total_arrival' => $category_total_records,
                     'total_conversion' => $sum_conversion_total
                 ];
-                
             }
         }
-       
         return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
             'labels' => $lables,
             'total_appointments'=>$total_apts,
