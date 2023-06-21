@@ -2576,7 +2576,6 @@ class DashboardReportsController extends Controller
         ->select('users.name','users.id')
         ->whereIn('users.id' , $centre_doctors)
         ->where(['role_id' => $role , 'users.active' => 1])
-        ->where()
         ->get();
         foreach($consultants as $consultant){
             array_push($lables , $consultant->name);
