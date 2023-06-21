@@ -783,4 +783,128 @@ class GeneralFunctions
                 ]);
         })->update(['name' => $name]);
     }
+    public static function GetPeriods()
+    {
+        $periods = [
+            'today' => [
+                'start_date' => Carbon::now()->format('Y-m-d'),
+                'end_date' => Carbon::now()->format('Y-m-d'),
+            ],
+            'yesterday' => [
+                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+            ],
+            'last7days' => [
+                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
+                'end_date' => Carbon::now()->format('Y-m-d'),
+            ],
+            'week' => [
+                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
+                'end_date' => Carbon::now()->endOfWeek()->format('Y-m-d'),
+            ],
+            'thismonth' => [
+                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
+            ],
+            'lastmonth' => [
+                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')
+            ]
+        ];
+        return $periods;
+    }
+    public static function genericfunctionforstaffwiserevenue($packagesadvance)
+    {
+        $balance = 0;
+        $total_balance = 0;
+        if (
+            (
+                $packagesadvance->cash_flow == 'in' &&
+                $packagesadvance->is_adjustment == '0' &&
+                $packagesadvance->is_tax == '0' &&
+                $packagesadvance->is_cancel == '0'
+            )
+            ||
+            (
+                $packagesadvance->cash_flow == 'out' &&
+                $packagesadvance->is_refund == '1'
+            )
+        ) {
+            switch ($packagesadvance->cash_flow) {
+                case 'in':
+                    $balance = $balance + $packagesadvance->cash_amount;
+                    break;
+                case 'out':
+                    $balance = $balance - $packagesadvance->cash_amount;
+                    break;
+                default:
+                    break;
+            }
+            $total_balance = $balance;
+            if ($packagesadvance->cash_amount != 0) {
+                if ($packagesadvance->package_id) {
+                    $transtype = Config::get('constants.trans_type.advance_in');
+                }
+                if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                    $transtype = Config::get('constants.trans_type.advance_in');
+                }
+                if ($packagesadvance->is_adjustment == '1') {
+                    $transtype = Config::get('constants.trans_type.adjustment');
+                }
+                if ($packagesadvance->is_cancel == '1') {
+                    $transtype = Config::get('constants.trans_type.invoice_cancel');
+                }
+                if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                    $transtype = Config::get('constants.trans_type.invoice_create');
+                }
+                if ($packagesadvance->is_refund == '1') {
+                    $transtype = Config::get('constants.trans_type.refund_in');
+                }
+                if ($packagesadvance->is_tax == '1') {
+                    $transtype = Config::get('constants.trans_type.tax_out');
+                }
+                if ($packagesadvance->cash_flow == 'in') {
+                    $revenue = $packagesadvance->cash_amount;
+                    $refund_out = '';
+                } else {
+                    $revenue = '';
+                    $refund_out = $packagesadvance->cash_amount;
+                }
+                $report_data = array(
+                    'patient' => $packagesadvance->user->name,
+                    'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
+                    'transtype' => $transtype,
+                    'payment_mode_id' => $packagesadvance->payment_mode_id,
+                    'cash_flow' => $packagesadvance->cash_flow,
+                    'revenue' => $revenue,
+                    'refund_out' => $refund_out,
+                    'Balance' => $balance,
+                    'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A')
+                );
+
+                return $report_data;
+            }
+        }
+
+    }
+    public static function GetConvertedAppointments($period , $periods , $consultant)
+    {
+        $converted_appointments =  Appointments::with('location:id,name')
+            ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
+            ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived') , 
+            'appointments.appointment_type_id' => 1 , 'appointments.doctor_id' => $consultant->id])
+            ->where('package_advances.cash_amount', '>', 0)
+            ->select('appointments.*')
+            ->when($period == 'today', function ($query) use ($periods ,$period) {
+                $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+            })
+            ->when($period != 'today', function ($query) use ($periods ,$period) {
+                $query->whereBetween('package_advances.created_at', [
+                    $periods[$period]['start_date'],
+                    $periods[$period]['end_date']
+                ]);
+            })
+        ->get();
+        return $converted_appointments;
+    }
 }

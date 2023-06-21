@@ -20,7 +20,6 @@ use App\Models\PackageService;
 use App\Models\Resources;
 use App\User;
 use Auth;
-use Auth;
 use Carbon\Carbon;
 use Config;
 use DB;
@@ -1168,7 +1167,7 @@ class Finanaces
                                 $transtype = Config::get('constants.trans_type.advance_in');
                             }
                             if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
-                                $transtype = Config::get('constants.trans_type.advance_in');
+                                $transtype = Cselfonfig::get('constants.trans_type.advance_in');
                             }
                             if ($packagesadvance->is_adjustment == '1') {
                                 $transtype = Config::get('constants.trans_type.adjustment');
@@ -2676,7 +2675,6 @@ class Finanaces
         $appointment_type = AppointmentTypes::whereSlug('consultancy')->first();
         $where[] = [['appointments.appointment_type_id' => $appointment_type->id]];
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
-
         $appointments = Appointments::with('location:id,name')
             ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
@@ -2687,7 +2685,6 @@ class Finanaces
             ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
-            ->limit(50)
             ->get();
         $total = 0;
         $count = [];
@@ -2921,14 +2918,14 @@ class Finanaces
         } else {
             $average_client_coversion = 0;
         }
-        $conversionsByPatient = collect($appointments_info)->where('conversion_spend', '!=', '')->groupBy('patient_id')
-            ->map(function ($appointments_info) {
-                return $appointments_info->sum('conversion_spend');
-            });
+        $conversionsByPatient = collect($appointments_info)->where('conversion_spend',"!=","")->groupBy('patient_id')
+        ->map(function ($appointments_info) {
+            return $appointments_info->sum('conversion_spend');
+        });
         $avg_C_val = 0;
-        if (count($conversionsByPatient) > 0) {
-            $avg_cxlient_value = $avg_C_val / count($conversionsByPatient);
-        } else {
+        if(count($conversionsByPatient) > 0){
+            $avg_cxlient_value = $avg_C_val/count($conversionsByPatient);
+        }else{
             $avg_cxlient_value = 0;
         }
 
