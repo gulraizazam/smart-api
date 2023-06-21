@@ -1,205 +1,232 @@
 //To manage the functionality of Week days
 $(document).ready(function () {
-
     $('#mondayElement_1').on('change', function () {
-        if ($('#mondayElement_1').is(':unchecked')) {
-            $('#mondayOperation_1 :input').attr('disabled', true);
+        if ($('#mondayElement_1').is(':checked') == true) {
+            $('.mondaytime_1').attr('disabled', false);
+            $('.monday_breake_time').attr('disabled', false);
+            $('.mondaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.monday_breake_time').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.mondaytime_1').attr('disabled', true);
+            $('.monday_breake_time').attr('disabled', true);
             $('.mondaytime_1').val('', '');
             $('.monday_breake_time').val('', '');
-        } else {
-            $('#mondayOperation_1 :input').removeAttr('disabled');
-            $('.mondaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.monday_breake_time').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
     $('#edit_mondayElement_1').on('change', function () {
-        if ($('#edit_mondayElement_1').is(':unchecked')) {
-            $('#edit_mondayOperation_1 :input').attr('disabled', true);
+        if ($('#edit_mondayElement_1').is(':checked')) {
+            $('.edit_mondaytime_1').attr('disabled', false);
+            $('.edit_monday_breake_time').attr('disabled', false);
+            $('.edit_mondaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.edit_monday_breake_time').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.edit_mondaytime_1').attr('disabled', true);
+            $('.edit_monday_breake_time').attr('disabled', true);
             $('.edit_mondaytime_1').val('', '');
             $('.edit_monday_breake_time').val('', '');
-        } else {
-            $('.mondayOperation_1 :input').removeAttr('disabled');
-            $('.edit_mondaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.edit_monday_breake_time').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
 
     $('#tuesdayElement_1').on('change', function () {
-        if ($('#tuesdayElement_1').is(':unchecked')) {
-            $('#tuesdayOperation_1 :input').attr('disabled', true);
+        if ($('#tuesdayElement_1').is(':checked')) {
+            $('.tuesdaytime_1').attr('disabled', false);
+            $('.tuesdaytime_break').attr('disabled', false);
+            $('.tuesdaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.tuesdaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.tuesdaytime_1').attr('disabled', true);
+            $('.tuesdaytime_break').attr('disabled', true);
             $('.tuesdaytime_1').val('', '');
             $('.tuesdaytime_break').val('', '');
-        } else {
-            $('#tuesdayOperation_1 :input').removeAttr('disabled');
-            $('.tuesdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.tuesdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
     $('#edit_tuesdayElement_1').on('change', function () {
-        if ($('#edit_tuesdayElement_1').is(':unchecked')) {
-            $('#edit_tuesdayOperation_1 :input').attr('disabled', true);
+        if ($('#edit_tuesdayElement_1').is(':checked')) {
+            $('.edit_tuesdaytime_1').attr('disabled', false);
+            $('.edit_tuesdaytime_break').attr('disabled', false);
+            $('.edit_tuesdaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.edit_tuesdaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.edit_tuesdaytime_1').attr('disabled', true);
+            $('.edit_tuesdaytime_break').attr('disabled', true);
             $('.edit_tuesdaytime_1').val('', '');
             $('.edit_tuesdaytime_break').val('', '');
-        } else {
-            $('#edit_tuesdayElement_1 :input').removeAttr('disabled');
-            $('.edit_tuesdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.edit_tuesdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
     $('#wednesdayElement_1').on('change', function () {
-        if ($('#wednesdayElement_1').is(':unchecked')) {
-            $('#wednesdayOperation_1 :input').attr('disabled', true);
+        if ($('#wednesdayElement_1').is(':checked')) {
+            $('.wednesdaytime_1').attr('disabled', false);
+            $('.wednesdaytime_break').attr('disabled', false);
+            $('.wednesdaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.wednesdaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.wednesdaytime_1').attr('disabled', true);
+            $('.wednesdaytime_break').attr('disabled', true);
             $('.wednesdaytime_1').val('', '');
             $('.wednesdaytime_break').val('', '');
-        } else {
-            $('#wednesdayOperation_1 :input').removeAttr('disabled');
-            $('.wednesdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.wednesdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+
         }
     });
 
     $('#edit_wednesdayElement_1').on('change', function () {
-        if ($('#edit_wednesdayElement_1').is(':unchecked')) {
-            $('#edit_wednesdayOperation_1 :input').attr('disabled', true);
+        if ($('#edit_wednesdayElement_1').is(':checked')) {
+            $('.edit_wednesdaytime_1').attr('disabled', false);
+            $('.edit_wednesdaytime_break').attr('disabled', false);
+            $('.edit_wednesdaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.edit_wednesdaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.edit_wednesdaytime_1').attr('disabled', true);
+            $('.edit_wednesdaytime_break').attr('disabled', true);
             $('.edit_wednesdaytime_1').val('', '');
             $('.edit_wednesdaytime_break').val('', '');
-        } else {
-            $('#edit_wednesdayOperation_1 :input').removeAttr('disabled');
-            $('.edit_wednesdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.edit_wednesdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
 
     $('#thursdayElement_1').on('change', function () {
-        if ($('#thursdayElement_1').is(':unchecked')) {
-            $('#thursdayOperation_1 :input').attr('disabled', true);
+        if ($('#thursdayElement_1').is(':checked')) {
+            $('.thursdaytime_1').attr('disabled', false);
+            $('.thursdaytime_break').attr('disabled', false);
+            $('.thursdaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.thursdaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+
+        } else {
+            $('.thursdaytime_1').attr('disabled', true);
+            $('.thursdaytime_break').attr('disabled', true);
             $('.thursdaytime_1').val('', '');
             $('.thursdaytime_break').val('', '');
-        } else {
-            $('#thursdayOperation_1 :input').removeAttr('disabled');
-            $('.thursdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.thursdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
     $('#edit_thursdayElement_1').on('change', function () {
-        if ($('#edit_thursdayElement_1').is(':unchecked')) {
-            $('#edit_thursdayOperation_1 :input').attr('disabled', true);
+        if ($('#edit_thursdayElement_1').is(':checked')) {
+            $('.edit_thursdaytime_1').attr('disabled', false);
+            $('.edit_thursdaytime_break').attr('disabled', false);
+            $('.edit_thursdaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.edit_thursdaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.edit_thursdaytime_1').attr('disabled', true);
+            $('.edit_thursdaytime_break').attr('disabled', true);
             $('.edit_thursdaytime_1').val('', '');
             $('.edit_thursdaytime_break').val('', '');
-        } else {
-            $('#edit_thursdayOperation_1 :input').removeAttr('disabled');
-            $('.edit_thursdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.edit_thursdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
     $('#fridayElement_1').on('change', function () {
-        if ($('#fridayElement_1').is(':unchecked')) {
-            $('#fridayOperation_1 :input').attr('disabled', true);
+        if ($('#fridayElement_1').is(':checked')) {
+            $('.fridaytime_1').attr('disabled', false);
+            $('.fridaytime_break').attr('disabled', false);
+            $('.fridaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.fridaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.fridaytime_1').attr('disabled', true);
+            $('.fridaytime_break').attr('disabled', true);
             $('.fridaytime_1').val('', '');
             $('.fridaytime_break').val('', '');
-        } else {
-            $('#fridayOperation_1 :input').removeAttr('disabled');
-            $('.fridaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.fridaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
     $('#edit_fridayElement_1').on('change', function () {
-        if ($('#edit_fridayElement_1').is(':unchecked')) {
-            $('#edit_fridayOperation_1 :input').attr('disabled', true);
+        if ($('#edit_fridayElement_1').is(':checked')) {
+            $('.edit_fridaytime_1').attr('disabled', false);
+            $('.edit_fridaytime_break').attr('disabled', false);
+            $('.edit_fridaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.edit_fridaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.edit_fridaytime_1').attr('disabled', true);
+            $('.edit_fridaytime_break').attr('disabled', true);
             $('.edit_fridaytime_1').val('', '');
             $('.edit_fridaytime_break').val('', '');
-        } else {
-            $('#edit_fridayOperation_1 :input').removeAttr('disabled');
-            $('.edit_fridaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.edit_fridaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
-
 
     $('#saturdayElement_1').on('change', function () {
-        if ($('#saturdayElement_1').is(':unchecked')) {
-            $('#saturdayOperation_1 :input').attr('disabled', true);
+        if ($('#saturdayElement_1').is(':checked')) {
+            $('.saturdaytime_1').attr('disabled', false);
+            $('.saturdaytime_break').attr('disabled', false);
+            $('.saturdaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.saturdaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.saturdaytime_1').attr('disabled', true);
+            $('.saturdaytime_break').attr('disabled', true);
             $('.saturdaytime_1').val('', '');
             $('.saturdaytime_break').val('', '');
-        } else {
-            $('#saturdayOperation_1 :input').removeAttr('disabled');
-            $('.saturdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.saturdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
-
     $('#edit_saturdayElement_1').on('change', function () {
-        if ($('#edit_saturdayElement_1').is(':unchecked')) {
-            $('#edit_saturdayOperation_1 :input').attr('disabled', true);
+        if ($('#edit_saturdayElement_1').is(':checked')) {
+            $('.edit_saturdaytime_1').attr('disabled', false);
+            $('.edit_saturdaytime_break').attr('disabled', false);
             $('.edit_saturdaytime_1').val('', '');
             $('.edit_saturdaytime_break').val('', '');
         } else {
-            $('#edit_saturdayOperation_1 :input').removeAttr('disabled');
-            $('.edit_saturdaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.edit_saturdaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+            $('.edit_saturdaytime_1').attr('disabled', true);
+            $('.edit_saturdaytime_break').attr('disabled', true);
+            $('.edit_saturdaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.edit_saturdaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
         }
     });
 
     $('#sundayElement_1').on('change', function () {
-        if ($('#sundayElement_1').is(':unchecked')) {
-            $('#sundayOperation_1 :input').attr('disabled', true);
+        if ($('#sundayElement_1').is(':checked')) {
+            $('.sundaytime_1').attr('disabled', false);
+            $('.sundaytime_break').attr('disabled', false);
+            $('.sundaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.sundaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('.sundaytime_1').attr('disabled', true);
+            $('.sundaytime_break').attr('disabled', true);
             $('.sundaytime_1').val('', '');
             $('.sundaytime_break').val('', '');
-        } else {
-            $('#sundayOperation_1 :input').removeAttr('disabled');
-            $('.sundaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.sundaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
     $('#edit_sundayElement_1').on('change', function () {
-        if ($('#edit_sundayElement_1').is(':unchecked')) {
-            $('#edit_sundayOperation_1 :input').attr('disabled', true);
+        if ($('#edit_sundayElement_1').is(':checked')) {
+            $('.edit_sundaytime_1').attr('disabled', false);
+            $('.edit_sundaytime_break').attr('disabled', false);
+            $('.edit_sundaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+            $('.edit_sundaytime_break').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
+        } else {
+            $('#edit_copy_all_1').prop('checked', false);
+            $('.edit_sundaytime_1').attr('disabled', true);
+            $('.edit_sundaytime_break').attr('disabled', true);
             $('.edit_sundaytime_1').val('', '');
             $('.edit_sundaytime_break').val('', '');
-        } else {
-            $('#edit_sundayOperation_1 :input').removeAttr('disabled');
-            $('.edit_sundaytime_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
-            $('.edit_sundaytime_break').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
         }
     });
 
     /*for add*/
     $('#copy_all_1').change(function () {
-
-        if ($(this).is(":checked")) {
+        if ($(this).is(":checked") == true) {
+            $('#copy_all_1').prop('checked', true);
             $('#copy_all_1').val('1');
 
             $('#mondayElement_1').prop('checked', true);
+            $('#mondayElement_1').attr('disabled', true);
 
-            $('#tuesdayOperation_1').find("input").prop('disabled', true);
             $('#tuesdayElement_1').prop('checked', true);
+            $('#tuesdayOperation_1').find("input").prop('disabled', true);
 
-            $('#wednesdayOperation_1').find("input").prop('disabled', true);
             $('#wednesdayElement_1').prop('checked', true);
+            $('#wednesdayOperation_1').find("input").prop('disabled', true);
 
-            $('#thursdayOperation_1').find("input").attr('disabled', true);
             $('#thursdayElement_1').prop('checked', true);
+            $('#thursdayOperation_1').find("input").prop('disabled', true);
 
-            $('#fridayOperation_1').find("input").attr('disabled', true);
             $('#fridayElement_1').prop('checked', true);
+            $('#fridayOperation_1').find("input").prop('disabled', true);
 
-            $('#saturdayOperation_1').find("input").attr('disabled', true);
             $('#saturdayElement_1').prop('checked', true);
+            $('#saturdayOperation_1').find("input").prop('disabled', true);
 
-            $('#sundayOperation_1').find("input").attr('disabled', true);
             $('#sundayElement_1').prop('checked', true);
-
-            $('.check_final_1').hide();
+            $('#sundayOperation_1').find("input").prop('disabled', true);
 
             /*get the monday break timing*/
             var frombreakvalue = $('#break_monday_from').val();
@@ -209,26 +236,49 @@ $(document).ready(function () {
             $(".f_time_break").val(frombreakvalue);
             $(".t_time_break").val(tobreakValue);
 
-            /*get the monday form and to value*/
-            var fromValue = $('#monday_from').val();
-            var toValue = $('#monday_to').val();
-
+            if ($('#monday_from').val() == '' && $('#monday_to').val() == '') {
+                /*get the monday form and to value*/
+                $('.mondaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+                var fromValue = $('#monday_from').val();
+                var toValue = $('#monday_to').val();
+            } else {
+                /*get the monday form and to value*/
+                var fromValue = $('#monday_from').val();
+                var toValue = $('#monday_to').val();
+            }
             //set the monday to and from value to all other days
             $(".ftime_1").val(fromValue);
             $(".ttime_1").val(toValue);
-        }
-        else {
-            $('.check_final_1').show();
+
+        } else {
+            $('#copy_all_1').prop('checked', false);
             $('#copy_all_1').val('0');
-            $('#mondayOperation_1').find("input").attr('disabled', false);
-            $('#tuesdayOperation_1').find("input").attr('disabled', false);
-            $('#wednesdayOperation_1').find("input").attr('disabled', false);
-            $('#thursdayOperation_1').find("input").attr('disabled', false);
-            $('#fridayOperation_1').find("input").attr('disabled', false);
-            $('#saturdayOperation_1').find("input").attr('disabled', false);
-            $('#sundayOperation_1').find("input").attr('disabled', false);
-            $(".ftime_1").timepicker('setTime', new Date());
-            $(".ttime_1").timepicker('setTime', new Date());
+
+            $('#mondayElement_1').prop('checked', false);
+            $('#mondayElement_1').attr('disabled', false);
+
+            $('#tuesdayElement_1').prop('checked', false);
+            $('#tuesdayOperation_1').find("input").prop('disabled', false);
+
+            $('#wednesdayElement_1').prop('checked', false);
+            $('#wednesdayOperation_1').find("input").prop('disabled', false);
+
+            $('#thursdayElement_1').prop('checked', false);
+            $('#thursdayOperation_1').find("input").prop('disabled', false);
+
+            $('#fridayElement_1').prop('checked', false);
+            $('#fridayOperation_1').find("input").prop('disabled', false);
+
+            $('#saturdayElement_1').prop('checked', false);
+            $('#saturdayOperation_1').find("input").prop('disabled', false);
+
+            $('#sundayElement_1').prop('checked', false);
+            $('#sundayOperation_1').find("input").prop('disabled', false);
+
+            $('.mondaytime_1').val('', '');
+            $('.monday_breake_time').val('', '');
+            $(".ftime_1").timepicker('setTime', null);
+            $(".ttime_1").timepicker('setTime', null);
             $(".f_time_break").timepicker('setTime', null);
             $(".t_time_break").timepicker('setTime', null);
         }
@@ -236,31 +286,30 @@ $(document).ready(function () {
 
     /*for edit*/
     $('#edit_copy_all_1').change(function () {
-
-        if ($(this).is(":checked")) {
+        if ($(this).is(":checked") == true) {
+            $('#edit_copy_all_1').prop('checked', true);
             $('#edit_copy_all_1').val('1');
 
             $('#edit_mondayElement_1').prop('checked', true);
+            $('#edit_mondayElement_1').attr('disabled', true);
 
+            $('#edit_tuesdayElement_1').prop('checked', true);
             $('#edit_tuesdayOperation_1').find("input").prop('disabled', true);
-            $('#tuesdayElement_1').prop('checked', true);
 
-            $('#edit_wednesdayOperation_1 :input').prop('disabled', true);
             $('#edit_wednesdayElement_1').prop('checked', true);
+            $('#edit_wednesdayOperation_1').find("input").prop('disabled', true);
 
-            $('#edit_thursdayOperation_1 :input').attr('disabled', true);
             $('#edit_thursdayElement_1').prop('checked', true);
+            $('#edit_thursdayOperation_1').find("input").prop('disabled', true);
 
-            $('#edit_fridayOperation_1 :input').attr('disabled', true);
             $('#edit_fridayElement_1').prop('checked', true);
+            $('#edit_fridayOperation_1').find("input").prop('disabled', true);
 
-            $('#edit_saturdayOperation_1 :input').attr('disabled', true);
             $('#edit_saturdayElement_1').prop('checked', true);
+            $('#edit_saturdayOperation_1').find("input").prop('disabled', true);
 
-            $('#edit_sundayOperation_1 :input').attr('disabled', true);
             $('#edit_sundayElement_1').prop('checked', true);
-
-            $('.edit_check_final_1').hide();
+            $('#edit_sundayOperation_1').find("input").prop('disabled', true);
 
             /*get the monday break timing*/
             var frombreakvalue = $('#edit_break_monday_from').val();
@@ -270,25 +319,50 @@ $(document).ready(function () {
             $(".f_time_break").val(frombreakvalue);
             $(".t_time_break").val(tobreakValue);
 
-            /*get the monday form and to value*/
-            var fromValue = $('#edit_monday_from').val();
-            var toValue = $('#edit_monday_to').val();
-
+            if ($('#edit_monday_from').val() == '' && $('#edit_monday_to').val() == '') {
+                /*get the monday form and to value*/
+                $('.edit_mondaytime_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
+                var fromValue = $('#edit_monday_from').val();
+                var toValue = $('#edit_monday_to').val();
+            } else {
+                /*get the monday form and to value*/
+                var fromValue = $('#edit_monday_from').val();
+                var toValue = $('#edit_monday_to').val();
+            }
             //set the monday to and from value to all other days
             $(".ftime_1").val(fromValue);
             $(".ttime_1").val(toValue);
-        }
-        else {
+        } else {
+            $('#edit_copy_all_1').prop('checked', false);
+            $('#edit_copy_all_1').val('0');
 
-            $('.edit_check_final_1').show();
-            $('#copy_all_1').val('0');
-            $('#edit_mondayOperation_1 :input').attr('disabled', false);
-            $('#tuesdayOperation_1, #edit_tuesdayOperation_1').find("input").attr('disabled', false);
-            $('#edit_wednesdayOperation_1 :input').attr('disabled', false);
-            $('#edit_thursdayOperation_1 :input').attr('disabled', false);
-            $('#edit_fridayOperation_1 :input').attr('disabled', false);
-            $('#edit_saturdayOperation_1 :input').attr('disabled', false);
-            $('#edit_sundayOperation_1 :input').attr('disabled', false);
+            $('#edit_mondayElement_1').prop('checked', false);
+            $('#edit_mondayElement_1').attr('disabled', false);
+
+            $('#edit_tuesdayElement_1').prop('checked', false);
+            $('#edit_tuesdayOperation_1').find("input").prop('disabled', false);
+
+            $('#edit_wednesdayElement_1').prop('checked', false);
+            $('#edit_wednesdayOperation_1').find("input").prop('disabled', false);
+
+            $('#edit_thursdayElement_1').prop('checked', false);
+            $('#edit_thursdayOperation_1').find("input").prop('disabled', false);
+
+            $('#edit_fridayElement_1').prop('checked', false);
+            $('#edit_fridayOperation_1').find("input").prop('disabled', false);
+
+            $('#edit_saturdayElement_1').prop('checked', false);
+            $('#edit_saturdayOperation_1').find("input").prop('disabled', false);
+
+            $('#edit_sundayElement_1').prop('checked', false);
+            $('#edit_sundayOperation_1').find("input").prop('disabled', false);
+
+            $('.edit_mondaytime_1').val('', '');
+            $('.edit_monday_breake_time').val('', '');
+            $(".ftime_1").timepicker('setTime', null);
+            $(".ttime_1").timepicker('setTime', null);
+            $(".f_time_break").timepicker('setTime', null);
+            $(".t_time_break").timepicker('setTime', null);
         }
     });
 });
@@ -305,11 +379,11 @@ $(document).ready(function () {
         $(this).datepicker('hide');
     });
 
-    $('.time_to_Rota_1').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+    $('.time_to_Rota_1').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
 
-    $('.breaktime').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null);
+    $('.breaktime').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null);
 
-    $('.monday_breake_time').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null).on('change', function(){
+    $('.monday_breake_time').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null).on('change', function () {
 
         if ($('#copy_all_1').is(":checked")) {
             $('#copy_all_1').trigger('change');
@@ -318,7 +392,7 @@ $(document).ready(function () {
     });
 
 
-    $('.edit_monday_breake_time').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", null).on('change', function(){
+    $('.edit_monday_breake_time').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", null).on('change', function () {
 
         if ($('#edit_copy_all_1').is(":checked")) {
             $('#edit_copy_all_1').trigger('change');
@@ -326,7 +400,7 @@ $(document).ready(function () {
         return true;
     });
 
-    $('#monday_from').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
+    $('#monday_from').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date()).on('change', function () {
 
         if ($('#copy_all_1').is(":checked")) {
             $('#copy_all_1').trigger('change');
@@ -334,7 +408,7 @@ $(document).ready(function () {
         return true;
     });
 
-    $('#edit_monday_from').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
+    $('#edit_monday_from').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date()).on('change', function () {
 
         if ($('#edit_copy_all_1').is(":checked")) {
             $('#edit_copy_all_1').trigger('change');
@@ -343,7 +417,7 @@ $(document).ready(function () {
     });
 
 
-    $('#monday_to').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
+    $('#monday_to').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date()).on('change', function () {
 
         if ($('#copy_all_1').is(":checked")) {
             $('#copy_all_1').trigger('change');
@@ -351,7 +425,7 @@ $(document).ready(function () {
         return true;
     });
 
-    $('#edit_monday_to').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date()).on('change', function(){
+    $('#edit_monday_to').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date()).on('change', function () {
 
         if ($('#edit_copy_all_1').is(":checked")) {
             $('#edit_copy_all_1').trigger('change');
@@ -378,39 +452,39 @@ var table_columns = [
         title: 'Resource Name',
         sortable: false,
         width: 130,
-    },{
+    }, {
         field: 'type',
         title: 'Type',
         sortable: false,
         width: 70,
-    },{
+    }, {
         field: 'location',
         title: 'Centre',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'city',
         title: 'City',
         sortable: false,
         width: 70,
-    },{
+    }, {
         field: 'from',
         title: 'From',
         sortable: false,
         width: 120,
-    },{
+    }, {
         field: 'to',
         title: 'To',
         sortable: false,
         width: 120,
-    },{
+    }, {
         field: 'active',
         title: 'Status',
         width: 70,
         template: function (data) {
             return statuses(data, route('admin.resourcerotas.status'));
         }
-    },{
+    }, {
         field: 'created_at',
         title: 'Created at',
         width: 140,
@@ -424,7 +498,7 @@ var table_columns = [
         template: function (data) {
             return actions(data);
         }
-    },{
+    }, {
         field: 'region',
         title: 'Regions',
         sortable: false,
@@ -436,9 +510,9 @@ function actions(data) {
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
-        let url = route('admin.resourcerotas.edit', {id: id});
-        let delete_url = route('admin.resourcerotas.destroy', {id: id});
-        let calender_url = route('admin.resourcerotas.calender-view', {id: id});
+        let url = route('admin.resourcerotas.edit', { id: id });
+        let delete_url = route('admin.resourcerotas.destroy', { id: id });
+        let calender_url = route('admin.resourcerotas.calender-view', { id: id });
 
         if (permissions.edit || permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -461,7 +535,7 @@ function actions(data) {
 
             if (permissions.calender) {
                 actions += '<li class="navi-item">\
-                    <a href="'+calender_url+'" class="navi-link">\
+                    <a href="'+ calender_url + '" class="navi-link">\
                         <span class="navi-icon"><i class="la la-eye"></i></span>\
                         <span class="navi-text">Calendar</span>\
                     </a>\
@@ -561,7 +635,7 @@ function setDefaultValues(form) {
     $("#start").val(data)
     $("#end").val(data)
 
-    $(".current-timepicker").timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+    $(".current-timepicker").timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
 
     form.find(".f_time_break").val('');
     form.find(".t_time_break").val('');
@@ -579,13 +653,13 @@ function getLocations($this) {
         cache: false,
         success: function (response) {
 
-            if(response.status != false){
+            if (response.status != false) {
                 setLocations(response);
-            }else{
+            } else {
                 let location_options = '<option>Select a Centre</option>';
                 $("#location_id").html(location_options);
             }
-            
+
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -624,9 +698,9 @@ function getResource($this) {
         data: { location_id: $this.val() },
         cache: false,
         success: function (response) {
-            if(response.status != false){
+            if (response.status != false) {
                 setResources(response);
-            }else{
+            } else {
                 let doctors_options = '<option value="">Select a Doctor</option>';
                 let machine_options = '<option value="">Select a Machine</option>';
                 $("#machine_id").html(machine_options);
@@ -662,7 +736,7 @@ function setResources(response) {
         $("#machine_id").html(machine_options);
         $("#doctor_id").html(doctors_options);
 
-    }  catch (error) {
+    } catch (error) {
         showException(error);
     }
 }
@@ -728,9 +802,9 @@ function setEditData(response) {
         let resourceRota = response.data.resourceRota;
         let resource_name = response.data.resource_name;
 
-        $("#modal_edit_resourcerotas_form").attr("action", route('admin.resourcerotas.update', {id: resourceRota.id}));
+        $("#modal_edit_resourcerotas_form").attr("action", route('admin.resourcerotas.update', { id: resourceRota.id }));
 
-        let fullCity = citi.region_id ? citi.region.name +' - '+ city : city;
+        let fullCity = citi.region_id ? citi.region.name + ' - ' + city : city;
 
         $("#city-name").text(fullCity);
         $("#resource-name").text(resource_name.name);
@@ -763,70 +837,70 @@ function setEditData(response) {
         $("#edit_monday_to").val(resourceRota.time_to_monday);
         $("#edit_break_monday_from").val(resourceRota.break_from_monday);
         $("#edit_break_monday_to").val(resourceRota.break_to_monday);
-        if(response.data.resourceRota.mondaychecked=="_off"){
-            $('#edit_mondayElement_1').attr('checked',false);
-        }else{
-            $('#edit_mondayElement_1').attr('checked',true);
+        if (response.data.resourceRota.mondaychecked == "_off") {
+            $('#edit_mondayElement_1').attr('checked', false);
+        } else {
+            $('#edit_mondayElement_1').attr('checked', true);
         }
         /*Tuesday*/
         $("#edit_time_f_tuesday").val(resourceRota.time_f_tuesday);
         $("#edit_time_to_tuesday").val(resourceRota.time_to_tuesday);
         $("#edit_break_from_tuesday").val(resourceRota.break_from_tuesday);
         $("#edit_break_to_tuesday").val(resourceRota.break_to_tuesday);
-        if(response.data.resourceRota.tuesdaychecked=="_off"){
-            $('#edit_tuesdayElement_1').attr('checked',false);
-        }else{
-            $('#edit_tuesdayElement_1').attr('checked',true);
+        if (response.data.resourceRota.tuesdaychecked == "_off") {
+            $('#edit_tuesdayElement_1').attr('checked', false);
+        } else {
+            $('#edit_tuesdayElement_1').attr('checked', true);
         }
         /*Wednesday*/
         $("#edit_time_f_wednesday").val(resourceRota.time_f_wednesday);
         $("#edit_time_to_wednesday").val(resourceRota.time_to_wednesday);
         $("#edit_break_from_wednesday").val(resourceRota.break_from_wednesday);
         $("#edit_break_to_wednesday").val(resourceRota.break_to_wednesday);
-        if(response.data.resourceRota.wednesdaychecked=="_off"){
-            $('#edit_wednesdayElement_1').attr('checked',false);
-        }else{
-            $('#edit_wednesdayElement_1').attr('checked',true);
+        if (response.data.resourceRota.wednesdaychecked == "_off") {
+            $('#edit_wednesdayElement_1').attr('checked', false);
+        } else {
+            $('#edit_wednesdayElement_1').attr('checked', true);
         }
         /*Thursday*/
         $("#edit_time_f_thursday").val(resourceRota.time_f_thursday);
         $("#edit_time_to_thursday").val(resourceRota.time_to_thursday);
         $("#edit_break_from_thursday").val(resourceRota.break_from_thursday);
         $("#edit_break_to_thursday").val(resourceRota.break_to_thursday);
-        if(response.data.resourceRota.thursdaychecked=="_off"){
-            $('#edit_thursdayElement_1').attr('checked',false);
-        }else{
-            $('#edit_thursdayElement_1').attr('checked',true);
+        if (response.data.resourceRota.thursdaychecked == "_off") {
+            $('#edit_thursdayElement_1').attr('checked', false);
+        } else {
+            $('#edit_thursdayElement_1').attr('checked', true);
         }
         /*Friday*/
         $("#edit_time_f_friday").val(resourceRota.time_f_friday);
         $("#edit_time_to_friday").val(resourceRota.time_to_friday);
         $("#edit_break_from_friday").val(resourceRota.break_from_friday);
         $("#edit_break_to_friday").val(resourceRota.break_to_friday);
-        if(response.data.resourceRota.fridaychecked=="_off"){
-            $('#edit_fridayElement_1').attr('checked',false);
-        }else{
-            $('#edit_fridayElement_1').attr('checked',true);
+        if (response.data.resourceRota.fridaychecked == "_off") {
+            $('#edit_fridayElement_1').attr('checked', false);
+        } else {
+            $('#edit_fridayElement_1').attr('checked', true);
         }
         /*Saturday*/
         $("#edit_time_f_saturday").val(resourceRota.time_f_saturday);
         $("#edit_time_to_saturday").val(resourceRota.time_to_saturday);
         $("#edit_break_from_saturday").val(resourceRota.break_from_saturday);
         $("#edit_break_to_saturday").val(resourceRota.break_to_saturday);
-        if(response.data.resourceRota.saturdaychecked=="_off"){
-            $('#edit_saturdayElement_1').attr('checked',false);
-        }else{
-            $('#edit_saturdayElement_1').attr('checked',true);
+        if (response.data.resourceRota.saturdaychecked == "_off") {
+            $('#edit_saturdayElement_1').attr('checked', false);
+        } else {
+            $('#edit_saturdayElement_1').attr('checked', true);
         }
         /*Sunday*/
         $("#edit_time_f_sunday").val(resourceRota.time_f_sunday);
         $("#edit_time_to_sunday").val(resourceRota.time_to_sunday);
         $("#edit_break_from_sunday").val(resourceRota.break_from_sunday);
         $("#edit_break_to_sunday").val(resourceRota.break_to_sunday);
-        if(response.data.resourceRota.sundaychecked=="_off"){
-            $('#edit_sundayElement_1').attr('checked',false);
-        }else{
-            $('#edit_sundayElement_1').attr('checked',true);
+        if (response.data.resourceRota.sundaychecked == "_off") {
+            $('#edit_sundayElement_1').attr('checked', false);
+        } else {
+            $('#edit_sundayElement_1').attr('checked', true);
         }
     } catch (error) {
         showException(error);
@@ -871,9 +945,9 @@ function setCreateEditData(response, edit = false) {
 
 function applyFilters(datatable) {
 
-    $('#apply-filters').on('click', function() {
+    $('#apply-filters').on('click', function () {
 
-        let filters =  {
+        let filters = {
             delete: '',
             resourcename: $("#search_resource_name").val(),
             resource_type_id: $("#search_type_id").val(),
@@ -896,8 +970,8 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $('#reset-filters').on('click', function() {
-        let filters =  {
+    $('#reset-filters').on('click', function () {
+        let filters = {
             delete: '',
             resourcename: '',
             resource_type_id: '',
@@ -932,24 +1006,24 @@ function setFilters(filter_values, active_filters) {
         let regions_options = "<option value=''>Select a Region</option>";
         let locations_options = "<option value=''>All</option>";
 
-        Object.entries(resource_types).forEach( function (value) {
-            type_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        Object.entries(resource_types).forEach(function (value) {
+            type_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
-        Object.entries(cities).forEach( function (value) {
-            cities_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        Object.entries(cities).forEach(function (value) {
+            cities_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
-        Object.entries(regions).forEach( function (value) {
-            regions_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        Object.entries(regions).forEach(function (value) {
+            regions_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
-        Object.entries(locations).forEach( function (value) {
-            locations_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        Object.entries(locations).forEach(function (value) {
+            locations_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
-        Object.entries(status).forEach( function (value) {
-            status_option += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        Object.entries(status).forEach(function (value) {
+            status_option += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
         $("#search_type_id").html(type_options);
