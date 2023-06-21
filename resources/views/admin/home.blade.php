@@ -738,11 +738,19 @@
                                                         $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
                                                     @endphp
                                                     <div class="btn-group">
+                                                    @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('Super Admin'))
                                                         <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorwiseconversion"
                                                             href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
                                                             data-close-others="true" aria-expanded="false"> All Centres
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
+                                                    @else
+                                                    <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorwiseconversion"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> Select Centre
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                    @endif
                                                         <ul class="dropdown-menu dropdown-menu-right">
                                                             @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('Super Admin'))
                                                             <li>
