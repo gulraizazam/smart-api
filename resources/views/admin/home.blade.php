@@ -1,138 +1,6 @@
 @extends('admin.layouts.master')
 @section('content')
-    <style>
-        .nav-tabs {
-            background: 0 0;
-            margin: 1px 0 0;
-            float: right;
-            display: inline-block;
-            border: 0;
-        }
-
-        .nav:before {
-            content: " ";
-            display: table;
-        }
-
-        .loader-img {
-            height: 60px;
-            margin-top: 106px;
-            margin-left: 244px;
-        }
-
-        .nav-tabs>li {
-            margin: 0;
-            padding: 0;
-            background: 0 0;
-            border: 0;
-            float: left;
-            display: block;
-            position: relative;
-        }
-
-        .nav-tabs>li>a {
-            margin: 0;
-            padding: 12px 13px 13px;
-            font-size: 13px;
-            color: #666;
-            border: 0;
-            background: 0 0;
-
-        }
-
-        .nav-tabs>li a.active {
-            background: 0 0;
-            border-bottom: 4px solid #35a1d4;
-            position: relative;
-        }
-
-        .hover-effect {
-            border-color: #3598dc !important;
-            color: #FFF !important;
-            background-color: #3598dc !important;
-            border-radius: 25px !important;
-            overflow: hidden;
-        }
-
-        .dropdown-menu {
-            box-shadow: 5px 5px rgb(102 102 102 / 10%);
-            left: 0;
-            min-width: 175px;
-            position: absolute;
-            z-index: 1000;
-            display: none;
-            float: left;
-            list-style: none;
-            text-shadow: none;
-            padding: 0;
-            background-color: #fff;
-            margin: 10px 0 0;
-            border: 1px solid #eee;
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            -webkit-border-radius: 4px;
-            -moz-border-radius: 4px;
-            -ms-border-radius: 4px;
-            -o-border-radius: 4px;
-            border-radius: 4px;
-        }
-
-        .btn-group>.dropdown-menu,
-        .dropdown-toggle>.dropdown-menu,
-        .dropdown>.dropdown-menu {
-            margin-top: 10px;
-        }
-
-        .btn-group>.dropdown-menu:before,
-        .dropdown-toggle>.dropdown-menu:before,
-        .dropdown>.dropdown-menu:before {
-            position: absolute;
-            top: -8px;
-            left: 9px;
-            right: auto;
-            display: inline-block !important;
-            border-right: 8px solid transparent;
-            border-bottom: 8px solid #e0e0e0;
-            border-left: 8px solid transparent;
-            content: '';
-            right: auto;
-            left: 9px;
-        }
-
-        .btn-group>.dropdown-menu.dropdown-menu-right:before,
-        .dropdown-toggle>.dropdown-menu.dropdown-menu-right:before,
-        .dropdown>.dropdown-menu.dropdown-menu-right:before {
-            left: auto;
-            right: 9px;
-        }
-
-        .dropdown-menu>li>a {
-            padding: 8px 16px;
-            color: #6f6f6f;
-            text-decoration: none;
-            display: block;
-            clear: both;
-            font-weight: 300;
-            line-height: 18px;
-            white-space: nowrap;
-        }
-
-        .centre-name {
-            font-size: 14px;
-            color: #3598dc;
-        }
-
-        .table-cols {
-            font-size: 12px;
-        }
-
-        .wise_arrival_ul .dropdown-menu li a {
-            cursor: pointer;
-        }
-
-        .wise_arrival_ul .dropdown-menu li a:hover {
-            background: #f3f3f3;
-        }
-    </style>
+<link rel="stylesheet" href="{{asset('assets/css/home.css')}}">
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb')
         <div class="d-flex flex-column-fluid">
@@ -856,6 +724,108 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Doctor Wise Conversion</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center doc_wise_arrival_ul">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    @php
+                                                        $centres_array =['All South Region','All Central Region','All Centres'];
+                                                        $locations = \App\Helpers\ACL::getUserCentres();
+                                                        $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
+                                                    @endphp
+                                                    <div class="btn-group">
+                                                        <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorwiseconversion"
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> All Centres
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a class="dropdown-item" data-period="thismonth" data-id="">All</a>
+                                                            </li>
+                                                            @foreach($centres as $centre)
+                                                            <li >
+                                                                <a class="dropdown-item centre-item" data-period="yesterday" data-id="{{$centre->id}}" onclick="GetDoctors({{$centre->id}})">{{$centre->name}}</a>
+                                                            </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a data-id="" class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report doctorname" 
+                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
+                                                            data-close-others="true" aria-expanded="false"> All Doctors
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
+                                                           
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="yesterday">
+                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('today');">Today</a>
+                                            </li>
+                                            <li class="yesterday">
+                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('yesterday');">Yesterday</a>
+                                            </li>
+                                            <li class="last7days">
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('last7days');">Last 7 Days</a>
+                                            </li>
+                                            <li class="week">
+                                                <a href="#appointment_by_status_2" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('week');">This Week</a>
+                                            </li>
+                                            <li class="thismonth">
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('thismonth');">This Month</a>
+                                            </li>
+                                            <li class="lastmonth">
+                                                <a href="#appointment_by_status_3" data-toggle="tab"
+                                                onclick="initDoctorWiseConversion('lastmonth');">Last Month</a>
+                                            </li>
+                                        </ul>
+                                        
+                                        <div class="d-none flex-column text-right">
+                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                            <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                        </div>
+                                    </div>
+                                   
+                                    <div class="row pt-7">
+                                        <div class="col-7">
+                                            <div id="doc_wise_conversion"></div>
+                                        </div>
+                                        <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02" > 
+                                        
+                                            <div class='table-responsive'>
+                                                <table class='table'>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class='table-cols'></th>
+                                                            <th class='table-cols'>Arrived</th>
+                                                            <th class='table-cols'>Converted</th>
+                                                           
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="categories-table-body"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -863,35 +833,78 @@
     </div>
     <script src="{{ asset('assets/js/home.js') }}"></script>
     @push('datatable-js')
-        <script src="{{ asset('assets/js/pages/crud/forms/validation/appointment/validation.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/dashboard/datatable.js') }}"></script>
-        <script src="{{ asset('assets/js/jsapi.js') }}"></script>
-        <script src="{{ asset('assets/js/pie.js') }}"></script>
-        <script>
-            jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function() {
-                var dataID = jQuery(this).attr('data-id');
-                var dataText = jQuery(this).text();
-                jQuery('.btn.arrivalbtn').attr('data-id', dataID);
-                jQuery('.btn.arrivalbtn').html(dataText + '<i class="fa fa-angle-down"></i>')
-                jQuery('.wise_arrival_ul li a').removeClass('active');
-                jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
-            });
+    <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
+    <script src="{{asset('assets/js/pages/dashboard/datatable.js')}}"></script>
+    <script src="{{asset('assets/js/jsapi.js')}}"></script>
+    <script src="{{asset('assets/js/pie.js')}}"></script>
+    <script>
+        jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function(){
+            var dataID = jQuery(this).attr('data-id');
+            var dataText = jQuery(this).text();
+            jQuery('.btn.arrivalbtn').attr('data-id', dataID);
+            jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>')
+            jQuery('.wise_arrival_ul li a').removeClass('active');
+            jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
+        });
+        jQuery('.btn.doctorwiseconversion + .dropdown-menu li a').on('click', function(){
+            var dataID = jQuery(this).attr('data-id');
+            var dataText = jQuery(this).text();
+            jQuery('.btn.doctorwiseconversion').attr('data-id', dataID);
+            jQuery('.btn.doctorwiseconversion').html(dataText+'<i class="fa fa-angle-down"></i>')
+            jQuery('.doc_wise_arrival_ul li a').removeClass('active');
+            jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
+        });
+        
+        function GetDoctors(centre_id)
+        {
+            CENTRE_ID = centre_id;
 
-            $(document).ready(function() {
-                period = "today";
-                // activities
-                $.ajax({
-                    url: route('admin.home.getactivity'),
-                    type: "GET",
-                    data: {
-                        'type': period
-                    },
-                    cache: false,
-                    success: function(response) {
-                        $('.loader-img').css('display', "none");
-                        $("#activitydiv").html(response);
-                    },
-                });
+            $("#categories-table-body").html('');
+            $.ajax({
+                url: route('admin.dashboard.doctor_wise_conversion'),
+                type: 'GET',
+                cache: false,
+                data: {
+                    'period': 'thismonth',
+                    'centre_id': centre_id
+                },
+                success: function (response) {
+                    var categories = response.data.categories;
+                    DoctorWiseConversion(response);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+           
+            var TABLE_HTML = "";
+            $.ajax({
+                url: route('admin.getdoctors'),
+                type: "GET",
+                data: {'centre_id': centre_id},
+                cache: false,
+                success: function (response) {
+                    jQuery('#doc_nav').html("");
+                    jQuery.each( response.doctors, function( index, doctor ) {               
+                        TABLE_HTML += " <li><a class='dropdown-item centre-item' data-id="+doctor.id+" onclick='LoadDocWiseConversion("+doctor.id+")'>"+doctor.name+"</a></li>";
+                    });
+                    jQuery('#doc_nav').append(TABLE_HTML);
+                },
+            });
+        }
+        $(document).ready(function(){
+            period="today";
+            // activities
+            $.ajax({
+                url: route('admin.home.getactivity'),
+                type: "GET",
+                data: {'type': period},
+                cache: false,
+                success: function (response) {
+                    $('.loader-img').css('display',"none");
+                    $("#activitydiv").html(response);
+                },
+            });
 
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     initUserWiseArrival('thismonth', '', 'firsttime');

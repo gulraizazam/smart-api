@@ -4,15 +4,18 @@ namespace App\Http\Controllers;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
+use App;
+use App\Helpers\GeneralFunctions;
+use App\Models\RoleHasUsers;
 use App\Models\Appointments;
 use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
+use App\Models\DoctorHasLocations;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
-use App\Models\RoleHasUsers;
 use App\Models\Services;
 use App\Models\User;
 use App\Reports\dashboardreport;
@@ -22,6 +25,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Routing\Generator\Dumper\GeneratorDumper;
 
 class DashboardReportsController extends Controller
 {
@@ -2547,5 +2551,157 @@ class DashboardReportsController extends Controller
             'arrived' => $arrived_apts,
 
         ]);
+    }
+    public function DoctoreWiseConversion(Request $request)
+    {
+       
+        $total_apts = [];
+        $converted_apts = [];
+        $lables = [];
+        $appointmentss = array();
+        $total = 0;
+        $appointments_info = array();
+        $period = $request->period;
+        $periods = GeneralFunctions::GetPeriods();
+        $centre_doctors = DoctorHasLocations::when($request->centre_id, function ($query) use ($request) {
+            return $query->where(['location_id' => $request->centre_id]);
+        })
+        ->when($request->doc_id, function ($query) use ($request) {
+            return $query->where(['user_id' => $request->doc_id]);
+        })
+        ->groupBy('user_id')
+        ->pluck('user_id');
+        $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
+        $consultants = RoleHasUsers::join('users','users.id','role_has_users.user_id')
+            ->select('users.name','users.id')
+            ->whereIn('users.id' , $centre_doctors)
+            ->where(['role_id' => $role , 'users.active' => 1])
+            ->get();
+        foreach($consultants as $consultant){
+            
+            array_push($lables , $consultant->name);
+
+            $converted_appointments = GeneralFunctions::GetConvertedAppointments($period , $periods , $consultant);
+
+            if (count($converted_appointments)) {
+                foreach ($converted_appointments as $appointment) {
+                    if (!in_array($appointment->id, $appointmentss)) {
+                        $appointments_info[$appointment->id] = array(
+                            'patient_id' => $appointment->patient_id,
+                            'appointment_id' => $appointment->id,
+                            'doctor_id' => $appointment->doctor_id,
+                            'doctor' => $appointment->doctor->name,
+                            'client' => $appointment->patient->name,
+                            'phone' => $appointment->patient->phone,
+                            'service' => $appointment->service->name,
+                            'service_id' => $appointment->service->id,
+                            'region' => $appointment->region->name,
+                            'city' => $appointment->city->name,
+                            'centre' => $appointment->location->name,
+                            'doi' => \Carbon\Carbon::parse($appointment->created_at)->format('M d Y'),
+                            'converted' => '',
+                            'conversion_spend' => '',
+                            'conversion_date' => '',
+                        );
+                    }
+                    $appointmentss[] = $appointment->id;
+                    $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->get()->pluck('id')->toArray();
+                    if (count($package_info)) {
+                        $actual = 0;
+                        $revenue_in = 0;
+                        $out = 0;
+                        $packagesadvances = PackageAdvances::whereIn('id', $package_info)
+                            ->where(['cash_flow' => "in"])
+                            ->where('cash_amount', '>', 0)
+                            ->get();
+                        if (count($packagesadvances) > 0) {
+                            $check = 0;
+                            $first_advance = PackageAdvances::whereIn('id', $package_info)
+                                ->where('cash_amount', '>', 0)
+                                ->orderBy('created_at', 'asc')
+                                ->first();
+                            $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
+                            if (($date >= $periods[$period]['start_date']) && ($date <= $periods[$period]['end_date'])) {
+                                $check = 1;
+                            }
+                            if ($check == 1) {
+                                $appointments_info[$appointment->id]['converted'] = 'Yes';
+                                foreach ($packagesadvances as $packagesadvance) {
+                                    $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
+                                    if ($package_advance) {
+                                        $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
+                                        $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
+                                    }
+                                }
+                                $actual = $revenue_in - $out;
+                                $appointments_info[$appointment->id]['conversion_spend'] = $actual;
+                                $appointments_info[$appointment->id]['converted'] = 'Yes';
+                                $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
+                                $count[$appointment->location->id][] = 1;
+                                $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
+                                if($appointment['converted'] != '') {
+                                    $arrived_count[$appointment->location->id][] = 1;
+                                    $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
+                                }
+                                $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
+                                $locationData[$appointment->location->name]['total'] = $total;
+                               
+                            }
+                        }
+                    }
+                }
+            }
+
+            $total_appointments = Appointments::whereBetween('scheduled_date',[$periods[$period]['start_date'], $periods[$period]['end_date']])
+            ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2 , 'doctor_id' => $consultant->id])
+            ->count();
+            
+            array_push($converted_apts, collect($appointments_info)->where('conversion_spend', "!=","")->count());
+            array_push($total_apts, $total_appointments);
+            $maxConversion = collect($appointments_info)->filter(function($appointment){
+                if($appointment['conversion_spend'] > 0){
+                    return $appointment;
+                }
+            });
+            $maxConversion = $maxConversion->groupBy('service_id');
+            $returnCategoryData = [];
+            foreach($maxConversion as $key => $conversions){
+                $sum_conversion_total = 0;
+                foreach($conversions as $conversion) {
+                    $name = $conversion['service'];
+                    $sum_conversion_total += 1;
+                }
+               $category_total_records = Appointments::where(['service_id' => $conversion['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1 , 'doctor_id' =>$consultant->id])
+                ->whereBetween('scheduled_date',[$periods[$period]['start_date'], $periods[$period]['end_date']])
+                ->count();
+               
+                $returnCategoryData[$key] = [
+                    'service' => $name,
+                    'total_arrival' => $category_total_records,
+                    'total_conversion' => $sum_conversion_total
+                ];
+            }
+        }
+        return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
+            'labels' => $lables,
+            'total_appointments'=>$total_apts,
+            'converted_appointments'=>$converted_apts,
+            'categories'=>$returnCategoryData
+
+        ]);
+           
+    }
+    public function GetCentreDoctors(Request $request)
+    {
+        $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
+        $centre_doctors = DoctorHasLocations::where(['location_id' => $request->centre_id])
+        ->groupBy('user_id')
+        ->pluck('user_id');
+        $consultants = RoleHasUsers::join('users','users.id','role_has_users.user_id')
+        ->select('users.name','users.id')
+        ->whereIn('users.id' , $centre_doctors)
+        ->where(['role_id' => $role , 'users.active' => 1])
+        ->get();
+        return response()->json(['status' => 1 , 'doctors' => $consultants]);
     }
 }
