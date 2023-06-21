@@ -554,155 +554,95 @@ class Resources extends BaseModal
         $filters = getFilters($request->all());
 
         if ($account_id) {
-            $where[] = [
-                'account_id',
-                '=',
-                $account_id,
-            ];
+            $where[] = array(['account_id' => $account_id]);
             Filters::put(Auth::User()->id, 'resources', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'account_id')) {
-                    $where[] = [
-                        'account_id',
-                        '=',
-                        Filters::get(Auth::User()->id, 'resources', 'account_id'),
-                    ];
+                    $where[] = array(['account_id' => Filters::get(Auth::User()->id, 'resources', 'account_id')]);
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = [
-                'name',
-                'like',
-                '%' . $filters['name'] . '%',
-            ];
+            $where[] = ['name', 'like', '%' . $filters['name'] . '%',];
             Filters::put(Auth::User()->id, 'resources', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'name')) {
-                    $where[] = [
-                        'name',
-                        'like',
-                        '%' . Filters::get(Auth::User()->id, 'resources', 'name') . '%',
-                    ];
+                    $where[] = ['name', 'like', '%' . Filters::get(Auth::User()->id, 'resources', 'name') . '%',];
                 }
             }
         }
         if (hasFilter($filters, 'resource_type_id')) {
-            $where[] = [
-                'resource_type_id',
-                '=',
-                $filters['resource_type_id'],
-            ];
+            $where[] = array(['resource_type_id' => $filters['resource_type_id']]);
             Filters::put(Auth::User()->id, 'resources', 'resource_type_id', $filters['resource_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'resource_type_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'resource_type_id')) {
-                    $where[] = [
-                        'resource_type_id',
-                        '=',
-                        Filters::get(Auth::User()->id, 'resources', 'resource_type_id'),
-                    ];
+                    $where[] = array(['resource_type_id' => Filters::get(Auth::User()->id, 'resources', 'resource_type_id')]);
                 }
             }
         }
         if (hasFilter($filters, 'location_id')) {
-            $where[] = [
-                'location_id',
-                '=',
-                $filters['location_id'],
-            ];
+            $where[] = array(['location_id' => $filters['location_id']]);
             Filters::put(Auth::User()->id, 'resources', 'location_id', $filters['location_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'location_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'location_id')) {
-                    $where[] = [
-                        'location_id',
-                        '=',
-                        Filters::get(Auth::User()->id, 'resources', 'location_id'),
-                    ];
+                    $where[] = array(['location_id' => Filters::get(Auth::User()->id, 'resources', 'location_id')]);
                 }
             }
         }
 
         if (hasFilter($filters, 'machine_type_id')) {
-            $where[] = [
-                'machine_type_id',
-                '=',
-                $filters['machine_type_id'],
-            ];
+            $where[] = array(['machine_type_id' => $filters['machine_type_id']]);
             Filters::put(Auth::User()->id, 'resources', 'machine_type_id', $filters['machine_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'machine_type_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'machine_type_id')) {
-                    $where[] = [
-                        'machine_type_id',
-                        '=',
-                        Filters::get(Auth::User()->id, 'resources', 'machine_type_id'),
-                    ];
+                    $where[] = array(['machine_type_id' => Filters::get(Auth::User()->id, 'resources', 'machine_type_id')]);
                 }
             }
         }
 
         if (hasFilter($filters, 'created_from')) {
-            $where[] = [
-                'resources.created_at',
-                '>=',
-                $filters['created_from'] . ' 00:00:00',
-            ];
+            $where[] = ['resources.created_at', '>=', $filters['created_from'] . ' 00:00:00',];
             Filters::put(Auth::User()->id, 'resources', 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'created_from');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'created_from')) {
-                    $where[] = [
-                        'resources.created_at',
-                        '>=',
-                        Filters::get(Auth::User()->id, 'resources', 'created_from') . ' 00:00:00',
-                    ];
+                    $where[] = ['resources.created_at', '>=', Filters::get(Auth::User()->id, 'resources', 'created_from') . ' 00:00:00',];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_to')) {
-            $where[] = [
-                'resources.created_at',
-                '<=',
-                $filters['created_to'] . ' 23:59:59',
-            ];
+            $where[] = ['resources.created_at', '<=', $filters['created_to'] . ' 23:59:59',];
             Filters::put(Auth::User()->id, 'resources', 'created_to', $filters['created_to'] . ' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'created_to');
             } else {
                 if (Filters::get(Auth::User()->id, 'resources', 'created_to')) {
-                    $where[] = [
-                        'resources.created_at',
-                        '<=',
-                        Filters::get(Auth::User()->id, 'resources', 'created_to') . ' 23:59:59',
-                    ];
+                    $where[] = ['resources.created_at', '<=', Filters::get(Auth::User()->id, 'resources', 'created_to') . ' 23:59:59',];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = [
-                'resources.active',
-                '=',
-                $filters['status'],
-            ];
+            $where[] = array(['resources.active' => $filters['status']]);
             Filters::put(Auth::user()->id, 'resources', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -710,11 +650,7 @@ class Resources extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'resources', 'status') == 0 || Filters::get(Auth::user()->id, 'resources', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'resources', 'status') != null) {
-                        $where[] = [
-                            'resources.active',
-                            '=',
-                            Filters::get(Auth::user()->id, 'resources', 'status'),
-                        ];
+                        $where[] = array(['resources.active' => Filters::get(Auth::user()->id, 'resources', 'status')]);
                     }
                 }
             }
