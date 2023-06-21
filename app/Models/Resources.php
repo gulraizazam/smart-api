@@ -171,9 +171,8 @@ class Resources extends BaseModal
 
         $record = self::join("resource_has_rota", "resources.id", "=", "resource_has_rota.resource_id")
             ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
-            ->where("resources.external_id", "=", $doctor_id)
+            ->where(["resources.external_id" => $doctor_id])
             ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
-            // ->where("resource_has_rota_days.end_timestamp", ">=", $data["ended_time"]) /*No Actually if start time exist in rota we'll create its treatment*/
             ->first();
 
         if ($record) {
@@ -224,8 +223,8 @@ class Resources extends BaseModal
         }
         $record = self::join('resource_has_rota', 'resource_id', '=', 'resource_has_rota.resource_id')
             ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
-            ->where('resources.id', '=', $request->get('resourceId'))
-            ->where('resource_has_rota.resource_id', '=', $request->get('resourceId'))
+            ->where(['resources.id' => $request->get('resourceId')])
+            ->where(['resource_has_rota.resource_id' => $request->get('resourceId')])
             ->where('resource_has_rota_days.start_timestamp', '<=', $data['started_time'])
             ->where('resource_has_rota_days.end_timestamp', '>=', $data['ended_time'])
             ->get()->toArray();
@@ -257,8 +256,8 @@ class Resources extends BaseModal
 
         return self::join('resource_has_rota', 'resource_id', '=', 'resource_has_rota.resource_id')
             ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
-            ->where('resources.id', '=', $resource_id)
-            ->where('resource_has_rota.resource_id', '=', $resource_id)
+            ->where(['resources.id' => $resource_id])
+            ->where(['resource_has_rota.resource_id' => $resource_id])
             ->where('resource_has_rota_days.start_timestamp', '<=', $data['started_time'])
             ->where('resource_has_rota_days.end_timestamp', '>=', $data['ended_time'])
             ->exists();
@@ -277,9 +276,9 @@ class Resources extends BaseModal
         $where[] = array("account_id", "=", Auth::User()->account_id);
         return self::where($where)->with(["resource_rota", "doctor_rotas" => function ($query) use ($location_id, $start_date, $end_date) {
             $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
-            $query->where("resource_has_rota.location_id", $location_id);
-            $query->where("resource_has_rota.is_consultancy", '1');
-            $query->where("resource_has_rota.active", '1');
+            $query->where(["resource_has_rota.location_id" => $location_id]);
+            $query->where(["resource_has_rota.is_consultancy" => '1']);
+            $query->where(["resource_has_rota.active" => '1']);
         }])->get();
     }
 
@@ -337,7 +336,7 @@ class Resources extends BaseModal
             if ($range) {
                 $query->whereBetween('resource_has_rota_days.date', [$start_date, $end_date]);
             } else {
-                $query->where('resource_has_rota_days.date', '=', $start_date);
+                $query->where(['resource_has_rota_days.date' => $start_date]);
             }
         }])->get();
     }
@@ -351,9 +350,9 @@ class Resources extends BaseModal
 
         return self::where($where)->with(['doctor_rotas' => function ($query) use ($location_id, $start_date, $end_date) {
             $query->whereBetween('resource_has_rota_days.date', [$start_date, $end_date]);
-            $query->where('resource_has_rota.location_id', $location_id);
-            $query->where('resource_has_rota.is_treatment', '1');
-            $query->where('resource_has_rota.active', '1');
+            $query->where(['resource_has_rota.location_id' => $location_id]);
+            $query->where(['resource_has_rota.is_treatment' => '1']);
+            $query->where(['resource_has_rota.active' => '1']);
         }])->get();
     }
 
@@ -440,10 +439,10 @@ class Resources extends BaseModal
      */
     public static function getActiveSorted($skip_ids = false, $include_ids = false)
     {
-        if ($skip_ids && ! is_array($skip_ids)) {
+        if ($skip_ids && !is_array($skip_ids)) {
             $skip_ids = [$skip_ids];
         }
-        if ($include_ids && ! is_array($include_ids)) {
+        if ($include_ids && !is_array($include_ids)) {
             $include_ids = [$include_ids];
         }
 
@@ -522,8 +521,8 @@ class Resources extends BaseModal
             } else {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
                     ->whereIn('location_id', ACL::getUserCentres())
-                    ->where('resources.active', 1)
-                    ->where('resources.active', 1)
+                    ->where(['resources.active' => 1])
+                    ->where(['resources.active' => 1])
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderby($orderBy, $order)
@@ -538,7 +537,7 @@ class Resources extends BaseModal
                     ->get();
             } else {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
-                    ->where('resources.active', 1)
+                    ->where(['resources.active' => 1])
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderby($orderBy, $order)
@@ -578,7 +577,7 @@ class Resources extends BaseModal
             $where[] = [
                 'name',
                 'like',
-                '%'.$filters['name'].'%',
+                '%' . $filters['name'] . '%',
             ];
             Filters::put(Auth::User()->id, 'resources', 'name', $filters['name']);
         } else {
@@ -589,7 +588,7 @@ class Resources extends BaseModal
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'resources', 'name').'%',
+                        '%' . Filters::get(Auth::User()->id, 'resources', 'name') . '%',
                     ];
                 }
             }
@@ -660,9 +659,9 @@ class Resources extends BaseModal
             $where[] = [
                 'resources.created_at',
                 '>=',
-                $filters['created_from'].' 00:00:00',
+                $filters['created_from'] . ' 00:00:00',
             ];
-            Filters::put(Auth::User()->id, 'resources', 'created_from', $filters['created_from'].' 00:00:00');
+            Filters::put(Auth::User()->id, 'resources', 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'created_from');
@@ -671,7 +670,7 @@ class Resources extends BaseModal
                     $where[] = [
                         'resources.created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, 'resources', 'created_from').' 00:00:00',
+                        Filters::get(Auth::User()->id, 'resources', 'created_from') . ' 00:00:00',
                     ];
                 }
             }
@@ -681,9 +680,9 @@ class Resources extends BaseModal
             $where[] = [
                 'resources.created_at',
                 '<=',
-                $filters['created_to'].' 23:59:59',
+                $filters['created_to'] . ' 23:59:59',
             ];
-            Filters::put(Auth::User()->id, 'resources', 'created_to', $filters['created_to'].' 23:59:59');
+            Filters::put(Auth::User()->id, 'resources', 'created_to', $filters['created_to'] . ' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'resources', 'created_to');
@@ -692,7 +691,7 @@ class Resources extends BaseModal
                     $where[] = [
                         'resources.created_at',
                         '<=',
-                        Filters::get(Auth::User()->id, 'resources', 'created_to').' 23:59:59',
+                        Filters::get(Auth::User()->id, 'resources', 'created_to') . ' 23:59:59',
                     ];
                 }
             }
@@ -768,7 +767,7 @@ class Resources extends BaseModal
 
         $resource = Resources::getData($id);
 
-        if (! $resource) {
+        if (!$resource) {
             flash('Resource not found.')->error()->important();
 
             return redirect()->route('admin.resources.index');
@@ -794,7 +793,7 @@ class Resources extends BaseModal
 
         $resource = Resources::getData($id);
 
-        if (! $resource) {
+        if (!$resource) {
             return false;
         }
 
@@ -816,7 +815,7 @@ class Resources extends BaseModal
 
         $resource = Resources::getData($id);
 
-        if (! $resource) {
+        if (!$resource) {
             return [
                 'status' => false,
                 'message' => 'Resource not found.',
@@ -863,7 +862,7 @@ class Resources extends BaseModal
             'account_id' => $account_id,
         ])->first();
 
-        if (! $record) {
+        if (!$record) {
             return null;
         }
 
