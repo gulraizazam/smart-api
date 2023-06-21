@@ -12,6 +12,7 @@ use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
+use App\Models\Packages;
 use App\Models\RoleHasUsers;
 use App\Models\Services;
 use App\Models\User;
@@ -2547,5 +2548,23 @@ class DashboardReportsController extends Controller
             'arrived' => $arrived_apts,
 
         ]);
+    }
+    public function FollowUpPatients(Request $request)
+    {
+        $packages = Packages::join('users','users.id','packages.patient_id')
+        ->select('packages.*')
+        ->get();
+        foreach($packages as $package){
+           
+            $cash_receive = PackageAdvances::where([
+                ['package_id', '=', $package->id],
+                ['cash_flow', '=', 'in'],
+                ['is_cancel', '=', '0'],
+            ])->sum('cash_amount');
+            $remaining  = $package->id
+            dd($cash_receive );
+        }
+       
+
     }
 }
