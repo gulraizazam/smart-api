@@ -744,9 +744,11 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right">
+                                                            @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('Super Admin'))
                                                             <li>
-                                                                <a class="dropdown-item" data-period="thismonth" data-id="">All</a>
+                                                                <a class="dropdown-item" data-period="thismonth" data-id="">All Centres</a>
                                                             </li>
+                                                            @endif
                                                             @foreach($centres as $centre)
                                                             <li >
                                                                 <a class="dropdown-item centre-item" data-period="yesterday" data-id="{{$centre->id}}" onclick="GetDoctors({{$centre->id}})">{{$centre->name}}</a>
