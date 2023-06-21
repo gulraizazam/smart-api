@@ -135,3 +135,17 @@ width: 70%;
 height: 2px;
 background: #3699FF;
 }
+.btn.btndropdown{
+    padding-right: 2rem;
+    display: flex;
+    align-items: center;
+}
+.btn.btndropdown i{
+    position: absolute;
+    right: 5px;
+    color: #000;
+}
+a.btn.form-control.btndropdown.btn_Report {
+    border: 1px solid #E4E6EF;
+    border-radius: 2px;
+}
