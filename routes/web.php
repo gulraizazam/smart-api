@@ -53,6 +53,7 @@ use App\Http\Controllers\DashboardReportsController;
 use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\PackageAdvances;
+use Facade\Ignition\Support\Packagist\Package;
 use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
@@ -119,20 +120,7 @@ Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController
 
 /*After authentication*/
 Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
-
-    Route::get('attchrole', function () {
-        dd(date_default_timezone_get());
-        $user = \App\Models\User::whereEmail('amjad@redsignal.biz')->first();
-        dd($user->assignRole(1));
-    });
-    Route::get('getrecords', function () {
-        $rr = Leads::join('users', 'users.id', '=', 'leads.patient_id')
-            ->select('leads.lead_status_id', 'leads.active', 'leads.city_id', 'leads.service_id', 'leads.active', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId', 'users.*')
-            ->get();
-
-        return view('admin.records', compact('rr'));
-
-    });
+   
     Route::get('error-logs', [LogViewerController::class, 'index']);
     Route::get('updateleads', [LeadsController::class, 'leadupdate']);
     Route::get('updatestatusleads', [LeadsController::class, 'leadstatusupdate']);
@@ -564,8 +552,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class, 'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
     Route::get('getcolor', [ServicesController::class, 'GetColor'])->name('dashboard.getcolor');
     Route::get('dashboard/getchild', [DashboardReportsController::class, 'getChild'])->name('dashboard.getchild');
-
     Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
-
     Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
+
+    ///////
+    Route::get('dashboard/followup', [DashboardReportsController::class, 'FollowUpPatients'])->name('dashboard.followup');
 });
