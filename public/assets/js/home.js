@@ -1,6 +1,9 @@
 var central_wise_arrival_chart;
 
 function initCollectionByCentre(today, yesterday, last7days, week, thismonth, lastmonth) {
+    $("#collection_by_centre_menu .active").removeClass('active');
+    $("#collection_by_centre_menu").parent().addClass('active');
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -17,43 +20,46 @@ function initCollectionByCentre(today, yesterday, last7days, week, thismonth, la
         },
         cache: false,
         success: function (response) {
-
             if (today != '') {
                 var pie = response.data.pie.today;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
-
+                $(".collection_by_centre_dropdown").text("Today");
             }
             if (yesterday != '') {
                 $(".pie-income-title").text('Yesterday Income');
                 var pie = response.data.pie.yesterday;
                 let total = response.data.total;
-                $(".total-pie-chart").text(total)
-                collectionCentreChart(pie);
+                $(".total-pie-chart").text(total);
+                $(".collection_by_centre_dropdown").text("Yesterday");
             }
             if (last7days != '') {
                 $(".pie-income-title").text('Weekly Income');
                 var pie = response.data.pie.last7days;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
+                $(".collection_by_centre_dropdown").text("Last 7 Days");
             }
             if (week != '') {
                 $(".pie-income-title").text('Weekly Income');
                 var pie = response.data.pie.week;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
+                $(".collection_by_centre_dropdown").text("This Week");
             }
             if (thismonth != '') {
                 $(".pie-income-title").text('Monthly Income');
                 var pie = response.data.pie.thismonth;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
+                $(".collection_by_centre_dropdown").text("Tis Month");
             }
             if (lastmonth != '') {
                 $(".pie-income-title").text('Last Month Income');
                 var pie = response.data.pie.lastmonth;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
+                $(".collection_by_centre_dropdown").text("Last Month");
             }
             collectionCentreChart(pie);
         },
@@ -85,6 +91,9 @@ function collectionCentreChart(pie) {
 }
 
 function initRevenueByCentre(period) {
+    $("#revenue_by_centre_menu .active").removeClass('active');
+    $("#revenue_by_centre_menu").parent().addClass('active');
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -101,23 +110,27 @@ function initRevenueByCentre(period) {
                 $(".revenue-centre-title").text('Today Income');
                 let total = response.data.total;
                 $(".total-centre").text(total);
+                $(".revenue_by_centre_dropdown").text("Today");
                 var pie = response.data.pie;
             }
             if (period == "yesterday") {
                 $(".revenue-centre-title").text('Yesterday Income');
                 let total = response.data.total;
                 $(".total-centre").text(total);
+                $(".revenue_by_centre_dropdown").text("Yesterday");
                 var pie = response.data.pie;
             }
             if (period == "last7days") {
                 let total = response.data.total;
                 $(".revenue-centre-title").text('Weekly Income');
+                $(".revenue_by_centre_dropdown").text("Last 7 days");
                 $(".total-centre").text(total);
                 var pie = response.data.pie;
             }
             if (period == "week") {
                 let total = response.data.total;
                 $(".revenue-centre-title").text('Weekly Income');
+                $(".revenue_by_centre_dropdown").text("This Week");
                 $(".total-centre").text(total);
                 var pie = response.data.pie;
             }
@@ -125,12 +138,14 @@ function initRevenueByCentre(period) {
                 $(".revenue-centre-title").text('Monthly Income');
                 let total = response.data.total;
                 $(".total-centre").text(total);
+                $(".revenue_by_centre_dropdown").text("This Month");
                 var pie = response.data.pie;
             }
             if (period == "lastmonth") {
                 $(".revenue-centre-title").text('Last Month Income');
                 let total = response.data.total;
                 $(".total-centre").text(total);
+                $(".revenue_by_centre_dropdown").text("Last Month");
                 var pie = response.data.pie;
             }
             revenueCentreChart(pie);
@@ -164,6 +179,9 @@ function revenueCentreChart(pie) {
 }
 
 function initRevenueByService(today, yesterday, last7days, week, thismonth, lastmonth) {
+    $("#revenue_by_service_menu .active").removeClass('active');
+    $("#revenue_by_service_menu").parent().addClass('active');
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -185,36 +203,42 @@ function initRevenueByService(today, yesterday, last7days, week, thismonth, last
                 $(".service-title").text('Today Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
+                $(".revenue_by_service_dropdown").text("Today");
                 var pie = response.data.pie.today;
             }
             if (yesterday != '') {
                 $(".service-title").text('Yesterday Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
+                $(".revenue_by_service_dropdown").text("Yesterday");
                 var pie = response.data.pie.yesterday;
             }
             if (last7days != '') {
                 $(".service-title").text('Weekly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
+                $(".revenue_by_service_dropdown").text("Last 7 Days");
                 var pie = response.data.pie.last7days;
             }
             if (week != '') {
                 $(".service-title").text('Weekly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
+                $(".revenue_by_service_dropdown").text("Week");
                 var pie = response.data.pie.week;
             }
             if (thismonth != '') {
                 $(".service-title").text('Monthly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
+                $(".revenue_by_service_dropdown").text("This Month");
                 var pie = response.data.pie.month;
             }
             if (lastmonth != '') {
                 $(".service-title").text('Last Month Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
+                $(".revenue_by_service_dropdown").text("Last Month");
                 var pie = response.data.pie.lastmonth;
             }
             revenueByService(pie, colors);
@@ -260,18 +284,23 @@ function initAppointmentsByStatus(period) {
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;
+                $(".revenue_by_service_dropdown").text("Today");
             }
             if (period == "yesterday") {
                 var pie = response.data.pie.yesterday;
+                $(".revenue_by_service_dropdown").text("Yesterday");
             }
             if (period == "last7days") {
                 var pie = response.data.pie.last7days;
+                $(".revenue_by_service_dropdown").text("Last 7 Days");
             }
             if (period == "thismonth") {
                 var pie = response.data.pie.thismonth;
+                $(".revenue_by_service_dropdown").text("This Month");
             }
             if (period == "lastmonth") {
                 var pie = response.data.pie.lastmonth;
+                $(".revenue_by_service_dropdown").text("Last Month");
             }
             AppointmentByStatus(pie, colors);
 
@@ -360,6 +389,9 @@ function AppointmentByType(pie, colors) {
 }
 
 function initConsultancyByStatus(period, type) {
+    $("#appointment_by_status_menu .active").removeClass('active');
+    $("#appointment_by_status_menu").parent().addClass('active');
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -373,21 +405,27 @@ function initConsultancyByStatus(period, type) {
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;
+                $(".appointment_by_status_dropdown").text("Today");
             }
             if (period == "yesterday") {
                 var pie = response.data.pie.yesterday;
+                $(".appointment_by_status_dropdown").text("Yesterday");
             }
             if (period == "last7days") {
                 var pie = response.data.pie.last7days;
+                $(".appointment_by_status_dropdown").text("Last 7 Days");
             }
             if (period == "week") {
                 var pie = response.data.pie.week;
+                $(".appointment_by_status_dropdown").text("This Week");
             }
             if (period == "thismonth") {
                 var pie = response.data.pie.thismonth;
+                $(".appointment_by_status_dropdown").text("This Month");
             }
             if (period == "lastmonth") {
                 var pie = response.data.pie.lastmonth;
+                $(".appointment_by_status_dropdown").text("Last Month");
             }
             ConsultancyByStatus(pie, colors);
 
@@ -397,6 +435,9 @@ function initConsultancyByStatus(period, type) {
 }
 
 function initTreatmentByStatus(period, type) {
+    $("#appointment_by_type_menu .active").removeClass('active');
+    $("#appointment_by_type_menu").parent().addClass('active');
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -409,21 +450,27 @@ function initTreatmentByStatus(period, type) {
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;
+                $(".appointment_by_type_dropdown").text("Today");
             }
             if (period == "yesterday") {
                 var pie = response.data.pie.yesterday;
+                $(".appointment_by_type_dropdown").text("Yesterday");
             }
             if (period == "last7days") {
                 var pie = response.data.pie.last7days;
+                $(".appointment_by_type_dropdown").text("Last 7 Days");
             }
             if (period == "week") {
                 var pie = response.data.pie.week;
+                $(".appointment_by_type_dropdown").text("This Week");
             }
             if (period == "thismonth") {
                 var pie = response.data.pie.thismonth;
+                $(".appointment_by_type_dropdown").text("This Month");
             }
             if (period == "lastmonth") {
                 var pie = response.data.pie.lastmonth;
+                $(".appointment_by_type_dropdown").text("Last Month");
             }
             TreatmentByStatus(pie, colors);
 
@@ -467,6 +514,9 @@ function ConsultancyByStatus(pie, colors) {
 }
 
 function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, lastmonth) {
+    $("#revenue_by_service_category_menu .active").removeClass('active');
+    $("#revenue_by_service_category_menu").parent().addClass('active');
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -485,18 +535,23 @@ function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, la
             let colors = response.data.colors;
             if (today != '') {
                 var pie = response.data.pie.today;
+                $(".revenue_by_service_category_dropdown").text("Today");
             }
             if (yesterday != '') {
                 var pie = response.data.pie.yesterday;
+                $(".revenue_by_service_category_dropdown").text("Yesterday");
             }
             if (last7days != '') {
                 var pie = response.data.pie.week;
+                $(".revenue_by_service_category_dropdown").text("Last 7 Days");
             }
             if (thismonth != '') {
                 var pie = response.data.pie.month;
+                $(".revenue_by_service_category_dropdown").text("This Month");
             }
             if (lastmonth != '') {
                 var pie = response.data.pie.lastmonth;
+                $(".revenue_by_service_category_dropdown").text("Last Month");
             }
             RevenueByServiceCategory(pie, colors);
         },
@@ -576,10 +631,10 @@ function CollectionByServiceCategory(service, colors) {
 }
 
 function initCentreWiseArrival(period, centreID, time = '') {
-    if(time != 'firsttime'){
+    if (time != 'firsttime') {
         central_wise_arrival_chart.destroy();
     }
-    if(centreID == 'centre'){
+    if (centreID == 'centre') {
         centreID = $('.btn.arrivalbtn').attr('data-id');
     }
     if (centreID == '' || centreID == 30) {
@@ -600,7 +655,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
         success: function (response) {
             $('#table-body').html("");
             $('.wise_arrival_ul li a').removeClass('active');
-            $('.wise_arrival_ul li.' + period +' a').addClass('active');
+            $('.wise_arrival_ul li.' + period + ' a').addClass('active');
 
             var TABLE_HTML = "";
             let walkin_t = 0;
@@ -619,14 +674,14 @@ function initCentreWiseArrival(period, centreID, time = '') {
                 let str = barLenght[i];
                 let wordToRemove = "CUTERA ";
                 let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                if(total != 0){
+                if (total != 0) {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
             }
             arrived_t -= walkin_t;
             total_t -= walkin_t;
 
-            if(centreID == "All" && total_t != 0){
+            if (centreID == "All" && total_t != 0) {
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
 
             }
@@ -639,11 +694,11 @@ function initCentreWiseArrival(period, centreID, time = '') {
     });
 }
 
-function initUserWiseArrival(period, userID, time = ''){
-    if(time != 'firsttime'){
+function initUserWiseArrival(period, userID, time = '') {
+    if (time != 'firsttime') {
         central_wise_arrival_chart.destroy();
     }
-    if(userID == 'user'){
+    if (userID == 'user') {
         userID = $('.btn.arrivalbtn').attr('data-id');
     }
     if (userID == '' || userID == 'All') {
@@ -664,22 +719,22 @@ function initUserWiseArrival(period, userID, time = ''){
         success: function (response) {
             jQuery('#table-body').html("");
             jQuery('.wise_arrival_ul li a').removeClass('active');
-            jQuery('.wise_arrival_ul li.' + period +' a').addClass('active');
+            jQuery('.wise_arrival_ul li.' + period + ' a').addClass('active');
             var TABLE_HTML = "";
             let total = 0;
             let arrived = 0;
             var barLenght = response.data.bar;
             var csr_name = $('.arrivalbtn').text();
 
-            for(var i = 0; i < barLenght.length; i++){
+            for (var i = 0; i < barLenght.length; i++) {
                 arrived += response.data.arrived[i];
                 total += response.data.total[i];
-                if(userID == 'All'){
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>"+((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2)+"%</td></tr>";
+                if (userID == 'All') {
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>" + ((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2) + "%</td></tr>";
                 }
             }
-            if(total != 0){
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+csr_name+"</td><td>"+arrived+"/"+total+"</td><td>"+((arrived / total) * 100).toFixed(2)+"%</td></tr>";
+            if (total != 0) {
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
             }
 
             jQuery('#table-body').append(TABLE_HTML);
@@ -708,7 +763,7 @@ function ConsultanciesByStatus(bar) {
     } else {
         modifiedData = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
     }
-    if(bar.data?.walkin != undefined){
+    if (bar.data?.walkin != undefined) {
         for (var i = 0; i < bar.data.walkin.length; i++) {
             bar.data.total[i] -= bar.data.walkin[i];
             bar.data.arrived[i] -= bar.data.walkin[i];
@@ -724,15 +779,15 @@ function ConsultanciesByStatus(bar) {
         }, {
             name: 'Walk-in',
             data: bar.data.walkin ?? []
-        }, ],
+        },],
         noData: {
             text: 'No Data',
             align: 'center',
             verticalAlign: 'top',
             style: {
-              color: 'red',
-              fontSize: '14px',
-              fontFamily: undefined
+                color: 'red',
+                fontSize: '14px',
+                fontFamily: undefined
             }
         },
         chart: {
