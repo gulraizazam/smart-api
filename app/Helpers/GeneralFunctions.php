@@ -890,7 +890,7 @@ class GeneralFunctions
     public static function GetConvertedAppointments($period , $periods , $consultant)
     {
         $converted_appointments =  Appointments::with('location:id,name')
-            ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
+            ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived') , 
             'appointments.appointment_type_id' => 1 , 'appointments.doctor_id' => $consultant->id])
             ->where('package_advances.cash_amount', '>', 0)
@@ -905,6 +905,22 @@ class GeneralFunctions
                 ]);
             })
         ->get();
-        return $converted_appointments;
+
+        $total_appointments =  Appointments::with('location:id,name')
+            ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived') , 
+            'appointments.appointment_type_id' => 1 , 'appointments.doctor_id' => $consultant->id])
+            ->select('appointments.*')
+            ->when($period == 'today', function ($query) use ($periods ,$period) {
+                $query->whereDate('appointments.scheduled_date', $periods[$period]['start_date']);
+            })
+            ->when($period != 'today', function ($query) use ($periods ,$period) {
+                $query->whereBetween('appointments.scheduled_date', [
+                    $periods[$period]['start_date'],
+                    $periods[$period]['end_date']
+                ]);
+            })
+        ->get();
+        $total_appointments->merge($converted_appointments);
+        return $total_appointments;
     }
 }
