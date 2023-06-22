@@ -835,11 +835,12 @@ function initDoctorWiseConversion(period, time = ''){
             'doc_id':DOC_ID
         },
         success: function (response) {
+            
             var categories = response.data.categories;
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
             jQuery.each( categories, function( index, category ) {
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>"+category.total_arrival+"</td><td>"+category.total_conversion+"</td></tr>";
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_arrival + "/" + category.total_conversion + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td></tr>";
                
             });
             jQuery('#categories-table-body').append(TABLE_HTML);
@@ -852,6 +853,7 @@ function initDoctorWiseConversion(period, time = ''){
 }
 function LoadDocWiseConversion(doc_id)
 {
+    doc_wise_conversion_chart.destroy();
     var DrName = $('#doc_nav').find('li').find('a[data-id='+doc_id+']').text(); 
     jQuery('.btn.doctorname').html(DrName+'<i class="fa fa-angle-down"></i>')
     jQuery('.btn.doctorname').attr('data-id',doc_id);
@@ -868,11 +870,11 @@ function LoadDocWiseConversion(doc_id)
             'centre_id' : CENTRE_ID
         },
         success: function (response) {
-            console.log('res',response);
+            $("#doc_wise_conversion").html("");
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
-            jQuery.each( response.data.total_appointments, function( index, category ) {
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>"+category.total_arrival+"</td><td>"+category.total_conversion+"</td></tr>";
+            jQuery.each( response.data.categories, function( index, category ) {
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_arrival + "/" + category.total_conversion + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td></tr>";
                
             });
             jQuery('#categories-table-body').append(TABLE_HTML);
