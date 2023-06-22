@@ -747,9 +747,9 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                     @else
-                                                    <a data-id="" class="btn form-control btndropdown btn_Report doctorwiseconversion"
+                                                    <a  class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                             href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                            data-close-others="true" aria-expanded="false"> Select Centre
+                                                            data-close-others="true" aria-expanded="false" data-id="{{$centres[0]->id}}"> {{$centres[0]->name}}
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                     @endif
@@ -777,7 +777,7 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
-                                                           
+                                                        
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -825,8 +825,8 @@
                                                     <thead>
                                                         <tr>
                                                             <th class='table-cols'></th>
-                                                            <th class='table-cols'>Arrived</th>
-                                                            <th class='table-cols'>Converted</th>
+                                                            <th class='table-cols'>Conversion Ratio</th>
+                                                            <th class='table-cols'>Percentage</th>
                                                            
                                                         </tr>
                                                     </thead>
@@ -867,44 +867,12 @@
             jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
         });
         
-        function GetDoctors(centre_id)
-        {
-            CENTRE_ID = centre_id;
-
-            $("#categories-table-body").html('');
-            $.ajax({
-                url: route('admin.dashboard.doctor_wise_conversion'),
-                type: 'GET',
-                cache: false,
-                data: {
-                    'period': 'thismonth',
-                    'centre_id': centre_id
-                },
-                success: function (response) {
-                    var categories = response.data.categories;
-                    DoctorWiseConversion(response);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
-           
-            var TABLE_HTML = "";
-            $.ajax({
-                url: route('admin.getdoctors'),
-                type: "GET",
-                data: {'centre_id': centre_id},
-                cache: false,
-                success: function (response) {
-                    jQuery('#doc_nav').html("");
-                    jQuery.each( response.doctors, function( index, doctor ) {               
-                        TABLE_HTML += " <li><a class='dropdown-item centre-item' data-id="+doctor.id+" onclick='LoadDocWiseConversion("+doctor.id+")'>"+doctor.name+"</a></li>";
-                    });
-                    jQuery('#doc_nav').append(TABLE_HTML);
-                },
-            });
-        }
+        
         $(document).ready(function(){
+            @if(Auth::user()->hasRole('FDM'))
+            var center_id = $(".doctorwiseconversion").attr('data-id');
+                GetDoctors(center_id);
+                @endif
             period="today";
             // activities
             $.ajax({
@@ -1346,6 +1314,56 @@
                 var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
                 chart.render();
             }
+            function GetDoctors(centre_id)
+        {
+            $('#doc_nav').empty();
+            $(".doctorname").text('Select doctor')
+            CENTRE_ID = centre_id;
+
+            $("#categories-table-body").html('');
+            $.ajax({
+                url: route('admin.dashboard.doctor_wise_conversion'),
+                type: 'GET',
+                cache: false,
+                data: {
+                    'period': 'thismonth',
+                    'centre_id': centre_id
+                },
+                success: function (response) {
+                   
+                    var categories = response.data.categories
+                    jQuery('#categories-table-body').html("");
+                    var TABLE_HTML = "";
+                    jQuery.each(categories, function( index, category ) {
+                      
+                      
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_arrival + "/" + category.total_conversion + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td></tr>";
+               
+                    });
+                    jQuery('#categories-table-body').append(TABLE_HTML);
+                    DoctorWiseConversion(response);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+           var all ="all";
+            var TABLE_HTML = "";
+            $.ajax({
+                url: route('admin.getdoctors'),
+                type: "GET",
+                data: {'centre_id': centre_id},
+                cache: false,
+                success: function (response) {
+                    jQuery('#doc_nav').html("");
+                     jQuery.each( response.doctors, function( index, doctor ) {      
+
+                        TABLE_HTML += " <li><a class='dropdown-item centre-item' data-id="+doctor.id+" onclick='LoadDocWiseConversion("+doctor.id+")'>"+doctor.name+"</a></li>";
+                    });
+                    jQuery('#doc_nav').append(TABLE_HTML);
+                },
+            });
+        }
         </script>
     @endpush
 @endsection
