@@ -172,7 +172,7 @@
                                                        
                                                         <ul class="dropdown-menu dropdown-menu-right"
                                                             id="collection_by_centre_menu">
-                                                            <li>
+                                                            <li class="centre-item">
                                                                 <a class="active" href="#location_collection_1"
                                                                     data-toggle="tab"
                                                                     onclick="initCollectionByCentre('today', '', '','','','');">
@@ -756,7 +756,7 @@
                                                         <ul class="dropdown-menu dropdown-menu-right">
                                                             @if(Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
                                                             <li>
-                                                                <a class="dropdown-item" data-period="thismonth" data-id="">All Centres</a>
+                                                                <a class="dropdown-item" data-period="thismonth" data-id="all" onclick="GetDoctors('all')">All Centres</a>
                                                             </li>
                                                             @endif
                                                             @foreach($centres as $centre)
@@ -825,9 +825,9 @@
                                                     <thead>
                                                         <tr>
                                                             <th class='table-cols'></th>
-                                                            <th class='table-cols'>Conversion Ratio</th>
-                                                            <th class='table-cols'>Percentage</th>
-                                                           
+                                                            <th class='table-cols'>Con. Ratio</th>
+                                                            <th class='table-cols'>% avg</th>
+                                                            <th class='table-cols'>Avg Value</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="categories-table-body"></tbody>
@@ -869,10 +869,12 @@
         
         
         $(document).ready(function(){
-            @if(Auth::user()->hasRole('FDM'))
             var center_id = $(".doctorwiseconversion").attr('data-id');
+            @if(Auth::user()->hasRole('FDM'))
+               
                 GetDoctors(center_id);
-                @endif
+            
+            @endif
             period="today";
             // activities
             $.ajax({
@@ -888,12 +890,16 @@
 
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     initUserWiseArrival('thismonth', '', 'firsttime');
+                    initDoctorWiseConversion('thismonth', 'firsttime');
+                    GetDoctors(center_id, 'firsttime');
                 @else
                     $(document).ready(function() {
                         initCentreWiseArrival('thismonth', '', 'firsttime');
                     });
                 @endif
+                
             });
+            
             var collection_by_center = false;
             var revenue_by_center = false;
             var revenue_by_service = false;
@@ -1314,56 +1320,8 @@
                 var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
                 chart.render();
             }
-            function GetDoctors(centre_id)
-        {
-            $('#doc_nav').empty();
-            $(".doctorname").text('Select doctor')
-            CENTRE_ID = centre_id;
-
-            $("#categories-table-body").html('');
-            $.ajax({
-                url: route('admin.dashboard.doctor_wise_conversion'),
-                type: 'GET',
-                cache: false,
-                data: {
-                    'period': 'thismonth',
-                    'centre_id': centre_id
-                },
-                success: function (response) {
-                   
-                    var categories = response.data.categories
-                    jQuery('#categories-table-body').html("");
-                    var TABLE_HTML = "";
-                    jQuery.each(categories, function( index, category ) {
-                      
-                      
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_arrival + "/" + category.total_conversion + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td></tr>";
-               
-                    });
-                    jQuery('#categories-table-body').append(TABLE_HTML);
-                    DoctorWiseConversion(response);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    errorMessage(xhr);
-                }
-            });
-           var all ="all";
-            var TABLE_HTML = "";
-            $.ajax({
-                url: route('admin.getdoctors'),
-                type: "GET",
-                data: {'centre_id': centre_id},
-                cache: false,
-                success: function (response) {
-                    jQuery('#doc_nav').html("");
-                     jQuery.each( response.doctors, function( index, doctor ) {      
-
-                        TABLE_HTML += " <li><a class='dropdown-item centre-item' data-id="+doctor.id+" onclick='LoadDocWiseConversion("+doctor.id+")'>"+doctor.name+"</a></li>";
-                    });
-                    jQuery('#doc_nav').append(TABLE_HTML);
-                },
-            });
-        }
+           
+        
         </script>
     @endpush
 @endsection
