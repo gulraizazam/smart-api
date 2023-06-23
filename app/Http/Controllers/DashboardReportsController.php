@@ -2665,6 +2665,7 @@ class DashboardReportsController extends Controller
 				}
 				if($request->centre_id && !$request->doc_id){
 					$category_total_records = Appointments::where(['service_id' => $conversion['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+					->whereIn('doctor_id' , $centre_doctors)
 					->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
 					->count();
 				}else{
