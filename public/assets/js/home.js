@@ -1,4 +1,5 @@
 var central_wise_arrival_chart;
+var doc_wise_conversion_chart;
 var CENTRE_ID;
 var SELECTED_MONTH;
 var DOC_ID;
@@ -818,13 +819,71 @@ function ConsultanciesByStatus(bar) {
     central_wise_arrival_chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
     central_wise_arrival_chart.render();
 }
+function GetDoctors(centre_id , time='')
+{
+        $('#doc_nav').empty();
+        $(".doctorname").text('Select doctor')
+        $("#categories-table-body").html('');
+        let converted = 0;
+        let arrived = 0;
+      
+        $.ajax({
+            url: route('admin.dashboard.doctor_wise_conversion'),
+            type: 'GET',
+            cache: false,
+            data: {
+                'period': 'thismonth',
+                'centre_id': centre_id
+            },
+            success: function (response) {
+                var categories = response.data.categories
+                jQuery('#categories-table-body').html("");
+                var TABLE_HTML = "";
+                jQuery.each(categories, function( index, category ) {
+                    arrived += category.total_arrival;
+                    converted +=category.total_conversion;
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_conversion+ "/" +category.total_arrival + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td><td>"+(category.avg).toFixed(2)+"</td></tr>";
+        
+                });
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td></tr>";
+            
+                jQuery('#categories-table-body').append(TABLE_HTML);
+                DoctorWiseConversion(response);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+            }
+        });
+   
+    var all ="all";
+        var TABLE_HTML = "";
+        $.ajax({
+            url: route('admin.getdoctors'),
+            type: "GET",
+            data: {'centre_id': centre_id},
+            cache: false,
+            success: function (response) {
+                jQuery('#doc_nav').html("");
+                jQuery.each( response.doctors, function( index, doctor ) {      
 
+                    TABLE_HTML += " <li><a class='dropdown-item centre-item' data-id="+doctor.id+" onclick='LoadDocWiseConversion("+doctor.id+")'>"+doctor.name+"</a></li>";
+                });
+                jQuery('#doc_nav').append(TABLE_HTML);
+            },
+        });
+}
 function initDoctorWiseConversion(period, time = ''){
+
+    if (time != 'firsttime') {
+        doc_wise_conversion_chart.destroy();
+    }
     SELECTED_MONTH = period;
     var centre_id = $(".doctorwiseconversion").attr('data-id');
     CENTRE_ID = centre_id;
     var doc_id = $(".doctorname").attr('data-id');
     DOC_ID = doc_id;
+    let converted = 0;
+    let arrived = 0;
     $.ajax({
         url: route('admin.dashboard.doctor_wise_conversion'),
         type: 'GET',
@@ -840,9 +899,13 @@ function initDoctorWiseConversion(period, time = ''){
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
             jQuery.each( categories, function( index, category ) {
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_arrival + "/" + category.total_conversion + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td></tr>";
-               
+                arrived += category.total_arrival;
+                converted +=category.total_conversion;
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_conversion+ "/" +category.total_arrival + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td><td>"+(category.avg).toFixed(2)+"</td></tr>";
+        
             });
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td></tr>";
+            
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
         },
@@ -851,6 +914,7 @@ function initDoctorWiseConversion(period, time = ''){
         }
     });
 }
+
 function LoadDocWiseConversion(doc_id)
 {
     doc_wise_conversion_chart.destroy();
@@ -860,6 +924,8 @@ function LoadDocWiseConversion(doc_id)
     var centre_id = $(".doctorwiseconversion").attr('data-id');
     CENTRE_ID = centre_id;
     DOC_ID = doc_id;
+    let converted = 0;
+    let arrived = 0;
     $.ajax({
         url: route('admin.dashboard.doctor_wise_conversion'),
         type: 'GET',
@@ -873,10 +939,16 @@ function LoadDocWiseConversion(doc_id)
             $("#doc_wise_conversion").html("");
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
+            
             jQuery.each( response.data.categories, function( index, category ) {
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_arrival + "/" + category.total_conversion + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td></tr>";
-               
+                arrived += category.total_arrival;
+                converted +=category.total_conversion;
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>"+category.service+"</td><td>" + category.total_conversion+ "/" +category.total_arrival + "</td><td>"+(( category.total_conversion/category.total_arrival) * 100).toFixed(2)+"%</td><td>"+(category.avg).toFixed(2)+"</td></tr>";
+        
             });
+            
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td></tr>";
+            
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
         },
@@ -885,7 +957,6 @@ function LoadDocWiseConversion(doc_id)
         }
     });
 }
-
 function DoctorWiseConversion(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
