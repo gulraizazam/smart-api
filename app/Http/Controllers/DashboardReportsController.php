@@ -2663,10 +2663,16 @@ class DashboardReportsController extends Controller
 					$name = $conversion['service'];
 					$sum_conversion_total += 1;
 				}
-
-				$category_total_records = Appointments::where(['service_id' => $conversion['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1, 'doctor_id' => $consultant->id])
+				if($request->centre_id && !$request->doc_id){
+					$category_total_records = Appointments::where(['service_id' => $conversion['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
 					->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
 					->count();
+				}else{
+					$category_total_records = Appointments::where(['service_id' => $conversion['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1,'doctor_id' => $consultant->id])
+					->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+					->count();
+				}
+				
 
 				$returnCategoryData[$key] = [
 					'service' => $name,
