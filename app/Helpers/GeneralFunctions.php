@@ -887,14 +887,15 @@ class GeneralFunctions
         }
 
     }
-    public static function GetConvertedAppointments($period , $periods , $consultant)
+    public static function GetConvertedAppointments($period , $periods , $consultant )
     {
         $converted_appointments =  Appointments::with('location:id,name')
             ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived') , 
             'appointments.appointment_type_id' => 1 , 'appointments.doctor_id' => $consultant->id])
+           
             ->where('package_advances.cash_amount', '>', 0)
-            ->select('appointments.*')
+            ->select('appointments.service_id','appointments.id')
             ->when($period == 'today', function ($query) use ($periods ,$period) {
                 $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
             })
