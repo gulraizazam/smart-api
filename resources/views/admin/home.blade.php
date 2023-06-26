@@ -1,6 +1,6 @@
 @extends('admin.layouts.master')
 @section('content')
-<link rel="stylesheet" href="{{asset('assets/css/home.css')}}">
+    <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb')
         <div class="d-flex flex-column-fluid">
@@ -169,7 +169,7 @@
                                                             aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                       
+
                                                         <ul class="dropdown-menu dropdown-menu-right"
                                                             id="collection_by_centre_menu">
                                                             <li class="centre-item">
@@ -285,7 +285,7 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
-                    <div class="col-lg-6 col-xxl-6">
+                        <div class="col-lg-6 col-xxl-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -408,8 +408,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
@@ -727,42 +725,56 @@
                             </div>
                         </div>
                         <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                            <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b"
+                                style="min-height: 605px;">
                                 <div class="card-body p-0">
-                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <div
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                         <span class="dashboard-counter text-uppercase">Doctor Wise Conversion</span>
                                         <ul class="nav nav-tabs d-flex align-items-center doc_wise_arrival_ul">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     @php
-                                                        $centres_array =['All South Region','All Central Region','All Centres'];
+                                                        $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
                                                         $locations = \App\Helpers\ACL::getUserCentres();
-                                                        $centres = \App\Models\Locations::whereIn('id',$locations)->whereNotIn('name',$centres_array)->where('active',1)->get();
+                                                        $centres = \App\Models\Locations::whereIn('id', $locations)
+                                                            ->whereNotIn('name', $centres_array)
+                                                            ->where('active', 1)
+                                                            ->get();
                                                     @endphp
                                                     <div class="btn-group">
-                                                    @if(Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
-                                                        <a data-id="" class="btn form-control btndropdown btn_Report doctorwiseconversion"
-                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                            data-close-others="true" aria-expanded="false"> All Centres
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                    @else
-                                                    <a  class="btn form-control btndropdown btn_Report doctorwiseconversion"
-                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                            data-close-others="true" aria-expanded="false" data-id="{{$centres[0]->id}}"> {{$centres[0]->name}}
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                    @endif
+                                                        @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                                                            <a data-id=""
+                                                                class="btn form-control btndropdown btn_Report doctorwiseconversion"
+                                                                href="javascript:;" data-toggle="dropdown"
+                                                                data-hover="dropdown" data-close-others="true"
+                                                                aria-expanded="false"> All Centres
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                        @else
+                                                            <a class="btn form-control btndropdown btn_Report doctorwiseconversion"
+                                                                href="javascript:;" data-toggle="dropdown"
+                                                                data-hover="dropdown" data-close-others="true"
+                                                                aria-expanded="false" data-id="{{ $centres[0]->id }}">
+                                                                {{ $centres[0]->name }}
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                        @endif
                                                         <ul class="dropdown-menu dropdown-menu-right">
-                                                            @if(Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
-                                                            <li>
-                                                                <a class="dropdown-item" data-period="thismonth" data-id="all" onclick="GetDoctors('all')">All Centres</a>
-                                                            </li>
+                                                            @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                                                                <li>
+                                                                    <a class="dropdown-item" data-period="thismonth"
+                                                                        data-id="all" onclick="GetDoctors('all')">All
+                                                                        Centres</a>
+                                                                </li>
                                                             @endif
-                                                            @foreach($centres as $centre)
-                                                            <li >
-                                                                <a class="dropdown-item centre-item" data-period="yesterday" data-id="{{$centre->id}}" onclick="GetDoctors({{$centre->id}})">{{$centre->name}}</a>
-                                                            </li>
+                                                            @foreach ($centres as $centre)
+                                                                <li>
+                                                                    <a class="dropdown-item centre-item"
+                                                                        data-period="yesterday"
+                                                                        data-id="{{ $centre->id }}"
+                                                                        onclick="GetDoctors({{ $centre->id }})">{{ $centre->name }}</a>
+                                                                </li>
                                                             @endforeach
                                                         </ul>
                                                     </div>
@@ -771,55 +783,81 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a data-id="" class="btn form-control btndropdown btn_Report doctorname" 
-                                                            href="javascript:;" data-toggle="dropdown" data-hover="dropdown"
-                                                            data-close-others="true" aria-expanded="false"> All Doctors
+                                                        <a data-id=""
+                                                            class="btn form-control btndropdown btn_Report doctorname"
+                                                            href="javascript:;" data-toggle="dropdown"
+                                                            data-hover="dropdown" data-close-others="true"
+                                                            aria-expanded="false"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
-                                                        
+                                                            <li class="yesterday">
+                                                                <a href="#appointment_by_status_1" data-toggle="tab"
+                                                                    onclick="initDoctorWiseConversion('today');">Today</a>
+                                                            </li>
                                                         </ul>
                                                     </div>
                                                 </div>
                                             </li>
-                                            <li class="yesterday">
-                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                onclick="initDoctorWiseConversion('today');">Today</a>
-                                            </li>
-                                            <li class="yesterday">
-                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                onclick="initDoctorWiseConversion('yesterday');">Yesterday</a>
-                                            </li>
-                                            <li class="last7days">
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initDoctorWiseConversion('last7days');">Last 7 Days</a>
-                                            </li>
-                                            <li class="week">
-                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                onclick="initDoctorWiseConversion('week');">This Week</a>
-                                            </li>
-                                            <li class="thismonth">
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initDoctorWiseConversion('thismonth');">This Month</a>
-                                            </li>
-                                            <li class="lastmonth">
-                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                onclick="initDoctorWiseConversion('lastmonth');">Last Month</a>
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a data-id=""
+                                                            class="btn form-control btndropdown btn_Report doctor_period arrivalbtn"
+                                                            href="javascript:;" data-toggle="dropdown"
+                                                            data-hover="dropdown" data-close-others="true"
+                                                            aria-expanded="false"> This Month
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right" id="doc_time">
+                                                            <li class="today">
+                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                    onclick="initDoctorWiseConversion('today');">Today</a>
+                                                            </li>
+                                                            <li class="yesterday">
+                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                    onclick="initDoctorWiseConversion('yesterday');">Yesterday</a>
+                                                            </li>
+                                                            <li class="last7days">
+                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                    onclick="initDoctorWiseConversion('last7days');">Last 7
+                                                                    Days</a>
+                                                            </li>
+                                                            <li class="week">
+                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                    onclick="initDoctorWiseConversion('week');">This
+                                                                    Week</a>
+                                                            </li>
+                                                            <li class="thismonth">
+                                                                <a href="#doctor_wise_conversion" data-toggle="tab" active
+                                                                    onclick="initDoctorWiseConversion('thismonth');">This
+                                                                    Month</a>
+                                                            </li>
+                                                            <li class="lastmonth">
+                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                    onclick="initDoctorWiseConversion('lastmonth');">Last
+                                                                    Month</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
                                             </li>
                                         </ul>
-                                        
+
                                         <div class="d-none flex-column text-right">
-                                            <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
-                                            <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                            <span
+                                                class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                            <span
+                                                class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
                                         </div>
                                     </div>
-                                   
+
                                     <div class="row pt-7">
                                         <div class="col-7">
                                             <div id="doc_wise_conversion"></div>
                                         </div>
-                                        <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02" > 
-                                        
+                                        <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
+
                                             <div class='table-responsive'>
                                                 <table class='table'>
                                                     <thead>
@@ -845,61 +883,60 @@
     </div>
     <script src="{{ asset('assets/js/home.js') }}"></script>
     @push('datatable-js')
-    <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
-    <script src="{{asset('assets/js/pages/dashboard/datatable.js')}}"></script>
-    <script src="{{asset('assets/js/jsapi.js')}}"></script>
-    <script src="{{asset('assets/js/pie.js')}}"></script>
-    <script>
-        jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function(){
-            var dataID = jQuery(this).attr('data-id');
-            var dataText = jQuery(this).text();
-            jQuery('.btn.arrivalbtn').attr('data-id', dataID);
-            jQuery('.btn.arrivalbtn').html(dataText+'<i class="fa fa-angle-down"></i>')
-            jQuery('.wise_arrival_ul li a').removeClass('active');
-            jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
-        });
-        jQuery('.btn.doctorwiseconversion + .dropdown-menu li a').on('click', function(){
-            var dataID = jQuery(this).attr('data-id');
-            var dataText = jQuery(this).text();
-            jQuery('.btn.doctorwiseconversion').attr('data-id', dataID);
-            jQuery('.btn.doctorwiseconversion').html(dataText+'<i class="fa fa-angle-down"></i>')
-            jQuery('.doc_wise_arrival_ul li a').removeClass('active');
-            jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
-        });
-        
-        
-        $(document).ready(function(){
-            var center_id = $(".doctorwiseconversion").attr('data-id');
-            @if(Auth::user()->hasRole('FDM'))
-               
-                GetDoctors(center_id);
-            
-            @endif
-            period="today";
-            // activities
-            $.ajax({
-                url: route('admin.home.getactivity'),
-                type: "GET",
-                data: {'type': period},
-                cache: false,
-                success: function (response) {
-                    $('.loader-img').css('display',"none");
-                    $("#activitydiv").html(response);
-                },
+        <script src="{{ asset('assets/js/pages/crud/forms/validation/appointment/validation.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/dashboard/datatable.js') }}"></script>
+        <script src="{{ asset('assets/js/jsapi.js') }}"></script>
+        <script src="{{ asset('assets/js/pie.js') }}"></script>
+        <script>
+            jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function() {
+                var dataID = jQuery(this).attr('data-id');
+                var dataText = jQuery(this).text();
+                jQuery('.btn.arrivalbtn').attr('data-id', dataID);
+                jQuery('.btn.arrivalbtn').html(dataText + '<i class="fa fa-angle-down"></i>')
+                jQuery('.wise_arrival_ul li a').removeClass('active');
+                jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
             });
+            jQuery('.btn.doctorwiseconversion + .dropdown-menu li a').on('click', function() {
+                var dataID = jQuery(this).attr('data-id');
+                var dataText = jQuery(this).text();
+                jQuery('.btn.doctorwiseconversion').attr('data-id', dataID);
+                jQuery('.btn.doctorwiseconversion').html(dataText + '<i class="fa fa-angle-down"></i>')
+                jQuery('.doc_wise_arrival_ul li a').removeClass('active');
+                jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
+            });
+
+
+            $(document).ready(function() {
+                var center_id = $(".doctorwiseconversion").attr('data-id');
+                @if (Auth::user()->hasRole('FDM'))
+                    GetDoctors(center_id);
+                @endif
+                period = "today";
+                // activities
+                $.ajax({
+                    url: route('admin.home.getactivity'),
+                    type: "GET",
+                    data: {
+                        'type': period
+                    },
+                    cache: false,
+                    success: function(response) {
+                        $('.loader-img').css('display', "none");
+                        $("#activitydiv").html(response);
+                    },
+                });
 
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     initUserWiseArrival('thismonth', '', 'firsttime');
                     initDoctorWiseConversion('thismonth', 'firsttime');
                     GetDoctors(center_id, 'firsttime');
                 @else
-                    $(document).ready(function() {
-                        initCentreWiseArrival('thismonth', '', 'firsttime');
-                    });
+                    GetDoctors(center_id, 'firsttime');
+                    initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
-                
+
             });
-            
+
             var collection_by_center = false;
             var revenue_by_center = false;
             var revenue_by_service = false;
@@ -1320,8 +1357,6 @@
                 var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
                 chart.render();
             }
-           
-        
         </script>
     @endpush
 @endsection
