@@ -2563,12 +2563,12 @@ class DashboardReportsController extends Controller
             ->groupBy('user_id')
             ->pluck('user_id');
 
-        $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
-        $consultants = RoleHasUsers::join('users', 'users.id', 'role_has_users.user_id')
-            ->select('users.name', 'users.id')
-            ->whereIn('users.id', $centre_doctors)
-            ->where(['role_id' => $role, 'users.active' => 1])
-            ->get();
+			$consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
+			->join('users','resources.external_id','users.id')
+			->select('users.name','users.id')
+			->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 , 'resource_has_rota.location_id' => $request->centre_id])
+			->distinct('user_id')
+			->get();
         foreach ($consultants as $consultant) {
             array_push($lables, $consultant->name);
             $consultant = [$consultant->id];
