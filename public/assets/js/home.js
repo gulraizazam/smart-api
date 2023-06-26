@@ -660,6 +660,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
             $('#table-body').html("");
             $('.wise_arrival_ul li a').removeClass('active');
             $('.wise_arrival_ul li.' + period + ' a').addClass('active');
+            $('.arrivalbtn').text();
 
             var TABLE_HTML = "";
             let walkin_t = 0;
@@ -927,7 +928,6 @@ function LoadDocWiseConversion(doc_id) {
     $('#doc_time li a').removeClass('active');
     $('#doc_time li.thismonth a').addClass('active');
     $('.arrivalbtn').text();
-    console.log($('#doc_time li.thismonth a').val());
     var DrName = $('#doc_nav').find('li').find('a[data-id=' + doc_id + ']').text();
     jQuery('.btn.doctorname').html(DrName + '<i class="fa fa-angle-down"></i>')
     jQuery('.btn.doctorname').attr('data-id', doc_id);

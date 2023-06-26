@@ -563,7 +563,7 @@
                                                         @endphp
                                                         <div class="btn-group">
                                                             <a data-id=""
-                                                                class="btn form-control btndropdown btn_Report arrivalbtn"
+                                                                class="btn form-control btndropdown btn_Report centre_name"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false"> All Centres
@@ -594,7 +594,7 @@
                                                         @endphp
                                                         <div class="btn-group">
                                                             <a data-id="All"
-                                                                class="btn form-control btndropdown btn_Report arrivalbtn"
+                                                                class="btn form-control btndropdown btn_Report centre_name"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">All
@@ -626,7 +626,7 @@
                                                         @endphp
                                                         <div class="btn-group">
                                                             <a data-id=""
-                                                                class="btn form-control btndropdown btn_Report arrivalbtn"
+                                                                class="btn form-control btndropdown btn_Report centre_name arrivalbtn"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">
@@ -638,49 +638,86 @@
                                                 </div>
                                             </li>
                                             @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                                <li class="yesterday">
-                                                    <a href="#appointment_by_status_1" data-toggle="tab"
-                                                        onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
-                                                </li>
-                                                <li class="last7days">
-                                                    <a href="#appointment_by_status_2" data-toggle="tab"
-                                                        onclick="initUserWiseArrival('last7days', 'user');">Last 7 Days</a>
-                                                </li>
-                                                <li class="week">
-                                                    <a href="#appointment_by_status_2" data-toggle="tab"
-                                                        onclick="initUserWiseArrival('week', 'user');">This Week</a>
-                                                </li>
-                                                <li class="thismonth">
-                                                    <a href="#appointment_by_status_3" data-toggle="tab"
-                                                        onclick="initUserWiseArrival('thismonth', 'user');">This Month</a>
-                                                </li>
-                                                <li class="lastmonth">
-                                                    <a href="#appointment_by_status_3" data-toggle="tab"
-                                                        onclick="initUserWiseArrival('lastmonth', 'user');">Last Month</a>
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a data-id=""
+                                                                class="btn form-control btndropdown btn_Report arrivalbtn"
+                                                                href="javascript:;" data-toggle="dropdown"
+                                                                data-hover="dropdown" data-close-others="true"
+                                                                aria-expanded="false"> This Month
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right" id="doc_time">
+                                                                <li class="yesterday">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
+                                                                </li>
+                                                                <li class="last7days">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('last7days', 'user');">Last
+                                                                        7
+                                                                        Days</a>
+                                                                </li>
+                                                                <li class="week">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('week', 'user');">This
+                                                                        Week</a>
+                                                                </li>
+                                                                <li class="thismonth">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab" active
+                                                                        onclick="initUserWiseArrival('thismonth', 'user');">This
+                                                                        Month</a>
+                                                                </li>
+                                                                <li class="lastmonth">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('lastmonth', 'user');">Last
+                                                                        Month</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
                                                 </li>
                                             @else
-                                                <li class="yesterday">
-                                                    <a href="#appointment_by_status_1" data-toggle="tab"
-                                                        onclick="initCentreWiseArrival('yesterday', 'centre');">Yesterday</a>
-                                                </li>
-                                                <li class="last7days">
-                                                    <a href="#appointment_by_status_2" data-toggle="tab"
-                                                        onclick="initCentreWiseArrival('last7days', 'centre');">Last 7
-                                                        Days</a>
-                                                </li>
-                                                <li class="week">
-                                                    <a href="#appointment_by_status_2" data-toggle="tab"
-                                                        onclick="initCentreWiseArrival('week', 'centre');">This Week</a>
-                                                </li>
-                                                <li class="thismonth">
-                                                    <a href="#appointment_by_status_3" data-toggle="tab"
-                                                        onclick="initCentreWiseArrival('thismonth', 'centre');">This
-                                                        Month</a>
-                                                </li>
-                                                <li class="lastmonth">
-                                                    <a href="#appointment_by_status_3" data-toggle="tab"
-                                                        onclick="initCentreWiseArrival('lastmonth', 'centre');">Last
-                                                        Month</a>
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a data-id=""
+                                                                class="btn form-control btndropdown btn_Report arrivalbtn"
+                                                                href="javascript:;" data-toggle="dropdown"
+                                                                data-hover="dropdown" data-close-others="true"
+                                                                aria-expanded="false"> This Month
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right">
+                                                                <li class="yesterday">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab"
+                                                                        onclick="initCentreWiseArrival('yesterday', 'centre');">Yesterday</a>
+                                                                </li>
+                                                                <li class="last7days">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab"
+                                                                        onclick="initCentreWiseArrival('last7days', 'centre');">Last
+                                                                        7
+                                                                        Days</a>
+                                                                </li>
+                                                                <li class="week">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab"
+                                                                        onclick="initCentreWiseArrival('week', 'centre');">This
+                                                                        Week</a>
+                                                                </li>
+                                                                <li class="thismonth">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab" active
+                                                                        onclick="initCentreWiseArrival('thismonth', 'centre');">This
+                                                                        Month</a>
+                                                                </li>
+                                                                <li class="lastmonth">
+                                                                    <a href="#wise_arrival_ul" data-toggle="tab"
+                                                                        onclick="initCentreWiseArrival('lastmonth', 'centre');">Last
+                                                                        Month</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
                                                 </li>
                                             @endif
                                         </ul>
