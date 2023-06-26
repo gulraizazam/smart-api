@@ -310,8 +310,7 @@ class PatientsController extends Controller
         if (Patients::updateRecord($id, $data)) {
 
             Appointments::where('patient_id', '=', $id)->update(['name' => $data['name']]);
-            Leads::where(['phone' => $data['phone']])->update(['name' => $data['name']]);
-
+            Leads::where(['phone' => $old_phone])->update(['name' => $data['name'], 'phone' => $data['phone'], 'gender' => $data['gender']]);
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
 
         }
