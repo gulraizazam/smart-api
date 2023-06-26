@@ -2668,8 +2668,6 @@ class DashboardReportsController extends Controller
             array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
 
-
-
             $total_arrived_appointments = Appointments::with('location:id,name')
                 ->join('services', 'appointments.service_id', 'services.id')
                 ->where([
