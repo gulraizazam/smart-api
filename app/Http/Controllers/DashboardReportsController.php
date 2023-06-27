@@ -2789,8 +2789,7 @@ class DashboardReportsController extends Controller
             ->distinct('user_id')
             ->get();
         }
-        
-        dd($consultants);
+       
         return response()->json(['status' => 1, 'doctors' => $consultants]);
     }
 }
