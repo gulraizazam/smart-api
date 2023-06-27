@@ -945,7 +945,8 @@
 
             $(document).ready(function() {
                 var center_id = $(".doctorwiseconversion").attr('data-id');
-                GetDoctors(center_id);
+                
+               
                
                 period = "today";
                 // activities
