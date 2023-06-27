@@ -2771,124 +2771,26 @@ class DashboardReportsController extends Controller
 
         ]);
     }
-    // public function DoctoreWiseConversion(Request $request)
-    // {
-    // 	$period = $request->period;
-    //  	$periods = GeneralFunctions::GetPeriods();
-    // 	$where = [];
-    // 	$labels=[];
-    // 	$total = 0;
-    // 	$total_apts = [];
-    //  	$converted_apts = [];
-    // 	$appointments_result = [];
-    // 	if ($request->doc_id) {
-    // 		$where[] = [['appointments.doctor_id' => $request->doc_id]];
-    // 	}
-    // 	if ($request->centre_id) {
-    // 		$where[] = [['appointments.location_id' => $request->centre_id]];
-    // 	}
-    // 	$centre_doctors = DoctorHasLocations::when($request->centre_id, function ($query) use ($request) {
-    // 			return $query->where(['location_id' => $request->centre_id]);
-    // 		})
-    // 			->when($request->doc_id, function ($query) use ($request) {
-    // 				return $query->where(['user_id' => $request->doc_id]);
-    // 			})
-    // 		->groupBy('user_id')
-    // 		->pluck('user_id');
 
-    // 	$role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
-    // 	$consultants = RoleHasUsers::join('users', 'users.id', 'role_has_users.user_id')
-    // 		->select('users.name', 'users.id')
-    // 		->whereIn('users.id', $centre_doctors)
-    // 		->where(['role_id' => $role, 'users.active' => 1])
-    // 		->get();
-    // 	$total_arrived_appointments = Appointments::with('location:id,name')
-    // 		->join('services','appointments.service_id', 'services.id')
-    // 		->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived') ,
-    // 		'appointments.appointment_type_id' => 1])
-    // 		->where($where)
-    // 		->selectRaw('count(*) as arrived, service_id,services.name')
-    // 		->whereBetween('appointments.scheduled_date', [
-    // 				$periods[$period]['start_date'],
-    // 				$periods[$period]['end_date']
-    // 			])
-    // 			->groupBy('service_id')
-    // 		->get();
-
-    // 		$converted_appointments =  Appointments::with('location:id,name')
-    // 			->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
-    // 			->join('services', 'appointments.service_id', '=', 'services.id')
-    // 			->where(['appointments.base_appointment_status_id'=> config('constants.appointment_status_arrived') ,
-    // 			'appointments.appointment_type_id' => 1])
-    // 			->where($where)
-    // 			->where('package_advances.cash_amount', '>', 0)
-    // 			->where('package_advances.cash_amount', '!=', "")
-    // 			->where(['cash_flow' => "in"])
-    // 			->select('appointments.*')
-    // 			->selectRaw('count(*) as converted, service_id,services.name,package_advances.appointment_id')
-    // 			->whereBetween('package_advances.created_at', [
-    // 					$periods[$period]['start_date'],
-    // 					$periods[$period]['end_date']
-    // 				])
-
-    // 				->groupBy('service_id')
-    // 			->get();
-    // 		foreach($consultants as $consultant) {
-    // 			array_push($labels, $consultant->name);
-
-
-    // 		}
-
-
-    // 	foreach ($total_arrived_appointments as $total) {
-    // 		$serviceId = $total->service_id;
-    // 		$serviceName = $total->name;
-    // 		$totalRecords = $total->arrived;
-    // 		$convertedRecords = 0;
-
-    // 		foreach ($converted_appointments as $converted) {
-    // 			if ($converted->service_id === $serviceId) {
-    // 				$convertedRecords = $converted->converted;
-    // 				break;
-    // 			}
-    // 		}
-
-    // 		$appointments_result[] = [
-    // 			'service_name' => $serviceName,
-    // 			'total_records' => $totalRecords,
-    // 			'converted_records' => $convertedRecords,
-    // 		];
-    // 	}
-    // 	array_push($total_apts , $total_arrived_appointments);
-    // 	array_push($converted_apts , $converted_appointments);
-    // 	return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
-    // 		'labels' => $labels,
-    // 		'appointments' => $appointments_result,
-    // 		'total_appointments' => $total_apts,
-    // 		'converted_appointments' => $converted_apts,
-
-    // 	]);
-    // }
     public function GetCentreDoctors(Request $request)
     {
-        $role = DB::table('roles')->where(['name' => 'Aesthetic Consultant'])->pluck('id');
-        if ($request->centre_id == "all") {
-            $locations = ACL::getUserCentres();
-            $centre_doctors = DoctorHasLocations::whereIn('location_id', $locations)
-                ->groupBy('user_id')
-                ->pluck('user_id');
-        } else {
-            $centre_doctors = DoctorHasLocations::where(['location_id' => $request->centre_id])
-                ->groupBy('user_id')
-                ->pluck('user_id');
-        }
-
-
-        $consultants = RoleHasUsers::join('users', 'users.id', 'role_has_users.user_id')
-            ->select('users.name', 'users.id')
-            ->whereIn('users.id', $centre_doctors)
-            ->where(['role_id' => $role, 'users.active' => 1])
+        if($request->centre_id == 'all'){
+            $consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
+            ->join('users','resources.external_id','users.id')
+            ->select('users.name','users.id')
+            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 ])
+            ->distinct('user_id')
             ->get();
+        }else{
+            $consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
+            ->join('users','resources.external_id','users.id')
+            ->select('users.name','users.id')
+            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 , 'resource_has_rota.location_id' => $request->centre_id])
+            ->distinct('user_id')
+            ->get();
+        }
+        
+        
         return response()->json(['status' => 1, 'doctors' => $consultants]);
     }
 }
