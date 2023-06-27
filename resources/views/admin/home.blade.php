@@ -1020,6 +1020,7 @@
                     data: { 'centre_id': centre_id },
                     cache: false,
                     success: function (response) {
+                        console.log('reponse' , response);
                         jQuery('#doc_nav').html("");
                         jQuery.each(response.doctors, function (index, doctor) {
 
