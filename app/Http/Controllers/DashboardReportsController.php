@@ -2594,6 +2594,7 @@ class DashboardReportsController extends Controller
                     'appointments.appointment_type_id' => 1
                 ])
                 ->whereIn('appointments.doctor_id', $consultant)
+                ->whereIn('appointments.location_id' ,$locations)
                 ->where('package_advances.cash_amount', '>', 0)
                 ->select('appointments.*')
                 ->when($period == 'today', function ($query) use ($periods, $period) {
