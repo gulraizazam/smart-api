@@ -1158,7 +1158,7 @@ class Finanaces
                                 $transtype = Config::get('constants.trans_type.advance_in');
                             }
                             if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
-                                $transtype = Cselfonfig::get('constants.trans_type.advance_in');
+                                $transtype = Config::get('constants.trans_type.advance_in');
                             }
                             if ($packagesadvance->is_adjustment == '1') {
                                 $transtype = Config::get('constants.trans_type.adjustment');
