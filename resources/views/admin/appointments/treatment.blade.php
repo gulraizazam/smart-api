@@ -267,7 +267,7 @@
                 if (service_value.indexOf("bold-") !== -1) {
                     var service = service_value.split("bold-")[1];
                 } else {
-                    var service = $("#treatment_search_service").val();
+                    var service = service_value;
                 }
                 $("#filter_service_id").val(service);
              }

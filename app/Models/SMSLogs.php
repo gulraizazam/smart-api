@@ -12,7 +12,7 @@ class SMSLogs extends Model
 
     protected $fillable = [
         'to', 'text', 'mask', 'status', 'sms_data', 'error_msg', 'log_type',
-        'appointment_id','invoice_id','package_id','is_refund', 'lead_id', 'created_by', 'created_at', 'updated_at'
+        'appointment_id', 'invoice_id', 'package_id', 'is_refund', 'lead_id', 'created_by', 'created_at', 'updated_at',
     ];
 
     protected $table = 'sms_logs';
@@ -25,7 +25,8 @@ class SMSLogs extends Model
         return $this->belongsTo('App\Models\Appointments', 'appointment_id');
     }
 
-    public function getToAttribute($value) {
+    public function getToAttribute($value)
+    {
         return GeneralFunctions::prepareNumber4Call(GeneralFunctions::cleanNumber($value));
     }
 }

@@ -4,6 +4,19 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
+use function __;
+use function array_keys;
+use function array_map;
+use function bin2hex;
+use function ceil;
+use function count;
+use function defined;
+use function explode;
+use function htmlspecialchars;
+use function in_array;
+use function is_array;
+use function is_bool;
+use function is_object;
 use PhpMyAdmin\ConfigStorage\Features\BookmarkFeature;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\ConfigStorage\RelationCleanup;
@@ -18,20 +31,6 @@ use PhpMyAdmin\SqlParser\Statements\DropStatement;
 use PhpMyAdmin\SqlParser\Statements\SelectStatement;
 use PhpMyAdmin\SqlParser\Utils\Query;
 use PhpMyAdmin\Utils\ForeignKey;
-
-use function __;
-use function array_keys;
-use function array_map;
-use function bin2hex;
-use function ceil;
-use function count;
-use function defined;
-use function explode;
-use function htmlspecialchars;
-use function in_array;
-use function is_array;
-use function is_bool;
-use function is_object;
 use function session_start;
 use function session_write_close;
 use function sprintf;
@@ -81,10 +80,10 @@ class Sql
     /**
      * Handle remembered sorting order, only for single table query
      *
-     * @param string $db                 database name
-     * @param string $table              table name
-     * @param array  $analyzedSqlResults the analyzed query results
-     * @param string $fullSqlQuery       SQL query
+     * @param  string  $db                 database name
+     * @param  string  $table              table name
+     * @param  array  $analyzedSqlResults the analyzed query results
+     * @param  string  $fullSqlQuery       SQL query
      */
     private function handleSortOrder(
         $db,
@@ -103,7 +102,7 @@ class Sql
 
             // Remove the name of the table from the retrieved field name.
             $sortCol = str_replace(
-                Util::backquote($table) . '.',
+                Util::backquote($table).'.',
                 '',
                 $sortCol
             );
@@ -112,7 +111,7 @@ class Sql
             $fullSqlQuery = Query::replaceClause(
                 $analyzedSqlResults['statement'],
                 $analyzedSqlResults['parser']->list,
-                'ORDER BY ' . $sortCol
+                'ORDER BY '.$sortCol
             );
 
             // TODO: Avoid reparsing the query.
@@ -133,8 +132,7 @@ class Sql
     /**
      * Append limit clause to SQL query
      *
-     * @param array $analyzedSqlResults the analyzed query results
-     *
+     * @param  array  $analyzedSqlResults the analyzed query results
      * @return string limit clause appended SQL query
      */
     private function getSqlWithLimitClause(array $analyzedSqlResults)
@@ -142,15 +140,15 @@ class Sql
         return Query::replaceClause(
             $analyzedSqlResults['statement'],
             $analyzedSqlResults['parser']->list,
-            'LIMIT ' . $_SESSION['tmpval']['pos'] . ', '
-            . $_SESSION['tmpval']['max_rows']
+            'LIMIT '.$_SESSION['tmpval']['pos'].', '
+            .$_SESSION['tmpval']['max_rows']
         );
     }
 
     /**
      * Verify whether the result set has columns from just one table
      *
-     * @param array $fieldsMeta meta fields
+     * @param  array  $fieldsMeta meta fields
      */
     private function resultSetHasJustOneTable(array $fieldsMeta): bool
     {
@@ -175,9 +173,9 @@ class Sql
      * Verify whether the result set contains all the columns
      * of at least one unique key
      *
-     * @param string $db         database name
-     * @param string $table      table name
-     * @param array  $fieldsMeta meta fields
+     * @param  string  $db         database name
+     * @param  string  $table      table name
+     * @param  array  $fieldsMeta meta fields
      */
     private function resultSetContainsUniqueKey(string $db, string $table, array $fieldsMeta): bool
     {
@@ -219,11 +217,10 @@ class Sql
      * During grid edit, if we have a relational field, returns the html for the
      * dropdown
      *
-     * @param string $db           current database
-     * @param string $table        current table
-     * @param string $column       current column
-     * @param string $currentValue current selected value
-     *
+     * @param  string  $db           current database
+     * @param  string  $table        current table
+     * @param  string  $column       current column
+     * @param  string  $currentValue current selected value
      * @return string html for the dropdown
      */
     public function getHtmlForRelationalColumnDropdown($db, $table, $column, $currentValue)
@@ -253,7 +250,7 @@ class Sql
                 $currentValue,
                 $GLOBALS['cfg']['ForeignKeyMaxLimit']
             );
-            $dropdown = '<select>' . $dropdown . '</select>';
+            $dropdown = '<select>'.$dropdown.'</select>';
         }
 
         return $dropdown;
@@ -320,10 +317,9 @@ class Sql
     /**
      * Get all the values for a enum column or set column in a table
      *
-     * @param string $db     current database
-     * @param string $table  current table
-     * @param string $column current column
-     *
+     * @param  string  $db     current database
+     * @param  string  $table  current table
+     * @param  string  $column current column
      * @return array|null array containing the value list for the column, null on failure
      */
     public function getValuesForColumn(string $db, string $table, string $column): ?array
@@ -342,7 +338,7 @@ class Sql
     /**
      * Function to check whether to remember the sorting order or not
      *
-     * @param array $analyzedSqlResults the analyzed query and other variables set
+     * @param  array  $analyzedSqlResults the analyzed query and other variables set
      *                                    after analyzing the query
      */
     private function isRememberSortingOrder(array $analyzedSqlResults): bool
@@ -363,7 +359,7 @@ class Sql
     /**
      * Function to check whether the LIMIT clause should be appended or not
      *
-     * @param array $analyzedSqlResults the analyzed query and other variables set
+     * @param  array  $analyzedSqlResults the analyzed query and other variables set
      *                                    after analyzing the query
      */
     private function isAppendLimitClause(array $analyzedSqlResults): bool
@@ -385,9 +381,9 @@ class Sql
     /**
      * Function to check whether this query is for just browsing
      *
-     * @param array<string, mixed> $analyzedSqlResults the analyzed query and other variables set
+     * @param  array<string, mixed>  $analyzedSqlResults the analyzed query and other variables set
      *                                                   after analyzing the query
-     * @param bool|null            $findRealEnd        whether the real end should be found
+     * @param  bool|null  $findRealEnd        whether the real end should be found
      */
     public static function isJustBrowsing(array $analyzedSqlResults, ?bool $findRealEnd): bool
     {
@@ -410,7 +406,7 @@ class Sql
     /**
      * Function to check whether the related transformation information should be deleted
      *
-     * @param array $analyzedSqlResults the analyzed query and other variables set
+     * @param  array  $analyzedSqlResults the analyzed query and other variables set
      *                                    after analyzing the query
      */
     private function isDeleteTransformationInfo(array $analyzedSqlResults): bool
@@ -423,10 +419,10 @@ class Sql
     /**
      * Function to check whether the user has rights to drop the database
      *
-     * @param array $analyzedSqlResults    the analyzed query and other variables set
+     * @param  array  $analyzedSqlResults    the analyzed query and other variables set
      *                                       after analyzing the query
-     * @param bool  $allowUserDropDatabase whether the user is allowed to drop db
-     * @param bool  $isSuperUser           whether this user is a superuser
+     * @param  bool  $allowUserDropDatabase whether the user is allowed to drop db
+     * @param  bool  $isSuperUser           whether this user is a superuser
      */
     public function hasNoRightsToDropDatabase(
         array $analyzedSqlResults,
@@ -442,9 +438,8 @@ class Sql
     /**
      * Function to set a column property
      *
-     * @param Table  $table        Table instance
-     * @param string $requestIndex col_order|col_visib
-     *
+     * @param  Table  $table        Table instance
+     * @param  string  $requestIndex col_order|col_visib
      * @return bool|Message
      */
     public function setColumnProperty(Table $table, string $requestIndex)
@@ -467,9 +462,8 @@ class Sql
     /**
      * Function to find the real end of rows
      *
-     * @param string $db    the current database
-     * @param string $table the current table
-     *
+     * @param  string  $db    the current database
+     * @param  string  $table the current table
      * @return mixed the number of rows if "retain" param is true, otherwise true
      */
     public function findRealEndOfRows($db, $table)
@@ -483,9 +477,8 @@ class Sql
     /**
      * Function to get the default sql query for browsing page
      *
-     * @param string $db    the current database
-     * @param string $table the current table
-     *
+     * @param  string  $db    the current database
+     * @param  string  $table the current table
      * @return string the default $sql_query for browse page
      */
     public function getDefaultSqlQueryForBrowse($db, $table): string
@@ -523,22 +516,22 @@ class Sql
 
                 if ($primaryKey !== null) {
                     $defaultOrderByClause = ' ORDER BY '
-                        . Util::backquote($table) . '.'
-                        . Util::backquote($primaryKey) . ' '
-                        . $GLOBALS['cfg']['TablePrimaryKeyOrder'];
+                        .Util::backquote($table).'.'
+                        .Util::backquote($primaryKey).' '
+                        .$GLOBALS['cfg']['TablePrimaryKeyOrder'];
                 }
             }
         }
 
-        return 'SELECT * FROM ' . Util::backquote($table) . $defaultOrderByClause;
+        return 'SELECT * FROM '.Util::backquote($table).$defaultOrderByClause;
     }
 
     /**
      * Responds an error when an error happens when executing the query
      *
-     * @param bool   $isGotoFile   whether goto file or not
-     * @param string $error        error after executing the query
-     * @param string $fullSqlQuery full sql query
+     * @param  bool  $isGotoFile   whether goto file or not
+     * @param  string  $error        error after executing the query
+     * @param  string  $fullSqlQuery full sql query
      */
     private function handleQueryExecuteError($isGotoFile, $error, $fullSqlQuery): void
     {
@@ -557,11 +550,11 @@ class Sql
     /**
      * Function to store the query as a bookmark
      *
-     * @param string $db                  the current database
-     * @param string $bookmarkUser        the bookmarking user
-     * @param string $sqlQueryForBookmark the query to be stored in bookmark
-     * @param string $bookmarkLabel       bookmark label
-     * @param bool   $bookmarkReplace     whether to replace existing bookmarks
+     * @param  string  $db                  the current database
+     * @param  string  $bookmarkUser        the bookmarking user
+     * @param  string  $sqlQueryForBookmark the query to be stored in bookmark
+     * @param  string  $bookmarkLabel       bookmark label
+     * @param  bool  $bookmarkReplace     whether to replace existing bookmarks
      */
     public function storeTheQueryAsBookmark(
         ?BookmarkFeature $bookmarkFeature,
@@ -606,10 +599,10 @@ class Sql
     /**
      * Function to get the affected or changed number of rows after executing a query
      *
-     * @param bool                  $isAffected whether the query affected a table
-     * @param ResultInterface|false $result     results of executing the query
-     *
+     * @param  bool  $isAffected whether the query affected a table
+     * @param  ResultInterface|false  $result     results of executing the query
      * @return int|string number of rows affected or changed
+     *
      * @psalm-return int|numeric-string
      */
     private function getNumberOfRowsAffectedOrChanged($isAffected, $result)
@@ -629,8 +622,7 @@ class Sql
      * Checks if the current database has changed
      * This could happen if the user sends a query like "USE `database`;"
      *
-     * @param string $db the database in the query
-     *
+     * @param  string  $db the database in the query
      * @return bool whether to reload the navigation(1) or not(0)
      */
     private function hasCurrentDbChanged(string $db): bool
@@ -648,10 +640,10 @@ class Sql
     /**
      * If a table, database or column gets dropped, clean comments.
      *
-     * @param string      $db     current database
-     * @param string      $table  current table
-     * @param string|null $column current column
-     * @param bool        $purge  whether purge set or not
+     * @param  string  $db     current database
+     * @param  string  $table  current table
+     * @param  string|null  $column current column
+     * @param  bool  $purge  whether purge set or not
      */
     private function cleanupRelations(string $db, string $table, ?string $column, bool $purge): void
     {
@@ -674,14 +666,16 @@ class Sql
      * Function to count the total number of rows for the same 'SELECT' query without
      * the 'LIMIT' clause that may have been programmatically added
      *
-     * @param int|string $numRows            number of rows affected/changed by the query
-     * @param bool       $justBrowsing       whether just browsing or not
-     * @param string     $db                 the current database
-     * @param string     $table              the current table
-     * @param array      $analyzedSqlResults the analyzed query and other variables set after analyzing the query
+     * @param  int|string  $numRows            number of rows affected/changed by the query
+     * @param  bool  $justBrowsing       whether just browsing or not
+     * @param  string  $db                 the current database
+     * @param  string  $table              the current table
+     * @param  array  $analyzedSqlResults the analyzed query and other variables set after analyzing the query
+     *
      * @psalm-param int|numeric-string $numRows
      *
      * @return int|string unlimited number of rows
+     *
      * @psalm-return int|numeric-string
      */
     private function countQueryResults(
@@ -749,11 +743,11 @@ class Sql
                         '',
                     ],
                 ];
-                $countQuery = 'SELECT COUNT(*) FROM (' . Query::replaceClauses(
+                $countQuery = 'SELECT COUNT(*) FROM ('.Query::replaceClauses(
                     $statement,
                     $tokenList,
                     $replaces
-                ) . ') as cnt';
+                ).') as cnt';
                 $unlimNumRows = $this->dbi->fetchValue($countQuery);
                 if ($unlimNumRows === false) {
                     $unlimNumRows = 0;
@@ -769,14 +763,14 @@ class Sql
     /**
      * Function to handle all aspects relating to executing the query
      *
-     * @param array       $analyzedSqlResults  analyzed sql results
-     * @param string      $fullSqlQuery        full sql query
-     * @param bool        $isGotoFile          whether to go to a file
-     * @param string      $db                  current database
-     * @param string|null $table               current table
-     * @param bool|null   $findRealEnd         whether to find the real end
-     * @param string|null $sqlQueryForBookmark sql query to be stored as bookmark
-     * @param array|null  $extraData           extra data
+     * @param  array  $analyzedSqlResults  analyzed sql results
+     * @param  string  $fullSqlQuery        full sql query
+     * @param  bool  $isGotoFile          whether to go to a file
+     * @param  string  $db                  current database
+     * @param  string|null  $table               current table
+     * @param  bool|null  $findRealEnd         whether to find the real end
+     * @param  string|null  $sqlQueryForBookmark sql query to be stored as bookmark
+     * @param  array|null  $extraData           extra data
      *
      * @psalm-return array{
      *  ResultInterface|false|null,
@@ -886,9 +880,9 @@ class Sql
     /**
      * Delete related transformation information
      *
-     * @param string $db                 current database
-     * @param string $table              current table
-     * @param array  $analyzedSqlResults analyzed sql results
+     * @param  string  $db                 current database
+     * @param  string  $table              current table
+     * @param  array  $analyzedSqlResults analyzed sql results
      */
     private function deleteTransformationInfo(string $db, string $table, array $analyzedSqlResults): void
     {
@@ -913,9 +907,9 @@ class Sql
     /**
      * Function to get the message for the no rows returned case
      *
-     * @param string|null $messageToShow      message to show
-     * @param array       $analyzedSqlResults analyzed sql results
-     * @param int|string  $numRows            number of rows
+     * @param  string|null  $messageToShow      message to show
+     * @param  array  $analyzedSqlResults analyzed sql results
+     * @param  int|string  $numRows            number of rows
      */
     private function getMessageForNoRowsReturned(
         ?string $messageToShow,
@@ -970,7 +964,7 @@ class Sql
 
         if (isset($GLOBALS['querytime'])) {
             $queryTime = Message::notice(
-                '(' . __('Query took %01.4f seconds.') . ')'
+                '('.__('Query took %01.4f seconds.').')'
             );
             $queryTime->addParam($GLOBALS['querytime']);
             $message->addMessage($queryTime);
@@ -995,17 +989,18 @@ class Sql
      * 6-> When searching using the SEARCH tab which returns zero results
      * 7-> When changing the structure of the table except change operation
      *
-     * @param array                      $analyzedSqlResults   analyzed sql results
-     * @param string                     $db                   current database
-     * @param string|null                $table                current table
-     * @param string|null                $messageToShow        message to show
-     * @param int|string                 $numRows              number of rows
-     * @param DisplayResults             $displayResultsObject DisplayResult instance
-     * @param array|null                 $extraData            extra data
-     * @param array|null                 $profilingResults     profiling results
-     * @param ResultInterface|false|null $result               executed query results
-     * @param string                     $sqlQuery             sql query
-     * @param string|null                $completeQuery        complete sql query
+     * @param  array  $analyzedSqlResults   analyzed sql results
+     * @param  string  $db                   current database
+     * @param  string|null  $table                current table
+     * @param  string|null  $messageToShow        message to show
+     * @param  int|string  $numRows              number of rows
+     * @param  DisplayResults  $displayResultsObject DisplayResult instance
+     * @param  array|null  $extraData            extra data
+     * @param  array|null  $profilingResults     profiling results
+     * @param  ResultInterface|false|null  $result               executed query results
+     * @param  string  $sqlQuery             sql query
+     * @param  string|null  $completeQuery        complete sql query
+     *
      * @psalm-param int|numeric-string $numRows
      *
      * @return string html
@@ -1126,7 +1121,7 @@ class Sql
     /**
      * Function to send response for ajax grid edit
      *
-     * @param ResultInterface $result result of the executed query
+     * @param  ResultInterface  $result result of the executed query
      */
     private function getResponseForGridEdit(ResultInterface $result): void
     {
@@ -1162,16 +1157,17 @@ class Sql
     /**
      * Function to get html for the sql query results table
      *
-     * @param DisplayResults             $displayResultsObject instance of DisplayResult
-     * @param array                      $displayParts         the parts to display
-     * @param bool                       $editable             whether the result table is
+     * @param  DisplayResults  $displayResultsObject instance of DisplayResult
+     * @param  array  $displayParts         the parts to display
+     * @param  bool  $editable             whether the result table is
      *                                                         editable or not
-     * @param int|string                 $unlimNumRows         unlimited number of rows
-     * @param int|string                 $numRows              number of rows
-     * @param array|null                 $showTable            table definitions
-     * @param ResultInterface|false|null $result               result of the executed query
-     * @param array                      $analyzedSqlResults   analyzed sql results
-     * @param bool                       $isLimitedDisplay     Show only limited operations or not
+     * @param  int|string  $unlimNumRows         unlimited number of rows
+     * @param  int|string  $numRows              number of rows
+     * @param  array|null  $showTable            table definitions
+     * @param  ResultInterface|false|null  $result               result of the executed query
+     * @param  array  $analyzedSqlResults   analyzed sql results
+     * @param  bool  $isLimitedDisplay     Show only limited operations or not
+     *
      * @psalm-param int|numeric-string $unlimNumRows
      * @psalm-param int|numeric-string $numRows
      */
@@ -1198,6 +1194,7 @@ class Sql
 
                 if ($result === false) {
                     $result = null;
+
                     continue;
                 }
 
@@ -1291,10 +1288,10 @@ class Sql
     /**
      * Function to get html for the previous query if there is such.
      *
-     * @param string|null    $displayQuery   display query
-     * @param bool           $showSql        whether to show sql
-     * @param array          $sqlData        sql data
-     * @param Message|string $displayMessage display message
+     * @param  string|null  $displayQuery   display query
+     * @param  bool  $showSql        whether to show sql
+     * @param  array  $sqlData        sql data
+     * @param  Message|string  $displayMessage display message
      */
     private function getHtmlForPreviousUpdateQuery(
         ?string $displayQuery,
@@ -1313,10 +1310,10 @@ class Sql
     /**
      * To get the message if a column index is missing. If not will return null
      *
-     * @param string|null $table        current table
-     * @param string      $database     current database
-     * @param bool        $editable     whether the results table can be editable or not
-     * @param bool        $hasUniqueKey whether there is a unique key
+     * @param  string|null  $table        current table
+     * @param  string  $database     current database
+     * @param  bool  $editable     whether the results table can be editable or not
+     * @param  bool  $hasUniqueKey whether there is a unique key
      */
     private function getMessageIfMissingColumnIndex(
         ?string $table,
@@ -1334,8 +1331,8 @@ class Sql
                 sprintf(
                     __(
                         'Current selection does not contain a unique column.'
-                        . ' Grid edit, checkbox, Edit, Copy and Delete features'
-                        . ' are not available. %s'
+                        .' Grid edit, checkbox, Edit, Copy and Delete features'
+                        .' are not available. %s'
                     ),
                     MySQLDocumentation::showDocumentation(
                         'config',
@@ -1348,8 +1345,8 @@ class Sql
                 sprintf(
                     __(
                         'Current selection does not contain a unique column.'
-                        . ' Grid edit, Edit, Copy and Delete features may result in'
-                        . ' undesired behavior. %s'
+                        .' Grid edit, Edit, Copy and Delete features may result in'
+                        .' undesired behavior. %s'
                     ),
                     MySQLDocumentation::showDocumentation(
                         'config',
@@ -1365,19 +1362,20 @@ class Sql
     /**
      * Function to display results when the executed query returns non empty results
      *
-     * @param ResultInterface|false|null $result               executed query results
-     * @param array                      $analyzedSqlResults   analysed sql results
-     * @param string                     $db                   current database
-     * @param string|null                $table                current table
-     * @param array|null                 $sqlData              sql data
-     * @param DisplayResults             $displayResultsObject Instance of DisplayResults
-     * @param int|string                 $unlimNumRows         unlimited number of rows
-     * @param int|string                 $numRows              number of rows
-     * @param string|null                $dispQuery            display query
-     * @param Message|string|null        $dispMessage          display message
-     * @param array|null                 $profilingResults     profiling results
-     * @param string                     $sqlQuery             sql query
-     * @param string|null                $completeQuery        complete sql query
+     * @param  ResultInterface|false|null  $result               executed query results
+     * @param  array  $analyzedSqlResults   analysed sql results
+     * @param  string  $db                   current database
+     * @param  string|null  $table                current table
+     * @param  array|null  $sqlData              sql data
+     * @param  DisplayResults  $displayResultsObject Instance of DisplayResults
+     * @param  int|string  $unlimNumRows         unlimited number of rows
+     * @param  int|string  $numRows              number of rows
+     * @param  string|null  $dispQuery            display query
+     * @param  Message|string|null  $dispMessage          display message
+     * @param  array|null  $profilingResults     profiling results
+     * @param  string  $sqlQuery             sql query
+     * @param  string|null  $completeQuery        complete sql query
+     *
      * @psalm-param int|numeric-string $unlimNumRows
      * @psalm-param int|numeric-string $numRows
      *
@@ -1563,20 +1561,20 @@ class Sql
     /**
      * Function to execute the query and send the response
      *
-     * @param array|null          $analyzedSqlResults  analysed sql results
-     * @param bool                $isGotoFile          whether goto file or not
-     * @param string              $db                  current database
-     * @param string|null         $table               current table
-     * @param bool|null           $findRealEnd         whether to find real end or not
-     * @param string|null         $sqlQueryForBookmark the sql query to be stored as bookmark
-     * @param array|null          $extraData           extra data
-     * @param string|null         $messageToShow       message to show
-     * @param array|null          $sqlData             sql data
-     * @param string              $goto                goto page url
-     * @param string|null         $dispQuery           display query
-     * @param Message|string|null $dispMessage         display message
-     * @param string              $sqlQuery            sql query
-     * @param string|null         $completeQuery       complete query
+     * @param  array|null  $analyzedSqlResults  analysed sql results
+     * @param  bool  $isGotoFile          whether goto file or not
+     * @param  string  $db                  current database
+     * @param  string|null  $table               current table
+     * @param  bool|null  $findRealEnd         whether to find real end or not
+     * @param  string|null  $sqlQueryForBookmark the sql query to be stored as bookmark
+     * @param  array|null  $extraData           extra data
+     * @param  string|null  $messageToShow       message to show
+     * @param  array|null  $sqlData             sql data
+     * @param  string  $goto                goto page url
+     * @param  string|null  $dispQuery           display query
+     * @param  Message|string|null  $dispMessage         display message
+     * @param  string  $sqlQuery            sql query
+     * @param  string|null  $completeQuery       complete query
      */
     public function executeQueryAndSendQueryResponse(
         $analyzedSqlResults,
@@ -1626,21 +1624,20 @@ class Sql
     /**
      * Function to execute the query and send the response
      *
-     * @param array               $analyzedSqlResults  analysed sql results
-     * @param bool                $isGotoFile          whether goto file or not
-     * @param string              $db                  current database
-     * @param string|null         $table               current table
-     * @param bool|null           $findRealEnd         whether to find real end or not
-     * @param string|null         $sqlQueryForBookmark the sql query to be stored as bookmark
-     * @param array|null          $extraData           extra data
-     * @param string|null         $messageToShow       message to show
-     * @param array|null          $sqlData             sql data
-     * @param string              $goto                goto page url
-     * @param string|null         $dispQuery           display query
-     * @param Message|string|null $dispMessage         display message
-     * @param string              $sqlQuery            sql query
-     * @param string|null         $completeQuery       complete query
-     *
+     * @param  array  $analyzedSqlResults  analysed sql results
+     * @param  bool  $isGotoFile          whether goto file or not
+     * @param  string  $db                  current database
+     * @param  string|null  $table               current table
+     * @param  bool|null  $findRealEnd         whether to find real end or not
+     * @param  string|null  $sqlQueryForBookmark the sql query to be stored as bookmark
+     * @param  array|null  $extraData           extra data
+     * @param  string|null  $messageToShow       message to show
+     * @param  array|null  $sqlData             sql data
+     * @param  string  $goto                goto page url
+     * @param  string|null  $dispQuery           display query
+     * @param  Message|string|null  $dispMessage         display message
+     * @param  string  $sqlQuery            sql query
+     * @param  string|null  $completeQuery       complete query
      * @return string html
      */
     public function executeQueryAndGetQueryResponse(
@@ -1772,8 +1769,7 @@ class Sql
     /**
      * Function to define pos to display a row
      *
-     * @param int $numberOfLine Number of the line to display
-     *
+     * @param  int  $numberOfLine Number of the line to display
      * @return int Start position to display the line
      */
     private function getStartPosToDisplayRow($numberOfLine)
@@ -1787,10 +1783,9 @@ class Sql
      * Function to calculate new pos if pos is higher than number of rows
      * of displayed table
      *
-     * @param string   $db    Database name
-     * @param string   $table Table name
-     * @param int|null $pos   Initial position
-     *
+     * @param  string  $db    Database name
+     * @param  string  $table Table name
+     * @param  int|null  $pos   Initial position
      * @return int Number of pos to display last page
      */
     public function calculatePosForLastPage($db, $table, $pos)

@@ -26,7 +26,7 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface
     {

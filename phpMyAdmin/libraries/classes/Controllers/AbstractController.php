@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers;
 
+use function __;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
-
-use function __;
 use function strlen;
 
 abstract class AbstractController
@@ -28,7 +27,7 @@ abstract class AbstractController
     }
 
     /**
-     * @param array<string, mixed> $templateData
+     * @param  array<string, mixed>  $templateData
      */
     protected function render(string $templatePath, array $templateData = []): void
     {
@@ -36,7 +35,7 @@ abstract class AbstractController
     }
 
     /**
-     * @param string[] $files
+     * @param  string[]  $files
      */
     protected function addScriptFiles(array $files): void
     {
@@ -91,11 +90,11 @@ abstract class AbstractController
     }
 
     /**
-     * @param array<string, mixed> $params
+     * @param  array<string, mixed>  $params
      */
     protected function redirect(string $route, array $params = []): void
     {
-        $uri = './index.php?route=' . $route . Url::getCommonRaw($params, '&');
+        $uri = './index.php?route='.$route.Url::getCommonRaw($params, '&');
         Core::sendHeaderLocation($uri);
     }
 }

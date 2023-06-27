@@ -7,23 +7,21 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\Utils\HttpRequest;
-use stdClass;
-
 use function count;
 use function explode;
 use function intval;
 use function is_numeric;
 use function is_object;
 use function json_decode;
+use const PHP_VERSION;
+use PhpMyAdmin\Utils\HttpRequest;
 use function preg_match;
+use stdClass;
 use function strlen;
 use function strpos;
 use function substr;
 use function time;
 use function version_compare;
-
-use const PHP_VERSION;
 
 /**
  * Responsible for retrieving version information and notifying about latest version
@@ -78,8 +76,7 @@ class VersionInformation
     /**
      * Calculates numerical equivalent of phpMyAdmin version string
      *
-     * @param string $version version
-     *
+     * @param  string  $version version
      * @return mixed false on failure, integer on success
      */
     public function versionToInt($version)
@@ -146,8 +143,7 @@ class VersionInformation
      * Returns the version and date of the latest phpMyAdmin version compatible
      * with the available PHP and MySQL versions
      *
-     * @param array $releases array of information related to each version
-     *
+     * @param  array  $releases array of information related to each version
      * @return array|null containing the version and date of latest compatible version
      */
     public function getLatestCompatibleVersion(array $releases)
@@ -195,9 +191,8 @@ class VersionInformation
     /**
      * Checks whether PHP or MySQL version meets supplied version condition
      *
-     * @param string $type      PHP or MySQL
-     * @param string $condition version condition
-     *
+     * @param  string  $type      PHP or MySQL
+     * @param  string  $condition version condition
      * @return bool whether the condition is met
      */
     public function evaluateVersionCondition(string $type, string $condition)

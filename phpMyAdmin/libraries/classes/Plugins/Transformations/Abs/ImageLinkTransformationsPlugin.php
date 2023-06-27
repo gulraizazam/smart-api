@@ -7,12 +7,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Transformations\Abs;
 
+use function __;
+use function htmlspecialchars;
 use PhpMyAdmin\FieldMetadata;
 use PhpMyAdmin\Plugins\TransformationsPlugin;
 use PhpMyAdmin\Url;
-
-use function __;
-use function htmlspecialchars;
 
 /**
  * Provides common methods for all of the link transformations plugins.
@@ -32,10 +31,9 @@ abstract class ImageLinkTransformationsPlugin extends TransformationsPlugin
     /**
      * Does the actual work of each specific transformations plugin.
      *
-     * @param string             $buffer  text to be transformed
-     * @param array              $options transformation options
-     * @param FieldMetadata|null $meta    meta information
-     *
+     * @param  string  $buffer  text to be transformed
+     * @param  array  $options transformation options
+     * @param  FieldMetadata|null  $meta    meta information
      * @return string
      */
     public function applyTransformation($buffer, array $options = [], ?FieldMetadata $meta = null)
@@ -44,7 +42,7 @@ abstract class ImageLinkTransformationsPlugin extends TransformationsPlugin
         // https://wiki.phpmyadmin.net/pma/Page_loader#Bypassing_the_page_loader
         $link = '<a class="disableAjax" target="_blank" rel="noopener noreferrer" href="';
         $link .= Url::getFromRoute('/transformation/wrapper', $options['wrapper_params']);
-        $link .= '" alt="[' . htmlspecialchars($buffer);
+        $link .= '" alt="['.htmlspecialchars($buffer);
         $link .= ']">[BLOB]</a>';
 
         return $link;

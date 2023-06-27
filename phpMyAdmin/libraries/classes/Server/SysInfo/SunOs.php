@@ -24,14 +24,13 @@ class SunOs extends Base
     /**
      * Read value from kstat
      *
-     * @param string $key Key to read
-     *
+     * @param  string  $key Key to read
      * @return string with value
      */
     private function kstat($key)
     {
         /** @psalm-suppress ForbiddenCode */
-        $m = shell_exec('kstat -p d ' . $key);
+        $m = shell_exec('kstat -p d '.$key);
 
         if ($m) {
             [, $value] = explode("\t", trim($m), 2);

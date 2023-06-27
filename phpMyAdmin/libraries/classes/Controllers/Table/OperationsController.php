@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function count;
+use function implode;
+use function mb_strstr;
+use function mb_strtolower;
+use function mb_strtoupper;
 use PhpMyAdmin\Charsets;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\ConfigStorage\Relation;
@@ -21,13 +27,6 @@ use PhpMyAdmin\StorageEngine;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function count;
-use function implode;
-use function mb_strstr;
-use function mb_strtolower;
-use function mb_strtoupper;
 use function preg_replace;
 use function strlen;
 use function urldecode;
@@ -151,7 +150,7 @@ class OperationsController extends AbstractController
 
             if ($message->isSuccess()) {
                 if (isset($_POST['submit_move'], $_POST['target_db'])) {
-                    $db = $_POST['target_db'];// Used in Header::getJsParams()
+                    $db = $_POST['target_db']; // Used in Header::getJsParams()
                 }
 
                 $this->response->addJSON('db', $db);
@@ -237,8 +236,8 @@ class OperationsController extends AbstractController
 
             if (count($table_alters) > 0) {
                 $sql_query = 'ALTER TABLE '
-                    . Util::backquote($table);
-                $sql_query .= "\r\n" . implode("\r\n", $table_alters);
+                    .Util::backquote($table);
+                $sql_query .= "\r\n".implode("\r\n", $table_alters);
                 $sql_query .= ';';
                 $result = (bool) $this->dbi->query($sql_query);
                 $reread_info = true;

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use ZipArchive;
-
 use function __;
 use function basename;
 use function bin2hex;
@@ -33,7 +31,6 @@ use function strlen;
 use function tempnam;
 use function trim;
 use function unlink;
-
 use const UPLOAD_ERR_CANT_WRITE;
 use const UPLOAD_ERR_EXTENSION;
 use const UPLOAD_ERR_FORM_SIZE;
@@ -42,6 +39,7 @@ use const UPLOAD_ERR_NO_FILE;
 use const UPLOAD_ERR_NO_TMP_DIR;
 use const UPLOAD_ERR_OK;
 use const UPLOAD_ERR_PARTIAL;
+use ZipArchive;
 
 /**
  * File wrapper class
@@ -85,7 +83,7 @@ class File
     private $zipExtension;
 
     /**
-     * @param bool|string $name file name or false
+     * @param  bool|string  $name file name or false
      */
     public function __construct($name = false)
     {
@@ -134,7 +132,7 @@ class File
      * checks or sets the temp flag for this file
      * file objects with temp flags are deleted with object destruction
      *
-     * @param bool $is_temp sets the temp flag
+     * @param  bool  $is_temp sets the temp flag
      */
     public function isTemp(?bool $is_temp = null): bool
     {
@@ -148,7 +146,7 @@ class File
     /**
      * accessor
      *
-     * @param string|null $name file name
+     * @param  string|null  $name file name
      */
     public function setName(?string $name): void
     {
@@ -192,7 +190,7 @@ class File
             return false;
         }
 
-        return '0x' . bin2hex($result);
+        return '0x'.bin2hex($result);
     }
 
     /**
@@ -220,7 +218,7 @@ class File
     /**
      * Initializes object from uploaded file.
      *
-     * @param string $name name of file uploaded
+     * @param  string  $name name of file uploaded
      */
     public function setUploadedFile(string $name): bool
     {
@@ -239,8 +237,8 @@ class File
     /**
      * Loads uploaded file from table change request.
      *
-     * @param string $key       the md5 hash of the column name
-     * @param string $rownumber number of row to process
+     * @param  string  $key       the md5 hash of the column name
+     * @param  string  $rownumber number of row to process
      */
     public function setUploadedFromTblChangeRequest(
         string $key,
@@ -311,11 +309,9 @@ class File
      * $file['error'] = [value]
      * </code>
      *
-     * @param array  $file      the array
-     * @param string $rownumber number of row to process
-     * @param string $key       key to process
-     *
-     * @return array
+     * @param  array  $file      the array
+     * @param  string  $rownumber number of row to process
+     * @param  string  $key       key to process
      *
      * @static
      */
@@ -336,8 +332,8 @@ class File
     /**
      * sets the name if the file to the one selected in the tbl_change form
      *
-     * @param string $key       the md5 hash of the column name
-     * @param string $rownumber number of row to process
+     * @param  string  $key       the md5 hash of the column name
+     * @param  string  $rownumber number of row to process
      */
     public function setSelectedFromTblChangeRequest(
         string $key,
@@ -376,8 +372,8 @@ class File
      * checks the superglobals provided if the tbl_change form is submitted
      * and uses the submitted/selected file
      *
-     * @param string $key       the md5 hash of the column name
-     * @param string $rownumber number of row to process
+     * @param  string  $key       the md5 hash of the column name
+     * @param  string  $rownumber number of row to process
      */
     public function checkTblChangeForm(string $key, string $rownumber): bool
     {
@@ -403,7 +399,7 @@ class File
     /**
      * Sets named file to be read from UploadDir.
      *
-     * @param string $name file name
+     * @param  string  $name file name
      */
     public function setLocalSelectedFile(string $name): bool
     {
@@ -416,7 +412,7 @@ class File
         }
 
         $this->setName(
-            Util::userDir($GLOBALS['cfg']['UploadDir']) . Core::securePath($name)
+            Util::userDir($GLOBALS['cfg']['UploadDir']).Core::securePath($name)
         );
         if (@is_link((string) $this->getName())) {
             $this->errorMessage = Message::error(__('File is a symbolic link'));
@@ -530,7 +526,7 @@ class File
     /**
      * Sets whether the content should be decompressed before returned
      *
-     * @param bool $decompress whether to decompress
+     * @param  bool  $decompress whether to decompress
      */
     public function setDecompressContent(bool $decompress): void
     {
@@ -554,7 +550,7 @@ class File
     /**
      * Sets the file handle
      *
-     * @param resource $handle file handle
+     * @param  resource  $handle file handle
      */
     public function setHandle($handle): void
     {
@@ -569,8 +565,8 @@ class File
         $this->errorMessage = Message::error(sprintf(
             __(
                 'You attempted to load file with unsupported compression (%s). '
-                . 'Either support for it is not implemented or disabled by your '
-                . 'configuration.'
+                .'Either support for it is not implemented or disabled by your '
+                .'configuration.'
             ),
             $this->getCompression()
         ));
@@ -631,7 +627,7 @@ class File
     /**
      * Opens file from zip
      *
-     * @param string|null $specific_entry Entry to open
+     * @param  string|null  $specific_entry Entry to open
      */
     public function openZip(?string $specific_entry = null): bool
     {
@@ -679,7 +675,7 @@ class File
     /**
      * Reads data from file
      *
-     * @param int $size Number of bytes to read
+     * @param  int  $size Number of bytes to read
      */
     public function read(int $size): string
     {
@@ -718,7 +714,7 @@ class File
     /**
      * Sets the character set of the file
      *
-     * @param string $charset character set of the file
+     * @param  string  $charset character set of the file
      */
     public function setCharset(string $charset): void
     {
@@ -762,7 +758,7 @@ class File
     /**
      * Sets the chunk size
      *
-     * @param int $chunkSize the chunk size
+     * @param  int  $chunkSize the chunk size
      */
     public function setChunkSize(int $chunkSize): void
     {

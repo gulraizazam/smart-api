@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function array_keys;
+use function htmlspecialchars;
+use function json_encode;
+use function min;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\DbTableExists;
 use PhpMyAdmin\FieldMetadata;
@@ -16,12 +21,6 @@ use PhpMyAdmin\SqlParser\Statements\SelectStatement;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function array_keys;
-use function htmlspecialchars;
-use function json_encode;
-use function min;
 use function strlen;
 
 /**
@@ -129,8 +128,8 @@ class ChartController extends AbstractController
         foreach (array_keys($keys) as $idx) {
             if (
                 isset($fields_meta[$idx]) && (
-                $fields_meta[$idx]->isType(FieldMetadata::TYPE_INT)
-                || $fields_meta[$idx]->isType(FieldMetadata::TYPE_REAL)
+                    $fields_meta[$idx]->isType(FieldMetadata::TYPE_INT)
+                    || $fields_meta[$idx]->isType(FieldMetadata::TYPE_REAL)
                 )
             ) {
                 $numericColumnFound = true;

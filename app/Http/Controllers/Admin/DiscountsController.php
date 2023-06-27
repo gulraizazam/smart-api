@@ -4,21 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Models\DiscountHasLocations;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Gate;
-use App\Models\Discounts;
-use App\Models\Locations;
 use App\Helpers\NodesTree;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Helpers\Widgets\ServiceWidget;
+use App\Http\Controllers\Controller;
+use App\Models\DiscountHasLocations;
+use App\Models\Discounts;
+use App\Models\Locations;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 use PHPUnit\Exception;
-
 
 class DiscountsController extends Controller
 {
@@ -42,7 +40,7 @@ class DiscountsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('discounts_manage')) {
+        if (! Gate::allows('discounts_manage')) {
             return abort(401);
         }
 
@@ -56,7 +54,7 @@ class DiscountsController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('discounts_create')) {
+        if (! Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -76,12 +74,11 @@ class DiscountsController extends Controller
     /**
      * Store a newly created discount in storage.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        if (!Gate::allows('discounts_create')) {
+        if (! Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -108,6 +105,7 @@ class DiscountsController extends Controller
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
+
                 return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
 
             }
@@ -122,7 +120,6 @@ class DiscountsController extends Controller
     /**
      * Validate form fields
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Contracts\Validation\Validator $validator;
      */
     protected function verifyFields(Request $request)
@@ -136,11 +133,10 @@ class DiscountsController extends Controller
         ]);
     }
 
-
     /**
      * Display the discount in datatable form.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
@@ -149,12 +145,11 @@ class DiscountsController extends Controller
         try {
 
             $records = [];
-            $records["data"] = [];
+            $records['data'] = [];
 
             $filename = 'discounts';
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
-
 
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
@@ -162,25 +157,25 @@ class DiscountsController extends Controller
                 if ($Discounts) {
                     $Discounts->delete();
                 }
-                $records["status"] = true;
-                $records["message"] = "Records has been deleted successfully!";
+                $records['status'] = true;
+                $records['message'] = 'Records has been deleted successfully!';
             }
 
             $where = $this->applyFilters($filters, $apply_filter, $filename);
 
             $total_query = Discounts::select('id');
             if (count($where)) {
-                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_discounts")){
+                if (\Illuminate\Support\Facades\Gate::allows('view_inactive_discounts')) {
                     $total_query->where($where);
-                }else{
-                    $total_query->where($where)->where('active',1);
+                } else {
+                    $total_query->where($where)->where('active', 1);
                 }
             }
             $iTotalRecords = $total_query->count();
 
-            list($orderBy, $order) = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request);
 
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $query = Discounts::select('*');
             if ($request->get('startdate') && $request->get('startdate') != '') {
@@ -191,10 +186,10 @@ class DiscountsController extends Controller
             }
 
             if (count($where)) {
-                if(\Illuminate\Support\Facades\Gate::allows("view_inactive_discounts")){
+                if (\Illuminate\Support\Facades\Gate::allows('view_inactive_discounts')) {
                     $query->where($where);
-                }else{
-                    $query->where($where)->where('active',1);
+                } else {
+                    $query->where($where)->where('active', 1);
                 }
             }
 
@@ -204,9 +199,9 @@ class DiscountsController extends Controller
 
             if ($Discounts) {
 
-                $records["data"] = $Discounts;
+                $records['data'] = $Discounts;
 
-                $records["meta"] = [
+                $records['meta'] = [
                     'field' => $orderBy,
                     'page' => $page,
                     'pages' => $pages,
@@ -216,7 +211,7 @@ class DiscountsController extends Controller
                 ];
             }
 
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('discounts_edit'),
                 'delete' => Gate::allows('discounts_destroy'),
                 'active' => Gate::allows('discounts_active'),
@@ -232,216 +227,217 @@ class DiscountsController extends Controller
         }
     }
 
-    private function applyFilters($filters, $apply_filter, $filename = 'discounts') {
+    private function applyFilters($filters, $apply_filter, $filename = 'discounts')
+    {
 
         $where = [];
 
-        if (Auth::user()->account_id && Auth::user()->account_id != ''){
-            $where[] = array(
+        if (Auth::user()->account_id && Auth::user()->account_id != '') {
+            $where[] = [
                 'account_id',
                 '=',
-                Auth::user()->account_id
-            );
+                Auth::user()->account_id,
+            ];
             Filters::put(Auth::User()->id, $filename, 'account_id', Auth::user()->account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, $filename, 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, $filename, 'account_id'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'name');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, $filename, 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, $filename, 'name').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'type')) {
-            $where[] = array(
+            $where[] = [
                 'type',
                 'like',
-                '%' . $filters['type'] . '%'
-            );
+                '%'.$filters['type'].'%',
+            ];
             Filters::put(Auth::User()->id, $filename, 'type', $filters['type']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'type');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'type')) {
-                    $where[] = array(
+                    $where[] = [
                         'type',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, $filename, 'type') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, $filename, 'type').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'amount')) {
-            $where[] = array(
+            $where[] = [
                 'amount',
                 'like',
-                '%' . $filters['amount'] . '%'
-            );
+                '%'.$filters['amount'].'%',
+            ];
             Filters::put(Auth::User()->id, $filename, 'amount', $filters['amount']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'amount');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'amount')) {
-                    $where[] = array(
+                    $where[] = [
                         'amount',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, $filename, 'amount') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, $filename, 'amount').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'discount_type')) {
-            $where[] = array(
+            $where[] = [
                 'discount_type',
                 '=',
-                $filters['discount_type']
-            );
+                $filters['discount_type'],
+            ];
             Filters::put(Auth::User()->id, $filename, 'discount_type', $filters['discount_type']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'discount_type');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'discount_type')) {
-                    $where[] = array(
+                    $where[] = [
                         'discount_type',
                         '=',
-                        Filters::get(Auth::user()->id, $filename ,'discount_type')
-                    );
+                        Filters::get(Auth::user()->id, $filename, 'discount_type'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
-            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
+                $filters['created_from'].' 00:00:00',
+            ];
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'].' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_from');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'created_from')) {
-                    $where[] = array(
+                    $where[] = [
                         'created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, $filename, 'created_from')
-                    );
+                        Filters::get(Auth::User()->id, $filename, 'created_from'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
+            $where[] = [
                 'created_at',
                 '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
-            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
+                $filters['created_to'].' 23:59:59',
+            ];
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'].' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_to');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'created_to')) {
-                    $where[] = array(
+                    $where[] = [
                         'created_at',
                         '<=',
-                        Filters::get(Auth::User()->id, $filename, 'created_to')
-                    );
+                        Filters::get(Auth::User()->id, $filename, 'created_to'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'startdate')) {
-            $where[] = array(
+            $where[] = [
                 'start',
                 '>=',
-                $filters['startdate']
-            );
-            Filters::put(Auth::user()->id , $filename, 'startdate', $filters['startdate']);
+                $filters['startdate'],
+            ];
+            Filters::put(Auth::user()->id, $filename, 'startdate', $filters['startdate']);
         } else {
-            if ($apply_filter){
+            if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'startdate');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'startdate')) {
-                    $where[] = array(
+                    $where[] = [
                         'start',
                         '>=',
-                        Filters::get(Auth::user()->id , $filename, 'startdate')
-                    );
+                        Filters::get(Auth::user()->id, $filename, 'startdate'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'enddate')) {
-            $where[] = array(
+            $where[] = [
                 'end',
                 '<=',
-                $filters['enddate']
-            );
-            Filters::put(Auth::user()->id , $filename, 'enddate', $filters['enddate']);
+                $filters['enddate'],
+            ];
+            Filters::put(Auth::user()->id, $filename, 'enddate', $filters['enddate']);
         } else {
-            if ($apply_filter){
+            if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'enddate');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'enddate')) {
-                    $where[] = array(
+                    $where[] = [
                         'end',
                         '<=',
-                        Filters::get(Auth::user()->id , $filename, 'enddate')
-                    );
+                        Filters::get(Auth::user()->id, $filename, 'enddate'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
-            Filters::put(Auth::user()->id, $filename, 'status',  $filters['status']);
+                $filters['status'],
+            ];
+            Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
         } else {
-            if ( $apply_filter ){
-                Filters::forget( Auth::user()->id, $filename, 'status');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, $filename, 'status');
             } else {
-                if ( Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1){
-                    if ( Filters::get(Auth::user()->id, $filename, 'status') != null ){
-                        $where[] = array(
+                if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get( Auth::user()->id, $filename, 'status')
-                        );
+                            Filters::get(Auth::user()->id, $filename, 'status'),
+                        ];
                     }
                 }
             }
@@ -450,7 +446,8 @@ class DiscountsController extends Controller
         return $where;
     }
 
-    private function getFiltersData($records, $filename) {
+    private function getFiltersData($records, $filename)
+    {
 
         $locations = Locations::getlocation();
 
@@ -466,7 +463,7 @@ class DiscountsController extends Controller
         $records['filter_values'] = [
             'services' => $Services,
             'locations' => $locations,
-            'status' => config('constants.status')
+            'status' => config('constants.status'),
         ];
 
         return $records;
@@ -476,12 +473,12 @@ class DiscountsController extends Controller
     /**
      * Show the form for editing the specified discount information.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
-        if (!Gate::allows('discounts_edit')) {
+        if (! Gate::allows('discounts_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -495,11 +492,11 @@ class DiscountsController extends Controller
 
             } else {
 
-                $discountServices = explode(",", $discount->service_id);
+                $discountServices = explode(',', $discount->service_id);
 
-                if (!$discountServices) {
+                if (! $discountServices) {
 
-                    $discountServices = array();
+                    $discountServices = [];
                 }
                 /* Create Nodes with Parents */
                 $parentGroups = new NodesTree();
@@ -515,10 +512,10 @@ class DiscountsController extends Controller
                     $Discount = $discount->toArray();
 
                     if ($Discount['start']) {
-                        $Discount['start'] = $discount->dateFormat($Discount['start'], "Y-m-d");
+                        $Discount['start'] = $discount->dateFormat($Discount['start'], 'Y-m-d');
                     }
                     if ($Discount['end']) {
-                        $Discount['end'] = $discount->dateFormat($Discount['end'], "Y-m-d");
+                        $Discount['end'] = $discount->dateFormat($Discount['end'], 'Y-m-d');
                     }
                 }
 
@@ -537,13 +534,12 @@ class DiscountsController extends Controller
     /**
      * Update the specified discount in storage.
      *
-     * @param  \Illuminate\Http\Request $request
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('discounts_edit')) {
+        if (! Gate::allows('discounts_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -583,12 +579,11 @@ class DiscountsController extends Controller
     /**
      * Active discount record from storage or database.
      *
-     * @param  Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request)
     {
-        if (!Gate::allows('discounts_active')) {
+        if (! Gate::allows('discounts_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -603,6 +598,7 @@ class DiscountsController extends Controller
             if ($response) {
                 return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
             }
+
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
 
         } catch (\Exception $e) {
@@ -613,18 +609,18 @@ class DiscountsController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
-        if (!Gate::allows('discounts_destroy')) {
+        if (! Gate::allows('discounts_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         try {
 
-             $record = Discounts::deleteRecord($id);
+            $record = Discounts::deleteRecord($id);
 
             return ApiHelper::apiResponse($this->success, $record);
         } catch (\Exception $e) {
@@ -636,11 +632,11 @@ class DiscountsController extends Controller
     /**
      * Display lcoation to add service for doctor.
      *
-     * @param  int $id
+     * @param  int  $id
      */
     public function displayDlocation($id)
     {
-        if (!Gate::allows('discounts_allocate')) {
+        if (! Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -671,11 +667,11 @@ class DiscountsController extends Controller
      */
     public function getDservices(Request $request)
     {
-        if (!Gate::allows('discounts_allocate')) {
+        if (! Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $discount_info = Discounts::find($request->discount_id);
-        if($discount_info->discount_type == Config::get('constants.Service')){
+        if ($discount_info->discount_type == Config::get('constants.Service')) {
             $serive = ServiceWidget::generateServiceArrayArray($request, Auth::User()->account_id);
         } else {
             $serive = ServiceWidget::generateServiceArrayConsultancy($request, Auth::User()->account_id);
@@ -689,12 +685,10 @@ class DiscountsController extends Controller
 
     /**
      * save services against location id.
-     *
-     * @param  $request
      */
     public function saveDservices(Request $request)
     {
-        if (!Gate::allows('discounts_allocate')) {
+        if (! Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -709,14 +703,14 @@ class DiscountsController extends Controller
         $checked = DiscountHasLocations::where([
             ['location_id', '=', $myArray[0]],
             ['service_id', '=', $myArray[1]],
-            ['discount_id', '=', $request->discount_id]
+            ['discount_id', '=', $request->discount_id],
         ])->count();
 
         if ($checked == '0') {
 
             $record = DiscountHasLocations::create($data);
 
-            $record_location_name = $record->location->city->name . "-" . $record->location->name;
+            $record_location_name = $record->location->city->name.'-'.$record->location->name;
             $record_service_name = $record->service->name;
 
             $myarray = ['record' => $record, 'record_locaiton_name' => $record_location_name, 'record_service_name' => $record_service_name];
@@ -736,14 +730,14 @@ class DiscountsController extends Controller
     public function deleteDservice(Request $request)
     {
 
-        if (!Gate::allows('discounts_allocate')) {
+        if (! Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         DiscountHasLocations::find($request->id)->delete();
 
         return ApiHelper::apiResponse($this->success, 'Row deleted', true, [
-            'id' => $request->id
+            'id' => $request->id,
         ]);
 
     }

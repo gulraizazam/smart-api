@@ -58,12 +58,12 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Doctor <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_doctor_id" onchange="doctorListener($(this).val();" class="form-control select2" name="doctor_id"> </select>
+                            <select id="edit_treatment_doctor_id" onchange="doctorListener($(this).val());" class="form-control select2" name="doctor_id"> </select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Machine <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_machine_id" onchange="machineListener($(this).val();" class="form-control select2" name="machine_id"> </select>
+                            <select id="edit_treatment_machine_id" onchange="machineListener($(this).val());" class="form-control select2" name="machine_id"> </select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">

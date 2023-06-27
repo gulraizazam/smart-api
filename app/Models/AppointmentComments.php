@@ -10,7 +10,7 @@ class AppointmentComments extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'comment', 'appointment_id', 'created_by','created_at', 'updated_at'
+        'comment', 'appointment_id', 'created_by', 'created_at', 'updated_at',
     ];
 
     protected $table = 'appointment_comments';

@@ -7,6 +7,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Export\Helpers;
 
+use function __;
+use function array_key_exists;
+use function count;
+use function ksort;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Dbal\ResultInterface;
@@ -15,11 +19,6 @@ use PhpMyAdmin\Pdf as PdfLib;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Util;
 use TCPDF_STATIC;
-
-use function __;
-use function array_key_exists;
-use function count;
-use function ksort;
 
 /**
  * Adapted from a LGPL script by Philip Clarke
@@ -98,13 +97,13 @@ class Pdf extends PdfLib
     /**
      * Constructs PDF and configures standard parameters.
      *
-     * @param string    $orientation page orientation
-     * @param string    $unit        unit
-     * @param string    $format      the format used for pages
-     * @param bool      $unicode     true means that the input text is unicode
-     * @param string    $encoding    charset encoding; default is UTF-8.
-     * @param bool      $diskcache   DEPRECATED TCPDF FEATURE
-     * @param false|int $pdfa        If not false, set the document to PDF/A mode and the good version (1 or 3)
+     * @param  string  $orientation page orientation
+     * @param  string  $unit        unit
+     * @param  string  $format      the format used for pages
+     * @param  bool  $unicode     true means that the input text is unicode
+     * @param  string  $encoding    charset encoding; default is UTF-8.
+     * @param  bool  $diskcache   DEPRECATED TCPDF FEATURE
+     * @param  false|int  $pdfa        If not false, set the document to PDF/A mode and the good version (1 or 3)
      */
     public function __construct(
         $orientation = 'P',
@@ -125,10 +124,10 @@ class Pdf extends PdfLib
     /**
      * Add page if needed.
      *
-     * @param float|int $h       cell height. Default value: 0
-     * @param mixed     $y       starting y position, leave empty for current
+     * @param  float|int  $h       cell height. Default value: 0
+     * @param  mixed  $y       starting y position, leave empty for current
      *                           position
-     * @param bool      $addpage if true add a page, otherwise only return
+     * @param  bool  $addpage if true add a page, otherwise only return
      *                           the true/false state
      */
     public function checkPageBreak($h = 0, $y = '', $addpage = true): bool
@@ -198,9 +197,9 @@ class Pdf extends PdfLib
             $this->Cell(
                 0,
                 $this->FontSizePt,
-                __('Database:') . ' ' . $this->dbAlias . ',  '
-                . __('Table:') . ' ' . $this->tableAlias . ',  '
-                . __('Purpose:') . ' ' . $this->purpose,
+                __('Database:').' '.$this->dbAlias.',  '
+                .__('Table:').' '.$this->tableAlias.',  '
+                .__('Purpose:').' '.$this->purpose,
                 0,
                 1,
                 'L'
@@ -238,7 +237,7 @@ class Pdf extends PdfLib
     /**
      * Generate table
      *
-     * @param int $lineheight Height of line
+     * @param  int  $lineheight Height of line
      */
     public function morepagestable($lineheight = 8): void
     {
@@ -271,12 +270,12 @@ class Pdf extends PdfLib
                     $l += $this->tablewidths[$col];
                 }
 
-                if (! isset($tmpheight[$row . '-' . $this->page])) {
-                    $tmpheight[$row . '-' . $this->page] = 0;
+                if (! isset($tmpheight[$row.'-'.$this->page])) {
+                    $tmpheight[$row.'-'.$this->page] = 0;
                 }
 
-                if ($tmpheight[$row . '-' . $this->page] < $this->GetY()) {
-                    $tmpheight[$row . '-' . $this->page] = $this->GetY();
+                if ($tmpheight[$row.'-'.$this->page] < $this->GetY()) {
+                    $tmpheight[$row.'-'.$this->page] = $this->GetY();
                 }
 
                 if ($this->page > $maxpage) {
@@ -287,7 +286,7 @@ class Pdf extends PdfLib
             }
 
             // get the height we were in the last used page
-            $h = $tmpheight[$row . '-' . $maxpage];
+            $h = $tmpheight[$row.'-'.$maxpage];
             // set the "pointer" to the left margin
             $l = $this->lMargin;
             // set the $currpage to the last page
@@ -321,7 +320,7 @@ class Pdf extends PdfLib
      * Defines the top margin.
      * The method can be called before creating the first page.
      *
-     * @param float $topMargin the margin
+     * @param  float  $topMargin the margin
      */
     public function setTopMargin($topMargin): void
     {
@@ -331,8 +330,8 @@ class Pdf extends PdfLib
     /**
      * Prints triggers
      *
-     * @param string $db    database name
-     * @param string $table table name
+     * @param  string  $db    database name
+     * @param  string  $table table name
      */
     public function getTriggers($db, $table): void
     {
@@ -415,12 +414,12 @@ class Pdf extends PdfLib
                     $l += $this->tablewidths[$col];
                 }
 
-                if (! isset($tmpheight[$row . '-' . $this->page])) {
-                    $tmpheight[$row . '-' . $this->page] = 0;
+                if (! isset($tmpheight[$row.'-'.$this->page])) {
+                    $tmpheight[$row.'-'.$this->page] = 0;
                 }
 
-                if ($tmpheight[$row . '-' . $this->page] < $this->GetY()) {
-                    $tmpheight[$row . '-' . $this->page] = $this->GetY();
+                if ($tmpheight[$row.'-'.$this->page] < $this->GetY()) {
+                    $tmpheight[$row.'-'.$this->page] = $this->GetY();
                 }
 
                 if ($this->page <= $maxpage) {
@@ -431,7 +430,7 @@ class Pdf extends PdfLib
             }
 
             // get the height we were in the last used page
-            $h = $tmpheight[$row . '-' . $maxpage];
+            $h = $tmpheight[$row.'-'.$maxpage];
             // set the "pointer" to the left margin
             $l = $this->lMargin;
             // set the $currpage to the last page
@@ -464,18 +463,18 @@ class Pdf extends PdfLib
     /**
      * Print $table's CREATE definition
      *
-     * @param string $db          the database name
-     * @param string $table       the table name
-     * @param bool   $do_relation whether to include relation comments
-     * @param bool   $do_comments whether to include the pmadb-style column
+     * @param  string  $db          the database name
+     * @param  string  $table       the table name
+     * @param  bool  $do_relation whether to include relation comments
+     * @param  bool  $do_comments whether to include the pmadb-style column
      *                            comments as comments in the structure;
      *                            this is deprecated but the parameter is
      *                            left here because /export calls
      *                            PMA_exportStructure() also for other
      *                            export types which use this parameter
-     * @param bool   $do_mime     whether to include mime comments
-     * @param bool   $view        whether we're handling a view
-     * @param array  $aliases     aliases of db/table/columns
+     * @param  bool  $do_mime     whether to include mime comments
+     * @param  bool  $view        whether we're handling a view
+     * @param  array  $aliases     aliases of db/table/columns
      */
     public function getTableDef(
         $db,
@@ -619,8 +618,8 @@ class Pdf extends PdfLib
             if ($do_relation && $have_rel) {
                 $data[] = isset($res_rel[$field_name])
                     ? $res_rel[$field_name]['foreign_table']
-                    . ' (' . $res_rel[$field_name]['foreign_field']
-                    . ')'
+                    .' ('.$res_rel[$field_name]['foreign_field']
+                    .')'
                     : '';
             }
 
@@ -653,12 +652,12 @@ class Pdf extends PdfLib
                     $l += $this->tablewidths[$col];
                 }
 
-                if (! isset($tmpheight[$row . '-' . $this->page])) {
-                    $tmpheight[$row . '-' . $this->page] = 0;
+                if (! isset($tmpheight[$row.'-'.$this->page])) {
+                    $tmpheight[$row.'-'.$this->page] = 0;
                 }
 
-                if ($tmpheight[$row . '-' . $this->page] < $this->GetY()) {
-                    $tmpheight[$row . '-' . $this->page] = $this->GetY();
+                if ($tmpheight[$row.'-'.$this->page] < $this->GetY()) {
+                    $tmpheight[$row.'-'.$this->page] = $this->GetY();
                 }
 
                 if ($this->page <= $maxpage) {
@@ -669,7 +668,7 @@ class Pdf extends PdfLib
             }
 
             // get the height we were in the last used page
-            $h = $tmpheight[$row . '-' . $maxpage];
+            $h = $tmpheight[$row.'-'.$maxpage];
             // set the "pointer" to the left margin
             $l = $this->lMargin;
             // set the $currpage to the last page
@@ -702,7 +701,7 @@ class Pdf extends PdfLib
     /**
      * MySQL report
      *
-     * @param string $query Query to execute
+     * @param  string  $query Query to execute
      */
     public function mysqlReport($query): void
     {
@@ -887,9 +886,6 @@ class Pdf extends PdfLib
         $this->tableAlias = $tableAlias ?? '';
     }
 
-    /**
-     * @param array $aliases
-     */
     public function setAliases(array $aliases): void
     {
         $this->aliases = $aliases;

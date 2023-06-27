@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers;
 
-use PhpMyAdmin\Core;
-use PhpMyAdmin\Normalization;
-use PhpMyAdmin\ResponseRenderer;
-use PhpMyAdmin\Template;
-use PhpMyAdmin\Url;
-
 use function __;
 use function _pgettext;
 use function in_array;
@@ -17,6 +11,11 @@ use function intval;
 use function json_decode;
 use function json_encode;
 use function min;
+use PhpMyAdmin\Core;
+use PhpMyAdmin\Normalization;
+use PhpMyAdmin\ResponseRenderer;
+use PhpMyAdmin\Template;
+use PhpMyAdmin\Url;
 
 /**
  * Normalization process (temporarily specific to 1NF).
@@ -37,8 +36,8 @@ class NormalizationController extends AbstractController
         global $db, $table;
 
         if (isset($_POST['getColumns'])) {
-            $html = '<option selected disabled>' . __('Select one…') . '</option>'
-                . '<option value="no_such_col">' . __('No such column') . '</option>';
+            $html = '<option selected disabled>'.__('Select one…').'</option>'
+                .'<option value="no_such_col">'.__('No such column').'</option>';
             //get column whose datatype falls under string category
             $html .= $this->normalization->getHtmlForColumnsList(
                 $db,
@@ -62,7 +61,7 @@ class NormalizationController extends AbstractController
         if (isset($_POST['addNewPrimary'])) {
             $num_fields = 1;
             $columnMeta = [
-                'Field' => $table . '_id',
+                'Field' => $table.'_id',
                 'Extra' => 'auto_increment',
             ];
             $html = $this->normalization->getHtmlForCreateNewColumn($num_fields, $db, $table, $columnMeta);
